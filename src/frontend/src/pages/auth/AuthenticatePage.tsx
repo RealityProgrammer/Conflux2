@@ -1,16 +1,39 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
-import { type ApiResponse } from "../../api/responses.tsx";
-import {useLocation} from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { authService } from "../../api/authService.ts";
+import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
+import {HttpStatusCode} from "axios";
 
-function onLoginAction(_previousState: any, formData: FormData): ApiResponse {
+async function onLoginAction(_previousState: any, formData: FormData): Promise<ApiResponse<LoginResponse>> {
     const email = formData.get("email");
     const password = formData.get("password");
-    const remember = formData.get("remember");
 
-    console.log(email + ", " + password + ", " + remember);
+    if (!email) {
+        return {
+            statusCode: HttpStatusCode.BadRequest,
+            message: "Email is required.",
+            data: null,
+        }
+    }
 
-    return { statusCode: 200, message: null };
+    if (!password) {
+        return {
+            statusCode: HttpStatusCode.BadRequest,
+            message: "Password is required.",
+            data: null,
+        }
+    }
+
+    const response: ApiResponse<LoginResponse> = await authService.login({
+        email: email as string,
+        password: password as string,
+        remember: false,
+    });
+
+    console.log(JSON.stringify(response));
+
+    return response;
 }
 
 function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) {
@@ -42,11 +65,11 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-400 mt-4">
-                        <label className="flex items-center space-x-2">
-                            <input type="checkbox" name="remember" className="accent-indigo-500"/>
+                        {/*<label className="flex items-center space-x-2">*/}
+                        {/*    <input type="checkbox" name="remember" className="accent-indigo-500"/>*/}
 
-                            <span>Remember me</span>
-                        </label>
+                        {/*    <span>Remember me</span>*/}
+                        {/*</label>*/}
 
                         <a href="#" className="hover:text-indigo-400 transition-colors">Forgot password?</a>
                     </div>

@@ -67,6 +67,16 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options => {
     });
 });
 
+// Security reinforcement.
+builder.Services.AddCors(options => {
+    options.AddPolicy("FrontendPolicy", policy => {
+        policy.WithOrigins(builder.Configuration["Frontend:Origin"]!)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 app.UseAuthentication();
@@ -83,5 +93,7 @@ app.UseHttpsRedirection();
 app.MapGet("/health", () => Results.Ok());
 
 app.MapControllers();
+
+app.UseCors("FrontendPolicy");
 
 app.Run();

@@ -51,7 +51,7 @@ public class AuthenticateController : ControllerBase {
         var result = await _signInManager.PasswordSignInAsync(user, request.Password, request.Remember, false);
 
         if (!result.Succeeded) {
-            return NotFound();
+            return Unauthorized();
         }
 
         GenerateJwtToken(user, out string accessToken, out string refreshToken, out long refreshTokenExpireTick);
