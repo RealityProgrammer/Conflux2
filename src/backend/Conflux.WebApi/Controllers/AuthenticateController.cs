@@ -152,6 +152,13 @@ public class AuthenticateController : ControllerBase {
             RefreshToken = newRefreshToken
         });
     }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<ActionResult> Logout() {
+        await _signInManager.SignOutAsync();
+        return Ok();
+    }
 }
 
 public record LoginRequest(string Email, string Password, bool Remember);
