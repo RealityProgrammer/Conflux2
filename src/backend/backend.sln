@@ -1,6 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conflux", "Conflux\Conflux.csproj", "{0E4C61B3-6144-48D8-AA07-3DEAF0FDA26E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conflux.WebApi", "Conflux.WebApi\Conflux.WebApi.csproj", "{0E4C61B3-6144-48D8-AA07-3DEAF0FDA26E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conflux.Infrastructure", "Conflux.Infrastructure\Conflux.Infrastructure.csproj", "{3A7A8906-686F-4EE5-B306-27F4C55C5731}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conflux.Domain", "Conflux.Domain\Conflux.Domain.csproj", "{8D1DE930-4394-4578-A12E-BF843EBC39F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conflux.Application", "Conflux.Application\Conflux.Application.csproj", "{FA870AD1-187D-4BF1-9D06-5331C79BFB58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +18,17 @@ Global
 		{0E4C61B3-6144-48D8-AA07-3DEAF0FDA26E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E4C61B3-6144-48D8-AA07-3DEAF0FDA26E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E4C61B3-6144-48D8-AA07-3DEAF0FDA26E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A7A8906-686F-4EE5-B306-27F4C55C5731}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A7A8906-686F-4EE5-B306-27F4C55C5731}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A7A8906-686F-4EE5-B306-27F4C55C5731}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A7A8906-686F-4EE5-B306-27F4C55C5731}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D1DE930-4394-4578-A12E-BF843EBC39F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D1DE930-4394-4578-A12E-BF843EBC39F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D1DE930-4394-4578-A12E-BF843EBC39F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D1DE930-4394-4578-A12E-BF843EBC39F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA870AD1-187D-4BF1-9D06-5331C79BFB58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA870AD1-187D-4BF1-9D06-5331C79BFB58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA870AD1-187D-4BF1-9D06-5331C79BFB58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA870AD1-187D-4BF1-9D06-5331C79BFB58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
