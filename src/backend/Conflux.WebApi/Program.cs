@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // Add database services.
@@ -25,7 +26,7 @@ if (app.Environment.IsDevelopment()) {
 
 app.UseHttpsRedirection();
 
-app.MapGet("/health", () => Results.Ok()).WithName("Healthcheck");
+app.MapGet("/health", () => Results.Ok());
 
 app.MapControllers();
 
