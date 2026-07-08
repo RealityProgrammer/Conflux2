@@ -16,16 +16,13 @@ public class AuthenticateController : ControllerBase {
     private const string ApplicationJwtLoginProvider = "AppJWT";
 
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IConfiguration _config;
 
     public AuthenticateController(
         UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
         IConfiguration config
     ) {
         _userManager = userManager;
-        _signInManager = signInManager;
         _config = config;
     }
 
@@ -44,20 +41,15 @@ public class AuthenticateController : ControllerBase {
     public async Task<ActionResult> Login([FromBody] LoginRequest request) {
         var user = await _userManager.FindByEmailAsync(request.Email);
 
-        if (user == null) {
-            return Unauthorized();
+        if (user != null && await _userManager.CheckPasswordAsync(user, request.Password)) {
+            GenerateJwtToken(user, out string accessToken, out string refreshToken, out long refreshTokenExpireTick);
+            await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{refreshToken}:{refreshTokenExpireTick}");
+            SetRefreshTokenCookie(user.Email!, refreshToken);
+
+            return Ok(new LoginResponse(accessToken));
         }
-
-        var result = await _signInManager.PasswordSignInAsync(user, request.Password, request.Remember, false);
-
-        if (!result.Succeeded) {
-            return Unauthorized();
-        }
-
-        GenerateJwtToken(user, out string accessToken, out string refreshToken, out long refreshTokenExpireTick);
-        await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{refreshToken}:{refreshTokenExpireTick}");
-
-        return Ok(new LoginResponse(accessToken, refreshToken));
+        
+        return Unauthorized();
     }
 
     private void GenerateJwtToken(ApplicationUser user, out string accessToken, out string refreshToken, out long refreshTokenExpireTick) {
@@ -80,6 +72,19 @@ public class AuthenticateController : ControllerBase {
         accessToken = new JwtSecurityTokenHandler().WriteToken(token);
         refreshToken = GenerateRefreshToken();
         refreshTokenExpireTick = DateTime.UtcNow.AddDays(7).Ticks;
+    }
+
+    private void SetRefreshTokenCookie(string email, string refreshToken) {
+        var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{refreshToken}"));
+        
+        var cookieOptions = new CookieOptions {
+            HttpOnly = true,                            // Prevent JavaScript access.
+            Secure = false,                             // TODO: Replace this with true once we got HTTPS
+            SameSite = SameSiteMode.Strict,             // Prevent CSRF
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        Response.Cookies.Append("X-Refresh-Token", payload, cookieOptions);
     }
 
     private static string GenerateRefreshToken() {
@@ -121,48 +126,66 @@ public class AuthenticateController : ControllerBase {
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request) {
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null) return Unauthorized();
-
-        var storedData = await _userManager.GetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken");
-        if (string.IsNullOrEmpty(storedData)) return Unauthorized();
-
-        int firstColon = storedData.IndexOf(':');
-
-        // Force login if somehow the data is corrupted.
-        if (firstColon == -1 || !long.TryParse(storedData.AsSpan()[(firstColon + 1)..], out var expireTick)) {
+    public async Task<IActionResult> Refresh() {
+        if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
             return Unauthorized();
         }
 
-        ReadOnlySpan<char> storedToken = storedData.AsSpan()[..firstColon];
+        try {
+            var decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
+            int firstColon = decodedPayload.IndexOf(':');
 
-        // Validate token match and expiration
-        if (storedToken != request.RefreshToken || DateTime.UtcNow.Ticks > expireTick) {
+            string email = decodedPayload[..firstColon];
+            string token = decodedPayload[(firstColon + 1)..];
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) {
+                return Unauthorized();
+            }
+
+            var storedData = await _userManager.GetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken");
+            if (string.IsNullOrEmpty(storedData)) return Unauthorized();
+
+            firstColon = storedData.IndexOf(':');
+
+            // Force login if somehow the data is corrupted.
+            if (firstColon == -1 || !long.TryParse(storedData.AsSpan()[(firstColon + 1)..], out var expireTick)) {
+                return Unauthorized();
+            }
+
+            ReadOnlySpan<char> storedToken = storedData.AsSpan()[..firstColon];
+
+            if (!storedToken.SequenceEqual(token) || DateTime.UtcNow.Ticks > expireTick) {
+                return Unauthorized();
+            }
+
+            GenerateJwtToken(user, out string newAccessToken, out string newRefreshToken, out long newRefreshTokenExpireTick);
+
+            await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{newRefreshToken}:{newRefreshTokenExpireTick}");
+
+            SetRefreshTokenCookie(user.Email!, newRefreshToken);
+            
+            return Ok(new RefreshResponse(newAccessToken));
+        } catch {
             return Unauthorized();
         }
-
-        // Rotate token.
-        GenerateJwtToken(user, out string newAccessToken, out string newRefreshToken, out long newRefreshTokenExpireTick);
-
-        await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{newRefreshToken}:{newRefreshTokenExpireTick}");
-
-        return Ok(new {
-            AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken
-        });
     }
 
     [HttpPost]
     [Authorize]
     public async Task<ActionResult> Logout() {
-        await _signInManager.SignOutAsync();
+        Response.Cookies.Delete("X-Refresh-Token", new() {
+            HttpOnly = true,
+            Secure = false,                     // TODO: Replace this with true once we got HTTPS
+            SameSite = SameSiteMode.Strict,
+        });
+        
         return Ok();
     }
+    
+    public record LoginRequest(string Email, string Password);
+    public record LoginResponse(string AccessToken);
+    public record RegisterRequest(string Email, string Password, string ConfirmPassword);
+    public record RegisterResponse(string Code, string Message);
+    public record RefreshResponse(string AccessToken);
 }
-
-public record LoginRequest(string Email, string Password, bool Remember);
-public record LoginResponse(string AccessToken, string RefreshToken);
-public record RegisterRequest(string Email, string Password, string ConfirmPassword);
-public record RegisterResponse(string Code, string Message);
-public record RefreshRequest(string Email, string RefreshToken);

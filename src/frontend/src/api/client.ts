@@ -46,7 +46,7 @@ apiClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && originalRequest && !(originalRequest as any).__retry && originalRequest.url !== '/auth') {
+        if (error.response?.status === 401 && originalRequest && !(originalRequest as any).__retry && originalRequest.url !== "/api/auth/login") {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
@@ -61,7 +61,7 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const { data } = await axios.post('https://localhost:5001/api/auth/refresh', {}, {
+                const { data } = await axios.post('https://localhost:5127/api/auth/refresh', {}, {
                     withCredentials: true
                 });
 
