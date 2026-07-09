@@ -65,12 +65,11 @@ export const authService = {
     },
 
     logout: async () : Promise<ApiResponse<null>> => {
-        await apiClient.post('/auth/logout');
+        const response: AxiosResponse = await apiClient.post('/auth/logout');
         setAccessToken(null);
 
         return {
-            statusCode: 200,
-            data: null,
+            statusCode: response.status,
         }
     }
 };

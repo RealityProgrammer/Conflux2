@@ -3,7 +3,7 @@ import { animate, random, JSAnimation } from "animejs";
 import { useLocation } from "react-router-dom";
 import { authService } from "../../api/authService.ts";
 import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
-import {HttpStatusCode} from "axios";
+import { HttpStatusCode } from "axios";
 
 async function onLoginAction(_previousState: any, formData: FormData): Promise<ApiResponse<LoginResponse>> {
     const email = formData.get("email");
