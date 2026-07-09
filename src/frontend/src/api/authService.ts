@@ -1,6 +1,6 @@
 import apiClient, { setAccessToken } from "./client.ts";
 import type { LoginRequest, RegisterRequest } from "./types/requests.ts";
-import type { ApiResponse, LoginResponse, RegisterResponse } from "./types/responses.ts";
+import type { ApiResponse, LoginResponse, RegisterResponse, RefreshResponse } from "./types/responses.ts";
 import { type AxiosResponse } from "axios";
 import { handleApiError } from "../utils/errorHelpers.ts";
 
@@ -37,4 +37,40 @@ export const authService = {
             return handleApiError(error);
         }
     },
+
+    refresh: async (): Promise<ApiResponse<RefreshResponse>> => {
+        try {
+            const response: AxiosResponse<RefreshResponse> = await apiClient.post('/auth/refresh', {}, {
+                withCredentials: true
+            });
+
+            if (response.status === 200) {
+                setAccessToken(response.data.accessToken);
+
+                return {
+                    statusCode: response.status,
+                    data: { accessToken: response.data.accessToken },
+                }
+            } else {
+                setAccessToken(null);
+
+                return {
+                    statusCode: response.status,
+                    data: null,
+                }
+            }
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
+
+    logout: async () : Promise<ApiResponse<null>> => {
+        await apiClient.post('/auth/logout');
+        setAccessToken(null);
+
+        return {
+            statusCode: 200,
+            data: null,
+        }
+    }
 };

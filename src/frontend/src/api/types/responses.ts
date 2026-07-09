@@ -7,10 +7,13 @@ export interface ApiResponse<T = any> {
 
 export interface LoginResponse {
     accessToken: string;
-    refreshToken: string;
 }
 
 export interface RegisterResponse {
     code: string;
     message: string;
+}
+
+export interface RefreshResponse {
+    accessToken: string;
 }

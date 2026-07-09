@@ -1,10 +1,10 @@
 import { createContext, type ReactNode, useContext, useEffect, useState, useRef } from "react";
-import apiClient, { setAccessToken } from "../api/client.ts";
+import { authService } from "../api/authService.ts";
+import type {ApiResponse, RefreshResponse} from "../api/types/responses.ts";
 
 interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (token: string) => void;
     logout: () => void;
 }
 
@@ -18,7 +18,7 @@ export const useAuth = () => {
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // Starts true to check session on boot
+    const [isLoading, setIsLoading] = useState(true); // start true because we are loading, obviously
 
     const hasFired = useRef(false);
 
@@ -29,38 +29,22 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
         // refresh access token if there is a valid refresh token
         const attemptSilentLogin = async () => {
-            try {
-                const { data } = await apiClient.post('http://localhost:5127/api/auth/refresh', {}, { withCredentials: true });
-                setAccessToken(data.accessToken);
-                setIsAuthenticated(true);
-            } catch (error) {
-                // No valid cookie, stay logged out
-                setAccessToken(null);
-                setIsAuthenticated(false);
-            } finally {
-                setIsLoading(false); // Done checking
-            }
+            const response: ApiResponse<RefreshResponse> = await authService.refresh();
+
+            setIsAuthenticated(response.statusCode === 200);
+            setIsLoading(false);
         };
 
         attemptSilentLogin();
     }, []);
 
-    const login = (token: string) => {
-        setAccessToken(token);
-        setIsAuthenticated(true);
-    };
-
     const logout = async () => {
-        try {
-            await apiClient.post('/auth/logout'); // Tell backend to delete cookie
-        } finally {
-            setAccessToken(null);
-            setIsAuthenticated(false);
-        }
+        await authService.logout();
+        setIsAuthenticated(false);
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
             {children}
         </AuthContext.Provider>
     );
