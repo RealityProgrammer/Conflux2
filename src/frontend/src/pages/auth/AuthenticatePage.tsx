@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { authService } from "../../api/authService.ts";
 import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
 import { HttpStatusCode } from "axios";
+import { Label } from "radix-ui";
 
 async function onLoginAction(_previousState: any, formData: FormData): Promise<ApiResponse<LoginResponse>> {
     const email = formData.get("email");
@@ -51,31 +52,27 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
 
                 <form className="mt-8" name="login" action={loginAction}>
                     <div>
-                        <label className="text-sm text-gray-300">Email</label>
+                        <Label.Root className="text-sm text-gray-300" htmlFor="login_email">Email</Label.Root>
 
-                        <input type="text" placeholder="Enter Email" name="email"
+                        <input id="login_email" type="text" placeholder="Enter Email" name="email"
                                className="w-full h-11 mt-2 px-3 input-field"/>
                     </div>
 
                     <div className="mt-4">
-                        <label className="text-sm text-gray-300">Password</label>
+                        <Label.Root className="text-sm text-gray-300" htmlFor="login_password">Password</Label.Root>
 
-                        <input type="password" placeholder="Enter Password" name="password"
+                        <input id="login_password" type="password" placeholder="Enter Password" name="password"
                                className="w-full h-11 mt-2 px-3 input-field"/>
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-400 mt-4">
-                        {/*<label className="flex items-center space-x-2">*/}
-                        {/*    <input type="checkbox" name="remember" className="accent-indigo-500"/>*/}
-
-                        {/*    <span>Remember me</span>*/}
-                        {/*</label>*/}
-
                         <a href="#" className="hover:text-indigo-400 transition-colors">Forgot password?</a>
                     </div>
 
-                    <button type="submit"
-                            className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer">
+                    <button
+                        type="submit"
+                        className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer"
+                    >
                         Log In
                     </button>
                 </form>
@@ -129,28 +126,36 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
 
                 <form className="mt-8" name="register" action={registerAction}>
                     <div>
-                        <label className="text-sm text-gray-300">Email</label>
+                        <Label.Root className="text-sm text-gray-300" htmlFor="register_email">Email</Label.Root>
 
-                        <input type="text" placeholder="Enter Email" name="email"
+                        <input id="register_email" type="text" placeholder="Enter Email" name="email"
                                className="w-full h-11 mt-2 px-3 input-field"/>
                     </div>
 
                     <div className="mt-4">
-                        <label className="text-sm text-gray-300">Password</label>
+                        <Label.Root className="text-sm text-gray-300" htmlFor="register_password">Password</Label.Root>
 
-                        <input type="password" placeholder="Enter Password" name="password"
+                        <input id="register_password"
+                               type="password"
+                               name="password"
+                               placeholder="Enter Password"
                                className="w-full h-11 mt-2 px-3 input-field"/>
                     </div>
 
                     <div className="mt-4">
-                        <label className="text-sm text-gray-300">Confirm Password</label>
+                        <Label.Root className="text-sm text-gray-300" htmlFor="register_confirm_password">Confirm Password</Label.Root>
 
-                        <input type="password" placeholder="Enter Password (again)" name="confirmPassword"
+                        <input id="register_confirm_password"
+                               type="password"
+                               name="confirmPassword"
+                               placeholder="Enter Password (again)"
                                className="w-full h-11 mt-2 px-3 input-field"/>
                     </div>
 
-                    <button type="submit"
-                            className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer">
+                    <button
+                        type="submit"
+                        className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer"
+                    >
                         Register
                     </button>
                 </form>

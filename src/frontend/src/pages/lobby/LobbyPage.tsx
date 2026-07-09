@@ -6,6 +6,8 @@ export default function LobbyPage() {
     return (
         <>
             { authData.isAuthenticated ? <p>You are authenticated.</p> : <p>You are not authenticated.</p> }
+
+            <button onClick={authData.logout}>Logout</button>
         </>
     );
 }

@@ -43,6 +43,7 @@ public class AuthenticateController : ControllerBase {
 
         if (user != null && await _userManager.CheckPasswordAsync(user, request.Password)) {
             GenerateJwtToken(user, out string accessToken, out string refreshToken, out long refreshTokenExpireTick);
+            
             await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{refreshToken}:{refreshTokenExpireTick}");
             SetRefreshTokenCookie(user.Email!, refreshToken);
 
