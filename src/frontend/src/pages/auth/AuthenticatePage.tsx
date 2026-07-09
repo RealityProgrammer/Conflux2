@@ -32,7 +32,9 @@ async function onLoginAction(_previousState: any, formData: FormData): Promise<A
         remember: false,
     });
 
-    console.log(JSON.stringify(response));
+    if (response.statusCode === HttpStatusCode.Ok) {
+
+    }
 
     return response;
 }

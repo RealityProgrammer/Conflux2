@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState, useRef } from "react";
 import { authService } from "../api/authService.ts";
 import type {ApiResponse, RefreshResponse} from "../api/types/responses.ts";
+import {HttpStatusCode} from "axios";
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -31,7 +32,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         const attemptSilentLogin = async () => {
             const response: ApiResponse<RefreshResponse> = await authService.refresh();
 
-            setIsAuthenticated(response.statusCode === 200);
+            setIsAuthenticated(response.statusCode === HttpStatusCode.Ok);
             setIsLoading(false);
         };
 

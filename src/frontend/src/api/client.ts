@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, {HttpStatusCode} from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 let inMemoryAccessToken: string | null = null;
@@ -46,7 +46,7 @@ apiClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && originalRequest && !(originalRequest as any).__retry && originalRequest.url !== "/api/auth/login") {
+        if (error.response?.status === HttpStatusCode.Unauthorized && originalRequest && !(originalRequest as any).__retry && originalRequest.url !== "/api/auth/login") {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });

@@ -1,7 +1,7 @@
 import apiClient, { setAccessToken } from "./client.ts";
 import type { LoginRequest, RegisterRequest } from "./types/requests.ts";
 import type { ApiResponse, LoginResponse, RegisterResponse, RefreshResponse } from "./types/responses.ts";
-import { type AxiosResponse } from "axios";
+import {type AxiosResponse, HttpStatusCode} from "axios";
 import { handleApiError } from "../utils/errorHelpers.ts";
 
 export const authService = {
@@ -9,7 +9,7 @@ export const authService = {
         try {
             const response: AxiosResponse<LoginResponse> = await apiClient.post("/auth/login", request);
 
-            if (response.status === 200) {
+            if (response.status === HttpStatusCode.Ok) {
                 setAccessToken(response.data.accessToken);
             }
 
@@ -44,7 +44,7 @@ export const authService = {
                 withCredentials: true
             });
 
-            if (response.status === 200) {
+            if (response.status === HttpStatusCode.Ok) {
                 setAccessToken(response.data.accessToken);
 
                 return {
