@@ -81,7 +81,7 @@ public class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = false,                             // TODO: Replace this with true once we got HTTPS
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = DateTime.UtcNow.AddDays(7)
+            Expires = DateTime.UtcNow.AddDays(7),
         };
 
         Response.Cookies.Append("X-Refresh-Token", payload, cookieOptions);
@@ -171,7 +171,7 @@ public class AuthenticateController : ControllerBase {
         }
     }
 
-    [HttpPost]
+    [HttpPost("logout")]
     [Authorize]
     public async Task<ActionResult> Logout() {
         Response.Cookies.Delete("X-Refresh-Token", new() {

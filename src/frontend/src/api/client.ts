@@ -3,7 +3,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 let inMemoryAccessToken: string | null = null;
 
-function setAccessToken(accessToken: string | null): void {
+export function setAccessToken(accessToken: string | null): void {
     inMemoryAccessToken = accessToken;
 }
 

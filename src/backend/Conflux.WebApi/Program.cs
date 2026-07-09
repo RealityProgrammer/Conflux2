@@ -30,7 +30,7 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at Jwt:Secret."))),
     };
 });
 
@@ -70,7 +70,9 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options => {
 // Security reinforcement.
 builder.Services.AddCors(options => {
     options.AddPolicy("FrontendPolicy", policy => {
-        policy.WithOrigins(builder.Configuration["Frontend:Origin"]!)
+        var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.");
+        
+        policy.WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -78,6 +80,8 @@ builder.Services.AddCors(options => {
 });
 
 var app = builder.Build();
+
+app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -93,7 +97,5 @@ app.UseHttpsRedirection();
 app.MapGet("/health", () => Results.Ok());
 
 app.MapControllers();
-
-app.UseCors("FrontendPolicy");
 
 app.Run();

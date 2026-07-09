@@ -1,4 +1,4 @@
-import apiClient from "./client.ts";
+import apiClient, { setAccessToken } from "./client.ts";
 import type { LoginRequest, RegisterRequest } from "./types/requests.ts";
 import type { ApiResponse, LoginResponse, RegisterResponse } from "./types/responses.ts";
 import { type AxiosResponse } from "axios";
@@ -8,6 +8,10 @@ export const authService = {
     login: async (request: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
         try {
             const response: AxiosResponse<LoginResponse> = await apiClient.post("/auth/login", request);
+
+            if (response.status === 200) {
+                setAccessToken(response.data.accessToken);
+            }
 
             return {
                 statusCode: response.status,
