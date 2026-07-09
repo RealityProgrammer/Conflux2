@@ -15,14 +15,17 @@
     "radix-ui": "^1.6.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-icons": "^5.7.0",
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
+    "@rolldown/plugin-babel": "^0.2.3",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "animejs": "^4.5.0",
+    "babel-plugin-react-compiler": "^1.0.0",
     "oxlint": "^1.71.0",
     "react-router-dom": "^7.18.1",
     "typescript": "~6.0.2",

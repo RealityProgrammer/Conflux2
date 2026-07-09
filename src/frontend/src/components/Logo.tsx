@@ -7,17 +7,17 @@ export default function Logo({ ...props }) {
                 </pattern>
 
                 <linearGradient id="cyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#00C6FF" />
-                    <stop offset="100%" stop-color="#0072FF" />
+                    <stop offset="0%" stopColor="#00C6FF" />
+                    <stop offset="100%" stopColor="#0072FF" />
                 </linearGradient>
 
                 <linearGradient id="magentaGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#F107A3" />
-                    <stop offset="100%" stop-color="#7B2FF7" />
+                    <stop offset="0%" stopColor="#F107A3" />
+                    <stop offset="100%" stopColor="#7B2FF7" />
                 </linearGradient>
 
                 <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+                    <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="#000000" floodOpacity="0.5"/>
                 </filter>
 
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -50,12 +50,12 @@ export default function Logo({ ...props }) {
             </g>
 
             <g>
-                <circle cx="250" cy="220" r="28" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.3" />
-                <circle cx="250" cy="220" r="18" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.6" />
+                <circle cx="250" cy="220" r="28" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.3" />
+                <circle cx="250" cy="220" r="18" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity="0.6" />
                 <circle cx="250" cy="220" r="10" fill="#FFFFFF" filter="url(#glow)" />
             </g>
 
-            <text x="250" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="800" fill="#F8FAFC" text-anchor="middle" letter-spacing="6" className="select-none">CONFLUX</text>
+            <text x="250" y="390" fontFamily="system-ui, -apple-system, sans-serif" fontSize="44" fontWeight="800" fill="#F8FAFC" textAnchor="middle" letterSpacing="6" className="select-none">CONFLUX</text>
         </svg>
     );
 }
