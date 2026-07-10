@@ -1,12 +1,50 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
-import { useLocation } from "react-router-dom";
+import { Form, useLocation, redirect, useActionData } from "react-router-dom";
 import { authService } from "../../api/authService.ts";
 import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
 import { HttpStatusCode } from "axios";
 import { Label } from "radix-ui";
 
-async function onLoginAction(_previousState: any, formData: FormData): Promise<ApiResponse<LoginResponse>> {
+export async function authLoader(){
+    if (authService.hasAccessToken()) {
+        return redirect("/");
+    }
+
+    try {
+        const response = await authService.refresh();
+        if (response.statusCode === HttpStatusCode.Ok) {
+            return redirect("/");
+        }
+    } catch (error) {
+        return null; // refresh failed, let user see the auth page.
+    }
+
+    return null; // also refresh failed
+}
+
+export async function authAction({ request }: { request: Request }) {
+    const formData: FormData = await request.formData();
+
+    switch (formData.get("intent")) {
+        case "login":
+            const response = await performLogin(formData);
+
+            if (response.statusCode === HttpStatusCode.Ok) {
+                return redirect("/");
+            }
+
+            return { error: response.message };
+
+        case "register":
+            return { error: "Not implemented." };
+
+        default:
+            return { error: "Unknown intent." };
+    }
+}
+
+async function performLogin(formData: FormData): Promise<ApiResponse<LoginResponse>> {
     const email = formData.get("email");
     const password = formData.get("password");
 
@@ -26,21 +64,31 @@ async function onLoginAction(_previousState: any, formData: FormData): Promise<A
         }
     }
 
-    const response: ApiResponse<LoginResponse> = await authService.login({
+    return await authService.login({
         email: email as string,
-        password: password as string,
-        remember: false,
+        password: password as string
     });
-
-    if (response.statusCode === HttpStatusCode.Ok) {
-
-    }
-
-    return response;
 }
 
+
 function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) {
-    const [loginState, loginAction] = useActionState(onLoginAction, null);
+    // const auth = useAuth();
+    // const navigate = useNavigate();
+    //
+    // async function loginAction(_previousState: any, formData: FormData): Promise<ApiResponse<LoginResponse>> {
+    //     const response = await performLogin(formData);
+    //
+    //     if (response.statusCode === HttpStatusCode.Ok) {
+    //         auth.updateAuthenticateStatus(true);
+    //         navigate("/");
+    //     }
+    //
+    //     return response;
+    // }
+    //
+    // const [loginState, loginAction] = useActionState(loginAction, null);
+
+    const actionData = useActionData() as { error?: string };
 
     return (
         <div className="bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative">
@@ -52,7 +100,11 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                 <h1 className="text-center font-bold text-3xl text-white">Welcome Back</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Identify yourself</p>
 
-                <form className="mt-8" name="login" action={loginAction}>
+                <Form className="mt-8" name="login" method="post">
+                    {/* Hidden fields */}
+
+                    <input type="hidden" value="login" name="intent"/>
+
                     <div>
                         <Label.Root className="text-sm text-gray-300" htmlFor="login_email">Email</Label.Root>
 
@@ -77,10 +129,10 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                     >
                         Log In
                     </button>
-                </form>
+                </Form>
 
-                {loginState && loginState.message && loginState.message.length > 0 && (
-                    <p className="text-center mt-1 text-red-500">{loginState.message}</p>
+                {actionData && actionData.error && actionData.error.length > 0 && (
+                    <p className="text-center mt-1 text-red-500">{actionData.error}</p>
                 ) }
 
                 <p className="text-center text-gray-400 text-sm mt-2">

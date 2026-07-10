@@ -1,8 +1,10 @@
-import apiClient, { setAccessToken } from "./client.ts";
+import apiClient, { setAccessToken, hasAccessToken } from "./client.ts";
 import type { LoginRequest, RegisterRequest } from "./types/requests.ts";
 import type { ApiResponse, LoginResponse, RegisterResponse, RefreshResponse } from "./types/responses.ts";
-import {type AxiosResponse, HttpStatusCode} from "axios";
+import { type AxiosResponse, HttpStatusCode } from "axios";
 import { handleApiError } from "../utils/errorHelpers.ts";
+
+let activeRefreshPromise: Promise<ApiResponse<RefreshResponse>> | null = null;
 
 export const authService = {
     login: async (request: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
@@ -39,29 +41,32 @@ export const authService = {
     },
 
     refresh: async (): Promise<ApiResponse<RefreshResponse>> => {
-        try {
-            const response: AxiosResponse<RefreshResponse> = await apiClient.post('/auth/refresh', {}, {
+        // prevent multiple refresh requests.
+        if (!activeRefreshPromise) {
+            activeRefreshPromise = apiClient.post("/auth/refresh", {}, {
                 withCredentials: true
+            }).then((response: AxiosResponse<RefreshResponse>) => {
+                if (response.status === HttpStatusCode.Ok) {
+                    setAccessToken(response.data.accessToken);
+
+                    return {
+                        statusCode: response.status,
+                        data: { accessToken: response.data.accessToken },
+                    }
+                } else {
+                    setAccessToken(null);
+
+                    return {
+                        statusCode: response.status,
+                        data: null,
+                    }
+                }
+            }).finally(() => {
+                activeRefreshPromise = null;    // clear when finish
             });
-
-            if (response.status === HttpStatusCode.Ok) {
-                setAccessToken(response.data.accessToken);
-
-                return {
-                    statusCode: response.status,
-                    data: { accessToken: response.data.accessToken },
-                }
-            } else {
-                setAccessToken(null);
-
-                return {
-                    statusCode: response.status,
-                    data: null,
-                }
-            }
-        } catch (error) {
-            return handleApiError(error);
         }
+
+        return activeRefreshPromise;
     },
 
     logout: async () : Promise<ApiResponse<null>> => {
@@ -71,5 +76,9 @@ export const authService = {
         return {
             statusCode: response.status,
         }
+    },
+
+    hasAccessToken: () => {
+        return hasAccessToken();
     }
 };

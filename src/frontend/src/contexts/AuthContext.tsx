@@ -1,12 +1,8 @@
-import { createContext, type ReactNode, useContext, useEffect, useState, useRef } from "react";
-import { authService } from "../api/authService.ts";
-import type {ApiResponse, RefreshResponse} from "../api/types/responses.ts";
-import {HttpStatusCode} from "axios";
+import { createContext, type ReactNode, useContext } from "react";
+import { useRouteLoaderData } from "react-router-dom";
 
 interface AuthContextType {
     isAuthenticated: boolean;
-    isLoading: boolean;
-    logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,35 +14,11 @@ export const useAuth = () => {
 };
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // start true because we are loading, obviously
-
-    const hasFired = useRef(false);
-
-    useEffect(() => {
-        // prevent duplicate execution caused by StrictMode
-        if (hasFired.current) return;
-        hasFired.current = true;
-
-        // refresh access token if there is a valid refresh token
-        const attemptSilentLogin = async () => {
-            const response: ApiResponse<RefreshResponse> = await authService.refresh();
-
-            setIsAuthenticated(response.statusCode === HttpStatusCode.Ok);
-            setIsLoading(false);
-        };
-
-        attemptSilentLogin();
-    }, []);
-
-    const logout = async () => {
-        await authService.logout();
-        setIsAuthenticated(false);
-    };
+    const loaderData: { isAuthenticated: boolean } | undefined = useRouteLoaderData("root");
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated: loaderData ? loaderData.isAuthenticated : false }}>
             {children}
         </AuthContext.Provider>
-    );
+    )
 }

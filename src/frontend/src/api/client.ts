@@ -7,6 +7,10 @@ export function setAccessToken(accessToken: string | null): void {
     inMemoryAccessToken = accessToken;
 }
 
+export function hasAccessToken(): boolean {
+    return !!inMemoryAccessToken;
+}
+
 const apiClient = axios.create({
     baseURL: 'http://localhost:5127/api',
     headers: {

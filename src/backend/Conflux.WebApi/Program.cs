@@ -1,5 +1,6 @@
 using Conflux.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -60,6 +61,13 @@ builder.Services.AddSwaggerGen(options => {
     });
 });
 
+// enable http logging in dev environment.
+if (builder.Environment.IsDevelopment()) {
+    builder.Services.AddHttpLogging(options => {
+        options.LoggingFields = HttpLoggingFields.Request | HttpLoggingFields.Response;
+    });
+}
+
 // Database related services.
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options => {
     options.UseNpgsql(builder.Configuration.GetConnectionString("Database"), options => {
@@ -86,10 +94,14 @@ app.UseCors("FrontendPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configure OpenAPI and Swagger for development environment.
+// Configure some helper services in development environment.
 if (app.Environment.IsDevelopment()) {
+    // swagger
     app.UseSwagger();
     app.UseSwaggerUI();
+    
+    // http logging to print incoming requests and outcoming responses.
+    app.UseHttpLogging();
 }
 
 app.UseHttpsRedirection();
