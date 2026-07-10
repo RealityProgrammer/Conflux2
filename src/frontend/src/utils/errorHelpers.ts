@@ -1,21 +1,21 @@
 import type { ApiResponse } from "../api/types/responses.ts";
-import { AxiosError } from "axios";
+import {AxiosError, HttpStatusCode} from "axios";
 
 export function handleApiError<T = any>(error: any): ApiResponse<T> {
     if (error instanceof AxiosError) {
         return {
-            statusCode: error.status!,
-            message: "Invalid login credential.",
+            statusCode: error.status ?? HttpStatusCode.InternalServerError,
+            message: error.message,
         }
     } else if (error instanceof Error) {
         return {
-            statusCode: 520,
+            statusCode: HttpStatusCode.InternalServerError,
             message: error.message,
         }
     }
 
     return {
-        statusCode: 500,
+        statusCode: HttpStatusCode.InternalServerError,
         message: "Error occurred: " + error,
     }
 }

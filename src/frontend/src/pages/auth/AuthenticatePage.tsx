@@ -1,4 +1,4 @@
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
 import { Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
 import { authService } from "../../api/authService.ts";
@@ -6,7 +6,7 @@ import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
 import { HttpStatusCode } from "axios";
 import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
-import {BsEye, BsEyeSlash} from "react-icons/bs";
+import { BsEye, BsEyeSlash } from "react-icons/bs";
 
 export async function authLoader(){
     if (authService.hasAccessToken()) {
@@ -28,48 +28,54 @@ export async function authLoader(){
 export async function authAction({ request }: { request: Request }) {
     const formData: FormData = await request.formData();
 
+    const email = formData.get("email");
+    const password = formData.get("password");
+
+    if (!email) {
+        return { message: "Email is required." }
+    }
+
+    if (!password) {
+        return { message: "Password is required." }
+    }
+
     switch (formData.get("intent")) {
-        case "login":
-            const response = await performLogin(formData);
+        case "login": {
+            const response: ApiResponse<LoginResponse> = await authService.login({
+                email: email as string,
+                password: password as string
+            })
 
             if (response.statusCode === HttpStatusCode.Ok) {
                 return redirect("/");
             }
 
-            return { error: response.message };
+            return { error: response.message ?? "Unknown error." };
+        }
 
-        case "register":
-            return { error: "Not implemented." };
+        case "register": {
+            const confirmPassword = formData.get("confirmPassword") as string;
+
+            if (password !== confirmPassword) {
+                return { error: "Passwords do not match." }
+            }
+
+            const response = await authService.register({
+                email: email as string,
+                password: password as string,
+                confirmPassword: confirmPassword,
+            });
+
+            if (response.statusCode === HttpStatusCode.Created) {
+                return redirect("/auth#login");
+            }
+
+            return { error: response.message ?? "Unknown error." };
+        }
 
         default:
             return { error: "Unknown intent." };
     }
-}
-
-async function performLogin(formData: FormData): Promise<ApiResponse<LoginResponse>> {
-    const email = formData.get("email");
-    const password = formData.get("password");
-
-    if (!email) {
-        return {
-            statusCode: HttpStatusCode.BadRequest,
-            message: "Email is required.",
-            data: null,
-        }
-    }
-
-    if (!password) {
-        return {
-            statusCode: HttpStatusCode.BadRequest,
-            message: "Password is required.",
-            data: null,
-        }
-    }
-
-    return await authService.login({
-        email: email as string,
-        password: password as string
-    });
 }
 
 function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) {
@@ -105,8 +111,8 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                                     id="login_password"
                                     placeholder="Enter Password"
                                     name="password"
-                                    className="flex-1 h-11 px-3 input-field rounded-r-none!"/>
-                                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field rounded-l-none!">
+                                    className="flex-1 h-11 px-3 input-field mr-1"/>
+                                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
                                     <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
                                 </PasswordToggleField.Toggle>
                             </div>
@@ -152,18 +158,11 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
     );
 }
 
-function onRegisterAction(_previousState: any, formData: FormData): ApiResponse {
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-
-    console.log(email + ", " + password + ", " + confirmPassword);
-
-    return { statusCode: 200, message: null }
-}
-
 function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
-    const [registerState, registerAction] = useActionState(onRegisterAction, null);
+    const navigation = useNavigation();
+    const actionData = useActionData() as { error?: string };
+
+    const isRegistering = navigation.state === "submitting" && navigation.formData?.get("intent") === "login";
 
     return (
         <div className="bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative">
@@ -175,44 +174,61 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
                 <h1 className="text-center font-bold text-3xl text-white">Welcome</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Hope you got drink</p>
 
-                <form className="mt-8" name="register" action={registerAction}>
+                <Form className="mt-8" name="register" method="post">
                     <div>
-                        <Label.Root className="text-sm text-gray-300" htmlFor="register_email">Email</Label.Root>
+                        <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_email">Email</Label.Root>
 
                         <input id="register_email" type="text" placeholder="Enter Email" name="email"
-                               className="w-full h-11 mt-2 px-3 input-field"/>
+                               className="w-full h-11 px-3 input-field"/>
                     </div>
 
                     <div className="mt-4">
-                        <Label.Root className="text-sm text-gray-300" htmlFor="register_password">Password</Label.Root>
+                        <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_password">Password</Label.Root>
 
-                        <input id="register_password"
-                               type="password"
-                               name="password"
-                               placeholder="Enter Password"
-                               className="w-full h-11 mt-2 px-3 input-field"/>
+                        <PasswordToggleField.Root>
+                            <div className="flex flex-nowrap w-full">
+                                <PasswordToggleField.Input
+                                    id="register_password"
+                                    placeholder="Enter Password"
+                                    name="password"
+                                    className="flex-1 h-11 px-3 input-field mr-1"/>
+                                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
+                                    <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
+                                </PasswordToggleField.Toggle>
+                            </div>
+                        </PasswordToggleField.Root>
                     </div>
 
                     <div className="mt-4">
-                        <Label.Root className="text-sm text-gray-300" htmlFor="register_confirm_password">Confirm Password</Label.Root>
+                        <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_confirm_password">Confirm Password</Label.Root>
 
-                        <input id="register_confirm_password"
-                               type="password"
-                               name="confirmPassword"
-                               placeholder="Enter Password (again)"
-                               className="w-full h-11 mt-2 px-3 input-field"/>
+                        <PasswordToggleField.Root>
+                            <div className="flex flex-nowrap w-full">
+                                <PasswordToggleField.Input
+                                    id="register_confirm_password"
+                                    placeholder="Enter Password (Again)"
+                                    name="confirmPassword"
+                                    className="flex-1 h-11 px-3 input-field mr-1"/>
+                                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
+                                    <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
+                                </PasswordToggleField.Toggle>
+                            </div>
+                        </PasswordToggleField.Root>
                     </div>
 
                     <button
                         type="submit"
-                        className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer"
+                        name="intent"
+                        value="register"
+                        disabled={isRegistering}
+                        className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer flex flex-row justify-center items-center"
                     >
-                        Register
+                        { isRegistering ? <Spinner className="size-6 fill-white"/> : <p>Register</p> }
                     </button>
-                </form>
+                </Form>
 
-                {registerState && registerState.message && registerState.message.length > 0 && (
-                    <p className="text-center mt-1 text-red-500">{registerState.message}</p>
+                {actionData && actionData.error && actionData.error.length > 0 && (
+                    <p className="text-center mt-1 text-red-500">{actionData.error}</p>
                 ) }
 
                 <p className="text-center text-gray-400 text-sm mt-2">
@@ -239,7 +255,9 @@ export default function AuthenticatePage() {
     const location = useLocation();
     const [isOnLoginSide, setIsOnLoginSide] = useState(location.hash !== "#register");
 
-    console.log(location.hash);
+    useEffect(() => {
+        setIsOnLoginSide(location.hash !== "#register");
+    }, [location.hash]);
 
     const gradientElementRefs = useRef<(HTMLDivElement | null)[]>([]);
     const gradientAnimations = useRef<JSAnimation[]>([]);
@@ -330,7 +348,7 @@ export default function AuthenticatePage() {
             </div>
 
             { /* Login/Registeration Card */ }
-            <div className="w-dvw h-dvh grid grid-cols-12 px-4 md:px-0">
+            <div className="w-dvw h-dvh grid grid-cols-12 px-4 sm:px-0">
                 <div className="col-start-1 col-span-12 sm:col-start-2 sm:col-span-10 md:col-start-3 md:col-span-8 lg:col-start-4 lg:col-span-6 xl:col-start-5 xl:col-span-4">
                     <div className="size-full flex flex-row justify-center items-center">
                         { /* Card flipping container */ }

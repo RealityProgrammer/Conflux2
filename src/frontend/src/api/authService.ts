@@ -13,6 +13,7 @@ export const authService = {
 
             if (response.status === HttpStatusCode.Ok) {
                 setAccessToken(response.data.accessToken);
+                localStorage.setItem("hasSession", "true");
             }
 
             return {
@@ -41,6 +42,20 @@ export const authService = {
     },
 
     refresh: async (): Promise<ApiResponse<RefreshResponse>> => {
+        // optimization: since unlogged in user can also trigger refresh, we gonna keep a flag that denotes
+        // whether there is a session around, it will allow us to bail out early without having new user
+        // tanking the server.
+
+        // NOTE: THIS FLAG IS ONLY USED FOR REFRESHING OPTIMIZATION
+
+        if (localStorage.getItem("hasSession") !== "true") {
+            return Promise.resolve({
+                statusCode: HttpStatusCode.Unauthorized,
+                data: null,
+                message: "No session active."
+            });
+        }
+
         // prevent multiple refresh requests.
         if (!activeRefreshPromise) {
             activeRefreshPromise = apiClient.post("/auth/refresh", {}, {
@@ -48,6 +63,7 @@ export const authService = {
             }).then((response: AxiosResponse<RefreshResponse>) => {
                 if (response.status === HttpStatusCode.Ok) {
                     setAccessToken(response.data.accessToken);
+                    localStorage.setItem("hasSession", "true");
 
                     return {
                         statusCode: response.status,
@@ -55,12 +71,18 @@ export const authService = {
                     }
                 } else {
                     setAccessToken(null);
+                    localStorage.removeItem("hasSession");
 
                     return {
                         statusCode: response.status,
                         data: null,
                     }
                 }
+            }).catch(err => {
+                setAccessToken(null);
+                localStorage.removeItem("hasSession");
+
+                return handleApiError(err);
             }).finally(() => {
                 activeRefreshPromise = null;    // clear when finish
             });
