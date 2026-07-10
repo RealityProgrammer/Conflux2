@@ -1,10 +1,12 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
-import { Form, useLocation, redirect, useActionData } from "react-router-dom";
+import { Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
 import { authService } from "../../api/authService.ts";
 import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
 import { HttpStatusCode } from "axios";
-import { Label } from "radix-ui";
+import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
+import Spinner from "../../components/Spinner.tsx";
+import {BsEye, BsEyeSlash} from "react-icons/bs";
 
 export async function authLoader(){
     if (authService.hasAccessToken()) {
@@ -70,9 +72,11 @@ async function performLogin(formData: FormData): Promise<ApiResponse<LoginRespon
     });
 }
 
-
 function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) {
+    const navigation = useNavigation();
     const actionData = useActionData() as { error?: string };
+
+    const isLoggingIn = navigation.state === "submitting" && navigation.formData?.get("intent") === "login";
 
     return (
         <div className="bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative">
@@ -85,22 +89,28 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                 <p className="text-center text-gray-400 text-sm mt-2">Identify yourself</p>
 
                 <Form className="mt-8" name="login" method="post">
-                    {/* Hidden fields */}
-
-                    <input type="hidden" value="login" name="intent"/>
-
                     <div>
-                        <Label.Root className="text-sm text-gray-300" htmlFor="login_email">Email</Label.Root>
+                        <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="login_email">Email</Label.Root>
 
                         <input id="login_email" type="text" placeholder="Enter Email" name="email"
-                               className="w-full h-11 mt-2 px-3 input-field"/>
+                               className="w-full h-11 px-3 input-field"/>
                     </div>
 
                     <div className="mt-4">
-                        <Label.Root className="text-sm text-gray-300" htmlFor="login_password">Password</Label.Root>
+                        <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="login_password">Password</Label.Root>
 
-                        <input id="login_password" type="password" placeholder="Enter Password" name="password"
-                               className="w-full h-11 mt-2 px-3 input-field"/>
+                        <PasswordToggleField.Root>
+                            <div className="flex flex-nowrap w-full">
+                                <PasswordToggleField.Input
+                                    id="login_password"
+                                    placeholder="Enter Password"
+                                    name="password"
+                                    className="flex-1 h-11 px-3 input-field rounded-r-none!"/>
+                                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field rounded-l-none!">
+                                    <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
+                                </PasswordToggleField.Toggle>
+                            </div>
+                        </PasswordToggleField.Root>
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-400 mt-4">
@@ -109,9 +119,12 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
 
                     <button
                         type="submit"
-                        className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer"
+                        name="intent"
+                        value="login"
+                        disabled={isLoggingIn}
+                        className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer flex flex-row justify-center items-center"
                     >
-                        Log In
+                        { isLoggingIn ? <Spinner className="size-6 fill-white"/> : <p>Log In</p> }
                     </button>
                 </Form>
 
@@ -317,8 +330,8 @@ export default function AuthenticatePage() {
             </div>
 
             { /* Login/Registeration Card */ }
-            <div className="w-dvw h-dvh grid grid-cols-1 px-4 md:px-0 md:grid-cols-4 lg:grid-cols-3">
-                <div className="col-start-1 col-span-1 md:col-start-2 md:col-span-2 lg:col-start-2 lg:col-span-1">
+            <div className="w-dvw h-dvh grid grid-cols-12 px-4 md:px-0">
+                <div className="col-start-1 col-span-12 sm:col-start-2 sm:col-span-10 md:col-start-3 md:col-span-8 lg:col-start-4 lg:col-span-6 xl:col-start-5 xl:col-span-4">
                     <div className="size-full flex flex-row justify-center items-center">
                         { /* Card flipping container */ }
                         <div className="w-full relative perspective-distant">
