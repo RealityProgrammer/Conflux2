@@ -80,7 +80,7 @@ builder.Services.AddCors(options => {
     options.AddPolicy("FrontendPolicy", policy => {
         var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.");
         
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(frontendOrigin)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -105,8 +105,6 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.UseHttpsRedirection();
-
-app.MapGet("/health", () => Results.Ok());
 
 app.MapControllers();
 

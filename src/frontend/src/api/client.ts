@@ -12,7 +12,7 @@ export function hasAccessToken(): boolean {
 }
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:5127/api',
+    baseURL: import.meta.env.VITE_BACKEND_URL,
     headers: {
         'Content-Type': 'application/json',
     },
