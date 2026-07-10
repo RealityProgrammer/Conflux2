@@ -72,22 +72,6 @@ async function performLogin(formData: FormData): Promise<ApiResponse<LoginRespon
 
 
 function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) {
-    // const auth = useAuth();
-    // const navigate = useNavigate();
-    //
-    // async function loginAction(_previousState: any, formData: FormData): Promise<ApiResponse<LoginResponse>> {
-    //     const response = await performLogin(formData);
-    //
-    //     if (response.statusCode === HttpStatusCode.Ok) {
-    //         auth.updateAuthenticateStatus(true);
-    //         navigate("/");
-    //     }
-    //
-    //     return response;
-    // }
-    //
-    // const [loginState, loginAction] = useActionState(loginAction, null);
-
     const actionData = useActionData() as { error?: string };
 
     return (

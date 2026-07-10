@@ -181,28 +181,6 @@ export default function HomePage(){
                             </NavLink>
                         </div>
                     }
-
-                    {/*{ auth.isLoading ?*/}
-                    {/*    <Spinner className="size-8 fill-white"/> :*/}
-                    {/*    auth.isAuthenticated ?*/}
-                    {/*        <AuthenticatedNavigationDrawer userName="Placeholder Name"/>*/}
-                    {/*        :*/}
-                    {/*        <div className="button-group justify-end flex-auto">*/}
-                    {/*            <NavLink*/}
-                    {/*                to={{ pathname: "/auth", hash: "login" }}*/}
-                    {/*                className="text-white py-2 font-bold border-indigo-500/30 grow-0 shrink basis-24 text-center shimmer"*/}
-                    {/*            >*/}
-                    {/*                Login*/}
-                    {/*            </NavLink>*/}
-
-                    {/*            <NavLink*/}
-                    {/*                to={{ pathname: "/auth", hash: "register" }}*/}
-                    {/*                className="text-white py-2 font-bold border-indigo-500/30 grow-0 shrink basis-24 text-center shimmer"*/}
-                    {/*            >*/}
-                    {/*                Register*/}
-                    {/*            </NavLink>*/}
-                    {/*        </div>*/}
-                    {/*}*/}
                 </section>
             </header>
 
