@@ -1,15 +1,18 @@
+using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Conflux.WebApi.Controllers;
 
 [ApiController]
 [Route("api/auth")]
 public sealed class AuthenticateController : ControllerBase {
-    private readonly IAuthenticateService _authService;
+    private readonly IAuthService _authService;
     
-    public AuthenticateController(IAuthenticateService authService) {
+    public AuthenticateController(IAuthService authService) {
         _authService = authService;
     }
 
@@ -26,7 +29,7 @@ public sealed class AuthenticateController : ControllerBase {
 
     [HttpPost("login", Name = "Login")]
     public async Task<ActionResult> Login([FromBody] LoginRequest request) {
-        var loginResult = await _authService.Login(request.Email, request.Password);
+        var loginResult = await _authService.LoginAsync(request.Email, request.Password);
     
         if (!loginResult.IsSuccess) {
             switch (loginResult.Error.Code) {
@@ -43,7 +46,7 @@ public sealed class AuthenticateController : ControllerBase {
         
         SetRefreshTokenCookie(request.Email, response.RefreshToken);
     
-        return Ok(new LoginResponse(response.TokenType, response.AccessToken));
+        return Ok(new LoginResponse(response.AuthorizationInfo, response.TokenType, response.AccessToken));
     }
     
     private void SetRefreshTokenCookie(string email, string refreshToken) {
@@ -67,8 +70,8 @@ public sealed class AuthenticateController : ControllerBase {
                 "Passwords do not match."
             ));
         }
-    
-        var response = await _authService.Register(request.Email, request.Password);
+        
+        var response = await _authService.RegisterAsync(request.Email, request.Password);
     
         if (response.IsSuccess) {
             return Created();
@@ -90,7 +93,7 @@ public sealed class AuthenticateController : ControllerBase {
             string email = decodedPayload[..firstColon];
             string refreshToken = decodedPayload[(firstColon + 1)..];
     
-            var result = await _authService.Refresh(email, refreshToken);
+            var result = await _authService.RefreshAsync(email, refreshToken);
     
             if (!result.IsSuccess) {
                 // we could return BadRequest when the error code is Auth.NoEmail, but it could be abused as
@@ -98,9 +101,11 @@ public sealed class AuthenticateController : ControllerBase {
                 
                 return Unauthorized();
             }
+
+            var value = result.Value;
             
-            SetRefreshTokenCookie(email, result.Value.RefreshToken);
-            return Ok(new RefreshResponse(result.Value.AccessToken));
+            SetRefreshTokenCookie(email, value.RefreshToken);
+            return Ok(new RefreshResponse(value.AuthorizationInfo, value.TokenType, value.AccessToken));
         } catch {
             return Unauthorized();
         }
@@ -117,12 +122,30 @@ public sealed class AuthenticateController : ControllerBase {
         
         return Ok();
     }
+
+    [HttpGet("authorization-info")]
+    [Authorize]
+    public async Task<ActionResult<UserAuthorizationInfo>> GetUserInfo() {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(nameIdentifier)) {
+            return Unauthorized();
+        }
+        
+        var info = await _authService.GetAuthorizationInfoAsync(nameIdentifier);
+
+        if (info == null) {
+            return Unauthorized();
+        }
+
+        return Ok(info);
+    }
     
     // ReSharper disable NotAccessedPositionalProperty.Global
     public record LoginRequest(string Email, string Password);
-    public record LoginResponse(string TokenType, string AccessToken);
+    public record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     public record RegisterRequest(string Email, string Password, string ConfirmPassword);
     public record RegisterResponse(string Code, string Message);
-    public record RefreshResponse(string AccessToken);
+    public record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     // ReSharper restore NotAccessedPositionalProperty.Global
 }
