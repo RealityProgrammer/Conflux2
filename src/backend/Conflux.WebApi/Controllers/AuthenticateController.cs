@@ -43,10 +43,23 @@ public sealed class AuthenticateController : ControllerBase {
         }
 
         var response = loginResult.Value;
-        
+
+        SetAccessTokenCookie(response.AccessToken);
         SetRefreshTokenCookie(request.Email, response.RefreshToken);
     
         return Ok(new LoginResponse(response.AuthorizationInfo, response.TokenType, response.AccessToken));
+    }
+
+    private void SetAccessTokenCookie(string accessToken) {
+        var cookieOptions = new CookieOptions {
+            HttpOnly = true,                            // Prevent JavaScript access.
+            Secure = false,                             // TODO: Replace this with true once we got HTTPS
+            SameSite = SameSiteMode.Strict,             // Prevent CSRF
+            Expires = DateTime.UtcNow.AddMinutes(15),
+        };
+
+        // Attach the cookie to the response
+        Response.Cookies.Append("X-Access-Token", accessToken, cookieOptions);
     }
     
     private void SetRefreshTokenCookie(string email, string refreshToken) {
@@ -104,7 +117,9 @@ public sealed class AuthenticateController : ControllerBase {
 
             var value = result.Value;
             
+            SetAccessTokenCookie(value.AccessToken);
             SetRefreshTokenCookie(email, value.RefreshToken);
+            
             return Ok(new RefreshResponse(value.AuthorizationInfo, value.TokenType, value.AccessToken));
         } catch {
             return Unauthorized();
@@ -114,6 +129,12 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("logout")]
     [Authorize]
     public async Task<ActionResult> Logout() {
+        Response.Cookies.Delete("X-Access-Token", new() {
+            HttpOnly = true,
+            Secure = false,                     // TODO: Replace this with true once we got HTTPS
+            SameSite = SameSiteMode.Strict,
+        });
+        
         Response.Cookies.Delete("X-Refresh-Token", new() {
             HttpOnly = true,
             Secure = false,                     // TODO: Replace this with true once we got HTTPS

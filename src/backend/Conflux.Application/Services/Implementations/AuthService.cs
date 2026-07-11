@@ -116,7 +116,7 @@ internal sealed class AuthService(
         }
 
         // compare the tokens.
-        if (storedData.AsSpan()[..firstColon] != refreshToken) {
+        if (!storedData.AsSpan()[..firstColon].SequenceEqual(refreshToken)) {
             return Result<RefreshResponse>.Failure("Auth.InvalidRefreshToken", "Invalid refresh token.");
         }
         
