@@ -7,11 +7,13 @@ export interface ApiResponse<T = any> {
 
 export interface UserAuthorizationInfo {
     username: string;
-    IReadOnlyList<string> Role, IReadOnlyList<string> Permissions;
+    roles: string[];
+    permissions: string[];
 }
 
 export interface LoginResponse {
     accessToken: string;
+    authorization: UserAuthorizationInfo;
 }
 
 export interface RegisterResponse {
@@ -21,4 +23,5 @@ export interface RegisterResponse {
 
 export interface RefreshResponse {
     accessToken: string;
+    authorization: UserAuthorizationInfo;
 }

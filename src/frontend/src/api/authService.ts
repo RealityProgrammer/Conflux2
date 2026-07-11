@@ -60,14 +60,14 @@ export const authService = {
         if (!activeRefreshPromise) {
             activeRefreshPromise = apiClient.post("/auth/refresh", {}, {
                 withCredentials: true
-            }).then((response: AxiosResponse<RefreshResponse>) => {
+            }).then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
                 if (response.status === HttpStatusCode.Ok) {
                     setAccessToken(response.data.accessToken);
                     localStorage.setItem("hasSession", "true");
 
                     return {
                         statusCode: response.status,
-                        data: { accessToken: response.data.accessToken },
+                        data: response.data,
                     }
                 } else {
                     setAccessToken(null);
@@ -102,5 +102,5 @@ export const authService = {
 
     hasAccessToken: () => {
         return hasAccessToken();
-    }
+    },
 };
