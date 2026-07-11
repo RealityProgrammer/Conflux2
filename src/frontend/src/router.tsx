@@ -27,6 +27,9 @@ export const router = createBrowserRouter([
                 action: authAction,
             },
             {
+                path: "/"
+            },
+            {
                 path: "/lobby",
                 element: <LobbyPage/>,
                 loader: protectedLoader,

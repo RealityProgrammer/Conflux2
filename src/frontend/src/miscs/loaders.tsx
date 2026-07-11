@@ -35,3 +35,5 @@ export async function protectedLoader() {
     // we got access token, so let them pass through.
     return { isAuthenticated: true };
 }
+
+export async function protectedLoader

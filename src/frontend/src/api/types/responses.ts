@@ -5,6 +5,11 @@ export interface ApiResponse<T = any> {
     data?: T | null;
 }
 
+export interface UserAuthorizationInfo {
+    username: string;
+    IReadOnlyList<string> Role, IReadOnlyList<string> Permissions;
+}
+
 export interface LoginResponse {
     accessToken: string;
 }
