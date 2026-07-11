@@ -1,3 +1,5 @@
+using Conflux.Application.Services;
+using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
@@ -5,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 
@@ -45,7 +48,20 @@ authBuilder.AddIdentityCookies(config => {
 
 builder.Services.AddAuthorization();
 
+// Security reinforcement.
+builder.Services.AddCors(options => {
+    options.AddPolicy("FrontendPolicy", policy => {
+        var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.");
+        
+        policy.WithOrigins(frontendOrigin)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 // API related services.
+builder.Services.AddScoped<IAuthenticateService, AuthenticateService>();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
@@ -75,19 +91,9 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options => {
     });
 });
 
-// Security reinforcement.
-builder.Services.AddCors(options => {
-    options.AddPolicy("FrontendPolicy", policy => {
-        var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.");
-        
-        policy.WithOrigins(frontendOrigin)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
-});
-
 var app = builder.Build();
+
+app.UseHttpsRedirection();
 
 app.UseCors("FrontendPolicy");
 
@@ -104,7 +110,6 @@ if (app.Environment.IsDevelopment()) {
     app.UseHttpLogging();
 }
 
-app.UseHttpsRedirection();
 
 app.MapControllers();
 
