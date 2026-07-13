@@ -1,7 +1,7 @@
 import apiClient, {getAuthorizationInfo, hasAuthorizationInfo, setAuthorizationInfo} from "../api/client.ts";
 import { redirect } from "react-router-dom";
 import { HttpStatusCode } from "axios";
-import { authService } from "../api/auth/authService.ts";
+import { authService } from "../api/authService.ts";
 
 export async function rootLoader() {
     if (!hasAuthorizationInfo()) {

@@ -1,4 +1,4 @@
-import apiClient, { hasAuthorizationInfo, getAuthorizationInfo, setAuthorizationInfo } from "../client.ts";
+import apiClient, { hasAuthorizationInfo, getAuthorizationInfo, setAuthorizationInfo } from "./client.ts";
 import type { LoginRequest, RegisterRequest } from "./requests.ts";
 import type {
     LoginResponse,
@@ -7,8 +7,8 @@ import type {
     UserAuthorizationInfo
 } from "./responses.ts";
 import { type AxiosResponse, HttpStatusCode } from "axios";
-import { handleApiError } from "../../utils/errorHelpers.ts";
-import type { ApiResponse } from "../apiResponse.ts";
+import { handleApiError } from "../utils/errorHelpers.ts";
+import type { ApiResponse } from "./apiResponse.ts";
 
 let activeRefreshPromise: Promise<ApiResponse<RefreshResponse>> | null = null;
 

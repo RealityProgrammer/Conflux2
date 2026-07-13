@@ -1,6 +1,6 @@
 import axios, {HttpStatusCode} from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
-import type { UserAuthorizationInfo } from "./auth/responses.ts";
+import type { UserAuthorizationInfo } from "./responses.ts";
 import Cookies from "js-cookie";
 let authorizationInfo: UserAuthorizationInfo | null = null;
 

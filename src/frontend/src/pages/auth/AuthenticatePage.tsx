@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
 import {Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
-import { authService } from "../../api/auth/authService.ts";
-import type { LoginResponse } from "../../api/auth/responses.ts";
+import { authService } from "../../api/authService.ts";
+import type { LoginResponse } from "../../api/responses.ts";
 import { HttpStatusCode } from "axios";
 import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
