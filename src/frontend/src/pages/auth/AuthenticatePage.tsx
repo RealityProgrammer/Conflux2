@@ -54,7 +54,7 @@ export async function authAction({ request }: { request: Request }) {
                 const isProfileSetup: boolean =
                     response.data?.authorization.permissions.includes("PROFILE_SETUP") ?? false;
 
-                return redirect(!isEmailConfirmed ? "/auth/verify-email" : !isProfileSetup ? "/profile-setup" : "/lobby");
+                return redirect(!isEmailConfirmed ? "/auth/verify-email" : !isProfileSetup ? "/profile-setup" : "/");
             }
 
             return { error: response.message ?? "Unknown error." };
