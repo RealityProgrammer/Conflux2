@@ -11,6 +11,7 @@ import { handleApiError } from "../utils/errorHelpers.ts";
 import type { ApiResponse } from "./apiResponse.ts";
 
 let activeRefreshPromise: Promise<ApiResponse<RefreshResponse>> | null = null;
+let activeGetAuthorizationInfoPromise: Promise<ApiResponse<UserAuthorizationInfo | null>> | null = null;
 
 export const authService = {
     login: async (request: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
@@ -107,7 +108,7 @@ export const authService = {
         return hasAuthorizationInfo();
     },
 
-    getAuthorizationInfo: async (): Promise<ApiResponse<UserAuthorizationInfo>> => {
+    getAuthorizationInfo: async (): Promise<ApiResponse<UserAuthorizationInfo | null>> => {
         if (hasAuthorizationInfo()) {
             return {
                 statusCode: HttpStatusCode.Ok,
@@ -116,6 +117,24 @@ export const authService = {
         }
 
         try {
+            if (!activeGetAuthorizationInfoPromise) {
+                activeGetAuthorizationInfoPromise =
+                    apiClient.get("/auth/authorization-info")
+                    .then((response: AxiosResponse<UserAuthorizationInfo | null>) => {
+                        return {
+                            statusCode: response.status,
+                            data: response.data,
+                        }
+                    }).catch((err) => {
+                        // nothing to do just yet so just throw the error back.
+                        throw err;
+                    }).finally(() => {
+                        activeGetAuthorizationInfoPromise = null;
+                    });
+
+                return activeGetAuthorizationInfoPromise;
+            }
+
             const response: AxiosResponse<UserAuthorizationInfo | null> = await apiClient.get("/auth/authorization-info");
 
             return {
