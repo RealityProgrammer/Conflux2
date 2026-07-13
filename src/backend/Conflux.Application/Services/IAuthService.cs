@@ -7,6 +7,7 @@ public interface IAuthService {
     Task<Result<LoginResponse>> LoginAsync(string email, string password);
     Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken);
     
-    Task<UserAuthorizationInfo?> GetAuthorizationInfoAsync(Guid userId);
-    Task<UserAuthorizationInfo?> GetAuthorizationInfoAsync(string userId);
+    Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId);
+
+    Task<Result> SendVerificationEmailAsync(string userId);
 }

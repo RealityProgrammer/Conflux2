@@ -157,11 +157,27 @@ public sealed class AuthenticateController : ControllerBase {
         
         var info = await _authService.GetAuthorizationInfoAsync(nameIdentifier);
 
-        if (info == null) {
+        if (!info.IsSuccess) {
             return Unauthorized();
         }
 
         return Ok(info);
+    }
+
+    [HttpPost("send-verify-email")] // Post to use the antiforgery token.
+    [Authorize]
+    public async Task<ActionResult> SendVerifyEmail() {
+        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(nameIdentifier)) {
+            return Unauthorized();
+        }
+
+        var result = await _authService.SendVerificationEmailAsync(nameIdentifier);
+        
+        return result.IsSuccess ? 
+            Ok() : 
+            StatusCode(StatusCodes.Status502BadGateway);    // TODO: Figure out a better status code representing email failure.
     }
     
     // ReSharper disable NotAccessedPositionalProperty.Global

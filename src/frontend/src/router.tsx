@@ -4,6 +4,7 @@ import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
 import LobbyPage from "./pages/lobby/LobbyPage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import {protectedLoader, rootLoader} from "./miscs/loaders.tsx";
+import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -21,15 +22,21 @@ export const router = createBrowserRouter([
                 element: <HomePage/>,
             },
             {
-                path: "/auth",
-                element: <AuthenticatePage/>,
+                path: "auth",
                 action: authAction,
+                children: [
+                    {
+                        index: true,
+                        element: <AuthenticatePage/>,
+                    },
+                    {
+                        path: "verify-email",
+                        element: <VerifyEmailPage/>,
+                    },
+                ]
             },
             {
-                path: "/"
-            },
-            {
-                path: "/lobby",
+                path: "lobby",
                 element: <LobbyPage/>,
                 loader: protectedLoader,
             }

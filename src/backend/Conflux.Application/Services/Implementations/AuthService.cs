@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -11,6 +12,7 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class AuthService(
     UserManager<ApplicationUser> userManager,
+    IMailingService mailingService,
     IConfiguration config
 ) : IAuthService {
     private const string ApplicationJwtLoginProvider = "AppJWT";
@@ -135,22 +137,41 @@ internal sealed class AuthService(
         ), "Bearer", tokens.AccessToken, tokens.RefreshToken));
     }
 
-    public async Task<UserAuthorizationInfo?> GetAuthorizationInfoAsync(Guid userId) {
-        // TODO: Reduce string allocation.
-        return await GetAuthorizationInfoAsync(userId.ToString());
-    }
-    
-    public async Task<UserAuthorizationInfo?> GetAuthorizationInfoAsync(string userId) {
+    public async Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId) {
         var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
-            return null;
+            return Result<UserAuthorizationInfo?>.Failure("Auth.NoId", "No user with the provided ID.");
         }
 
         var userRoles = await userManager.GetRolesAsync(user);
         var permissions = await GetAuthorizationPermissions(user);
         
-        return new(user.UserName!, userRoles.AsReadOnly(), permissions);
+        return Result<UserAuthorizationInfo?>.Success(new(user.UserName!, userRoles.AsReadOnly(), permissions));
+    }
+
+    public async Task<Result> SendVerificationEmailAsync(string userId) {
+        var user = await userManager.FindByIdAsync(userId);
+
+        if (user == null) {
+            return Result.Failure("Auth.NoId", "No user with the provided ID.");
+        }
+
+        string confirmCode = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
+
+        NameValueCollection queryArguments = System.Web.HttpUtility.ParseQueryString(string.Empty);
+        queryArguments.Add("userId", userId);
+        queryArguments.Add("code", encodedCode);
+
+        UriBuilder builder = new UriBuilder(config["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.")) {
+            Path = "auth/confirm-email",
+            Query = queryArguments.ToString(),
+        };
+
+        string redirectUrl = builder.Uri.ToString();
+
+        return await mailingService.SendEmailConfirmationAsync(user.Email!, redirectUrl);
     }
 
     private async Task<List<string>> GetAuthorizationPermissions(ApplicationUser user) {
