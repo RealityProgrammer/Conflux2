@@ -1,4 +1,4 @@
-import type { ApiResponse } from "../api/types/responses.ts";
+import type { ApiResponse } from "../api/auth/responses.ts";
 import {AxiosError, HttpStatusCode} from "axios";
 
 export function handleApiError<T = any>(error: any): ApiResponse<T> {

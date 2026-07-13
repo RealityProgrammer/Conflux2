@@ -1,7 +1,7 @@
 import Logo from "../components/Logo.tsx";
 import NavLink from "../components/NavLink.tsx";
 import PageTitle from "../components/PageTitle.tsx";
-import { useAuth } from "../contexts/AuthContext.tsx";
+import { useAuthorization } from "../contexts/AuthContext.tsx";
 import { Dialog } from "radix-ui";
 import { useState, useRef, useEffect } from "react";
 import { animate } from "animejs";
@@ -111,7 +111,7 @@ function AuthenticatedNavigationDrawer({ userName }: { userName: string }) {
 }
 
 export default function HomePage(){
-    const auth = useAuth();
+    const auth = useAuthorization();
 
     return (
         <>
@@ -162,8 +162,8 @@ export default function HomePage(){
                 </nav>
 
                 <section className="flex-1 flex flex-row justify-end">
-                    { auth.isAuthenticated ?
-                        <AuthenticatedNavigationDrawer userName="Placeholder Name"/>
+                    { auth.userAuthorization ?
+                        <AuthenticatedNavigationDrawer userName={auth.userAuthorization.userName}/>
                         :
                         <div className="button-group justify-end flex-auto">
                             <NavLink

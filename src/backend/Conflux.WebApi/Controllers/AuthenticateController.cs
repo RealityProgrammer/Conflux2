@@ -2,7 +2,6 @@ using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.Controllers;
@@ -28,6 +27,7 @@ public sealed class AuthenticateController : ControllerBase {
     }
 
     [HttpPost("login", Name = "Login")]
+    [IgnoreAntiforgeryToken]
     public async Task<ActionResult> Login([FromBody] LoginRequest request) {
         var loginResult = await _authService.LoginAsync(request.Email, request.Password);
     
@@ -53,7 +53,7 @@ public sealed class AuthenticateController : ControllerBase {
     private void SetAccessTokenCookie(string accessToken) {
         var cookieOptions = new CookieOptions {
             HttpOnly = true,                            // Prevent JavaScript access.
-            Secure = false,                             // TODO: Replace this with true once we got HTTPS
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
             Expires = DateTime.UtcNow.AddMinutes(15),
         };
@@ -67,7 +67,7 @@ public sealed class AuthenticateController : ControllerBase {
         
         var cookieOptions = new CookieOptions {
             HttpOnly = true,                            // Prevent JavaScript access.
-            Secure = false,                             // TODO: Replace this with true once we got HTTPS
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
             Expires = DateTime.UtcNow.AddDays(7),
         };
@@ -76,6 +76,7 @@ public sealed class AuthenticateController : ControllerBase {
     }
     
     [HttpPost("register", Name = "Register")]
+    [IgnoreAntiforgeryToken]
     public async Task<ActionResult> Register([FromBody] RegisterRequest request) {
         if (request.Password != request.ConfirmPassword) {
             return BadRequest(new RegisterResponse(
@@ -131,13 +132,13 @@ public sealed class AuthenticateController : ControllerBase {
     public async Task<ActionResult> Logout() {
         Response.Cookies.Delete("X-Access-Token", new() {
             HttpOnly = true,
-            Secure = false,                     // TODO: Replace this with true once we got HTTPS
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
         });
         
         Response.Cookies.Delete("X-Refresh-Token", new() {
             HttpOnly = true,
-            Secure = false,                     // TODO: Replace this with true once we got HTTPS
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
         });
         

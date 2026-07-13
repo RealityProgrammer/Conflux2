@@ -1,11 +1,11 @@
-import { useAuth } from "../../contexts/AuthContext.tsx";
+import { useAuthorization } from "../../contexts/AuthContext.tsx";
 
 export default function LobbyPage() {
-    const authData = useAuth();
+    const authData = useAuthorization();
 
     return (
         <>
-            { authData.isAuthenticated ? <p>You are authenticated.</p> : <p>You are not authenticated.</p> }
+            { authData.userAuthorization ? <p>You are authenticated.</p> : <p>You are not authenticated.</p> }
 
             <button onClick={authData.logout}>Logout</button>
         </>

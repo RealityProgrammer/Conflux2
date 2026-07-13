@@ -1,15 +1,22 @@
 import axios, {HttpStatusCode} from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
+import type { UserAuthorizationInfo } from "./auth/responses.ts";
+import Cookies from "js-cookie";
+let authorizationInfo: UserAuthorizationInfo | null = null;
 
-let inMemoryAccessToken: string | null = null;
-
-export function setAccessToken(accessToken: string | null): void {
-    inMemoryAccessToken = accessToken;
+export function hasAuthorizationInfo() {
+    return !!authorizationInfo;
 }
 
-export function hasAccessToken(): boolean {
-    return !!inMemoryAccessToken;
+export function setAuthorizationInfo(info: UserAuthorizationInfo | null) {
+    authorizationInfo = info;
 }
+
+export function getAuthorizationInfo() {
+    return authorizationInfo;
+}
+
+axios.defaults.withCredentials = true;
 
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
@@ -20,42 +27,47 @@ const apiClient = axios.create({
 });
 
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: any) => void }> = [];
+let failedQueue: Array<{ resolve: () => void; reject: (error: any) => void }> = [];
 
-function processQueue(error: any, token: string | null = null) {
+function processQueue(error: any) {
     failedQueue.forEach((promise) => {
         if (error) {
             promise.reject(error);
         } else {
-            promise.resolve(token as string);
+            promise.resolve();
         }
     });
 
     failedQueue = [];
 };
 
-// intercept the request to attach the access token
-apiClient.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        if (inMemoryAccessToken && config.headers) {
-            config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+// request interceptors
+apiClient.interceptors.request.use((config) => {
+    // Only attach for state-changing methods
+    if (['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase() || '')) {
+        const csrfToken = Cookies.get('XSRF-TOKEN');
+        if (csrfToken) {
+            config.headers['X-XSRF-TOKEN'] = csrfToken;
         }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+    }
+    return config;
+});
 
+// response interceptors
 apiClient.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-        const originalRequest = error.config;
+        const originalRequest = error.config as InternalAxiosRequestConfig & { __retry: boolean };
 
-        if (error.response?.status === HttpStatusCode.Unauthorized && originalRequest && !(originalRequest as any).__retry && originalRequest.url !== "/api/auth/login") {
+        if (error.response?.status === HttpStatusCode.Unauthorized &&
+            originalRequest && !(originalRequest as any).__retry &&
+            originalRequest.url !== "/api/auth/login" &&
+            originalRequest.url !== "/api/auth/register"
+        ) {
             if (isRefreshing) {
-                return new Promise(function (resolve, reject) {
+                return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
-                }).then((token) => {
-                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                }).then(() => {
                     return apiClient(originalRequest);
                 })
                 .catch((err) => Promise.reject(err));
@@ -65,20 +77,16 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const { data } = await axios.post('https://localhost:5127/api/auth/refresh', {}, {
+                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/refresh`, {}, {
                     withCredentials: true
                 });
 
-                setAccessToken(data.accessToken);
-                processQueue(null, data.accessToken);
-
-                originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+                processQueue(null);
                 return apiClient(originalRequest);
             } catch (refreshError) {
-                processQueue(refreshError, null);
-                setAccessToken(null); // Clear token
+                processQueue(refreshError);
+                authorizationInfo = null;
 
-                // Trigger your app's logout flow here (e.g., redirect to /login)
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
@@ -87,6 +95,6 @@ apiClient.interceptors.response.use(
 
         return Promise.reject(error);
     }
-)
+);
 
 export default apiClient;

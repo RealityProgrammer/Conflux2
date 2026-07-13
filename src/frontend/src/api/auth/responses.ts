@@ -1,12 +1,5 @@
-export interface ApiResponse<T = any> {
-    statusCode: number;
-    errorCode?: string | null;
-    message?: string | null;
-    data?: T | null;
-}
-
 export interface UserAuthorizationInfo {
-    username: string;
+    userName: string;
     roles: string[];
     permissions: string[];
 }

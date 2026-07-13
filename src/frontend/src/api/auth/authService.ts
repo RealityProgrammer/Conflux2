@@ -1,8 +1,14 @@
-import apiClient, { setAccessToken, hasAccessToken } from "./client.ts";
-import type { LoginRequest, RegisterRequest } from "./types/requests.ts";
-import type { ApiResponse, LoginResponse, RegisterResponse, RefreshResponse } from "./types/responses.ts";
+import apiClient, { hasAuthorizationInfo, getAuthorizationInfo, setAuthorizationInfo } from "../client.ts";
+import type { LoginRequest, RegisterRequest } from "./requests.ts";
+import type {
+    LoginResponse,
+    RegisterResponse,
+    RefreshResponse,
+    UserAuthorizationInfo
+} from "./responses.ts";
 import { type AxiosResponse, HttpStatusCode } from "axios";
-import { handleApiError } from "../utils/errorHelpers.ts";
+import { handleApiError } from "../../utils/errorHelpers.ts";
+import type { ApiResponse } from "../apiResponse.ts";
 
 let activeRefreshPromise: Promise<ApiResponse<RefreshResponse>> | null = null;
 
@@ -12,8 +18,8 @@ export const authService = {
             const response: AxiosResponse<LoginResponse> = await apiClient.post("/auth/login", request);
 
             if (response.status === HttpStatusCode.Ok) {
-                setAccessToken(response.data.accessToken);
                 localStorage.setItem("hasSession", "true");
+                setAuthorizationInfo(response.data.authorization);
             }
 
             return {
@@ -62,7 +68,6 @@ export const authService = {
                 withCredentials: true
             }).then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
                 if (response.status === HttpStatusCode.Ok) {
-                    setAccessToken(response.data.accessToken);
                     localStorage.setItem("hasSession", "true");
 
                     return {
@@ -70,7 +75,6 @@ export const authService = {
                         data: response.data,
                     }
                 } else {
-                    setAccessToken(null);
                     localStorage.removeItem("hasSession");
 
                     return {
@@ -78,8 +82,7 @@ export const authService = {
                         data: null,
                     }
                 }
-            }).catch(err => {
-                setAccessToken(null);
+            }).catch((err: any) => {
                 localStorage.removeItem("hasSession");
 
                 return handleApiError(err);
@@ -91,16 +94,36 @@ export const authService = {
         return activeRefreshPromise;
     },
 
-    logout: async () : Promise<ApiResponse<null>> => {
+    logout: async (): Promise<ApiResponse<null>> => {
         const response: AxiosResponse = await apiClient.post('/auth/logout');
-        setAccessToken(null);
+        setAuthorizationInfo(null);
 
         return {
             statusCode: response.status,
         }
     },
 
-    hasAccessToken: () => {
-        return hasAccessToken();
+    hasAuthorizationInfo: () => {
+        return hasAuthorizationInfo();
     },
+
+    getAuthorizationInfo: async (): Promise<ApiResponse<UserAuthorizationInfo>> => {
+        if (hasAuthorizationInfo()) {
+            return {
+                statusCode: HttpStatusCode.Ok,
+                data: getAuthorizationInfo()!,
+            };
+        }
+
+        try {
+            const response: AxiosResponse<UserAuthorizationInfo | null> = await apiClient.get("/auth/authorization-info");
+
+            return {
+                statusCode: HttpStatusCode.Ok,
+                data: response.data,
+            }
+        } catch (error) {
+            return handleApiError(error);
+        }
+    }
 };

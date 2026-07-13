@@ -1,30 +1,32 @@
 import { createContext, type ReactNode, useContext } from "react";
-import { useRouteLoaderData, useRevalidator, useNavigate } from "react-router-dom";
-import { authService } from "../api/authService.ts";
+import { useRevalidator, useNavigate, useRouteLoaderData } from "react-router-dom";
+import { authService } from "../api/auth/authService.ts";
+import type { UserAuthorizationInfo } from "../api/auth/responses.ts";
 
-interface AuthContextType {
-    isAuthenticated: boolean;
-    logout: () => Promise<void>;
+interface AuthorizationContextType {
+    userAuthorization: UserAuthorizationInfo | null;
+    logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthorizationContext = createContext<AuthorizationContextType | null>(null);
 
-export const useAuth = () => {
-    const context = useContext(AuthContext);
+export const useAuthorization = () => {
+    const context = useContext(AuthorizationContext);
     if (!context) throw new Error("useAuth must be used within an AuthProvider");
     return context;
 };
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
-    const loaderData: { isAuthenticated: boolean } | undefined = useRouteLoaderData("root");
     const revalidator = useRevalidator();
     const navigate = useNavigate();
 
+    const authorizationInfo: UserAuthorizationInfo | null = useRouteLoaderData("root") ?? null;
+
     const logout = async (): Promise<void> => {
-        // logout will automatically set the accessToken to null
         await authService.logout();
 
         await revalidator.revalidate();
+
         navigate({
             pathname: "/auth",
             hash: "login",
@@ -32,11 +34,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{
-            isAuthenticated: loaderData ? loaderData.isAuthenticated : false,
+        <AuthorizationContext.Provider value={{
+            userAuthorization: authorizationInfo,
             logout,
         }}>
             {children}
-        </AuthContext.Provider>
+        </AuthorizationContext.Provider>
     )
 }

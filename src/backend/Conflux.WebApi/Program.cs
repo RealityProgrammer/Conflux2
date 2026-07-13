@@ -4,12 +4,11 @@ using Conflux.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.Reflection;
 using System.Security.Claims;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +57,11 @@ authBuilder.AddIdentityCookies(config => {
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddAntiforgery(options => {
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
 // Security reinforcement.
 builder.Services.AddCors(options => {
     options.AddPolicy("FrontendPolicy", policy => {
@@ -72,7 +76,12 @@ builder.Services.AddCors(options => {
 
 // API related services.
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddControllers();
+
+// only AddControllersWithViews support for antiforgery for some reason.
+// https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
+builder.Services.AddControllersWithViews(options => {
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
@@ -106,6 +115,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 
 app.UseCors("FrontendPolicy");
+app.UseAntiforgery();
 
 app.UseAuthentication();
 app.UseAuthorization();

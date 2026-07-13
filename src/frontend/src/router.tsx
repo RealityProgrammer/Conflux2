@@ -1,15 +1,15 @@
-import {createBrowserRouter, Outlet} from 'react-router-dom';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
 import HomePage from './pages/HomePage'
-import AuthenticatePage, { authAction, authLoader } from "./pages/auth/AuthenticatePage.tsx";
+import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
 import LobbyPage from "./pages/lobby/LobbyPage.tsx";
-import {protectedLoader, rootLoader} from "./miscs/loaders.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
+import {protectedLoader, rootLoader} from "./miscs/loaders.tsx";
 
 export const router = createBrowserRouter([
     {
         id: "root",
         path: "/",
-        loader: rootLoader, // root loader that handle the silent login via refresh token
+        loader: rootLoader,
         element: (
             <AuthProvider>
                 <Outlet/>
@@ -23,7 +23,6 @@ export const router = createBrowserRouter([
             {
                 path: "/auth",
                 element: <AuthenticatePage/>,
-                loader: authLoader,
                 action: authAction,
             },
             {

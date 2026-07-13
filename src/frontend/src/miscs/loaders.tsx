@@ -1,39 +1,33 @@
-import { hasAccessToken } from "../api/client.ts";
+import apiClient, {getAuthorizationInfo, hasAuthorizationInfo, setAuthorizationInfo} from "../api/client.ts";
 import { redirect } from "react-router-dom";
 import { HttpStatusCode } from "axios";
-import { authService } from "../api/authService.ts";
+import { authService } from "../api/auth/authService.ts";
 
 export async function rootLoader() {
-    if (!hasAccessToken()) {
+    if (!hasAuthorizationInfo()) {
         try {
-            const response = await authService.refresh();
-            return { isAuthenticated: response.statusCode === HttpStatusCode.Ok };
+            const response = await authService.getAuthorizationInfo();
+
+            if (response.statusCode === HttpStatusCode.Ok) {
+                setAuthorizationInfo(response.data!);
+            }
+
+            await apiClient.get("/csrf/token");
+
+            return response.data;
         } catch (error) {
-            return { isAuthenticated: false };
+            setAuthorizationInfo(null);
+            return null;
         }
     }
 
-    return { isAuthenticated: true };
+    return getAuthorizationInfo();
 }
 
 export async function protectedLoader() {
-    // check if user has access token stored.
-    if (!hasAccessToken()) {
-        // try refresh the token
-        try {
-            const response = await authService.refresh();
-            if (response.statusCode !== HttpStatusCode.Ok) {
-                return redirect('/auth');
-            }
-
-            // token is automatically set by calling authService.refresh()
-        } catch (error) {
-            return redirect('/auth');
-        }
+    if (!hasAuthorizationInfo()) {
+        return redirect('/auth#login');
     }
 
-    // we got access token, so let them pass through.
-    return { isAuthenticated: true };
+    return null;
 }
-
-export async function protectedLoader

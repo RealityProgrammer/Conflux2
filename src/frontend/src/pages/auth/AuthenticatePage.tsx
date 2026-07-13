@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
-import { Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
-import { authService } from "../../api/authService.ts";
-import type { ApiResponse, LoginResponse } from "../../api/types/responses.ts";
+import {Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
+import { authService } from "../../api/auth/authService.ts";
+import type { LoginResponse } from "../../api/auth/responses.ts";
 import { HttpStatusCode } from "axios";
 import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
 import { BsEye, BsEyeSlash } from "react-icons/bs";
+import type { ApiResponse } from "../../api/apiResponse.ts";
 
 export async function authLoader(){
-    if (authService.hasAccessToken()) {
+    if (authService.hasAuthorizationInfo()) {
         return redirect("/");
     }
 
