@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import { animate } from "animejs";
 import {BsDoorClosed, BsDoorOpen, BsGear} from "react-icons/bs";
 
-function AuthenticatedNavigationDrawer({ userName }: { userName: string }) {
+function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string, logout: () => void }) {
     const [open, setOpen] = useState(false);
 
     const contentRef = useRef<HTMLDivElement | null>(null);
@@ -101,6 +101,15 @@ function AuthenticatedNavigationDrawer({ userName }: { userName: string }) {
 
                                     Settings
                                 </NavLink>
+
+                                <button className="text-red-700 rounded-full px-7 py-2 font-bold border-2 border-red-600 w-full flex flex-row justify-center items-center gap-3 flex-none cursor-pointer" onClick={logout}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-5 flex-none fill-red-700" viewBox="0 0 16 16">
+                                        <path d="M8.5 10c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1"/>
+                                        <path d="M10.828.122A.5.5 0 0 1 11 .5V1h.5A1.5 1.5 0 0 1 13 2.5V15h1.5a.5.5 0 0 1 0 1h-13a.5.5 0 0 1 0-1H3V1.5a.5.5 0 0 1 .43-.495l7-1a.5.5 0 0 1 .398.117M11.5 2H11v13h1V2.5a.5.5 0 0 0-.5-.5M4 1.934V15h6V1.077z"/>
+                                    </svg>
+
+                                    Logout
+                                </button>
                             </div>
                         </Dialog.Content>
                     </>
@@ -110,7 +119,7 @@ function AuthenticatedNavigationDrawer({ userName }: { userName: string }) {
     );
 }
 
-export default function HomePage(){
+export default function HomePage() {
     const auth = useAuthorization();
 
     return (
@@ -163,7 +172,10 @@ export default function HomePage(){
 
                 <section className="flex-1 flex flex-row justify-end">
                     { auth.userAuthorization ?
-                        <AuthenticatedNavigationDrawer userName={auth.userAuthorization.userName}/>
+                        <AuthenticatedNavigationDrawer
+                            userName={auth.userAuthorization.userName}
+                            logout={auth.logout}
+                        />
                         :
                         <div className="button-group justify-end flex-auto">
                             <NavLink
