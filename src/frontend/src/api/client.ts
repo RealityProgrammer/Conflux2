@@ -66,6 +66,7 @@ apiClient.interceptors.response.use(
         ) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
+                    // @ts-ignore
                     failedQueue.push({ resolve, reject });
                 }).then(() => {
                     return apiClient(originalRequest);
