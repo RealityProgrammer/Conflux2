@@ -129,6 +129,7 @@ public sealed class AuthenticateController : ControllerBase {
     
     [HttpPost("logout")]
     [Authorize]
+    [IgnoreAntiforgeryToken]
     public async Task<ActionResult> Logout() {
         Response.Cookies.Delete("X-Access-Token", new() {
             HttpOnly = true,
