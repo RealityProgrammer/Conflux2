@@ -157,6 +157,10 @@ internal sealed class AuthService(
             return Result.Failure("Auth.NoId", "No user with the provided ID.");
         }
 
+        if (user.EmailConfirmed) {
+            return Result.Failure("Auth.AlreadyConfirmed", "User is already verified.");
+        }
+
         string confirmCode = await userManager.GenerateEmailConfirmationTokenAsync(user);
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
 
