@@ -72,7 +72,7 @@ export const authService = {
             const csrfToken = Cookies.get('XSRF-TOKEN');
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (csrfToken) {
-                headers['X-XSRF-TOKEN'] = csrfToken;
+                headers['X-CSRF-TOKEN'] = csrfToken;
             }
 
             // use raw axios to prevent interception

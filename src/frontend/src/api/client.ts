@@ -33,7 +33,7 @@ apiClient.interceptors.request.use((config) => {
     if (['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase() || '')) {
         const csrfToken = Cookies.get('XSRF-TOKEN');
         if (csrfToken) {
-            config.headers['X-XSRF-TOKEN'] = csrfToken;
+            config.headers['X-CSRF-TOKEN'] = csrfToken;
         }
     }
     return config;
