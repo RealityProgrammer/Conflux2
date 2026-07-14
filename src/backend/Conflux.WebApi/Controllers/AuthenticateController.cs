@@ -1,8 +1,9 @@
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
+using Conflux.Application.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.Controllers;
@@ -11,9 +12,11 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/auth")]
 public sealed class AuthenticateController : ControllerBase {
     private readonly IAuthService _authService;
+    private readonly AuthServiceOptions _options;
     
-    public AuthenticateController(IAuthService authService) {
+    public AuthenticateController(IAuthService authService, IOptions<AuthServiceOptions> options) {
         _authService = authService;
+        _options = options.Value;
     }
 
     [HttpGet("healthcheck", Name = "Healthcheck")]
@@ -56,7 +59,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = DateTime.UtcNow.AddMinutes(1),
+            Expires = DateTime.UtcNow.AddSeconds(_options.AccessTokenDuration),
         };
 
         // Attach the cookie to the response
@@ -70,7 +73,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = DateTime.UtcNow.AddDays(7),
+            Expires = DateTime.UtcNow.AddSeconds(_options.RefreshTokenDuration),
         };
     
         Response.Cookies.Append("X-Refresh-Token", payload, cookieOptions);

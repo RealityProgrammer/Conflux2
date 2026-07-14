@@ -75,7 +75,10 @@ builder.Services.AddCors(options => {
 });
 
 // API related services.
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services
+    .AddScoped<IAuthService, AuthService>()
+    .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"));
+
 builder.Services.AddSingleton<IMailingService, MailingService>();
 
 // only AddControllersWithViews support for antiforgery for some reason.
