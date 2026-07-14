@@ -1,20 +1,6 @@
 import axios, {HttpStatusCode} from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
-import type { UserAuthorizationInfo } from "./responses.ts";
 import Cookies from "js-cookie";
-let authorizationInfo: UserAuthorizationInfo | null = null;
-
-export function hasAuthorizationInfo() {
-    return !!authorizationInfo;
-}
-
-export function setAuthorizationInfo(info: UserAuthorizationInfo | null) {
-    authorizationInfo = info;
-}
-
-export function getAuthorizationInfo() {
-    return authorizationInfo;
-}
 
 axios.defaults.withCredentials = true;
 
@@ -59,11 +45,12 @@ apiClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { __retry: boolean };
 
-        if (error.response?.status === HttpStatusCode.Unauthorized &&
-            originalRequest && !(originalRequest as any).__retry &&
-            originalRequest.url !== "/api/auth/login" &&
-            originalRequest.url !== "/api/auth/register"
-        ) {
+        const isAuthRequest: boolean =
+            originalRequest.url!.includes('/auth/login') ||
+            originalRequest.url!.includes('/auth/register') ||
+            originalRequest.url!.includes('/auth/refresh');
+
+        if (error.response?.status === HttpStatusCode.Unauthorized && originalRequest && !originalRequest.__retry && !isAuthRequest) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     // @ts-ignore
@@ -74,7 +61,7 @@ apiClient.interceptors.response.use(
                 .catch((err) => Promise.reject(err));
             }
 
-            (originalRequest as any).__retry = true;
+            originalRequest.__retry = true;
             isRefreshing = true;
 
             try {
@@ -86,7 +73,6 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError);
-                authorizationInfo = null;
 
                 return Promise.reject(refreshError);
             } finally {

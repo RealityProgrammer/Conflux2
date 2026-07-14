@@ -1,6 +1,6 @@
 import { useState } from "react";
-import {authService} from "../../api/authService.ts";
-import {HttpStatusCode} from "axios";
+import { authService } from "../../api/authService.ts";
+import { HttpStatusCode } from "axios";
 
 enum SendStatus {
     NotSend = 0,

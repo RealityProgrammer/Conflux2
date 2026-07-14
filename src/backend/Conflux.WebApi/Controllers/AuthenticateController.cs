@@ -56,7 +56,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = DateTime.UtcNow.AddMinutes(15),
+            Expires = DateTime.UtcNow.AddMinutes(1),
         };
 
         // Attach the cookie to the response
@@ -96,6 +96,7 @@ public sealed class AuthenticateController : ControllerBase {
     }
     
     [HttpPost("refresh")]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Refresh() {
         if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
             return Unauthorized();

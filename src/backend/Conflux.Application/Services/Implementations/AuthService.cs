@@ -74,7 +74,7 @@ internal sealed class AuthService(
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
         var credential = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        DateTime accessTokenExpire = DateTime.Now.AddMinutes(15);
+        DateTime accessTokenExpire = DateTime.Now.AddMinutes(1);
 
         var token = new JwtSecurityToken(
             issuer: config["Jwt:Issuer"],

@@ -4,9 +4,10 @@ import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
 import LobbyPage from "./pages/lobby/LobbyPage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
-import apiClient, {getAuthorizationInfo, hasAuthorizationInfo, setAuthorizationInfo} from "./api/client.ts";
+import apiClient from "./api/client.ts";
 import {authService} from "./api/authService.ts";
 import {HttpStatusCode} from "axios";
+import type {UserAuthorizationInfo} from "./api/responses.ts";
 
 export const router = createBrowserRouter([
     {
@@ -40,17 +41,21 @@ export const router = createBrowserRouter([
             {
                 id: "lobby",
                 path: "lobby",
-                loader: () => {
-                    if (!hasAuthorizationInfo()) {
+                loader: async () => {
+                    const response = await authService.getAuthorizationInfo();
+
+                    if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
                         return redirect('/auth#login');
                     }
 
-                    const authorizationInfo = getAuthorizationInfo();
+                    const authorizationInfo: UserAuthorizationInfo = response.data;
 
-                    if (!authorizationInfo?.permissions.includes("EMAIL_VERIFIED")) {
+                    if (!authorizationInfo.permissions.includes("EMAIL_VERIFIED")) {
+                        console.log("lobbyloader: to verify-email.");
                         return redirect("/auth/verify-email");
                     }
 
+                    console.log("lobbyloader: finish.");
                     return null;
                 },
                 element: <Outlet/>,
@@ -66,22 +71,10 @@ export const router = createBrowserRouter([
 ]);
 
 export async function rootLoader() {
-    if (!hasAuthorizationInfo()) {
-        try {
-            const response = await authService.getAuthorizationInfo();
+    const [authResponse] = await Promise.all([
+        authService.getAuthorizationInfo(),
+        apiClient.get("/csrf/token").catch(() => null) // Suppress fails so app loads even if backend is offline
+    ]);
 
-            if (response.statusCode === HttpStatusCode.Ok) {
-                setAuthorizationInfo(response.data!);
-            }
-
-            await apiClient.get("/csrf/token");
-
-            return response.data;
-        } catch (error) {
-            setAuthorizationInfo(null);
-            return null;
-        }
-    }
-
-    return getAuthorizationInfo();
+    return authResponse.data;
 }

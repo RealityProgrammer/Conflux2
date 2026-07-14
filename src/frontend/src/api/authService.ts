@@ -1,4 +1,4 @@
-import apiClient, { hasAuthorizationInfo, getAuthorizationInfo, setAuthorizationInfo } from "./client.ts";
+import apiClient from "./client.ts";
 import type { LoginRequest, RegisterRequest } from "./requests.ts";
 import type {
     LoginResponse,
@@ -6,12 +6,15 @@ import type {
     RefreshResponse,
     UserAuthorizationInfo
 } from "./responses.ts";
-import { type AxiosResponse, HttpStatusCode } from "axios";
+import axios, { type AxiosResponse, HttpStatusCode } from "axios";
 import { handleApiError } from "../utils/errorHelpers.ts";
 import type { ApiResponse } from "./apiResponse.ts";
+import Cookies from "js-cookie";
 
 let activeRefreshPromise: Promise<ApiResponse<RefreshResponse>> | null = null;
 let activeGetAuthorizationInfoPromise: Promise<ApiResponse<UserAuthorizationInfo | null>> | null = null;
+
+let cachedAuthorization : UserAuthorizationInfo | null = null;
 
 export const authService = {
     login: async (request: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
@@ -20,7 +23,7 @@ export const authService = {
 
             if (response.status === HttpStatusCode.Ok) {
                 localStorage.setItem("hasSession", "true");
-                setAuthorizationInfo(response.data.authorization);
+                cachedAuthorization = response.data.authorization;
             }
 
             return {
@@ -65,30 +68,43 @@ export const authService = {
 
         // prevent multiple refresh requests.
         if (!activeRefreshPromise) {
-            activeRefreshPromise = apiClient.post("/auth/refresh")
-                .then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
-                    if (response.status === HttpStatusCode.Ok) {
-                        localStorage.setItem("hasSession", "true");
+            // manually attach header, no idea if this is needed but im too lazy to test
+            const csrfToken = Cookies.get('XSRF-TOKEN');
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (csrfToken) {
+                headers['X-XSRF-TOKEN'] = csrfToken;
+            }
 
-                        return {
-                            statusCode: response.status,
-                            data: response.data,
-                        }
-                    } else {
-                        localStorage.removeItem("hasSession");
+            // use raw axios to prevent interception
+            activeRefreshPromise = axios.post<RefreshResponse>(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
+                withCredentials: true,
+                headers,
+            }).then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
+                if (response.status === HttpStatusCode.Ok) {
+                    localStorage.setItem("hasSession", "true");
+                    cachedAuthorization = response.data.authorization;
 
-                        return {
-                            statusCode: response.status,
-                            data: null,
-                        }
+                    return {
+                        statusCode: response.status,
+                        data: response.data,
                     }
-                }).catch((err: any) => {
+                } else {
                     localStorage.removeItem("hasSession");
+                    cachedAuthorization = null;
 
-                    return handleApiError(err);
-                }).finally(() => {
-                    activeRefreshPromise = null;    // clear when finish
-                });
+                    return {
+                        statusCode: response.status,
+                        data: null,
+                    }
+                }
+            }).catch((err: any) => {
+                localStorage.removeItem("hasSession");
+                cachedAuthorization = null;
+
+                return handleApiError(err);
+            }).finally(() => {
+                activeRefreshPromise = null;    // clear when finish
+            });
         }
 
         return activeRefreshPromise;
@@ -96,7 +112,8 @@ export const authService = {
 
     logout: async (): Promise<ApiResponse<null>> => {
         const response: AxiosResponse = await apiClient.post('/auth/logout');
-        setAuthorizationInfo(null);
+        cachedAuthorization = null;
+        localStorage.removeItem("hasSession");
 
         return {
             statusCode: response.status,
@@ -104,15 +121,22 @@ export const authService = {
     },
 
     hasAuthorizationInfo: () => {
-        return hasAuthorizationInfo();
+        return !!cachedAuthorization;
     },
 
     getAuthorizationInfo: async (): Promise<ApiResponse<UserAuthorizationInfo | null>> => {
-        if (hasAuthorizationInfo()) {
+        if (cachedAuthorization) {
             return {
                 statusCode: HttpStatusCode.Ok,
-                data: getAuthorizationInfo()!,
+                data: cachedAuthorization,
             };
+        }
+
+        if (localStorage.getItem("hasSession") !== "true") {
+            return Promise.resolve<ApiResponse<UserAuthorizationInfo | null>>({
+                statusCode: HttpStatusCode.Unauthorized,
+                data: null,
+            });
         }
 
         try {
@@ -120,26 +144,33 @@ export const authService = {
                 activeGetAuthorizationInfoPromise =
                     apiClient.get("/auth/authorization-info")
                         .then((response: AxiosResponse<UserAuthorizationInfo | null>) => {
-                            return {
-                                statusCode: response.status,
-                                data: response.data,
+                            if (response.status === HttpStatusCode.Ok) {
+                                cachedAuthorization = response.data;
+
+                                return {
+                                    statusCode: response.status,
+                                    data: response.data,
+                                };
+                            } else {
+                                cachedAuthorization = null;
+                                localStorage.removeItem("hasSession");
+
+                                return {
+                                    statusCode: response.status,
+                                    data: null,
+                                };
                             }
                         }).catch((err) => {
-                            // nothing to do just yet so just throw the error back.
-                            throw err;
+                            cachedAuthorization = null;
+                            localStorage.removeItem("hasSession");
+
+                            return handleApiError(err);
                         }).finally(() => {
                             activeGetAuthorizationInfoPromise = null;
                         });
-
-                return activeGetAuthorizationInfoPromise;
             }
 
-            const response: AxiosResponse<UserAuthorizationInfo | null> = await apiClient.get("/auth/authorization-info");
-
-            return {
-                statusCode: HttpStatusCode.Ok,
-                data: response.data,
-            }
+            return activeGetAuthorizationInfoPromise;
         } catch (error) {
             return handleApiError(error);
         }
