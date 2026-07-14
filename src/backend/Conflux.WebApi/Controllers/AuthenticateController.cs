@@ -1,6 +1,7 @@
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -160,12 +161,13 @@ public sealed class AuthenticateController : ControllerBase {
         if (!info.IsSuccess) {
             return Unauthorized();
         }
-
-        return Ok(info);
+        
+        return Ok(info.Value);
     }
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
     [Authorize]
+    [IgnoreAntiforgeryToken]
     public async Task<ActionResult> SendVerifyEmail() {
         var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         

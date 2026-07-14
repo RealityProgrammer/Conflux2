@@ -1,4 +1,6 @@
 import { useState } from "react";
+import {authService} from "../../api/authService.ts";
+import {HttpStatusCode} from "axios";
 
 enum SendStatus {
     NotSend = 0,
@@ -16,8 +18,8 @@ export default function VerifyEmailPage() {
         }
 
         setSendStatus(SendStatus.Sending);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setSendStatus(SendStatus.Success);
+        const response = await authService.sendVerifyEmail();
+        setSendStatus(response.status === HttpStatusCode.Ok ? SendStatus.Success : SendStatus.Failure);
     }
 
     return (

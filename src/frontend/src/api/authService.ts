@@ -65,31 +65,30 @@ export const authService = {
 
         // prevent multiple refresh requests.
         if (!activeRefreshPromise) {
-            activeRefreshPromise = apiClient.post("/auth/refresh", {}, {
-                withCredentials: true
-            }).then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
-                if (response.status === HttpStatusCode.Ok) {
-                    localStorage.setItem("hasSession", "true");
+            activeRefreshPromise = apiClient.post("/auth/refresh")
+                .then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
+                    if (response.status === HttpStatusCode.Ok) {
+                        localStorage.setItem("hasSession", "true");
 
-                    return {
-                        statusCode: response.status,
-                        data: response.data,
+                        return {
+                            statusCode: response.status,
+                            data: response.data,
+                        }
+                    } else {
+                        localStorage.removeItem("hasSession");
+
+                        return {
+                            statusCode: response.status,
+                            data: null,
+                        }
                     }
-                } else {
+                }).catch((err: any) => {
                     localStorage.removeItem("hasSession");
 
-                    return {
-                        statusCode: response.status,
-                        data: null,
-                    }
-                }
-            }).catch((err: any) => {
-                localStorage.removeItem("hasSession");
-
-                return handleApiError(err);
-            }).finally(() => {
-                activeRefreshPromise = null;    // clear when finish
-            });
+                    return handleApiError(err);
+                }).finally(() => {
+                    activeRefreshPromise = null;    // clear when finish
+                });
         }
 
         return activeRefreshPromise;
@@ -120,17 +119,17 @@ export const authService = {
             if (!activeGetAuthorizationInfoPromise) {
                 activeGetAuthorizationInfoPromise =
                     apiClient.get("/auth/authorization-info")
-                    .then((response: AxiosResponse<UserAuthorizationInfo | null>) => {
-                        return {
-                            statusCode: response.status,
-                            data: response.data,
-                        }
-                    }).catch((err) => {
-                        // nothing to do just yet so just throw the error back.
-                        throw err;
-                    }).finally(() => {
-                        activeGetAuthorizationInfoPromise = null;
-                    });
+                        .then((response: AxiosResponse<UserAuthorizationInfo | null>) => {
+                            return {
+                                statusCode: response.status,
+                                data: response.data,
+                            }
+                        }).catch((err) => {
+                            // nothing to do just yet so just throw the error back.
+                            throw err;
+                        }).finally(() => {
+                            activeGetAuthorizationInfoPromise = null;
+                        });
 
                 return activeGetAuthorizationInfoPromise;
             }
@@ -141,6 +140,15 @@ export const authService = {
                 statusCode: HttpStatusCode.Ok,
                 data: response.data,
             }
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
+
+    sendVerifyEmail: async (): Promise<AxiosResponse<ApiResponse<void>>> => {
+        try {
+            const response: AxiosResponse<ApiResponse<void>> = await apiClient.post("/auth/send-verify-email");
+            return response;
         } catch (error) {
             return handleApiError(error);
         }

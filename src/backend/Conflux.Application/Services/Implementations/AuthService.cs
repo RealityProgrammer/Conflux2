@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Web;
 
 namespace Conflux.Application.Services.Implementations;
 
@@ -164,7 +165,7 @@ internal sealed class AuthService(
         string confirmCode = await userManager.GenerateEmailConfirmationTokenAsync(user);
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
 
-        NameValueCollection queryArguments = System.Web.HttpUtility.ParseQueryString(string.Empty);
+        NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);
         queryArguments.Add("userId", userId);
         queryArguments.Add("code", encodedCode);
 
