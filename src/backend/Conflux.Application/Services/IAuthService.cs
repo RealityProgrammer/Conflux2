@@ -10,4 +10,5 @@ public interface IAuthService {
     Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId);
 
     Task<Result> SendVerificationEmailAsync(string userId);
+    Task<Result> ConfirmEmailAsync(string userId, string code);
 }

@@ -1,3 +1,4 @@
+using Conflux.Application;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
@@ -13,10 +14,16 @@ namespace Conflux.WebApi.Controllers;
 public sealed class AuthenticateController : ControllerBase {
     private readonly IAuthService _authService;
     private readonly AuthServiceOptions _options;
+    private readonly ILogger<AuthenticateController> _logger;
     
-    public AuthenticateController(IAuthService authService, IOptions<AuthServiceOptions> options) {
+    public AuthenticateController(
+        IAuthService authService, 
+        IOptions<AuthServiceOptions> options,
+        ILogger<AuthenticateController> logger
+    ) {
         _authService = authService;
         _options = options.Value;
+        _logger = logger;
     }
 
     [HttpGet("healthcheck", Name = "Healthcheck")]
@@ -170,7 +177,6 @@ public sealed class AuthenticateController : ControllerBase {
     }
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
-    [Authorize]
     public async Task<ActionResult> SendVerifyEmail() {
         var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         
@@ -179,10 +185,55 @@ public sealed class AuthenticateController : ControllerBase {
         }
 
         var result = await _authService.SendVerificationEmailAsync(nameIdentifier);
+
+        if (result.IsSuccess) {
+            return Ok();
+        }
+
+        switch (result.Error.Code) {
+            case "Auth.NoId":
+                return BadRequest();
+            
+            case "Auth.AlreadyConfirmed":
+                return Ok();
+            
+            case var _ when result.Error.Code.StartsWith("Mail."):
+                return StatusCode(StatusCodes.Status503ServiceUnavailable);
+                
+            default:
+                _logger.LogWarning("Unhandled result error {e} when sending verify email.", result.Error);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
+        if (string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.ConfirmationCode)) {
+            return BadRequest();
+        }
+
+        var result = await _authService.ConfirmEmailAsync(request.UserId, request.ConfirmationCode);
         
-        return result.IsSuccess ? 
-            Ok() : 
-            StatusCode(StatusCodes.Status502BadGateway);    // TODO: Figure out a better status code representing email failure.
+        if (result.IsSuccess) {
+            return Ok();
+        }
+
+        switch (result.Error.Code) {
+            case "Auth.NoId" or "Auth.InvalidConfirmCode":
+                return BadRequest();
+
+            case "Auth.AlreadyConfirmed":
+                return Ok();
+            
+            case var _ when result.Error.Code.StartsWith("Auth."):
+                // TODO: Better reporting.
+                return StatusCode(StatusCodes.Status500InternalServerError);
+
+            default:
+                _logger.LogWarning("Unhandled result error {e} when confirm email.", result.Error);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
     
     // ReSharper disable NotAccessedPositionalProperty.Global
@@ -191,5 +242,6 @@ public sealed class AuthenticateController : ControllerBase {
     public record RegisterRequest(string Email, string Password, string ConfirmPassword);
     public record RegisterResponse(string Code, string Message);
     public record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
+    public record ConfirmEmailRequest(string UserId, string ConfirmationCode);
     // ReSharper restore NotAccessedPositionalProperty.Global
 }

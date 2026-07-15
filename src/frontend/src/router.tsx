@@ -1,13 +1,14 @@
-import {createBrowserRouter, Outlet, redirect} from 'react-router-dom';
+import { createBrowserRouter, Outlet, redirect } from 'react-router-dom';
 import HomePage from './pages/HomePage'
-import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
+import AuthenticatePage, { authAction } from "./pages/auth/AuthenticatePage.tsx";
 import LobbyPage from "./pages/lobby/LobbyPage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
 import apiClient from "./api/client.ts";
-import {authService} from "./api/authService.ts";
-import {HttpStatusCode} from "axios";
-import type {UserAuthorizationInfo} from "./api/responses.ts";
+import { authService } from "./api/authService.ts";
+import { HttpStatusCode } from "axios";
+import type { UserAuthorizationInfo } from "./api/responses.ts";
+import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -31,11 +32,34 @@ export const router = createBrowserRouter([
                         index: true,
                         element: <AuthenticatePage/>,
                         action: authAction,
+                        loader: async () => {
+                            const response = await authService.getAuthorizationInfo();
+
+                            if (response.statusCode === HttpStatusCode.Ok && response.data) {
+                                return redirect('/lobby');
+                            }
+
+                            return null;
+                        },
                     },
                     {
                         path: "verify-email",
                         element: <VerifyEmailPage/>,
+                        loader: async () => {
+                            const response = await authService.getAuthorizationInfo();
+
+                            if (response.statusCode === HttpStatusCode.Ok &&
+                                response.data &&
+                                response.data.permissions.includes("EMAIL_CONFIRMED")
+                            ) {
+                                return redirect('/');
+                            }
+                        },
                     },
+                    {
+                        path: "confirm-email",
+                        element: <ConfirmEmailPage/>,
+                    }
                 ]
             },
             {
@@ -50,12 +74,10 @@ export const router = createBrowserRouter([
 
                     const authorizationInfo: UserAuthorizationInfo = response.data;
 
-                    if (!authorizationInfo.permissions.includes("EMAIL_VERIFIED")) {
-                        console.log("lobbyloader: to verify-email.");
+                    if (!authorizationInfo.permissions.includes("EMAIL_CONFIRMED")) {
                         return redirect("/auth/verify-email");
                     }
 
-                    console.log("lobbyloader: finish.");
                     return null;
                 },
                 element: <Outlet/>,
@@ -73,7 +95,8 @@ export const router = createBrowserRouter([
 export async function rootLoader() {
     const [authResponse] = await Promise.all([
         authService.getAuthorizationInfo(),
-        apiClient.get("/csrf/token").catch(() => null) // Suppress fails so app loads even if backend is offline
+        // suppress fails so app loads even if backend is offline
+        apiClient.get("/csrf/token").catch(() => null)
     ]);
 
     return authResponse.data;

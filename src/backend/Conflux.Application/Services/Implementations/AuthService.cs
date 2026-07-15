@@ -182,6 +182,8 @@ internal sealed class AuthService : IAuthService {
         if (user.EmailConfirmed) {
             return Result.Failure("Auth.AlreadyConfirmed", "User is already verified.");
         }
+        
+        // TODO: Time-limiting the confirmation token.
 
         string confirmCode = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
@@ -198,6 +200,27 @@ internal sealed class AuthService : IAuthService {
         string redirectUrl = builder.Uri.ToString();
 
         return await _mailingService.SendEmailConfirmationAsync(user.Email!, redirectUrl);
+    }
+
+    public async Task<Result> ConfirmEmailAsync(string userId, string code) {
+        var user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null) {
+            return Result.Failure("Auth.NoId", "No user with the provided ID.");
+        }
+        
+        if (user.EmailConfirmed) {
+            return Result.Failure("Auth.AlreadyConfirmed", "User is already verified.");
+        }
+        
+        var result = await _userManager.ConfirmEmailAsync(user, code);
+
+        if (result.Succeeded) {
+            return Result.Success();
+        }
+
+        var firstError = result.Errors.First();
+        return Result.Failure($"Auth.{firstError.Code}", firstError.Description);
     }
 
     private async Task<List<string>> GetAuthorizationPermissions(ApplicationUser user) {

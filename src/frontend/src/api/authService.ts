@@ -1,5 +1,5 @@
 import apiClient from "./client.ts";
-import type { LoginRequest, RegisterRequest } from "./requests.ts";
+import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./requests.ts";
 import type {
     LoginResponse,
     RegisterResponse,
@@ -176,12 +176,32 @@ export const authService = {
         }
     },
 
-    sendVerifyEmail: async (): Promise<AxiosResponse<ApiResponse<void>>> => {
+    sendVerifyEmail: async (): Promise<ApiResponse<void>> => {
         try {
             const response: AxiosResponse<ApiResponse<void>> = await apiClient.post("/auth/send-verify-email");
-            return response;
+
+            return {
+                statusCode: response.status,
+            }
         } catch (error) {
             return handleApiError(error);
         }
-    }
+    },
+
+    confirmEmail: async (request: EmailConfirmationRequest): Promise<ApiResponse<void>> => {
+        try {
+            const response: AxiosResponse<ApiResponse<void>> = await apiClient.post("/auth/confirm-email", request);
+
+            if (response.status === HttpStatusCode.Ok) {
+                // refresh the authorization information.
+                await authService.refresh();
+            }
+
+            return {
+                statusCode: response.status,
+            }
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
 };

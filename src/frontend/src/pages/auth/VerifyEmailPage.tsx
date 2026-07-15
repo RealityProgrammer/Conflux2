@@ -19,7 +19,7 @@ export default function VerifyEmailPage() {
 
         setSendStatus(SendStatus.Sending);
         const response = await authService.sendVerifyEmail();
-        setSendStatus(response.status === HttpStatusCode.Ok ? SendStatus.Success : SendStatus.Failure);
+        setSendStatus(response.statusCode === HttpStatusCode.Ok ? SendStatus.Success : SendStatus.Failure);
     }
 
     return (
