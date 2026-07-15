@@ -45,20 +45,12 @@ export const router = createBrowserRouter([
                     {
                         path: "verify-email",
                         element: <VerifyEmailPage/>,
-                        loader: async () => {
-                            const response = await authService.getAuthorizationInfo();
-
-                            if (response.statusCode === HttpStatusCode.Ok &&
-                                response.data &&
-                                response.data.permissions.includes("EMAIL_CONFIRMED")
-                            ) {
-                                return redirect('/');
-                            }
-                        },
+                        loader: restrictConfirmedUser,
                     },
                     {
                         path: "confirm-email",
                         element: <ConfirmEmailPage/>,
+                        loader: restrictConfirmedUser,
                     }
                 ]
             },
@@ -92,7 +84,7 @@ export const router = createBrowserRouter([
     }
 ]);
 
-export async function rootLoader() {
+async function rootLoader() {
     const [authResponse] = await Promise.all([
         authService.getAuthorizationInfo(),
         // suppress fails so app loads even if backend is offline
@@ -100,4 +92,15 @@ export async function rootLoader() {
     ]);
 
     return authResponse.data;
+}
+
+async function restrictConfirmedUser() {
+    const response = await authService.getAuthorizationInfo();
+
+    if (response.statusCode === HttpStatusCode.Ok &&
+        response.data &&
+        response.data.permissions.includes("EMAIL_CONFIRMED")
+    ) {
+        return redirect('/');
+    }
 }
