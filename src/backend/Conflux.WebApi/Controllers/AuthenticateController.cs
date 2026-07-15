@@ -1,10 +1,10 @@
-using Conflux.Application;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.Controllers;
@@ -89,13 +89,6 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("register", Name = "Register")]
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult> Register([FromBody] RegisterRequest request) {
-        if (request.Password != request.ConfirmPassword) {
-            return BadRequest(new RegisterResponse(
-                "PasswordMismatch",
-                "Passwords do not match."
-            ));
-        }
-        
         var response = await _authService.RegisterAsync(request.Email, request.Password);
     
         if (response.IsSuccess) {
@@ -111,7 +104,7 @@ public sealed class AuthenticateController : ControllerBase {
         if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
             return Unauthorized();
         }
-    
+        
         try {
             var decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
             int firstColon = decodedPayload.IndexOf(':');
@@ -209,10 +202,6 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("confirm-email")]
     [AllowAnonymous]
     public async Task<ActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
-        if (string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(request.ConfirmationCode)) {
-            return BadRequest();
-        }
-
         var result = await _authService.ConfirmEmailAsync(request.UserId, request.ConfirmationCode);
         
         if (result.IsSuccess) {
@@ -237,11 +226,36 @@ public sealed class AuthenticateController : ControllerBase {
     }
     
     // ReSharper disable NotAccessedPositionalProperty.Global
-    public record LoginRequest(string Email, string Password);
-    public record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
-    public record RegisterRequest(string Email, string Password, string ConfirmPassword);
-    public record RegisterResponse(string Code, string Message);
+    public record LoginRequest(
+        [Required, EmailAddress] string Email,
+        [Required, DataType(DataType.Password)] string Password
+    );
+    
+    public record LoginResponse(
+        UserAuthorizationInfo Authorization, 
+        string TokenType, 
+        string AccessToken
+    );
+    
+    public record RegisterRequest(
+        [Required, EmailAddress] string Email, 
+        [Required, DataType(DataType.Password)] string Password,
+        
+        [Required, DataType(DataType.Password)]
+        [property: Compare("Password", ErrorMessage = "Passwords do not match.")]
+        string ConfirmPassword
+    );
+    
+    public record RegisterResponse(
+        string Code,
+        string Message
+    );
+    
     public record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
-    public record ConfirmEmailRequest(string UserId, string ConfirmationCode);
+    
+    public record ConfirmEmailRequest(
+        [Required] string UserId, 
+        [Required] string ConfirmationCode
+    );
     // ReSharper restore NotAccessedPositionalProperty.Global
 }
