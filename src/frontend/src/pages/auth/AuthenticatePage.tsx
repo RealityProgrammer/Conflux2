@@ -48,13 +48,15 @@ export async function authAction({ request }: { request: Request }) {
             })
 
             if (response.statusCode === HttpStatusCode.Ok) {
-                const isEmailConfirmed: boolean =
-                    response.data?.authorization.permissions.includes("EMAIL_CONFIRMED") ?? false;
+                return redirect("/lobby");
 
-                const isProfileSetup: boolean =
-                    response.data?.authorization.permissions.includes("PROFILE_SETUP") ?? false;
-
-                return redirect(!isEmailConfirmed ? "/auth/verify-email" : !isProfileSetup ? "/profile-setup" : "/");
+                // const isEmailConfirmed: boolean =
+                //     response.data?.authorization.permissions.includes("EMAIL_CONFIRMED") ?? false;
+                //
+                // const isProfileSetup: boolean =
+                //     response.data?.authorization.permissions.includes("PROFILE_SETUP") ?? false;
+                //
+                // return redirect(!isEmailConfirmed ? "/auth/verify-email" : !isProfileSetup ? "/profile-setup" : "/");
             }
 
             return { error: response.message ?? "Unknown error." };

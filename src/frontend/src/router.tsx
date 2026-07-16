@@ -14,7 +14,15 @@ export const router = createBrowserRouter([
     {
         id: "root",
         path: "/",
-        loader: rootLoader,
+        loader: async () => {
+            const [authResponse] = await Promise.all([
+                authService.getAuthorizationInfo(),
+                // suppress fails so app loads even if backend is offline
+                apiClient.get("/csrf/token").catch(() => null)
+            ]);
+
+            return authResponse.data;
+        },
         element: (
             <AuthProvider>
                 <Outlet/>
@@ -55,6 +63,21 @@ export const router = createBrowserRouter([
                 ]
             },
             {
+                path: "setup-profile",
+                loader: async () => {
+                    const response = await authService.getAuthorizationInfo();
+
+                    if (response.statusCode === HttpStatusCode.Ok &&
+                        response.data &&
+                        response.data.permissions.includes("PROFILE_SETUP")
+                    ) {
+                        return redirect('/');
+                    }
+
+                    return null;
+                },
+            },
+            {
                 id: "lobby",
                 path: "lobby",
                 loader: async () => {
@@ -68,6 +91,10 @@ export const router = createBrowserRouter([
 
                     if (!authorizationInfo.permissions.includes("EMAIL_CONFIRMED")) {
                         return redirect("/auth/verify-email");
+                    }
+
+                    if (!authorizationInfo.permissions.includes("PROFILE_SETUP")) {
+                        return redirect("/setup-profile");
                     }
 
                     return null;
@@ -84,16 +111,6 @@ export const router = createBrowserRouter([
     }
 ]);
 
-async function rootLoader() {
-    const [authResponse] = await Promise.all([
-        authService.getAuthorizationInfo(),
-        // suppress fails so app loads even if backend is offline
-        apiClient.get("/csrf/token").catch(() => null)
-    ]);
-
-    return authResponse.data;
-}
-
 async function restrictConfirmedUser() {
     const response = await authService.getAuthorizationInfo();
 
@@ -103,4 +120,6 @@ async function restrictConfirmedUser() {
     ) {
         return redirect('/');
     }
+
+    return null;
 }

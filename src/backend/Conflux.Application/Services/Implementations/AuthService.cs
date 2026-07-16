@@ -84,10 +84,18 @@ internal sealed class AuthService : IAuthService {
     
     private async Task<TokenResponse> GenerateJwtToken(ApplicationUser user, IEnumerable<string> roles) {
         var claims = new List<Claim> {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString("N")),
-            new(ClaimTypes.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString("N")),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
         };
+        
+        if (user.EmailConfirmed) {
+            claims.Add(new(JwtRegisteredClaimNames.EmailVerified, "true"));
+        }
 
+        if (user.IsProfileSetup) {
+            claims.Add(new("ProfileSetupComplete", "true"));
+        }
+        
         foreach (var role in roles) {
             claims.Add(new("role", role));
         }

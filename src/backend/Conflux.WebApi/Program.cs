@@ -36,6 +36,8 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at Jwt:Secret."))),
     };
 
+    options.MapInboundClaims = false;
+
     options.Events = new() {
         OnMessageReceived = context => {
             if (context.Request.Cookies.TryGetValue("X-Access-Token", out var token)) {
