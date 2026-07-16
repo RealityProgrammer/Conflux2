@@ -20,3 +20,7 @@ export interface RefreshResponse {
     accessToken: string;
     authorization: UserAuthorizationInfo;
 }
+
+export interface UploadAvatarResponse {
+    url: string;
+}

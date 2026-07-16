@@ -68,11 +68,11 @@ export const router = createBrowserRouter([
                 loader: async () => {
                     const response = await authService.getAuthorizationInfo();
 
-                    if (response.statusCode === HttpStatusCode.Ok && response.data && response.data.isProfileSetup) {
-                        return redirect('/');
+                    if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
+                        return redirect('/auth#login');
                     }
 
-                    return null;
+                    return response.data.isProfileSetup ? redirect('/') : null;
                 },
                 element: <ProfileSetupPage/>
             },

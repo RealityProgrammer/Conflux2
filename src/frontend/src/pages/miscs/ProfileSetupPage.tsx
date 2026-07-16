@@ -3,6 +3,10 @@ import { useState, useRef, useEffect } from "react";
 import { animate, utils } from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import Spinner from "../../components/Spinner.tsx";
+import { userService } from "../../api/userService.ts";
+import type {ApiResponse} from "../../api/apiResponse.ts";
+import type {UploadAvatarResponse} from "../../api/responses.ts";
+import {HttpStatusCode} from "axios";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -41,11 +45,11 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
     // TODO: Replace with user's avatar path.
-    const [avatarUrl, setAvatarUrl] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80");
+    const [avatar, setAvatar] = useState<{ file: File, previewUrl: string }>();
 
-    const onAvatarChanged = (_file: File, previewUrl: string) => {
+    const onAvatarChanged = (file: File, previewUrl: string) => {
         isChanged.current = true;
-        setAvatarUrl(previewUrl);
+        setAvatar({ file, previewUrl });
     };
 
     const uploadAvatar = async () => {
@@ -53,16 +57,21 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
             return;
         }
 
-        if (isChanged.current) {
+        if (isChanged.current && avatar && avatar.file) {
             setIsUploadingAvatar(true);
-            await new Promise(resolve => setTimeout(resolve, 3000));
 
-            // reset the properties so that going back and front between panels doesn't cause another uploading request.
+            const response: ApiResponse<UploadAvatarResponse> = await userService.uploadAvatar(avatar.file);
+
+            if (response.statusCode === HttpStatusCode.Ok) {
+                // reset the properties so that going back and front between panels doesn't cause another uploading request.
+                setDisplayingPanel(DisplayingPanel.Profile);
+            } else {
+                // TODO: Report something goes wrong.
+            }
+
             isChanged.current = false;
             setIsUploadingAvatar(false);
         }
-
-        setDisplayingPanel(DisplayingPanel.Profile);
     }
 
     return (
@@ -74,10 +83,10 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
 
             <div className="flex-1 flex justify-center items-center">
                 <SelectableAvatar
-                    src={avatarUrl}
+                    src={avatar?.previewUrl}
                     onAvatarChange={onAvatarChanged}
                     className="size-64 rounded-full"
-                    fallbackText="LMAO"
+                    fallbackText="???"
                 />
             </div>
 

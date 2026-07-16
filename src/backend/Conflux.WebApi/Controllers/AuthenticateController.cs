@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.Controllers;
@@ -154,13 +155,13 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpGet("authorization-info")]
     [Authorize]
     public async Task<ActionResult<UserAuthorizationInfo>> GetUserInfo() {
-        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(nameIdentifier)) {
+        if (string.IsNullOrEmpty(userId)) {
             return Unauthorized();
         }
         
-        var info = await _authService.GetAuthorizationInfoAsync(nameIdentifier);
+        var info = await _authService.GetAuthorizationInfoAsync(userId);
 
         if (!info.IsSuccess) {
             return Unauthorized();
@@ -171,13 +172,13 @@ public sealed class AuthenticateController : ControllerBase {
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
     public async Task<ActionResult> SendVerifyEmail() {
-        var nameIdentifier = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(nameIdentifier)) {
+        if (string.IsNullOrEmpty(userId)) {
             return Unauthorized();
         }
 
-        var result = await _authService.SendVerificationEmailAsync(nameIdentifier);
+        var result = await _authService.SendVerificationEmailAsync(userId);
 
         if (result.IsSuccess) {
             return Ok();

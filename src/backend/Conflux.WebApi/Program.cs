@@ -17,7 +17,7 @@ builder.Services
     .AddIdentityCore<ApplicationUser>(options => {
         options.SignIn.RequireConfirmedAccount = false;
         options.User.RequireUniqueEmail = true;
-        options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+        options.ClaimsIdentity.RoleClaimType = "role";
     })
     .AddRoles<IdentityRole<Guid>>()
     .AddRoleManager<RoleManager<IdentityRole<Guid>>>()
@@ -79,7 +79,9 @@ builder.Services.AddCors(options => {
 // API related services.
 builder.Services
     .AddScoped<IAuthService, AuthService>()
-    .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"));
+    .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
+
+    .AddScoped<IUserService, UserService>();
 
 builder.Services.AddSingleton<IMailingService, MailingService>();
 
