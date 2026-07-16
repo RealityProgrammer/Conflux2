@@ -74,6 +74,8 @@ internal sealed class AuthService : IAuthService {
             
             return Result<LoginResponse>.Success(new(new(
                 user.UserName!,
+                user.EmailConfirmed,
+                user.IsProfileSetup,
                 roles.AsReadOnly(),
                 permissions
             ), "Bearer", token.AccessToken, token.RefreshToken));
@@ -162,6 +164,8 @@ internal sealed class AuthService : IAuthService {
         
         return Result<RefreshResponse>.Success(new(new(
             user.UserName!,
+            user.EmailConfirmed,
+            user.IsProfileSetup,
             roles.AsReadOnly(),
             permissions
         ), "Bearer", tokens.AccessToken, tokens.RefreshToken));
@@ -177,7 +181,13 @@ internal sealed class AuthService : IAuthService {
         var userRoles = await _userManager.GetRolesAsync(user);
         var permissions = await GetAuthorizationPermissions(user);
         
-        return Result<UserAuthorizationInfo?>.Success(new(user.UserName!, userRoles.AsReadOnly(), permissions));
+        return Result<UserAuthorizationInfo?>.Success(new(
+            user.UserName!, 
+            user.EmailConfirmed,
+            user.IsProfileSetup,
+            userRoles.AsReadOnly(), 
+            permissions
+        ));
     }
 
     public async Task<Result> SendVerificationEmailAsync(string userId) {
@@ -233,10 +243,6 @@ internal sealed class AuthService : IAuthService {
 
     private async Task<List<string>> GetAuthorizationPermissions(ApplicationUser user) {
         List<string> permissions = [];
-
-        if (user.EmailConfirmed) {
-            permissions.Add("EMAIL_CONFIRMED");
-        }
 
         return permissions;
     }

@@ -67,10 +67,7 @@ export const router = createBrowserRouter([
                 loader: async () => {
                     const response = await authService.getAuthorizationInfo();
 
-                    if (response.statusCode === HttpStatusCode.Ok &&
-                        response.data &&
-                        response.data.permissions.includes("PROFILE_SETUP")
-                    ) {
+                    if (response.statusCode === HttpStatusCode.Ok && response.data && response.data.isProfileSetup) {
                         return redirect('/');
                     }
 
@@ -89,11 +86,11 @@ export const router = createBrowserRouter([
 
                     const authorizationInfo: UserAuthorizationInfo = response.data;
 
-                    if (!authorizationInfo.permissions.includes("EMAIL_CONFIRMED")) {
+                    if (!authorizationInfo.isVerified) {
                         return redirect("/auth/verify-email");
                     }
 
-                    if (!authorizationInfo.permissions.includes("PROFILE_SETUP")) {
+                    if (!authorizationInfo.isProfileSetup) {
                         return redirect("/setup-profile");
                     }
 
@@ -114,10 +111,7 @@ export const router = createBrowserRouter([
 async function restrictConfirmedUser() {
     const response = await authService.getAuthorizationInfo();
 
-    if (response.statusCode === HttpStatusCode.Ok &&
-        response.data &&
-        response.data.permissions.includes("EMAIL_CONFIRMED")
-    ) {
+    if (response.statusCode === HttpStatusCode.Ok && response.data && response.data.isVerified) {
         return redirect('/');
     }
 
