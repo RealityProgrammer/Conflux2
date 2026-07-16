@@ -15,7 +15,7 @@ interface PanelProps {
 
 function IntroPanel({ setDisplayingPanel }: PanelProps) {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Hold up</h1>
                 <p className="mt-2 text-center">Before going further, you need to setup your profile first!</p>
@@ -36,7 +36,7 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
 
 function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Setup Avatar</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Make yourself look special</p>
@@ -59,7 +59,7 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
 
 function ProfilePanel({ setDisplayingPanel }: PanelProps) {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Setup Profile</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Make a name of yourself, literally</p>
@@ -88,7 +88,7 @@ function ProfilePanel({ setDisplayingPanel }: PanelProps) {
 
 function CompletePanel() {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative p-6">
+        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible relative p-6">
             <h1 className="text-center font-bold text-3xl text-white">Setup Complete</h1>
             <p className="text-center text-gray-400 text-sm mt-2">One of us, one of us...</p>
         </section>
