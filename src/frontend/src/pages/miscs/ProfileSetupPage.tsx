@@ -1,6 +1,8 @@
 import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 import { useState, useRef, useEffect } from "react";
 import { animate, utils } from "animejs";
+import { Avatar } from "radix-ui";
+import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -15,7 +17,7 @@ interface PanelProps {
 
 function IntroPanel({ setDisplayingPanel }: PanelProps) {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Hold up</h1>
                 <p className="mt-2 text-center">Before going further, you need to setup your profile first!</p>
@@ -36,14 +38,32 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
 
 function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Setup Avatar</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Make yourself look special</p>
             </header>
 
-            <div className="flex-1">
-                { /* Body goes here */ }
+            <div className="flex-1 flex justify-center items-center">
+                <SelectableAvatar
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
+                    onAvatarChange={() => console.log("Avatar changed.")}
+                    className="size-64 rounded-full"
+                    fallbackText="LMAO"
+                />
+
+                {/*<Avatar.Root className="size-64 align-middle flex flex-row justify-center items-center select-none overflow-hidden rounded-full cursor-pointer hover:bg-black/10" onClick={() => console.log("click")}>*/}
+                {/*    <Avatar.Image*/}
+                {/*        src="https://images.unsplash.com/photo-1511485977113-f34c92461ad9?ixlib=rb-1.2.1&w=128&h=128&dpr=2&q=80"*/}
+                {/*        className="size-full rounded-[inherit] object-cover"*/}
+                {/*        alt="Test Alt"*/}
+                {/*    />*/}
+
+                {/*    <Avatar.Fallback*/}
+                {/*        className="bg-white size-full text-violet-600 flex justify-center items-center text-5xl">*/}
+                {/*        TA*/}
+                {/*    </Avatar.Fallback>*/}
+                {/*</Avatar.Root>*/}
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
@@ -59,7 +79,7 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
 
 function ProfilePanel({ setDisplayingPanel }: PanelProps) {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Setup Profile</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Make a name of yourself, literally</p>
@@ -88,7 +108,7 @@ function ProfilePanel({ setDisplayingPanel }: PanelProps) {
 
 function CompletePanel() {
     return (
-        <section className="w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible relative p-6">
+        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible relative p-6">
             <h1 className="text-center font-bold text-3xl text-white">Setup Complete</h1>
             <p className="text-center text-gray-400 text-sm mt-2">One of us, one of us...</p>
         </section>
