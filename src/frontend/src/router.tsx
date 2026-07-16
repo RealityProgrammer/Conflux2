@@ -9,6 +9,7 @@ import { authService } from "./api/authService.ts";
 import { HttpStatusCode } from "axios";
 import type { UserAuthorizationInfo } from "./api/responses.ts";
 import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
+import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
 
                     return null;
                 },
+                element: <ProfileSetupPage/>
             },
             {
                 id: "lobby",
