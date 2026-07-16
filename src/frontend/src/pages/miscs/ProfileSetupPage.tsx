@@ -1,8 +1,8 @@
 import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 import { useState, useRef, useEffect } from "react";
 import { animate, utils } from "animejs";
-import { Avatar } from "radix-ui";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
+import Spinner from "../../components/Spinner.tsx";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -37,6 +37,34 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
 }
 
 function AvatarPanel({ setDisplayingPanel }: PanelProps) {
+    const isChanged = useRef<boolean>(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+    // TODO: Replace with user's avatar path.
+    const [avatarUrl, setAvatarUrl] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80");
+
+    const onAvatarChanged = (_file: File, previewUrl: string) => {
+        isChanged.current = true;
+        setAvatarUrl(previewUrl);
+    };
+
+    const uploadAvatar = async () => {
+        if (isUploadingAvatar) {
+            return;
+        }
+
+        if (isChanged.current) {
+            setIsUploadingAvatar(true);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // reset the properties so that going back and front between panels doesn't cause another uploading request.
+            isChanged.current = false;
+            setIsUploadingAvatar(false);
+        }
+
+        setDisplayingPanel(DisplayingPanel.Profile);
+    }
+
     return (
         <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
             <header className="flex-none">
@@ -46,31 +74,24 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
 
             <div className="flex-1 flex justify-center items-center">
                 <SelectableAvatar
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
-                    onAvatarChange={() => console.log("Avatar changed.")}
+                    src={avatarUrl}
+                    onAvatarChange={onAvatarChanged}
                     className="size-64 rounded-full"
                     fallbackText="LMAO"
                 />
-
-                {/*<Avatar.Root className="size-64 align-middle flex flex-row justify-center items-center select-none overflow-hidden rounded-full cursor-pointer hover:bg-black/10" onClick={() => console.log("click")}>*/}
-                {/*    <Avatar.Image*/}
-                {/*        src="https://images.unsplash.com/photo-1511485977113-f34c92461ad9?ixlib=rb-1.2.1&w=128&h=128&dpr=2&q=80"*/}
-                {/*        className="size-full rounded-[inherit] object-cover"*/}
-                {/*        alt="Test Alt"*/}
-                {/*    />*/}
-
-                {/*    <Avatar.Fallback*/}
-                {/*        className="bg-white size-full text-violet-600 flex justify-center items-center text-5xl">*/}
-                {/*        TA*/}
-                {/*    </Avatar.Fallback>*/}
-                {/*</Avatar.Root>*/}
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Profile)}>
-                    Next
+                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={uploadAvatar}>
+                    {
+                        isUploadingAvatar ?
+                            <Spinner className="size-6 fill-white"/> :
+                            <>
+                                Next
 
-                    <BsArrowRight className="ml-2 size-6 fill-white"/>
+                                <BsArrowRight className="ml-2 size-6 fill-white"/>
+                            </>
+                    }
                 </button>
             </footer>
         </section>
