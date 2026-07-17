@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.Security.Claims;
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,9 +81,12 @@ builder.Services
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
-    .AddScoped<IUserService, UserService>();
+    .AddScoped<IUserService, UserService>()
+    .AddSingleton<IMailingService, MailingService>();
 
-builder.Services.AddSingleton<IMailingService, MailingService>();
+// Services related to external services.
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions("MediaAWS"));
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
