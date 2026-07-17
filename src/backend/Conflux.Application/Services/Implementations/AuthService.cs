@@ -73,6 +73,7 @@ internal sealed class AuthService : IAuthService {
             var permissions = await GetAuthorizationPermissions(user);
             
             return Result<LoginResponse>.Success(new(new(
+                user.Id,
                 user.UserName!,
                 user.EmailConfirmed,
                 user.IsProfileSetup,
@@ -163,6 +164,7 @@ internal sealed class AuthService : IAuthService {
         var permissions = await GetAuthorizationPermissions(user);
         
         return Result<RefreshResponse>.Success(new(new(
+            user.Id,
             user.UserName!,
             user.EmailConfirmed,
             user.IsProfileSetup,
@@ -182,6 +184,7 @@ internal sealed class AuthService : IAuthService {
         var permissions = await GetAuthorizationPermissions(user);
         
         return Result<UserAuthorizationInfo?>.Success(new(
+            user.Id,
             user.UserName!, 
             user.EmailConfirmed,
             user.IsProfileSetup,

@@ -11,10 +11,11 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class UserService(
     IAmazonS3 s3Client,
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
+    TimeProvider timeProvider,
     IConfiguration config
 ) : IUserService {
     public async Task<Result<AvatarUploadResponse>> UploadAvatarAsync(Guid userId, Stream avatarStream, string contentType) {
-        if (avatarStream.CanSeek && avatarStream.Position > 0) {
+        if (avatarStream is { CanSeek: true, Position: > 0 }) {
             avatarStream.Position = 0;
         }
         
@@ -29,7 +30,7 @@ internal sealed class UserService(
         int changed = await dbContext.Users
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(setters => {
-                setters.SetProperty(u => u.AvatarKey, uniqueKey);
+                setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
             });
 
         if (changed == 0) {
@@ -105,6 +106,25 @@ internal sealed class UserService(
                 HttpStatusCode.NotFound => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.NotFound", "User has no avatar."),
                 _ => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.StatusCode", $"S3 returned response with status code {e.StatusCode} ({(int)e.StatusCode}).")
             };
+        }
+    }
+
+    public Result<string> GetAvatarUrl(Guid userId, bool useHttps) {
+        var bucketName = config["MediaAWS:BucketName"];
+        var uniqueKey = CreateAvatarUniqueKey(userId);
+
+        try {
+            var request = new GetPreSignedUrlRequest {
+                BucketName = bucketName,
+                Key = uniqueKey,
+                Expires = DateTime.UtcNow.AddHours(1),
+                Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
+            };
+
+            string url = s3Client.GetPreSignedURL(request);
+            return Result<string>.Success(url);
+        } catch (Exception ex) {
+            return Result<string>.Failure("User.GetAvatarUrl", ex.Message);
         }
     }
 

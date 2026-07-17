@@ -4,9 +4,10 @@ import { animate, utils } from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import { userService } from "../../api/userService.ts";
-import type {ApiResponse} from "../../api/apiResponse.ts";
-import type {UploadAvatarResponse} from "../../api/responses.ts";
-import {HttpStatusCode} from "axios";
+import type { ApiResponse } from "../../api/apiResponse.ts";
+import type { UploadAvatarResponse } from "../../api/responses.ts";
+import { HttpStatusCode } from "axios";
+import {useAuthorization} from "../../contexts/AuthContext.tsx";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -44,8 +45,15 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     const isChanged = useRef<boolean>(false);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
+    const auth = useAuthorization();
+
+    const userId: string | undefined = auth.userAuthorization?.id;
+
     // TODO: Replace with user's avatar path.
-    const [avatar, setAvatar] = useState<{ file: File, previewUrl: string }>();
+    const [avatar, setAvatar] = useState<{ file: File | undefined, previewUrl: string | undefined }>({
+        file: undefined,
+        previewUrl: userId == null ? undefined : userService.getAvatarUrl(userId, false),
+    });
 
     const onAvatarChanged = (file: File, previewUrl: string) => {
         isChanged.current = true;

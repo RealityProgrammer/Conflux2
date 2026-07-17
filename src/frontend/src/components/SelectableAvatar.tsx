@@ -1,29 +1,58 @@
 import { Avatar } from "radix-ui";
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 
 interface AvatarInputProps {
-    src?: string;
-    fallbackText?: string;
-    className?: string;
+    src?: string | undefined;
+    fallbackText?: string | undefined;
+    className?: string | undefined;
     onAvatarChange: (file: File, previewUrl: string) => void;
 }
 
 export default function SelectableAvatar({ src, fallbackText, className, onAvatarChange }: AvatarInputProps) {
     const [avatarUrl, setAvatarUrl] = useState(src);
+    const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleAvatarClick = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (event: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
+    // set avatar preview
+    useEffect(() => {
+        if (!localPreviewUrl) {
+            setAvatarUrl(src);
+        }
+    }, [src, localPreviewUrl]);
+
+    // free the old preview url
+    useEffect(() => {
+        return () => {
+            if (localPreviewUrl) {
+                URL.revokeObjectURL(localPreviewUrl);
+            }
+        };
+    }, [localPreviewUrl]);
+
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            const previewUrl = URL.createObjectURL(file);
-            setAvatarUrl(previewUrl);
+            // just in case lmao
+            if (localPreviewUrl) {
+                URL.revokeObjectURL(localPreviewUrl);
+            }
+
+            const newPreviewUrl = URL.createObjectURL(file);
+            setLocalPreviewUrl(newPreviewUrl);
+            setAvatarUrl(newPreviewUrl);
 
             if (onAvatarChange) {
-                onAvatarChange(file, previewUrl);
+                onAvatarChange(file, newPreviewUrl);
+            }
+
+            // no idea if this is needed but make it so that selecting exact same file twice still
+            // triggers the onChange event
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
             }
         }
     };

@@ -1,4 +1,5 @@
 export interface UserAuthorizationInfo {
+    id: string;
     userName: string;
     isVerified: boolean;
     isProfileSetup: boolean;

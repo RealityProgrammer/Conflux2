@@ -44,7 +44,8 @@ public sealed class UserController : ControllerBase {
     }
 
     [HttpGet("avatar")]
-    public async Task<ActionResult> ViewAvatar([FromQuery] string userId) {
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
+    public async Task<ActionResult> GetAvatarUrl([FromQuery] string userId) {
         if (string.IsNullOrEmpty(userId)) {
             return BadRequest("User ID is required.");
         }
@@ -53,22 +54,19 @@ public sealed class UserController : ControllerBase {
             return BadRequest();
         }
 
-        var result = await _userService.OpenAvatarAsync(userIdGuid);
+        var result = _userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
         
         if (result.IsSuccess) {
-            var response = result.Value;
-            
-            Response.RegisterForDispose(response.DisposeObject);
-            
-            return File(response.AvatarStream, response.ContentType);
+            return Redirect(result.Value);
         }
 
         return result.Error.Code switch {
-            "User.OpenAvatar.NotFound" => NotFound(),
-            _ => StatusCode(StatusCodes.Status500InternalServerError),  // TODO: Better error return.
+            "User.OpenAvatar.NotFound" => NotFound(new GetAvatarUrlResponse(null, result.Error.Message)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new GetAvatarUrlResponse(null, result.Error.Message)),
         };
     }
     
     public record UploadAvatarRequest([Required] IFormFile File);
     public record UploadAvatarResponse(string? Url, string? Message);
+    public record GetAvatarUrlResponse(string? Url, string? Message);
 }

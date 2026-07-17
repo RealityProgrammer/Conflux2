@@ -16,7 +16,6 @@ export const userService = {
                         "Content-Type": "multipart/form-data",
                     }
                 });
-
             return {
                 statusCode: response.status,
                 data: response.data,
@@ -25,4 +24,16 @@ export const userService = {
             return handleApiError(err);
         }
     },
+
+    getAvatarUrl: (userId: string, forceRefresh: boolean): string => {
+        const queryParams: URLSearchParams = new URLSearchParams({
+            userId: userId,
+        });
+
+        if (forceRefresh) {
+            queryParams.append("t", new Date().getTime().toString());
+        }
+
+        return `${import.meta.env.VITE_BACKEND_URL}/user/avatar?${queryParams.toString()}`;
+    }
 }

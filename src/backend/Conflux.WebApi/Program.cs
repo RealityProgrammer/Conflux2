@@ -78,6 +78,8 @@ builder.Services.AddCors(options => {
 
 // API related services.
 builder.Services
+    .AddSingleton(TimeProvider.System)
+        
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
@@ -85,8 +87,7 @@ builder.Services
     .AddSingleton<IMailingService, MailingService>();
 
 // Services related to external services.
-builder.Services.AddAWSService<IAmazonS3>();
-builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions("MediaAWS"));
+builder.Services.AddAWSService<IAmazonS3>(builder.Configuration.GetAWSOptions("MediaAWS"));
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
