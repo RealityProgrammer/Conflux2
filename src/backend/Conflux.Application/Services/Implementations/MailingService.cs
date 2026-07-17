@@ -33,6 +33,8 @@ internal sealed class MailingService(
             return Result.Failure("Mail.MissingConfig", "Missing Mail:Password configuration option.");
         }
         
+        // TODO: Move the task to background service.
+        
         var email = new MimeMessage();
         email.From.Add(new MailboxAddress(senderName, senderEmail));
         email.To.Add(MailboxAddress.Parse(receiverEmail));
@@ -68,9 +70,6 @@ internal sealed class MailingService(
                     """,
         };
 
-        // we could delegate this to the background thread but we want to display the error text at frontend so
-        // have to use synchronous for simplicity.
-        
         using var smtp = new SmtpClient();
 
         try {
