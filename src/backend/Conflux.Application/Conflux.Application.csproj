@@ -21,5 +21,9 @@
     <ItemGroup>
         <Using Include="System.Text"/>
     </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Repositories\" />
+    </ItemGroup>
 
 </Project>
