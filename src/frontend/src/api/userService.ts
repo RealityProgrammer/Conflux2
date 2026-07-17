@@ -11,7 +11,7 @@ export const userService = {
             formData.set("File", file);
 
             const response: AxiosResponse<UploadAvatarResponse> =
-                await apiClient.post("/user/upload-avatar", formData, {
+                await apiClient.post("/user/avatar", formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
                     }
@@ -24,5 +24,5 @@ export const userService = {
         } catch (err) {
             return handleApiError(err);
         }
-    }
+    },
 }

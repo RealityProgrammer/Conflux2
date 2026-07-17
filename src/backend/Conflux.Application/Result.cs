@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Conflux.Application;
 
 public readonly record struct Result {
