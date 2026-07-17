@@ -27,7 +27,7 @@ public sealed class UserController : ControllerBase {
         
         // TODO: Validate file mime-type (via actual content instead of file name extension).
 
-        using var fileStream = request.File.OpenReadStream();
+        await using var fileStream = request.File.OpenReadStream();
         
         var result = await _userService.UploadAvatarAsync(userId, fileStream);
 
