@@ -1,6 +1,4 @@
-export interface ApiResponse<T = any> {
+export type ApiResponse<T = void> = {
     statusCode: number;
-    errorCode?: string | null;
     message?: string | null;
-    data?: T | null;
-}
+} & (T extends void ? {} : { data?: T | null });

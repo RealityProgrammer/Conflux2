@@ -1,14 +1,14 @@
 import { Avatar } from "radix-ui";
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
+import {BsPerson} from "react-icons/bs";
 
 interface AvatarInputProps {
     src?: string | undefined;
-    fallbackText?: string | undefined;
     className?: string | undefined;
     onAvatarChange: (file: File, previewUrl: string) => void;
 }
 
-export default function SelectableAvatar({ src, fallbackText, className, onAvatarChange }: AvatarInputProps) {
+export default function SelectableAvatar({ src, className, onAvatarChange }: AvatarInputProps) {
     const [avatarUrl, setAvatarUrl] = useState(src);
     const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -19,9 +19,14 @@ export default function SelectableAvatar({ src, fallbackText, className, onAvata
 
     // set avatar preview
     useEffect(() => {
-        if (!localPreviewUrl) {
-            setAvatarUrl(src);
+        if (src === localPreviewUrl) return;
+
+        if (localPreviewUrl) {
+            URL.revokeObjectURL(localPreviewUrl);
+            setLocalPreviewUrl(null);
         }
+
+        setAvatarUrl(src);
     }, [src, localPreviewUrl]);
 
     // free the old preview url
@@ -79,7 +84,7 @@ export default function SelectableAvatar({ src, fallbackText, className, onAvata
                     className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-700 text-2xl font-medium rounded-[inherit]"
                     delayMs={600}
                 >
-                    {fallbackText}
+                    <BsPerson className="fill-black size-5/6"/>
                 </Avatar.Fallback>
             </Avatar.Root>
 

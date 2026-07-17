@@ -2,7 +2,6 @@ import apiClient from "./client.ts";
 import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./requests.ts";
 import type {
     LoginResponse,
-    RegisterResponse,
     RefreshResponse,
     UserAuthorizationInfo
 } from "./responses.ts";
@@ -36,15 +35,13 @@ export const authService = {
         }
     },
 
-    register: async (request: RegisterRequest): Promise<ApiResponse<RegisterResponse>> => {
+    register: async (request: RegisterRequest): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse<RegisterResponse> = await apiClient.post("/auth/register", request);
+            const response: AxiosResponse = await apiClient.post("/auth/register", request);
 
             return {
                 statusCode: response.status,
                 message: response.data.message,
-                errorCode: response.data.code,
-                data: null,
             }
         } catch (error) {
             return handleApiError(error);
@@ -110,7 +107,7 @@ export const authService = {
         return activeRefreshPromise;
     },
 
-    logout: async (): Promise<ApiResponse<null>> => {
+    logout: async (): Promise<ApiResponse<void>> => {
         const response: AxiosResponse = await apiClient.post('/auth/logout');
         cachedAuthorization = null;
         localStorage.removeItem("hasSession");

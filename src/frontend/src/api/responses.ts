@@ -12,11 +12,6 @@ export interface LoginResponse {
     authorization: UserAuthorizationInfo;
 }
 
-export interface RegisterResponse {
-    code: string;
-    message: string;
-}
-
 export interface RefreshResponse {
     accessToken: string;
     authorization: UserAuthorizationInfo;

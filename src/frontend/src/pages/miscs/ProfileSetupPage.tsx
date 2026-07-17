@@ -1,4 +1,4 @@
-import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
+import { BsArrowLeft, BsArrowRepeat, BsArrowRight, BsX } from "react-icons/bs";
 import { useState, useRef, useEffect } from "react";
 import { animate, utils } from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
@@ -7,7 +7,7 @@ import { userService } from "../../api/userService.ts";
 import type { ApiResponse } from "../../api/apiResponse.ts";
 import type { UploadAvatarResponse } from "../../api/responses.ts";
 import { HttpStatusCode } from "axios";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import { useAuthorization } from "../../contexts/AuthContext.tsx";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -41,46 +41,85 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
     );
 }
 
+class SetAvatar {
+    readonly type = "set";
+    constructor(public file: File, public previewUrl: string) {}
+};
+
+class DeleteAvatar {
+    readonly type = "delete";
+};
+
+class NoAvatarModification {
+    readonly type = "noMod";
+};
+
+type AvatarOperation = SetAvatar | DeleteAvatar | NoAvatarModification;
+
 function AvatarPanel({ setDisplayingPanel }: PanelProps) {
-    const isChanged = useRef<boolean>(false);
-    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isApplying, setIsApplying] = useState(false);
+    const [avatarOperation, setAvatarOperation] = useState<AvatarOperation>(new NoAvatarModification());
 
     const auth = useAuthorization();
+    const userOriginalAvatarUrl = useRef<string>(
+        auth.userAuthorization?.id == null ?
+            null :
+            userService.getAvatarUrl(auth.userAuthorization.id, false)
+    );
 
-    const userId: string | undefined = auth.userAuthorization?.id;
-
-    // TODO: Replace with user's avatar path.
-    const [avatar, setAvatar] = useState<{ file: File | undefined, previewUrl: string | undefined }>({
-        file: undefined,
-        previewUrl: userId == null ? undefined : userService.getAvatarUrl(userId, false),
-    });
-
-    const onAvatarChanged = (file: File, previewUrl: string) => {
-        isChanged.current = true;
-        setAvatar({ file, previewUrl });
-    };
-
-    const uploadAvatar = async () => {
-        if (isUploadingAvatar) {
-            return;
-        }
-
-        if (isChanged.current && avatar && avatar.file) {
-            setIsUploadingAvatar(true);
-
-            const response: ApiResponse<UploadAvatarResponse> = await userService.uploadAvatar(avatar.file);
-
-            if (response.statusCode === HttpStatusCode.Ok) {
-                // reset the properties so that going back and front between panels doesn't cause another uploading request.
+    const applyAvatar = async () => {
+        switch (avatarOperation.type) {
+            case "noMod":
                 setDisplayingPanel(DisplayingPanel.Profile);
-            } else {
-                // TODO: Report something goes wrong.
+                break;
+
+            case "delete": {
+                setIsApplying(true);
+
+                const response: ApiResponse = await userService.deleteAvatar();
+
+                if (response.statusCode === HttpStatusCode.Ok || response.statusCode === HttpStatusCode.NoContent) {
+                    setDisplayingPanel(DisplayingPanel.Profile);
+                } else {
+                    // TODO: Report something goes wrong.
+                }
+
+                setDisplayingPanel(DisplayingPanel.Profile);
+
+                setAvatarOperation(new NoAvatarModification());
+                setIsApplying(false);
+                break;
             }
 
-            isChanged.current = false;
-            setIsUploadingAvatar(false);
+            case "set": {
+                setIsApplying(true);
+
+                const response: ApiResponse<UploadAvatarResponse> = await userService.uploadAvatar(avatarOperation.file);
+
+                if (response.statusCode === HttpStatusCode.Ok) {
+                    setDisplayingPanel(DisplayingPanel.Profile);
+                } else {
+                    // TODO: Report something goes wrong.
+                }
+
+                setAvatarOperation(new NoAvatarModification());
+                setIsApplying(false);
+                break;
+            }
         }
     }
+
+    const onAvatarChanged = (file: File, previewUrl: string) => {
+        setAvatarOperation(new SetAvatar(file, previewUrl));
+    };
+
+    const onAvatarDelete = () => {
+        setAvatarOperation(new DeleteAvatar());
+    };
+
+    const onAvatarRevert = () => {
+        setAvatarOperation(new NoAvatarModification());
+    };
 
     return (
         <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
@@ -89,19 +128,28 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
                 <p className="text-center text-gray-400 text-sm mt-2">Make yourself look special</p>
             </header>
 
-            <div className="flex-1 flex justify-center items-center">
+            <div className="flex-1 flex flex-row flex-nowrap justify-center items-start gap-2">
                 <SelectableAvatar
-                    src={avatar?.previewUrl}
+                    src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl.current ?? undefined}
                     onAvatarChange={onAvatarChanged}
-                    className="size-64 rounded-full"
-                    fallbackText="???"
+                    className="size-64 rounded-full flex-none"
                 />
+
+                <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">
+                    <button className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete"}>
+                        <BsX className="fill-white size-6"/>
+                    </button>
+
+                    <button className="button-primary p-1.5! flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
+                        <BsArrowRepeat className="fill-white size-6"/>
+                    </button>
+                </div>
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={uploadAvatar}>
+                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={applyAvatar}>
                     {
-                        isUploadingAvatar ?
+                        isApplying ?
                             <Spinner className="size-6 fill-white"/> :
                             <>
                                 Next

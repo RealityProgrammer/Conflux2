@@ -65,6 +65,28 @@ public sealed class UserController : ControllerBase {
             _ => StatusCode(StatusCodes.Status500InternalServerError, new GetAvatarUrlResponse(null, result.Error.Message)),
         };
     }
+
+    [HttpDelete("avatar")]
+    [Authorize]
+    public async Task<ActionResult> DeleteAvatar() {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim)) {
+            return BadRequest("User ID is required.");
+        }
+
+        if (!Guid.TryParse(idClaim, out var userIdGuid)) {
+            return BadRequest();
+        }
+        
+        var result = await _userService.DeleteAvatarAsync(userIdGuid);
+        
+        if (result.IsSuccess || result.Error.Code == "User.DeleteAvatar.NotFound") {
+            return NoContent();
+        }
+
+        return StatusCode(StatusCodes.Status500InternalServerError, new GetAvatarUrlResponse(null, result.Error.Message));
+    }
     
     public record UploadAvatarRequest([Required] IFormFile File);
     public record UploadAvatarResponse(string? Url, string? Message);

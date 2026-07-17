@@ -35,5 +35,17 @@ export const userService = {
         }
 
         return `${import.meta.env.VITE_BACKEND_URL}/user/avatar?${queryParams.toString()}`;
-    }
+    },
+
+    deleteAvatar: async (): Promise<ApiResponse> => {
+        try {
+            const response: AxiosResponse<UploadAvatarResponse> = await apiClient.delete("/user/avatar");
+
+            return {
+                statusCode: response.status,
+            }
+        } catch (err) {
+            return handleApiError(err);
+        }
+    },
 }

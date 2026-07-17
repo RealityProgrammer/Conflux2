@@ -84,7 +84,7 @@ internal sealed class UserService(
                 
                 return Result<AvatarUploadResponse>.Failure(
                     "User.UploadAvatar.StatusCode",
-                    $"S3 response with status code {response.HttpStatusCode} ({(int)response.HttpStatusCode})."
+                    GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode)
                 );
         }
     }
@@ -104,7 +104,7 @@ internal sealed class UserService(
         } catch (AmazonS3Exception e) {
             return e.StatusCode switch {
                 HttpStatusCode.NotFound => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.NotFound", "User has no avatar."),
-                _ => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.StatusCode", $"S3 returned response with status code {e.StatusCode} ({(int)e.StatusCode}).")
+                _ => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.StatusCode", GetUnhandledS3ResponseStatusCodeMessage(e.StatusCode)),
             };
         }
     }
@@ -128,7 +128,52 @@ internal sealed class UserService(
         }
     }
 
+    public async Task<Result> DeleteAvatarAsync(Guid userId) {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        // begin writing transaction, if s3 upload fail, rollback.
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+        int changed = await dbContext.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(setters => {
+                setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
+            });
+
+        if (changed == 0) {
+            return Result.Failure("User.NoId", "No user with the provided ID.");
+        }
+        
+        var bucketName = config["MediaAWS:BucketName"];
+        var uniqueKey = CreateAvatarUniqueKey(userId);
+        
+        try {
+            var response = await s3Client.DeleteObjectAsync(bucketName, uniqueKey);
+
+            switch (response.HttpStatusCode) {
+                case HttpStatusCode.OK or HttpStatusCode.NoContent:
+                    await transaction.CommitAsync();
+                    return Result.Success();
+                
+                case HttpStatusCode.NotFound:
+                    await transaction.RollbackAsync();
+                    return Result.Failure("User.DeleteAvatar.NotFound", "User has no avatar.");
+                
+                default:
+                    await transaction.RollbackAsync();
+                    return Result.Failure("User.DeleteAvatar", GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode));
+            }
+        } catch (Exception ex) {
+            await transaction.RollbackAsync();
+            return Result.Failure("User.DeleteAvatar", ex.Message);
+        }
+    }
+
     private static string CreateAvatarUniqueKey(Guid userId) {
         return $"avatars/users/{userId}";
+    }
+
+    private static string GetUnhandledS3ResponseStatusCodeMessage(HttpStatusCode code) {
+        return $"S3 response with status code {code} ({(int)code}).";
     }
 }
