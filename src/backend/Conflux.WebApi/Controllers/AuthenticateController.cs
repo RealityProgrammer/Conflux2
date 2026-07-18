@@ -177,6 +177,7 @@ public sealed class AuthenticateController : ControllerBase {
     }
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
+    [Authorize]
     public async Task<ActionResult> SendVerifyEmail() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         

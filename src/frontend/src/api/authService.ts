@@ -107,7 +107,7 @@ export const authService = {
         return activeRefreshPromise;
     },
 
-    logout: async (): Promise<ApiResponse<void>> => {
+    logout: async (): Promise<ApiResponse> => {
         const response: AxiosResponse = await apiClient.post('/auth/logout');
         cachedAuthorization = null;
         localStorage.removeItem("hasSession");
@@ -173,9 +173,9 @@ export const authService = {
         }
     },
 
-    sendVerifyEmail: async (): Promise<ApiResponse<void>> => {
+    sendVerifyEmail: async (): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse<ApiResponse<void>> = await apiClient.post("/auth/send-verify-email");
+            const response: AxiosResponse<ApiResponse> = await apiClient.post("/auth/send-verify-email");
 
             return {
                 statusCode: response.status,
@@ -185,9 +185,9 @@ export const authService = {
         }
     },
 
-    confirmEmail: async (request: EmailConfirmationRequest): Promise<ApiResponse<void>> => {
+    confirmEmail: async (request: EmailConfirmationRequest): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse<ApiResponse<void>> = await apiClient.post("/auth/confirm-email", request);
+            const response: AxiosResponse<ApiResponse> = await apiClient.post("/auth/confirm-email", request);
 
             if (response.status === HttpStatusCode.Ok) {
                 // refresh the authorization information.

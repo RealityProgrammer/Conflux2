@@ -1,6 +1,7 @@
-import axios, {HttpStatusCode} from 'axios';
+import axios, {type AxiosResponse, HttpStatusCode} from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
+import type {RefreshResponse} from "./responses.ts";
 
 axios.defaults.withCredentials = true;
 
@@ -11,21 +12,6 @@ const apiClient = axios.create({
     },
     withCredentials: true,
 });
-
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: () => void; reject: (error: any) => void }> = [];
-
-function processQueue(error: any) {
-    failedQueue.forEach((promise) => {
-        if (error) {
-            promise.reject(error);
-        } else {
-            promise.resolve();
-        }
-    });
-
-    failedQueue = [];
-};
 
 // request interceptors
 apiClient.interceptors.request.use((config) => {
@@ -40,48 +26,58 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // response interceptors
-apiClient.interceptors.response.use(
-    (response) => response,
-    async (error: AxiosError) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & { __retry: boolean };
-
-        const isAuthRequest: boolean =
-            originalRequest.url!.includes('/auth/login') ||
-            originalRequest.url!.includes('/auth/register') ||
-            originalRequest.url!.includes('/auth/refresh');
-
-        if (error.response?.status === HttpStatusCode.Unauthorized && originalRequest && !originalRequest.__retry && !isAuthRequest) {
-            if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    // @ts-ignore
-                    failedQueue.push({ resolve, reject });
-                }).then(() => {
-                    return apiClient(originalRequest);
-                })
-                .catch((err) => Promise.reject(err));
+function registerAuthenticateExpirationInterception() {
+    const interceptor = apiClient.interceptors.response.use(
+        (response) => response,
+        async (error: AxiosError) => {
+            // if error happen, check if it is caused by unauthorized error, if not, reject
+            if (error.response?.status === HttpStatusCode.Unauthorized) {
+                return Promise.reject(error);
             }
 
-            originalRequest.__retry = true;
-            isRefreshing = true;
+            // well, unauthorized, try to invoke refresh and try request again.
+            const originalRequestConfig = error.config as InternalAxiosRequestConfig & { __retry: boolean };
+
+            // reject some endpoint
+            if (originalRequestConfig.url!.includes('/auth/login') ||
+                originalRequestConfig.url!.includes('/auth/register') ||
+                originalRequestConfig.url!.includes('/auth/refresh')
+            ) {
+                return Promise.reject(error);
+            }
+
+            // welp we retried this, fail again, bail out
+            if (originalRequestConfig.__retry) {
+                return Promise.reject(error);
+            }
+
+            originalRequestConfig.__retry = true;
+
+            // make it not loop according to this:
+            // https://stackoverflow.com/questions/51646853/automating-access-token-refreshing-via-interceptors-in-axios
+            axios.interceptors.response.eject(interceptor);
 
             try {
-                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
-                    withCredentials: true
-                });
+                const response: AxiosResponse<RefreshResponse> =
+                    await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
+                        withCredentials: true
+                    });
 
-                processQueue(null);
-                return apiClient(originalRequest);
-            } catch (refreshError) {
-                processQueue(refreshError);
+                // if success, update the header and retry the request.
+                if (response.status === HttpStatusCode.Ok) {
+                    originalRequestConfig.headers['Authorization'] = `Bearer ${response.data.accessToken}`;
+                }
 
-                return Promise.reject(refreshError);
+                return apiClient(originalRequestConfig);
+            } catch (error) {
+                return Promise.reject(error);
             } finally {
-                isRefreshing = false;
+                registerAuthenticateExpirationInterception();
             }
         }
+    );
+}
 
-        return Promise.reject(error);
-    }
-);
+registerAuthenticateExpirationInterception();
 
 export default apiClient;
