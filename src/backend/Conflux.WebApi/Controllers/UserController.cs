@@ -1,3 +1,5 @@
+using Conflux.Application;
+using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -87,8 +89,33 @@ public sealed class UserController : ControllerBase {
 
         return StatusCode(StatusCodes.Status500InternalServerError, new GetAvatarUrlResponse(null, result.Error.Message));
     }
+
+    [HttpGet("profile")]
+    public async Task<ActionResult> GetSessionUserBasicProfile() {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim)) {
+            return BadRequest(new GetSessionUserBasicProfileResponse(null, "User ID is required."));
+        }
+        
+        if (!Guid.TryParse(idClaim, out var userIdGuid)) {
+            return BadRequest();
+        }
+        
+        Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(userIdGuid);
+
+        if (result.IsSuccess) {
+            return Ok(new GetSessionUserBasicProfileResponse(result.Value, null));
+        }
+
+        return result.Error.Code switch {
+            "User.Profile.NoId" => NotFound(new GetSessionUserBasicProfileResponse(null, result.Error.Message)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new GetSessionUserBasicProfileResponse(null, result.Error.Message))
+        };
+    }
     
     public record UploadAvatarRequest([Required] IFormFile File);
     public record UploadAvatarResponse(string? Url, string? Message);
     public record GetAvatarUrlResponse(string? Url, string? Message);
+    public record GetSessionUserBasicProfileResponse(UserBasicProfileResponse? Profile, string? Message);
 }

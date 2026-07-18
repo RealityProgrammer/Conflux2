@@ -23,17 +23,23 @@ internal sealed class AuthService : IAuthService {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IMailingService _mailingService;
     private readonly IConfiguration _config;
-
+    private readonly TimeProvider _timeProvider;
+    private readonly ILogger<AuthService> _logger;
+    
     private readonly AuthServiceOptions _options;
 
     public AuthService(
         UserManager<ApplicationUser> userManager, 
-        IMailingService mailingService, 
+        IMailingService mailingService,
+        TimeProvider timeProvider,
         IConfiguration config,
+        ILogger<AuthService> logger,
         IOptions<AuthServiceOptions> options
     ) {
         _userManager = userManager;
         _mailingService = mailingService;
+        _timeProvider = timeProvider;
+        _logger = logger;
         _config = config;
 
         _options = options.Value;
@@ -43,12 +49,15 @@ internal sealed class AuthService : IAuthService {
         var userExists = await _userManager.FindByEmailAsync(email);
         
         if (userExists != null) {
-            return Result.Failure("Auth.OccupiedIdentity", "User email is already in used.");
+            return Result.Failure("Auth.OccupiedEmail", "User email is already in used.");
         }
 
+        var generatedUserName = $"User-{Guid.NewGuid():N}";
+
         ApplicationUser user = new ApplicationUser {
-            UserName = email,
             Email = email,
+            UserName = generatedUserName,
+            DisplayName = generatedUserName,
         };
         
         var result = await _userManager.CreateAsync(user, password);
@@ -68,13 +77,18 @@ internal sealed class AuthService : IAuthService {
             IList<string> roles = await _userManager.GetRolesAsync(user);
             var token = await GenerateJwtToken(user, roles);
             
-            await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
+            var identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
+
+            if (!identityResult.Succeeded) {
+                _logger.LogError("SetAuthenticationTokenAsync error: {c} - {d}", identityResult.Errors.First().Code, identityResult.Errors.First().Description);
+            }
             
             var permissions = await GetAuthorizationPermissions(user);
             
+            _logger.LogInformation("Login refresh token: {t}", token.RefreshToken);
+            
             return Result<LoginResponse>.Success(new(new(
                 user.Id,
-                user.UserName!,
                 user.EmailConfirmed,
                 user.IsProfileSetup,
                 roles.AsReadOnly(),
@@ -106,14 +120,13 @@ internal sealed class AuthService : IAuthService {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Secret"]!));
         var credential = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        DateTime accessTokenExpire = DateTime.Now.AddSeconds(_options.AccessTokenDuration);
+        DateTimeOffset accessTokenExpire = _timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration);
 
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            notBefore: null,
-            expires: accessTokenExpire,
+            expires: accessTokenExpire.UtcDateTime,
             signingCredentials: credential
         );
 
@@ -121,7 +134,7 @@ internal sealed class AuthService : IAuthService {
         long accessTokenExpireTick = accessTokenExpire.Ticks;
         string refreshToken = GenerateRefreshToken();
         long refreshTokenExpireTick = DateTime.UtcNow.AddSeconds(_options.RefreshTokenDuration).Ticks;
-
+        
         return new(accessToken, accessTokenExpireTick, refreshToken, refreshTokenExpireTick);
     }
     
@@ -149,6 +162,8 @@ internal sealed class AuthService : IAuthService {
         if (firstColon == -1 || !long.TryParse(storedData.AsSpan()[(firstColon + 1)..], out var expireTick) || DateTime.UtcNow.Ticks > expireTick) {
             return Result<RefreshResponse>.Failure(new("Auth.NoRefreshToken", "User has no valid refresh token."));
         }
+        
+        _logger.LogInformation("validate refresh tokens: {t1}, {t2}.", storedData.AsSpan()[..firstColon].ToString(), refreshToken);
 
         // compare the tokens.
         if (!storedData.AsSpan()[..firstColon].SequenceEqual(refreshToken)) {
@@ -165,7 +180,6 @@ internal sealed class AuthService : IAuthService {
         
         return Result<RefreshResponse>.Success(new(new(
             user.Id,
-            user.UserName!,
             user.EmailConfirmed,
             user.IsProfileSetup,
             roles.AsReadOnly(),
@@ -185,7 +199,6 @@ internal sealed class AuthService : IAuthService {
         
         return Result<UserAuthorizationInfo?>.Success(new(
             user.Id,
-            user.UserName!, 
             user.EmailConfirmed,
             user.IsProfileSetup,
             userRoles.AsReadOnly(), 

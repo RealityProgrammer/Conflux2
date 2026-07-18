@@ -8,4 +8,6 @@ public interface IUserService {
     Task<Result> DeleteAvatarAsync(Guid userId);
 
     Result<string> GetAvatarUrl(Guid userId, bool useHttps);
+    
+    Task<Result<UserBasicProfileResponse>> GetUserBasicProfileAsync(Guid userId);
 }

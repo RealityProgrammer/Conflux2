@@ -31,6 +31,7 @@ internal sealed class UserService(
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(setters => {
                 setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
+                setters.SetProperty(u => u.HasAvatar, true);
             });
 
         if (changed == 0) {
@@ -117,7 +118,7 @@ internal sealed class UserService(
             var request = new GetPreSignedUrlRequest {
                 BucketName = bucketName,
                 Key = uniqueKey,
-                Expires = DateTime.UtcNow.AddHours(1),
+                Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
                 Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
             };
 
@@ -131,13 +132,14 @@ internal sealed class UserService(
     public async Task<Result> DeleteAvatarAsync(Guid userId) {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
-        // begin writing transaction, if s3 upload fail, rollback.
+        // begin writing transaction, if s3 delete fail, rollback.
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
         int changed = await dbContext.Users
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(setters => {
                 setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
+                setters.SetProperty(u => u.HasAvatar, false);
             });
 
         if (changed == 0) {
@@ -167,6 +169,19 @@ internal sealed class UserService(
             await transaction.RollbackAsync();
             return Result.Failure("User.DeleteAvatar", ex.Message);
         }
+    }
+
+    public async Task<Result<UserBasicProfileResponse>> GetUserBasicProfileAsync(Guid userId) {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        UserBasicProfileResponse? result = await dbContext.Users
+            .Where(u => u.Id == userId)
+            .Select(u => new UserBasicProfileResponse(u.UserName!, u.DisplayName!, u.HasAvatar))
+            .FirstOrDefaultAsync();
+
+        return result == null ? 
+            Result<UserBasicProfileResponse>.Failure("User.Profile.NoId", "No user with the provided ID.") : 
+            Result<UserBasicProfileResponse>.Success(result);
     }
 
     private static string CreateAvatarUniqueKey(Guid userId) {

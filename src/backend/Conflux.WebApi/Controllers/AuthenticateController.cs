@@ -14,14 +14,17 @@ namespace Conflux.WebApi.Controllers;
 public sealed class AuthenticateController : ControllerBase {
     private readonly IAuthService _authService;
     private readonly AuthServiceOptions _options;
+    private TimeProvider _timeProvider;
     private readonly ILogger<AuthenticateController> _logger;
     
     public AuthenticateController(
         IAuthService authService, 
+        TimeProvider timeProvider,
         IOptions<AuthServiceOptions> options,
         ILogger<AuthenticateController> logger
     ) {
         _authService = authService;
+        _timeProvider = timeProvider;
         _options = options.Value;
         _logger = logger;
     }
@@ -66,7 +69,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = DateTime.UtcNow.AddSeconds(_options.AccessTokenDuration),
+            Expires = _timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration),
         };
 
         // Attach the cookie to the response
@@ -80,7 +83,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = DateTime.UtcNow.AddSeconds(_options.RefreshTokenDuration),
+            Expires = _timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration),
         };
     
         Response.Cookies.Append("X-Refresh-Token", payload, cookieOptions);
@@ -89,6 +92,10 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("register", Name = "Register")]
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult> Register([FromBody] RegisterRequest request) {
+        if (request.Password != request.ConfirmPassword) {
+            return BadRequest(new RegisterResponse("Auth.MismatchPassword", "Passwords must be match."));
+        }
+        
         var response = await _authService.RegisterAsync(request.Email, request.Password);
     
         if (response.IsSuccess) {
@@ -154,13 +161,13 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpGet("authorization-info")]
     [Authorize]
     public async Task<ActionResult<UserAuthorizationInfo>> GetUserInfo() {
-        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(userId)) {
+        if (string.IsNullOrEmpty(idClaim)) {
             return Unauthorized();
         }
         
-        var info = await _authService.GetAuthorizationInfoAsync(userId);
+        var info = await _authService.GetAuthorizationInfoAsync(idClaim);
 
         if (!info.IsSuccess) {
             return Unauthorized();
@@ -171,13 +178,13 @@ public sealed class AuthenticateController : ControllerBase {
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
     public async Task<ActionResult> SendVerifyEmail() {
-        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(userId)) {
+        if (string.IsNullOrEmpty(idClaim)) {
             return Unauthorized();
         }
 
-        var result = await _authService.SendVerificationEmailAsync(userId);
+        var result = await _authService.SendVerificationEmailAsync(idClaim);
 
         if (result.IsSuccess) {
             return Ok();
@@ -240,10 +247,7 @@ public sealed class AuthenticateController : ControllerBase {
     public record RegisterRequest(
         [Required, EmailAddress] string Email, 
         [Required, DataType(DataType.Password)] string Password,
-        
-        [Required, DataType(DataType.Password)]
-        [property: Compare("Password", ErrorMessage = "Passwords do not match.")]
-        string ConfirmPassword
+        [Required, DataType(DataType.Password)] string ConfirmPassword
     );
     
     public record RegisterResponse(
