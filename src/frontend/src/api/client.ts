@@ -1,7 +1,6 @@
-import axios, {type AxiosResponse, HttpStatusCode} from 'axios';
+import axios, { HttpStatusCode } from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
-import type {RefreshResponse} from "./responses.ts";
 
 axios.defaults.withCredentials = true;
 
@@ -58,15 +57,9 @@ function registerAuthenticateExpirationInterception() {
             axios.interceptors.response.eject(interceptor);
 
             try {
-                const response: AxiosResponse<RefreshResponse> =
-                    await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
-                        withCredentials: true
-                    });
-
-                // if success, update the header and retry the request.
-                // if (response.status === HttpStatusCode.Ok) {
-                //     originalRequestConfig.headers['Authorization'] = `Bearer ${response.data.accessToken}`;
-                // }
+                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
+                    withCredentials: true
+                });
 
                 return apiClient(originalRequestConfig);
             } catch (error) {
