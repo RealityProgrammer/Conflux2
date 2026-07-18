@@ -61,11 +61,11 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     const [avatarOperation, setAvatarOperation] = useState<AvatarOperation>(new NoAvatarModification());
 
     const auth = useAuthorization();
-    const userOriginalAvatarUrl = useRef<string>(
-        auth.userAuthorization?.id == null ?
-            null :
-            userService.getAvatarUrl(auth.userAuthorization.id, false)
-    );
+    const hasAvatar = auth.userProfile?.hasAvatar ?? false;
+
+    const userOriginalAvatarUrl = auth.userAuthorization?.id == null || !hasAvatar ?
+        null :
+        userService.getAvatarUrl(auth.userAuthorization.id, false)
 
     const applyAvatar = async () => {
         switch (avatarOperation.type) {
@@ -79,6 +79,10 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
                 const response: ApiResponse = await userService.deleteAvatar();
 
                 if (response.statusCode === HttpStatusCode.Ok || response.statusCode === HttpStatusCode.NoContent) {
+                    auth.updateUserProfile({
+                        hasAvatar: false,
+                    });
+
                     setDisplayingPanel(DisplayingPanel.Profile);
                 } else {
                     // TODO: Report something goes wrong.
@@ -97,6 +101,10 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
                 const response: ApiResponse<UploadAvatarResponse> = await userService.uploadAvatar(avatarOperation.file);
 
                 if (response.statusCode === HttpStatusCode.Ok) {
+                    auth.updateUserProfile({
+                        hasAvatar: true,
+                    });
+
                     setDisplayingPanel(DisplayingPanel.Profile);
                 } else {
                     // TODO: Report something goes wrong.
@@ -130,13 +138,13 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
 
             <div className="flex-1 flex flex-row flex-nowrap justify-center items-start gap-2">
                 <SelectableAvatar
-                    src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl.current ?? undefined}
+                    src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl ?? undefined}
                     onAvatarChange={onAvatarChanged}
                     className="size-64 rounded-full flex-none"
                 />
 
                 <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">
-                    <button className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete"}>
+                    <button className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete" || (!hasAvatar && avatarOperation.type == "noMod")}>
                         <BsX className="fill-white size-6"/>
                     </button>
 

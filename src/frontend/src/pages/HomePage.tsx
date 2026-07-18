@@ -173,7 +173,7 @@ export default function HomePage() {
                 <section className="flex-1 flex flex-row justify-end">
                     { auth.userAuthorization ?
                         <AuthenticatedNavigationDrawer
-                            userName={auth.userAuthorization.userName}
+                            userName={auth.userProfile?.userName ?? "Unknown User"}
                             logout={auth.logout}
                         />
                         :

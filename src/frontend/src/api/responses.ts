@@ -1,10 +1,15 @@
 export interface UserAuthorizationInfo {
     id: string;
-    userName: string;
     isVerified: boolean;
     isProfileSetup: boolean;
     roles: string[];
     permissions: string[];
+}
+
+export interface UserBasicProfileInfo {
+    userName: string;
+    displayName: string;
+    hasAvatar: boolean;
 }
 
 export interface LoginResponse {
