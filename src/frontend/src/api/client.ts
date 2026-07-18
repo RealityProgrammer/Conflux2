@@ -31,7 +31,7 @@ function registerAuthenticateExpirationInterception() {
         (response) => response,
         async (error: AxiosError) => {
             // if error happen, check if it is caused by unauthorized error, if not, reject
-            if (error.response?.status === HttpStatusCode.Unauthorized) {
+            if (error.response?.status !== HttpStatusCode.Unauthorized) {
                 return Promise.reject(error);
             }
 
@@ -64,9 +64,9 @@ function registerAuthenticateExpirationInterception() {
                     });
 
                 // if success, update the header and retry the request.
-                if (response.status === HttpStatusCode.Ok) {
-                    originalRequestConfig.headers['Authorization'] = `Bearer ${response.data.accessToken}`;
-                }
+                // if (response.status === HttpStatusCode.Ok) {
+                //     originalRequestConfig.headers['Authorization'] = `Bearer ${response.data.accessToken}`;
+                // }
 
                 return apiClient(originalRequestConfig);
             } catch (error) {
