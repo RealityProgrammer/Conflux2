@@ -42,17 +42,17 @@ public sealed class AuthenticateController : ControllerBase {
 
     [HttpPost("login", Name = "Login")]
     [IgnoreAntiforgeryToken]
-    public async Task<ActionResult> Login([FromBody] LoginRequest request) {
+    public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest request) {
         var loginResult = await _authService.LoginAsync(request.Email, request.Password);
     
         if (!loginResult.IsSuccess) {
             switch (loginResult.Error.Code) {
                 case "Auth.InvalidCredentials":
-                    return BadRequest();
+                    return BadRequest(new ApiResponse<LoginResponse>(null, "Invalid credentials."));
                 
                 default:
                     // Unknown error code so we just gonna return random shit.
-                    return BadRequest();
+                    return BadRequest(new ApiResponse<LoginResponse>(null, "Unexpected server error happened."));
             }            
         }
 
@@ -61,7 +61,10 @@ public sealed class AuthenticateController : ControllerBase {
         SetAccessTokenCookie(response.AccessToken);
         SetRefreshTokenCookie(request.Email, response.RefreshToken);
     
-        return Ok(new LoginResponse(response.AuthorizationInfo, response.TokenType, response.AccessToken));
+        return Ok(new ApiResponse<LoginResponse>(
+            new(response.AuthorizationInfo, response.TokenType, response.AccessToken),
+            null
+        ));
     }
 
     private void SetAccessTokenCookie(string accessToken) {
@@ -91,9 +94,9 @@ public sealed class AuthenticateController : ControllerBase {
     
     [HttpPost("register", Name = "Register")]
     [IgnoreAntiforgeryToken]
-    public async Task<ActionResult> Register([FromBody] RegisterRequest request) {
+    public async Task<ActionResult<ApiResponse>> Register([FromBody] RegisterRequest request) {
         if (request.Password != request.ConfirmPassword) {
-            return BadRequest(new RegisterResponse("Auth.MismatchPassword", "Passwords must be match."));
+            return BadRequest(new ApiResponse("Passwords must be match."));
         }
         
         var response = await _authService.RegisterAsync(request.Email, request.Password);
@@ -102,47 +105,43 @@ public sealed class AuthenticateController : ControllerBase {
             return Created();
         }
     
-        return BadRequest(new RegisterResponse(response.Error.Code, response.Error.Message));
+        return BadRequest(new ApiResponse(response.Error.Message));
     }
     
     [HttpPost("refresh")]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> Refresh() {
+    public async Task<ActionResult<ApiResponse<RefreshResponse>>> Refresh() {
         if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
-            return Unauthorized();
+            return Unauthorized(new ApiResponse<RefreshResponse>(null, "No refresh token."));
         }
         
-        try {
-            var decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
-            int firstColon = decodedPayload.IndexOf(':');
-    
-            string email = decodedPayload[..firstColon];
-            string refreshToken = decodedPayload[(firstColon + 1)..];
-    
-            var result = await _authService.RefreshAsync(email, refreshToken);
-    
-            if (!result.IsSuccess) {
-                // we could return BadRequest when the error code is Auth.NoEmail, but it could be abused as
-                // a user query mechanism.
-                
-                return Unauthorized();
-            }
+        var decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
+        int firstColon = decodedPayload.IndexOf(':');
 
-            var value = result.Value;
+        string email = decodedPayload[..firstColon];
+        string refreshToken = decodedPayload[(firstColon + 1)..];
+
+        var result = await _authService.RefreshAsync(email, refreshToken);
+
+        if (!result.IsSuccess) {
+            // we could return BadRequest when the error code is Auth.NoEmail, but it could be abused as
+            // a user query mechanism.
             
-            SetAccessTokenCookie(value.AccessToken);
-            SetRefreshTokenCookie(email, value.RefreshToken);
-            
-            return Ok(new RefreshResponse(value.AuthorizationInfo, value.TokenType, value.AccessToken));
-        } catch {
-            return Unauthorized();
+            return Unauthorized(new ApiResponse<RefreshResponse>(null, "Invalid authorization."));
         }
+
+        var value = result.Value;
+        
+        SetAccessTokenCookie(value.AccessToken);
+        SetRefreshTokenCookie(email, value.RefreshToken);
+        
+        return Ok(new ApiResponse<RefreshResponse>(new(value.AuthorizationInfo, value.TokenType, value.AccessToken), null));
     }
     
     [HttpPost("logout")]
     [Authorize]
     [IgnoreAntiforgeryToken]
-    public async Task<ActionResult> Logout() {
+    public async Task<ActionResult<ApiResponse>> Logout() {
         Response.Cookies.Delete("X-Access-Token", new() {
             HttpOnly = true,
             Secure = Request.IsHttps,
@@ -155,34 +154,34 @@ public sealed class AuthenticateController : ControllerBase {
             SameSite = SameSiteMode.Strict,
         });
         
-        return Ok();
+        return Ok("Logout successfully.");
     }
 
     [HttpGet("authorization-info")]
     [Authorize]
-    public async Task<ActionResult<UserAuthorizationInfo>> GetUserInfo() {
+    public async Task<ActionResult<ApiResponse<UserAuthorizationInfo>>> GetAuthorizationInfo() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim)) {
-            return Unauthorized();
+            return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, "Invalid identifier."));
         }
         
         var info = await _authService.GetAuthorizationInfoAsync(idClaim);
 
         if (!info.IsSuccess) {
-            return Unauthorized();
+            return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, "Failed to get authorization information."));
         }
         
-        return Ok(info.Value);
+        return Ok(new ApiResponse<UserAuthorizationInfo>(info.Value, null));
     }
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
     [Authorize]
-    public async Task<ActionResult> SendVerifyEmail() {
+    public async Task<ActionResult<ApiResponse>> SendVerifyEmail() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim)) {
-            return Unauthorized();
+            return Unauthorized(new ApiResponse("Invalid identifier."));
         }
 
         var result = await _authService.SendVerificationEmailAsync(idClaim);
@@ -193,23 +192,23 @@ public sealed class AuthenticateController : ControllerBase {
 
         switch (result.Error.Code) {
             case "Auth.NoId":
-                return BadRequest();
+                return BadRequest(new ApiResponse("Invalid identifier."));
             
             case "Auth.AlreadyConfirmed":
                 return Ok();
             
             case var _ when result.Error.Code.StartsWith("Mail."):
-                return StatusCode(StatusCodes.Status503ServiceUnavailable);
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse("Error happened with mailing service."));
                 
             default:
                 _logger.LogWarning("Unhandled result error {e} when sending verify email.", result.Error);
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("Server have unexpected error."));
         }
     }
 
     [HttpPost("confirm-email")]
     [AllowAnonymous]
-    public async Task<ActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
+    public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
         var result = await _authService.ConfirmEmailAsync(request.UserId, request.ConfirmationCode);
         
         if (result.IsSuccess) {
@@ -218,18 +217,18 @@ public sealed class AuthenticateController : ControllerBase {
 
         switch (result.Error.Code) {
             case "Auth.NoId" or "Auth.InvalidConfirmCode":
-                return BadRequest();
+                return BadRequest(new ApiResponse("Invalid identifier or confirmation code."));
 
             case "Auth.AlreadyConfirmed":
                 return Ok();
             
             case var _ when result.Error.Code.StartsWith("Auth."):
                 // TODO: Better reporting.
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("Server have unexpected error."));
 
             default:
                 _logger.LogWarning("Unhandled result error {e} when confirm email.", result.Error);
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("Server have unexpected error."));
         }
     }
     
@@ -239,21 +238,12 @@ public sealed class AuthenticateController : ControllerBase {
         [Required, DataType(DataType.Password)] string Password
     );
     
-    public record LoginResponse(
-        UserAuthorizationInfo Authorization, 
-        string TokenType, 
-        string AccessToken
-    );
+    public record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     
     public record RegisterRequest(
         [Required, EmailAddress] string Email, 
         [Required, DataType(DataType.Password)] string Password,
         [Required, DataType(DataType.Password)] string ConfirmPassword
-    );
-    
-    public record RegisterResponse(
-        string Code,
-        string Message
     );
     
     public record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);

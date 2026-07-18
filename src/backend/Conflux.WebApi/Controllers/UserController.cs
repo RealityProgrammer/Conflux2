@@ -21,7 +21,7 @@ public sealed class UserController : ControllerBase {
     
     [HttpPost("avatar")]
     [Authorize]
-    public async Task<ActionResult> UploadAvatar([FromForm] UploadAvatarRequest request) {
+    public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -34,26 +34,22 @@ public sealed class UserController : ControllerBase {
         
         await using var fileStream = file.OpenReadStream();
         var result = await _userService.UploadAvatarAsync(userId, fileStream, file.ContentType);
-
+        
         if (result.IsSuccess) {
-            return Ok(new UploadAvatarResponse(result.Value.S3Key, null));
+            return Ok();
         }
 
         return result.Error.Code switch {
-            "User.UploadAvatar.ServiceUnavailable" => StatusCode(StatusCodes.Status503ServiceUnavailable, new UploadAvatarResponse(null, result.Error.Message)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new UploadAvatarResponse(null, result.Error.Message))
+            "User.UploadAvatar.ServiceUnavailable" => StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(result.Error.Message)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error.Message))
         };
     }
 
     [HttpGet("avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAvatarUrl([FromQuery] string userId) {
-        if (string.IsNullOrEmpty(userId)) {
-            return BadRequest("User ID is required.");
-        }
-
-        if (!Guid.TryParse(userId, out var userIdGuid)) {
-            return BadRequest();
+    public async Task<ActionResult<ApiResponse<GetAvatarUrlResponse>>> GetAvatarUrl([FromQuery] string userId) {
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userIdGuid)) {
+            return BadRequest(new ApiResponse<GetAvatarUrlResponse>(null, "Invalid identifier."));
         }
 
         var result = _userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
@@ -63,22 +59,18 @@ public sealed class UserController : ControllerBase {
         }
 
         return result.Error.Code switch {
-            "User.OpenAvatar.NotFound" => NotFound(new GetAvatarUrlResponse(null, result.Error.Message)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new GetAvatarUrlResponse(null, result.Error.Message)),
+            "User.OpenAvatar.NotFound" => NotFound(new ApiResponse<GetAvatarUrlResponse>(null, result.Error.Message)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetAvatarUrlResponse>(null, result.Error.Message)),
         };
     }
 
     [HttpDelete("avatar")]
     [Authorize]
-    public async Task<ActionResult> DeleteAvatar() {
+    public async Task<ActionResult<ApiResponse>> DeleteAvatar() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(idClaim)) {
-            return BadRequest("User ID is required.");
-        }
-
-        if (!Guid.TryParse(idClaim, out var userIdGuid)) {
-            return BadRequest();
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
+            return BadRequest(new ApiResponse("Invalid identifier."));
         }
         
         var result = await _userService.DeleteAvatarAsync(userIdGuid);
@@ -87,35 +79,29 @@ public sealed class UserController : ControllerBase {
             return NoContent();
         }
 
-        return StatusCode(StatusCodes.Status500InternalServerError, new GetAvatarUrlResponse(null, result.Error.Message));
+        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error.Message));
     }
 
     [HttpGet("profile")]
-    public async Task<ActionResult> GetSessionUserBasicProfile() {
+    public async Task<ActionResult<ApiResponse<UserBasicProfileResponse>>> GetSessionUserBasicProfile() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(idClaim)) {
-            return BadRequest(new GetSessionUserBasicProfileResponse(null, "User ID is required."));
-        }
-        
-        if (!Guid.TryParse(idClaim, out var userIdGuid)) {
-            return BadRequest();
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, "Invalid identifier."));
         }
         
         Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(userIdGuid);
 
         if (result.IsSuccess) {
-            return Ok(new GetSessionUserBasicProfileResponse(result.Value, null));
+            return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, null));
         }
 
         return result.Error.Code switch {
-            "User.Profile.NoId" => NotFound(new GetSessionUserBasicProfileResponse(null, result.Error.Message)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new GetSessionUserBasicProfileResponse(null, result.Error.Message))
+            "User.Profile.NoId" => NotFound(new ApiResponse<UserBasicProfileResponse>(null, result.Error.Message)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error.Message)),
         };
     }
     
     public record UploadAvatarRequest([Required] IFormFile File);
-    public record UploadAvatarResponse(string? Url, string? Message);
-    public record GetAvatarUrlResponse(string? Url, string? Message);
-    public record GetSessionUserBasicProfileResponse(UserBasicProfileResponse? Profile, string? Message);
+    public record GetAvatarUrlResponse(string? Url);
 }
