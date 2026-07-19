@@ -1,13 +1,9 @@
 import apiClient from "./client.ts";
-import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./requests.ts";
-import type {
-    LoginResponse,
-    RefreshResponse,
-    UserAuthorizationInfo
-} from "./responses.ts";
+import type { EmailConfirmationRequest, LoginRequest, RegisterRequest } from "./requests.ts";
+import type { LoginResponse, RefreshResponse, UserAuthorizationInfo } from "./responses.ts";
 import axios, { type AxiosResponse, HttpStatusCode } from "axios";
 import { handleApiError } from "../utils/errorHelpers.ts";
-import type { ApiResponse } from "./apiResponse.ts";
+import type { ApiResponse, BackendApiResponse } from "./apiResponse.ts";
 import Cookies from "js-cookie";
 
 let activeRefreshPromise: Promise<ApiResponse<RefreshResponse>> | null = null;
@@ -18,17 +14,18 @@ let cachedAuthorization : UserAuthorizationInfo | null = null;
 export const authService = {
     login: async (request: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
         try {
-            const response: AxiosResponse<LoginResponse> = await apiClient.post("/auth/login", request);
+            const response: AxiosResponse<BackendApiResponse<LoginResponse>> =
+                await apiClient.post("/auth/login", request);
 
             if (response.status === HttpStatusCode.Ok) {
                 localStorage.setItem("hasSession", "true");
-                cachedAuthorization = response.data.authorization;
+                cachedAuthorization = response.data.data?.authorization!;
             }
 
             return {
                 statusCode: response.status,
-                message: null,
-                data: response.data,
+                message: response.data.message,
+                data: response.data.data,
             };
         } catch (error) {
             return handleApiError(error);
@@ -37,7 +34,8 @@ export const authService = {
 
     register: async (request: RegisterRequest): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse = await apiClient.post("/auth/register", request);
+            const response: AxiosResponse<BackendApiResponse> =
+                await apiClient.post<BackendApiResponse>("/auth/register", request);
 
             return {
                 statusCode: response.status,
@@ -58,8 +56,8 @@ export const authService = {
         if (localStorage.getItem("hasSession") !== "true") {
             return Promise.resolve({
                 statusCode: HttpStatusCode.Unauthorized,
+                message: "No session active.",
                 data: null,
-                message: "No session active."
             });
         }
 
@@ -73,26 +71,21 @@ export const authService = {
             }
 
             // use raw axios to prevent interception
-            activeRefreshPromise = axios.post<RefreshResponse>(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
-                withCredentials: true,
+            activeRefreshPromise = axios.post<BackendApiResponse<RefreshResponse>>(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
                 headers,
-            }).then((response: AxiosResponse<RefreshResponse>): ApiResponse<RefreshResponse> => {
+            }).then((response: AxiosResponse<BackendApiResponse<RefreshResponse>>): ApiResponse<RefreshResponse> => {
                 if (response.status === HttpStatusCode.Ok) {
                     localStorage.setItem("hasSession", "true");
-                    cachedAuthorization = response.data.authorization;
-
-                    return {
-                        statusCode: response.status,
-                        data: response.data,
-                    }
+                    cachedAuthorization = response.data.data?.authorization!;
                 } else {
                     localStorage.removeItem("hasSession");
                     cachedAuthorization = null;
+                }
 
-                    return {
-                        statusCode: response.status,
-                        data: null,
-                    }
+                return {
+                    statusCode: response.status,
+                    message: response.data?.message,
+                    data: response.data?.data,
                 }
             }).catch((err: any) => {
                 localStorage.removeItem("hasSession");
@@ -108,12 +101,13 @@ export const authService = {
     },
 
     logout: async (): Promise<ApiResponse> => {
-        const response: AxiosResponse = await apiClient.post('/auth/logout');
+        const response: AxiosResponse = await apiClient.post<BackendApiResponse>('/auth/logout');
         cachedAuthorization = null;
         localStorage.removeItem("hasSession");
 
         return {
             statusCode: response.status,
+            message: response.data?.message,
         }
     },
 
@@ -121,16 +115,16 @@ export const authService = {
         return !!cachedAuthorization;
     },
 
-    getAuthorizationInfo: async (): Promise<ApiResponse<UserAuthorizationInfo | null>> => {
+    getAuthorizationInfo: async (): Promise<ApiResponse<UserAuthorizationInfo>> => {
         if (cachedAuthorization) {
-            return {
+            return Promise.resolve<ApiResponse<UserAuthorizationInfo>>({
                 statusCode: HttpStatusCode.Ok,
                 data: cachedAuthorization,
-            };
+            });
         }
 
         if (localStorage.getItem("hasSession") !== "true") {
-            return Promise.resolve<ApiResponse<UserAuthorizationInfo | null>>({
+            return Promise.resolve<ApiResponse<UserAuthorizationInfo>>({
                 statusCode: HttpStatusCode.Unauthorized,
                 data: null,
             });
@@ -139,24 +133,20 @@ export const authService = {
         try {
             if (!activeGetAuthorizationInfoPromise) {
                 activeGetAuthorizationInfoPromise =
-                    apiClient.get("/auth/authorization-info")
-                        .then((response: AxiosResponse<UserAuthorizationInfo | null>) => {
+                    apiClient.get<BackendApiResponse<UserAuthorizationInfo>>("/auth/authorization-info")
+                        .then((response: AxiosResponse<BackendApiResponse<UserAuthorizationInfo>>): ApiResponse<UserAuthorizationInfo> => {
                             if (response.status === HttpStatusCode.Ok) {
-                                cachedAuthorization = response.data;
-
-                                return {
-                                    statusCode: response.status,
-                                    data: response.data,
-                                };
+                                cachedAuthorization = response.data.data!;
                             } else {
                                 cachedAuthorization = null;
                                 localStorage.removeItem("hasSession");
-
-                                return {
-                                    statusCode: response.status,
-                                    data: null,
-                                };
                             }
+
+                            return {
+                                statusCode: response.status,
+                                message: response.data?.message,
+                                data: response.data?.data,
+                            };
                         }).catch((err) => {
                             cachedAuthorization = null;
                             localStorage.removeItem("hasSession");
@@ -175,10 +165,12 @@ export const authService = {
 
     sendVerifyEmail: async (): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse<ApiResponse> = await apiClient.post("/auth/send-verify-email");
+            const response: AxiosResponse<BackendApiResponse> =
+                await apiClient.post<BackendApiResponse>("/auth/send-verify-email");
 
             return {
                 statusCode: response.status,
+                message: response.data?.message,
             }
         } catch (error) {
             return handleApiError(error);
@@ -187,7 +179,8 @@ export const authService = {
 
     confirmEmail: async (request: EmailConfirmationRequest): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse<ApiResponse> = await apiClient.post("/auth/confirm-email", request);
+            const response: AxiosResponse<BackendApiResponse> =
+                await apiClient.post<BackendApiResponse>("/auth/confirm-email", request);
 
             if (response.status === HttpStatusCode.Ok) {
                 // refresh the authorization information.
@@ -196,6 +189,7 @@ export const authService = {
 
             return {
                 statusCode: response.status,
+                message: response.data?.message,
             }
         } catch (error) {
             return handleApiError(error);

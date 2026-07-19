@@ -13,15 +13,13 @@ export interface UserBasicProfileInfo {
 }
 
 export interface LoginResponse {
-    accessToken: string;
     authorization: UserAuthorizationInfo;
+    tokenType: string;
+    accessToken: string;
 }
 
 export interface RefreshResponse {
-    accessToken: string;
     authorization: UserAuthorizationInfo;
-}
-
-export interface UploadAvatarResponse {
-    url: string;
+    tokenType: string;
+    accessToken: string;
 }

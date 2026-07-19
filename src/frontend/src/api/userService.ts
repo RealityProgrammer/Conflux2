@@ -1,24 +1,24 @@
-import {type AxiosResponse, HttpStatusCode} from "axios";
-import type {UserBasicProfileInfo, UploadAvatarResponse} from "./responses.ts";
+import { type AxiosResponse, HttpStatusCode } from "axios";
+import type { UserBasicProfileInfo } from "./responses.ts";
 import { handleApiError } from "../utils/errorHelpers.ts";
 import apiClient from "./client.ts";
-import type { ApiResponse } from "./apiResponse.ts";
+import type { ApiResponse, BackendApiResponse } from "./apiResponse.ts";
 
 export const userService = {
-    uploadAvatar: async (file: File): Promise<ApiResponse<UploadAvatarResponse>> => {
+    uploadAvatar: async (file: File): Promise<ApiResponse> => {
         try {
             const formData: FormData = new FormData();
             formData.set("File", file);
 
-            const response: AxiosResponse<UploadAvatarResponse> =
+            const response: AxiosResponse<BackendApiResponse> =
                 await apiClient.post("/user/avatar", formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
                     }
                 });
+
             return {
                 statusCode: response.status,
-                data: response.data,
             }
         } catch (err) {
             return handleApiError(err);
@@ -39,7 +39,8 @@ export const userService = {
 
     deleteAvatar: async (): Promise<ApiResponse> => {
         try {
-            const response: AxiosResponse = await apiClient.delete("/user/avatar");
+            const response: AxiosResponse<BackendApiResponse> =
+                await apiClient.delete<BackendApiResponse>("/user/avatar");
 
             return {
                 statusCode: response.status,
@@ -51,14 +52,14 @@ export const userService = {
 
     getSessionUserProfile: async (): Promise<ApiResponse<UserBasicProfileInfo>> => {
         try {
-            const response: AxiosResponse<{ profile: UserBasicProfileInfo | null, message: string | null } | null> =
-                await apiClient.get("/user/profile");
+            const response: AxiosResponse<BackendApiResponse<UserBasicProfileInfo>> =
+                await apiClient.get<BackendApiResponse<UserBasicProfileInfo>>("/user/profile");
 
             if (response.status == HttpStatusCode.Ok) {
                 return {
                     statusCode: response.status,
                     message: response.data!.message,
-                    data: response.data!.profile,
+                    data: response.data!.data,
                 }
             }
 
