@@ -11,12 +11,11 @@ export const userService = {
             const formData: FormData = new FormData();
             formData.set("File", file);
 
-            const response: AxiosResponse<BackendApiResponse> =
-                await apiClient.post("/user/avatar", formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    }
-                });
+            const response: AxiosResponse<BackendApiResponse> = await apiClient.post("/user/avatar", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                }
+            });
 
             return {
                 statusCode: response.status,
@@ -52,10 +51,28 @@ export const userService = {
     },
 
     setupProfile: async (userName: string, displayName: string, avatarOperation: AvatarOperation): Promise<ApiResponse> => {
-        return {
-            statusCode: HttpStatusCode.NotImplemented,
-            message: "not implemented",
-        };
+        try {
+            const formData = new FormData();
+            formData.append("userName", userName);
+            formData.append("displayName", displayName);
+            formData.append("avatarOperation", avatarOperation.type);
+
+            if (avatarOperation.type === "set") {
+                formData.append("avatarFile", avatarOperation.file);
+            }
+
+            const response = await apiClient.post("/user/setup-profile", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                }
+            });
+
+            return {
+                statusCode: response.status,
+            };
+        } catch (err) {
+            return handleApiError(err);
+        }
     },
 
     getSessionUserProfile: async (): Promise<ApiResponse<UserBasicProfileInfo>> => {

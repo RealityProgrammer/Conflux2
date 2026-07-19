@@ -1,4 +1,5 @@
 using Conflux.Application;
+using Conflux.Application.Requests;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -83,6 +84,7 @@ public sealed class UserController : ControllerBase {
     }
 
     [HttpGet("profile")]
+    [Authorize]
     public async Task<ActionResult<ApiResponse<UserBasicProfileResponse>>> GetSessionUserBasicProfile() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
@@ -101,7 +103,46 @@ public sealed class UserController : ControllerBase {
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error.Message)),
         };
     }
-    
+
+    [HttpPost("setup-profile")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse>> SetupProfile([FromForm] SetupProfileRequest request) {
+        if (request is { AvatarOperation: AvatarOperationType.Set, AvatarFile: null }) {
+            return BadRequest(new ApiResponse("Avatar file not set."));
+        }
+        
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, "Invalid identifier."));
+        }
+
+        if (request.AvatarOperation == AvatarOperationType.Set) {
+            // TODO: Validate avatar.
+        }
+        
+        await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
+        
+        Result result = await _userService.SetupProfileAsync(new(
+            userIdGuid,
+            request.UserName,
+            request.DisplayName,
+            new(request.AvatarOperation, avatarFileStream, request.AvatarFile?.ContentType)
+        ));
+        
+        if (result.IsSuccess) {
+            return Ok();
+        }
+        
+        return StatusCode(StatusCodes.Status500InternalServerError);
+    }
+
     public record UploadAvatarRequest([Required] IFormFile File);
     public record GetAvatarUrlResponse(string? Url);
+    public record SetupProfileRequest(
+        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 64 characters.")] string UserName, 
+        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 64 characters.")] string DisplayName, 
+        [EnumDataType(typeof(AvatarOperationType), ErrorMessage = "Invalid avatar operation.")] AvatarOperationType AvatarOperation, 
+        IFormFile? AvatarFile
+    );
 }

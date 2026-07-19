@@ -1,10 +1,9 @@
-import {BsArrowLeft, BsArrowRepeat, BsArrowRight, BsCheck, BsX} from "react-icons/bs";
+import { BsArrowLeft, BsArrowRepeat, BsArrowRight, BsCheck, BsX } from "react-icons/bs";
 import { useState, useRef, useEffect, useActionState } from "react";
 import { animate, utils } from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import { userService } from "../../api/userService.ts";
-import type { ApiResponse } from "../../api/apiResponse.ts";
 import { HttpStatusCode } from "axios";
 import { useAuthorization } from "../../contexts/AuthContext.tsx";
 import { Label } from "radix-ui";
@@ -48,64 +47,12 @@ interface AvatarPanelProps extends PanelProps {
 }
 
 function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }: AvatarPanelProps) {
-    const [isApplying, setIsApplying] = useState(false);
-
     const auth = useAuthorization();
     const hasAvatar = auth.userProfile?.hasAvatar ?? false;
 
     const userOriginalAvatarUrl = auth.userAuthorization?.id == null || !hasAvatar ?
         null :
         userService.getAvatarUrl(auth.userAuthorization.id, false)
-
-    const applyAvatar = async () => {
-        switch (avatarOperation.type) {
-            case "noMod":
-                setDisplayingPanel(DisplayingPanel.Name);
-                break;
-
-            case "delete": {
-                setIsApplying(true);
-
-                const response: ApiResponse = await userService.deleteAvatar();
-
-                if (response.statusCode === HttpStatusCode.Ok || response.statusCode === HttpStatusCode.NoContent) {
-                    auth.updateUserProfile({
-                        hasAvatar: false,
-                    });
-
-                    setDisplayingPanel(DisplayingPanel.Name);
-                } else {
-                    // TODO: Report something goes wrong.
-                }
-
-                setDisplayingPanel(DisplayingPanel.Name);
-
-                setAvatarOperation(new NoAvatarModification());
-                setIsApplying(false);
-                break;
-            }
-
-            case "set": {
-                setIsApplying(true);
-
-                const response: ApiResponse = await userService.uploadAvatar(avatarOperation.file);
-
-                if (response.statusCode === HttpStatusCode.Ok) {
-                    auth.updateUserProfile({
-                        hasAvatar: true,
-                    });
-
-                    setDisplayingPanel(DisplayingPanel.Name);
-                } else {
-                    // TODO: Report something goes wrong.
-                }
-
-                setAvatarOperation(new NoAvatarModification());
-                setIsApplying(false);
-                break;
-            }
-        }
-    }
 
     const onAvatarChanged = (file: File, previewUrl: string) => {
         setAvatarOperation(new SetAvatar(file, previewUrl));
@@ -145,16 +92,10 @@ function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={applyAvatar}>
-                    {
-                        isApplying ?
-                            <Spinner className="size-6 fill-white"/> :
-                            <>
-                                Next
+                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Name)}>
+                    Next
 
-                                <BsArrowRight className="ml-2 size-6 fill-white"/>
-                            </>
-                    }
+                    <BsArrowRight className="ml-2 size-6 fill-white"/>
                 </button>
             </footer>
         </section>
@@ -175,7 +116,7 @@ function ProfilePanel({ setDisplayingPanel }: PanelProps) {
                 <div className="flex-1">
                     <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="username">Name</Label.Root>
 
-                    <input id="name" type="text" placeholder="Enter username" name="username"
+                    <input id="userName" type="text" placeholder="Enter username" name="userName"
                            className="w-full h-11 px-3 input-field"
                            defaultValue={auth.userProfile?.userName ?? ""}/>
                 </div>
@@ -332,9 +273,7 @@ export default function ProfileSetupPage() {
     type State = { success: boolean, error: string | null | undefined };
 
     const setupProfile = async (_prevState: State, formData: FormData): Promise<State> => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        const userName = formData.get("name") as string;
+        const userName = formData.get("userName") as string;
         const displayName = formData.get("displayName") as string;
 
         const response = await userService.setupProfile(userName, displayName, avatarOperation);

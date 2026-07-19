@@ -99,8 +99,13 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                     <div>
                         <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="login_email">Email</Label.Root>
 
-                        <input id="login_email" type="email" placeholder="Enter Email" name="email"
-                               className="w-full h-11 px-3 input-field"/>
+                        <input type="email"
+                               id="login_email"
+                               name="email"
+                               placeholder="Enter Email"
+                               className="w-full h-11 px-3 input-field"
+                               required
+                               aria-required/>
                     </div>
 
                     <div className="mt-4">
@@ -112,7 +117,9 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                                     id="login_password"
                                     placeholder="Enter Password"
                                     name="password"
-                                    className="flex-1 h-11 px-3 input-field mr-1"/>
+                                    className="flex-1 h-11 px-3 input-field mr-1"
+                                    required
+                                    aria-required/>
                                 <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
                                     <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
                                 </PasswordToggleField.Toggle>
@@ -179,8 +186,13 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
                     <div>
                         <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_email">Email</Label.Root>
 
-                        <input id="register_email" type="text" placeholder="Enter Email" name="email"
-                               className="w-full h-11 px-3 input-field"/>
+                        <input type="text"
+                               id="register_email"
+                               placeholder="Enter Email"
+                               name="email"
+                               className="w-full h-11 px-3 input-field"
+                               required
+                               aria-required/>
                     </div>
 
                     <div className="mt-4">
@@ -192,7 +204,8 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
                                     id="register_password"
                                     placeholder="Enter Password"
                                     name="password"
-                                    className="flex-1 h-11 px-3 input-field mr-1"/>
+                                    className="flex-1 h-11 px-3 input-field mr-1"
+                                    required aria-required/>
                                 <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
                                     <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
                                 </PasswordToggleField.Toggle>
@@ -209,7 +222,8 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
                                     id="register_confirm_password"
                                     placeholder="Enter Password (Again)"
                                     name="confirmPassword"
-                                    className="flex-1 h-11 px-3 input-field mr-1"/>
+                                    className="flex-1 h-11 px-3 input-field mr-1"
+                                    required aria-required/>
                                 <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
                                     <PasswordToggleField.Icon visible={<BsEye className="size-6"/>} hidden={<BsEyeSlash className="size-6"/>}/>
                                 </PasswordToggleField.Toggle>

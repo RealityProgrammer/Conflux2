@@ -1,7 +1,9 @@
 using Amazon.S3;
 using Amazon.S3.Model;
+using Conflux.Application.Requests;
 using Conflux.Application.Responses;
 using Conflux.Domain;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Net;
@@ -12,6 +14,7 @@ internal sealed class UserService(
     IAmazonS3 s3Client,
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
     TimeProvider timeProvider,
+    UserManager<ApplicationUser> userManager,
     IConfiguration config
 ) : IUserService {
     public async Task<Result<AvatarUploadResponse>> UploadAvatarAsync(Guid userId, Stream avatarStream, string contentType) {
@@ -24,9 +27,6 @@ internal sealed class UserService(
         // begin writing transaction, if s3 upload fail, rollback.
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
         
-        var bucketName = config["MediaAWS:BucketName"];
-        var uniqueKey = CreateAvatarUniqueKey(userId);
-        
         int changed = await dbContext.Users
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(setters => {
@@ -38,55 +38,68 @@ internal sealed class UserService(
             return Result<AvatarUploadResponse>.Failure("User.NoId", "No user with the provided ID.");
         }
         
+        Result<AvatarUploadResponse> result = await UploadAvatarToS3(userId, avatarStream, contentType);
+
+        if (result.IsSuccess) {
+            await transaction.CommitAsync();
+        } else {
+            await transaction.RollbackAsync();
+        }
+        
+        return result;
+    }
+
+    private async Task<Result<AvatarUploadResponse>> UploadAvatarToS3(
+        Guid userId, 
+        Stream avatarStream, 
+        string contentType
+    ) {
+        var bucketName = config["MediaAWS:BucketName"];
+        string uniqueKey = CreateAvatarUniqueKey(userId);
+        
         var uploadRequest = new PutObjectRequest {
             InputStream = avatarStream,
             BucketName = bucketName,
             Key = uniqueKey,
             ContentType = contentType,
         };
-        
-        // try catch exception?
 
-        PutObjectResponse response = await s3Client.PutObjectAsync(uploadRequest);
+        try {
+            PutObjectResponse response = await s3Client.PutObjectAsync(uploadRequest);
 
-        switch (response.HttpStatusCode) {
-            case HttpStatusCode.OK or HttpStatusCode.Created:
-                // commit transaction, should be fine here
-                await transaction.CommitAsync();
-                
-                return Result<AvatarUploadResponse>.Success(new(uniqueKey));
+            switch (response.HttpStatusCode) {
+                case HttpStatusCode.OK or HttpStatusCode.Created:
+                    return Result<AvatarUploadResponse>.Success(new(uniqueKey));
 
-            // errors or unhandled status codes, rollback transaction.
-            case HttpStatusCode.Unauthorized:
-                await transaction.RollbackAsync();
-                
-                return Result<AvatarUploadResponse>.Failure(
-                    "User.UploadAvatar.Authorize",
-                    "Cannot upload avatar to S3 service due to authorization issue."
-                );
-            
-            case HttpStatusCode.ServiceUnavailable:
-                await transaction.RollbackAsync();
-                
-                return Result<AvatarUploadResponse>.Failure(
-                    "User.UploadAvatar.ServiceUnavailable",
-                    "Cannot upload avatar to S3 service."
-                );
+                case HttpStatusCode.Unauthorized:
+                    return Result<AvatarUploadResponse>.Failure(
+                        "User.UploadAvatar.Authorize",
+                        "Cannot upload avatar to S3 service due to authorization issue."
+                    );
 
-            case HttpStatusCode.MethodNotAllowed:
-                await transaction.RollbackAsync();
-                return Result<AvatarUploadResponse>.Failure(
-                    "User.UploadAvatar.MethodNotAllowed",
-                    "Method is not allowed (Potentially using discontinued supports for Email Grantee ACLs)."
-                );
+                case HttpStatusCode.ServiceUnavailable:
+                    return Result<AvatarUploadResponse>.Failure(
+                        "User.UploadAvatar.ServiceUnavailable",
+                        "Cannot upload avatar to S3 service."
+                    );
 
-            default:
-                await transaction.RollbackAsync();
-                
-                return Result<AvatarUploadResponse>.Failure(
-                    "User.UploadAvatar.StatusCode",
-                    GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode)
-                );
+                case HttpStatusCode.MethodNotAllowed:
+                    return Result<AvatarUploadResponse>.Failure(
+                        "User.UploadAvatar.MethodNotAllowed",
+                        "Method is not allowed (Potentially using discontinued supports for Email Grantee ACLs)."
+                    );
+
+                default:
+                    return Result<AvatarUploadResponse>.Failure(
+                        "User.UploadAvatar.StatusCode",
+                        GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode)
+                    );
+            }
+        } catch (AmazonS3Exception e) {
+            return Result<AvatarUploadResponse>.Failure(
+                "User.UploadAvatar.S3Exception",
+                GetUnhandledS3ResponseStatusCodeMessage(e.StatusCode)
+            );
         }
     }
 
@@ -145,7 +158,19 @@ internal sealed class UserService(
         if (changed == 0) {
             return Result.Failure("User.NoId", "No user with the provided ID.");
         }
+
+        var result = await DeleteAvatarFromS3(userId);
         
+        if (result.IsSuccess) {
+            await transaction.CommitAsync();
+        } else {
+            await transaction.RollbackAsync();
+        }
+        
+        return result;
+    }
+
+    private async Task<Result> DeleteAvatarFromS3(Guid userId) {
         var bucketName = config["MediaAWS:BucketName"];
         var uniqueKey = CreateAvatarUniqueKey(userId);
         
@@ -154,20 +179,114 @@ internal sealed class UserService(
 
             switch (response.HttpStatusCode) {
                 case HttpStatusCode.OK or HttpStatusCode.NoContent:
-                    await transaction.CommitAsync();
                     return Result.Success();
                 
                 case HttpStatusCode.NotFound:
-                    await transaction.RollbackAsync();
                     return Result.Failure("User.DeleteAvatar.NotFound", "User has no avatar.");
                 
                 default:
-                    await transaction.RollbackAsync();
                     return Result.Failure("User.DeleteAvatar", GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode));
             }
         } catch (Exception ex) {
-            await transaction.RollbackAsync();
             return Result.Failure("User.DeleteAvatar", ex.Message);
+        }
+    }
+
+    public async Task<Result> SetupProfileAsync(SetupProfileRequest request) {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var validate = await dbContext.Users
+            .Where(u => u.Id == request.UserId)
+            .Select(u => new { u.IsProfileSetup })
+            .FirstOrDefaultAsync();
+
+        if (validate == null) {
+            return Result.Failure("User.SetupProfile.NoId", "No user with the provided ID.");
+        }
+        
+        if (validate.IsProfileSetup) {
+            return Result.Failure("User.SetupProfile.AlreadySetup", "User already setup their profile.");
+        }
+        
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+        var normalizedName = userManager.NormalizeName(request.UserName);
+
+        int changed = await dbContext.Users
+            .Where(u => u.Id == request.UserId)
+            .ExecuteUpdateAsync(setters => {
+                setters.SetProperty(u => u.UserName, request.UserName);
+                setters.SetProperty(u => u.NormalizedUserName, normalizedName);
+                setters.SetProperty(u => u.DisplayName, request.DisplayName);
+
+                switch (request.AvatarOperation.Type) {
+                    case AvatarOperationType.Delete:
+                        setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
+                        setters.SetProperty(u => u.HasAvatar, false);
+                        break;
+                    
+                    case AvatarOperationType.Set:
+                        setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
+                        setters.SetProperty(u => u.HasAvatar, true);    // just in case lol.
+                        break;
+                }
+                
+                setters.SetProperty(u => u.IsProfileSetup, true);
+            });
+
+        if (changed == 0) {
+            await transaction.RollbackAsync();
+            return Result.Failure("User.SetupProfile.FailedToUpdate", "Failed to update user profile data.");
+        }
+
+        switch (request.AvatarOperation.Type) {
+            case AvatarOperationType.Set:
+            {
+                if (request.AvatarOperation.AvatarStream is not { } stream) {
+                    await transaction.RollbackAsync();
+                    
+                    return Result.Failure(
+                        "User.SetupProfile.MissingAvatarStream", 
+                        "Avatar stream is missing."
+                    );
+                }
+
+                if (request.AvatarOperation.ContentType is not { } contentType) {
+                    await transaction.RollbackAsync();
+                    
+                    return Result.Failure(
+                        "User.SetupProfile.MissingAvatarContentType", 
+                        "Avatar content type is missing."
+                    );
+                }
+                
+                var result = await UploadAvatarToS3(request.UserId, stream, contentType);
+
+                if (result.IsSuccess) {
+                    await transaction.CommitAsync();
+                    return Result.Success();
+                }
+
+                await transaction.RollbackAsync();
+                return Result.Failure(result.Error);
+            }
+
+            case AvatarOperationType.Delete:
+            {
+                var result = await DeleteAvatarFromS3(request.UserId);
+                
+                if (result.IsSuccess) {
+                    await transaction.CommitAsync();
+                    return Result.Success();
+                }
+
+                await transaction.RollbackAsync();
+                return Result.Failure(result.Error);
+            }
+            
+            default:
+                await transaction.CommitAsync();
+                return Result.Success();
         }
     }
 

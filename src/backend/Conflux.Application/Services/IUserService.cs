@@ -1,3 +1,4 @@
+using Conflux.Application.Requests;
 using Conflux.Application.Responses;
 
 namespace Conflux.Application.Services;
@@ -8,6 +9,7 @@ public interface IUserService {
     Task<Result> DeleteAvatarAsync(Guid userId);
 
     Result<string> GetAvatarUrl(Guid userId, bool useHttps);
-    
+
+    Task<Result> SetupProfileAsync(SetupProfileRequest request);
     Task<Result<UserBasicProfileResponse>> GetUserBasicProfileAsync(Guid userId);
 }
