@@ -99,7 +99,7 @@ function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) 
                     <div>
                         <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="login_email">Email</Label.Root>
 
-                        <input id="login_email" type="text" placeholder="Enter Email" name="email"
+                        <input id="login_email" type="email" placeholder="Enter Email" name="email"
                                className="w-full h-11 px-3 input-field"/>
                     </div>
 

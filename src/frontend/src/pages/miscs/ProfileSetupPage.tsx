@@ -1,18 +1,19 @@
-import { BsArrowLeft, BsArrowRepeat, BsArrowRight, BsX } from "react-icons/bs";
-import { useState, useRef, useEffect } from "react";
+import {BsArrowLeft, BsArrowRepeat, BsArrowRight, BsCheck, BsX} from "react-icons/bs";
+import { useState, useRef, useEffect, useActionState } from "react";
 import { animate, utils } from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import { userService } from "../../api/userService.ts";
 import type { ApiResponse } from "../../api/apiResponse.ts";
-import type { UploadAvatarResponse } from "../../api/responses.ts";
 import { HttpStatusCode } from "axios";
 import { useAuthorization } from "../../contexts/AuthContext.tsx";
+import { Label } from "radix-ui";
+import { type AvatarOperation, SetAvatar, DeleteAvatar, NoAvatarModification } from "../../api/requests.ts";
 
 enum DisplayingPanel {
     Intro = 0,
     Avatar = 1,
-    Profile = 2,
+    Name = 2,
     Complete = 3,
 }
 
@@ -31,7 +32,7 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
             <p className="text-sm text-gray-400 text-center mt-2">You don't want to be an unknown, don't you?</p>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
                     Show me the way
 
                     <BsArrowRight className="ml-2 size-6 fill-white"/>
@@ -41,24 +42,13 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
     );
 }
 
-class SetAvatar {
-    readonly type = "set";
-    constructor(public file: File, public previewUrl: string) {}
-};
+interface AvatarPanelProps extends PanelProps {
+    avatarOperation: AvatarOperation;
+    setAvatarOperation: (operation: AvatarOperation) => void;
+}
 
-class DeleteAvatar {
-    readonly type = "delete";
-};
-
-class NoAvatarModification {
-    readonly type = "noMod";
-};
-
-type AvatarOperation = SetAvatar | DeleteAvatar | NoAvatarModification;
-
-function AvatarPanel({ setDisplayingPanel }: PanelProps) {
+function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }: AvatarPanelProps) {
     const [isApplying, setIsApplying] = useState(false);
-    const [avatarOperation, setAvatarOperation] = useState<AvatarOperation>(new NoAvatarModification());
 
     const auth = useAuthorization();
     const hasAvatar = auth.userProfile?.hasAvatar ?? false;
@@ -70,7 +60,7 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     const applyAvatar = async () => {
         switch (avatarOperation.type) {
             case "noMod":
-                setDisplayingPanel(DisplayingPanel.Profile);
+                setDisplayingPanel(DisplayingPanel.Name);
                 break;
 
             case "delete": {
@@ -83,12 +73,12 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
                         hasAvatar: false,
                     });
 
-                    setDisplayingPanel(DisplayingPanel.Profile);
+                    setDisplayingPanel(DisplayingPanel.Name);
                 } else {
                     // TODO: Report something goes wrong.
                 }
 
-                setDisplayingPanel(DisplayingPanel.Profile);
+                setDisplayingPanel(DisplayingPanel.Name);
 
                 setAvatarOperation(new NoAvatarModification());
                 setIsApplying(false);
@@ -98,14 +88,14 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
             case "set": {
                 setIsApplying(true);
 
-                const response: ApiResponse<UploadAvatarResponse> = await userService.uploadAvatar(avatarOperation.file);
+                const response: ApiResponse = await userService.uploadAvatar(avatarOperation.file);
 
                 if (response.statusCode === HttpStatusCode.Ok) {
                     auth.updateUserProfile({
                         hasAvatar: true,
                     });
 
-                    setDisplayingPanel(DisplayingPanel.Profile);
+                    setDisplayingPanel(DisplayingPanel.Name);
                 } else {
                     // TODO: Report something goes wrong.
                 }
@@ -130,7 +120,7 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
     };
 
     return (
-        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-3">
             <header className="flex-none">
                 <h1 className="text-center font-bold text-3xl text-white">Setup Avatar</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Make yourself look special</p>
@@ -144,18 +134,18 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
                 />
 
                 <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">
-                    <button className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete" || (!hasAvatar && avatarOperation.type == "noMod")}>
+                    <button type="button" className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete" || (!hasAvatar && avatarOperation.type == "noMod")}>
                         <BsX className="fill-white size-6"/>
                     </button>
 
-                    <button className="button-primary p-1.5! flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
+                    <button type="button" className="button-primary p-1.5! flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
                         <BsArrowRepeat className="fill-white size-6"/>
                     </button>
                 </div>
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={applyAvatar}>
+                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={applyAvatar}>
                     {
                         isApplying ?
                             <Spinner className="size-6 fill-white"/> :
@@ -172,25 +162,41 @@ function AvatarPanel({ setDisplayingPanel }: PanelProps) {
 }
 
 function ProfilePanel({ setDisplayingPanel }: PanelProps) {
+    const auth = useAuthorization();
+
     return (
-        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-2">
+        <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-3">
             <header className="flex-none">
-                <h1 className="text-center font-bold text-3xl text-white">Setup Profile</h1>
+                <h1 className="text-center font-bold text-3xl text-white">Name yourself</h1>
                 <p className="text-center text-gray-400 text-sm mt-2">Make a name of yourself, literally</p>
             </header>
 
-            <div className="flex-1">
-                { /* Body goes here */ }
+            <div className="flex-1 flex flex-row gap-2">
+                <div className="flex-1">
+                    <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="username">Name</Label.Root>
+
+                    <input id="name" type="text" placeholder="Enter username" name="username"
+                           className="w-full h-11 px-3 input-field"
+                           defaultValue={auth.userProfile?.userName ?? ""}/>
+                </div>
+
+                <div className="flex-1">
+                    <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="displayName">Display Name</Label.Root>
+
+                    <input id="displayName" type="text" placeholder="Enter display name" name="displayName"
+                           className="w-full h-11 px-3 input-field"
+                           defaultValue={auth.userProfile?.displayName ?? ""}/>
+                </div>
             </div>
 
             <footer className="flex flex-none flex-row justify-around mt-2">
-                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
                     <BsArrowLeft className="mr-2 size-6 fill-white"/>
 
                     Previous
                 </button>
 
-                <button className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Complete)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Complete)}>
                     Next
 
                     <BsArrowRight className="ml-2 size-6 fill-white"/>
@@ -200,11 +206,52 @@ function ProfilePanel({ setDisplayingPanel }: PanelProps) {
     );
 }
 
-function CompletePanel() {
+interface CompletePanelProps extends PanelProps {
+    isSaving: boolean;
+}
+
+function CompletePanel({ setDisplayingPanel, isSaving }: CompletePanelProps) {
     return (
         <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible relative p-6">
-            <h1 className="text-center font-bold text-3xl text-white">Setup Complete</h1>
-            <p className="text-center text-gray-400 text-sm mt-2">One of us, one of us...</p>
+            <header>
+                <h1 className="text-center font-bold text-3xl text-white">Almost complete</h1>
+            </header>
+
+            <div className="mt-4">
+                <p className="text-center text-white text-sm">
+                    Well that wasn't too hard, you can now revise everything, press the Complete button if you want to
+                    complete profile setup.
+                </p>
+            </div>
+
+            <footer className="flex flex-none flex-row justify-around mt-2">
+                <button type="button"
+                        className="button-primary inline-flex flex-row items-center py-2!"
+                        onClick={() => setDisplayingPanel(DisplayingPanel.Name)}
+                        disabled={isSaving}
+                >
+                    <BsArrowLeft className="mr-2 size-6 fill-white"/>
+
+                    Previous
+                </button>
+
+                <button type="submit"
+                        className="button-success relative inline-flex flex-row justify-center items-center py-2!"
+                        disabled={isSaving}
+                >
+                    <span className={`inline-flex flex-row items-center ${isSaving ? 'invisible' : 'visible'}`}>
+                        Complete
+
+                        <BsCheck className="ml-2 size-6 fill-white"/>
+                    </span>
+
+                    {isSaving && (
+                        <span className="absolute inset-0 flex justify-center items-center">
+                            <Spinner className="size-6 fill-white"/>
+                        </span>
+                    )}
+                </button>
+            </footer>
         </section>
     );
 }
@@ -214,7 +261,7 @@ export default function ProfileSetupPage() {
     const previousPanel = useRef<DisplayingPanel>(displayingPanel);
 
     const zoomRef = useRef<HTMLDivElement | null>(null);
-    const mapRef = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<HTMLFormElement | null>(null);
 
     const teleportToPanel = (panel: DisplayingPanel) => {
         if (!mapRef.current) return;
@@ -235,6 +282,8 @@ export default function ProfileSetupPage() {
 
     // teleport the viewport to the intro panel.
     useEffect(() => teleportToPanel(DisplayingPanel.Intro), []);
+
+    const [avatarOperation, setAvatarOperation] = useState<AvatarOperation>(new NoAvatarModification());
 
     const animateCameraMovement = () => {
         if (!mapRef.current || !zoomRef.current) return;
@@ -280,6 +329,27 @@ export default function ProfileSetupPage() {
         return () => window.removeEventListener("resize", handleResize);
     }, [displayingPanel]);
 
+    type State = { success: boolean, error: string | null | undefined };
+
+    const setupProfile = async (_prevState: State, formData: FormData): Promise<State> => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const userName = formData.get("name") as string;
+        const displayName = formData.get("displayName") as string;
+
+        const response = await userService.setupProfile(userName, displayName, avatarOperation);
+
+        return {
+            success: response.statusCode === HttpStatusCode.Ok,
+            error: response.message ?? null,
+        }
+    };
+
+    const [_state, formAction, isPending] = useActionState<State, FormData>(setupProfile, {
+        success: false,
+        error: null,
+    });
+
     return (
         <div className="fixed bg-fixed inset-0 overflow-hidden mesh-bg-1">
             <div
@@ -287,7 +357,7 @@ export default function ProfileSetupPage() {
                 className="absolute inset-0 origin-center"
             >
 
-                <div ref={mapRef} className="absolute top-0 left-0 w-[3000px] h-[2000px] origin-top-left">
+                <form ref={mapRef} className="absolute top-0 left-0 w-[3000px] h-[2000px] origin-top-left" action={formAction}>
                     <div
                         id={`panel-${DisplayingPanel.Intro}`}
                         className={`absolute left-[15%] top-[20%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Intro ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
@@ -299,12 +369,12 @@ export default function ProfileSetupPage() {
                         id={`panel-${DisplayingPanel.Avatar}`}
                         className={`absolute left-[40%] top-[60%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Avatar ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
                     >
-                        <AvatarPanel setDisplayingPanel={setDisplayingPanel}/>
+                        <AvatarPanel setDisplayingPanel={setDisplayingPanel} avatarOperation={avatarOperation} setAvatarOperation={setAvatarOperation}/>
                     </div>
 
                     <div
-                        id={`panel-${DisplayingPanel.Profile}`}
-                        className={`absolute left-[70%] top-[30%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Profile ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
+                        id={`panel-${DisplayingPanel.Name}`}
+                        className={`absolute left-[70%] top-[30%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Name ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
                     >
                         <ProfilePanel setDisplayingPanel={setDisplayingPanel}/>
                     </div>
@@ -313,9 +383,9 @@ export default function ProfileSetupPage() {
                         id={`panel-${DisplayingPanel.Complete}`}
                         className={`absolute left-[85%] top-[75%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Complete ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
                     >
-                        <CompletePanel/>
+                        <CompletePanel setDisplayingPanel={setDisplayingPanel} isSaving={isPending}/>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     );

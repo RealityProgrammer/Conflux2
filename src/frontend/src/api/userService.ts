@@ -3,6 +3,7 @@ import type { UserBasicProfileInfo } from "./responses.ts";
 import { handleApiError } from "../utils/errorHelpers.ts";
 import apiClient from "./client.ts";
 import type { ApiResponse, BackendApiResponse } from "./apiResponse.ts";
+import type {AvatarOperation} from "./requests.ts";
 
 export const userService = {
     uploadAvatar: async (file: File): Promise<ApiResponse> => {
@@ -48,6 +49,13 @@ export const userService = {
         } catch (err) {
             return handleApiError(err);
         }
+    },
+
+    setupProfile: async (userName: string, displayName: string, avatarOperation: AvatarOperation): Promise<ApiResponse> => {
+        return {
+            statusCode: HttpStatusCode.NotImplemented,
+            message: "not implemented",
+        };
     },
 
     getSessionUserProfile: async (): Promise<ApiResponse<UserBasicProfileInfo>> => {
