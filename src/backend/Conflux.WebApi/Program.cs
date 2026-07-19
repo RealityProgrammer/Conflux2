@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
+using Conflux.WebApi;
+using Conflux.WebApi.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,8 +94,23 @@ builder.Services.AddAWSService<IAmazonS3>(builder.Configuration.GetAWSOptions("M
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
 builder.Services.AddControllersWithViews(options => {
-    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+    options.Filters.Add<AntiforgeryValidationFilter>();
+}).ConfigureApiBehaviorOptions(options => {
+    options.InvalidModelStateResponseFactory = context => {
+        var validationErrors = context.ModelState
+            .Where(ms => ms.Value!.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+            );
+
+        ApiResponse<Dictionary<string, string[]>> response = 
+            new(validationErrors, "One or more validation errors occurred.");
+
+        return new BadRequestObjectResult(response);
+    };
 });
+
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {

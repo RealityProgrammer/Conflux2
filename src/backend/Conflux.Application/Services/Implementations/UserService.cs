@@ -204,9 +204,9 @@ internal sealed class UserService(
             return Result.Failure("User.SetupProfile.NoId", "No user with the provided ID.");
         }
         
-        if (validate.IsProfileSetup) {
-            return Result.Failure("User.SetupProfile.AlreadySetup", "User already setup their profile.");
-        }
+        // if (validate.IsProfileSetup) {
+        //     return Result.Failure("User.SetupProfile.AlreadySetup", "User already setup their profile.");
+        // }
         
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
