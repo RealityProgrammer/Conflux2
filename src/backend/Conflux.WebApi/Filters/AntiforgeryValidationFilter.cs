@@ -4,37 +4,36 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Conflux.WebApi.Filters;
 
-internal sealed class AntiforgeryValidationFilter : IAsyncAuthorizationFilter {
-    private readonly IAntiforgery _antiforgery;
-
-    public AntiforgeryValidationFilter(IAntiforgery antiforgery) {
-        _antiforgery = antiforgery;
-    }
-
+internal sealed class AntiforgeryValidationFilter(IAntiforgery antiforgery) : IAsyncAuthorizationFilter {
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context) {
+        if (context.ActionDescriptor.EndpointMetadata.OfType<IgnoreAntiforgeryTokenAttribute>().Any()) {
+            return;
+        }
+        
+        bool explicitlyRequiresValidation = 
+            context.ActionDescriptor.EndpointMetadata.OfType<ValidateAntiForgeryTokenAttribute>().Any();
+        
         var request = context.HttpContext.Request;
 
-        // allow safe HTTP methods
+        // allow safe HTTP methods or any endpoint that explicitly require validation
         if (HttpMethods.IsGet(request.Method) ||
             HttpMethods.IsHead(request.Method) ||
             HttpMethods.IsOptions(request.Method) ||
-            HttpMethods.IsTrace(request.Method)
+            HttpMethods.IsTrace(request.Method) ||
+            explicitlyRequiresValidation
         ) {
             return;
         }
 
         var referer = request.Headers.Referer.ToString();
-
-        // check contains instead of starts with because referer is full uri, which creating one can cause some
-        // additional overhead.
+        
         if (!string.IsNullOrEmpty(referer) && referer.Contains("/swagger", StringComparison.OrdinalIgnoreCase)) {
             return;
         }
 
         try {
-            await _antiforgery.ValidateRequestAsync(context.HttpContext);
+            await antiforgery.ValidateRequestAsync(context.HttpContext);
         } catch (AntiforgeryValidationException) {
-            // This satisfies your requirement for a detailed error payload
             context.Result = new BadRequestObjectResult(new ApiResponse("Anti-forgery token validation failed."));
         }
     }

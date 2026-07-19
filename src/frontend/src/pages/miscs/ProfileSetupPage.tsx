@@ -198,6 +198,8 @@ function CompletePanel({ setDisplayingPanel, isSaving }: CompletePanelProps) {
 }
 
 export default function ProfileSetupPage() {
+    const auth = useAuthorization();
+
     const [displayingPanel, setDisplayingPanel] = useState<DisplayingPanel>(DisplayingPanel.Intro);
     const previousPanel = useRef<DisplayingPanel>(displayingPanel);
 
@@ -277,6 +279,14 @@ export default function ProfileSetupPage() {
         const displayName = formData.get("displayName") as string;
 
         const response = await userService.setupProfile(userName, displayName, avatarOperation);
+
+        if (response.statusCode === 200) {
+            auth.updateUserProfile({
+                userName,
+                displayName,
+                hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
+            })
+        }
 
         return {
             success: response.statusCode === HttpStatusCode.Ok,
