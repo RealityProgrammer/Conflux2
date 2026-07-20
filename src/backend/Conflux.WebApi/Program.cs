@@ -13,6 +13,7 @@ using Conflux.Application;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -97,6 +98,8 @@ builder.Services.AddAWSService<IAmazonS3>(builder.Configuration.GetAWSOptions("M
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
 builder.Services.AddControllersWithViews(options => {
     options.Filters.Add<AntiforgeryValidationFilter>();
+}).AddJsonOptions(options => {
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 }).ConfigureApiBehaviorOptions(options => {
     options.InvalidModelStateResponseFactory = context => {
         var validationErrors = context.ModelState
