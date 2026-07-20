@@ -1,3 +1,4 @@
+using Conflux.Application;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
@@ -46,14 +47,10 @@ public sealed class AuthenticateController : ControllerBase {
         var loginResult = await _authService.LoginAsync(request.Email, request.Password);
     
         if (!loginResult.IsSuccess) {
-            switch (loginResult.Error.Code) {
-                case "Auth.InvalidCredentials":
-                    return BadRequest(new ApiResponse<LoginResponse>(null, "Invalid credentials."));
-                
-                default:
-                    // Unknown error code so we just gonna return random shit.
-                    return BadRequest(new ApiResponse<LoginResponse>(null, "Unexpected server error happened."));
-            }            
+            return loginResult.Error.Code switch {
+                nameof(Errors.InvalidCredentials) => BadRequest(new ApiResponse<LoginResponse>(null, Errors.InvalidCredentials())),
+                _ => BadRequest(new ApiResponse<LoginResponse>(null, Errors.UnexpectedError())),
+            };
         }
 
         var response = loginResult.Value;
@@ -63,7 +60,7 @@ public sealed class AuthenticateController : ControllerBase {
     
         return Ok(new ApiResponse<LoginResponse>(
             new(response.AuthorizationInfo, response.TokenType, response.AccessToken),
-            null
+            Error.None
         ));
     }
 
@@ -96,7 +93,7 @@ public sealed class AuthenticateController : ControllerBase {
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse>> Register([FromBody] RegisterRequest request) {
         if (request.Password != request.ConfirmPassword) {
-            return BadRequest(new ApiResponse("Passwords must be match."));
+            return BadRequest(new ApiResponse(Errors.MismatchPasswords()));
         }
         
         var response = await _authService.RegisterAsync(request.Email, request.Password);
@@ -105,14 +102,14 @@ public sealed class AuthenticateController : ControllerBase {
             return Created();
         }
     
-        return BadRequest(new ApiResponse(response.Error.Message));
+        return BadRequest(new ApiResponse(response.Error));
     }
     
     [HttpPost("refresh")]
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<RefreshResponse>>> Refresh() {
         if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
-            return Unauthorized(new ApiResponse<RefreshResponse>(null, "No refresh token."));
+            return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidRefreshToken()));
         }
         
         var decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
@@ -126,8 +123,7 @@ public sealed class AuthenticateController : ControllerBase {
         if (!result.IsSuccess) {
             // we could return BadRequest when the error code is Auth.NoEmail, but it could be abused as
             // a user query mechanism.
-            
-            return Unauthorized(new ApiResponse<RefreshResponse>(null, "Invalid authorization."));
+            return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidCredentials()));
         }
 
         var value = result.Value;
@@ -135,7 +131,10 @@ public sealed class AuthenticateController : ControllerBase {
         SetAccessTokenCookie(value.AccessToken);
         SetRefreshTokenCookie(email, value.RefreshToken);
         
-        return Ok(new ApiResponse<RefreshResponse>(new(value.AuthorizationInfo, value.TokenType, value.AccessToken), null));
+        return Ok(new ApiResponse<RefreshResponse>(
+            new(value.AuthorizationInfo, value.TokenType, value.AccessToken), 
+            Error.None
+        ));
     }
     
     [HttpPost("logout")]
@@ -154,7 +153,7 @@ public sealed class AuthenticateController : ControllerBase {
             SameSite = SameSiteMode.Strict,
         });
         
-        return Ok("Logout successfully.");
+        return Ok();
     }
 
     [HttpGet("authorization-info")]
@@ -163,16 +162,16 @@ public sealed class AuthenticateController : ControllerBase {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim)) {
-            return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, "Invalid identifier."));
+            return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
         var info = await _authService.GetAuthorizationInfoAsync(idClaim);
 
         if (!info.IsSuccess) {
-            return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, "Failed to get authorization information."));
+            return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
-        return Ok(new ApiResponse<UserAuthorizationInfo>(info.Value, null));
+        return Ok(new ApiResponse<UserAuthorizationInfo>(info.Value, Error.None));
     }
 
     [HttpPost("send-verify-email")] // Post to use the antiforgery token.
@@ -181,7 +180,7 @@ public sealed class AuthenticateController : ControllerBase {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim)) {
-            return Unauthorized(new ApiResponse("Invalid identifier."));
+            return Unauthorized(new ApiResponse(Errors.InvalidCredentials()));
         }
 
         var result = await _authService.SendVerificationEmailAsync(idClaim);
@@ -191,18 +190,15 @@ public sealed class AuthenticateController : ControllerBase {
         }
 
         switch (result.Error.Code) {
-            case "Auth.NoId":
-                return BadRequest(new ApiResponse("Invalid identifier."));
+            case nameof(Errors.NoUserFoundFromId):
+                return BadRequest(new ApiResponse(result.Error));
             
-            case "Auth.AlreadyConfirmed":
+            case nameof(Errors.UserAlreadyVerified):
                 return Ok();
             
-            case var _ when result.Error.Code.StartsWith("Mail."):
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse("Error happened with mailing service."));
-                
             default:
-                _logger.LogWarning("Unhandled result error {e} when sending verify email.", result.Error);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("Server have unexpected error."));
+                _logger.LogError("Error while sending verification email: {e}", result.Error);
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(Errors.UnexpectedError()));
         }
     }
 
@@ -216,19 +212,15 @@ public sealed class AuthenticateController : ControllerBase {
         }
 
         switch (result.Error.Code) {
-            case "Auth.NoId" or "Auth.InvalidConfirmCode":
-                return BadRequest(new ApiResponse("Invalid identifier or confirmation code."));
+            case nameof(Errors.NoUserFoundFromId) or nameof(Errors.InvalidConfirmationCode):
+                return BadRequest(new ApiResponse(result.Error));
 
-            case "Auth.AlreadyConfirmed":
+            case nameof(Errors.UserAlreadyVerified):
                 return Ok();
             
-            case var _ when result.Error.Code.StartsWith("Auth."):
-                // TODO: Better reporting.
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("Server have unexpected error."));
-
             default:
-                _logger.LogWarning("Unhandled result error {e} when confirm email.", result.Error);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse("Server have unexpected error."));
+                _logger.LogWarning("Error while sending verification email: {e}", result.Error);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
         }
     }
     

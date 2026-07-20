@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
-import {Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
+import { Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
 import { authService } from "../../api/authService.ts";
-import type { LoginResponse } from "../../api/responses.ts";
+import type { LoginResponse, ServiceResponse } from "../../api/responses.ts";
 import { HttpStatusCode } from "axios";
 import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
 import { BsEye, BsEyeSlash } from "react-icons/bs";
-import type { ApiResponse } from "../../api/apiResponse.ts";
 
 export async function authLoader(){
     if (authService.hasAuthorizationInfo()) {
@@ -42,7 +41,7 @@ export async function authAction({ request }: { request: Request }) {
 
     switch (formData.get("intent")) {
         case "login": {
-            const response: ApiResponse<LoginResponse> = await authService.login({
+            const response: ServiceResponse<LoginResponse> = await authService.login({
                 email: email as string,
                 password: password as string
             })
@@ -51,7 +50,7 @@ export async function authAction({ request }: { request: Request }) {
                 return redirect("/lobby");
             }
 
-            return { error: response.message ?? "Unknown error." };
+            return { error: response.error?.message ?? "Unknown error." };
         }
 
         case "register": {
@@ -61,7 +60,7 @@ export async function authAction({ request }: { request: Request }) {
                 return { error: "Passwords do not match." }
             }
 
-            const response = await authService.register({
+            const response: ServiceResponse = await authService.register({
                 email: email as string,
                 password: password as string,
                 confirmPassword: confirmPassword,
@@ -71,7 +70,7 @@ export async function authAction({ request }: { request: Request }) {
                 return redirect("/auth#login");
             }
 
-            return { error: response.message ?? "Unknown error." };
+            return { error: response.error?.message ?? "Unknown error." };
         }
 
         default:

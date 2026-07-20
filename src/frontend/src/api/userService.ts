@@ -1,27 +1,28 @@
-import { type AxiosResponse, HttpStatusCode } from "axios";
-import type { UserBasicProfileInfo } from "./responses.ts";
-import { handleApiError } from "../utils/errorHelpers.ts";
+import { type AxiosError, type AxiosResponse } from "axios";
+import type { BackendResponse, ServiceResponse, UserBasicProfileInfo } from "./responses.ts";
 import apiClient from "./client.ts";
-import type { ApiResponse, BackendApiResponse } from "./apiResponse.ts";
-import type {AvatarOperation} from "./requests.ts";
+import type { AvatarOperation } from "./requests.ts";
+import { handleAxiosError } from "./errorHandling.ts";
 
 export const userService = {
-    uploadAvatar: async (file: File): Promise<ApiResponse> => {
+    uploadAvatar: async (file: File): Promise<ServiceResponse> => {
         try {
             const formData: FormData = new FormData();
             formData.set("File", file);
 
-            const response: AxiosResponse<BackendApiResponse> = await apiClient.post("/user/avatar", formData, {
+            const response: AxiosResponse<BackendResponse> = await apiClient.post("/user/avatar", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 }
             });
 
             return {
+                success: true,
                 statusCode: response.status,
             }
-        } catch (err) {
-            return handleApiError(err);
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
         }
     },
 
@@ -37,20 +38,24 @@ export const userService = {
         return `${import.meta.env.VITE_BACKEND_URL}/user/avatar?${queryParams.toString()}`;
     },
 
-    deleteAvatar: async (): Promise<ApiResponse> => {
+    deleteAvatar: async (): Promise<ServiceResponse> => {
         try {
-            const response: AxiosResponse<BackendApiResponse> =
-                await apiClient.delete<BackendApiResponse>("/user/avatar");
+            const response: AxiosResponse<BackendResponse> =
+                await apiClient.delete<BackendResponse>("/user/avatar");
 
             return {
+                success: true,
                 statusCode: response.status,
             }
-        } catch (err) {
-            return handleApiError(err);
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
         }
     },
 
-    setupProfile: async (userName: string, displayName: string, avatarOperation: AvatarOperation): Promise<ApiResponse> => {
+    setupProfile: async (userName: string,
+                         displayName: string,
+                         avatarOperation: AvatarOperation): Promise<ServiceResponse> => {
         try {
             const formData = new FormData();
             formData.append("userName", userName);
@@ -68,31 +73,28 @@ export const userService = {
             });
 
             return {
+                success: true,
                 statusCode: response.status,
             };
-        } catch (err) {
-            return handleApiError(err);
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
         }
     },
 
-    getSessionUserProfile: async (): Promise<ApiResponse<UserBasicProfileInfo>> => {
+    getSessionUserProfile: async (): Promise<ServiceResponse<UserBasicProfileInfo>> => {
         try {
-            const response: AxiosResponse<BackendApiResponse<UserBasicProfileInfo>> =
-                await apiClient.get<BackendApiResponse<UserBasicProfileInfo>>("/user/profile");
-
-            if (response.status == HttpStatusCode.Ok) {
-                return {
-                    statusCode: response.status,
-                    message: response.data!.message,
-                    data: response.data!.data,
-                }
-            }
+            const response: AxiosResponse<BackendResponse<UserBasicProfileInfo>> =
+                await apiClient.get<BackendResponse<UserBasicProfileInfo>>("/user/profile");
 
             return {
+                success: true,
                 statusCode: response.status,
+                data: response.data!.data,
             }
-        } catch (err) {
-            return handleApiError(err);
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
         }
     }
 }

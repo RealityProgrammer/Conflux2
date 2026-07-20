@@ -10,19 +10,19 @@ internal sealed class MailingService(
 ) : IMailingService {
     public async Task<Result> SendEmailConfirmationAsync(string receiverEmail, string verifyUrl) {
         if (config["Mail:SenderName"] is not { } senderName) {
-            return Result.Failure("Mail.MissingConfig", "Missing Mail:SenderName configuration option.");
+            return Errors.MissingConfiguration("Mail:SenderName");
         }
         
         if (config["Mail:SenderEmail"] is not { } senderEmail) {
-            return Result.Failure("Mail.MissingConfig", "Missing Mail:SenderEmail configuration option.");
+            return Errors.MissingConfiguration("Mail:SenderEmail");
         }
         
         if (config["Mail:Server"] is not { } server) {
-            return Result.Failure("Mail.Server", "Missing Mail:Server configuration option.");
+            return Errors.MissingConfiguration("Mail:Server");
         }
         
         if (config["Mail:Port"] is not { } port) {
-            return Result.Failure("Mail.MissingConfig", "Missing Mail:Port configuration option.");
+            return Errors.MissingConfiguration("Mail:Port");
         }
 
         if (!int.TryParse(port, out int parsedPort)) {
@@ -30,7 +30,7 @@ internal sealed class MailingService(
         }
         
         if (config["Mail:Password"] is not { } password) {
-            return Result.Failure("Mail.MissingConfig", "Missing Mail:Password configuration option.");
+            return Errors.MissingConfiguration("Mail:Password");
         }
         
         // TODO: Move the task to background service.
@@ -76,19 +76,19 @@ internal sealed class MailingService(
             try {
                 await smtp.ConnectAsync(server, parsedPort, SecureSocketOptions.StartTls);
             } catch {
-                return Result.Failure("Mail.NoConnection", "Failed to connect to mail server.");
+                return Errors.ConnectionFailure("mailing server");
             }
 
             try {
                 await smtp.AuthenticateAsync(senderEmail, password);
             } catch {
-                return Result.Failure("Mail.NoAuthentication", "Failed to authenticate to mail server.");
+                return Errors.InvalidCredentials("mailing service");
             }
 
             try {
                 await smtp.SendAsync(email);
             } catch {
-                return Result.Failure("Mail.SendFailure", "Failed to send mail.");
+                return Errors.OperationFailure("send confirmation email");
             }
             
             return Result.Success();

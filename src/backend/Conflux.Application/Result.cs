@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Conflux.Application;
 
 public readonly record struct Result {
@@ -15,9 +13,11 @@ public readonly record struct Result {
     
     public static Result Failure(Error error) => new(false, error);
     
-    public static Result Failure(string errorCode, string errorMessage) {
-        return new(false, new(errorCode, errorMessage));
+    public static Result Failure(string errorCode, string errorMessage, object? details = null) {
+        return new(false, new(errorCode, errorMessage, details));
     }
+
+    public static implicit operator Result(Error error) => Failure(error);
 }
 
 public readonly record struct Result<T> {
@@ -40,4 +40,6 @@ public readonly record struct Result<T> {
     public static Result<T> Failure(string errorCode, string errorMessage) {
         return new(false, default!, new(errorCode, errorMessage));
     }
+
+    public static implicit operator Result<T>(Error error) => Failure(error);
 }

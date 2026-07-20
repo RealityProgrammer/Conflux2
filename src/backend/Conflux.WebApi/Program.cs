@@ -9,8 +9,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
+using Conflux.Application;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,12 +102,12 @@ builder.Services.AddControllersWithViews(options => {
         var validationErrors = context.ModelState
             .Where(ms => ms.Value!.Errors.Count > 0)
             .ToDictionary(
-                kvp => kvp.Key,
+                kvp => JsonNamingPolicy.CamelCase.ConvertName(kvp.Key), // blame the frontend
                 kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
             );
 
         ApiResponse<Dictionary<string, string[]>> response = 
-            new(validationErrors, "One or more validation errors occurred.");
+            new(null, Errors.ValidationErrorsOccured(validationErrors));
 
         return new BadRequestObjectResult(response);
     };

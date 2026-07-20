@@ -49,7 +49,7 @@ internal sealed class AuthService : IAuthService {
         var userExists = await _userManager.FindByEmailAsync(email);
         
         if (userExists != null) {
-            return Result.Failure("Auth.OccupiedEmail", "User email is already in used.");
+            return Errors.InvalidCredentials();
         }
 
         var generatedUserName = $"User-{Guid.NewGuid():N}";
@@ -77,15 +77,9 @@ internal sealed class AuthService : IAuthService {
             IList<string> roles = await _userManager.GetRolesAsync(user);
             var token = await GenerateJwtToken(user, roles);
             
-            var identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
+            await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
 
-            if (!identityResult.Succeeded) {
-                _logger.LogError("SetAuthenticationTokenAsync error: {c} - {d}", identityResult.Errors.First().Code, identityResult.Errors.First().Description);
-            }
-            
             var permissions = await GetAuthorizationPermissions(user);
-            
-            _logger.LogInformation("Login refresh token: {t}", token.RefreshToken);
             
             return Result<LoginResponse>.Success(new(new(
                 user.Id,
@@ -96,7 +90,7 @@ internal sealed class AuthService : IAuthService {
             ), "Bearer", token.AccessToken, token.RefreshToken));
         }
 
-        return Result<LoginResponse>.Failure("Auth.InvalidCredentials", "Invalid credentials.");
+        return Errors.InvalidCredentials();
     }
     
     private async Task<TokenResponse> GenerateJwtToken(ApplicationUser user, IEnumerable<string> roles) {
@@ -148,26 +142,24 @@ internal sealed class AuthService : IAuthService {
     public async Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken) {
         var user = await _userManager.FindByEmailAsync(userEmail);
         if (user == null) {
-            return Result<RefreshResponse>.Failure("Auth.NoEmail", "No user with the provided email.");
+            return Errors.NoUserFoundFromEmail();
         }
         
         var storedData = await _userManager.GetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken");
         if (string.IsNullOrEmpty(storedData)) {
-            return Result<RefreshResponse>.Failure("Auth.NoRefreshToken", "User has no valid refresh token.");
+            return Errors.InvalidRefreshToken();
         }
         
         int firstColon = storedData.IndexOf(':');
 
         // failure if somehow the data is corrupted or is expired.
         if (firstColon == -1 || !long.TryParse(storedData.AsSpan()[(firstColon + 1)..], out var expireTick) || DateTime.UtcNow.Ticks > expireTick) {
-            return Result<RefreshResponse>.Failure(new("Auth.NoRefreshToken", "User has no valid refresh token."));
+            return Errors.InvalidRefreshToken();
         }
         
-        _logger.LogInformation("validate refresh tokens: {t1}, {t2}.", storedData.AsSpan()[..firstColon].ToString(), refreshToken);
-
         // compare the tokens.
         if (!storedData.AsSpan()[..firstColon].SequenceEqual(refreshToken)) {
-            return Result<RefreshResponse>.Failure("Auth.InvalidRefreshToken", "Invalid refresh token.");
+            return Errors.InvalidRefreshToken();
         }
         
         // everything is fine now, rotate and store the new generated tokens.
@@ -191,7 +183,7 @@ internal sealed class AuthService : IAuthService {
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null) {
-            return Result<UserAuthorizationInfo?>.Failure("Auth.NoId", "No user with the provided ID.");
+            return Result<UserAuthorizationInfo?>.Failure(Errors.NoUserFoundFromId());
         }
 
         var userRoles = await _userManager.GetRolesAsync(user);
@@ -210,11 +202,11 @@ internal sealed class AuthService : IAuthService {
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null) {
-            return Result.Failure("Auth.NoId", "No user with the provided ID.");
+            return Errors.NoUserFoundFromId();
         }
 
         if (user.EmailConfirmed) {
-            return Result.Failure("Auth.AlreadyConfirmed", "User is already verified.");
+            return Errors.UserAlreadyVerified();
         }
         
         // TODO: Time-limiting the confirmation token.
@@ -240,11 +232,11 @@ internal sealed class AuthService : IAuthService {
         var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null) {
-            return Result.Failure("Auth.NoId", "No user with the provided ID.");
+            return Errors.NoUserFoundFromId();
         }
-        
+
         if (user.EmailConfirmed) {
-            return Result.Failure("Auth.AlreadyConfirmed", "User is already verified.");
+            return Errors.UserAlreadyVerified();
         }
         
         var result = await _userManager.ConfirmEmailAsync(user, code);
@@ -254,7 +246,7 @@ internal sealed class AuthService : IAuthService {
         }
 
         var firstError = result.Errors.First();
-        return Result.Failure($"Auth.{firstError.Code}", firstError.Description);
+        return Result.Failure(firstError.Code, firstError.Description);
     }
 
     private async Task<List<string>> GetAuthorizationPermissions(ApplicationUser user) {

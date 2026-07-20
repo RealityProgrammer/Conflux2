@@ -1,3 +1,19 @@
+import type { HttpStatusCode } from "axios";
+
+export type Error = {
+    code: string;
+    message: string;
+    details?: any | null;
+};
+
+export type ServiceResponse<T = void> = {
+    success: boolean;
+    statusCode: HttpStatusCode;
+    error?: Error | null;
+} & (T extends void ? {} : { data?: T | null });
+
+export type BackendResponse<T = void> = Omit<ServiceResponse<T>, 'success'>;
+
 export interface UserAuthorizationInfo {
     id: string;
     isVerified: boolean;
@@ -23,3 +39,5 @@ export interface RefreshResponse {
     tokenType: string;
     accessToken: string;
 }
+
+export type FieldErrors<F extends keyof any> = Record<F, string[]>;

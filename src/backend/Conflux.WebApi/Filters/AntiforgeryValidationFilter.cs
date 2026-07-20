@@ -1,3 +1,4 @@
+using Conflux.Application;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -34,7 +35,7 @@ internal sealed class AntiforgeryValidationFilter(IAntiforgery antiforgery) : IA
         try {
             await antiforgery.ValidateRequestAsync(context.HttpContext);
         } catch (AntiforgeryValidationException) {
-            context.Result = new BadRequestObjectResult(new ApiResponse("Anti-forgery token validation failed."));
+            context.Result = new BadRequestObjectResult(new ApiResponse(Errors.AntiforgeryTokenVerificationFailed()));
         }
     }
 }

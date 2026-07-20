@@ -8,7 +8,7 @@ public interface IUserService {
     Task<Result<OpenAvatarResponse>> OpenAvatarAsync(Guid userId);
     Task<Result> DeleteAvatarAsync(Guid userId);
 
-    Result<string> GetAvatarUrl(Guid userId, bool useHttps);
+    string GetAvatarUrl(Guid userId, bool useHttps);
 
     Task<Result> SetupProfileAsync(SetupProfileRequest request);
     Task<Result<UserBasicProfileResponse>> GetUserBasicProfileAsync(Guid userId);

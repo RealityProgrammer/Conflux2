@@ -15,7 +15,8 @@ internal sealed class UserService(
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
     TimeProvider timeProvider,
     UserManager<ApplicationUser> userManager,
-    IConfiguration config
+    IConfiguration config,
+    ILogger<UserService> logger
 ) : IUserService {
     public async Task<Result<AvatarUploadResponse>> UploadAvatarAsync(Guid userId, Stream avatarStream, string contentType) {
         if (avatarStream is { CanSeek: true, Position: > 0 }) {
@@ -35,7 +36,7 @@ internal sealed class UserService(
             });
 
         if (changed == 0) {
-            return Result<AvatarUploadResponse>.Failure("User.NoId", "No user with the provided ID.");
+            return Errors.NoUserFoundFromId();
         }
         
         Result<AvatarUploadResponse> result = await UploadAvatarToS3(userId, avatarStream, contentType);
@@ -72,34 +73,21 @@ internal sealed class UserService(
                     return Result<AvatarUploadResponse>.Success(new(uniqueKey));
 
                 case HttpStatusCode.Unauthorized:
-                    return Result<AvatarUploadResponse>.Failure(
-                        "User.UploadAvatar.Authorize",
-                        "Cannot upload avatar to S3 service due to authorization issue."
-                    );
+                    return Errors.InvalidCredentials("S3");
 
                 case HttpStatusCode.ServiceUnavailable:
-                    return Result<AvatarUploadResponse>.Failure(
-                        "User.UploadAvatar.ServiceUnavailable",
-                        "Cannot upload avatar to S3 service."
-                    );
+                    return Errors.ConnectionFailure("S3");
 
                 case HttpStatusCode.MethodNotAllowed:
-                    return Result<AvatarUploadResponse>.Failure(
-                        "User.UploadAvatar.MethodNotAllowed",
-                        "Method is not allowed (Potentially using discontinued supports for Email Grantee ACLs)."
-                    );
+                    return Errors.Discontinued("S3 no longer support Email Grantee ACLs.");
 
                 default:
-                    return Result<AvatarUploadResponse>.Failure(
-                        "User.UploadAvatar.StatusCode",
-                        GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode)
-                    );
+                    logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
+                    return Errors.UnexpectedError();
             }
         } catch (AmazonS3Exception e) {
-            return Result<AvatarUploadResponse>.Failure(
-                "User.UploadAvatar.S3Exception",
-                GetUnhandledS3ResponseStatusCodeMessage(e.StatusCode)
-            );
+            logger.LogError(e, "S3 threw exception.");
+            return Errors.UnexpectedError();
         }
     }
 
@@ -109,37 +97,36 @@ internal sealed class UserService(
 
         try {
             var response = await s3Client.GetObjectAsync(bucketName, uniqueKey);
-
+            
             return Result<OpenAvatarResponse>.Success(new(
                 response.ResponseStream,
                 response.Headers.ContentType,
                 response
             ));
         } catch (AmazonS3Exception e) {
-            return e.StatusCode switch {
-                HttpStatusCode.NotFound => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.NotFound", "User has no avatar."),
-                _ => Result<OpenAvatarResponse>.Failure("User.OpenAvatar.StatusCode", GetUnhandledS3ResponseStatusCodeMessage(e.StatusCode)),
-            };
+            switch (e.StatusCode) {
+                case HttpStatusCode.NotFound:
+                    return Errors.ResourceNotFound("Avatar");
+                
+                default:
+                    logger.LogError(e, "S3 threw exception.");
+                    return Errors.UnexpectedError();
+            }
         }
     }
 
-    public Result<string> GetAvatarUrl(Guid userId, bool useHttps) {
+    public string GetAvatarUrl(Guid userId, bool useHttps) {
         var bucketName = config["MediaAWS:BucketName"];
         var uniqueKey = CreateAvatarUniqueKey(userId);
 
-        try {
-            var request = new GetPreSignedUrlRequest {
-                BucketName = bucketName,
-                Key = uniqueKey,
-                Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
-                Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
-            };
-
-            string url = s3Client.GetPreSignedURL(request);
-            return Result<string>.Success(url);
-        } catch (Exception ex) {
-            return Result<string>.Failure("User.GetAvatarUrl", ex.Message);
-        }
+        var request = new GetPreSignedUrlRequest {
+            BucketName = bucketName,
+            Key = uniqueKey,
+            Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
+            Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
+        };
+        
+        return s3Client.GetPreSignedURL(request);
     }
 
     public async Task<Result> DeleteAvatarAsync(Guid userId) {
@@ -156,7 +143,7 @@ internal sealed class UserService(
             });
 
         if (changed == 0) {
-            return Result.Failure("User.NoId", "No user with the provided ID.");
+            return Errors.NoUserFoundFromId();
         }
 
         var result = await DeleteAvatarFromS3(userId);
@@ -182,13 +169,15 @@ internal sealed class UserService(
                     return Result.Success();
                 
                 case HttpStatusCode.NotFound:
-                    return Result.Failure("User.DeleteAvatar.NotFound", "User has no avatar.");
+                    return Errors.ResourceNotFound("Avatar");
                 
                 default:
-                    return Result.Failure("User.DeleteAvatar", GetUnhandledS3ResponseStatusCodeMessage(response.HttpStatusCode));
+                    logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
+                    return Errors.UnexpectedError();
             }
-        } catch (Exception ex) {
-            return Result.Failure("User.DeleteAvatar", ex.Message);
+        } catch (Exception e) {
+            logger.LogError(e, "S3 threw exception.");
+            return Errors.UnexpectedError();
         }
     }
 
@@ -201,7 +190,7 @@ internal sealed class UserService(
             .FirstOrDefaultAsync();
 
         if (validate == null) {
-            return Result.Failure("User.SetupProfile.NoId", "No user with the provided ID.");
+            return Result.Failure(Errors.NoUserFoundFromId());
         }
         
         // if (validate.IsProfileSetup) {
@@ -236,7 +225,7 @@ internal sealed class UserService(
 
         if (changed == 0) {
             await transaction.RollbackAsync();
-            return Result.Failure("User.SetupProfile.FailedToUpdate", "Failed to update user profile data.");
+            return Errors.NoUserFoundFromId();  // should unexpected error be thrown.
         }
 
         switch (request.AvatarOperation.Type) {
@@ -244,20 +233,13 @@ internal sealed class UserService(
             {
                 if (request.AvatarOperation.AvatarStream is not { } stream) {
                     await transaction.RollbackAsync();
-                    
-                    return Result.Failure(
-                        "User.SetupProfile.MissingAvatarStream", 
-                        "Avatar stream is missing."
-                    );
+                    return Errors.MissingArgument("Avatar stream");
                 }
 
                 if (request.AvatarOperation.ContentType is not { } contentType) {
                     await transaction.RollbackAsync();
                     
-                    return Result.Failure(
-                        "User.SetupProfile.MissingAvatarContentType", 
-                        "Avatar content type is missing."
-                    );
+                    return Errors.MissingArgument("Avatar content type");
                 }
                 
                 var result = await UploadAvatarToS3(request.UserId, stream, contentType);
@@ -299,7 +281,7 @@ internal sealed class UserService(
             .FirstOrDefaultAsync();
 
         return result == null ? 
-            Result<UserBasicProfileResponse>.Failure("User.Profile.NoId", "No user with the provided ID.") : 
+            Errors.NoUserFoundFromId() : 
             Result<UserBasicProfileResponse>.Success(result);
     }
 

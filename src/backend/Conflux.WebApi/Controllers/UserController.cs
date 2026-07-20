@@ -39,10 +39,14 @@ public sealed class UserController : ControllerBase {
         if (result.IsSuccess) {
             return Ok();
         }
-
+        
         return result.Error.Code switch {
-            "User.UploadAvatar.ServiceUnavailable" => StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(result.Error.Message)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error.Message))
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            
+            nameof(Errors.ConnectionFailure) or nameof(Errors.InvalidCredentials) => 
+                StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(result.Error)),
+            
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
         };
     }
 
@@ -50,19 +54,11 @@ public sealed class UserController : ControllerBase {
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
     public async Task<ActionResult<ApiResponse<GetAvatarUrlResponse>>> GetAvatarUrl([FromQuery] string userId) {
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userIdGuid)) {
-            return BadRequest(new ApiResponse<GetAvatarUrlResponse>(null, "Invalid identifier."));
+            return BadRequest(new ApiResponse<GetAvatarUrlResponse>(null, Errors.InvalidIdentifier()));
         }
-
-        var result = _userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
         
-        if (result.IsSuccess) {
-            return Redirect(result.Value);
-        }
-
-        return result.Error.Code switch {
-            "User.OpenAvatar.NotFound" => NotFound(new ApiResponse<GetAvatarUrlResponse>(null, result.Error.Message)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetAvatarUrlResponse>(null, result.Error.Message)),
-        };
+        var result = _userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
+        return Redirect(result);
     }
 
     [HttpDelete("avatar")]
@@ -71,16 +67,24 @@ public sealed class UserController : ControllerBase {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
-            return BadRequest(new ApiResponse("Invalid identifier."));
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
         var result = await _userService.DeleteAvatarAsync(userIdGuid);
         
-        if (result.IsSuccess || result.Error.Code == "User.DeleteAvatar.NotFound") {
+        if (result.IsSuccess) {
             return NoContent();
         }
 
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error.Message));
+        switch (result.Error.Code) {
+            case nameof(Errors.ResourceNotFound):
+                return NoContent();
+            
+            case nameof(Errors.NoUserFoundFromId):
+                return BadRequest(result.Error);
+        }
+
+        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
     }
 
     [HttpGet("profile")]
@@ -89,32 +93,28 @@ public sealed class UserController : ControllerBase {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, "Invalid identifier."));
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
         }
         
         Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(userIdGuid);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, null));
+            return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, Error.None));
         }
-
+        
         return result.Error.Code switch {
-            "User.Profile.NoId" => NotFound(new ApiResponse<UserBasicProfileResponse>(null, result.Error.Message)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error.Message)),
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
         };
     }
 
     [HttpPost("setup-profile")]
     [Authorize]
     public async Task<ActionResult<ApiResponse>> SetupProfile([FromForm] SetupProfileRequest request) {
-        if (request is { AvatarOperation: AvatarOperationType.Set, AvatarFile: null }) {
-            return BadRequest(new ApiResponse("Avatar file not set."));
-        }
-        
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, "Invalid identifier."));
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
         }
 
         if (request.AvatarOperation == AvatarOperationType.Set) {
@@ -134,15 +134,28 @@ public sealed class UserController : ControllerBase {
             return Ok();
         }
         
-        return StatusCode(StatusCodes.Status500InternalServerError);
+        return result.Error.Code switch {
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
 
     public record UploadAvatarRequest([Required] IFormFile File);
     public record GetAvatarUrlResponse(string? Url);
+
     public record SetupProfileRequest(
-        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 64 characters.")] string UserName, 
-        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 64 characters.")] string DisplayName, 
-        [EnumDataType(typeof(AvatarOperationType), ErrorMessage = "Invalid avatar operation.")] AvatarOperationType AvatarOperation, 
+        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 64 characters.")]
+        string UserName,
+        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 64 characters.")]
+        string DisplayName,
+        [EnumDataType(typeof(AvatarOperationType), ErrorMessage = "Invalid avatar operation.")]
+        AvatarOperationType AvatarOperation,
         IFormFile? AvatarFile
-    );
+    ) : IValidatableObject {
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+            if (AvatarOperation == AvatarOperationType.Set && AvatarFile == null) {
+                yield return new("Avatar file is required when setting.", [ nameof(AvatarFile) ]);
+            }
+        }
+    }
 }

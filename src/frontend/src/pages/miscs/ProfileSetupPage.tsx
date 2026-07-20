@@ -8,6 +8,7 @@ import { HttpStatusCode } from "axios";
 import { useAuthorization } from "../../contexts/AuthContext.tsx";
 import { Label } from "radix-ui";
 import { type AvatarOperation, SetAvatar, DeleteAvatar, NoAvatarModification } from "../../api/requests.ts";
+import type {FieldErrors} from "../../api/responses.ts";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -198,6 +199,12 @@ function CompletePanel({ setDisplayingPanel, isSaving }: CompletePanelProps) {
 }
 
 export default function ProfileSetupPage() {
+    type State = {
+        success: boolean,
+        fieldErrors?: FieldErrors<'userName' | 'displayName' | 'avatarFile'> | null,
+        message?: string | null
+    };
+
     const auth = useAuthorization();
 
     const [displayingPanel, setDisplayingPanel] = useState<DisplayingPanel>(DisplayingPanel.Intro);
@@ -272,31 +279,34 @@ export default function ProfileSetupPage() {
         return () => window.removeEventListener("resize", handleResize);
     }, [displayingPanel]);
 
-    type State = { success: boolean, error: string | null | undefined };
-
     const setupProfile = async (_prevState: State, formData: FormData): Promise<State> => {
         const userName = formData.get("userName") as string;
         const displayName = formData.get("displayName") as string;
 
         const response = await userService.setupProfile(userName, displayName, avatarOperation);
 
-        if (response.statusCode === 200) {
-            auth.updateUserProfile({
-                userName,
-                displayName,
-                hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
-            })
+        switch (response.statusCode) {
+            case HttpStatusCode.Ok:
+                auth.updateUserProfile({
+                    userName,
+                    displayName,
+                    hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
+                });
+                break;
+
+            case HttpStatusCode.BadRequest:
+
+                break;
         }
 
         return {
             success: response.statusCode === HttpStatusCode.Ok,
-            error: response.message ?? null,
+            message: response.message ?? null,
         }
     };
 
     const [_state, formAction, isPending] = useActionState<State, FormData>(setupProfile, {
         success: false,
-        error: null,
     });
 
     return (
