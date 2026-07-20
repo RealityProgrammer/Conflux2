@@ -4,7 +4,6 @@ import AuthenticatePage, { authAction } from "./pages/auth/AuthenticatePage.tsx"
 import LobbyPage from "./pages/lobby/LobbyPage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
-import apiClient from "./api/client.ts";
 import { authService } from "./api/authService.ts";
 import { HttpStatusCode } from "axios";
 import type { UserAuthorizationInfo } from "./api/responses.ts";
@@ -19,7 +18,6 @@ export const router = createBrowserRouter([
         loader: async () => {
             const [authResponse] = await Promise.all([
                 authService.getAuthorizationInfo(),
-                apiClient.get("/csrf/token").catch(() => null)
             ]);
 
             const authInfo = authResponse.data;

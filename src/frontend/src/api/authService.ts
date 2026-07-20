@@ -10,6 +10,7 @@ import type {
 import axios, {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import Cookies from "js-cookie";
 import {handleAxiosError} from "./errorHandling.ts";
+import {csrfService} from "./csrfService.ts";
 
 let activeRefreshPromise: Promise<ServiceResponse<RefreshResponse>> | null = null;
 let activeGetAuthorizationInfoPromise: Promise<ServiceResponse<UserAuthorizationInfo | null>> | null = null;
@@ -22,10 +23,10 @@ export const authService = {
             const response: AxiosResponse<BackendResponse<LoginResponse>> =
                 await apiClient.post("/auth/login", request);
 
-            if (response.status === HttpStatusCode.Ok) {
-                localStorage.setItem("hasSession", "true");
-                cachedAuthorization = response.data.data?.authorization!;
-            }
+            localStorage.setItem("hasSession", "true");
+            cachedAuthorization = response.data.data?.authorization!;
+
+            await csrfService.requestCsrfToken();
 
             return {
                 success: true,
@@ -84,20 +85,29 @@ export const authService = {
                 `${import.meta.env.VITE_BACKEND_URL}/auth/refresh`,
                 {},
                 { headers }
-            ).then((response: AxiosResponse<BackendResponse<RefreshResponse>>): ServiceResponse<RefreshResponse> => {
+            ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {
                 localStorage.setItem("hasSession", "true");
                 cachedAuthorization = response.data.data?.authorization!;
+
+                await csrfService.requestCsrfToken();
 
                 return {
                     success: true,
                     statusCode: response.status,
                     data: response.data?.data,
                 }
-            }).catch((err: any): ServiceResponse<RefreshResponse> => {
+            }).catch(async (err: any): Promise<ServiceResponse<RefreshResponse>> => {
                 const axiosError = err as AxiosError<BackendResponse<RefreshResponse>>;
 
                 localStorage.removeItem("hasSession");
                 cachedAuthorization = null;
+
+                try {
+                    // get anonymous token to wipe out the old ones because antiforgery token is identity-based
+                    await csrfService.requestCsrfToken();
+                } catch (csrfErr) {
+                    console.error("Failed to reset to anonymous CSRF token after refresh failure", csrfErr);
+                }
 
                 return handleAxiosError(axiosError);
             }).finally(() => {
@@ -113,6 +123,8 @@ export const authService = {
             const response: AxiosResponse = await apiClient.post<BackendResponse>('/auth/logout');
             cachedAuthorization = null;
             localStorage.removeItem("hasSession");
+
+            await csrfService.requestCsrfToken();
 
             return {
                 success: true,

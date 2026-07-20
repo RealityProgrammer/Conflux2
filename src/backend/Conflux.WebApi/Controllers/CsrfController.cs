@@ -27,6 +27,7 @@ public sealed class CsrfController : ControllerBase {
     }
 
     [HttpPost("test")]
+    [ValidateAntiForgeryToken]
     public IActionResult TestCsrfToken() {
         return Ok();
     }

@@ -1,6 +1,8 @@
 import axios, { HttpStatusCode } from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
+import {csrfService} from "./csrfService.ts";
+import type {BackendResponse} from "./responses.ts";
 
 axios.defaults.withCredentials = true;
 
@@ -28,9 +30,13 @@ apiClient.interceptors.request.use((config) => {
 function registerAuthenticateExpirationInterception() {
     const interceptor = apiClient.interceptors.response.use(
         (response) => response,
-        async (error: AxiosError) => {
-            // if error happen, check if it is caused by unauthorized error, if not, reject
-            if (error.response?.status !== HttpStatusCode.Unauthorized) {
+        async (error: AxiosError<BackendResponse>) => {
+            const isUnauthorized = error.response?.status === HttpStatusCode.Unauthorized;
+            const isCsrfFailure = error.response?.status === HttpStatusCode.BadRequest &&
+                error.response?.data?.error?.code === 'AntiforgeryTokenVerificationFailed';
+
+            // reject if not unauthorized and csrf failure.
+            if (!isUnauthorized && !isCsrfFailure) {
                 return Promise.reject(error);
             }
 
@@ -54,12 +60,11 @@ function registerAuthenticateExpirationInterception() {
 
             // make it not loop according to this:
             // https://stackoverflow.com/questions/51646853/automating-access-token-refreshing-via-interceptors-in-axios
-            axios.interceptors.response.eject(interceptor);
+            apiClient.interceptors.response.eject(interceptor);
 
             try {
-                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {}, {
-                    withCredentials: true
-                });
+                await apiClient.post(`/auth/refresh`);
+                await csrfService.requestCsrfToken();
 
                 return apiClient(originalRequestConfig);
             } catch (error) {

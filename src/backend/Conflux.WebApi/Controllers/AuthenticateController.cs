@@ -2,6 +2,7 @@ using Conflux.Application;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -15,17 +16,20 @@ namespace Conflux.WebApi.Controllers;
 public sealed class AuthenticateController : ControllerBase {
     private readonly IAuthService _authService;
     private readonly AuthServiceOptions _options;
-    private TimeProvider _timeProvider;
+    private readonly TimeProvider _timeProvider;
+    private readonly IAntiforgery _antiforgery;
     private readonly ILogger<AuthenticateController> _logger;
     
     public AuthenticateController(
         IAuthService authService, 
         TimeProvider timeProvider,
+        IAntiforgery antiforgery,
         IOptions<AuthServiceOptions> options,
         ILogger<AuthenticateController> logger
     ) {
         _authService = authService;
         _timeProvider = timeProvider;
+        _antiforgery = antiforgery;
         _options = options.Value;
         _logger = logger;
     }
