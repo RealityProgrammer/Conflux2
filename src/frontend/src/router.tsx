@@ -10,6 +10,7 @@ import { HttpStatusCode } from "axios";
 import type { UserAuthorizationInfo } from "./api/responses.ts";
 import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
 import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
+import {userService} from "./api/userService.ts";
 
 export const router = createBrowserRouter([
     {
@@ -18,11 +19,25 @@ export const router = createBrowserRouter([
         loader: async () => {
             const [authResponse] = await Promise.all([
                 authService.getAuthorizationInfo(),
-                // suppress fails so app loads even if backend is offline
                 apiClient.get("/csrf/token").catch(() => null)
             ]);
 
-            return authResponse.data;
+            const authInfo = authResponse.data;
+            let profileInfo = null;
+
+            if (authInfo?.id) {
+                try {
+                    const profileResponse = await userService.getSessionUserProfile();
+                    profileInfo = profileResponse.data;
+                } catch (error) {
+                    console.error("Failed to load user profile: ", error);
+                }
+            }
+
+            return {
+                authorizationInfo: authInfo,
+                userProfile: profileInfo
+            };
         },
         element: (
             <AuthProvider>

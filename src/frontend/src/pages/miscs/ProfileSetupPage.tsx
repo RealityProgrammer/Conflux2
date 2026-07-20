@@ -9,6 +9,7 @@ import { useAuthorization } from "../../contexts/AuthContext.tsx";
 import { Label } from "radix-ui";
 import { type AvatarOperation, SetAvatar, DeleteAvatar, NoAvatarModification } from "../../api/requests.ts";
 import type {FieldErrors} from "../../api/responses.ts";
+import {useNavigate} from "react-router-dom";
 
 enum DisplayingPanel {
     Intro = 0,
@@ -45,9 +46,13 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
 interface AvatarPanelProps extends PanelProps {
     avatarOperation: AvatarOperation;
     setAvatarOperation: (operation: AvatarOperation) => void;
+    fieldErrors?: FieldErrors<'avatarFile'> | null;
+    clearError: (name: 'avatarFile') => void;
 }
 
-function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }: AvatarPanelProps) {
+function AvatarPanel({
+        setDisplayingPanel, avatarOperation, setAvatarOperation, fieldErrors, clearError
+    }: AvatarPanelProps) {
     const auth = useAuthorization();
     const hasAvatar = auth.userProfile?.hasAvatar ?? false;
 
@@ -57,15 +62,20 @@ function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }
 
     const onAvatarChanged = (file: File, previewUrl: string) => {
         setAvatarOperation(new SetAvatar(file, previewUrl));
+        clearError('avatarFile');
     };
 
     const onAvatarDelete = () => {
         setAvatarOperation(new DeleteAvatar());
+        clearError('avatarFile');
     };
 
     const onAvatarRevert = () => {
         setAvatarOperation(new NoAvatarModification());
+        clearError('avatarFile');
     };
+
+    const hasError = !!fieldErrors?.avatarFile;
 
     return (
         <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-3">
@@ -74,22 +84,30 @@ function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }
                 <p className="text-center text-gray-400 text-sm mt-2">Make yourself look special</p>
             </header>
 
-            <div className="flex-1 flex flex-row flex-nowrap justify-center items-start gap-2">
-                <SelectableAvatar
-                    src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl ?? undefined}
-                    onAvatarChange={onAvatarChanged}
-                    className="size-64 rounded-full flex-none"
-                />
+            <div className="flex-1 flex flex-col">
+                <div className="flex flex-row flex-nowrap justify-center items-start gap-2">
+                    <SelectableAvatar
+                        src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl ?? undefined}
+                        onAvatarChange={onAvatarChanged}
+                        className={`size-64 rounded-full flex-none ${hasError && 'ring-4 ring-red-500'}`}
+                    />
 
-                <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">
-                    <button type="button" className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete" || (!hasAvatar && avatarOperation.type == "noMod")}>
-                        <BsX className="fill-white size-6"/>
-                    </button>
+                    <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">
+                        <button type="button" className="button-danger p-1.5! flex flex-row justify-center items-center" onClick={onAvatarDelete} disabled={avatarOperation.type === "delete" || (!hasAvatar && avatarOperation.type == "noMod")}>
+                            <BsX className="fill-white size-6"/>
+                        </button>
 
-                    <button type="button" className="button-primary p-1.5! flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
-                        <BsArrowRepeat className="fill-white size-6"/>
-                    </button>
+                        <button type="button" className="button-primary p-1.5! flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
+                            <BsArrowRepeat className="fill-white size-6"/>
+                        </button>
+                    </div>
                 </div>
+
+                {
+                    hasError && (
+                        <p className="text-center text-red-500 text-sm mt-1">{fieldErrors?.avatarFile[0]}</p>
+                    )
+                }
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
@@ -105,13 +123,14 @@ function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }
 
 interface NamesPanelProps extends PanelProps {
     fieldErrors?: FieldErrors<'userName' | 'displayName'> | null;
+    clearError: (name: 'userName' | 'displayName') => void;
 }
 
-function NamesPanel({ setDisplayingPanel, fieldErrors }: NamesPanelProps) {
+function NamesPanel({ setDisplayingPanel, fieldErrors, clearError }: NamesPanelProps) {
     const auth = useAuthorization();
 
-    const [userName, setUserName] = useState(auth.userProfile?.userName ?? "");
-    const [displayName, setDisplayName] = useState(auth.userProfile?.displayName ?? "");
+    const [userName, setUserName] = useState(auth.userProfile?.userName ?? "???");
+    const [displayName, setDisplayName] = useState(auth.userProfile?.displayName ?? "???");
 
     return (
         <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-3">
@@ -127,11 +146,14 @@ function NamesPanel({ setDisplayingPanel, fieldErrors }: NamesPanelProps) {
                     <input id="userName" type="text" placeholder="Enter username" name="userName"
                            className="w-full h-11 px-3 input-field"
                            value={userName}
-                           onChange={(e) => setUserName(e.target.value)}/>
+                           onChange={(e) => {
+                               setUserName(e.target.value);
+                               clearError('userName');
+                           }}/>
 
                     {
                         fieldErrors?.userName && (
-                            <span className="block text-center text-red-500 text-sm mt-1">{fieldErrors?.userName[0]}</span>
+                            <p className="text-center text-red-500 text-sm mt-1">{fieldErrors?.userName[0]}</p>
                         )
                     }
                 </div>
@@ -142,11 +164,14 @@ function NamesPanel({ setDisplayingPanel, fieldErrors }: NamesPanelProps) {
                     <input id="displayName" type="text" placeholder="Enter display name" name="displayName"
                            className="w-full h-11 px-3 input-field"
                            value={displayName}
-                           onChange={(e) => setDisplayName(e.target.value)}/>
+                           onChange={(e) => {
+                               setDisplayName(e.target.value);
+                               clearError('displayName');
+                           }}/>
 
                     {
                         fieldErrors?.displayName && (
-                            <span className="block text-center text-red-500 text-sm mt-1">{fieldErrors?.displayName[0]}</span>
+                            <p className="text-center text-red-500 text-sm mt-1">{fieldErrors?.displayName[0]}</p>
                         )
                     }
                 </div>
@@ -227,6 +252,7 @@ export default function ProfileSetupPage() {
     };
 
     const auth = useAuthorization();
+    const navigator = useNavigate();
 
     const [displayingPanel, setDisplayingPanel] = useState<DisplayingPanel>(DisplayingPanel.Intro);
     const previousPanel = useRef<DisplayingPanel>(displayingPanel);
@@ -314,6 +340,8 @@ export default function ProfileSetupPage() {
                     hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
                 });
 
+                navigator("/lobby");
+
                 return {
                     success: true,
                 };
@@ -345,12 +373,32 @@ export default function ProfileSetupPage() {
         if (!state.fieldErrors) return;
 
         // this is dogshit but it works for now
+        if (state.fieldErrors.avatarFile) {
+            setDisplayingPanel(DisplayingPanel.Avatar);
+            return;
+        }
         if (state.fieldErrors.userName || state.fieldErrors.displayName) {
             setDisplayingPanel(DisplayingPanel.Name);
-        } else if (state.fieldErrors.avatarFile) {
-            setDisplayingPanel(DisplayingPanel.Avatar);
+            return;
         }
     }, [state]);
+
+    // error displaying for each field, copy into a separate field to make the field no longer display error
+    // when the value is changed.
+    const [visibleErrors, setVisibleErrors] = useState<State['fieldErrors']>(null);
+
+    useEffect(() => {
+        setVisibleErrors(state.fieldErrors);
+    }, [state.fieldErrors]);
+
+    const clearError = (field: 'userName' | 'displayName' | 'avatarFile') => {
+        setVisibleErrors(prev => {
+            if (!prev) return prev;
+            const updatedErrors = { ...prev };
+            delete updatedErrors[field];    // remove the specific error
+            return updatedErrors;
+        });
+    };
 
     return (
         <div className="fixed bg-fixed inset-0 overflow-hidden mesh-bg-1">
@@ -373,7 +421,10 @@ export default function ProfileSetupPage() {
                     >
                         <AvatarPanel setDisplayingPanel={setDisplayingPanel}
                                      avatarOperation={avatarOperation}
-                                     setAvatarOperation={setAvatarOperation}/>
+                                     setAvatarOperation={setAvatarOperation}
+                                     fieldErrors={visibleErrors}
+                                     clearError={clearError}
+                                     />
                     </div>
 
                     <div
@@ -381,7 +432,8 @@ export default function ProfileSetupPage() {
                         className={`absolute left-[70%] top-[30%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Name ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
                     >
                         <NamesPanel setDisplayingPanel={setDisplayingPanel}
-                                    fieldErrors={state.fieldErrors}/>
+                                    fieldErrors={visibleErrors}
+                                    clearError={clearError}/>
                     </div>
 
                     <div

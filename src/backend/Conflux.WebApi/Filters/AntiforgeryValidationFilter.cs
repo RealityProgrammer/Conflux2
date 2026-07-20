@@ -21,7 +21,7 @@ internal sealed class AntiforgeryValidationFilter(IAntiforgery antiforgery) : IA
             HttpMethods.IsHead(request.Method) ||
             HttpMethods.IsOptions(request.Method) ||
             HttpMethods.IsTrace(request.Method) ||
-            explicitlyRequiresValidation
+            !explicitlyRequiresValidation
         ) {
             return;
         }

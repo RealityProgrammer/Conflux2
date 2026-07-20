@@ -25,4 +25,9 @@ public sealed class CsrfController : ControllerBase {
 
         return Ok();
     }
+
+    [HttpPost("test")]
+    public IActionResult TestCsrfToken() {
+        return Ok();
+    }
 }

@@ -141,13 +141,13 @@ public sealed class UserController : ControllerBase {
                 yield return new("Avatar file is required.", [ nameof(File) ]);
             } else {
                 if (!File.ContentType.StartsWith("image/")) {
-                    yield return new("Avatar file is not an image file.", [ nameof(File) ]);
+                    yield return new("Avatar is not an image file.", [ nameof(File) ]);
                 }
 
                 ReadOnlySpan<char> subtype = File.ContentType.AsSpan(6);
 
                 if (subtype is not "png" and not "jpeg") {
-                    yield return new("Avatar file is using unsupported format.", [ nameof(File) ]);
+                    yield return new("Avatar is using unsupported format.", [ nameof(File) ]);
                 }
                 
                 var configuration = context.GetRequiredService<IConfiguration>();
@@ -155,7 +155,7 @@ public sealed class UserController : ControllerBase {
                 long maxSize = configuration.GetValue<long>("Services:User:MaxAvatarSizeBytes", 1048576);
 
                 if (File.Length > maxSize) {
-                    yield return new($"Avatar file must be smaller than {maxSize.Bytes():MB}.");
+                    yield return new($"Avatar must be smaller than {maxSize.Bytes():MB}.");
                 }
             }
         }
@@ -164,15 +164,28 @@ public sealed class UserController : ControllerBase {
     public record GetAvatarUrlResponse(string? Url);
 
     public record SetupProfileRequest(
-        [Required(ErrorMessage = "Username is required."), StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 64 characters.")]
         string UserName,
-        [Required(ErrorMessage = "Display name is required."), StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 64 characters.")]
         string DisplayName,
-        [EnumDataType(typeof(AvatarOperationType), ErrorMessage = "Invalid avatar operation.")]
         AvatarOperationType AvatarOperation,
         IFormFile? AvatarFile
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext context) {
+            if (string.IsNullOrEmpty(UserName)) {
+                yield return new("Username is required.", [ nameof(UserName) ]);
+            } else if (UserName.Length is < 8 or > 64) {
+                yield return new("Username must be between 8 and 64 characters.", [ nameof(UserName) ]);
+            }
+            
+            if (string.IsNullOrEmpty(DisplayName)) {
+                yield return new("Display name is required.", [ nameof(DisplayName) ]);
+            } else if (DisplayName.Length is < 8 or > 64) {
+                yield return new("Display name must be between 8 and 64 characters.", [ nameof(DisplayName) ]);
+            }
+
+            if (AvatarOperation is not AvatarOperationType.NoMod and not AvatarOperationType.Set and not AvatarOperationType.Delete) {
+                yield return new("Invalid avatar operation.", [ nameof(AvatarOperation) ]);
+            }
+            
             if (AvatarOperation == AvatarOperationType.Set) {
                 if (AvatarFile == null) {
                     yield return new("Avatar file is required when setting.", [ nameof(AvatarFile) ]);
@@ -192,7 +205,7 @@ public sealed class UserController : ControllerBase {
                     long maxSize = configuration.GetValue<long>("Services:User:MaxAvatarSizeBytes", 1048576);
 
                     if (AvatarFile.Length > maxSize) {
-                        yield return new($"Avatar file must be smaller than {maxSize.Bytes():MB}.");
+                        yield return new($"Avatar file must be smaller than {maxSize.Bytes():MB}.", [ nameof(AvatarFile) ]);
                     }
                 }
             }
