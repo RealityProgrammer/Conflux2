@@ -190,12 +190,12 @@ internal sealed class UserService(
             .FirstOrDefaultAsync();
 
         if (validate == null) {
-            return Result.Failure(Errors.NoUserFoundFromId());
+            return Errors.NoUserFoundFromId();
         }
         
-        // if (validate.IsProfileSetup) {
-        //     return Result.Failure("User.SetupProfile.AlreadySetup", "User already setup their profile.");
-        // }
+        if (validate.IsProfileSetup) {
+            return Errors.UserAlreadyVerified();
+        }
         
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -225,7 +225,7 @@ internal sealed class UserService(
 
         if (changed == 0) {
             await transaction.RollbackAsync();
-            return Errors.NoUserFoundFromId();  // should unexpected error be thrown.
+            return Errors.NoUserFoundFromId();  // should unexpected error be thrown?
         }
 
         switch (request.AvatarOperation.Type) {
@@ -238,7 +238,6 @@ internal sealed class UserService(
 
                 if (request.AvatarOperation.ContentType is not { } contentType) {
                     await transaction.RollbackAsync();
-                    
                     return Errors.MissingArgument("Avatar content type");
                 }
                 

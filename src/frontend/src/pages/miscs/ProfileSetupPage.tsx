@@ -103,8 +103,15 @@ function AvatarPanel({ setDisplayingPanel, avatarOperation, setAvatarOperation }
     );
 }
 
-function ProfilePanel({ setDisplayingPanel }: PanelProps) {
+interface NamesPanelProps extends PanelProps {
+    fieldErrors?: FieldErrors<'userName' | 'displayName'> | null;
+}
+
+function NamesPanel({ setDisplayingPanel, fieldErrors }: NamesPanelProps) {
     const auth = useAuthorization();
+
+    const [userName, setUserName] = useState(auth.userProfile?.userName ?? "");
+    const [displayName, setDisplayName] = useState(auth.userProfile?.displayName ?? "");
 
     return (
         <section className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible p-6 flex flex-col gap-3">
@@ -119,7 +126,14 @@ function ProfilePanel({ setDisplayingPanel }: PanelProps) {
 
                     <input id="userName" type="text" placeholder="Enter username" name="userName"
                            className="w-full h-11 px-3 input-field"
-                           defaultValue={auth.userProfile?.userName ?? ""}/>
+                           value={userName}
+                           onChange={(e) => setUserName(e.target.value)}/>
+
+                    {
+                        fieldErrors?.userName && (
+                            <span className="block text-center text-red-500 text-sm mt-1">{fieldErrors?.userName[0]}</span>
+                        )
+                    }
                 </div>
 
                 <div className="flex-1">
@@ -127,7 +141,14 @@ function ProfilePanel({ setDisplayingPanel }: PanelProps) {
 
                     <input id="displayName" type="text" placeholder="Enter display name" name="displayName"
                            className="w-full h-11 px-3 input-field"
-                           defaultValue={auth.userProfile?.displayName ?? ""}/>
+                           value={displayName}
+                           onChange={(e) => setDisplayName(e.target.value)}/>
+
+                    {
+                        fieldErrors?.displayName && (
+                            <span className="block text-center text-red-500 text-sm mt-1">{fieldErrors?.displayName[0]}</span>
+                        )
+                    }
                 </div>
             </div>
 
@@ -292,22 +313,44 @@ export default function ProfileSetupPage() {
                     displayName,
                     hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
                 });
-                break;
+
+                return {
+                    success: true,
+                };
 
             case HttpStatusCode.BadRequest:
+                return response.error?.code === "ValidationErrorsOccured" ? {
+                    success: false,
+                    message: response.error?.message,
+                    fieldErrors: response.error?.details as FieldErrors<'userName' | 'displayName' | 'avatarFile'>,
+                } : {
+                    success: false,
+                    message: response.error?.message,
+                };
 
-                break;
-        }
-
-        return {
-            success: response.statusCode === HttpStatusCode.Ok,
-            message: response.message ?? null,
+            default:
+                return {
+                    success: false,
+                    message: response.error?.message,
+                };
         }
     };
 
-    const [_state, formAction, isPending] = useActionState<State, FormData>(setupProfile, {
+    const [state, formAction, isPending] = useActionState<State, FormData>(setupProfile, {
         success: false,
     });
+
+    // jump to the panel when there is field error
+    useEffect(() => {
+        if (!state.fieldErrors) return;
+
+        // this is dogshit but it works for now
+        if (state.fieldErrors.userName || state.fieldErrors.displayName) {
+            setDisplayingPanel(DisplayingPanel.Name);
+        } else if (state.fieldErrors.avatarFile) {
+            setDisplayingPanel(DisplayingPanel.Avatar);
+        }
+    }, [state]);
 
     return (
         <div className="fixed bg-fixed inset-0 overflow-hidden mesh-bg-1">
@@ -328,14 +371,17 @@ export default function ProfileSetupPage() {
                         id={`panel-${DisplayingPanel.Avatar}`}
                         className={`absolute left-[40%] top-[60%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Avatar ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
                     >
-                        <AvatarPanel setDisplayingPanel={setDisplayingPanel} avatarOperation={avatarOperation} setAvatarOperation={setAvatarOperation}/>
+                        <AvatarPanel setDisplayingPanel={setDisplayingPanel}
+                                     avatarOperation={avatarOperation}
+                                     setAvatarOperation={setAvatarOperation}/>
                     </div>
 
                     <div
                         id={`panel-${DisplayingPanel.Name}`}
                         className={`absolute left-[70%] top-[30%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Name ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
                     >
-                        <ProfilePanel setDisplayingPanel={setDisplayingPanel}/>
+                        <NamesPanel setDisplayingPanel={setDisplayingPanel}
+                                    fieldErrors={state.fieldErrors}/>
                     </div>
 
                     <div

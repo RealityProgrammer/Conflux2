@@ -2,6 +2,7 @@ using Conflux.Application;
 using Conflux.Application.Requests;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -28,8 +29,6 @@ public sealed class UserController : ControllerBase {
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return Unauthorized();
         }
-        
-        // TODO: Validate file mime-type (via actual content instead of file name extension).
         
         var file = request.File;
         
@@ -117,10 +116,6 @@ public sealed class UserController : ControllerBase {
             return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
         }
 
-        if (request.AvatarOperation == AvatarOperationType.Set) {
-            // TODO: Validate avatar.
-        }
-        
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
         
         Result result = await _userService.SetupProfileAsync(new(
@@ -140,21 +135,66 @@ public sealed class UserController : ControllerBase {
         };
     }
 
-    public record UploadAvatarRequest([Required] IFormFile File);
+    public record UploadAvatarRequest(IFormFile File) : IValidatableObject {
+        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
+            if (File == null!) {
+                yield return new("Avatar file is required.", [ nameof(File) ]);
+            } else {
+                if (!File.ContentType.StartsWith("image/")) {
+                    yield return new("Avatar file is not an image file.", [ nameof(File) ]);
+                }
+
+                ReadOnlySpan<char> subtype = File.ContentType.AsSpan(6);
+
+                if (subtype is not "png" and not "jpeg") {
+                    yield return new("Avatar file is using unsupported format.", [ nameof(File) ]);
+                }
+                
+                var configuration = context.GetRequiredService<IConfiguration>();
+                
+                long maxSize = configuration.GetValue<long>("Services:User:MaxAvatarSizeBytes", 1048576);
+
+                if (File.Length > maxSize) {
+                    yield return new($"Avatar file must be smaller than {maxSize.Bytes():MB}.");
+                }
+            }
+        }
+    }
+    
     public record GetAvatarUrlResponse(string? Url);
 
     public record SetupProfileRequest(
-        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 64 characters.")]
+        [Required(ErrorMessage = "Username is required."), StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 64 characters.")]
         string UserName,
-        [Required, StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 64 characters.")]
+        [Required(ErrorMessage = "Display name is required."), StringLength(maximumLength: 64, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 64 characters.")]
         string DisplayName,
         [EnumDataType(typeof(AvatarOperationType), ErrorMessage = "Invalid avatar operation.")]
         AvatarOperationType AvatarOperation,
         IFormFile? AvatarFile
     ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            if (AvatarOperation == AvatarOperationType.Set && AvatarFile == null) {
-                yield return new("Avatar file is required when setting.", [ nameof(AvatarFile) ]);
+        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
+            if (AvatarOperation == AvatarOperationType.Set) {
+                if (AvatarFile == null) {
+                    yield return new("Avatar file is required when setting.", [ nameof(AvatarFile) ]);
+                } else {
+                    if (!AvatarFile.ContentType.StartsWith("image/")) {
+                        yield return new("Avatar file is not an image file.", [ nameof(AvatarFile) ]);
+                    }
+
+                    ReadOnlySpan<char> subtype = AvatarFile.ContentType.AsSpan(6);
+
+                    if (subtype is not "png" and not "jpeg") {
+                        yield return new("Avatar file is using unsupported format.", [ nameof(AvatarFile) ]);
+                    }
+                    
+                    var configuration = context.GetRequiredService<IConfiguration>();
+                    
+                    long maxSize = configuration.GetValue<long>("Services:User:MaxAvatarSizeBytes", 1048576);
+
+                    if (AvatarFile.Length > maxSize) {
+                        yield return new($"Avatar file must be smaller than {maxSize.Bytes():MB}.");
+                    }
+                }
             }
         }
     }

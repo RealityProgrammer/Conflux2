@@ -1,8 +1,9 @@
-import { type AxiosError, type AxiosResponse } from "axios";
+import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import type { BackendResponse, ServiceResponse, UserBasicProfileInfo } from "./responses.ts";
 import apiClient from "./client.ts";
 import type { AvatarOperation } from "./requests.ts";
 import { handleAxiosError } from "./errorHandling.ts";
+import {authService} from "./authService.ts";
 
 export const userService = {
     uploadAvatar: async (file: File): Promise<ServiceResponse> => {
@@ -71,6 +72,11 @@ export const userService = {
                     "Content-Type": "multipart/form-data",
                 }
             });
+
+            if (response.status === HttpStatusCode.Ok) {
+                // refresh the authorization information to refresh the profile setup claim.
+                await authService.refresh();
+            }
 
             return {
                 success: true,
