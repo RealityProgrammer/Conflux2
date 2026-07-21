@@ -1,7 +1,7 @@
 import { useLocation, type Location, Link } from 'react-router-dom';
 import * as React from "react";
 
-enum NavLinkMatch {
+export enum NavLinkMatch {
     Exact = "Exact",
     Prefix = "Prefix",
 };

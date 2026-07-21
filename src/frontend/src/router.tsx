@@ -1,7 +1,6 @@
 import { createBrowserRouter, Outlet, redirect } from 'react-router-dom';
 import HomePage from './pages/HomePage'
 import AuthenticatePage, { authAction } from "./pages/auth/AuthenticatePage.tsx";
-import LobbyPage from "./pages/lobby/LobbyPage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
 import { authService } from "./api/authService.ts";
@@ -9,7 +8,9 @@ import { HttpStatusCode } from "axios";
 import type { UserAuthorizationInfo } from "./api/responses.ts";
 import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
 import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
-import {userService} from "./api/userService.ts";
+import { userService } from "./api/userService.ts";
+import LobbyLayout from "./layouts/LobbyLayout.tsx";
+import { LobbyPage } from "./pages/lobby/LobbyPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -111,11 +112,15 @@ export const router = createBrowserRouter([
 
                     return null;
                 },
-                element: <Outlet/>,
+                // only rerun the loader if the path has truly changed
+                shouldRevalidate: ({ currentUrl, nextUrl }) => {
+                    return currentUrl.pathname !== nextUrl.pathname;
+                },
+                element: <LobbyLayout/>,
                 children: [
                     {
                         index: true,
-                        element: <LobbyPage/>,
+                        element: <LobbyPage/>
                     }
                 ]
             }

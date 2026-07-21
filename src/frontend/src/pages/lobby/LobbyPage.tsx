@@ -1,22 +1,8 @@
-import { useAuthorization } from "../../contexts/AuthContext.tsx";
-import apiClient from "../../api/client.ts";
-import type {AxiosError, AxiosResponse} from "axios";
-
-export default function LobbyPage() {
-    const authData = useAuthorization();
-
+export function LobbyPage() {
     return (
-        <>
-            { authData.userAuthorization ? <p>You are authenticated.</p> : <p>You are not authenticated.</p> }
-
-            <button onClick={authData.logout}>Logout</button>
-            <button onClick={() => {
-                apiClient.post("/csrf/test").then(response => {
-                    console.log("csrf successful");
-                }).catch(error => {
-                    console.error("csrf error");
-                });
-            }}>Test CSRF</button>
-        </>
+        <div className="bg-gray-700 size-full flex flex-col justify-center items-center">
+            <h1 className="text-4xl font-bold text-white select-none">Welcome to Conflux</h1>
+            <h1 className="font-normal text-gray-500 select-none">Yea nothing interesting happen here, carry on</h1>
+        </div>
     );
 }

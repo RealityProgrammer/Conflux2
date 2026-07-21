@@ -151,7 +151,7 @@ internal sealed class AuthService : IAuthService {
         }
         
         int firstColon = storedData.IndexOf(':');
-
+        
         // failure if somehow the data is corrupted or is expired.
         if (firstColon == -1 || !long.TryParse(storedData.AsSpan()[(firstColon + 1)..], out var expireTick) || DateTime.UtcNow.Ticks > expireTick) {
             return Errors.InvalidRefreshToken();

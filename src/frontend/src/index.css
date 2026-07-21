@@ -35,6 +35,16 @@
         100% { background-position: 0 50%; }
     }
 
+    @keyframes animate-overlayShow {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    @keyframes animate-overlayHide {
+        0% { opacity: 100; }
+        100% { opacity: 0; }
+    }
+
     .shimmer {
         @apply relative inline-block overflow-hidden
     }
