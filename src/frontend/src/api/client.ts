@@ -63,7 +63,7 @@ function registerAuthenticateExpirationInterception() {
             apiClient.interceptors.response.eject(interceptor);
 
             try {
-                await apiClient.post(`/auth/refresh`);
+                await apiClient.post("/auth/refresh");
                 await csrfService.requestCsrfToken();
 
                 return apiClient(originalRequestConfig);

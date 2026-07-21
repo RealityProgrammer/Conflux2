@@ -58,6 +58,7 @@ function Sidebar() {
 
 function DirectMessagesList() {
     const items = [...Array(10000).keys()];
+    const navigate = useNavigate();
 
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -74,7 +75,7 @@ function DirectMessagesList() {
     return (
         <div
             ref={parentRef}
-            className="flex-1 overflow-y-auto min-h-0"
+            className="flex-1 overflow-y-auto min-h-0 scrollbar-hide"
         >
             {/* LAYER 2: The Sizer Container */}
             <div
@@ -86,12 +87,15 @@ function DirectMessagesList() {
                     const value = items[virtualItem.index];
 
                     return (
-                        <div
+                        <button
                             key={virtualItem.key}
                             className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover:bg-white/12 rounded-lg cursor-pointer"
                             style={{
                                 height: `${virtualItem.size}px`,
                                 transform: `translateY(${virtualItem.start}px)`,
+                            }}
+                            onClick={() => {
+                                navigate("/lobby/dm/" + crypto.randomUUID());
                             }}
                         >
                             <Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer scale-100 hover:scale-110 transition-transform duration-200 ease-linear">
@@ -109,9 +113,9 @@ function DirectMessagesList() {
                             </Avatar.Root>
 
                             <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                                {`Element Number ${value} abcdefghijkl`}
+                                {`Element Number ${value}`}
                             </p>
-                        </div>
+                        </button>
                     );
                 })}
             </div>

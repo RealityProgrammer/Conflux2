@@ -11,6 +11,9 @@ import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
 import { userService } from "./api/userService.ts";
 import LobbyLayout from "./layouts/LobbyLayout.tsx";
 import { LobbyPage } from "./pages/lobby/LobbyPage.tsx";
+import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
+import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
+import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 
 export const router = createBrowserRouter([
     {
@@ -121,7 +124,19 @@ export const router = createBrowserRouter([
                     {
                         index: true,
                         element: <LobbyPage/>
-                    }
+                    },
+                    {
+                        path: "announcements",
+                        element: <SystemAnnouncementPage/>
+                    },
+                    {
+                        path: "friends",
+                        element: <FriendsPage/>
+                    },
+                    {
+                        path: "dm/:userId?",
+                        element: <DirectMessagePage/>
+                    },
                 ]
             }
         ]
