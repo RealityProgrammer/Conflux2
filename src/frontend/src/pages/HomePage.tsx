@@ -1,11 +1,11 @@
 import Logo from "../components/Logo.tsx";
-import NavLink from "../components/NavLink.tsx";
 import PageTitle from "../components/PageTitle.tsx";
 import { useAuthorization } from "../contexts/AuthContext.tsx";
 import { Dialog } from "radix-ui";
 import { useState, useRef, useEffect } from "react";
 import { animate } from "animejs";
 import {BsDoorClosed, BsDoorOpen, BsGear} from "react-icons/bs";
+import {NavLink} from "react-router-dom";
 
 function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string, logout: () => void }) {
     const [open, setOpen] = useState(false);
