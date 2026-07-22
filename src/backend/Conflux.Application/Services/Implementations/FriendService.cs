@@ -1,3 +1,4 @@
+using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -8,7 +9,7 @@ internal sealed class FriendService(
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
     TimeProvider timeProvider
 ) : IFriendService {
-    public async Task<Result> SendFriendRequestAsync(Guid fromUser, Guid toUser) {
+    public async Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUser, Guid toUser) {
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -42,7 +43,7 @@ internal sealed class FriendService(
                         });
 
                     if (numChanged == 1) {
-                        return Result.Success();
+                        return Result<SendFriendRequestResponse>.Success(new(SendFriendRequestResult.Requested));
                     }
                     
                     return Errors.OperationFailure("send friend request");
@@ -50,7 +51,7 @@ internal sealed class FriendService(
                 case FriendRequestStatus.Pending:
                     // idempotency goes hard
                     if (existingRequest.SenderUserId == fromUser) {
-                        return Result.Success();
+                        return Result<SendFriendRequestResponse>.Success(new(SendFriendRequestResult.Requested));
                     }
                     
                     // auto accept friend request
@@ -62,10 +63,10 @@ internal sealed class FriendService(
                                 .SetProperty(r => r.UpdatedAt, utcNow);
                         });
 
-                    return Result.Success();
+                    return Result<SendFriendRequestResponse>.Success(new(SendFriendRequestResult.Friended));
                 
                 case FriendRequestStatus.Accepted:
-                    return Errors.AlreadyFriended();
+                    return Result<SendFriendRequestResponse>.Success(new(SendFriendRequestResult.Friended));
             }
         }
         
@@ -81,7 +82,7 @@ internal sealed class FriendService(
 
         try {
             await dbContext.SaveChangesAsync();
-            return Result.Success();
+            return Result<SendFriendRequestResponse>.Success(new(SendFriendRequestResult.Requested));
         } catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) {
             // conflict, automatically friend if the existing is from the "toUser".
             await dbContext.FriendRequests
@@ -92,7 +93,7 @@ internal sealed class FriendService(
                         .SetProperty(r => r.UpdatedAt, utcNow);
                 });
             
-            return Result.Success();
+            return Result<SendFriendRequestResponse>.Success(new(SendFriendRequestResult.Friended));
         }
     }
 }

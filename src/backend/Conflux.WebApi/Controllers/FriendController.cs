@@ -1,4 +1,5 @@
 using Conflux.Application;
+using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Conflux.WebApi.Attributes;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,7 @@ public sealed class FriendController(
 
         Guid toUser = Guid.Parse(request.ToUser);
 
-        var result = await friendService.SendFriendRequestAsync(userId, toUser);
+        Result<SendFriendRequestResponse> result = await friendService.SendFriendRequestAsync(userId, toUser);
 
         if (result.IsSuccess) {
             return Ok();
