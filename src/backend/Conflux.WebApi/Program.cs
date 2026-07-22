@@ -12,6 +12,8 @@ using Amazon.S3;
 using Conflux.Application;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
+using Conflux.WebApi.Miscs;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -145,6 +147,22 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options => {
 });
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment()) {
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+
+    var logger = services.GetRequiredService<ILogger<DatabaseSeedHelper>>();
+
+    try {
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        await using var dbContext = await services.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContextAsync();
+
+        await DatabaseSeedHelper.SeedUserAsync(userManager, dbContext, logger);
+    } catch (Exception e) {
+        logger.LogError(e, "An error occurred while seeding the database.");
+    }
+}
 
 app.UseHttpsRedirection();
 
