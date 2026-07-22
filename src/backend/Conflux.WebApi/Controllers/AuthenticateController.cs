@@ -125,11 +125,10 @@ public sealed class AuthenticateController : ControllerBase {
         var result = await _authService.RefreshAsync(email, refreshToken);
 
         if (!result.IsSuccess) {
-            // we could return BadRequest when the error code is Auth.NoEmail, but it could be abused as
-            // a user query mechanism.
+            // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
             return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidCredentials()));
         }
-
+        
         var value = result.Value;
         
         SetAccessTokenCookie(value.AccessToken);
@@ -144,7 +143,7 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("logout")]
     [Authorize]
     [IgnoreAntiforgeryToken]
-    public async Task<ActionResult<ApiResponse>> Logout() {
+    public ActionResult<ApiResponse> Logout() {
         Response.Cookies.Delete("X-Access-Token", new() {
             HttpOnly = true,
             Secure = Request.IsHttps,
