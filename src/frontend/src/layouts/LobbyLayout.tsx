@@ -60,29 +60,18 @@ function DirectMessagesList() {
     const items = [...Array(10000).keys()];
     const navigate = useNavigate();
 
-    const parentRef = useRef<HTMLDivElement>(null);
+    const parentRef = useRef<HTMLDivElement | null>(null);
 
     const rowVirtualizer = useVirtualizer({
         count: items.length,
         getScrollElement: () => parentRef.current,
-        // Estimate the height of a single item in pixels.
-        // Your p-1.5 (12px total) + size-9 (36px) = roughly 48px height.
         estimateSize: () => 48,
-
         overscan: 5,
     });
 
     return (
-        <div
-            ref={parentRef}
-            className="flex-1 overflow-y-auto min-h-0 scrollbar-hide"
-        >
-            {/* LAYER 2: The Sizer Container */}
-            <div
-                className="relative w-full"
-                style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-            >
-                {/* LAYER 3: The Virtual Items */}
+        <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
+            <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => {
                     const value = items[virtualItem.index];
 
@@ -98,7 +87,7 @@ function DirectMessagesList() {
                                 navigate("/lobby/dm/" + crypto.randomUUID());
                             }}
                         >
-                            <Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer scale-100 hover:scale-110 transition-transform duration-200 ease-linear">
+                            <Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">
                                 <Avatar.Image
                                     className="size-full rounded-[inherit] object-cover"
                                     src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
@@ -113,7 +102,7 @@ function DirectMessagesList() {
                             </Avatar.Root>
 
                             <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                                {`Element Number ${value}`}
+                                Element Number {value}
                             </p>
                         </button>
                     );

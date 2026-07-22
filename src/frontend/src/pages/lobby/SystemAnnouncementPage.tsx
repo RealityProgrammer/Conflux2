@@ -1,5 +1,3 @@
-import { useParams } from "react-router-dom";
-
 export default function SystemAnnouncementPage() {
     return (
         <div className="bg-gray-700 size-full flex flex-col justify-center items-center">
