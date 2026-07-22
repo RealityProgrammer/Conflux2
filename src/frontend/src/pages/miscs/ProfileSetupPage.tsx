@@ -33,7 +33,7 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
             <p className="text-sm text-gray-400 text-center mt-2">You don't want to be an unknown, don't you?</p>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center py-2 px-3" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
                     Show me the way
 
                     <BsArrowRight className="ml-2 size-6 fill-white"/>
@@ -97,7 +97,7 @@ function AvatarPanel({
                             <BsX className="fill-white size-6"/>
                         </button>
 
-                        <button type="button" className="button-primary p-1.5! flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
+                        <button type="button" className="button-primary p-1.5 flex flex-row justify-center items-center" onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
                             <BsArrowRepeat className="fill-white size-6"/>
                         </button>
                     </div>
@@ -111,7 +111,7 @@ function AvatarPanel({
             </div>
 
             <footer className="flex flex-none flex-row justify-center mt-2">
-                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Name)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center px-3 py-2" onClick={() => setDisplayingPanel(DisplayingPanel.Name)}>
                     Next
 
                     <BsArrowRight className="ml-2 size-6 fill-white"/>
@@ -178,13 +178,13 @@ function NamesPanel({ setDisplayingPanel, fieldErrors, clearError }: NamesPanelP
             </div>
 
             <footer className="flex flex-none flex-row justify-around mt-2">
-                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center px-3 py-2" onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
                     <BsArrowLeft className="mr-2 size-6 fill-white"/>
 
                     Previous
                 </button>
 
-                <button type="button" className="button-primary inline-flex flex-row items-center py-2!" onClick={() => setDisplayingPanel(DisplayingPanel.Complete)}>
+                <button type="button" className="button-primary inline-flex flex-row items-center px-3 py-2" onClick={() => setDisplayingPanel(DisplayingPanel.Complete)}>
                     Next
 
                     <BsArrowRight className="ml-2 size-6 fill-white"/>
@@ -214,7 +214,7 @@ function CompletePanel({ setDisplayingPanel, isSaving }: CompletePanelProps) {
 
             <footer className="flex flex-none flex-row justify-around mt-2">
                 <button type="button"
-                        className="button-primary inline-flex flex-row items-center py-2!"
+                        className="button-primary inline-flex flex-row items-center px-3 py-2"
                         onClick={() => setDisplayingPanel(DisplayingPanel.Name)}
                         disabled={isSaving}
                 >

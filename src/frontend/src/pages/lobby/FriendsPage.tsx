@@ -1,4 +1,4 @@
-import {Avatar, ScrollArea, Tabs} from "radix-ui";
+import {Avatar, ScrollArea, Separator, Tabs} from "radix-ui";
 import {BsPeople, BsPerson, BsSearch} from "react-icons/bs";
 import {useRef, useState} from "react";
 import {useDebounceCallback} from "usehooks-ts";
@@ -88,6 +88,32 @@ function FriendListTabContent() {
     );
 }
 
+function AddFriend() {
+    return (
+        <>
+            <p>In search of a friend?</p>
+            <p>You can send friend request with their username.</p>
+
+            <div className="flex flex-row mt-3">
+                <div className="select-none w-11 h-11 flex justify-center items-center border border-gray-600 rounded-l-lg border-r-0">
+                    @
+                </div>
+
+                <input className="flex-1 input-field w-full h-11 px-3 rounded-l-none" placeholder="Enter friend's username"/>
+
+                <button className="ml-2 button-primary flex-none h-11 px-3 basis-48">
+                    Send Friend Request
+                </button>
+            </div>
+
+            <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-3"/>
+
+            <p>Want to make a new friend?</p>
+            <p>Soon...</p>
+        </>
+    );
+}
+
 export default function FriendsPage() {
     const [tabValue, setTabValue] = useState("friends");
 
@@ -103,15 +129,25 @@ export default function FriendsPage() {
                 <Tabs.Root value={tabValue} onValueChange={setTabValue} className="flex-1 min-h-0 flex flex-col mt-2 text-white h-full">
                     <Tabs.List className="flex flex-row flex-nowrap gap-3 flex-none border-b-gray-600 border-b-2">
                         <Tabs.Trigger value="friends" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "friends" && "bg-white/8"}`}>Friends</Tabs.Trigger>
+                        <Tabs.Trigger value="pending" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "pending" && "bg-white/8"}`}>Pending</Tabs.Trigger>
                         <Tabs.Trigger value="blocked" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "blocked" && "bg-white/8"}`}>Blocked</Tabs.Trigger>
+                        <Tabs.Trigger value="add-friend" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "add-friend" && "bg-white/8"}`}>Add Friend</Tabs.Trigger>
                     </Tabs.List>
 
                     <Tabs.Content value="friends" className="pt-2 flex-1 min-h-0">
                         <FriendListTabContent/>
                     </Tabs.Content>
 
+                    <Tabs.Content value="pending" className="pt-2 flex-1 min-h-0">
+                        Pending
+                    </Tabs.Content>
+
                     <Tabs.Content value="blocked" className="pt-2 flex-1 min-h-0">
                         Blocked
+                    </Tabs.Content>
+
+                    <Tabs.Content value="add-friend" className="pt-2 flex-1 min-h-0">
+                        <AddFriend/>
                     </Tabs.Content>
                 </Tabs.Root>
             </div>

@@ -91,6 +91,7 @@ builder.Services
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
     .AddScoped<IUserService, UserService>()
+    .AddScoped<IFriendService, FriendService>()
     .AddSingleton<IMailingService, MailingService>();
 
 // Services related to external services.

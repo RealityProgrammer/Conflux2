@@ -7,7 +7,7 @@ public class FileLengthAttribute : ValidationAttribute {
     public long MinimumLength { get; set; }
     public long MaximumLength { get; }
     
-    public FileLengthAttribute(long maximumLength) : base(() => "") {
+    public FileLengthAttribute(long maximumLength) {
         MaximumLength = maximumLength;
     }
 
