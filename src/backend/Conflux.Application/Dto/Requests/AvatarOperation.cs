@@ -1,4 +1,4 @@
-namespace Conflux.Application.Requests;
+namespace Conflux.Application.Dto.Requests;
 
 public enum AvatarOperationType {
     NoMod,

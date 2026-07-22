@@ -1,4 +1,4 @@
-using Conflux.Application.Responses;
+using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;

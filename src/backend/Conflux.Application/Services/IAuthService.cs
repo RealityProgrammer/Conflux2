@@ -1,4 +1,4 @@
-using Conflux.Application.Responses;
+using Conflux.Application.Dto.Responses;
 
 namespace Conflux.Application.Services;
 

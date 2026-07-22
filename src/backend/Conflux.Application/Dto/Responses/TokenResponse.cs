@@ -1,4 +1,4 @@
-namespace Conflux.Application.Responses;
+namespace Conflux.Application.Dto.Responses;
 
 public readonly record struct TokenResponse(
     string AccessToken, 

@@ -1,5 +1,5 @@
-using Conflux.Application.Requests;
-using Conflux.Application.Responses;
+using Conflux.Application.Dto.Requests;
+using Conflux.Application.Dto.Responses;
 
 namespace Conflux.Application.Services;
 

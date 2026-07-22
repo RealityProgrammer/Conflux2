@@ -1,7 +1,7 @@
 using Amazon.S3;
 using Amazon.S3.Model;
-using Conflux.Application.Requests;
-using Conflux.Application.Responses;
+using Conflux.Application.Dto.Requests;
+using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

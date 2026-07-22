@@ -1,6 +1,6 @@
 using Conflux.Application;
-using Conflux.Application.Requests;
-using Conflux.Application.Responses;
+using Conflux.Application.Dto.Requests;
+using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;

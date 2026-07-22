@@ -1,5 +1,5 @@
 using Conflux.Application;
-using Conflux.Application.Responses;
+using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.WebApi.Attributes;
