@@ -30,9 +30,10 @@ internal sealed class UserService(
         
         int changed = await dbContext.Users
             .Where(u => u.Id == userId)
-            .ExecuteUpdateAsync(setters => {
-                setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
-                setters.SetProperty(u => u.HasAvatar, true);
+            .ExecuteUpdateAsync(setter => {
+                setter
+                    .SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow())
+                    .SetProperty(u => u.HasAvatar, true);
             });
 
         if (changed == 0) {
@@ -137,9 +138,10 @@ internal sealed class UserService(
 
         int changed = await dbContext.Users
             .Where(u => u.Id == userId)
-            .ExecuteUpdateAsync(setters => {
-                setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
-                setters.SetProperty(u => u.HasAvatar, false);
+            .ExecuteUpdateAsync(setter => {
+                setter
+                    .SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow())
+                    .SetProperty(u => u.HasAvatar, false);
             });
 
         if (changed == 0) {
@@ -203,24 +205,27 @@ internal sealed class UserService(
 
         int changed = await dbContext.Users
             .Where(u => u.Id == request.UserId)
-            .ExecuteUpdateAsync(setters => {
-                setters.SetProperty(u => u.UserName, request.UserName);
-                setters.SetProperty(u => u.NormalizedUserName, normalizedName);
-                setters.SetProperty(u => u.DisplayName, request.DisplayName);
+            .ExecuteUpdateAsync(setter => {
+                setter
+                    .SetProperty(u => u.UserName, request.UserName)
+                    .SetProperty(u => u.NormalizedUserName, normalizedName)
+                    .SetProperty(u => u.DisplayName, request.DisplayName);
 
                 switch (request.AvatarOperation.Type) {
                     case AvatarOperationType.Delete:
-                        setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
-                        setters.SetProperty(u => u.HasAvatar, false);
+                        setter
+                            .SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow())
+                            .SetProperty(u => u.HasAvatar, false);
                         break;
                     
                     case AvatarOperationType.Set:
-                        setters.SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow());
-                        setters.SetProperty(u => u.HasAvatar, true);    // just in case lol.
+                        setter
+                            .SetProperty(u => u.AvatarUpdatedAt, timeProvider.GetUtcNow())
+                            .SetProperty(u => u.HasAvatar, true);    // just in case lol.
                         break;
                 }
                 
-                setters.SetProperty(u => u.IsProfileSetup, true);
+                setter.SetProperty(u => u.IsProfileSetup, true);
             });
 
         if (changed == 0) {

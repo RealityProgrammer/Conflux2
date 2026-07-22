@@ -26,7 +26,14 @@ public sealed class FriendController(
 
         var result = await friendService.SendFriendRequestAsync(userId, toUser);
 
-        return Ok(new ApiResponse(result.Error));
+        if (result.IsSuccess) {
+            return Ok();
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.AlreadyFriended) => Conflict(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
+        };
     }
 
     public record SendFriendRequestRequest(

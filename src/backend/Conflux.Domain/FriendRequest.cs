@@ -5,22 +5,27 @@ namespace Conflux.Domain;
 
 public enum FriendRequestStatus {
     /// <summary>
-    /// Representing no request between two users, or unfriended status. 
+    /// No request between two users, or unfriended status.
     /// </summary>
     None,
     
     /// <summary>
-    /// Representing pending status.
+    /// Waiting for receiver to accept or sender to cancel their own request.
     /// </summary>
     Pending,
     
     /// <summary>
-    /// Representing accepted status.
+    /// Sender canceled their own request.
+    /// </summary>
+    Canceled,
+    
+    /// <summary>
+    /// Receiver accepted the request.
     /// </summary>
     Accepted,
     
     /// <summary>
-    /// Representing rejected status.
+    /// Receiver rejected the request.
     /// </summary>
     Rejected,
 }
@@ -33,6 +38,6 @@ public class FriendRequest {
     
     public FriendRequestStatus Status { get; set; }
     
-    public DateTimeOffset CreatedAt { get; private set; }
-    public DateTimeOffset UpdatedAt { get; private set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }
