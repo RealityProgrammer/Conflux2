@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Conflux.Domain;
 
@@ -14,4 +15,10 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     [MaxLength(32)] public string? Pronouns { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public ICollection<FriendRequest> SentFriendRequests { get; set; } = [];
+    public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = [];
+    
+    [NotMapped]
+    public IEnumerable<FriendRequest> FriendRequests => SentFriendRequests.Concat(ReceivedFriendRequests);
 }

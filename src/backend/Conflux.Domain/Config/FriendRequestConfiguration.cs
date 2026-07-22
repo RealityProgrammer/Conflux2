@@ -14,5 +14,18 @@ internal sealed class FriendRequestConfiguration : IEntityTypeConfiguration<Frie
             "SenderUserId" <> "ReceiverUserId"
             """
         ));
+        
+        // relationships
+        builder.HasOne(r => r.Sender)
+            .WithMany(u => u.SentFriendRequests)
+            .HasForeignKey(r => r.SenderUserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);  // delete if sender is deleted
+
+        builder.HasOne(r => r.Receiver)
+            .WithMany(u => u.ReceivedFriendRequests)
+            .HasForeignKey(r => r.ReceiverUserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);  // delete if receiver is deleted
     }
 }

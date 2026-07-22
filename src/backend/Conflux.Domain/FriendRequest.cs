@@ -40,4 +40,7 @@ public class FriendRequest : IHasCreatedAt {
     
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    
+    public ApplicationUser Sender { get; set; } = null!;
+    public ApplicationUser Receiver { get; set; } = null!;
 }
