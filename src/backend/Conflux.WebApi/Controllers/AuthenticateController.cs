@@ -2,6 +2,7 @@ using Conflux.Application;
 using Conflux.Application.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
+using Conflux.WebApi.Attributes;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -244,7 +245,7 @@ public sealed class AuthenticateController : ControllerBase {
     public record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     
     public record ConfirmEmailRequest(
-        [Required] string UserId, 
+        [Required, StringFormat(StringFormat.Guid)] string UserId, 
         [Required] string ConfirmationCode
     );
     // ReSharper restore NotAccessedPositionalProperty.Global
