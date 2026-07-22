@@ -141,10 +141,17 @@ if (builder.Environment.IsDevelopment()) {
 }
 
 // Database related services.
-builder.Services.AddDbContextFactory<ApplicationDbContext>(options => {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Database"), options => {
-        options.MigrationsAssembly("Conflux.Infrastructure");
-    });
+builder.Services.AddSingleton<CreateTimestampInterceptor>();
+
+builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) => {
+    var createTimestampInterceptor = services.GetRequiredService<CreateTimestampInterceptor>();
+    
+    options
+        .UseNpgsql(builder.Configuration.GetConnectionString("Database"), options => {
+            options.MigrationsAssembly("Conflux.Infrastructure");
+        })
+        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+        .AddInterceptors(createTimestampInterceptor);
 });
 
 var app = builder.Build();

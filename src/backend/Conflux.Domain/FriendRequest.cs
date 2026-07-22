@@ -31,7 +31,7 @@ public enum FriendRequestStatus {
 }
 
 [EntityTypeConfiguration(typeof(FriendRequestConfiguration))]
-public class FriendRequest {
+public class FriendRequest : IHasCreatedAt {
     public Guid Id { get; set; }
     public Guid SenderUserId { get; set; }
     public Guid ReceiverUserId { get; set; }

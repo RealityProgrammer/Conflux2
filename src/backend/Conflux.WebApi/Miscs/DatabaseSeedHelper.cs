@@ -41,7 +41,10 @@ internal class DatabaseSeedHelper {
             .RuleFor(
                 u => u.Pronouns,
                 (f, _) => f.PickRandom(pronouns)
-            );
+            )
+            .RuleFor(
+                u => u.CreatedAt,
+                (f, _) => f.Date.PastOffset(2));
     });
     
     public static async Task SeedUserAsync(

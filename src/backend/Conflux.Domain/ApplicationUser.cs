@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain;
 
-public sealed class ApplicationUser : IdentityUser<Guid> {
+public sealed class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public bool IsProfileSetup { get; set; }
     
     public DateTimeOffset? AvatarUpdatedAt { get; set; }
@@ -12,4 +12,6 @@ public sealed class ApplicationUser : IdentityUser<Guid> {
     [MaxLength(64)] public string? DisplayName { get; set; }
     [MaxLength(255)] public string? Biography { get; set; }
     [MaxLength(32)] public string? Pronouns { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
 }
