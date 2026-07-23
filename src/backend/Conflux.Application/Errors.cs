@@ -60,6 +60,12 @@ public static class Errors {
     public static Error AlreadyFriended() =>
         new(nameof(WaitingForAcceptance), "Already friended.");
     
-    public static Error ResourceInvalidState(string resourceName, string stateName) =>
-        new(nameof(ResourceInvalidState), $"{resourceName} is having invalid {stateName}.");
+    public static Error FriendRequestCanceled() =>
+        new(nameof(FriendRequestCanceled), "Friend request has been canceled.");
+    
+    public static Error FriendRequestRejected() =>
+        new(nameof(FriendRequestRejected), "Friend request has been rejected.");
+    
+    public static Error Unauthorized(string description) =>
+        new(nameof(Unauthorized), description);
 }

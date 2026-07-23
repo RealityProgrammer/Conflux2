@@ -1,5 +1,13 @@
+using System.Text.Json.Serialization;
+
 namespace Conflux.Application;
 
-public readonly record struct Error(string Code, string Message, object? Details = null) {
+public readonly record struct Error(
+    string Code, 
+    string Message,
+    
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    object? Details = null
+) {
     public static Error None => new(string.Empty, string.Empty);
 }
