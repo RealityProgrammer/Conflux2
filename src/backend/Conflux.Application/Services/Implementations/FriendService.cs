@@ -205,12 +205,12 @@ internal sealed class FriendService(
         }
 
         if (existingRequest.ReceiverUserId != receiverUserId) {
-            return Errors.Unauthorized("Only the receiver can cancel their own request.");
+            return Errors.Unauthorized("Only the receiver can reject request.");
         }
 
         switch (existingRequest.Status) {
             case FriendRequestStatus.Rejected:
-                // idempotency, already canceled, so return success
+                // idempotency, already rejected, so return success
                 return Result.Success();
             
             case FriendRequestStatus.Pending:
@@ -230,6 +230,63 @@ internal sealed class FriendService(
             
             case FriendRequestStatus.Accepted:
                 return Errors.AlreadyFriended();
+            
+            case FriendRequestStatus.Canceled:
+                return Errors.FriendRequestCanceled();
+            
+            // invalid status, or None will return resource not found.
+            case FriendRequestStatus.None:
+            default:
+                return Errors.ResourceNotFound("Friend request");
+        }
+    }
+    
+    public async Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid friendRequestId) {
+        // copy-paste from RejectFriendRequestAsync, future modification should be applied accordingly
+        // if CancelFriendRequestAsync changes
+        DateTimeOffset utcNow = timeProvider.GetUtcNow();
+        
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        
+        var existingRequest = await dbContext.FriendRequests
+            .Where(r => r.Id == friendRequestId)
+            .Select(r => new {
+                r.Id,
+                r.Status,
+                r.ReceiverUserId,
+            })
+            .FirstOrDefaultAsync();
+
+        if (existingRequest == null) {
+            return Errors.ResourceNotFound("Friend request");
+        }
+
+        if (existingRequest.ReceiverUserId != receiverUserId) {
+            return Errors.Unauthorized("Only the receiver can accept request.");
+        }
+
+        switch (existingRequest.Status) {
+            case FriendRequestStatus.Accepted:
+                // idempotency, already friended, so return success
+                return Result.Success();
+            
+            case FriendRequestStatus.Pending:
+                // WHERE again to prevent concurrency issue, will return 0 changed if it happen
+                int numChanged = await dbContext.FriendRequests
+                    .Where(r => r.Id == friendRequestId && r.Status == FriendRequestStatus.Pending)
+                    .ExecuteUpdateAsync(setter => setter
+                        .SetProperty(r => r.Status, FriendRequestStatus.Accepted)
+                        .SetProperty(r => r.UpdatedAt, utcNow)
+                    );
+
+                if (numChanged == 1) {
+                    return Result.Success();
+                }
+
+                return Errors.OperationFailure("accept friend request due to state changed.");
+            
+            case FriendRequestStatus.Rejected:
+                return Errors.FriendRequestRejected();
             
             case FriendRequestStatus.Canceled:
                 return Errors.FriendRequestCanceled();

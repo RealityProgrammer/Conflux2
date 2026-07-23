@@ -79,4 +79,27 @@ public sealed class FriendController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
+    
+    [HttpPost("requests/{requestId:guid}/accept")]
+    public async Task<ActionResult<ApiResponse>> AcceptFriendRequest([FromRoute] Guid requestId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result = await friendService.AcceptFriendRequestAsync(userId, requestId);
+
+        if (result.IsSuccess) {
+            return Ok();
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.FriendRequestCanceled) or 
+            nameof(Errors.FriendRequestRejected) => Conflict(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
 }
