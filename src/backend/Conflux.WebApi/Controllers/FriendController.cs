@@ -16,7 +16,7 @@ public sealed class FriendController(
     ILogger<FriendController> logger
 ) : ControllerBase {
     [HttpPost("requests/{toUserId:guid}")]
-    public async Task<ActionResult<ApiResponse>> SendFriendRequest(Guid toUserId) {
+    public async Task<ActionResult<ApiResponse<SendFriendRequestResponse>>> SendFriendRequest(Guid toUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -26,11 +26,12 @@ public sealed class FriendController(
         Result<SendFriendRequestResponse> result = await friendService.SendFriendRequestAsync(userId, toUserId);
 
         if (result.IsSuccess) {
-            return Ok();
+            return Ok(new ApiResponse<SendFriendRequestResponse>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
             nameof(Errors.AlreadyFriended) => Conflict(new ApiResponse(result.Error)),
+            nameof(Errors.DisallowSelfAction) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

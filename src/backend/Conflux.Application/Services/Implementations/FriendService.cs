@@ -10,6 +10,10 @@ internal sealed class FriendService(
     TimeProvider timeProvider
 ) : IFriendService {
     public async Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUserId, Guid toUserId) {
+        if (fromUserId == toUserId) {
+            return Errors.DisallowSelfAction("Self sending friend request is not allowed.");
+        }
+        
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();

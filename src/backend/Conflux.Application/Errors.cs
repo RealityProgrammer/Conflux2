@@ -68,4 +68,7 @@ public static class Errors {
     
     public static Error Unauthorized(string description) =>
         new(nameof(Unauthorized), description);
+    
+    public static Error DisallowSelfAction(string description) =>
+        new(nameof(DisallowSelfAction), description);
 }
