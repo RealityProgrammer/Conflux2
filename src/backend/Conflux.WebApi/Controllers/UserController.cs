@@ -2,10 +2,10 @@ using Conflux.Application;
 using Conflux.Application.Dto.Requests;
 using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
+using Conflux.Domain;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Conflux.WebApi.Controllers;
@@ -65,11 +65,11 @@ public sealed class UserController : ControllerBase {
     public async Task<ActionResult<ApiResponse>> DeleteAvatar() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await _userService.DeleteAvatarAsync(userIdGuid);
+        var result = await _userService.DeleteAvatarAsync(userId);
         
         if (result.IsSuccess) {
             return NoContent();
@@ -91,11 +91,11 @@ public sealed class UserController : ControllerBase {
     public async Task<ActionResult<ApiResponse<UserBasicProfileResponse>>> GetSessionUserBasicProfile() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
         }
         
-        Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(userIdGuid);
+        Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(userId);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, Error.None));
@@ -112,14 +112,14 @@ public sealed class UserController : ControllerBase {
     public async Task<ActionResult<ApiResponse>> SetupProfile([FromForm] SetupProfileRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userIdGuid)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
         }
 
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
         
         Result result = await _userService.SetupProfileAsync(new(
-            userIdGuid,
+            userId,
             request.UserName,
             request.DisplayName,
             new(request.AvatarOperation, avatarFileStream, request.AvatarFile?.ContentType)
@@ -133,6 +133,38 @@ public sealed class UserController : ControllerBase {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
+    }
+
+    /// <summary>
+    /// Allows normal user to discover other user.
+    /// </summary>
+    /// <returns>Collection of </returns>
+    [HttpGet("discover")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<DiscoverUsersResponse>>> DiscoverUsers(
+        [FromQuery] string? name,
+        [FromQuery] int offset,
+        [FromQuery] int count
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+        }
+        
+        offset = int.Max(offset, 0);
+        count = int.Max(count, 1);
+        
+        Result<DiscoverUsersResponse> result = await _userService.DiscoverUsersAsync(userId, name, offset, count);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<DiscoverUsersResponse>(result.Value, Error.None));
+        }
+
+        return StatusCode(
+            StatusCodes.Status500InternalServerError, 
+            new ApiResponse<DiscoverUsersResponse>(null, result.Error)
+        );
     }
 
     public record UploadAvatarRequest(IFormFile File) : IValidatableObject {

@@ -1,5 +1,5 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type { BackendResponse, ServiceResponse, UserBasicProfileInfo } from "./responses.ts";
+import type {BackendResponse, DiscoverUsersResponse, ServiceResponse, UserBasicProfileInfo} from "./responses.ts";
 import apiClient from "./client.ts";
 import type { AvatarOperation } from "./requests.ts";
 import { handleAxiosError } from "./errorHandling.ts";
@@ -102,5 +102,30 @@ export const userService = {
             const axiosError = error as AxiosError<BackendResponse>;
             return handleAxiosError(axiosError);
         }
-    }
+    },
+
+    discover: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<DiscoverUsersResponse>> => {
+        try {
+            const searchParams = new URLSearchParams();
+
+            if (name) {
+                searchParams.append("name", name);
+            }
+
+            searchParams.append("offset", String(offset));
+            searchParams.append("count", String(count));
+
+            const response: AxiosResponse<BackendResponse<DiscoverUsersResponse>> =
+                await apiClient.get<BackendResponse<DiscoverUsersResponse>>(`/user/discover?${searchParams.toString()}`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+                data: response.data!.data,
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
 }

@@ -40,4 +40,15 @@ export interface RefreshResponse {
     accessToken: string;
 }
 
+export type UserSearchResult = {
+    userName: string;
+    displayName: string;
+    hasAvatar: boolean;
+}
+
+export interface DiscoverUsersResponse {
+    users: UserSearchResult[];
+    totalCount: number;
+}
+
 export type FieldErrors<F extends keyof any> = Record<F, string[]>;

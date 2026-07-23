@@ -4,13 +4,18 @@ import './index.css'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './router.tsx'
 import { csrfService } from "./api/csrfService.ts";
+import {QueryClientProvider, QueryClient} from "@tanstack/react-query";
 
 async function initializeApp() {
     await csrfService.requestCsrfToken();
 
+    const queryClient = new QueryClient();
+
     createRoot(document.getElementById('root')!).render(
         <StrictMode>
-            <RouterProvider router={router}/>
+            <QueryClientProvider client={queryClient}>
+                <RouterProvider router={router}/>
+            </QueryClientProvider>
         </StrictMode>,
     )
 }
