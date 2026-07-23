@@ -15,17 +15,15 @@ public sealed class FriendController(
     IFriendService friendService,
     ILogger<FriendController> logger
 ) : ControllerBase {
-    [HttpPost("requests")]
-    public async Task<ActionResult<ApiResponse>> SendFriendRequest([FromBody] SendFriendRequestRequest request) {
+    [HttpPost("requests/{toUserId:guid}")]
+    public async Task<ActionResult<ApiResponse>> SendFriendRequest(Guid toUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        Guid toUser = Guid.Parse(request.ToUser);
-
-        Result<SendFriendRequestResponse> result = await friendService.SendFriendRequestAsync(userId, toUser);
+        Result<SendFriendRequestResponse> result = await friendService.SendFriendRequestAsync(userId, toUserId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -80,9 +78,4 @@ public sealed class FriendController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-
-    public record SendFriendRequestRequest(
-        [Required(ErrorMessage = "Required"), StringFormat(StringFormat.Guid)] 
-        string ToUser
-    );
 }

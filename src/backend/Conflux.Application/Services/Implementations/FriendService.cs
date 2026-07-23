@@ -9,7 +9,7 @@ internal sealed class FriendService(
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
     TimeProvider timeProvider
 ) : IFriendService {
-    public async Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUser, Guid toUser) {
+    public async Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUserId, Guid toUserId) {
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -19,8 +19,8 @@ internal sealed class FriendService(
 
         var existingRequest = await dbContext.FriendRequests
             .Where(r =>
-                r.SenderUserId == fromUser && r.ReceiverUserId == toUser ||
-                r.SenderUserId == toUser && r.ReceiverUserId == fromUser
+                r.SenderUserId == fromUserId && r.ReceiverUserId == toUserId ||
+                r.SenderUserId == toUserId && r.ReceiverUserId == fromUserId
             ).Select(r => new {
                 r.Id,
                 r.Status,
@@ -36,8 +36,8 @@ internal sealed class FriendService(
                         .Where(r => r.Id == existingRequest.Id)
                         .ExecuteUpdateAsync(setter => {
                             setter
-                                .SetProperty(r => r.SenderUserId, fromUser)
-                                .SetProperty(r => r.ReceiverUserId, toUser)
+                                .SetProperty(r => r.SenderUserId, fromUserId)
+                                .SetProperty(r => r.ReceiverUserId, toUserId)
                                 .SetProperty(r => r.Status, FriendRequestStatus.Pending)
                                 .SetProperty(r => r.UpdatedAt, utcNow);
                         });
@@ -53,7 +53,7 @@ internal sealed class FriendService(
                 
                 case FriendRequestStatus.Pending:
                     // idempotency goes hard
-                    if (existingRequest.SenderUserId == fromUser) {
+                    if (existingRequest.SenderUserId == fromUserId) {
                         return Result<SendFriendRequestResponse>.Success(new(
                             existingRequest.Id,
                             SendFriendRequestResult.Requested
@@ -84,8 +84,8 @@ internal sealed class FriendService(
         
         // create and add request
         FriendRequest newRequest = new() {
-            SenderUserId = fromUser,
-            ReceiverUserId = toUser,
+            SenderUserId = fromUserId,
+            ReceiverUserId = toUserId,
             Status = FriendRequestStatus.Pending,
             CreatedAt = utcNow,
         };
@@ -106,7 +106,7 @@ internal sealed class FriendService(
                 $"""
                 UPDATE "FriendRequests"
                 SET "Status" = {(int)FriendRequestStatus.Accepted}, "UpdatedAt" = {utcNow}
-                WHERE "SenderUserId" = {toUser} AND "ReceiverUserId" = {fromUser}
+                WHERE "SenderUserId" = {toUserId} AND "ReceiverUserId" = {fromUserId}
                 RETURNING "Id"
                 """).FirstOrDefaultAsync();
 
