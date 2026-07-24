@@ -150,7 +150,6 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
         .UseNpgsql(builder.Configuration.GetConnectionString("Database"), options => {
             options.MigrationsAssembly("Conflux.Infrastructure");
         })
-        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
         .AddInterceptors(createTimestampInterceptor);
 });
 

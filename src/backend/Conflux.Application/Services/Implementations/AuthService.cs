@@ -77,8 +77,13 @@ internal sealed class AuthService : IAuthService {
             IList<string> roles = await _userManager.GetRolesAsync(user);
             var token = await GenerateJwtToken(user, roles);
             
-            await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
-
+            IdentityResult identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
+            IdentityResult identityResult2 = await _userManager.UpdateAsync(user);   // IMPORTANT: since tracking is disabled, call this so that EF update the model
+            
+            if (!identityResult.Succeeded || !identityResult2.Succeeded) {
+                return Errors.OperationFailure("set authentication token");
+            }
+            
             var permissions = await GetAuthorizationPermissions(user);
             
             return Result<LoginResponse>.Success(new(new(
@@ -136,6 +141,7 @@ internal sealed class AuthService : IAuthService {
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
+        
         return Convert.ToBase64String(randomNumber);
     }
 
@@ -166,8 +172,13 @@ internal sealed class AuthService : IAuthService {
         IList<string> roles = await _userManager.GetRolesAsync(user);
         var tokens = await GenerateJwtToken(user, roles);
         
-        await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{tokens.RefreshToken}:{tokens.RefreshTokenExpireTick}");
-
+        var identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{tokens.RefreshToken}:{tokens.RefreshTokenExpireTick}");
+        var identityResult2 = await _userManager.UpdateAsync(user);   // IMPORTANT: since tracking is disabled, call this so that EF update the model
+        
+        if (!identityResult.Succeeded || !identityResult2.Succeeded) {
+            return Errors.OperationFailure("set authentication token");
+        }
+        
         var permissions = await GetAuthorizationPermissions(user);
         
         return Result<RefreshResponse>.Success(new(new(
