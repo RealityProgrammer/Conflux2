@@ -78,9 +78,8 @@ internal sealed class AuthService : IAuthService {
             var token = await GenerateJwtToken(user, roles);
             
             IdentityResult identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
-            IdentityResult identityResult2 = await _userManager.UpdateAsync(user);   // IMPORTANT: since tracking is disabled, call this so that EF update the model
             
-            if (!identityResult.Succeeded || !identityResult2.Succeeded) {
+            if (!identityResult.Succeeded) {
                 return Errors.OperationFailure("set authentication token");
             }
             
@@ -173,9 +172,8 @@ internal sealed class AuthService : IAuthService {
         var tokens = await GenerateJwtToken(user, roles);
         
         var identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{tokens.RefreshToken}:{tokens.RefreshTokenExpireTick}");
-        var identityResult2 = await _userManager.UpdateAsync(user);   // IMPORTANT: since tracking is disabled, call this so that EF update the model
         
-        if (!identityResult.Succeeded || !identityResult2.Succeeded) {
+        if (!identityResult.Succeeded) {
             return Errors.OperationFailure("set authentication token");
         }
         
