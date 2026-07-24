@@ -313,6 +313,7 @@ internal sealed class UserService(
             .Select(u => new {
                 TotalCount = queryable.Count(),
                 Item = new DiscoverUserElement(
+                    u.Id,
                     u.UserName!, 
                     u.DisplayName!, 
                     u.HasAvatar
