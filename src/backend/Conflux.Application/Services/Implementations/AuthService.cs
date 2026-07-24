@@ -140,7 +140,7 @@ internal sealed class AuthService : IAuthService {
         rng.GetBytes(randomNumber);
         
         refreshToken = Convert.ToBase64String(randomNumber);
-        tokenExpireTick = _timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration).Ticks;
+        tokenExpireTick = _timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration).Ticks;
     }
 
     public async Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken) {
@@ -157,8 +157,12 @@ internal sealed class AuthService : IAuthService {
         int firstColon = storedData.IndexOf(':');
         
         // failure if somehow the data is corrupted or is expired.
-        if (firstColon == -1 || !long.TryParse(storedData.AsSpan(firstColon + 1), out var expireTick) || _timeProvider.GetUtcNow().Ticks > expireTick) {
+        if (firstColon == -1 || !long.TryParse(storedData.AsSpan(firstColon + 1), out var expireTick)) {
             return Errors.InvalidRefreshToken();
+        }
+
+        if (_timeProvider.GetUtcNow().Ticks > expireTick) {
+            return Errors.ExpiredRefreshToken();
         }
         
         // compare the tokens.

@@ -18,6 +18,9 @@ public static class Errors {
 
     public static Error InvalidRefreshToken() =>
         new(nameof(InvalidRefreshToken), "Invalid refresh token.");
+    
+    public static Error ExpiredRefreshToken() =>
+        new(nameof(ExpiredRefreshToken), "Expired refresh token.");
 
     public static Error UserAlreadyVerified() =>
         new(nameof(UserAlreadyVerified), "User is already verified.");
