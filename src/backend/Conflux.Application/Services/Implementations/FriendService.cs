@@ -132,14 +132,17 @@ internal sealed class FriendService(
         }
     }
 
-    public async Task<Result> CancelFriendRequestAsync(Guid senderUserId, Guid friendRequestId) {
+    public async Task<Result> CancelFriendRequestAsync(Guid senderUserId, Guid toUserId) {
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         var existingRequest = await dbContext.FriendRequests
-            .Where(r => r.Id == friendRequestId)
+            .Where(r => 
+                r.SenderUserId == senderUserId && r.ReceiverUserId == toUserId || 
+                r.SenderUserId == toUserId && r.ReceiverUserId == toUserId
+            )
             .Select(r => new {
                 r.Id,
                 r.Status,
@@ -163,7 +166,7 @@ internal sealed class FriendService(
             case FriendRequestStatus.Pending:
                 // WHERE again to prevent concurrency issue, will return 0 changed if it happen
                 int numChanged = await dbContext.FriendRequests
-                    .Where(r => r.Id == friendRequestId && r.Status == FriendRequestStatus.Pending)
+                    .Where(r => r.Id == existingRequest.Id && r.Status == FriendRequestStatus.Pending)
                     .ExecuteUpdateAsync(setter => setter
                         .SetProperty(r => r.Status, FriendRequestStatus.Canceled)
                         .SetProperty(r => r.UpdatedAt, utcNow)
@@ -188,7 +191,7 @@ internal sealed class FriendService(
         }
     }
     
-    public async Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid friendRequestId) {
+    public async Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid senderUserId) {
         // copy-paste from CancelFriendRequestAsync, future modification should be applied accordingly
         // if CancelFriendRequestAsync changes
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
@@ -197,7 +200,10 @@ internal sealed class FriendService(
         dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         var existingRequest = await dbContext.FriendRequests
-            .Where(r => r.Id == friendRequestId)
+            .Where(r => 
+                r.SenderUserId == receiverUserId && r.ReceiverUserId == senderUserId || 
+                r.SenderUserId == senderUserId && r.ReceiverUserId == receiverUserId
+            )
             .Select(r => new {
                 r.Id,
                 r.Status,
@@ -221,7 +227,7 @@ internal sealed class FriendService(
             case FriendRequestStatus.Pending:
                 // WHERE again to prevent concurrency issue, will return 0 changed if it happen
                 int numChanged = await dbContext.FriendRequests
-                    .Where(r => r.Id == friendRequestId && r.Status == FriendRequestStatus.Pending)
+                    .Where(r => r.Id == existingRequest.Id && r.Status == FriendRequestStatus.Pending)
                     .ExecuteUpdateAsync(setter => setter
                         .SetProperty(r => r.Status, FriendRequestStatus.Rejected)
                         .SetProperty(r => r.UpdatedAt, utcNow)
@@ -246,7 +252,7 @@ internal sealed class FriendService(
         }
     }
     
-    public async Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid friendRequestId) {
+    public async Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid senderUserId) {
         // copy-paste from RejectFriendRequestAsync, future modification should be applied accordingly
         // if CancelFriendRequestAsync changes
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
@@ -255,7 +261,10 @@ internal sealed class FriendService(
         dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         var existingRequest = await dbContext.FriendRequests
-            .Where(r => r.Id == friendRequestId)
+            .Where(r => 
+                r.SenderUserId == receiverUserId && r.ReceiverUserId == senderUserId || 
+                r.SenderUserId == senderUserId && r.ReceiverUserId == receiverUserId
+            )
             .Select(r => new {
                 r.Id,
                 r.Status,
@@ -279,7 +288,7 @@ internal sealed class FriendService(
             case FriendRequestStatus.Pending:
                 // WHERE again to prevent concurrency issue, will return 0 changed if it happen
                 int numChanged = await dbContext.FriendRequests
-                    .Where(r => r.Id == friendRequestId && r.Status == FriendRequestStatus.Pending)
+                    .Where(r => r.Id == existingRequest.Id && r.Status == FriendRequestStatus.Pending)
                     .ExecuteUpdateAsync(setter => setter
                         .SetProperty(r => r.Status, FriendRequestStatus.Accepted)
                         .SetProperty(r => r.UpdatedAt, utcNow)

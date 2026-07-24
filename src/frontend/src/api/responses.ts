@@ -61,3 +61,14 @@ export interface DiscoverFriendsResponse {
 }
 
 export type FieldErrors<F extends keyof any> = Record<F, string[]>;
+
+export enum SendFriendRequestResult {
+    Requested = "Requested",
+    Friended = "Friended",
+    Failure = "Failure",
+}
+
+export interface SendFriendRequestResponse {
+    requestId: string;
+    result: SendFriendRequestResult;
+}

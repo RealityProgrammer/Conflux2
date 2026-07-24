@@ -1,15 +1,5 @@
 import {Avatar, ScrollArea, Tabs} from "radix-ui";
-import {
-    BsDot,
-    BsPeople,
-    BsPerson,
-    BsPersonCheck,
-    BsPersonDash,
-    BsPersonPlus,
-    BsPersonX,
-    BsSearch,
-    BsThreeDots
-} from "react-icons/bs";
+import {BsPeople, BsPerson, BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsSearch} from "react-icons/bs";
 import {type Ref, useEffect, useRef, useState} from "react";
 import {useDebounceCallback, useDebounceValue} from "usehooks-ts";
 import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
@@ -17,10 +7,13 @@ import {useInfiniteQuery} from "@tanstack/react-query";
 import {
     type DiscoverFriendElement,
     type DiscoverFriendsResponse,
-    DiscoverFriendStatus,
+    DiscoverFriendStatus, type SendFriendRequestResponse,
+    SendFriendRequestResult,
     type ServiceResponse
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
+import UserAvatar from "../../components/UserAvatar.tsx";
+import Spinner from "../../components/Spinner.tsx";
 
 function FriendListTabContent() {
     const searchDebounce = useDebounceCallback(async (value) => {
@@ -198,8 +191,6 @@ function AddFriendTabContent() {
         fetchNextPage,
     ]);
 
-    const [executingIds, setExecutingIds] = useState<Set<string>>(new Set<string>());
-
     return (
         <div className="flex flex-col gap-2 h-full">
             <header className="flex-none">
@@ -243,8 +234,83 @@ interface FriendSearchResultContainerProps {
 }
 
 function AddFriendSearchResultContainer(
-    { userNameSearch, isLoading, pageSize, itemHeight, scrollViewportRef, virtualizeHeight, virtualItems, userResults }: FriendSearchResultContainerProps
+    {
+        userNameSearch,
+        isLoading,
+        pageSize,
+        itemHeight,
+        scrollViewportRef,
+        virtualizeHeight,
+        virtualItems,
+        userResults,
+    }: FriendSearchResultContainerProps
 ) {
+    const [executingIds, setExecutingIds] = useState<Set<string>>(new Set<string>());
+
+    const handleSetExecutingId = async (userId: string, action: () => Promise<void>): Promise<void> => {
+        setExecutingIds(prev => new Set(prev).add(userId));
+
+        try {
+            await action();
+        } finally {
+            setExecutingIds(prev => {
+                const next = new Set(prev);
+                next.delete(userId);
+                return next;
+            });
+        }
+    };
+
+    const handleSendFriendRequest = async (user: DiscoverFriendElement): Promise<void> => {
+        handleSetExecutingId(user.userId, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const response: ServiceResponse<SendFriendRequestResponse> =
+                await friendService.sendFriendRequest(user.userId);
+
+            if (response.success && response.data) {
+                switch (response.data.result) {
+                    case SendFriendRequestResult.Failure:
+                        break;
+
+                    case SendFriendRequestResult.Friended:
+                        user.status = DiscoverFriendStatus.Friended;
+                        break;
+
+                    case SendFriendRequestResult.Requested:
+                        user.status = DiscoverFriendStatus.OutcomingRequest;
+                        break;
+                }
+            }
+        });
+    };
+
+    const handleAcceptFriendRequest  = (user: DiscoverFriendElement) => {
+        handleSetExecutingId(user.userId, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const response: ServiceResponse =
+                await friendService.acceptFriendRequest(user.userId);
+
+            if (response.success) {
+                user.status = DiscoverFriendStatus.Friended;
+            }
+        });
+    };
+
+    const handleCancelFriendRequest = (user: DiscoverFriendElement) => {
+        handleSetExecutingId(user.userId, async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const response: ServiceResponse =
+                await friendService.cancelFriendRequest(user.userId);
+
+            if (response.success) {
+                user.status = DiscoverFriendStatus.Stranger;
+            }
+        });
+    };
+
     return (
         <ScrollArea.Root className="flex-1 overflow-hidden rounded">
             { !userNameSearch ? (
@@ -291,20 +357,10 @@ function AddFriendSearchResultContainer(
                                         </div>
                                         :
                                         <>
-                                            <Avatar.Root
-                                                className="flex-none size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">
-                                                <Avatar.Image
-                                                    className="size-full rounded-[inherit] object-cover"
-                                                    src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
-                                                    alt="Test"
-                                                />
-                                                <Avatar.Fallback
-                                                    className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
-                                                    delayMs={600}
-                                                >
-                                                    <BsPerson className="fill-black size-5/6"/>
-                                                </Avatar.Fallback>
-                                            </Avatar.Root>
+                                            <UserAvatar
+                                                userId={user.userId}
+                                                hasAvatar={user.hasAvatar}
+                                                className="flex-none size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
 
                                             <div className="flex-1 flex flex-col">
                                                 <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
@@ -316,27 +372,25 @@ function AddFriendSearchResultContainer(
                                             </div>
 
                                             <div className="flex-none flex flex-row gap-2 justify-center items-center">
-                                                {user.status == DiscoverFriendStatus.Stranger ? (
-                                                    <button onClick={() => {
-                                                        console.log("send friend request.");
-                                                    }}>
-                                                        <BsPersonPlus className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
-                                                    </button>
-                                                ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
-                                                    <button onClick={() => {
-                                                        console.log("reject friend request.");
-                                                    }}>
-                                                        <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
-                                                    </button>
-                                                ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
-                                                    <button onClick={() => {
-                                                        console.log("cancel friend request.");
-                                                    }}>
-                                                        <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
-                                                    </button>
-                                                ) : user.status == DiscoverFriendStatus.Friended ? (
-                                                    <BsPersonDash className="fill-green-500 size-6 cursor-pointer"/>
-                                                ) : null}
+                                                {executingIds.has(user.userId) ? (
+                                                    <Spinner className="fill-white size-6"/>
+                                                ) : (
+                                                    user.status == DiscoverFriendStatus.Stranger ? (
+                                                        <button onClick={() => handleSendFriendRequest(user)}>
+                                                            <BsPersonPlus className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
+                                                        </button>
+                                                    ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
+                                                        <button onClick={() => handleAcceptFriendRequest(user)}>
+                                                            <BsPersonCheck className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
+                                                        </button>
+                                                    ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
+                                                        <button onClick={() => handleCancelFriendRequest(user)}>
+                                                            <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
+                                                        </button>
+                                                    ) : user.status == DiscoverFriendStatus.Friended ? (
+                                                        <BsPersonDash className="fill-red-500 size-6 cursor-pointer"/>
+                                                    ) : null
+                                                )}
                                             </div>
                                         </>
                                     }

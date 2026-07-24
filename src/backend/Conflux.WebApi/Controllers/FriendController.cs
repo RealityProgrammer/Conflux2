@@ -36,15 +36,15 @@ public sealed class FriendController(
         };
     }
 
-    [HttpPost("requests/{requestId:guid}/cancel")]
-    public async Task<ActionResult<ApiResponse>> CancelFriendRequest([FromRoute] Guid requestId) {
+    [HttpPost("requests/{toUserId:guid}/cancel")]
+    public async Task<ActionResult<ApiResponse>> CancelFriendRequest([FromRoute] Guid toUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.CancelFriendRequestAsync(userId, requestId);
+        Result result = await friendService.CancelFriendRequestAsync(userId, toUserId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -58,15 +58,15 @@ public sealed class FriendController(
         };
     }
     
-    [HttpPost("requests/{requestId:guid}/reject")]
-    public async Task<ActionResult<ApiResponse>> RejectFriendRequest([FromRoute] Guid requestId) {
+    [HttpPost("requests/{senderUserId:guid}/reject")]
+    public async Task<ActionResult<ApiResponse>> RejectFriendRequest([FromRoute] Guid senderUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.RejectFriendRequestAsync(userId, requestId);
+        Result result = await friendService.RejectFriendRequestAsync(userId, senderUserId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -80,15 +80,15 @@ public sealed class FriendController(
         };
     }
     
-    [HttpPost("requests/{requestId:guid}/accept")]
-    public async Task<ActionResult<ApiResponse>> AcceptFriendRequest([FromRoute] Guid requestId) {
+    [HttpPost("requests/{senderUserId:guid}/accept")]
+    public async Task<ActionResult<ApiResponse>> AcceptFriendRequest([FromRoute] Guid senderUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.AcceptFriendRequestAsync(userId, requestId);
+        Result result = await friendService.AcceptFriendRequestAsync(userId, senderUserId);
 
         if (result.IsSuccess) {
             return Ok();
