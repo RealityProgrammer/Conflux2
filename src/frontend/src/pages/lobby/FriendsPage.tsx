@@ -198,6 +198,8 @@ function AddFriendTabContent() {
         fetchNextPage,
     ]);
 
+    const [executingIds, setExecutingIds] = useState<Set<string>>(new Set<string>());
+
     return (
         <div className="flex flex-col gap-2 h-full">
             <header className="flex-none">

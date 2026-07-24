@@ -13,13 +13,15 @@ using Conflux.Application;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Miscs;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using ScottBrady91.AspNetCore.Identity;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Authenticate & Authorization.
+builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>();
+
 builder.Services
     .AddIdentityCore<ApplicationUser>(options => {
         options.SignIn.RequireConfirmedAccount = false;
