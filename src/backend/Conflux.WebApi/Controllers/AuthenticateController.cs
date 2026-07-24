@@ -123,7 +123,7 @@ public sealed class AuthenticateController : ControllerBase {
         string email = decodedPayload[..firstColon];
         string refreshToken = decodedPayload[(firstColon + 1)..];
 
-        var result = await _authService.RefreshAsync(email, refreshToken);
+        Result<Application.Dto.Responses.RefreshResponse> result = await _authService.RefreshAsync(email, refreshToken);
 
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
@@ -133,7 +133,6 @@ public sealed class AuthenticateController : ControllerBase {
         var value = result.Value;
         
         SetAccessTokenCookie(value.AccessToken);
-        SetRefreshTokenCookie(email, value.RefreshToken);
         
         return Ok(new ApiResponse<RefreshResponse>(
             new(value.AuthorizationInfo, value.TokenType, value.AccessToken), 

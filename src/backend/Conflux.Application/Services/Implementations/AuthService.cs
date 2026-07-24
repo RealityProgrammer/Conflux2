@@ -75,9 +75,11 @@ internal sealed class AuthService : IAuthService {
         
         if (user != null && await _userManager.CheckPasswordAsync(user, password)) {
             IList<string> roles = await _userManager.GetRolesAsync(user);
-            var token = await GenerateJwtToken(user, roles);
             
-            IdentityResult identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token.RefreshToken}:{token.RefreshTokenExpireTick}");
+            GenerateAccessToken(user, roles, out string accessToken, out _);
+            GenerateRefreshToken(out string refreshToken, out long refreshTokenExpireTick);
+            
+            IdentityResult identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{refreshToken}:{refreshTokenExpireTick}");
             
             if (!identityResult.Succeeded) {
                 return Errors.OperationFailure("set authentication token");
@@ -91,13 +93,13 @@ internal sealed class AuthService : IAuthService {
                 user.IsProfileSetup,
                 roles.AsReadOnly(),
                 permissions
-            ), "Bearer", token.AccessToken, token.RefreshToken));
+            ), "Bearer", accessToken, refreshToken));
         }
 
         return Errors.InvalidCredentials();
     }
     
-    private async Task<TokenResponse> GenerateJwtToken(ApplicationUser user, IEnumerable<string> roles) {
+    private void GenerateAccessToken(ApplicationUser user, IEnumerable<string> roles, out string accessToken, out long expireTick) {
         var claims = new List<Claim> {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString("N")),
             new(JwtRegisteredClaimNames.Email, user.Email!),
@@ -128,20 +130,17 @@ internal sealed class AuthService : IAuthService {
             signingCredentials: credential
         );
 
-        string accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-        long accessTokenExpireTick = accessTokenExpire.Ticks;
-        string refreshToken = GenerateRefreshToken();
-        long refreshTokenExpireTick = DateTime.UtcNow.AddSeconds(_options.RefreshTokenDuration).Ticks;
-        
-        return new(accessToken, accessTokenExpireTick, refreshToken, refreshTokenExpireTick);
+        accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+        expireTick = accessTokenExpire.Ticks;
     }
     
-    private static string GenerateRefreshToken() {
+    private void GenerateRefreshToken(out string refreshToken, out long tokenExpireTick) {
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         
-        return Convert.ToBase64String(randomNumber);
+        refreshToken = Convert.ToBase64String(randomNumber);
+        tokenExpireTick = _timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration).Ticks;
     }
 
     public async Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken) {
@@ -158,24 +157,18 @@ internal sealed class AuthService : IAuthService {
         int firstColon = storedData.IndexOf(':');
         
         // failure if somehow the data is corrupted or is expired.
-        if (firstColon == -1 || !long.TryParse(storedData.AsSpan()[(firstColon + 1)..], out var expireTick) || DateTime.UtcNow.Ticks > expireTick) {
+        if (firstColon == -1 || !long.TryParse(storedData.AsSpan(firstColon + 1), out var expireTick) || _timeProvider.GetUtcNow().Ticks > expireTick) {
             return Errors.InvalidRefreshToken();
         }
         
         // compare the tokens.
-        if (!storedData.AsSpan()[..firstColon].SequenceEqual(refreshToken)) {
+        if (!storedData.AsSpan(0, firstColon).SequenceEqual(refreshToken)) {
             return Errors.InvalidRefreshToken();
         }
         
         // everything is fine now, rotate and store the new generated tokens.
         IList<string> roles = await _userManager.GetRolesAsync(user);
-        var tokens = await GenerateJwtToken(user, roles);
-        
-        var identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{tokens.RefreshToken}:{tokens.RefreshTokenExpireTick}");
-        
-        if (!identityResult.Succeeded) {
-            return Errors.OperationFailure("set authentication token");
-        }
+        GenerateAccessToken(user, roles, out string accessToken, out _);
         
         var permissions = await GetAuthorizationPermissions(user);
         
@@ -185,7 +178,7 @@ internal sealed class AuthService : IAuthService {
             user.IsProfileSetup,
             roles.AsReadOnly(),
             permissions
-        ), "Bearer", tokens.AccessToken, tokens.RefreshToken));
+        ), "Bearer", accessToken));
     }
 
     public async Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId) {
