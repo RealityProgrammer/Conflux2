@@ -40,14 +40,15 @@ export interface RefreshResponse {
     accessToken: string;
 }
 
-export type UserSearchResult = {
+export type DiscoverUserElement = {
+    userId: string;
     userName: string;
     displayName: string;
     hasAvatar: boolean;
 }
 
 export interface DiscoverUsersResponse {
-    users: UserSearchResult[];
+    users: DiscoverUserElement[];
     totalCount: number;
 }
 

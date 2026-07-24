@@ -1,11 +1,11 @@
 import {Avatar, ScrollArea, Tabs} from "radix-ui";
-import {BsPeople, BsPerson, BsSearch} from "react-icons/bs";
-import {useRef, useState, useEffect} from "react";
+import {BsPeople, BsPerson, BsPersonPlus, BsSearch} from "react-icons/bs";
+import {useRef, useState, useEffect, type Ref} from "react";
 import {useDebounceCallback, useDebounceValue} from "usehooks-ts";
-import {useVirtualizer} from "@tanstack/react-virtual";
+import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {userService} from "../../api/userService.ts";
-import type {DiscoverUsersResponse, ServiceResponse, UserSearchResult} from "../../api/responses.ts";
+import type {DiscoverUsersResponse, ServiceResponse, DiscoverUserElement} from "../../api/responses.ts";
 
 function FriendListTabContent() {
     const searchDebounce = useDebounceCallback(async (value) => {
@@ -121,7 +121,7 @@ function AddFriendTabContent() {
         return () => observer.disconnect();
     }, []);
 
-    const [searchValue, setSearchValue] = useDebounceValue("", 500);
+    const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
 
     const {
         data,
@@ -130,12 +130,13 @@ function AddFriendTabContent() {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["discoverUsers", searchValue],
-        queryFn: async ({ pageParam = 0 }) => {
+        enabled: !!userNameSearch,
+        queryKey: ["discoverUsers", userNameSearch],
+        queryFn: async ({ pageParam = 0 }): Promise<DiscoverUsersResponse | null | undefined> => {
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
             const response: ServiceResponse<DiscoverUsersResponse> =
-                await userService.discover(searchValue, pageParam, pageSize);
+                await userService.discover(userNameSearch, pageParam, pageSize);
 
             return response.data;
         },
@@ -157,14 +158,14 @@ function AddFriendTabContent() {
     // create virtualizer related objects
     const virtualCount = hasNextPage ? allUsers.length + 1 : allUsers.length;
 
-    const friendsVirtualize = useVirtualizer({
+    const userVirtualize = useVirtualizer({
         count: virtualCount,
         getScrollElement: () => scrollViewport.current,
         estimateSize: () => ITEM_HEIGHT,
         overscan: 5,
     });
 
-    const virtualItems = friendsVirtualize.getVirtualItems();
+    const virtualItems = userVirtualize.getVirtualItems();
 
     // trigger next query when scrolling near the end
     useEffect(() => {
@@ -197,30 +198,78 @@ function AddFriendTabContent() {
                 <input className="flex-1 input-field w-full h-11 px-3 rounded-l-none"
                        placeholder="Enter friend's username"
                        onChange={(e) => {
-                           setSearchValue(e.target.value);
+                           setUserNameSearch(e.target.value);
                        }}/>
             </section>
 
-            <ScrollArea.Root className="flex-1 overflow-hidden rounded">
-                <ScrollArea.Viewport ref={scrollViewport} className="border-2 border-gray-600 rounded-md size-full">
+            <AddFriendSearchResultContainer userNameSearch={userNameSearch}
+                                            isLoading={isLoading}
+                                            pageSize={pageSize}
+                                            itemHeight={ITEM_HEIGHT}
+                                            scrollViewportRef={scrollViewport}
+                                            virtualizeHeight={userVirtualize.getTotalSize()}
+                                            virtualItems={virtualItems}
+                                            userResults={allUsers}/>
+        </div>
+    );
+}
+
+interface FriendSearchResultContainerProps {
+    userNameSearch: string;
+    isLoading: boolean;
+    pageSize: number;
+    itemHeight: number;
+    scrollViewportRef: Ref<HTMLDivElement>;
+    virtualizeHeight: number;
+    virtualItems: VirtualItem[];
+    userResults: DiscoverUserElement[];
+}
+
+function AddFriendSearchResultContainer(
+    { userNameSearch, isLoading, pageSize, itemHeight, scrollViewportRef, virtualizeHeight, virtualItems, userResults }: FriendSearchResultContainerProps
+) {
+    return (
+        <ScrollArea.Root className="flex-1 overflow-hidden rounded">
+            { !userNameSearch ? (
+                <div className="select-none flex size-full items-center justify-center text-gray-400 border-2 border-gray-600 rounded-md">
+                    See the textbox above? Insert the name of user there and we will search for them.
+                </div>
+            ) : isLoading ? (
+                <div className="flex size-full flex-col border-2 border-gray-600 rounded-md">
+                    {Array.from({ length: pageSize }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="w-full p-1.5 flex flex-row gap-1 items-center border-b border-white/5"
+                            style={{ height: `${itemHeight}px` }}
+                        >
+                            {/* Avatar Skeleton */}
+                            <div className="flex-none size-10 rounded-full bg-white/10 animate-pulse" />
+
+                            {/* Username Skeleton */}
+                            <div className="ml-2 h-4 w-32 rounded bg-white/10 animate-pulse" />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <ScrollArea.Viewport ref={scrollViewportRef} className="border-2 border-gray-600 rounded-md size-full">
                     <div
                         className="relative w-full"
-                        style={{ height: `${friendsVirtualize.getTotalSize()}px` }}
+                        style={{ height: `${virtualizeHeight}px` }}
                     >
                         { virtualItems.map((virtualItem) => {
-                            const isLoading = virtualItem.index >= allUsers.length;
-                            const user = allUsers[virtualItem.index];
+                            const isLoading = virtualItem.index >= userResults.length;
+                            const user = userResults[virtualItem.index];
 
                             return (
                                 <div key={virtualItem.key}
-                                     className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover:bg-white/12"
+                                     className="absolute top-0 left-0 w-full px-3 py-1.5 flex flex-row gap-1 items-center hover:bg-white/12"
                                      style={{
                                          height: `${virtualItem.size}px`,
                                          transform: `translateY(${virtualItem.start}px)`,
                                      }}
                                 >
                                     { isLoading ?
-                                        <div className="h-10 flex flex-row justify-center items-center">
+                                        <div className="h-10 flex flex-row gap-2 justify-center items-center">
                                             Loading...
                                         </div>
                                         :
@@ -240,9 +289,18 @@ function AddFriendTabContent() {
                                                 </Avatar.Fallback>
                                             </Avatar.Root>
 
-                                            <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                                                {user.displayName}
-                                            </p>
+                                            <div className="flex-1 flex flex-col">
+                                                <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    {user.displayName}
+                                                </p>
+                                                <p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    @{user.userName}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex-none flex flex-row gap-2 justify-center items-center">
+                                                <BsPersonPlus className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
+                                            </div>
                                         </>
                                     }
                                 </div>
@@ -250,15 +308,15 @@ function AddFriendTabContent() {
                         })}
                     </div>
                 </ScrollArea.Viewport>
+            )}
 
-                <ScrollArea.Scrollbar
-                    className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover:bg-white/6 w-2"
-                    orientation="vertical"
-                >
-                    <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-mauve10 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2 bg-gray-400"/>
-                </ScrollArea.Scrollbar>
-            </ScrollArea.Root>
-        </div>
+            <ScrollArea.Scrollbar
+                className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover:bg-white/6 w-2"
+                orientation="vertical"
+            >
+                <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-mauve10 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2 bg-gray-400"/>
+            </ScrollArea.Scrollbar>
+        </ScrollArea.Root>
     );
 }
 
