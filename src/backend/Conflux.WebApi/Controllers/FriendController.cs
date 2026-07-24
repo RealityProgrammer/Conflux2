@@ -102,4 +102,32 @@ public sealed class FriendController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
+    
+    [HttpGet("discover")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<DiscoverFriendsResponse>>> DiscoverUsers(
+        [FromQuery] string? name,
+        [FromQuery] int offset,
+        [FromQuery] int count
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+        }
+        
+        offset = int.Max(offset, 0);
+        count = int.Max(count, 1);
+        
+        Result<DiscoverFriendsResponse> result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<DiscoverFriendsResponse>(result.Value, Error.None));
+        }
+
+        return StatusCode(
+            StatusCodes.Status500InternalServerError, 
+            new ApiResponse<DiscoverFriendsResponse>(null, result.Error)
+        );
+    }
 }

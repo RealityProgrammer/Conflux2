@@ -12,11 +12,4 @@ public interface IUserService {
 
     Task<Result> SetupProfileAsync(SetupProfileRequest request);
     Task<Result<UserBasicProfileResponse>> GetUserBasicProfileAsync(Guid userId);
-
-    Task<Result<DiscoverUsersResponse>> DiscoverUsersAsync(
-        Guid searchingUserId,
-        string? nameFilter, 
-        int offset, 
-        int count
-    );
 }

@@ -7,4 +7,11 @@ public interface IFriendService {
     Task<Result> CancelFriendRequestAsync(Guid senderUserId, Guid friendRequestId);
     Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid friendRequestId);
     Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid friendRequestId);
+    
+    Task<Result<DiscoverFriendsResponse>> DiscoverFriendsAsync(
+        Guid searchingUserId,
+        string? nameFilter, 
+        int offset, 
+        int count
+    );
 }

@@ -1,11 +1,26 @@
 import {Avatar, ScrollArea, Tabs} from "radix-ui";
-import {BsPeople, BsPerson, BsPersonPlus, BsSearch} from "react-icons/bs";
-import {useRef, useState, useEffect, type Ref} from "react";
+import {
+    BsDot,
+    BsPeople,
+    BsPerson,
+    BsPersonCheck,
+    BsPersonDash,
+    BsPersonPlus,
+    BsPersonX,
+    BsSearch,
+    BsThreeDots
+} from "react-icons/bs";
+import {type Ref, useEffect, useRef, useState} from "react";
 import {useDebounceCallback, useDebounceValue} from "usehooks-ts";
 import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import {userService} from "../../api/userService.ts";
-import type {DiscoverUsersResponse, ServiceResponse, DiscoverUserElement} from "../../api/responses.ts";
+import {
+    type DiscoverFriendElement,
+    type DiscoverFriendsResponse,
+    DiscoverFriendStatus,
+    type ServiceResponse
+} from "../../api/responses.ts";
+import {friendService} from "../../api/friendService.ts";
 
 function FriendListTabContent() {
     const searchDebounce = useDebounceCallback(async (value) => {
@@ -132,11 +147,11 @@ function AddFriendTabContent() {
     } = useInfiniteQuery({
         enabled: !!userNameSearch,
         queryKey: ["discoverUsers", userNameSearch],
-        queryFn: async ({ pageParam = 0 }): Promise<DiscoverUsersResponse | null | undefined> => {
+        queryFn: async ({ pageParam = 0 }): Promise<DiscoverFriendsResponse | null | undefined> => {
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            const response: ServiceResponse<DiscoverUsersResponse> =
-                await userService.discover(userNameSearch, pageParam, pageSize);
+            const response: ServiceResponse<DiscoverFriendsResponse> =
+                await friendService.discover(userNameSearch, pageParam, pageSize);
 
             return response.data;
         },
@@ -222,7 +237,7 @@ interface FriendSearchResultContainerProps {
     scrollViewportRef: Ref<HTMLDivElement>;
     virtualizeHeight: number;
     virtualItems: VirtualItem[];
-    userResults: DiscoverUserElement[];
+    userResults: DiscoverFriendElement[];
 }
 
 function AddFriendSearchResultContainer(
@@ -262,7 +277,7 @@ function AddFriendSearchResultContainer(
 
                             return (
                                 <div key={virtualItem.key}
-                                     className="absolute top-0 left-0 w-full px-3 py-1.5 flex flex-row gap-1 items-center hover:bg-white/12"
+                                     className="absolute top-0 left-0 w-full px-3 py-1.5 flex flex-row gap-1 items-center hover:bg-white/12 transition-colors duration-150 ease-linear"
                                      style={{
                                          height: `${virtualItem.size}px`,
                                          transform: `translateY(${virtualItem.start}px)`,
@@ -299,7 +314,27 @@ function AddFriendSearchResultContainer(
                                             </div>
 
                                             <div className="flex-none flex flex-row gap-2 justify-center items-center">
-                                                <BsPersonPlus className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
+                                                {user.status == DiscoverFriendStatus.Stranger ? (
+                                                    <button onClick={() => {
+                                                        console.log("send friend request.");
+                                                    }}>
+                                                        <BsPersonPlus className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
+                                                    </button>
+                                                ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
+                                                    <button onClick={() => {
+                                                        console.log("reject friend request.");
+                                                    }}>
+                                                        <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
+                                                    </button>
+                                                ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
+                                                    <button onClick={() => {
+                                                        console.log("cancel friend request.");
+                                                    }}>
+                                                        <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
+                                                    </button>
+                                                ) : user.status == DiscoverFriendStatus.Friended ? (
+                                                    <BsPersonDash className="fill-green-500 size-6 cursor-pointer"/>
+                                                ) : null}
                                             </div>
                                         </>
                                     }

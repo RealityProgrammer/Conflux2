@@ -135,38 +135,6 @@ public sealed class UserController : ControllerBase {
         };
     }
 
-    /// <summary>
-    /// Allows normal user to discover other user.
-    /// </summary>
-    /// <returns>Collection of </returns>
-    [HttpGet("discover")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<DiscoverUsersResponse>>> DiscoverUsers(
-        [FromQuery] string? name,
-        [FromQuery] int offset,
-        [FromQuery] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        Result<DiscoverUsersResponse> result = await _userService.DiscoverUsersAsync(userId, name, offset, count);
-
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<DiscoverUsersResponse>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<DiscoverUsersResponse>(null, result.Error)
-        );
-    }
-
     public record UploadAvatarRequest(IFormFile File) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext context) {
             if (File == null!) {

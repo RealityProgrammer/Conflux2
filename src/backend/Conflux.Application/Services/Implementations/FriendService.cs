@@ -1,7 +1,9 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using FriendRequestStatus = Conflux.Domain.FriendRequestStatus;
 
 namespace Conflux.Application.Services.Implementations;
 
@@ -17,6 +19,7 @@ internal sealed class FriendService(
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         // check if there was a friend request between 2 users
         // if it's status is None or Rejected, update to Pending with sender and receiver assigned accordingly.
@@ -133,6 +136,7 @@ internal sealed class FriendService(
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         var existingRequest = await dbContext.FriendRequests
             .Where(r => r.Id == friendRequestId)
@@ -190,6 +194,7 @@ internal sealed class FriendService(
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         var existingRequest = await dbContext.FriendRequests
             .Where(r => r.Id == friendRequestId)
@@ -247,6 +252,7 @@ internal sealed class FriendService(
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
         
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         
         var existingRequest = await dbContext.FriendRequests
             .Where(r => r.Id == friendRequestId)
@@ -296,5 +302,66 @@ internal sealed class FriendService(
             default:
                 return Errors.ResourceNotFound("Friend request");
         }
+    }
+    
+    public async Task<Result<DiscoverFriendsResponse>> DiscoverFriendsAsync(
+        Guid searchingUserId,
+        string? nameFilter, 
+        int offset, 
+        int count
+    ) {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var queryable = dbContext.Users
+            // ignore the user who requests the search and anyone who hasn't setup their profile
+            .Where(u => u.Id != searchingUserId && u.IsProfileSetup);
+        
+        // name filtering
+        if (!string.IsNullOrEmpty(nameFilter)) {
+            string pattern = $"%{nameFilter}%";
+            
+            queryable = queryable
+                .Where(u => 
+                    u.UserName != null && 
+                    u.DisplayName != null &&
+                    (EF.Functions.ILike(u.UserName, pattern) || EF.Functions.ILike(u.DisplayName, pattern))
+                );
+        }
+        
+        var resultQuery = await queryable
+            .OrderBy(u => u.UserName)
+            .ThenBy(u => u.Id)
+            .Skip(offset)
+            .Take(count)
+            .Select(u => new {
+                TotalCount = queryable.Count(),
+                Item = new DiscoverFriendElement(
+                    u.Id,
+                    u.UserName!, 
+                    u.DisplayName!, 
+                    u.HasAvatar,
+                    dbContext.FriendRequests
+                        .Where(fr => 
+                            (fr.SenderUserId == searchingUserId && fr.ReceiverUserId == u.Id || fr.SenderUserId == u.Id && fr.ReceiverUserId == searchingUserId) &&
+                            // only care about active states, ignore canceled and rejected
+                            (fr.Status == FriendRequestStatus.Pending || fr.Status == FriendRequestStatus.Accepted)
+                        )
+                        .Select(fr => 
+                            fr.Status == FriendRequestStatus.Accepted ? DiscoverFriendStatus.Friended :
+                            fr.SenderUserId == searchingUserId ? DiscoverFriendStatus.OutcomingRequest : 
+                            DiscoverFriendStatus.IncomingRequest
+                        )
+                        .FirstOrDefault()
+                )
+            })
+            .ToListAsync();
+        
+        int totalCount = resultQuery.Count > 0 ? resultQuery[0].TotalCount : 0;
+        var items = resultQuery.Select(r => r.Item).ToList();
+        
+        var response = new DiscoverFriendsResponse(items, totalCount);
+        
+        return Result<DiscoverFriendsResponse>.Success(response);
     }
 }

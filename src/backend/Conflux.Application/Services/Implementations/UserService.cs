@@ -290,46 +290,6 @@ internal sealed class UserService(
             Result<UserBasicProfileResponse>.Success(result);
     }
 
-    public async Task<Result<DiscoverUsersResponse>> DiscoverUsersAsync(
-        Guid searchingUserId,
-        string? nameFilter, 
-        int offset, 
-        int count
-    ) {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-
-        var queryable = dbContext.Users
-            .Where(u => u.Id != searchingUserId);
-
-        if (!string.IsNullOrEmpty(nameFilter)) {
-            queryable = queryable.Where(u => EF.Functions.Like(u.UserName, $"%{nameFilter}%"));
-        }
-        
-        var resultQuery = await queryable
-            .OrderBy(u => u.UserName)
-            .ThenBy(u => u.Id)
-            .Skip(offset)
-            .Take(count)
-            .Select(u => new {
-                TotalCount = queryable.Count(),
-                Item = new DiscoverUserElement(
-                    u.Id,
-                    u.UserName!, 
-                    u.DisplayName!, 
-                    u.HasAvatar
-                )
-            })
-            .ToListAsync();
-        
-        int totalCount = resultQuery.Count > 0 ? resultQuery[0].TotalCount : 0;
-        
-        var items = resultQuery.Select(r => r.Item).ToList();
-        
-        var response = new DiscoverUsersResponse(items, totalCount);
-        
-        return Result<DiscoverUsersResponse>.Success(response);
-    }
-
     private static string CreateAvatarUniqueKey(Guid userId) {
         return $"avatars/users/{userId}";
     }
