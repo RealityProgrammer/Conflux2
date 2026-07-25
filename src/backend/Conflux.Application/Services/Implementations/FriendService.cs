@@ -312,6 +312,46 @@ internal sealed class FriendService(
                 return Errors.ResourceNotFound("Friend request");
         }
     }
+
+    public async Task<Result> UnfriendAsync(Guid invokerUserId, Guid otherUserId) {
+        DateTimeOffset utcNow = timeProvider.GetUtcNow();
+        
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        
+        var existingRequest = await dbContext.FriendRequests
+            .Where(r => 
+                r.SenderUserId == invokerUserId && r.ReceiverUserId == otherUserId || 
+                r.SenderUserId == otherUserId && r.ReceiverUserId == invokerUserId
+            )
+            .Select(r => new {
+                r.Id,
+                r.Status,
+                r.ReceiverUserId,
+            })
+            .FirstOrDefaultAsync();
+
+        if (existingRequest == null) {
+            return Errors.ResourceNotFound("Friend request");
+        }
+
+        if (existingRequest.Status != FriendRequestStatus.Accepted) {
+            return Errors.NotFriend();
+        }
+        
+        int numChanged = await dbContext.FriendRequests
+            .Where(r => r.Id == existingRequest.Id && r.Status == FriendRequestStatus.Accepted)
+            .ExecuteUpdateAsync(setter => setter
+                .SetProperty(r => r.Status, FriendRequestStatus.None)
+                .SetProperty(r => r.UpdatedAt, utcNow)
+            );
+
+        if (numChanged == 1) {
+            return Result.Success();
+        }
+
+        return Errors.OperationFailure("unfriend due to state changed.");
+    }
     
     public async Task<Result<DiscoverFriendsResponse>> DiscoverFriendsAsync(
         Guid searchingUserId,

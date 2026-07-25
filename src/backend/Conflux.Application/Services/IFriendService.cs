@@ -7,6 +7,7 @@ public interface IFriendService {
     Task<Result> CancelFriendRequestAsync(Guid senderUserId, Guid toUserId);
     Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid senderUserId);
     Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid senderUserId);
+    Task<Result> UnfriendAsync(Guid invokerUserId, Guid otherUserId);
     
     Task<Result<DiscoverFriendsResponse>> DiscoverFriendsAsync(
         Guid searchingUserId,

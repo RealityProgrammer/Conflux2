@@ -1,9 +1,9 @@
 import {Avatar, ScrollArea, Tabs} from "radix-ui";
-import {BsPeople, BsPerson, BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsSearch} from "react-icons/bs";
+import {BsPeople, BsPerson, BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsSearch, BsThreeDotsVertical} from "react-icons/bs";
 import {type Ref, useEffect, useRef, useState} from "react";
 import {useDebounceCallback, useDebounceValue} from "usehooks-ts";
 import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {useInfiniteQuery, useQueryClient, type InfiniteData} from "@tanstack/react-query";
 import {
     type DiscoverFriendElement,
     type DiscoverFriendsResponse,
@@ -245,13 +245,78 @@ function AddFriendSearchResultContainer(
         userResults,
     }: FriendSearchResultContainerProps
 ) {
+    type FriendActionType = 'send' | 'accept' | 'reject' | 'cancel' | 'unfriend';
+
     const [executingIds, setExecutingIds] = useState<Set<string>>(new Set<string>());
+    const queryClient = useQueryClient();
 
-    const handleSetExecutingId = async (userId: string, action: () => Promise<void>): Promise<void> => {
+    const updateCacheStatus = (userId: string, newStatus: DiscoverFriendStatus) => {
+        queryClient.setQueryData<InfiniteData<DiscoverFriendsResponse>>(
+            ["discoverUsers", userNameSearch],
+            (oldData) => {
+                if (!oldData) return oldData;
+
+                return {
+                    ...oldData,
+                    pages: oldData.pages.map(page => ({
+                        ...page,
+                        users: page.users.map(user => {
+                            return user.userId === userId ? {...user, status: newStatus} : user;
+                        })
+                    }))
+                };
+            }
+        );
+    };
+
+    const handleAction = async (userId: string, actionType: FriendActionType) => {
         setExecutingIds(prev => new Set(prev).add(userId));
-
         try {
-            await action();
+            // fake delay to test
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            let success = false;
+            let targetStatus = DiscoverFriendStatus.Stranger;
+
+            switch (actionType) {
+                case 'send': {
+                    const response: ServiceResponse<SendFriendRequestResponse> =
+                        await friendService.sendFriendRequest(userId);
+
+                    success = response.success;
+
+                    if (success && response.data) {
+                        targetStatus = response.data.result === SendFriendRequestResult.Friended
+                            ? DiscoverFriendStatus.Friended
+                            : DiscoverFriendStatus.OutcomingRequest;
+                    }
+                    break;
+                }
+
+                case 'accept':
+                    success = (await friendService.acceptFriendRequest(userId)).success;
+                    targetStatus = DiscoverFriendStatus.Friended;
+                    break;
+
+                case 'reject':
+                    success = (await friendService.rejectFriendRequest(userId)).success;
+                    targetStatus = DiscoverFriendStatus.Stranger; // Or whatever your UI expects
+                    break;
+
+                case 'cancel':
+                    success = (await friendService.cancelFriendRequest(userId)).success;
+                    targetStatus = DiscoverFriendStatus.Stranger;
+                    break;
+
+                case 'unfriend':
+                    success = (await friendService.unfriend(userId)).success;
+                    targetStatus = DiscoverFriendStatus.Stranger;
+                    break;
+            }
+
+            if (success) {
+                updateCacheStatus(userId, targetStatus);
+            }
         } finally {
             setExecutingIds(prev => {
                 const next = new Set(prev);
@@ -259,57 +324,7 @@ function AddFriendSearchResultContainer(
                 return next;
             });
         }
-    };
-
-    const handleSendFriendRequest = async (user: DiscoverFriendElement): Promise<void> => {
-        handleSetExecutingId(user.userId, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const response: ServiceResponse<SendFriendRequestResponse> =
-                await friendService.sendFriendRequest(user.userId);
-
-            if (response.success && response.data) {
-                switch (response.data.result) {
-                    case SendFriendRequestResult.Failure:
-                        break;
-
-                    case SendFriendRequestResult.Friended:
-                        user.status = DiscoverFriendStatus.Friended;
-                        break;
-
-                    case SendFriendRequestResult.Requested:
-                        user.status = DiscoverFriendStatus.OutcomingRequest;
-                        break;
-                }
-            }
-        });
-    };
-
-    const handleAcceptFriendRequest  = (user: DiscoverFriendElement) => {
-        handleSetExecutingId(user.userId, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const response: ServiceResponse =
-                await friendService.acceptFriendRequest(user.userId);
-
-            if (response.success) {
-                user.status = DiscoverFriendStatus.Friended;
-            }
-        });
-    };
-
-    const handleCancelFriendRequest = (user: DiscoverFriendElement) => {
-        handleSetExecutingId(user.userId, async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const response: ServiceResponse =
-                await friendService.cancelFriendRequest(user.userId);
-
-            if (response.success) {
-                user.status = DiscoverFriendStatus.Stranger;
-            }
-        });
-    };
+    }
 
     return (
         <ScrollArea.Root className="flex-1 overflow-hidden rounded">
@@ -376,21 +391,33 @@ function AddFriendSearchResultContainer(
                                                     <Spinner className="fill-white size-6"/>
                                                 ) : (
                                                     user.status == DiscoverFriendStatus.Stranger ? (
-                                                        <button onClick={() => handleSendFriendRequest(user)}>
+                                                        <button onClick={() => handleAction(user.userId, 'send')}>
                                                             <BsPersonPlus className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
                                                         </button>
                                                     ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
-                                                        <button onClick={() => handleAcceptFriendRequest(user)}>
-                                                            <BsPersonCheck className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
-                                                        </button>
+                                                        <>
+                                                            <button onClick={() => handleAction(user.userId, 'accept')}>
+                                                                <BsPersonCheck className="fill-green-300 hover:fill-green-500 size-6 cursor-pointer"/>
+                                                            </button>
+
+                                                            <button onClick={() => handleAction(user.userId, 'reject')}>
+                                                                <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
+                                                            </button>
+                                                        </>
                                                     ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
-                                                        <button onClick={() => handleCancelFriendRequest(user)}>
+                                                        <button onClick={() => handleAction(user.userId, 'cancel')}>
                                                             <BsPersonX className="fill-red-400 hover:fill-red-500 size-6 cursor-pointer"/>
                                                         </button>
                                                     ) : user.status == DiscoverFriendStatus.Friended ? (
-                                                        <BsPersonDash className="fill-red-500 size-6 cursor-pointer"/>
+                                                        <button onClick={() => handleAction(user.userId, 'unfriend')}>
+                                                            <BsPersonDash className="fill-red-500 size-6 cursor-pointer"/>
+                                                        </button>
                                                     ) : null
                                                 )}
+
+                                                <button>
+                                                    <BsThreeDotsVertical className="fill-gray-400 hover:fill-white size-6 cursor-pointer"/>
+                                                </button>
                                             </div>
                                         </>
                                     }

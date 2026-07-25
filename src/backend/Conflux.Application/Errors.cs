@@ -74,4 +74,7 @@ public static class Errors {
     
     public static Error DisallowSelfAction(string description) =>
         new(nameof(DisallowSelfAction), description);
+
+    public static Error NotFriend() =>
+        new(nameof(NotFriend), "Users are not friend.");
 }

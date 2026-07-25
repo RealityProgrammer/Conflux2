@@ -103,6 +103,27 @@ public sealed class FriendController(
         };
     }
     
+    [HttpPost("unfriend/{userId:guid}")]
+    public async Task<ActionResult<ApiResponse>> Unfriend([FromRoute] Guid userId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var currentUserId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result = await friendService.UnfriendAsync(currentUserId, userId);
+
+        if (result.IsSuccess) {
+            return Ok();
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.NotFriend) => Conflict(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+    
     [HttpGet("discover")]
     [Authorize]
     public async Task<ActionResult<ApiResponse<DiscoverFriendsResponse>>> DiscoverUsers(

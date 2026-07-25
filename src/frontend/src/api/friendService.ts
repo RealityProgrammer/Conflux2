@@ -34,10 +34,10 @@ export const friendService = {
         }
     },
 
-    sendFriendRequest: async (toUser: string): Promise<ServiceResponse<SendFriendRequestResponse>> => {
+    sendFriendRequest: async (receiverUserId: string): Promise<ServiceResponse<SendFriendRequestResponse>> => {
         try {
             const response: AxiosResponse<BackendResponse<SendFriendRequestResponse>> =
-                await apiClient.post<BackendResponse<SendFriendRequestResponse>>(`/friend/requests/${encodeURIComponent(toUser)}`);
+                await apiClient.post<BackendResponse<SendFriendRequestResponse>>(`/friend/requests/${encodeURIComponent(receiverUserId)}`);
 
             return {
                 success: true,
@@ -50,10 +50,10 @@ export const friendService = {
         }
     },
 
-    acceptFriendRequest: async (toUser: string): Promise<ServiceResponse> => {
+    acceptFriendRequest: async (senderUserId: string): Promise<ServiceResponse> => {
         try {
             const response: AxiosResponse<BackendResponse> =
-                await apiClient.post<BackendResponse>(`/friend/requests/${encodeURIComponent(toUser)}/accept`);
+                await apiClient.post<BackendResponse>(`/friend/requests/${encodeURIComponent(senderUserId)}/accept`);
 
             return {
                 success: true,
@@ -65,10 +65,40 @@ export const friendService = {
         }
     },
 
-    cancelFriendRequest: async (toUser: string): Promise<ServiceResponse> => {
+    rejectFriendRequest: async (senderUserId: string): Promise<ServiceResponse> => {
         try {
             const response: AxiosResponse<BackendResponse> =
-                await apiClient.post<BackendResponse>(`/friend/requests/${encodeURIComponent(toUser)}/cancel`);
+                await apiClient.post<BackendResponse>(`/friend/requests/${encodeURIComponent(senderUserId)}/reject`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<ServiceResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
+    cancelFriendRequest: async (receiverUserId: string): Promise<ServiceResponse> => {
+        try {
+            const response: AxiosResponse<BackendResponse> =
+                await apiClient.post<BackendResponse>(`/friend/requests/${encodeURIComponent(receiverUserId)}/cancel`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<ServiceResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
+    unfriend: async (userId: string): Promise<ServiceResponse> => {
+        try {
+            const response: AxiosResponse<BackendResponse> =
+                await apiClient.post<BackendResponse>(`/friend/unfriend/${encodeURIComponent(userId)}`);
 
             return {
                 success: true,
