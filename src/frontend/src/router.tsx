@@ -1,5 +1,5 @@
-import { createBrowserRouter, Outlet, redirect } from 'react-router-dom';
-import HomePage from './pages/HomePage'
+import { createBrowserRouter, Outlet, redirect } from "react-router";
+import HomePage from "./pages/HomePage"
 import AuthenticatePage, { authAction } from "./pages/auth/AuthenticatePage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";

@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useEffect, useState, useRef } from "react";
 import Spinner from "../../components/Spinner.tsx";
 import {authService} from "../../api/authService.ts";

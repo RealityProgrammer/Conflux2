@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { useRevalidator, useNavigate, useRouteLoaderData } from "react-router-dom";
+import { useRevalidator, useNavigate, useRouteLoaderData } from "react-router";
 import { authService } from "../api/authService.ts";
 import type { UserBasicProfileInfo, UserAuthorizationInfo } from "../api/responses.ts";
 

@@ -1,7 +1,7 @@
 import { useAuthorization } from "../contexts/AuthContext.tsx";
 import {Avatar, Separator, Tooltip} from "radix-ui";
 import { userService } from "../api/userService.ts";
-import {NavLink, Outlet, useLocation, useNavigate} from "react-router-dom";
+import {NavLink, Outlet, useLocation, useNavigate} from "react-router";
 import {BsMegaphone, BsPeople, BsPerson} from "react-icons/bs";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {useRef} from "react";

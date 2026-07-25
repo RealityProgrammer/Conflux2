@@ -5,7 +5,7 @@ import { Dialog } from "radix-ui";
 import { useState, useRef, useEffect } from "react";
 import { animate } from "animejs";
 import {BsDoorClosed, BsDoorOpen, BsGear} from "react-icons/bs";
-import {NavLink} from "react-router-dom";
+import {NavLink} from "react-router";
 
 function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string, logout: () => void }) {
     const [open, setOpen] = useState(false);

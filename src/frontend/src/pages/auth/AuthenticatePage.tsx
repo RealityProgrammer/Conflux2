@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { animate, random, JSAnimation } from "animejs";
-import { Form, useLocation, redirect, useActionData, useNavigation } from "react-router-dom";
+import { Form, useLocation, redirect, useActionData, useNavigation } from "react-router";
 import { authService } from "../../api/authService.ts";
 import type { LoginResponse, ServiceResponse } from "../../api/responses.ts";
 import { HttpStatusCode } from "axios";

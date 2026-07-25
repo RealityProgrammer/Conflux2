@@ -1,4 +1,4 @@
-import axios, { HttpStatusCode } from 'axios';
+import axios, { HttpStatusCode } from "axios";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import {csrfService} from "./csrfService.ts";

@@ -9,7 +9,7 @@ import { useAuthorization } from "../../contexts/AuthContext.tsx";
 import { Label } from "radix-ui";
 import { type AvatarOperation, SetAvatar, DeleteAvatar, NoAvatarModification } from "../../api/requests.ts";
 import type {FieldErrors} from "../../api/responses.ts";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 
 enum DisplayingPanel {
     Intro = 0,
