@@ -15,8 +15,6 @@ export function useSignalR(url: string, listeners: Record<string, SignalRListene
 
     // build the connection
     useEffect(() => {
-        if (connection) return;
-
         // have to do this so that react strict mode double invocation doesn't cause error in the console
         let isMounted = true;
 
@@ -32,7 +30,10 @@ export function useSignalR(url: string, listeners: Record<string, SignalRListene
 
         setConnection(newConnection);
 
-        Object.keys(listenersRef.current).forEach((eventName) => {
+        console.log("registering events...");
+        const eventNames = Object.keys(listenersRef.current);
+
+        eventNames.forEach((eventName) => {
             newConnection.on(eventName, (...args) => {
                 listenersRef.current[eventName]?.(...args);
             });
@@ -56,6 +57,12 @@ export function useSignalR(url: string, listeners: Record<string, SignalRListene
         startConnection();
 
         return () => {
+            isMounted = false;
+
+            eventNames.forEach((eventName) => {
+                newConnection.off(eventName);
+            });
+
             if (newConnection.state === HubConnectionState.Connected) {
                 newConnection.stop();
             }
