@@ -1,5 +1,5 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Dto.Events;
+using Conflux.Application.Dto.Notifications;
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Mediator;
@@ -53,7 +53,7 @@ internal sealed class FriendService(
                         });
 
                     if (numChanged == 1) {
-                        await mediator.Publish(new FriendRequestSentEvent(fromUserId, toUserId));
+                        await mediator.Publish(new FriendRequestSentNotification(fromUserId, toUserId));
                         
                         return Result<SendFriendRequestResponse>.Success(new(
                             existingRequest.Id, 
@@ -64,7 +64,7 @@ internal sealed class FriendService(
                     return Errors.OperationFailure("send friend request");
                 
                 case FriendRequestStatus.Pending:
-                    // idempotency goes hard
+                    // idempotency: the user already requested to receiver
                     if (existingRequest.SenderUserId == fromUserId) {
                         return Result<SendFriendRequestResponse>.Success(new(
                             existingRequest.Id,
@@ -72,7 +72,8 @@ internal sealed class FriendService(
                         ));
                     }
                     
-                    // auto accept friend request
+                    // this user send request to the receiver, but the receiver already sent a request to this
+                    // user, thus auto accept friend request
                     await dbContext.FriendRequests
                         .Where(r => r.Id == existingRequest.Id)
                         .ExecuteUpdateAsync(setter => {
@@ -81,7 +82,7 @@ internal sealed class FriendService(
                                 .SetProperty(r => r.UpdatedAt, utcNow);
                         });
 
-                    await mediator.Publish(new FriendRequestAcceptedEvent(fromUserId, toUserId));
+                    await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
 
                     return Result<SendFriendRequestResponse>.Success(new(
                         existingRequest.Id,
@@ -109,7 +110,7 @@ internal sealed class FriendService(
         try {
             await dbContext.SaveChangesAsync();
             
-            await mediator.Publish(new FriendRequestSentEvent(fromUserId, toUserId));
+            await mediator.Publish(new FriendRequestSentNotification(fromUserId, toUserId));
             
             return Result<SendFriendRequestResponse>.Success(new(
                 newRequest.Id,
@@ -128,7 +129,7 @@ internal sealed class FriendService(
                 """).FirstOrDefaultAsync();
 
             if (updatedId != Guid.Empty) {
-                await mediator.Publish(new FriendRequestAcceptedEvent(fromUserId, toUserId));
+                await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
                 
                 return Result<SendFriendRequestResponse>.Success(new(
                     updatedId, 
@@ -185,6 +186,8 @@ internal sealed class FriendService(
                     );
 
                 if (numChanged == 1) {
+                    await mediator.Publish(new FriendRequestCanceledNotification(senderUserId, toUserId));
+                    
                     return Result.Success();
                 }
 
@@ -246,6 +249,8 @@ internal sealed class FriendService(
                     );
 
                 if (numChanged == 1) {
+                    await mediator.Publish(new FriendRequestRejectedNotification(receiverUserId, senderUserId));
+                    
                     return Result.Success();
                 }
 
@@ -307,7 +312,7 @@ internal sealed class FriendService(
                     );
 
                 if (numChanged == 1) {
-                    await mediator.Publish(new FriendRequestAcceptedEvent(receiverUserId, senderUserId));
+                    await mediator.Publish(new FriendRequestAcceptedNotification(receiverUserId, senderUserId));
                     
                     return Result.Success();
                 }
@@ -361,6 +366,8 @@ internal sealed class FriendService(
             );
 
         if (numChanged == 1) {
+            await mediator.Publish(new UnfriendNotification(invokerUserId, otherUserId));
+            
             return Result.Success();
         }
 

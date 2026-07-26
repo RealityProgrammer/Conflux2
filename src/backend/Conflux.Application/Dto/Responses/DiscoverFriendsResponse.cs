@@ -1,6 +1,6 @@
 namespace Conflux.Application.Dto.Responses;
 
-public record DiscoverFriendsResponse(
+public sealed record DiscoverFriendsResponse(
     List<DiscoverFriendElement> Users,
     int TotalCount
 );

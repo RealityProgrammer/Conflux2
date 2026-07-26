@@ -228,22 +228,22 @@ public sealed class AuthenticateController : ControllerBase {
     }
     
     // ReSharper disable NotAccessedPositionalProperty.Global
-    public record LoginRequest(
+    public sealed record LoginRequest(
         [Required, EmailAddress] string Email,
         [Required, DataType(DataType.Password)] string Password
     );
     
-    public record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
+    public sealed record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     
-    public record RegisterRequest(
+    public sealed record RegisterRequest(
         [Required, EmailAddress] string Email, 
         [Required, DataType(DataType.Password)] string Password,
         [Required, DataType(DataType.Password)] string ConfirmPassword
     );
     
-    public record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
+    public sealed record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     
-    public record ConfirmEmailRequest(
+    public sealed record ConfirmEmailRequest(
         [Required, StringFormat(StringFormat.Guid)] string UserId, 
         [Required] string ConfirmationCode
     );

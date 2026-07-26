@@ -7,6 +7,12 @@ import {useVirtualizer} from "@tanstack/react-virtual";
 import {useRef} from "react";
 import UserAvatar from "../components/UserAvatar.tsx";
 import {useSignalR} from "../hooks/useSignalR.ts";
+import {emitGlobalEvent} from "../hooks/useGlobalEvent.ts";
+import type {
+    FriendRequestAcceptedNotification,
+    FriendRequestCanceledNotification,
+    FriendRequestReceivedNotification, FriendRequestRejectedNotification, UnfriendedNotification
+} from "../api/notifications.ts";
 
 function Sidebar() {
     const auth = useAuthorization();
@@ -135,13 +141,25 @@ function LocationSidebar() {
 
 export default function LobbyLayout() {
     const connection = useSignalR(`${import.meta.env.VITE_BACKEND_HUBS_URL}/user-lobby`, {
-        ReceivedFriendRequest: () => {
-            console.log("received friend request");
+        FriendRequestReceived: (notification: FriendRequestReceivedNotification) => {
+            emitGlobalEvent("lobby:friendRequestReceived", notification);
         },
 
-        FriendRequestAccepted: () => {
-            console.log("friend request accepted");
-        }
+        FriendRequestCanceled: (notification: FriendRequestCanceledNotification) => {
+            emitGlobalEvent("lobby:friendRequestCanceled", notification);
+        },
+
+        FriendRequestAccepted: (notification: FriendRequestAcceptedNotification) => {
+            emitGlobalEvent("lobby:friendRequestAccepted", notification);
+        },
+
+        FriendRequestRejected: (notification: FriendRequestRejectedNotification) => {
+            emitGlobalEvent("lobby:friendRequestRejected", notification);
+        },
+
+        Unfriended: (notification: UnfriendedNotification) => {
+            emitGlobalEvent("lobby:unfriended", notification);
+        },
     });
 
     return (

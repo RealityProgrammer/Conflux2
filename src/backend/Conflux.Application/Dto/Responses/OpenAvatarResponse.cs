@@ -1,3 +1,3 @@
 namespace Conflux.Application.Dto.Responses;
 
-public record OpenAvatarResponse(Stream AvatarStream, string ContentType, IDisposable DisposeObject);
+public sealed record OpenAvatarResponse(Stream AvatarStream, string ContentType, IDisposable DisposeObject);

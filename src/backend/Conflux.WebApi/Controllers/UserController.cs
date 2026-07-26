@@ -135,7 +135,7 @@ public sealed class UserController : ControllerBase {
         };
     }
 
-    public record UploadAvatarRequest(IFormFile File) : IValidatableObject {
+    public sealed record UploadAvatarRequest(IFormFile File) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext context) {
             if (File == null!) {
                 yield return new("Avatar file is required.", [ nameof(File) ]);
@@ -161,9 +161,9 @@ public sealed class UserController : ControllerBase {
         }
     }
     
-    public record GetAvatarUrlResponse(string? Url);
+    public sealed record GetAvatarUrlResponse(string? Url);
 
-    public record SetupProfileRequest(
+    public sealed record SetupProfileRequest(
         string UserName,
         string DisplayName,
         AvatarOperationType AvatarOperation,

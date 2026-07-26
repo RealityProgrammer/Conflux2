@@ -7,7 +7,7 @@ public enum DiscoverFriendStatus {
     Friended,
 }
 
-public record DiscoverFriendElement(
+public sealed record DiscoverFriendElement(
     Guid UserId, 
     string UserName, 
     string DisplayName, 

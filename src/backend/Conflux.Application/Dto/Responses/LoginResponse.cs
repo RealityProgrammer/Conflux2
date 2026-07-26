@@ -1,6 +1,6 @@
 namespace Conflux.Application.Dto.Responses;
 
-public record LoginResponse(
+public sealed record LoginResponse(
     UserAuthorizationInfo AuthorizationInfo, 
     string TokenType, 
     string AccessToken, 

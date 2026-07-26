@@ -3,17 +3,9 @@ import {HttpTransportType, HubConnection, HubConnectionBuilder, HubConnectionSta
 
 export type SignalRListener = (...args: any[]) => any;
 
-export function useSignalR(url: string, listeners: Record<string, SignalRListener>): HubConnection | null {
+export function useSignalRConnection(url: string): HubConnection | null {
     const [connection, setConnection] = useState<HubConnection | null>(null);
 
-    const listenersRef = useRef(listeners);
-
-    // update the ref on every render
-    useEffect(() => {
-        listenersRef.current = listeners;
-    });
-
-    // build the connection
     useEffect(() => {
         // have to do this so that react strict mode double invocation doesn't cause error in the console
         let isMounted = true;
@@ -29,15 +21,6 @@ export function useSignalR(url: string, listeners: Record<string, SignalRListene
             .build();
 
         setConnection(newConnection);
-
-        console.log("registering events...");
-        const eventNames = Object.keys(listenersRef.current);
-
-        eventNames.forEach((eventName) => {
-            newConnection.on(eventName, (...args) => {
-                listenersRef.current[eventName]?.(...args);
-            });
-        });
 
         const startConnection = async () => {
             try {
@@ -59,15 +42,40 @@ export function useSignalR(url: string, listeners: Record<string, SignalRListene
         return () => {
             isMounted = false;
 
-            eventNames.forEach((eventName) => {
-                newConnection.off(eventName);
-            });
-
             if (newConnection.state === HubConnectionState.Connected) {
                 newConnection.stop();
             }
         };
     }, [url]);
+
+    return connection;
+}
+
+export function useSignalR(url: string, listeners: Record<string, SignalRListener>): HubConnection | null {
+    const connection = useSignalRConnection(url);
+    const listenersRef = useRef(listeners);
+
+    useEffect(() => {
+        listenersRef.current = listeners;
+    });
+
+    useEffect(() => {
+        if (!connection) return;
+
+        const eventNames = Object.keys(listenersRef.current);
+
+        eventNames.forEach((eventName) => {
+            connection.on(eventName, (...args) => {
+                listenersRef.current[eventName]?.(...args);
+            });
+        });
+
+        return () => {
+            eventNames.forEach((eventName) => {
+                connection.off(eventName);
+            });
+        };
+    }, [connection]);
 
     return connection;
 }

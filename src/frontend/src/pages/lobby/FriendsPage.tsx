@@ -1,7 +1,7 @@
 import {Avatar, ScrollArea, Tabs} from "radix-ui";
 import {BsPeople, BsPerson, BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsSearch, BsThreeDotsVertical} from "react-icons/bs";
 import {type Ref, useEffect, useRef, useState} from "react";
-import {useDebounceCallback, useDebounceValue} from "usehooks-ts";
+import {useDebounceCallback, useDebounceValue, useEventListener} from "usehooks-ts";
 import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import {useInfiniteQuery, useQueryClient, type InfiniteData} from "@tanstack/react-query";
 import {
@@ -14,6 +14,12 @@ import {
 import {friendService} from "../../api/friendService.ts";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import Spinner from "../../components/Spinner.tsx";
+import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
+import type {
+    FriendRequestAcceptedNotification,
+    FriendRequestCanceledNotification,
+    FriendRequestReceivedNotification, FriendRequestRejectedNotification, UnfriendedNotification
+} from "../../api/notifications.ts";
 
 function FriendListTabContent() {
     const searchDebounce = useDebounceCallback(async (value) => {
@@ -325,6 +331,27 @@ function AddFriendSearchResultContainer(
             });
         }
     }
+
+    // handle realtime modification
+    useGlobalEvent("lobby:friendRequestReceived", (notif: FriendRequestReceivedNotification) => {
+        updateCacheStatus(notif.senderUserId, DiscoverFriendStatus.IncomingRequest);
+    });
+
+    useGlobalEvent("lobby:friendRequestCanceled", (notif: FriendRequestCanceledNotification) => {
+        updateCacheStatus(notif.senderUserId, DiscoverFriendStatus.Stranger);
+    });
+
+    useGlobalEvent("lobby:friendRequestAccepted", (notif: FriendRequestAcceptedNotification) => {
+        updateCacheStatus(notif.acceptorUserId, DiscoverFriendStatus.Friended);
+    });
+
+    useGlobalEvent("lobby:friendRequestRejected", (notif: FriendRequestRejectedNotification) => {
+        updateCacheStatus(notif.rejecterUserId, DiscoverFriendStatus.Stranger);
+    });
+
+    useGlobalEvent("lobby:unfriended", (notif: UnfriendedNotification) => {
+        updateCacheStatus(notif.invokerUserId, DiscoverFriendStatus.Stranger);
+    });
 
     return (
         <ScrollArea.Root className="flex-1 overflow-hidden rounded">

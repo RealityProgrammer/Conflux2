@@ -1,6 +1,6 @@
 namespace Conflux.Application.Dto.Responses;
 
-public record UserBasicProfileResponse(
+public sealed record UserBasicProfileResponse(
     string? UserName,
     string? DisplayName,
     bool HasAvatar

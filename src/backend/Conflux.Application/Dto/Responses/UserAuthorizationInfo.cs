@@ -1,6 +1,6 @@
 namespace Conflux.Application.Dto.Responses;
 
-public record UserAuthorizationInfo(
+public sealed record UserAuthorizationInfo(
     Guid Id,
     bool IsVerified,
     bool IsProfileSetup,

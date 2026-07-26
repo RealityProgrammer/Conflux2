@@ -6,4 +6,4 @@ public enum SendFriendRequestResult {
     Failure,
 }
 
-public record SendFriendRequestResponse(Guid RequestId, SendFriendRequestResult Result);
+public sealed record SendFriendRequestResponse(Guid RequestId, SendFriendRequestResult Result);

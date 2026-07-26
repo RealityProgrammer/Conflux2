@@ -8,7 +8,7 @@ public record ApiResponse(
     Error Error
 );
 
-public record ApiResponse<T>(
+public sealed record ApiResponse<T>(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     T? Data, 
     
