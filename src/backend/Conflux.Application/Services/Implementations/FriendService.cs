@@ -207,6 +207,8 @@ internal sealed class FriendService(
     }
     
     public async Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid senderUserId) {
+        await Task.Delay(3000);
+        
         // copy-paste from CancelFriendRequestAsync, future modification should be applied accordingly
         // if CancelFriendRequestAsync changes
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
