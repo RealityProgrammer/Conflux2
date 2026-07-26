@@ -1,6 +1,9 @@
 import {useParams} from "react-router";
+import {useDocumentTitle} from "usehooks-ts";
 
 export default function DirectMessagePage() {
+    useDocumentTitle("DM - Conflux");
+
     const params = useParams();
     const userId: string | undefined = params["userId"];
 

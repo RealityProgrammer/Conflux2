@@ -1,11 +1,11 @@
 import Logo from "../components/Logo.tsx";
-import PageTitle from "../components/PageTitle.tsx";
 import { useAuthorization } from "../contexts/AuthContext.tsx";
 import { Dialog } from "radix-ui";
 import { useState, useRef, useEffect } from "react";
 import { animate } from "animejs";
 import {BsDoorClosed, BsDoorOpen, BsGear} from "react-icons/bs";
 import {NavLink} from "react-router";
+import {useDocumentTitle} from "usehooks-ts";
 
 function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string, logout: () => void }) {
     const [open, setOpen] = useState(false);
@@ -120,12 +120,12 @@ function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string,
 }
 
 export default function HomePage() {
+    useDocumentTitle("Conflux");
+
     const auth = useAuthorization();
 
     return (
         <>
-            <PageTitle title="Homepage"/>
-
             <div className="fixed inset-0 z-[-1] bg-gray-900"></div>
 
             <header className="bg-[#071318] w-full border-b-2 border-b-[#353535] px-6 py-2 flex flex-row items-center">

@@ -1,7 +1,7 @@
 import {Avatar, ScrollArea, Tabs} from "radix-ui";
 import {BsPeople, BsPerson, BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsSearch, BsThreeDotsVertical} from "react-icons/bs";
 import {type Ref, useEffect, useRef, useState} from "react";
-import {useDebounceCallback, useDebounceValue, useEventListener} from "usehooks-ts";
+import {useDebounceCallback, useDebounceValue, useDocumentTitle, useEventListener} from "usehooks-ts";
 import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import {useInfiniteQuery, useQueryClient, type InfiniteData} from "@tanstack/react-query";
 import {
@@ -466,6 +466,8 @@ function AddFriendSearchResultContainer(
 }
 
 export default function FriendsPage() {
+    useDocumentTitle("Friends - Conflux");
+
     const [tabValue, setTabValue] = useState("friends");
 
     return (

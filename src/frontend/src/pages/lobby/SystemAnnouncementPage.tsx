@@ -1,4 +1,8 @@
+import {useDocumentTitle} from "usehooks-ts";
+
 export default function SystemAnnouncementPage() {
+    useDocumentTitle("Announcements - Conflux");
+
     return (
         <div className="bg-gray-700 size-full flex flex-col justify-center items-center">
             <h1 className="text-4xl font-bold text-white select-none">This is announcement page</h1>
