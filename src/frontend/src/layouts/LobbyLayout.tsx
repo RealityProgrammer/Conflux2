@@ -5,6 +5,8 @@ import {NavLink, Outlet, useLocation, useNavigate} from "react-router";
 import {BsMegaphone, BsPeople, BsPerson} from "react-icons/bs";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {useRef} from "react";
+import UserAvatar from "../components/UserAvatar.tsx";
+import {useSignalR} from "../hooks/useSignalR.ts";
 
 function Sidebar() {
     const auth = useAuthorization();
@@ -16,26 +18,15 @@ function Sidebar() {
             <Tooltip.Provider delayDuration={500}>
                 <Tooltip.Root>
                     <Tooltip.Trigger asChild>
-                        <Avatar.Root
+                        <UserAvatar
+                            userId={auth.userAuthorization?.id}
+                            hasAvatar={auth.userProfile?.hasAvatar ?? false}
                             className="mt-1.5 flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer scale-100 hover:scale-110 transition-transform duration-200 ease-linear"
                             onClick={() => {
                                 if (location.pathname !== "/lobby") {
                                     navigate("/lobby");
                                 }
-                            }}
-                        >
-                            <Avatar.Image
-                                className="size-full rounded-[inherit] object-cover"
-                                src={auth.userAuthorization?.id === null ? undefined : userService.getAvatarUrl(auth.userAuthorization!.id, false)}
-                                alt="User Avatar"
-                            />
-                            <Avatar.Fallback
-                                className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
-                                delayMs={600}
-                            >
-                                <BsPerson className="fill-black size-5/6"/>
-                            </Avatar.Fallback>
-                        </Avatar.Root>
+                            }}/>
                     </Tooltip.Trigger>
 
                     <Tooltip.Portal>
@@ -50,7 +41,7 @@ function Sidebar() {
 
             <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1.5"/>
 
-            <div className="flex-1 h-full bg-red-500">
+            <div className="flex-1 h-full">
             </div>
         </nav>
     );
@@ -143,6 +134,16 @@ function LocationSidebar() {
 }
 
 export default function LobbyLayout() {
+    const connection = useSignalR(`${import.meta.env.VITE_BACKEND_HUBS_URL}/user-lobby`, {
+        ReceivedFriendRequest: () => {
+            console.log("received friend request");
+        },
+
+        FriendRequestAccepted: () => {
+            console.log("friend request accepted");
+        }
+    });
+
     return (
         <div className="h-dvh w-dvw overflow-hidden flex flex-row">
             <Sidebar/>

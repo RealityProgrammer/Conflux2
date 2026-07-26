@@ -101,7 +101,7 @@ internal sealed class AuthService : IAuthService {
     
     private void GenerateAccessToken(ApplicationUser user, IEnumerable<string> roles, out string accessToken, out long expireTick) {
         var claims = new List<Claim> {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString("N")),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
         };
         

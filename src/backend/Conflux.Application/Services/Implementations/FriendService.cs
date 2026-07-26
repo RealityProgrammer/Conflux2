@@ -1,6 +1,8 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Dto.Events;
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using FriendRequestStatus = Conflux.Domain.FriendRequestStatus;
@@ -9,7 +11,8 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class FriendService(
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IMediator mediator
 ) : IFriendService {
     public async Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUserId, Guid toUserId) {
         if (fromUserId == toUserId) {
@@ -50,6 +53,8 @@ internal sealed class FriendService(
                         });
 
                     if (numChanged == 1) {
+                        await mediator.Publish(new FriendRequestSentEvent(fromUserId, toUserId));
+                        
                         return Result<SendFriendRequestResponse>.Success(new(
                             existingRequest.Id, 
                             SendFriendRequestResult.Requested
@@ -76,6 +81,8 @@ internal sealed class FriendService(
                                 .SetProperty(r => r.UpdatedAt, utcNow);
                         });
 
+                    await mediator.Publish(new FriendRequestAcceptedEvent(fromUserId, toUserId));
+
                     return Result<SendFriendRequestResponse>.Success(new(
                         existingRequest.Id,
                         SendFriendRequestResult.Friended
@@ -101,6 +108,9 @@ internal sealed class FriendService(
 
         try {
             await dbContext.SaveChangesAsync();
+            
+            await mediator.Publish(new FriendRequestSentEvent(fromUserId, toUserId));
+            
             return Result<SendFriendRequestResponse>.Success(new(
                 newRequest.Id,
                 SendFriendRequestResult.Requested
@@ -118,6 +128,8 @@ internal sealed class FriendService(
                 """).FirstOrDefaultAsync();
 
             if (updatedId != Guid.Empty) {
+                await mediator.Publish(new FriendRequestAcceptedEvent(fromUserId, toUserId));
+                
                 return Result<SendFriendRequestResponse>.Success(new(
                     updatedId, 
                     SendFriendRequestResult.Friended
@@ -295,6 +307,8 @@ internal sealed class FriendService(
                     );
 
                 if (numChanged == 1) {
+                    await mediator.Publish(new FriendRequestAcceptedEvent(receiverUserId, senderUserId));
+                    
                     return Result.Success();
                 }
 

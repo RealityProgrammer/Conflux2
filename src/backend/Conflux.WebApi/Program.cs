@@ -12,7 +12,9 @@ using Amazon.S3;
 using Conflux.Application;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
+using Conflux.WebApi.Hubs;
 using Conflux.WebApi.Miscs;
+using Microsoft.AspNetCore.SignalR;
 using ScottBrady91.AspNetCore.Identity;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -85,15 +87,22 @@ builder.Services.AddCors(options => {
     });
 });
 
+// require stuffs
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddMediator();
+
+// necessary because signalr default uses ClaimNames.NameIdentifier instead of JwtRegisteredClaimNames.Sub
+builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
+builder.Services.AddSignalR();
+
 // API related services.
 builder.Services
-    .AddSingleton(TimeProvider.System)
-        
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
     .AddScoped<IUserService, UserService>()
     .AddScoped<IFriendService, FriendService>()
+    
     .AddSingleton<IMailingService, MailingService>();
 
 // Services related to external services.
@@ -191,7 +200,7 @@ if (app.Environment.IsDevelopment()) {
     app.UseHttpLogging();
 }
 
-
 app.MapControllers();
+app.MapHub<UserLobbyHub>("/hubs/user-lobby");
 
 app.Run();

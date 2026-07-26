@@ -7,7 +7,7 @@ import type {BackendResponse} from "./responses.ts";
 axios.defaults.withCredentials = true;
 
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL,
+    baseURL: import.meta.env.VITE_BACKEND_API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
