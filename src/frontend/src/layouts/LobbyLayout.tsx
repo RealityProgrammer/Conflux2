@@ -76,7 +76,7 @@ function DirectMessagesList() {
                     return (
                         <button
                             key={virtualItem.key}
-                            className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover:bg-white/12 rounded-lg cursor-pointer"
+                            className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight rounded-lg cursor-pointer"
                             style={{
                                 height: `${virtualItem.size}px`,
                                 transform: `translateY(${virtualItem.start}px)`,
@@ -116,13 +116,13 @@ function LocationSidebar() {
             <section className="flex-none">
                 <header className="text-xs mb-1.5 font-bold text-gray-400 uppercase">System</header>
 
-                <NavLink to="/lobby/announcements" className={({ isActive }) => `mb-1.5 p-2 rounded-md flex flex-row gap-2 items-center ${isActive ? 'bg-white/8' : 'hover:bg-white/12'}`}>
+                <NavLink to="/lobby/announcements" className={({ isActive }) => `mb-1.5 p-2 rounded-md flex flex-row gap-2 items-center ${isActive ? 'bg-white/8' : 'hover-highlight'}`}>
                     <BsMegaphone className="size-6 fill-white"/>
 
                     <span className="font-semibold">Announcements</span>
                 </NavLink>
 
-                <NavLink to="/lobby/friends" className={({ isActive }) => `p-2 rounded-md flex flex-row gap-2 items-center ${isActive ? 'bg-white/8' : 'hover:bg-white/12'}`}>
+                <NavLink to="/lobby/friends" className={({ isActive }) => `p-2 rounded-md flex flex-row gap-2 items-center ${isActive ? 'bg-white/8' : 'hover-highlight'}`}>
                     <BsPeople className="size-6 fill-white"/>
 
                     <span className="font-semibold">Friends</span>

@@ -57,7 +57,7 @@ function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string,
         }}>
             <Dialog.Trigger asChild>
                 <button
-                    className="float-end bg-transparent hover:bg-white/10 p-2 rounded-full inline-flex flex-row justify-end items-center gap-1 cursor-pointer text-white"
+                    className="float-end bg-transparent hover-highlight p-2 rounded-full inline-flex flex-row justify-end items-center gap-1 cursor-pointer text-white"
                 >
                     { userName }
                 </button>

@@ -19,7 +19,7 @@ import type {
     FriendRequestRejectedNotification,
     UnfriendedNotification
 } from "../../api/notifications.ts";
-import {DropdownMenu, ScrollArea, Separator} from "radix-ui";
+import {DropdownMenu, ScrollArea} from "radix-ui";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsThreeDotsVertical} from "react-icons/bs";
 import IconButton, {IconButtonTheme} from "../../components/IconButton.tsx";
@@ -307,7 +307,7 @@ function SearchResultContainer(
 
                             return (
                                 <div key={virtualItem.key}
-                                     className="absolute top-0 left-0 w-full px-3 py-1.5 flex flex-row gap-1 items-center hover:bg-white/12 transition-colors duration-150 ease-linear"
+                                     className="absolute top-0 left-0 w-full px-3 py-1.5 flex flex-row gap-1 items-center hover-highlight transition-colors duration-150 ease-linear"
                                      style={{
                                          height: `${virtualItem.size}px`,
                                          transform: `translateY(${virtualItem.start}px)`,
@@ -331,7 +331,7 @@ function SearchResultContainer(
             )}
 
             <ScrollArea.Scrollbar
-                className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover:bg-white/6 w-2"
+                className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight w-2"
                 orientation="vertical"
             >
                 <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-mauve10 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2 bg-gray-400"/>
@@ -400,11 +400,55 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
                             className="min-w-50 rounded-lg bg-gray-600 p-1.5 shadow-lg text-white"
                             sideOffset={5}
                         >
-                            <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-[3px] leading-none text-violet11 outline-none cursor-pointer hover:bg-white/12">
+                            <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
                                 Visit Profile
                             </DropdownMenu.Item>
 
-                            <Separator.Root orientation="horizontal" className="h-px bg-gray-500 my-1.5"/>
+                            <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+
+                            {user.status == DiscoverFriendStatus.Stranger ? (
+                                <DropdownMenu.Item
+                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                    onSelect={handleSendFriendRequest}
+                                    disabled
+                                >
+                                    Send Friend Request
+                                </DropdownMenu.Item>
+                            ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
+                                <>
+                                    <DropdownMenu.Item
+                                        className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                        onSelect={handleAcceptFriendRequest}
+                                        disabled
+                                    >
+                                        Accept Friend Request
+                                    </DropdownMenu.Item>
+
+                                    <DropdownMenu.Item
+                                        className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm font-sans"
+                                        onSelect={handleRejectFriendRequest}
+                                        disabled
+                                    >
+                                        Reject Friend Request
+                                    </DropdownMenu.Item>
+                                </>
+                            ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
+                                <DropdownMenu.Item
+                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                    onSelect={handleCancelFriendRequest}
+                                    disabled
+                                >
+                                    Cancel Friend Request
+                                </DropdownMenu.Item>
+                            ) : (
+                                <DropdownMenu.Item
+                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                    onSelect={handleUnfriend}
+                                    disabled
+                                >
+                                    Unfriend
+                                </DropdownMenu.Item>
+                            )}
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>

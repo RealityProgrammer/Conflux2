@@ -65,7 +65,7 @@ function FriendListTabContent() {
 
                             return (
                                 <div key={virtualItem.key}
-                                   className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover:bg-white/12"
+                                   className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight"
                                    style={{
                                        height: `${virtualItem.size}px`,
                                        transform: `translateY(${virtualItem.start}px)`,
@@ -96,7 +96,7 @@ function FriendListTabContent() {
                 </ScrollArea.Viewport>
 
                 <ScrollArea.Scrollbar
-                    className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover:bg-white/6 w-2"
+                    className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight w-2"
                     orientation="vertical"
                 >
                     <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-mauve10 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2 bg-gray-400"/>
@@ -122,10 +122,10 @@ export default function FriendsPage() {
             <div className="flex-1 bg-gray-700 flex flex-col min-h-0 px-2 pb-2">
                 <Tabs.Root value={tabValue} onValueChange={setTabValue} className="flex-1 min-h-0 flex flex-col mt-2 text-white h-full">
                     <Tabs.List className="flex flex-row flex-nowrap gap-3 flex-none border-b-gray-600 border-b-2">
-                        <Tabs.Trigger value="friends" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "friends" && "bg-white/8"}`}>Friends</Tabs.Trigger>
-                        <Tabs.Trigger value="pending" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "pending" && "bg-white/8"}`}>Pending</Tabs.Trigger>
-                        <Tabs.Trigger value="blocked" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "blocked" && "bg-white/8"}`}>Blocked</Tabs.Trigger>
-                        <Tabs.Trigger value="add-friend" className={`px-2 py-1 hover:bg-white/12 rounded-t-md cursor-pointer ${tabValue === "add-friend" && "bg-white/8"}`}>Add Friend</Tabs.Trigger>
+                        <Tabs.Trigger value="friends" className={`px-2 py-1 hover-highlight rounded-t-md cursor-pointer ${tabValue === "friends" && "bg-white/8"}`}>Friends</Tabs.Trigger>
+                        <Tabs.Trigger value="pending" className={`px-2 py-1 hover-highlight rounded-t-md cursor-pointer ${tabValue === "pending" && "bg-white/8"}`}>Pending</Tabs.Trigger>
+                        <Tabs.Trigger value="blocked" className={`px-2 py-1 hover-highlight rounded-t-md cursor-pointer ${tabValue === "blocked" && "bg-white/8"}`}>Blocked</Tabs.Trigger>
+                        <Tabs.Trigger value="add-friend" className={`px-2 py-1 hover-highlight rounded-t-md cursor-pointer ${tabValue === "add-friend" && "bg-white/8"}`}>Add Friend</Tabs.Trigger>
                     </Tabs.List>
 
                     <Tabs.Content value="friends" className="pt-2 flex-1 min-h-0">

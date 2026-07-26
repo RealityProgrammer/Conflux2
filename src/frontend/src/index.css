@@ -196,7 +196,7 @@
     }
 
     .button-primary-2 {
-        @apply rounded-lg text-white border border-gray-600 bg-black/5 hover:bg-black/2 active:bg-black/8 w-full p-3 shadow-lg cursor-pointer;
+        @apply rounded-lg text-white border border-gray-600 bg-black/5 hover:bg-black/2 active:bg-black/8 w-full p-3 shadow-lg;
     }
 
     .button-warning {
@@ -212,7 +212,7 @@
     }
 
     .button-nav-menu {
-        @apply flex flex-row justify-start items-center px-4 py-2 rounded-lg w-full gap-3 flex-none cursor-pointer hover:bg-white/25 active:bg-black/15 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:text-gray-400;
+        @apply flex flex-row justify-start items-center px-4 py-2 rounded-lg w-full gap-3 flex-none cursor-pointer hover-highlight active:bg-black/15 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:text-gray-400;
     }
 
     /* For debugging purpose */
@@ -234,18 +234,15 @@
         -ms-touch-action: none;
         touch-action: none;
     }
-}
 
-/*@layer utilities {*/
-/*    .scrollbar-hide::-webkit-scrollbar {*/
-/*        display: none;*/
-/*    }*/
-/*    */
-/*    .scrollbar-hide {*/
-/*        -ms-overflow-style: none;*/
-/*        scrollbar-width: none;*/
-/*    }*/
-/*}*/
+    .button-cursor {
+        @apply not-disabled:cursor-pointer disabled:cursor-default
+    }
+
+    .hover-highlight {
+        @apply hover:bg-white/12
+    }
+}
 
 @layer base {
     * {
