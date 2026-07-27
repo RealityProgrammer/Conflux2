@@ -228,20 +228,14 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+}
 
-    .dragging-container,
-    .dragging-container * {
-        -ms-touch-action: none;
-        touch-action: none;
-    }
+@utility button-cursor {
+    @apply not-disabled:cursor-pointer disabled:cursor-default
+}
 
-    .button-cursor {
-        @apply not-disabled:cursor-pointer disabled:cursor-default
-    }
-
-    .hover-highlight {
-        @apply hover:bg-white/12
-    }
+@utility hover-highlight {
+    @apply not-disabled:hover:bg-white/12
 }
 
 @layer base {
