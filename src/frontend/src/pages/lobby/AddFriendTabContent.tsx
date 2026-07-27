@@ -365,25 +365,25 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
 
             <div className="flex-none flex flex-row gap-2 justify-center items-center">
                 {user.status == DiscoverFriendStatus.Stranger ? (
-                    <IconButton className="size-6" theme="success" onClick={handleSendFriendRequest} isLoading={executingActionType == 'send'}>
+                    <IconButton className="size-6" theme="success" onClick={handleSendFriendRequest} isLoading={!!executingActionType}>
                         <BsPersonPlus className="size-6"/>
                     </IconButton>
                 ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
                     <>
-                        <IconButton className="size-6" theme="success" onClick={handleAcceptFriendRequest} isLoading={executingActionType == 'accept'} disabled={executingActionType == 'reject'}>
+                        <IconButton className="size-6" theme="success" onClick={handleAcceptFriendRequest} isLoading={executingActionType == 'accept'} disabled={!!executingActionType}>
                             <BsPersonCheck className="size-6"/>
                         </IconButton>
 
-                        <IconButton className="size-6" theme="danger" onClick={handleRejectFriendRequest} isLoading={executingActionType == 'reject'} disabled={executingActionType == 'accept'}>
+                        <IconButton className="size-6" theme="danger" onClick={handleRejectFriendRequest} isLoading={executingActionType == 'reject'} disabled={!!executingActionType}>
                             <BsPersonX className="size-6"/>
                         </IconButton>
                     </>
                 ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
-                    <IconButton className="size-6" theme="danger" onClick={handleCancelFriendRequest} isLoading={executingActionType == 'cancel'}>
+                    <IconButton className="size-6" theme="danger" onClick={handleCancelFriendRequest} isLoading={!!executingActionType}>
                         <BsPersonX className="size-6"/>
                     </IconButton>
                 ) : (
-                    <IconButton className="size-6" theme="danger" onClick={handleUnfriend} isLoading={executingActionType == 'unfriend'}>
+                    <IconButton className="size-6" theme="danger" onClick={handleUnfriend} isLoading={!!executingActionType}>
                         <BsPersonDash className="size-6"/>
                     </IconButton>
                 )}
@@ -408,47 +408,61 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
 
                             {user.status == DiscoverFriendStatus.Stranger ? (
                                 <DropdownMenu.Item
-                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                                     onSelect={handleSendFriendRequest}
-                                    disabled
+                                    disabled={!!executingActionType}
                                 >
                                     Send Friend Request
                                 </DropdownMenu.Item>
                             ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
                                 <>
                                     <DropdownMenu.Item
-                                        className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                        className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                                         onSelect={handleAcceptFriendRequest}
-                                        disabled
+                                        disabled={!!executingActionType}
                                     >
                                         Accept Friend Request
                                     </DropdownMenu.Item>
 
                                     <DropdownMenu.Item
-                                        className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm font-sans"
+                                        className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm font-sans"
                                         onSelect={handleRejectFriendRequest}
-                                        disabled
+                                        disabled={!!executingActionType}
                                     >
                                         Reject Friend Request
                                     </DropdownMenu.Item>
                                 </>
                             ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
                                 <DropdownMenu.Item
-                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                                     onSelect={handleCancelFriendRequest}
-                                    disabled
+                                    disabled={!!executingActionType}
                                 >
                                     Cancel Friend Request
                                 </DropdownMenu.Item>
                             ) : (
                                 <DropdownMenu.Item
-                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm"
+                                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                                     onSelect={handleUnfriend}
-                                    disabled
+                                    disabled={!!executingActionType}
                                 >
                                     Unfriend
                                 </DropdownMenu.Item>
                             )}
+
+                            <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+
+                            <DropdownMenu.Item
+                                className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                            >
+                                Block
+                            </DropdownMenu.Item>
+
+                            <DropdownMenu.Item
+                                className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                            >
+                                Report User
+                            </DropdownMenu.Item>
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
