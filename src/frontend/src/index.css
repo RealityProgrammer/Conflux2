@@ -235,7 +235,7 @@
 }
 
 @utility hover-highlight {
-    @apply not-disabled:hover:bg-white/12
+    @apply not-disabled:hover:bg-white/5
 }
 
 @layer base {

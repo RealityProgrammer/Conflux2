@@ -11,6 +11,7 @@ import type {
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import UserAvatar from "../../components/UserAvatar.tsx";
+import UserNameplate from "../../components/UserNameplate.tsx";
 
 interface FriendRowProps {
     element: QueryFriendElement;
@@ -155,20 +156,13 @@ export default function FriendListTabContent() {
 
 function FriendRow({ element, itemHeight }: FriendRowProps) {
     return (
-        <>
-            <UserAvatar
-                userId={element.userId}
-                hasAvatar={element.hasAvatar}
-                className="flex-none size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
-
-            <div className="flex-1 flex flex-col">
-                <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
-                    {element.displayName}
-                </p>
-                <p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
-                    @{element.userName}
-                </p>
-            </div>
-        </>
+        <UserNameplate userId={element.userId}
+                       userName={element.userName}
+                       displayName={element.displayName}
+                       hasAvatar={element.hasAvatar}
+                       className="w-full"
+        >
+            Something
+        </UserNameplate>
     );
 }

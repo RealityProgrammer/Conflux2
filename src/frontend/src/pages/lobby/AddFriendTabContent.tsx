@@ -23,6 +23,7 @@ import {DropdownMenu, ScrollArea} from "radix-ui";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsThreeDotsVertical} from "react-icons/bs";
 import IconButton from "../../components/IconButton.tsx";
+import UserNameplate from "../../components/UserNameplate.tsx";
 
 type FriendActionType = 'send' | 'accept' | 'reject' | 'cancel' | 'unfriend';
 
@@ -319,21 +320,12 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
     const handleUnfriend = () => onFriendAction(user.userId, 'unfriend');
 
     return (
-        <>
-            <UserAvatar
-                userId={user.userId}
-                hasAvatar={user.hasAvatar}
-                className="flex-none size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
-
-            <div className="flex-1 flex flex-col">
-                <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
-                    {user.displayName}
-                </p>
-                <p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
-                    @{user.userName}
-                </p>
-            </div>
-
+        <UserNameplate userId={user.userId}
+                       userName={user.userName}
+                       displayName={user.displayName}
+                       hasAvatar={user.hasAvatar}
+                       className="w-full"
+        >
             <div className="flex-none flex flex-row gap-2 justify-center items-center">
                 {user.status == UserRelationshipStatus.Stranger ? (
                     <IconButton className="size-6" theme="success" onClick={handleSendFriendRequest} isLoading={!!executingActionType}>
@@ -438,6 +430,6 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
             </div>
-        </>
+        </UserNameplate>
     );
 }
