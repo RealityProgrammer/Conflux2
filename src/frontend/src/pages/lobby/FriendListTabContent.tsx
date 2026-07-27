@@ -2,16 +2,17 @@ import {useDebounceValue} from "usehooks-ts";
 import {useEffect, useRef, useState} from "react";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {BsPerson, BsSearch} from "react-icons/bs";
-import {Avatar, ScrollArea} from "radix-ui";
+import {Avatar, DropdownMenu, ScrollArea} from "radix-ui";
 import {useInfiniteQuery} from "@tanstack/react-query";
-import type {
-    PaginatedResponse,
-    QueryFriendElement,
-    ServiceResponse
+import {
+    type PaginatedResponse,
+    type QueryFriendElement,
+    type ServiceResponse, UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import UserNameplate from "../../components/UserNameplate.tsx";
+import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 
 interface FriendRowProps {
     element: QueryFriendElement;
@@ -162,7 +163,37 @@ function FriendRow({ element, itemHeight }: FriendRowProps) {
                        hasAvatar={element.hasAvatar}
                        className="w-full"
         >
-            Something
+            <MoreActionsButton>
+                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                    Visit Profile
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                    Direct Message
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+
+                <DropdownMenu.Item
+                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                >
+                    Unfriend
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+
+                <DropdownMenu.Item
+                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                >
+                    Block
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Item
+                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                >
+                    Report User
+                </DropdownMenu.Item>
+            </MoreActionsButton>
         </UserNameplate>
     );
 }
