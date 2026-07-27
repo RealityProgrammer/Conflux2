@@ -1,10 +1,10 @@
-import {type Ref, useEffect, useRef, useState} from "react";
+import {type RefObject, useEffect, useRef, useState} from "react";
 import {useDebounceValue} from "usehooks-ts";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
     type DiscoverFriendElement,
-    type DiscoverFriendsResponse,
-    DiscoverFriendStatus,
+    type PaginatedResponse,
+    UserRelationshipStatus,
     type SendFriendRequestResponse,
     SendFriendRequestResult,
     type ServiceResponse
@@ -22,7 +22,7 @@ import type {
 import {DropdownMenu, ScrollArea} from "radix-ui";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX, BsThreeDotsVertical} from "react-icons/bs";
-import IconButton, {IconButtonTheme} from "../../components/IconButton.tsx";
+import IconButton from "../../components/IconButton.tsx";
 
 type FriendActionType = 'send' | 'accept' | 'reject' | 'cancel' | 'unfriend';
 
@@ -31,7 +31,7 @@ interface SearchResultContainerProps {
     isLoading: boolean;
     pageSize: number;
     itemHeight: number;
-    scrollViewportRef: Ref<HTMLDivElement>;
+    scrollViewportRef: RefObject<HTMLDivElement>;
     virtualizeHeight: number;
     virtualItems: VirtualItem[];
     userResults: DiscoverFriendElement[];
@@ -47,31 +47,8 @@ export default function AddFriendTabContent() {
     const ITEM_HEIGHT: number = 52;
     const MIN_PAGE_SIZE: number = 20;
 
-    const scrollViewport = useRef<HTMLDivElement | null>(null);
+    const scrollViewport = useRef<HTMLDivElement>(null!);
     const [pageSize, setPageSize] = useState(MIN_PAGE_SIZE);
-
-    useEffect(() => {
-        if (!scrollViewport.current) {
-            return;
-        }
-
-        // resize observer to calculate the optimal display size
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                const height = entry.contentRect.height;
-                if (height > 0) {
-                    const visibleItems = Math.ceil(height / ITEM_HEIGHT);
-
-                    // should we multiply by 2 or plus overscan? multiply is kinda overkill
-                    const optimalSize = Math.max(MIN_PAGE_SIZE, visibleItems * 2);
-                    setPageSize(optimalSize);
-                }
-            }
-        });
-
-        observer.observe(scrollViewport.current);
-        return () => observer.disconnect();
-    }, []);
 
     const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
 
@@ -84,8 +61,8 @@ export default function AddFriendTabContent() {
     } = useInfiniteQuery({
         enabled: !!userNameSearch,
         queryKey: ["discoverUsers", userNameSearch],
-        queryFn: async ({ pageParam = 0 }): Promise<DiscoverFriendsResponse | null | undefined> => {
-            const response: ServiceResponse<DiscoverFriendsResponse> =
+        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<DiscoverFriendElement> | null | undefined> => {
+            const response: ServiceResponse<PaginatedResponse<DiscoverFriendElement>> =
                 await friendService.discover(userNameSearch, pageParam, pageSize);
 
             return response.data;
@@ -95,7 +72,7 @@ export default function AddFriendTabContent() {
             if (!lastPage) return undefined;
 
             const loadedCount = allPages.reduce(
-                (acc, page) => acc + (page?.users.length ?? 0),
+                (acc, page) => acc + (page?.elements.length ?? 0),
                 0
             );
 
@@ -103,35 +80,29 @@ export default function AddFriendTabContent() {
         },
     });
 
-    const allUsers = data?.pages.flatMap((page) => page?.users ?? []) ?? [];
+    const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
     // create virtualizer related objects
-    const virtualCount = hasNextPage ? allUsers.length + 1 : allUsers.length;
+    const virtualCount = hasNextPage ? allElements.length + 1 : allElements.length;
 
-    const userVirtualize = useVirtualizer({
+    const virtualizer = useVirtualizer({
         count: virtualCount,
         getScrollElement: () => scrollViewport.current,
         estimateSize: () => ITEM_HEIGHT,
         overscan: 5,
     });
 
-    const virtualItems = userVirtualize.getVirtualItems();
+    const virtualItems = virtualizer.getVirtualItems();
 
     // trigger next query when scrolling near the end
     useEffect(() => {
         const lastVirtualItem = virtualItems[virtualItems.length - 1];
         if (!lastVirtualItem) return;
 
-        if (lastVirtualItem.index >= allUsers.length - 1 && hasNextPage && !isFetchingNextPage) {
+        if (lastVirtualItem.index >= allElements.length - 1 && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [
-        virtualItems,
-        allUsers.length,
-        hasNextPage,
-        isFetchingNextPage,
-        fetchNextPage,
-    ]);
+    }, [virtualItems, allElements.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
         <div className="flex flex-col gap-2 h-full">
@@ -157,9 +128,9 @@ export default function AddFriendTabContent() {
                                             pageSize={pageSize}
                                             itemHeight={ITEM_HEIGHT}
                                             scrollViewportRef={scrollViewport}
-                                            virtualizeHeight={userVirtualize.getTotalSize()}
+                                            virtualizeHeight={virtualizer.getTotalSize()}
                                             virtualItems={virtualItems}
-                                            userResults={allUsers}/>
+                                            userResults={allElements}/>
         </div>
     );
 }
@@ -179,8 +150,8 @@ function SearchResultContainer(
     const [executingActions, setExecutingActions] = useState<Map<string, FriendActionType>>(new Map<string, FriendActionType>());
     const queryClient = useQueryClient();
 
-    const updateCacheStatus = (userId: string, newStatus: DiscoverFriendStatus) => {
-        queryClient.setQueryData<InfiniteData<DiscoverFriendsResponse>>(
+    const updateCacheStatus = (userId: string, newStatus: UserRelationshipStatus) => {
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<DiscoverFriendElement>>>(
             ["discoverUsers", userNameSearch],
             (oldData) => {
                 if (!oldData) return oldData;
@@ -189,7 +160,7 @@ function SearchResultContainer(
                     ...oldData,
                     pages: oldData.pages.map(page => ({
                         ...page,
-                        users: page.users.map(user => {
+                        users: page.elements.map(user => {
                             return user.userId === userId ? {...user, status: newStatus} : user;
                         })
                     }))
@@ -202,7 +173,7 @@ function SearchResultContainer(
         setExecutingActions(prev => new Map(prev).set(userId, actionType));
         try {
             let success = false;
-            let targetStatus = DiscoverFriendStatus.Stranger;
+            let targetStatus = UserRelationshipStatus.Stranger;
 
             switch (actionType) {
                 case 'send': {
@@ -213,30 +184,30 @@ function SearchResultContainer(
 
                     if (success && response.data) {
                         targetStatus = response.data.result === SendFriendRequestResult.Friended
-                            ? DiscoverFriendStatus.Friended
-                            : DiscoverFriendStatus.OutcomingRequest;
+                            ? UserRelationshipStatus.Friended
+                            : UserRelationshipStatus.OutcomingRequest;
                     }
                     break;
                 }
 
                 case 'accept':
                     success = (await friendService.acceptFriendRequest(userId)).success;
-                    targetStatus = DiscoverFriendStatus.Friended;
+                    targetStatus = UserRelationshipStatus.Friended;
                     break;
 
                 case 'reject':
                     success = (await friendService.rejectFriendRequest(userId)).success;
-                    targetStatus = DiscoverFriendStatus.Stranger; // Or whatever your UI expects
+                    targetStatus = UserRelationshipStatus.Stranger; // Or whatever your UI expects
                     break;
 
                 case 'cancel':
                     success = (await friendService.cancelFriendRequest(userId)).success;
-                    targetStatus = DiscoverFriendStatus.Stranger;
+                    targetStatus = UserRelationshipStatus.Stranger;
                     break;
 
                 case 'unfriend':
                     success = (await friendService.unfriend(userId)).success;
-                    targetStatus = DiscoverFriendStatus.Stranger;
+                    targetStatus = UserRelationshipStatus.Stranger;
                     break;
             }
 
@@ -254,56 +225,56 @@ function SearchResultContainer(
 
     // handle realtime modification
     useGlobalEvent("lobby:friendRequestReceived", (notif: FriendRequestReceivedNotification) => {
-        updateCacheStatus(notif.senderUserId, DiscoverFriendStatus.IncomingRequest);
+        updateCacheStatus(notif.senderUserId, UserRelationshipStatus.IncomingRequest);
     });
 
     useGlobalEvent("lobby:friendRequestCanceled", (notif: FriendRequestCanceledNotification) => {
-        updateCacheStatus(notif.senderUserId, DiscoverFriendStatus.Stranger);
+        updateCacheStatus(notif.senderUserId, UserRelationshipStatus.Stranger);
     });
 
     useGlobalEvent("lobby:friendRequestAccepted", (notif: FriendRequestAcceptedNotification) => {
-        updateCacheStatus(notif.acceptorUserId, DiscoverFriendStatus.Friended);
+        updateCacheStatus(notif.acceptorUserId, UserRelationshipStatus.Friended);
     });
 
     useGlobalEvent("lobby:friendRequestRejected", (notif: FriendRequestRejectedNotification) => {
-        updateCacheStatus(notif.rejecterUserId, DiscoverFriendStatus.Stranger);
+        updateCacheStatus(notif.rejecterUserId, UserRelationshipStatus.Stranger);
     });
 
     useGlobalEvent("lobby:unfriended", (notif: UnfriendedNotification) => {
-        updateCacheStatus(notif.invokerUserId, DiscoverFriendStatus.Stranger);
+        updateCacheStatus(notif.invokerUserId, UserRelationshipStatus.Stranger);
     });
 
     return (
         <ScrollArea.Root className="flex-1 overflow-hidden rounded">
-            { !userNameSearch ? (
-                <div className="select-none flex size-full items-center justify-center text-gray-400 border-2 border-gray-600 rounded-md">
-                    See the textbox above? Insert the name of user there and we will search for them.
-                </div>
-            ) : isLoading ? (
-                <div className="flex size-full flex-col border-2 border-gray-600 rounded-md">
-                    {Array.from({ length: pageSize }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="w-full p-1.5 flex flex-row gap-1 items-center border-b border-white/5"
-                            style={{ height: `${itemHeight}px` }}
-                        >
-                            {/* Avatar Skeleton */}
-                            <div className="flex-none size-10 rounded-full bg-white/10 animate-pulse" />
+            <ScrollArea.Viewport ref={scrollViewportRef} className="size-full [&>div]:flex! [&>div]:flex-col [&>div]:min-h-full border-2 border-gray-600 rounded-md">
+                { !userNameSearch ? (
+                    <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+                        See the textbox above? Insert the name of user there and we will search for them.
+                    </div>
+                ) : isLoading ? (
+                    <div className="flex size-full flex-col border-2 border-gray-600 rounded-md">
+                        {Array.from({ length: pageSize }).map((_, index) => (
+                            <div
+                                key={index}
+                                className="w-full p-1.5 flex flex-row gap-1 items-center border-b border-white/5"
+                                style={{ height: `${itemHeight}px` }}
+                            >
+                                {/* Avatar Skeleton */}
+                                <div className="flex-none size-10 rounded-full bg-white/10 animate-pulse" />
 
-                            {/* Username Skeleton */}
-                            <div className="ml-2 h-4 w-32 rounded bg-white/10 animate-pulse" />
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <ScrollArea.Viewport ref={scrollViewportRef} className="border-2 border-gray-600 rounded-md size-full">
+                                {/* Username Skeleton */}
+                                <div className="ml-2 h-4 w-32 rounded bg-white/10 animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
                     <div
                         className="relative w-full"
                         style={{ height: `${virtualizeHeight}px` }}
                     >
                         { virtualItems.map((virtualItem) => {
                             const isLoading = virtualItem.index >= userResults.length;
-                            const user = userResults[virtualItem.index];
+                            const element = userResults[virtualItem.index];
 
                             return (
                                 <div key={virtualItem.key}
@@ -319,16 +290,16 @@ function SearchResultContainer(
                                         </div>
                                         :
                                         <UserSearchRow
-                                            user={user}
+                                            user={element}
                                             onFriendAction={handleAction}
-                                            executingActionType={executingActions.get(user.userId) ?? null}/>
+                                            executingActionType={executingActions.get(element.userId) ?? null}/>
                                     }
                                 </div>
                             );
                         })}
                     </div>
-                </ScrollArea.Viewport>
-            )}
+                )}
+            </ScrollArea.Viewport>
 
             <ScrollArea.Scrollbar
                 className="flex touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight w-2"
@@ -364,11 +335,11 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
             </div>
 
             <div className="flex-none flex flex-row gap-2 justify-center items-center">
-                {user.status == DiscoverFriendStatus.Stranger ? (
+                {user.status == UserRelationshipStatus.Stranger ? (
                     <IconButton className="size-6" theme="success" onClick={handleSendFriendRequest} isLoading={!!executingActionType}>
                         <BsPersonPlus className="size-6"/>
                     </IconButton>
-                ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
+                ) : user.status == UserRelationshipStatus.IncomingRequest ? (
                     <>
                         <IconButton className="size-6" theme="success" onClick={handleAcceptFriendRequest} isLoading={executingActionType == 'accept'} disabled={!!executingActionType}>
                             <BsPersonCheck className="size-6"/>
@@ -378,7 +349,7 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
                             <BsPersonX className="size-6"/>
                         </IconButton>
                     </>
-                ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
+                ) : user.status == UserRelationshipStatus.OutcomingRequest ? (
                     <IconButton className="size-6" theme="danger" onClick={handleCancelFriendRequest} isLoading={!!executingActionType}>
                         <BsPersonX className="size-6"/>
                     </IconButton>
@@ -406,7 +377,7 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
 
                             <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
 
-                            {user.status == DiscoverFriendStatus.Stranger ? (
+                            {user.status == UserRelationshipStatus.Stranger ? (
                                 <DropdownMenu.Item
                                     className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                                     onSelect={handleSendFriendRequest}
@@ -414,7 +385,7 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
                                 >
                                     Send Friend Request
                                 </DropdownMenu.Item>
-                            ) : user.status == DiscoverFriendStatus.IncomingRequest ? (
+                            ) : user.status == UserRelationshipStatus.IncomingRequest ? (
                                 <>
                                     <DropdownMenu.Item
                                         className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
@@ -432,7 +403,7 @@ function UserSearchRow({ user, onFriendAction, executingActionType }: SearchResu
                                         Reject Friend Request
                                     </DropdownMenu.Item>
                                 </>
-                            ) : user.status == DiscoverFriendStatus.OutcomingRequest ? (
+                            ) : user.status == UserRelationshipStatus.OutcomingRequest ? (
                                 <DropdownMenu.Item
                                     className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                                     onSelect={handleCancelFriendRequest}

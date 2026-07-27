@@ -40,7 +40,7 @@ export interface RefreshResponse {
     accessToken: string;
 }
 
-export enum DiscoverFriendStatus {
+export enum UserRelationshipStatus {
     Stranger = "Stranger",
     OutcomingRequest = "OutcomingRequest",
     IncomingRequest = "IncomingRequest",
@@ -52,11 +52,18 @@ export type DiscoverFriendElement = {
     userName: string;
     displayName: string;
     hasAvatar: boolean;
-    status: DiscoverFriendStatus;
+    status: UserRelationshipStatus;
 }
 
-export interface DiscoverFriendsResponse {
-    users: DiscoverFriendElement[];
+export type QueryFriendElement = {
+    userId: string;
+    userName: string;
+    displayName: string;
+    hasAvatar: boolean;
+}
+
+export type PaginatedResponse<T> = {
+    elements: T[];
     totalCount: number;
 }
 

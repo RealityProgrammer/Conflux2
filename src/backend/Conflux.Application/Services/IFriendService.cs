@@ -9,10 +9,24 @@ public interface IFriendService {
     Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid senderUserId);
     Task<Result> UnfriendAsync(Guid invokerUserId, Guid otherUserId);
     
-    Task<Result<DiscoverFriendsResponse>> DiscoverFriendsAsync(
+    Task<Result<PaginatedResponse<DiscoverFriendElement>>> DiscoverFriendsAsync(
         Guid searchingUserId,
         string? nameFilter, 
         int offset, 
+        int count
+    );
+
+    Task<Result<PaginatedResponse<QueryFriendElement>>> QueryFriendsAsync(
+        Guid searchingUserId,
+        string? nameFilter,
+        int offset,
+        int count
+    );
+    
+    Task<Result<PaginatedResponse<QueryPendingRequestElement>>> QueryPendingRequestsAsync(
+        Guid searchingUserId,
+        string? nameFilter,
+        int offset,
         int count
     );
 }

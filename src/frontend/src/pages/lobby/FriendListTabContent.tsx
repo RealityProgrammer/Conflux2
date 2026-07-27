@@ -1,80 +1,145 @@
-import {useDebounceCallback} from "usehooks-ts";
-import {useRef} from "react";
+import {useDebounceValue} from "usehooks-ts";
+import {useEffect, useRef, useState} from "react";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {BsPerson, BsSearch} from "react-icons/bs";
 import {Avatar, ScrollArea} from "radix-ui";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import type {
+    PaginatedResponse,
+    QueryFriendElement,
+    ServiceResponse
+} from "../../api/responses.ts";
+import {friendService} from "../../api/friendService.ts";
+import UserAvatar from "../../components/UserAvatar.tsx";
+
+interface FriendRowProps {
+    element: QueryFriendElement;
+    itemHeight: number;
+}
 
 export default function FriendListTabContent() {
-    const searchDebounce = useDebounceCallback(async (value) => {
-        console.log("begin search for " + value);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log("finish search.");
-    }, 500);
+    const ITEM_HEIGHT: number = 52;
+    const MIN_PAGE_SIZE: number = 20;
 
-    const items = [...Array(100).keys()];
+    const scrollViewportRef = useRef<HTMLDivElement>(null!);
 
-    const scrollViewport = useRef<HTMLDivElement | null>(null);
+    const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
+    const [pageSize, setPageSize] = useState(MIN_PAGE_SIZE);
 
-    const friendsVirtualize = useVirtualizer({
-        count: items.length,
-        getScrollElement: () => scrollViewport.current,
-        estimateSize: () => 52,
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+    } = useInfiniteQuery({
+        queryKey: ["queryFriends", userNameSearch],
+        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<QueryFriendElement> | null | undefined> => {
+            const response: ServiceResponse<PaginatedResponse<QueryFriendElement>> =
+                await friendService.queryFriends(userNameSearch, pageParam, pageSize);
+
+            return response.data;
+        },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            if (!lastPage) return undefined;
+
+            const loadedCount = allPages.reduce(
+                (acc, page) => acc + (page?.elements.length ?? 0),
+                0
+            );
+
+            return loadedCount < lastPage.totalCount ? loadedCount : undefined;
+        },
+    });
+
+    const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
+
+    // create virtualizer related objects
+    const virtualCount = hasNextPage ? allElements.length + 1 : allElements.length;
+
+    const virtualizer = useVirtualizer({
+        count: virtualCount,
+        getScrollElement: () => scrollViewportRef.current,
+        estimateSize: () => ITEM_HEIGHT,
         overscan: 5,
-    })
+    });
+
+    const virtualItems = virtualizer.getVirtualItems();
+
+    // trigger next query when scrolling near the end
+    useEffect(() => {
+        const lastVirtualItem = virtualItems[virtualItems.length - 1];
+        if (!lastVirtualItem) return;
+
+        if (lastVirtualItem.index >= allElements.length - 1 && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [virtualItems, allElements.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
         <div className="flex flex-col gap-2 h-full">
             <div className="flex-none relative w-full flex items-center">
                 <BsSearch className="absolute left-2.5 size-4 fill-white pointer-events-none" />
 
-                <input
-                    className="input-field w-full h-11 px-3 pl-8"
-                    placeholder="Search..."
-                    onChange={(e) => {
-                        searchDebounce(e.target.value);
-                    }}
-                />
+                <input className="input-field w-full h-11 px-3 pl-8"
+                       placeholder="Search..."
+                       onChange={(e) => {
+                           setUserNameSearch(e.target.value);
+                       }}/>
             </div>
 
             <ScrollArea.Root className="flex-1 overflow-hidden rounded">
-                <ScrollArea.Viewport ref={scrollViewport} className="border-2 border-gray-600 rounded-md size-full">
-                    <div
-                        className="relative w-full"
-                        style={{ height: `${friendsVirtualize.getTotalSize()}px` }}
-                    >
-                        { friendsVirtualize.getVirtualItems().map((virtualItem) => {
-                            const value = items[virtualItem.index];
-
-                            return (
-                                <div key={virtualItem.key}
-                                     className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight"
-                                     style={{
-                                         height: `${virtualItem.size}px`,
-                                         transform: `translateY(${virtualItem.start}px)`,
-                                     }}
+                <ScrollArea.Viewport ref={scrollViewportRef} className="size-full [&>div]:flex! [&>div]:flex-col [&>div]:min-h-full border-2 border-gray-600 rounded-md">
+                    { allElements.length === 0 ? (
+                        <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+                            Nobody here... So very lonely...
+                        </div>
+                    ) : isLoading ? (
+                        <div className="flex size-full flex-col border-2 border-gray-600 rounded-md">
+                            {Array.from({ length: pageSize }).map((_, index) => (
+                                <div
+                                    key={index}
+                                    className="w-full p-1.5 flex flex-row gap-1 items-center border-b border-white/5"
+                                    style={{ height: `${ITEM_HEIGHT}px` }}
                                 >
-                                    <Avatar.Root
-                                        className="flex-none size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">
-                                        <Avatar.Image
-                                            className="size-full rounded-[inherit] object-cover"
-                                            src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
-                                            alt="Test"
-                                        />
-                                        <Avatar.Fallback
-                                            className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
-                                            delayMs={600}
-                                        >
-                                            <BsPerson className="fill-black size-5/6"/>
-                                        </Avatar.Fallback>
-                                    </Avatar.Root>
+                                    {/* Avatar Skeleton */}
+                                    <div className="flex-none size-10 rounded-full bg-white/10 animate-pulse" />
 
-                                    <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                                        Friend {value}
-                                    </p>
+                                    {/* Username Skeleton */}
+                                    <div className="ml-2 h-4 w-32 rounded bg-white/10 animate-pulse" />
                                 </div>
-                            );
-                        })}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div
+                            className="relative w-full"
+                            style={{ height: `${virtualizer.getTotalSize()}px` }}
+                        >
+                            { virtualizer.getVirtualItems().map((virtualItem) => {
+                                const element = allElements[virtualItem.index];
+
+                                return (
+                                    <div key={virtualItem.key}
+                                         className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight"
+                                         style={{
+                                             height: `${virtualItem.size}px`,
+                                             transform: `translateY(${virtualItem.start}px)`,
+                                         }}
+                                    >
+                                        { isLoading ? (
+                                            <div className="h-10 flex flex-row gap-2 justify-center items-center">
+                                                Loading...
+                                            </div>
+                                        ) : (
+                                            <FriendRow element={element}
+                                                       itemHeight={ITEM_HEIGHT}/>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </ScrollArea.Viewport>
 
                 <ScrollArea.Scrollbar
@@ -85,5 +150,25 @@ export default function FriendListTabContent() {
                 </ScrollArea.Scrollbar>
             </ScrollArea.Root>
         </div>
+    );
+}
+
+function FriendRow({ element, itemHeight }: FriendRowProps) {
+    return (
+        <>
+            <UserAvatar
+                userId={element.userId}
+                hasAvatar={element.hasAvatar}
+                className="flex-none size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
+
+            <div className="flex-1 flex flex-col">
+                <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                    {element.displayName}
+                </p>
+                <p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                    @{element.userName}
+                </p>
+            </div>
+        </>
     );
 }

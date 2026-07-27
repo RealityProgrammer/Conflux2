@@ -126,7 +126,7 @@ public sealed class FriendController(
     
     [HttpGet("discover")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<DiscoverFriendsResponse>>> DiscoverUsers(
+    public async Task<ActionResult<ApiResponse<PaginatedResponse<DiscoverFriendElement>>>> DiscoverUsers(
         [FromQuery] string? name,
         [FromQuery] int offset,
         [FromQuery] int count
@@ -140,15 +140,43 @@ public sealed class FriendController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<DiscoverFriendsResponse> result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
+        Result<PaginatedResponse<DiscoverFriendElement>> result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<DiscoverFriendsResponse>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResponse<DiscoverFriendElement>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<DiscoverFriendsResponse>(null, result.Error)
+            new ApiResponse<PaginatedResponse<DiscoverFriendElement>>(null, result.Error)
+        );
+    }
+    
+    [HttpGet("friends")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<PaginatedResponse<QueryFriendElement>>>> QueryFriends(
+        [FromQuery] string? name,
+        [FromQuery] int offset,
+        [FromQuery] int count
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+        }
+        
+        offset = int.Max(offset, 0);
+        count = int.Max(count, 1);
+        
+        Result<PaginatedResponse<QueryFriendElement>> result = await friendService.QueryFriendsAsync(userId, name, offset, count);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<PaginatedResponse<QueryFriendElement>>(result.Value, Error.None));
+        }
+
+        return StatusCode(
+            StatusCodes.Status500InternalServerError, 
+            new ApiResponse<PaginatedResponse<QueryFriendElement>>(null, result.Error)
         );
     }
 }

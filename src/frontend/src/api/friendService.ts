@@ -1,6 +1,6 @@
 import type {
-    BackendResponse,
-    DiscoverFriendsResponse,
+    BackendResponse, DiscoverFriendElement,
+    PaginatedResponse, QueryFriendElement,
     SendFriendRequestResponse,
     ServiceResponse
 } from "./responses.ts";
@@ -9,7 +9,7 @@ import apiClient from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 
 export const friendService = {
-    discover: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<DiscoverFriendsResponse>> => {
+    discover: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResponse<DiscoverFriendElement>>> => {
         try {
             const searchParams = new URLSearchParams();
 
@@ -20,8 +20,8 @@ export const friendService = {
             searchParams.append("offset", String(offset));
             searchParams.append("count", String(count));
 
-            const response: AxiosResponse<BackendResponse<DiscoverFriendsResponse>> =
-                await apiClient.get<BackendResponse<DiscoverFriendsResponse>>(`/friend/discover?${searchParams.toString()}`);
+            const response: AxiosResponse<BackendResponse<PaginatedResponse<DiscoverFriendElement>>> =
+                await apiClient.get<BackendResponse<PaginatedResponse<DiscoverFriendElement>>>(`/friend/discover?${searchParams.toString()}`);
 
             return {
                 success: true,
@@ -103,6 +103,31 @@ export const friendService = {
             return {
                 success: true,
                 statusCode: response.status,
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<ServiceResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
+    queryFriends: async (name: string | null, offset: number, count: number) : Promise<ServiceResponse<PaginatedResponse<QueryFriendElement>>> => {
+        try {
+            const searchParams = new URLSearchParams();
+
+            if (name) {
+                searchParams.append("name", name);
+            }
+
+            searchParams.append("offset", String(offset));
+            searchParams.append("count", String(count));
+
+            const response: AxiosResponse<BackendResponse<PaginatedResponse<QueryFriendElement>>> =
+                await apiClient.get<BackendResponse<PaginatedResponse<QueryFriendElement>>>(`/friend/friends?${searchParams.toString()}`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+                data: response.data.data,
             }
         } catch (error) {
             const axiosError = error as AxiosError<ServiceResponse>;
