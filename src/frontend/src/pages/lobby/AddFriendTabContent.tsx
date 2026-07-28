@@ -25,6 +25,7 @@ import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
+import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 
 type FriendActionType = 'send' | 'accept' | 'reject' | 'cancel' | 'unfriend';
 
@@ -244,9 +245,9 @@ function ElementRow({ user, onFriendAction, executingActionType }: SearchResultR
                     <BsPersonX className="size-6"/>
                 </IconButton>
             ) : (
-                <IconButton className="size-6" theme="danger" onClick={handleUnfriend} isLoading={!!executingActionType}>
-                    <BsPersonDash className="size-6"/>
-                </IconButton>
+                <FriendActionButtons.Unfriend isExecuting={!!executingActionType}
+                                              className="size-6"
+                                              onClick={handleUnfriend}/>
             )}
 
             <MoreActionsButton>
