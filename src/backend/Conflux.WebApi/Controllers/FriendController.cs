@@ -131,8 +131,6 @@ public sealed class FriendController(
         [FromQuery] int offset,
         [FromQuery] int count
     ) {
-        await Task.Delay(3000);
-        
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
