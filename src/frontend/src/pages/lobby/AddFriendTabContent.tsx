@@ -233,7 +233,7 @@ function Row({ user, updateCacheStatus }: RowProps) {
             }
         }
     });
-    const handleUnfriend = () => mutation.mutate('reject', {
+    const handleUnfriend = () => mutation.mutate('unfriend', {
         onSuccess: (response: ServiceResponse) => {
             if (response && response.success) {
                 updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
@@ -260,7 +260,7 @@ function Row({ user, updateCacheStatus }: RowProps) {
                         onClick={handleRejectFriendRequest}
                         className="size-6"/>
 
-                    <FriendActionButtons.Reject
+                    <FriendActionButtons.Accept
                         isExecuting={activeAction == 'accept'}
                         onClick={handleAcceptFriendRequest}
                         className="size-6"/>

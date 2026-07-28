@@ -15,13 +15,14 @@ import Spinner from "../../components/Spinner.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
 import type {
+    FriendRequestAcceptedNotification,
     FriendRequestCanceledNotification,
     FriendRequestReceivedNotification,
     FriendRequestRejectedNotification
 } from "../../api/notifications.ts";
-import {userService} from "../../api/userService.ts";
 import useFriendActions from "../../hooks/useFriendActions.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
+import {useCacheService} from "../../hooks/useCacheService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -99,14 +100,12 @@ export default function PendingRequestsTabContent() {
                 };
             }
         );
-    }
+    };
+
+    const { fetchUserBasicProfile } = useCacheService();
 
     useGlobalEvent("lobby:friendRequestReceived", async (notif: FriendRequestReceivedNotification) => {
-        const profileResponse = await queryClient.fetchQuery({
-            queryKey: ["userProfile", notif.senderUserId],
-            queryFn: () => userService.getUserBasicProfile(notif.senderUserId),
-            staleTime: 900, // 15 minutes cache
-        });
+        const profileResponse = await fetchUserBasicProfile(notif.senderUserId);
 
         if (!profileResponse.success) return;
 
@@ -153,6 +152,10 @@ export default function PendingRequestsTabContent() {
 
     useGlobalEvent("lobby:friendRequestRejected", (notif: FriendRequestRejectedNotification) => {
         removeCacheElement(notif.rejecterUserId);
+    });
+
+    useGlobalEvent("lobby:friendRequestAccepted", (notif: FriendRequestAcceptedNotification) => {
+        removeCacheElement(notif.acceptorUserId);
     });
 
     useGlobalEvent("lobby:friendRequestCanceled", (notif: FriendRequestCanceledNotification) => {

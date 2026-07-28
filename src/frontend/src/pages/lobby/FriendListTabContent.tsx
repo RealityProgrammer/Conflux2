@@ -4,8 +4,8 @@ import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
     type PaginatedResponse,
-    type QueryFriendElement,
-    type ServiceResponse
+    type QueryFriendElement, type QueryPendingRequestElement,
+    type ServiceResponse, UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
@@ -13,9 +13,10 @@ import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
-import type {UnfriendedNotification} from "../../api/notifications.ts";
+import type {FriendRequestAcceptedNotification, UnfriendedNotification} from "../../api/notifications.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.tsx";
+import {useCacheService} from "../../hooks/useCacheService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -30,6 +31,8 @@ export default function FriendListTabContent() {
     const queryClient = useQueryClient();
     const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
 
+    const queryKey = ["queryFriends", userNameSearch];
+
     const {
         data,
         fetchNextPage,
@@ -37,7 +40,7 @@ export default function FriendListTabContent() {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["queryFriends", userNameSearch],
+        queryKey: queryKey,
         queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<QueryFriendElement> | null | undefined> => {
             const response: ServiceResponse<PaginatedResponse<QueryFriendElement>> =
                 await friendService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
@@ -61,7 +64,7 @@ export default function FriendListTabContent() {
 
     const handleRemoveUserFromCache = (userId: string) => {
         queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryFriendElement>>>(
-            ["queryFriends", userNameSearch],
+            queryKey,
             (oldData) => {
                 if (!oldData) return oldData;
 
@@ -93,8 +96,56 @@ export default function FriendListTabContent() {
         );
     };
 
+    const { fetchUserBasicProfile } = useCacheService();
+
     useGlobalEvent("lobby:unfriended", (notif: UnfriendedNotification) => {
         handleRemoveUserFromCache(notif.invokerUserId);
+    });
+
+    useGlobalEvent("lobby:friendRequestAccepted", async (notif: FriendRequestAcceptedNotification) => {
+        const profileResponse = await fetchUserBasicProfile(notif.acceptorUserId);
+
+        if (!profileResponse.success) return;
+
+        const userProfile = profileResponse.data!;
+
+        const newElement: QueryPendingRequestElement = {
+            userId: notif.acceptorUserId,
+            userName: userProfile.userName,
+            displayName: userProfile.displayName,
+            hasAvatar: userProfile.hasAvatar,
+            status: UserRelationshipStatus.IncomingRequest,
+        }
+
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || oldData.pages.length === 0) return oldData;
+
+                const alreadyExists = oldData.pages.some(page =>
+                    page?.elements.some(el => el.userId === notif.acceptorUserId)
+                );
+
+                if (alreadyExists) return oldData;
+
+                return {
+                    ...oldData,
+                    pages: oldData.pages.map((page, index) => {
+                        if (!page) return page;
+
+                        const updatedElements = index === 0
+                            ? [newElement, ...page.elements]
+                            : page.elements;
+
+                        return {
+                            ...page,
+                            elements: updatedElements,
+                            totalCount: page.totalCount + 1,
+                        };
+                    }),
+                };
+            }
+        );
     });
 
     return (
