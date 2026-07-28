@@ -12,7 +12,7 @@ interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
 
 function Root({ userId, userName, displayName, hasAvatar, children, className, ...props }: UserNameplateProps){
     return (
-        <div className={`flex flex-row items-center gap-3 ${className}`} {...props}>
+        <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
             <UserAvatar
                 userId={userId}
                 hasAvatar={hasAvatar ?? false}

@@ -57,8 +57,7 @@ internal sealed class FriendService(
                         await mediator.Publish(new FriendRequestSentNotification(fromUserId, toUserId));
                         
                         return Result<SendFriendRequestResponse>.Success(new(
-                            existingRequest.Id, 
-                            SendFriendRequestResult.Requested
+                            UserRelationshipStatus.OutcomingRequest
                         ));
                     }
                     
@@ -68,8 +67,7 @@ internal sealed class FriendService(
                     // idempotency: the user already requested to receiver
                     if (existingRequest.SenderUserId == fromUserId) {
                         return Result<SendFriendRequestResponse>.Success(new(
-                            existingRequest.Id,
-                            SendFriendRequestResult.Requested
+                            UserRelationshipStatus.OutcomingRequest
                         ));
                     }
                     
@@ -86,14 +84,12 @@ internal sealed class FriendService(
                     await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
 
                     return Result<SendFriendRequestResponse>.Success(new(
-                        existingRequest.Id,
-                        SendFriendRequestResult.Friended
+                        UserRelationshipStatus.Friended
                     ));
                 
                 case FriendRequestStatus.Accepted:
                     return Result<SendFriendRequestResponse>.Success(new(
-                        existingRequest.Id,
-                        SendFriendRequestResult.Friended
+                        UserRelationshipStatus.Friended
                     ));
             }
         }
@@ -114,8 +110,7 @@ internal sealed class FriendService(
             await mediator.Publish(new FriendRequestSentNotification(fromUserId, toUserId));
             
             return Result<SendFriendRequestResponse>.Success(new(
-                newRequest.Id,
-                SendFriendRequestResult.Requested
+                UserRelationshipStatus.OutcomingRequest
             ));
         } catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) {
             // conflict, automatically friend if the existing is from the "toUser".
@@ -133,15 +128,13 @@ internal sealed class FriendService(
                 await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
                 
                 return Result<SendFriendRequestResponse>.Success(new(
-                    updatedId, 
-                    SendFriendRequestResult.Friended
+                    UserRelationshipStatus.Friended
                 ));
             }
             
             // likely caused by the user sent the exact same request twice at the same time
             return Result<SendFriendRequestResponse>.Success(new(
-                Guid.Empty, 
-                SendFriendRequestResult.Requested
+                UserRelationshipStatus.OutcomingRequest
             ));
         }
     }

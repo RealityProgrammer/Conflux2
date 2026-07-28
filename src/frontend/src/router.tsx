@@ -29,7 +29,7 @@ export const router = createBrowserRouter([
 
             if (authInfo?.id) {
                 try {
-                    const profileResponse = await userService.getSessionUserProfile();
+                    const profileResponse = await userService.getSessionUserBasicProfile();
                     profileInfo = profileResponse.data;
                 } catch (error) {
                     console.error("Failed to load user profile: ", error);

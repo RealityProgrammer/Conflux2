@@ -1,7 +1,7 @@
 import {useDebounceValue} from "usehooks-ts";
 import {BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {type InfiniteData, useInfiniteQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {
     type PaginatedResponse,
     type QueryPendingRequestElement,
@@ -13,17 +13,30 @@ import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
+import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
+import type {
+    FriendRequestCanceledNotification,
+    FriendRequestReceivedNotification,
+    FriendRequestRejectedNotification
+} from "../../api/notifications.ts";
+import {userService} from "../../api/userService.ts";
+import useFriendActions from "../../hooks/useFriendActions.tsx";
+import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
+
+const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
     element: QueryPendingRequestElement;
-    itemHeight: number;
+    removeCacheElement: (userId: string) => void;
 }
 
 export default function PendingRequestsTabContent() {
-    const ITEM_HEIGHT: number = 52;
     const PAGE_SIZE: number = 20;
 
+    const queryClient = useQueryClient();
     const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
+
+    const queryKey = ["queryPendingRequests", userNameSearch];
 
     const {
         data,
@@ -32,7 +45,7 @@ export default function PendingRequestsTabContent() {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["queryFriends", userNameSearch],
+        queryKey: queryKey,
         queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<QueryPendingRequestElement> | null | undefined> => {
             const response: ServiceResponse<PaginatedResponse<QueryPendingRequestElement>> =
                 await friendService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
@@ -54,6 +67,98 @@ export default function PendingRequestsTabContent() {
 
     const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
+    const removeCacheElement = (userId: string) => {
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData) return oldData;
+
+                const elementExists = oldData.pages.some(page =>
+                    page?.elements.some(element => element.userId === userId)
+                );
+
+                if (!elementExists) return oldData;
+
+                return {
+                    ...oldData,
+                    pages: oldData.pages.map((page) => {
+                        if (!page) return page;
+
+                        const filteredElements = page.elements.filter(
+                            (element) => element.userId !== userId
+                        );
+
+                        const removedCount = page.elements.length - filteredElements.length;
+
+                        return {
+                            ...page,
+                            elements: filteredElements,
+                            totalCount: page.totalCount - removedCount,
+                        };
+                    }),
+                };
+            }
+        );
+    }
+
+    useGlobalEvent("lobby:friendRequestReceived", async (notif: FriendRequestReceivedNotification) => {
+        const profileResponse = await queryClient.fetchQuery({
+            queryKey: ["userProfile", notif.senderUserId],
+            queryFn: () => userService.getUserBasicProfile(notif.senderUserId),
+            staleTime: 900, // 15 minutes cache
+        });
+
+        if (!profileResponse.success) return;
+
+        const userProfile = profileResponse.data!;
+
+        const newElement: QueryPendingRequestElement = {
+            userId: notif.senderUserId,
+            userName: userProfile.userName,
+            displayName: userProfile.displayName,
+            hasAvatar: userProfile.hasAvatar,
+            status: UserRelationshipStatus.IncomingRequest,
+        }
+
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || oldData.pages.length === 0) return oldData;
+
+                const alreadyExists = oldData.pages.some(page =>
+                    page?.elements.some(el => el.userId === notif.senderUserId)
+                );
+
+                if (alreadyExists) return oldData;
+
+                return {
+                    ...oldData,
+                    pages: oldData.pages.map((page, index) => {
+                        if (!page) return page;
+
+                        const updatedElements = index === 0
+                            ? [newElement, ...page.elements]
+                            : page.elements;
+
+                        return {
+                            ...page,
+                            elements: updatedElements,
+                            totalCount: page.totalCount + 1,
+                        };
+                    }),
+                };
+            }
+        );
+    });
+
+    useGlobalEvent("lobby:friendRequestRejected", (notif: FriendRequestRejectedNotification) => {
+        removeCacheElement(notif.rejecterUserId);
+    });
+
+    useGlobalEvent("lobby:friendRequestCanceled", (notif: FriendRequestCanceledNotification) => {
+        removeCacheElement(notif.senderUserId);
+    });
+
     return (
         <div className="flex flex-col gap-2 h-full">
             <div className="flex-none relative w-full flex items-center">
@@ -66,44 +171,101 @@ export default function PendingRequestsTabContent() {
                        }}/>
             </div>
 
-            <VirtualizedScrollList items={allElements}
-                                   isLoading={isLoading}
-                                   itemHeight={ITEM_HEIGHT}
-                                   fetchNextPage={() => { fetchNextPage() }}
-                                   hasNextPage={hasNextPage}
-                                   isFetchingNextPage={isFetchingNextPage}
-                                   renderItem={(item: QueryPendingRequestElement) => (
-                                       <ElementRow element={item} itemHeight={ITEM_HEIGHT}/>
-                                   )}
-                                   renderSkeletonItem={(index) => (
-                                       <UserNameplate.Skeleton key={index}
-                                                               className="p-1.5"
-                                                               style={{ height: `${ITEM_HEIGHT}px` }}/>
-                                   )}
-                                   renderFetchingNext={() => (
-                                       <Spinner className="fill-white size-6 align-middle"/>
-                                   )}/>
+            <VirtualizedScrollList
+                items={allElements}
+                isLoading={isLoading}
+                itemHeight={ITEM_HEIGHT}
+                fetchNextPage={() => { fetchNextPage() }}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                renderItem={(item: QueryPendingRequestElement) => (
+                    <Row element={item} removeCacheElement={removeCacheElement}/>
+                )}
+                renderSkeletonItem={(index) => (
+                    <UserNameplate.Skeleton key={index}
+                                            className="p-1.5"
+                                            style={{ height: `${ITEM_HEIGHT}px` }}/>
+                )}
+                renderFetchingNext={() => (
+                    <Spinner className="fill-white size-6 align-middle"/>
+                )}/>
         </div>
     );
 }
 
-function ElementRow({ element, itemHeight }: RowProps) {
+function Row({ element, removeCacheElement }: RowProps) {
+    const { mutation, activeAction } = useFriendActions(element.userId);
+
+    const handleAccept = () => {
+        mutation.mutate('accept', {
+            onSuccess: (response: ServiceResponse) => {
+                if (response.success) {
+                    removeCacheElement(element.userId);
+                }
+            },
+        });
+    }
+
+    const handleReject = () => {
+        mutation.mutate('reject', {
+            onSuccess: (response: ServiceResponse) => {
+                if (response.success) {
+                    removeCacheElement(element.userId);
+                }
+            },
+        });
+    }
+
+    const handleCancel = () => {
+        mutation.mutate('cancel', {
+            onSuccess: (response: ServiceResponse) => {
+                if (response.success) {
+                    removeCacheElement(element.userId);
+                }
+            },
+        });
+    }
+
     return (
-        <UserNameplate.Root userId={element.userId}
-                            userName={element.userName}
-                            displayName={element.displayName}
-                            hasAvatar={element.hasAvatar}
-                            className="w-full"
-                            style={{
-                                height: `${itemHeight}px`,
-                            }}
+        <UserNameplate.Root
+            userId={element.userId}
+            userName={element.userName}
+            displayName={element.displayName}
+            hasAvatar={element.hasAvatar}
+            className="w-full p-1.5"
+            style={{ height: `${ITEM_HEIGHT}px`}}
         >
+            {element.status === UserRelationshipStatus.IncomingRequest ? (
+                <>
+                    <FriendActionButtons.Reject
+                        isExecuting={!!activeAction}
+                        className="size-6"
+                        onClick={handleReject}/>
+
+                    <FriendActionButtons.Accept
+                        isExecuting={!!activeAction}
+                        className="size-6"
+                        onClick={handleAccept}/>
+
+                    <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+                </>
+            ) : element.status === UserRelationshipStatus.OutcomingRequest && (
+                <>
+                    <FriendActionButtons.Cancel
+                        isExecuting={!!activeAction}
+                        className="size-6"
+                        onClick={handleCancel}/>
+
+                    <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+                </>
+            )}
+
             <MoreActionsButton>
-                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                <DropdownMenu.Item className="dropdown-item-default">
                     Visit Profile
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                <DropdownMenu.Item className="dropdown-item-default">
                     Direct Message
                 </DropdownMenu.Item>
 
@@ -111,11 +273,18 @@ function ElementRow({ element, itemHeight }: RowProps) {
 
                 {element.status === UserRelationshipStatus.IncomingRequest ? (
                     <>
-                        <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                        <DropdownMenu.Item
+                            className="dropdown-item-default"
+                            disabled={!!activeAction}
+                            onSelect={handleReject}
+                        >
                             Reject Request
                         </DropdownMenu.Item>
 
-                        <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                        <DropdownMenu.Item className="dropdown-item-default"
+                            disabled={!!activeAction}
+                            onSelect={handleReject}
+                        >
                             Accept Request
                         </DropdownMenu.Item>
 
@@ -124,7 +293,9 @@ function ElementRow({ element, itemHeight }: RowProps) {
                 ) : element.status === UserRelationshipStatus.OutcomingRequest && (
                     <>
                         <DropdownMenu.Item
-                            className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                            className="dropdown-item-danger"
+                            disabled={!!activeAction}
+                            onSelect={handleCancel}
                         >
                             Cancel Request
                         </DropdownMenu.Item>
@@ -133,18 +304,14 @@ function ElementRow({ element, itemHeight }: RowProps) {
                     </>
                 )}
 
-                <DropdownMenu.Item
-                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-                >
+                <DropdownMenu.Item className="dropdown-item-danger">
                     Block
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item
-                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-                >
+                <DropdownMenu.Item className="dropdown-item-danger">
                     Report User
                 </DropdownMenu.Item>
             </MoreActionsButton>
         </UserNameplate.Root>
-    );
+    )
 }

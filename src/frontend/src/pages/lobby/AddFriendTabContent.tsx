@@ -1,13 +1,11 @@
-import {useState} from "react";
 import {useDebounceValue} from "usehooks-ts";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
     type DiscoverFriendElement,
     type PaginatedResponse,
-    UserRelationshipStatus,
     type SendFriendRequestResponse,
-    SendFriendRequestResult,
-    type ServiceResponse
+    type ServiceResponse,
+    UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
@@ -19,20 +17,16 @@ import type {
     UnfriendedNotification
 } from "../../api/notifications.ts";
 import {DropdownMenu} from "radix-ui";
-import {BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX} from "react-icons/bs";
-import IconButton from "../../components/IconButton.tsx";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
+import useFriendActions from "../../hooks/useFriendActions.tsx";
 
-type FriendActionType = 'send' | 'accept' | 'reject' | 'cancel' | 'unfriend';
-
-interface SearchResultRowProps {
+interface RowProps {
     user: DiscoverFriendElement;
-    onFriendAction: (userId: string, actionType: FriendActionType) => Promise<void>;
-    executingActionType: FriendActionType | null;
+    updateCacheStatus: (userId: string, newStatus: UserRelationshipStatus) => void;
 }
 
 export default function AddFriendTabContent() {
@@ -71,7 +65,6 @@ export default function AddFriendTabContent() {
 
     const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
-    const [executingActions, setExecutingActions] = useState<Map<string, FriendActionType>>(new Map<string, FriendActionType>());
     const queryClient = useQueryClient();
 
     const updateCacheStatus = (userId: string, newStatus: UserRelationshipStatus) => {
@@ -93,59 +86,59 @@ export default function AddFriendTabContent() {
         );
     };
 
-    const handleAction = async (userId: string, actionType: FriendActionType) => {
-        setExecutingActions(prev => new Map(prev).set(userId, actionType));
-        try {
-            let success = false;
-            let targetStatus = UserRelationshipStatus.Stranger;
-
-            switch (actionType) {
-                case 'send': {
-                    const response: ServiceResponse<SendFriendRequestResponse> =
-                        await friendService.sendFriendRequest(userId);
-
-                    success = response.success;
-
-                    if (success && response.data) {
-                        targetStatus = response.data.result === SendFriendRequestResult.Friended
-                            ? UserRelationshipStatus.Friended
-                            : UserRelationshipStatus.OutcomingRequest;
-                    }
-                    break;
-                }
-
-                case 'accept':
-                    success = (await friendService.acceptFriendRequest(userId)).success;
-                    targetStatus = UserRelationshipStatus.Friended;
-                    break;
-
-                case 'reject':
-                    success = (await friendService.rejectFriendRequest(userId)).success;
-                    targetStatus = UserRelationshipStatus.Stranger; // Or whatever your UI expects
-                    break;
-
-                case 'cancel':
-                    success = (await friendService.cancelFriendRequest(userId)).success;
-                    targetStatus = UserRelationshipStatus.Stranger;
-                    break;
-
-                case 'unfriend':
-                    success = (await friendService.unfriend(userId)).success;
-                    targetStatus = UserRelationshipStatus.Stranger;
-                    break;
-            }
-
-            if (success) {
-                updateCacheStatus(userId, targetStatus);
-            }
-        } finally {
-            setExecutingActions(prev => {
-                const next = new Map(prev);
-                next.delete(userId);
-                return next;
-            });
-        }
-    }
+    // const handleAction = async (userId: string, actionType: FriendActionType) => {
+    //     setExecutingActions(prev => new Map(prev).set(userId, actionType));
+    //     try {
+    //         let success = false;
+    //         let targetStatus = UserRelationshipStatus.Stranger;
+    //
+    //         switch (actionType) {
+    //             case 'send': {
+    //                 const response: ServiceResponse<SendFriendRequestResponse> =
+    //                     await friendService.sendFriendRequest(userId);
+    //
+    //                 success = response.success;
+    //
+    //                 if (success && response.data) {
+    //                     targetStatus = response.data.result === SendFriendRequestResult.Friended
+    //                         ? UserRelationshipStatus.Friended
+    //                         : UserRelationshipStatus.OutcomingRequest;
+    //                 }
+    //                 break;
+    //             }
+    //
+    //             case 'accept':
+    //                 success = (await friendService.acceptFriendRequest(userId)).success;
+    //                 targetStatus = UserRelationshipStatus.Friended;
+    //                 break;
+    //
+    //             case 'reject':
+    //                 success = (await friendService.rejectFriendRequest(userId)).success;
+    //                 targetStatus = UserRelationshipStatus.Stranger; // Or whatever your UI expects
+    //                 break;
+    //
+    //             case 'cancel':
+    //                 success = (await friendService.cancelFriendRequest(userId)).success;
+    //                 targetStatus = UserRelationshipStatus.Stranger;
+    //                 break;
+    //
+    //             case 'unfriend':
+    //                 success = (await friendService.unfriend(userId)).success;
+    //                 targetStatus = UserRelationshipStatus.Stranger;
+    //                 break;
+    //         }
+    //
+    //         if (success) {
+    //             updateCacheStatus(userId, targetStatus);
+    //         }
+    //     } finally {
+    //         setExecutingActions(prev => {
+    //             const next = new Map(prev);
+    //             next.delete(userId);
+    //             return next;
+    //         });
+    //     }
+    // }
 
     // handle realtime modification
     useGlobalEvent("lobby:friendRequestReceived", (notif: FriendRequestReceivedNotification) => {
@@ -194,10 +187,7 @@ export default function AddFriendTabContent() {
                                    hasNextPage={hasNextPage}
                                    isFetchingNextPage={isFetchingNextPage}
                                    renderItem={(item) => (
-                                       <ElementRow
-                                           user={item}
-                                           onFriendAction={handleAction}
-                                           executingActionType={executingActions.get(item.userId) ?? null}/>
+                                       <Row user={item} updateCacheStatus={updateCacheStatus}/>
                                    )}
                                    renderSkeletonItem={(index) =>
                                        <UserNameplate.Skeleton key={index}
@@ -212,12 +202,44 @@ export default function AddFriendTabContent() {
     );
 }
 
-function ElementRow({ user, onFriendAction, executingActionType }: SearchResultRowProps) {
-    const handleSendFriendRequest = () => onFriendAction(user.userId, 'send');
-    const handleAcceptFriendRequest = () => onFriendAction(user.userId, 'accept');
-    const handleRejectFriendRequest = () => onFriendAction(user.userId, 'reject');
-    const handleCancelFriendRequest = () => onFriendAction(user.userId, 'cancel');
-    const handleUnfriend = () => onFriendAction(user.userId, 'unfriend');
+function Row({ user, updateCacheStatus }: RowProps) {
+    const { mutation, activeAction } = useFriendActions(user.userId);
+
+    const handleSendFriendRequest = () => mutation.mutate('send', {
+        onSuccess: (response: ServiceResponse<SendFriendRequestResponse>) => {
+            if (response && response.success && response.data) {
+                updateCacheStatus(user.userId, response.data.status);
+            }
+        },
+    });
+    const handleAcceptFriendRequest = () => mutation.mutate('accept', {
+        onSuccess: (response: ServiceResponse) => {
+            if (response && response.success) {
+                updateCacheStatus(user.userId, UserRelationshipStatus.Friended);
+            }
+        }
+    });
+    const handleRejectFriendRequest = () => mutation.mutate('reject', {
+        onSuccess: (response: ServiceResponse) => {
+            if (response && response.success) {
+                updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
+            }
+        }
+    });
+    const handleCancelFriendRequest = () => mutation.mutate('cancel', {
+        onSuccess: (response: ServiceResponse) => {
+            if (response && response.success) {
+                updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
+            }
+        }
+    });
+    const handleUnfriend = () => mutation.mutate('reject', {
+        onSuccess: (response: ServiceResponse) => {
+            if (response && response.success) {
+                updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
+            }
+        }
+    });
 
     return (
         <UserNameplate.Root userId={user.userId}
@@ -227,31 +249,36 @@ function ElementRow({ user, onFriendAction, executingActionType }: SearchResultR
                             className="w-full p-1.5"
         >
             {user.status == UserRelationshipStatus.Stranger ? (
-                <IconButton className="size-6" theme="success" onClick={handleSendFriendRequest} isLoading={!!executingActionType}>
-                    <BsPersonPlus className="size-6"/>
-                </IconButton>
+                <FriendActionButtons.Send
+                    isExecuting={activeAction == 'send'}
+                    onClick={handleSendFriendRequest}
+                    className="size-6"/>
             ) : user.status == UserRelationshipStatus.IncomingRequest ? (
                 <>
-                    <IconButton className="size-6" theme="success" onClick={handleAcceptFriendRequest} isLoading={executingActionType == 'accept'} disabled={!!executingActionType}>
-                        <BsPersonCheck className="size-6"/>
-                    </IconButton>
+                    <FriendActionButtons.Reject
+                        isExecuting={activeAction == 'reject'}
+                        onClick={handleRejectFriendRequest}
+                        className="size-6"/>
 
-                    <IconButton className="size-6" theme="danger" onClick={handleRejectFriendRequest} isLoading={executingActionType == 'reject'} disabled={!!executingActionType}>
-                        <BsPersonX className="size-6"/>
-                    </IconButton>
+                    <FriendActionButtons.Reject
+                        isExecuting={activeAction == 'accept'}
+                        onClick={handleAcceptFriendRequest}
+                        className="size-6"/>
                 </>
             ) : user.status == UserRelationshipStatus.OutcomingRequest ? (
-                <IconButton className="size-6" theme="danger" onClick={handleCancelFriendRequest} isLoading={!!executingActionType}>
-                    <BsPersonX className="size-6"/>
-                </IconButton>
+                <FriendActionButtons.Cancel
+                    isExecuting={activeAction == 'cancel'}
+                    onClick={handleCancelFriendRequest}
+                    className="size-6"/>
             ) : (
-                <FriendActionButtons.Unfriend isExecuting={!!executingActionType}
-                                              className="size-6"
-                                              onClick={handleUnfriend}/>
+                <FriendActionButtons.Unfriend
+                    isExecuting={activeAction == 'unfriend'}
+                    className="size-6"
+                    onClick={handleUnfriend}/>
             )}
 
             <MoreActionsButton>
-                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                <DropdownMenu.Item className="dropdown-item-default">
                     Visit Profile
                 </DropdownMenu.Item>
 
@@ -259,9 +286,8 @@ function ElementRow({ user, onFriendAction, executingActionType }: SearchResultR
 
                 {user.status == UserRelationshipStatus.Stranger ? (
                     <DropdownMenu.Item
-                        className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
+                        className="dropdown-item-default"
                         onSelect={handleSendFriendRequest}
-                        disabled={!!executingActionType}
                     >
                         Send Friend Request
                     </DropdownMenu.Item>
@@ -270,15 +296,15 @@ function ElementRow({ user, onFriendAction, executingActionType }: SearchResultR
                         <DropdownMenu.Item
                             className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                             onSelect={handleAcceptFriendRequest}
-                            disabled={!!executingActionType}
+                            disabled={!!activeAction}
                         >
                             Accept Friend Request
                         </DropdownMenu.Item>
 
                         <DropdownMenu.Item
-                            className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm font-sans"
+                            className="dropdown-item-danger"
                             onSelect={handleRejectFriendRequest}
-                            disabled={!!executingActionType}
+                            disabled={!!activeAction}
                         >
                             Reject Friend Request
                         </DropdownMenu.Item>
@@ -287,7 +313,7 @@ function ElementRow({ user, onFriendAction, executingActionType }: SearchResultR
                     <DropdownMenu.Item
                         className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                         onSelect={handleCancelFriendRequest}
-                        disabled={!!executingActionType}
+                        disabled={!!activeAction}
                     >
                         Cancel Friend Request
                     </DropdownMenu.Item>
@@ -295,7 +321,7 @@ function ElementRow({ user, onFriendAction, executingActionType }: SearchResultR
                     <DropdownMenu.Item
                         className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
                         onSelect={handleUnfriend}
-                        disabled={!!executingActionType}
+                        disabled={!!activeAction}
                     >
                         Unfriend
                     </DropdownMenu.Item>

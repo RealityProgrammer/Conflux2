@@ -1,7 +1,7 @@
 import {useDebounceValue} from "usehooks-ts";
 import {BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
-import {type InfiniteData, useInfiniteQuery, useIsMutating, useMutation, useQueryClient} from "@tanstack/react-query";
+import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
     type PaginatedResponse,
     type QueryFriendElement,
@@ -15,15 +15,16 @@ import Spinner from "../../components/Spinner.tsx";
 import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
 import type {UnfriendedNotification} from "../../api/notifications.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
+import useFriendActions from "../../hooks/useFriendActions.tsx";
+
+const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
     element: QueryFriendElement;
-    itemHeight: number;
-    onUnfriended: (userId: string) => void;
+    removeUserFromCache: (userId: string) => void;
 }
 
 export default function FriendListTabContent() {
-    const ITEM_HEIGHT: number = 52;
     const PAGE_SIZE: number = 20;
 
     const queryClient = useQueryClient();
@@ -108,44 +109,39 @@ export default function FriendListTabContent() {
                        }}/>
             </div>
 
-            <VirtualizedScrollList items={allElements}
-                                   isLoading={isLoading}
-                                   itemHeight={ITEM_HEIGHT}
-                                   fetchNextPage={() => { fetchNextPage() }}
-                                   hasNextPage={hasNextPage}
-                                   isFetchingNextPage={isFetchingNextPage}
-                                   renderItem={(item: QueryFriendElement) => (
-                                       <ElementRow element={item}
-                                                   itemHeight={ITEM_HEIGHT}
-                                                   onUnfriended={handleRemoveUserFromCache}/>
-                                   )}
-                                   renderSkeletonItem={(index) => (
-                                       <UserNameplate.Skeleton key={index}
-                                                               className="p-1.5"
-                                                               style={{ height: `${ITEM_HEIGHT}px` }}/>
-                                   )}
-                                   renderFetchingNext={() => (
-                                       <Spinner className="fill-white size-6 align-middle"/>
-                                   )}/>
+            <VirtualizedScrollList
+                items={allElements}
+                isLoading={isLoading}
+                itemHeight={ITEM_HEIGHT}
+                fetchNextPage={() => { fetchNextPage() }}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                renderItem={(item: QueryFriendElement) =>
+                    <Row element={item}
+                         removeUserFromCache={() => handleRemoveUserFromCache(item.userId)}/>
+                }
+                renderSkeletonItem={(index) => (
+                    <UserNameplate.Skeleton key={index}
+                                            className="p-1.5"
+                                            style={{ height: `${ITEM_HEIGHT}px` }}/>
+                )}
+                renderFetchingNext={() => (
+                    <Spinner className="fill-white size-6 align-middle"/>
+                )}/>
         </div>
     );
 }
 
-function ElementRow({ element, itemHeight, onUnfriended }: RowProps) {
-    const unfriendMutationKey = ["unfriend", element.userId];
+function Row({ element, removeUserFromCache }: RowProps) {
+    const { mutation, activeAction } = useFriendActions(element.userId);
 
-    const unfriendMutation = useMutation({
-        mutationKey: unfriendMutationKey,
-        mutationFn: async () => {
-            const response = await friendService.unfriend(element.userId);
-
+    const handleUnfriend = () => mutation.mutate('unfriend', {
+        onSuccess: (response: ServiceResponse) => {
             if (response.success) {
-                onUnfriended(element.userId);
+                removeUserFromCache(element.userId)
             }
-        },
+        }
     });
-
-    const activeUnfriendMutations = useIsMutating({ mutationKey: unfriendMutationKey });
 
     return (
         <UserNameplate.Root userId={element.userId}
@@ -153,44 +149,32 @@ function ElementRow({ element, itemHeight, onUnfriended }: RowProps) {
                             displayName={element.displayName}
                             hasAvatar={element.hasAvatar}
                             className="w-full p-1.5"
-                            style={{
-                                height: `${itemHeight}px`,
-                            }}
+                            style={{ height: `${ITEM_HEIGHT}px` }}
         >
-            <FriendActionButtons.Unfriend isExecuting={activeUnfriendMutations > 0}
-                                          className="size-6"
-                                          onClick={() => unfriendMutation.mutate()}/>
+            <FriendActionButtons.Unfriend isExecuting={!!activeAction} className="size-6" onClick={handleUnfriend}/>
 
             <MoreActionsButton>
-                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                <DropdownMenu.Item className="dropdown-item-default">
                     Visit Profile
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                <DropdownMenu.Item className="dropdown-item-default">
                     Direct Message
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
 
-                <DropdownMenu.Item
-                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-                    disabled={activeUnfriendMutations > 0}
-                    onSelect={() => unfriendMutation.mutate()}
-                >
+                <DropdownMenu.Item className="dropdown-item-danger" disabled={!!activeAction} onSelect={handleUnfriend}>
                     Unfriend
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
 
-                <DropdownMenu.Item
-                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-                >
+                <DropdownMenu.Item className="dropdown-item-danger">
                     Block
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item
-                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-                >
+                <DropdownMenu.Item className="dropdown-item-danger">
                     Report User
                 </DropdownMenu.Item>
             </MoreActionsButton>

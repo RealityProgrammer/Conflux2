@@ -235,7 +235,15 @@
 }
 
 @utility hover-highlight {
-    @apply not-disabled:hover:bg-white/5
+    @apply not-disabled:hover:bg-white/8
+}
+
+@utility dropdown-item-default {
+    @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight text-sm text-white data-disabled:text-white/35 cursor-pointer data-disabled:pointer-events-none;
+}
+
+@utility dropdown-item-danger {
+    @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight font-semibold text-sm text-red-500 data-disabled:text-red-500/35 cursor-pointer data-disabled:pointer-events-none;
 }
 
 @layer base {

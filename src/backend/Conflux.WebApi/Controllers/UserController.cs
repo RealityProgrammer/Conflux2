@@ -106,6 +106,21 @@ public sealed class UserController : ControllerBase {
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
         };
     }
+    
+    [HttpGet("{id:guid}/profile")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<UserBasicProfileResponse>>> GetUserBasicProfile(Guid id) {
+        Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(id);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
+        };
+    }
 
     [HttpPost("setup-profile")]
     [Authorize]

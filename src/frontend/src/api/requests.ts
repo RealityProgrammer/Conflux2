@@ -17,14 +17,14 @@ export interface EmailConfirmationRequest {
 export class SetAvatar {
     readonly type = "set";
     constructor(public file: File, public previewUrl: string) {}
-};
+}
 
 export class DeleteAvatar {
     readonly type = "delete";
-};
+}
 
 export class NoAvatarModification {
     readonly type = "noMod";
-};
+}
 
 export type AvatarOperation = SetAvatar | DeleteAvatar | NoAvatarModification;

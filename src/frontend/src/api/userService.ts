@@ -88,7 +88,23 @@ export const userService = {
         }
     },
 
-    getSessionUserProfile: async (): Promise<ServiceResponse<UserBasicProfileInfo>> => {
+    getUserBasicProfile: async (userId: string): Promise<ServiceResponse<UserBasicProfileInfo>> => {
+        try {
+            const response: AxiosResponse<BackendResponse<UserBasicProfileInfo>> =
+                await apiClient.get<BackendResponse<UserBasicProfileInfo>>(`/user/${encodeURIComponent(userId)}/profile`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+                data: response.data!.data,
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
+    getSessionUserBasicProfile: async (): Promise<ServiceResponse<UserBasicProfileInfo>> => {
         try {
             const response: AxiosResponse<BackendResponse<UserBasicProfileInfo>> =
                 await apiClient.get<BackendResponse<UserBasicProfileInfo>>("/user/profile");
