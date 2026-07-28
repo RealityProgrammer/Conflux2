@@ -1,6 +1,6 @@
 import type {
     BackendResponse, DiscoverFriendElement,
-    PaginatedResponse, QueryFriendElement,
+    PaginatedResponse, QueryFriendElement, QueryPendingRequestElement,
     SendFriendRequestResponse,
     ServiceResponse
 } from "./responses.ts";
@@ -123,6 +123,31 @@ export const friendService = {
 
             const response: AxiosResponse<BackendResponse<PaginatedResponse<QueryFriendElement>>> =
                 await apiClient.get<BackendResponse<PaginatedResponse<QueryFriendElement>>>(`/friend/friends?${searchParams.toString()}`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+                data: response.data.data,
+            }
+        } catch (error) {
+            const axiosError = error as AxiosError<ServiceResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
+    queryPendingRequests: async (name: string | null, offset: number, count: number) : Promise<ServiceResponse<PaginatedResponse<QueryPendingRequestElement>>> => {
+        try {
+            const searchParams = new URLSearchParams();
+
+            if (name) {
+                searchParams.append("name", name);
+            }
+
+            searchParams.append("offset", String(offset));
+            searchParams.append("count", String(count));
+
+            const response: AxiosResponse<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>> =
+                await apiClient.get<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>>(`/friend/pending-requests?${searchParams.toString()}`);
 
             return {
                 success: true,

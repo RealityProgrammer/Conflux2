@@ -1,15 +1,18 @@
-import type { ReactNode, RefObject } from "react";
-import type { VirtualItem } from "@tanstack/react-virtual";
+import {type ReactNode, type RefObject, useEffect, useRef} from "react";
+import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 interface VirtualizedScrollListProps<T> {
     items: T[];
     isLoading: boolean;
-    pageSize?: number;
     itemHeight: number;
-    scrollViewportRef: RefObject<HTMLDivElement>;
-    virtualItems: VirtualItem[];
-    totalHeight: number;
+    pageSize?: number;
+    overscan?: number;
+
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+    fetchNextPage: () => void | Promise<void>;
+
     emptyState?: ReactNode;
 
     renderItem: (item: T, index: number) => ReactNode;
@@ -20,16 +23,43 @@ interface VirtualizedScrollListProps<T> {
 export default function VirtualizedScrollList<T>({
     items,
     isLoading,
-    pageSize = 20,
     itemHeight,
-    scrollViewportRef,
-    virtualItems,
-    totalHeight,
+    pageSize = 20,
+    overscan = 5,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     emptyState,
     renderItem,
     renderSkeletonItem,
     renderFetchingNext,
 }: VirtualizedScrollListProps<T>) {
+    const scrollViewportRef = useRef<HTMLDivElement>(null!);
+
+    const virtualCount = hasNextPage ? items.length + 1 : items.length;
+
+    const virtualizer = useVirtualizer({
+        count: virtualCount,
+        getScrollElement: () => scrollViewportRef.current,
+        estimateSize: () => itemHeight,
+        overscan,
+    });
+
+    const virtualItems = virtualizer.getVirtualItems();
+    const totalHeight = virtualizer.getTotalSize();
+
+    // trigger next page load
+    useEffect(() => {
+        if (!fetchNextPage) return;
+
+        const lastVirtualItem = virtualItems[virtualItems.length - 1];
+        if (!lastVirtualItem) return;
+
+        if (lastVirtualItem.index >= items.length - 1 && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [virtualItems, items.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
     return (
         <ScrollArea.Root className="flex-1 overflow-hidden rounded">
             <ScrollArea.Viewport

@@ -4,21 +4,22 @@ import {DropdownMenu} from "radix-ui";
 import {useInfiniteQuery} from "@tanstack/react-query";
 import {
     type PaginatedResponse,
-    type QueryFriendElement,
-    type ServiceResponse
+    type QueryPendingRequestElement,
+    type ServiceResponse,
+    UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
-import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
+import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 
 interface RowProps {
-    element: QueryFriendElement;
+    element: QueryPendingRequestElement;
     itemHeight: number;
 }
 
-export default function FriendListTabContent() {
+export default function PendingRequestsTabContent() {
     const ITEM_HEIGHT: number = 52;
     const PAGE_SIZE: number = 20;
 
@@ -32,9 +33,9 @@ export default function FriendListTabContent() {
         isLoading,
     } = useInfiniteQuery({
         queryKey: ["queryFriends", userNameSearch],
-        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<QueryFriendElement> | null | undefined> => {
-            const response: ServiceResponse<PaginatedResponse<QueryFriendElement>> =
-                await friendService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
+        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<QueryPendingRequestElement> | null | undefined> => {
+            const response: ServiceResponse<PaginatedResponse<QueryPendingRequestElement>> =
+                await friendService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
 
             return response.data;
         },
@@ -71,7 +72,7 @@ export default function FriendListTabContent() {
                                    fetchNextPage={() => { fetchNextPage() }}
                                    hasNextPage={hasNextPage}
                                    isFetchingNextPage={isFetchingNextPage}
-                                   renderItem={(item: QueryFriendElement) => (
+                                   renderItem={(item: QueryPendingRequestElement) => (
                                        <ElementRow element={item} itemHeight={ITEM_HEIGHT}/>
                                    )}
                                    renderSkeletonItem={(index) => (
@@ -92,7 +93,7 @@ function ElementRow({ element, itemHeight }: RowProps) {
                             userName={element.userName}
                             displayName={element.displayName}
                             hasAvatar={element.hasAvatar}
-                            className="w-full p-1.5"
+                            className="w-full"
                             style={{
                                 height: `${itemHeight}px`,
                             }}
@@ -108,13 +109,29 @@ function ElementRow({ element, itemHeight }: RowProps) {
 
                 <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
 
-                <DropdownMenu.Item
-                    className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-                >
-                    Unfriend
-                </DropdownMenu.Item>
+                {element.status === UserRelationshipStatus.IncomingRequest ? (
+                    <>
+                        <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                            Reject Request
+                        </DropdownMenu.Item>
 
-                <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+                        <DropdownMenu.Item className="group relative flex p-2 select-none items-center rounded-sm leading-none text-violet11 outline-none button-cursor hover-highlight text-sm">
+                            Accept Request
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+                    </>
+                ) : element.status === UserRelationshipStatus.OutcomingRequest && (
+                    <>
+                        <DropdownMenu.Item
+                            className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
+                        >
+                            Cancel Request
+                        </DropdownMenu.Item>
+
+                        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+                    </>
+                )}
 
                 <DropdownMenu.Item
                     className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"

@@ -62,6 +62,14 @@ export type QueryFriendElement = {
     hasAvatar: boolean;
 }
 
+export type QueryPendingRequestElement = {
+    userId: string;
+    userName: string;
+    displayName: string;
+    hasAvatar: boolean;
+    status: UserRelationshipStatus;
+}
+
 export type PaginatedResponse<T> = {
     elements: T[];
     totalCount: number;
