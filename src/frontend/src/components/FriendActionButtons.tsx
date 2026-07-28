@@ -8,7 +8,7 @@ interface UnfriendButtonProps extends HTMLAttributes<HTMLButtonElement> {
 
 function Send({ isExecuting, ...props }: UnfriendButtonProps) {
     return (
-        <IconButton theme="danger" isLoading={isExecuting} {...props}>
+        <IconButton theme="success" isLoading={isExecuting} {...props}>
             <BsPersonPlus className="size-6"/>
         </IconButton>
     );
