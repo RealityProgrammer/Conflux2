@@ -11,7 +11,7 @@ using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application;
 using Conflux.Domain.Repositories;
-using Conflux.Domain.Repositories.Implementations;
+using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Hubs;
