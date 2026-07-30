@@ -1,4 +1,4 @@
-namespace Conflux.Application;
+namespace Conflux.Domain;
 
 public static class Errors {
     public static Error MismatchPasswords() =>
@@ -12,6 +12,9 @@ public static class Errors {
 
     public static Error NoUserFoundFromEmail() => 
         new(nameof(NoUserFoundFromEmail), "No user found from the provided email address.");
+    
+    public static Error EmailAttachedToAccount() => 
+        new(nameof(NoUserFoundFromEmail), "Email attached to an existing account.");
     
     public static Error NoUserFoundFromId() => 
         new(nameof(NoUserFoundFromId), "No user found from the provided ID.");

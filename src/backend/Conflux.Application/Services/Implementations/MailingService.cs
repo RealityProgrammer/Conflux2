@@ -1,3 +1,4 @@
+using Conflux.Domain;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 using MailKit.Net.Smtp;

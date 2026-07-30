@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Conflux.Application;
+namespace Conflux.Domain;
 
 public readonly record struct Error(
     string Code, 

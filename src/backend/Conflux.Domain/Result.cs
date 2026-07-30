@@ -1,10 +1,10 @@
-namespace Conflux.Application;
+namespace Conflux.Domain;
 
 public readonly record struct Result {
     public bool IsSuccess { get; }
     public Error Error { get; }
     
-    private Result(bool isSuccess, Error error) {
+    internal Result(bool isSuccess, Error error) {
         IsSuccess = isSuccess;
         Error = error;
     }
@@ -42,4 +42,6 @@ public readonly record struct Result<T> {
     }
 
     public static implicit operator Result<T>(Error error) => Failure(error);
+
+    public static implicit operator Result(Result<T> result) => new(result.IsSuccess, result.Error);
 }

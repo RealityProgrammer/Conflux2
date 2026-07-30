@@ -10,6 +10,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application;
+using Conflux.Domain.Repositories;
+using Conflux.Domain.Repositories.Implementations;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Hubs;
@@ -97,6 +99,7 @@ builder.Services.AddSignalR();
 
 // API related services.
 builder.Services
+    .AddScoped<IAuthRepository, AuthRepository>()
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 

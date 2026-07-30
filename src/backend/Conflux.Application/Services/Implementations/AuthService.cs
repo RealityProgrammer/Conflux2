@@ -1,5 +1,6 @@
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
+using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -17,76 +18,48 @@ public class AuthServiceOptions {
     public int RefreshTokenDuration { get; set; } = TimeSpan.FromDays(7).Seconds;
 }
 
-internal sealed class AuthService : IAuthService {
+internal sealed class AuthService(
+    // UserManager<ApplicationUser> userManager,
+    IAuthRepository authRepository,
+    IMailingService mailingService,
+    TimeProvider timeProvider,
+    IConfiguration config,
+    ILogger<AuthService> logger,
+    IOptions<AuthServiceOptions> options
+) : IAuthService {
     private const string ApplicationJwtLoginProvider = "AppJWT";
 
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IMailingService _mailingService;
-    private readonly IConfiguration _config;
-    private readonly TimeProvider _timeProvider;
-    private readonly ILogger<AuthService> _logger;
+    private readonly ILogger<AuthService> _logger = logger;
     
-    private readonly AuthServiceOptions _options;
+    private readonly AuthServiceOptions _options = options.Value;
 
-    public AuthService(
-        UserManager<ApplicationUser> userManager, 
-        IMailingService mailingService,
-        TimeProvider timeProvider,
-        IConfiguration config,
-        ILogger<AuthService> logger,
-        IOptions<AuthServiceOptions> options
-    ) {
-        _userManager = userManager;
-        _mailingService = mailingService;
-        _timeProvider = timeProvider;
-        _logger = logger;
-        _config = config;
-
-        _options = options.Value;
-    }
-    
     public async Task<Result> RegisterAsync(string email, string password) {
-        var userExists = await _userManager.FindByEmailAsync(email);
-        
-        if (userExists != null) {
-            return Errors.InvalidCredentials();
+        var result = await authRepository.RegisterAsync(email, password);
+
+        if (result.IsSuccess) {
+            return Result.Success();
         }
 
-        var generatedUserName = $"User-{Guid.NewGuid():N}";
-
-        ApplicationUser user = new ApplicationUser {
-            Email = email,
-            UserName = generatedUserName,
-            DisplayName = generatedUserName,
-        };
-        
-        var result = await _userManager.CreateAsync(user, password);
-        
-        if (!result.Succeeded) {
-            var firstError = result.Errors.First();
-            return Result.Failure(firstError.Code, firstError.Description);
-        }
-
-        return Result.Success();
+        return result;
     }
 
     public async Task<Result<LoginResponse>> LoginAsync(string email, string password) {
-        var user = await _userManager.FindByEmailAsync(email);
-        
-        if (user != null && await _userManager.CheckPasswordAsync(user, password)) {
-            IList<string> roles = await _userManager.GetRolesAsync(user);
-            
+        var user = await authRepository.GetUserByLoginCredentialAsync(email, password);
+
+        if (user != null) {
+            IList<string> roles = await authRepository.GetUserRolesAsync(user);
+                        
             GenerateAccessToken(user, roles, out string accessToken, out _);
-            GenerateRefreshToken(out string refreshToken, out long refreshTokenExpireTick);
+            GenerateRefreshToken(out string refreshToken, out DateTimeOffset refreshTokenExpiration);
+
+            var storeResult = await authRepository.StoresAuthenticationToken(user, refreshToken, refreshTokenExpiration);
             
-            IdentityResult identityResult = await _userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{refreshToken}:{refreshTokenExpireTick}");
-            
-            if (!identityResult.Succeeded) {
-                return Errors.OperationFailure("set authentication token");
+            if (!storeResult.IsSuccess) {
+                return storeResult.Error;
             }
             
             var permissions = await GetAuthorizationPermissions(user);
-            
+
             return Result<LoginResponse>.Success(new(new(
                 user.Id,
                 user.EmailConfirmed,
@@ -117,14 +90,14 @@ internal sealed class AuthService : IAuthService {
             claims.Add(new("role", role));
         }
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Secret"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
         var credential = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        DateTimeOffset accessTokenExpire = _timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration);
+        DateTimeOffset accessTokenExpire = timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration);
 
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
+            issuer: config["Jwt:Issuer"],
+            audience: config["Jwt:Audience"],
             claims: claims,
             expires: accessTokenExpire.UtcDateTime,
             signingCredentials: credential
@@ -134,44 +107,28 @@ internal sealed class AuthService : IAuthService {
         expireTick = accessTokenExpire.Ticks;
     }
     
-    private void GenerateRefreshToken(out string refreshToken, out long tokenExpireTick) {
+    private void GenerateRefreshToken(out string refreshToken, out DateTimeOffset expiration) {
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         
         refreshToken = Convert.ToBase64String(randomNumber);
-        tokenExpireTick = _timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration).Ticks;
+        expiration = timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration);
     }
 
     public async Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken) {
-        var user = await _userManager.FindByEmailAsync(userEmail);
+        var user = await authRepository.GetUserByEmailAsync(userEmail);
         if (user == null) {
             return Errors.NoUserFoundFromEmail();
         }
-        
-        var storedData = await _userManager.GetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken");
-        if (string.IsNullOrEmpty(storedData)) {
-            return Errors.InvalidRefreshToken();
-        }
-        
-        int firstColon = storedData.IndexOf(':');
-        
-        // failure if somehow the data is corrupted or is expired.
-        if (firstColon == -1 || !long.TryParse(storedData.AsSpan(firstColon + 1), out var expireTick)) {
-            return Errors.InvalidRefreshToken();
-        }
 
-        if (_timeProvider.GetUtcNow().Ticks > expireTick) {
-            return Errors.ExpiredRefreshToken();
+        var result = await authRepository.CheckAuthenticationToken(user, refreshToken);
+
+        if (!result.IsSuccess) {
+            return result.Error;
         }
         
-        // compare the tokens.
-        if (!storedData.AsSpan(0, firstColon).SequenceEqual(refreshToken)) {
-            return Errors.InvalidRefreshToken();
-        }
-        
-        // everything is fine now, rotate and store the new generated tokens.
-        IList<string> roles = await _userManager.GetRolesAsync(user);
+        IList<string> roles = await authRepository.GetUserRolesAsync(user);
         GenerateAccessToken(user, roles, out string accessToken, out _);
         
         var permissions = await GetAuthorizationPermissions(user);
@@ -186,13 +143,13 @@ internal sealed class AuthService : IAuthService {
     }
 
     public async Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId) {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await authRepository.GetUserByIdAsync(userId);
 
         if (user == null) {
             return Result<UserAuthorizationInfo?>.Failure(Errors.NoUserFoundFromId());
         }
 
-        var userRoles = await _userManager.GetRolesAsync(user);
+        var userRoles = await authRepository.GetUserRolesAsync(user);
         var permissions = await GetAuthorizationPermissions(user);
         
         return Result<UserAuthorizationInfo?>.Success(new(
@@ -205,7 +162,7 @@ internal sealed class AuthService : IAuthService {
     }
 
     public async Task<Result> SendVerificationEmailAsync(string userId) {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await authRepository.GetUserByIdAsync(userId);
 
         if (user == null) {
             return Errors.NoUserFoundFromId();
@@ -216,26 +173,25 @@ internal sealed class AuthService : IAuthService {
         }
         
         // TODO: Time-limiting the confirmation token.
-
-        string confirmCode = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        string confirmCode = await authRepository.GenerateEmailConfirmationCodeAsync(user);
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
 
         NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);
         queryArguments.Add("userId", userId);
         queryArguments.Add("code", encodedCode);
 
-        UriBuilder builder = new UriBuilder(_config["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.")) {
+        UriBuilder builder = new UriBuilder(config["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.")) {
             Path = "auth/confirm-email",
             Query = queryArguments.ToString(),
         };
 
         string redirectUrl = builder.Uri.ToString();
 
-        return await _mailingService.SendEmailConfirmationAsync(user.Email!, redirectUrl);
+        return await mailingService.SendEmailConfirmationAsync(user.Email!, redirectUrl);
     }
 
     public async Task<Result> ConfirmEmailAsync(string userId, string code) {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await authRepository.GetUserByIdAsync(userId);
 
         if (user == null) {
             return Errors.NoUserFoundFromId();
@@ -245,14 +201,7 @@ internal sealed class AuthService : IAuthService {
             return Errors.UserAlreadyVerified();
         }
         
-        var result = await _userManager.ConfirmEmailAsync(user, code);
-
-        if (result.Succeeded) {
-            return Result.Success();
-        }
-
-        var firstError = result.Errors.First();
-        return Result.Failure(firstError.Code, firstError.Description);
+        return await authRepository.ConfirmEmailAsync(user, code);
     }
 
     private async Task<List<string>> GetAuthorizationPermissions(ApplicationUser user) {

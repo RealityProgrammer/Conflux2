@@ -1,4 +1,5 @@
 using Conflux.Application;
+using Conflux.Domain;
 using System.Text.Json.Serialization;
 
 namespace Conflux.WebApi;
