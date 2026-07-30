@@ -20,9 +20,13 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
     </ItemGroup>
-
+    
     <ItemGroup>
-      <ProjectReference Include="..\Conflux.Application\Conflux.Application.csproj" />
+      <ProjectReference Include="..\Conflux.Domain\Conflux.Domain.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Using Include="Microsoft.EntityFrameworkCore"/>
     </ItemGroup>
 
 </Project>

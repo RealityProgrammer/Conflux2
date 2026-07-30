@@ -1,0 +1,7 @@
+namespace Conflux.Domain.Dto;
+
+public sealed record FriendRequestSummary(
+    Guid Id, 
+    FriendRequestStatus Status, 
+    Guid SenderId
+);

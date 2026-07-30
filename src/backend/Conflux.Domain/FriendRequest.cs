@@ -1,6 +1,3 @@
-using Conflux.Domain.Config;
-using Microsoft.EntityFrameworkCore;
-
 namespace Conflux.Domain;
 
 public enum FriendRequestStatus {
@@ -30,7 +27,6 @@ public enum FriendRequestStatus {
     Rejected,
 }
 
-[EntityTypeConfiguration(typeof(FriendRequestConfiguration))]
 public class FriendRequest : IHasCreatedAt {
     public Guid Id { get; set; }
     public Guid SenderUserId { get; set; }

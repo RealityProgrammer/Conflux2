@@ -3,8 +3,6 @@ namespace Conflux.Domain.Repositories;
 public interface IAuthRepository {
     Task<Result<ApplicationUser>> RegisterAsync(string email, string password);
     Task<ApplicationUser?> GetUserByLoginCredentialAsync(string email, string password);
-    Task<ApplicationUser?> GetUserByEmailAsync(string email);
-    Task<ApplicationUser?> GetUserByIdAsync(string userId);
     
     Task<string> GenerateEmailConfirmationCodeAsync(ApplicationUser user);
     Task<Result> ConfirmEmailAsync(ApplicationUser user, string token);

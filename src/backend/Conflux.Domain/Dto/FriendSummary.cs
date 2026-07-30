@@ -1,6 +1,6 @@
-namespace Conflux.Application.Dto.Responses;
+namespace Conflux.Domain.Dto;
 
-public sealed record QueryFriendElement(
+public sealed record FriendSummary(
     Guid UserId, 
     string UserName, 
     string DisplayName, 

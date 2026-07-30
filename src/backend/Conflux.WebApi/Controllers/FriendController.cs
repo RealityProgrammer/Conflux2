@@ -2,6 +2,7 @@ using Conflux.Application;
 using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.WebApi.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -127,7 +128,7 @@ public sealed class FriendController(
     
     [HttpGet("discover")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResponse<DiscoverFriendElement>>>> DiscoverUsers(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<DiscoverFriendSummary>>>> DiscoverUsers(
         [FromQuery] string? name,
         [FromQuery] int offset,
         [FromQuery] int count
@@ -135,27 +136,27 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserBasicProfileSummary>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResponse<DiscoverFriendElement>> result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
+        Result<PaginatedResult<DiscoverFriendSummary>> result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResponse<DiscoverFriendElement>>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResponse<DiscoverFriendElement>>(null, result.Error)
+            new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(null, result.Error)
         );
     }
     
     [HttpGet("friends")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResponse<QueryFriendElement>>>> QueryFriends(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<FriendSummary>>>> QueryFriends(
         [FromQuery] string? name,
         [FromQuery] int offset,
         [FromQuery] int count
@@ -163,27 +164,27 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<FriendSummary>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResponse<QueryFriendElement>> result = await friendService.QueryFriendsAsync(userId, name, offset, count);
+        Result<PaginatedResult<FriendSummary>> result = await friendService.QueryFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResponse<QueryFriendElement>>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResult<FriendSummary>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResponse<QueryFriendElement>>(null, result.Error)
+            new ApiResponse<PaginatedResult<FriendSummary>>(null, result.Error)
         );
     }
 
     [HttpGet("pending-requests")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResponse<QueryPendingRequestElement>>>> QueryPendingRequests(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestSummary>>>> QueryPendingRequests(
         [FromQuery] string? name,
         [FromQuery] int offset,
         [FromQuery] int count
@@ -191,22 +192,22 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<PendingFriendRequestSummary>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResponse<QueryPendingRequestElement>> result = 
+        Result<PaginatedResult<PendingFriendRequestSummary>> result = 
             await friendService.QueryPendingRequestsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResponse<QueryPendingRequestElement>>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestSummary>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResponse<QueryFriendElement>>(null, result.Error)
+            new ApiResponse<PaginatedResult<PendingFriendRequestSummary>>(null, result.Error)
         );
     }
 }

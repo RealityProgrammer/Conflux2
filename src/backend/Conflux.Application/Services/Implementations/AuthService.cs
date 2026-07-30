@@ -19,7 +19,7 @@ public class AuthServiceOptions {
 }
 
 internal sealed class AuthService(
-    // UserManager<ApplicationUser> userManager,
+    UserManager<ApplicationUser> userManager,
     IAuthRepository authRepository,
     IMailingService mailingService,
     TimeProvider timeProvider,
@@ -117,7 +117,7 @@ internal sealed class AuthService(
     }
 
     public async Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken) {
-        var user = await authRepository.GetUserByEmailAsync(userEmail);
+        var user = await userManager.FindByEmailAsync(userEmail);
         if (user == null) {
             return Errors.NoUserFoundFromEmail();
         }
@@ -143,7 +143,7 @@ internal sealed class AuthService(
     }
 
     public async Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId) {
-        var user = await authRepository.GetUserByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
             return Result<UserAuthorizationInfo?>.Failure(Errors.NoUserFoundFromId());
@@ -162,7 +162,7 @@ internal sealed class AuthService(
     }
 
     public async Task<Result> SendVerificationEmailAsync(string userId) {
-        var user = await authRepository.GetUserByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
             return Errors.NoUserFoundFromId();
@@ -191,7 +191,7 @@ internal sealed class AuthService(
     }
 
     public async Task<Result> ConfirmEmailAsync(string userId, string code) {
-        var user = await authRepository.GetUserByIdAsync(userId);
+        var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
             return Errors.NoUserFoundFromId();

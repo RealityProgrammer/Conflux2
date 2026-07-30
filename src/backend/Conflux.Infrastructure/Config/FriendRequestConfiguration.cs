@@ -1,7 +1,8 @@
+using Conflux.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Conflux.Domain.Config;
+namespace Conflux.Infrastructure.Config;
 
 internal sealed class FriendRequestConfiguration : IEntityTypeConfiguration<FriendRequest> {
     public void Configure(EntityTypeBuilder<FriendRequest> builder) {

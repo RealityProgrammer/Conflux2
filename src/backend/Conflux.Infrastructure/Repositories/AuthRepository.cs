@@ -40,14 +40,6 @@ public sealed class AuthRepository(
         return user != null && await userManager.CheckPasswordAsync(user, password) ? user : null;
     }
 
-    public async Task<ApplicationUser?> GetUserByEmailAsync(string email) {
-        return await userManager.FindByEmailAsync(email);
-    }
-    
-    public async Task<ApplicationUser?> GetUserByIdAsync(string email) {
-        return await userManager.FindByIdAsync(email);
-    }
-
     public async Task<string> GenerateEmailConfirmationCodeAsync(ApplicationUser user) {
         return await userManager.GenerateEmailConfirmationTokenAsync(user);
     }

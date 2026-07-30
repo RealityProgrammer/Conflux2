@@ -1,4 +1,4 @@
-namespace Conflux.Application.Dto.Responses;
+namespace Conflux.Domain.Dto;
 
 public enum UserRelationshipStatus {
     Stranger,

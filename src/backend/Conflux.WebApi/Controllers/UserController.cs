@@ -3,6 +3,7 @@ using Conflux.Application.Dto.Requests;
 using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -88,37 +89,37 @@ public sealed class UserController : ControllerBase {
 
     [HttpGet("profile")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<UserBasicProfileResponse>>> GetSessionUserBasicProfile() {
+    public async Task<ActionResult<ApiResponse<UserBasicProfileSummary>>> GetSessionUserBasicProfile() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserBasicProfileSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(userId);
+        Result<UserBasicProfileSummary> result = await _userService.GetUserBasicProfileAsync(userId);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, Error.None));
+            return Ok(new ApiResponse<UserBasicProfileSummary>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
-            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserBasicProfileSummary>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileSummary>(null, result.Error)),
         };
     }
     
     [HttpGet("{id:guid}/profile")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<UserBasicProfileResponse>>> GetUserBasicProfile(Guid id) {
-        Result<UserBasicProfileResponse> result = await _userService.GetUserBasicProfileAsync(id);
+    public async Task<ActionResult<ApiResponse<UserBasicProfileSummary>>> GetUserBasicProfile(Guid id) {
+        Result<UserBasicProfileSummary> result = await _userService.GetUserBasicProfileAsync(id);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<UserBasicProfileResponse>(result.Value, Error.None));
+            return Ok(new ApiResponse<UserBasicProfileSummary>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
-            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileResponse>(null, result.Error)),
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserBasicProfileSummary>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserBasicProfileSummary>(null, result.Error)),
         };
     }
 
@@ -128,7 +129,7 @@ public sealed class UserController : ControllerBase {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileResponse>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserBasicProfileSummary>(null, Errors.InvalidIdentifier()));
         }
 
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;

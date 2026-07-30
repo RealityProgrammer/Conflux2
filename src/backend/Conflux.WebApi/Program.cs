@@ -11,6 +11,7 @@ using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application;
 using Conflux.Domain.Repositories;
+using Conflux.Infrastructure;
 using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
@@ -103,7 +104,10 @@ builder.Services
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
+    .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IUserService, UserService>()
+    
+    .AddScoped<IFriendRepository, FriendRepository>()
     .AddScoped<IFriendService, FriendService>()
     
     .AddSingleton<IMailingService, MailingService>();
@@ -157,7 +161,17 @@ if (builder.Environment.IsDevelopment()) {
 // Database related services.
 builder.Services.AddSingleton<CreateTimestampInterceptor>();
 
-builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) => {
+// builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) => {
+//     var createTimestampInterceptor = services.GetRequiredService<CreateTimestampInterceptor>();
+//     
+//     options
+//         .UseNpgsql(builder.Configuration.GetConnectionString("Database"), options => {
+//             options.MigrationsAssembly("Conflux.Infrastructure");
+//         })
+//         .AddInterceptors(createTimestampInterceptor);
+// });
+
+builder.Services.AddDbContext<ApplicationDbContext>((services, options) => {
     var createTimestampInterceptor = services.GetRequiredService<CreateTimestampInterceptor>();
     
     options
