@@ -8,4 +8,6 @@ public class ApplicationDbContext(
     DbContextOptions<ApplicationDbContext> options
 ) : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options) {
     public DbSet<FriendRequest> FriendRequests { get; set; }
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<Message> Messages { get; set; }
 }

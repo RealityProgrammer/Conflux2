@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Conflux.Domain;
 
-public sealed class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
+public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public bool IsProfileSetup { get; set; }
     
     public DateTimeOffset? AvatarUpdatedAt { get; set; }
@@ -16,8 +16,8 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
 
     public DateTimeOffset CreatedAt { get; set; }
 
-    public ICollection<FriendRequest> SentFriendRequests { get; set; } = [];
-    public ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = [];
+    public virtual ICollection<FriendRequest> SentFriendRequests { get; set; }
+    public virtual ICollection<FriendRequest> ReceivedFriendRequests { get; set; }
     
     [NotMapped]
     public IEnumerable<FriendRequest> FriendRequests => SentFriendRequests.Concat(ReceivedFriendRequests);

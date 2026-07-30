@@ -3,6 +3,7 @@ using System;
 using Conflux.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Conflux.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260729102432_FriendRequestNullableUpdatedAt")]
+    partial class FriendRequestNullableUpdatedAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,7 +122,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Conversations", (string)null);
+                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("Conflux.Domain.FriendRequest", b =>
@@ -149,7 +152,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("SenderUserId");
 
-                    b.ToTable("FriendRequests", null, t =>
+                    b.ToTable("FriendRequests", t =>
                         {
                             t.HasCheckConstraint("CK_FriendRequest_NotSelf", "\"SenderUserId\" <> \"ReceiverUserId\"");
                         });
@@ -186,7 +189,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
