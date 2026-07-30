@@ -1,7 +1,5 @@
-﻿using Conflux.Domain;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace Conflux.Infrastructure;
@@ -20,7 +18,7 @@ public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<App
             .Build();
 
         // Build DbContext options
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var connectionString = configuration.GetConnectionString("Database");
 
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
