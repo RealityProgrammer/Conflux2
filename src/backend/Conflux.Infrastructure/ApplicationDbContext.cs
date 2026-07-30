@@ -14,6 +14,8 @@ public class ApplicationDbContext(
     public DbSet<Message> Messages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder) {
+        base.OnModelCreating(builder);
+        
         new FriendRequestConfiguration().Configure(builder.Entity<FriendRequest>());
         new ConversationConfiguration().Configure(builder.Entity<Conversation>());
         new MessageConfiguration().Configure(builder.Entity<Message>());

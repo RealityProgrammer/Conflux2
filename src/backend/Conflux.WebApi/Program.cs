@@ -191,8 +191,8 @@ if (app.Environment.IsDevelopment()) {
 
     try {
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        await using var dbContext = await services.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContextAsync();
-
+        await using var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        
         await DatabaseSeedHelper.SeedUserAsync(userManager, dbContext, logger);
     } catch (Exception e) {
         logger.LogError(e, "An error occurred while seeding the database.");
