@@ -18,6 +18,10 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     pageSize?: number;
     overscan?: number;
 
+    hasPreviousPage?: boolean;
+    isFetchingPreviousPage?: boolean;
+    fetchPreviousPage?: () => void | Promise<void>;
+
     hasNextPage: boolean;
     isFetchingNextPage: boolean;
     fetchNextPage: () => void | Promise<void>;
@@ -36,6 +40,9 @@ export default function VirtualizedScrollList<T>({
     estimateSize,
     pageSize = 20,
     overscan = 5,
+    hasPreviousPage,
+    isFetchingPreviousPage,
+    fetchPreviousPage,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -47,7 +54,9 @@ export default function VirtualizedScrollList<T>({
 }: VirtualizedScrollListProps<T>) {
     const scrollViewportRef = useRef<HTMLDivElement>(null!);
 
-    const virtualCount = hasNextPage ? items.length + 1 : items.length;
+    const prevOffset = hasPreviousPage ? 1 : 0;
+    const nextOffset = hasNextPage ? 1 : 0;
+    const virtualCount = prevOffset + items.length + nextOffset;
 
     const virtualizer = useVirtualizer({
         count: virtualCount,
@@ -59,14 +68,22 @@ export default function VirtualizedScrollList<T>({
     const virtualItems = virtualizer.getVirtualItems();
     const totalHeight = virtualizer.getTotalSize();
 
-    // trigger next page load
+    // trigger previous page load
     useEffect(() => {
-        if (!fetchNextPage) return;
+        if (!fetchPreviousPage || virtualItems.length === 0) return;
 
         const lastVirtualItem = virtualItems[virtualItems.length - 1];
-        if (!lastVirtualItem) return;
+        if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [virtualItems, hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage]);
 
-        if (lastVirtualItem.index >= items.length - 1 && hasNextPage && !isFetchingNextPage) {
+    // trigger next page load
+    useEffect(() => {
+        if (!fetchNextPage || virtualItems.length === 0) return;
+
+        const lastVirtualItem = virtualItems[virtualItems.length - 1];
+        if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
     }, [virtualItems, items.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -90,8 +107,12 @@ export default function VirtualizedScrollList<T>({
                     /* Virtualized List Container */
                     <div className="relative w-full" style={{ height: `${totalHeight}px` }}>
                         {virtualItems.map((virtualItem) => {
-                            const isFetchingNext = virtualItem.index >= items.length;
-                            const item = items[virtualItem.index];
+                            const isFetchingPrev = hasPreviousPage && virtualItem.index === 0;
+                            const isFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
+
+                            // Shift the array index back by 1 if there's a previous loader at index 0
+                            const itemIndex = virtualItem.index - prevOffset;
+                            const item = items[itemIndex];
 
                             return (
                                 <div
