@@ -110,6 +110,9 @@ builder.Services
     .AddScoped<IFriendRepository, FriendRepository>()
     .AddScoped<IFriendService, FriendService>()
     
+    .AddScoped<IChannelRepository, ChannelRepository>()
+    .AddScoped<IChannelService, ChannelService>()
+    
     .AddSingleton<IMailingService, MailingService>();
 
 // Services related to external services.

@@ -1,17 +1,23 @@
-import {useParams} from "react-router";
+import {useLoaderData, useParams} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
 
-    const params = useParams();
-    const userId: string | undefined = params["userId"];
+    const { userId, channelId } = useLoaderData();
 
     if (!userId) {
         return (
             <div className="bg-gray-700 size-full flex flex-col justify-center items-center">
-                <h1 className="text-4xl font-bold text-white select-none">It is a wasted barren here...</h1>
-                <h1 className="font-normal text-gray-500 select-none">But nobody came...</h1>
+                <h1 className="font-normal font-bold text-gray-500 select-none">It is a wasted barren here...</h1>
+            </div>
+        );
+    }
+
+    if (!channelId) {
+        return (
+            <div className="bg-gray-700 size-full flex flex-col justify-center items-center">
+                <h1 className="font-normal font-bold text-gray-500 select-none">But nobody came...</h1>
             </div>
         );
     }
@@ -19,7 +25,8 @@ export default function DirectMessagePage() {
     return (
         <div className="bg-gray-700 size-full flex flex-col justify-center items-center">
             <h1 className="text-4xl font-bold text-white select-none">This is DM</h1>
-            <h1 className="font-normal text-gray-500 select-none">DM with user with ID {userId} will happen here</h1>
+            <h1 className="font-normal text-gray-500 select-none">UserID: {userId}</h1>
+            <h1 className="font-normal text-gray-500 select-none">ChannelID: {channelId}</h1>
         </div>
     );
 }

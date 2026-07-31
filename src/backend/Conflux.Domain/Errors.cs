@@ -80,4 +80,10 @@ public static class Errors {
 
     public static Error NotFriend() =>
         new(nameof(NotFriend), "Users are not friend.");
+    
+    public static Error NoFriendRequest() =>
+        new(nameof(NoAcceptedFriendRequest), "No friend request between 2 users.");
+
+    public static Error NoAcceptedFriendRequest() =>
+        new(nameof(NoAcceptedFriendRequest), "No accepted friend request between 2 users.");
 }

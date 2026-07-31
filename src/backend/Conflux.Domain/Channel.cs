@@ -1,6 +1,6 @@
 namespace Conflux.Domain;
 
-public sealed class Channel : IHasCreatedAt {
+public class Channel : IHasCreatedAt {
     public Guid Id { get; set; }
     
     public ChannelType Type { get; set; }
@@ -14,6 +14,8 @@ public sealed class Channel : IHasCreatedAt {
     
     public Guid? FriendRequestId { get; set; }
     public FriendRequest? FriendRequest { get; set; }
+
+    public virtual ICollection<ChannelMember> Members { get; set; } = null!;
     
     public DateTimeOffset CreatedAt { get; set; }
 }

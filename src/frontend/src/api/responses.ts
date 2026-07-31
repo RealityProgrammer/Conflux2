@@ -80,3 +80,7 @@ export type FieldErrors<F extends keyof any> = Record<F, string[]>;
 export interface SendFriendRequestResponse {
     status: UserRelationshipStatus;
 }
+
+export type DirectMessageResolutionResponse = {
+    channelId: string;
+}

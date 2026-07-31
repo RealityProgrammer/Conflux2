@@ -1,5 +1,5 @@
 import {useDebounceValue} from "usehooks-ts";
-import {BsSearch} from "react-icons/bs";
+import {BsChatSquareText, BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
@@ -17,16 +17,21 @@ import type {FriendRequestAcceptedNotification, UnfriendedNotification} from "..
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.tsx";
 import {useCacheService} from "../../hooks/useCacheService.ts";
+import IconButton from "../../components/IconButton.tsx";
+import {useNavigate} from "react-router";
 
 const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
     element: QueryFriendElement;
     removeUserFromCache: (userId: string) => void;
+    navigateToDirectMessage: (userId: string) => void;
 }
 
 export default function FriendListTabContent() {
     const PAGE_SIZE: number = 20;
+
+    const navigation = useNavigate();
 
     const queryClient = useQueryClient();
     const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
@@ -169,7 +174,8 @@ export default function FriendListTabContent() {
                 isFetchingNextPage={isFetchingNextPage}
                 renderItem={(item: QueryFriendElement) =>
                     <Row element={item}
-                         removeUserFromCache={() => handleRemoveUserFromCache(item.userId)}/>
+                         removeUserFromCache={() => handleRemoveUserFromCache(item.userId)}
+                         navigateToDirectMessage={(userId) => navigation(`/lobby/dm/${encodeURIComponent(userId)}`)}/>
                 }
                 renderSkeletonItem={(index) => (
                     <UserNameplate.Skeleton key={index}
@@ -183,7 +189,7 @@ export default function FriendListTabContent() {
     );
 }
 
-function Row({ element, removeUserFromCache }: RowProps) {
+function Row({ element, removeUserFromCache, navigateToDirectMessage }: RowProps) {
     const { mutation, activeAction } = useFriendActions(element.userId);
 
     const handleUnfriend = () => mutation.mutate('unfriend', {
@@ -194,6 +200,8 @@ function Row({ element, removeUserFromCache }: RowProps) {
         }
     });
 
+    const toDirectMessage = () => navigateToDirectMessage(element.userId);
+
     return (
         <UserNameplate.Root userId={element.userId}
                             userName={element.userName}
@@ -202,6 +210,10 @@ function Row({ element, removeUserFromCache }: RowProps) {
                             className="w-full p-1.5"
                             style={{ height: `${ITEM_HEIGHT}px` }}
         >
+            <IconButton theme="default" onClick={toDirectMessage}>
+                <BsChatSquareText className="size-6"/>
+            </IconButton>
+
             <FriendActionButtons.Unfriend isExecuting={!!activeAction} className="size-6" onClick={handleUnfriend}/>
 
             <MoreActionsButton>
@@ -209,7 +221,7 @@ function Row({ element, removeUserFromCache }: RowProps) {
                     Visit Profile
                 </DropdownMenu.Item>
 
-                <DropdownMenu.Item className="dropdown-item-default">
+                <DropdownMenu.Item className="dropdown-item-default" onSelect={toDirectMessage}>
                     Direct Message
                 </DropdownMenu.Item>
 

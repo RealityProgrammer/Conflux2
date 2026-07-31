@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, redirect } from "react-router";
+import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect, useParams} from "react-router";
 import HomePage from "./pages/HomePage"
 import AuthenticatePage, { authAction } from "./pages/auth/AuthenticatePage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
@@ -14,6 +14,7 @@ import { LobbyPage } from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
+import {channelService} from "./api/channelService.ts";
 
 export const router = createBrowserRouter([
     {
@@ -135,7 +136,19 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: "dm/:userId?",
-                        element: <DirectMessagePage/>
+                        element: <DirectMessagePage/>,
+                        loader: async ({ params }: LoaderFunctionArgs): Promise<{ userId: string | undefined, channelId: string | null }> => {
+                            const userId: string | undefined = params.userId;
+
+                            if (!userId) {
+                                return { userId, channelId: null };
+                            }
+
+                            const response =
+                                await channelService.getDirectMessageConversationId(userId);
+
+                            return { userId, channelId: response.data ?? null };
+                        }
                     },
                 ]
             }
