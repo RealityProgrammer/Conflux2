@@ -8,7 +8,7 @@ export const channelService = {
         try {
             const response: AxiosResponse<BackendResponse<DirectMessageResolutionResponse>> =
                 await apiClient.post<BackendResponse<DirectMessageResolutionResponse>>(
-                    `/channel/dm/${encodeURIComponent(toUserId)}`
+                    `/channels/dm/${encodeURIComponent(toUserId)}`
                 );
 
             return {

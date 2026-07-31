@@ -8,7 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 namespace Conflux.WebApi.Controllers;
 
 [ApiController]
-[Route("api/channel")]
+[Route("api/channels")]
 public sealed class ChannelController(
     IChannelService channelService
 ) : ControllerBase {
