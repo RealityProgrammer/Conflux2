@@ -3,16 +3,27 @@ import {useDocumentTitle} from "usehooks-ts";
 import IconButton from "../../components/IconButton.tsx";
 import {BsPaperclip, BsSend} from "react-icons/bs";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
+import type {DirectMessagePageLoaderProps} from "../../router.tsx";
+import UserAvatar from "../../components/UserAvatar.tsx";
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
 
-    const { userId, channelId } = useLoaderData();
-    
+    const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
+
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
-            <header className="flex-none basis-10 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2">
-                Channel {channelId}
+            <header className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2">
+                {!!channelId && !!channelSummary ? (
+                    <>
+                        <UserAvatar hasAvatar={channelSummary.otherUser.hasAvatar}
+                                    className="size-8 overflow-hidden rounded-full"/>
+
+                        <p>{channelSummary.otherUser.userName}</p>
+                    </>
+                ) : (
+                    <p>But nobody came...</p>
+                )}
             </header>
 
             <VirtualizedScrollList
@@ -47,5 +58,4 @@ export default function DirectMessagePage() {
             </footer>
         </div>
     );
-/
 }

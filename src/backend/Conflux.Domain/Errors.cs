@@ -86,4 +86,7 @@ public static class Errors {
 
     public static Error NoAcceptedFriendRequest() =>
         new(nameof(NoAcceptedFriendRequest), "No accepted friend request between 2 users.");
+
+    public static Error NoDirectMessageChannelWithId() =>
+        new(nameof(NoDirectMessageChannelWithId), "No direct message channel with the given ID.");
 }

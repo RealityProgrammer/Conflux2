@@ -22,7 +22,8 @@ export interface UserAuthorizationInfo {
     permissions: string[];
 }
 
-export interface UserBasicProfileInfo {
+export type UserBasicProfileSummary = {
+    id: string;
     userName: string;
     displayName: string;
     hasAvatar: boolean;
@@ -83,4 +84,8 @@ export interface SendFriendRequestResponse {
 
 export type DirectMessageResolutionResponse = {
     channelId: string;
+}
+
+export type DirectMessageChannelSummary = {
+    otherUser: UserBasicProfileSummary;
 }

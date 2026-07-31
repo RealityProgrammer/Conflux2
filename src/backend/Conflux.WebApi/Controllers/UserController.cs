@@ -13,6 +13,7 @@ namespace Conflux.WebApi.Controllers;
 
 [ApiController]
 [Route("api/user")]
+[Authorize]
 public sealed class UserController : ControllerBase {
     private readonly IUserService _userService;
     private readonly IConfiguration _config;
@@ -23,7 +24,6 @@ public sealed class UserController : ControllerBase {
     }
     
     [HttpPost("avatar")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
@@ -62,7 +62,6 @@ public sealed class UserController : ControllerBase {
     }
 
     [HttpDelete("avatar")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse>> DeleteAvatar() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
@@ -88,7 +87,6 @@ public sealed class UserController : ControllerBase {
     }
 
     [HttpGet("profile")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse<UserBasicProfileSummary>>> GetSessionUserBasicProfile() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
@@ -109,7 +107,6 @@ public sealed class UserController : ControllerBase {
     }
     
     [HttpGet("{id:guid}/profile")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse<UserBasicProfileSummary>>> GetUserBasicProfile(Guid id) {
         Result<UserBasicProfileSummary> result = await _userService.GetUserBasicProfileAsync(id);
 
@@ -124,7 +121,6 @@ public sealed class UserController : ControllerBase {
     }
 
     [HttpPost("setup-profile")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse>> SetupProfile([FromForm] SetupProfileRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 

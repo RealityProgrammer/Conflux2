@@ -9,6 +9,36 @@ internal sealed class ChannelRepository(
     IFriendRepository friendRepository,
     TimeProvider timeProvider
 ) : IChannelRepository {
+    public async Task<Result<DirectMessageChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId) {
+        var summary = await dbContext.Channels
+            .Where(c =>
+                c.Type == ChannelType.DirectMessage &&
+                c.Id == channelId
+            )
+            .Join(
+                dbContext.FriendRequests,
+                c => c.FriendRequestId,
+                fr => fr.Id,
+                (c, fr) => new { Channel = c, FriendRequest = fr }
+            )
+            .Join(
+                dbContext.Users,
+                cfr => cfr.FriendRequest.SenderUserId == userId ? cfr.FriendRequest.ReceiverUserId : cfr.FriendRequest.SenderUserId,
+                u => u.Id,
+                (cfr, u) => new { cfr.Channel, cfr.FriendRequest, User = u }
+            )
+            .Select(cfru => 
+                new DirectMessageChannelSummary(
+                    new(cfru.User.Id, cfru.User.UserName, cfru.User.DisplayName, cfru.User.HasAvatar)
+                )
+            )
+            .FirstOrDefaultAsync();
+
+        return summary != null ?
+            Result<DirectMessageChannelSummary>.Success(summary) :
+            Errors.NoDirectMessageChannelWithId();
+    }
+
     public async Task<Result<ChannelResolutionResult>> GetOrCreateDirectMessageChannelAsync(Guid user1, Guid user2) {
         // no tracking
         dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;

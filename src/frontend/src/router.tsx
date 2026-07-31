@@ -1,11 +1,15 @@
-import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect, useParams} from "react-router";
+import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect} from "react-router";
 import HomePage from "./pages/HomePage"
 import AuthenticatePage, { authAction } from "./pages/auth/AuthenticatePage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
 import { authService } from "./api/authService.ts";
 import { HttpStatusCode } from "axios";
-import type { UserAuthorizationInfo } from "./api/responses.ts";
+import type {
+    DirectMessageChannelSummary,
+    ServiceResponse,
+    UserAuthorizationInfo,
+} from "./api/responses.ts";
 import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
 import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
 import { userService } from "./api/userService.ts";
@@ -15,6 +19,11 @@ import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import {channelService} from "./api/channelService.ts";
+
+export type DirectMessagePageLoaderProps = {
+    channelId: string | null;
+    channelSummary: DirectMessageChannelSummary | null;
+};
 
 export const router = createBrowserRouter([
     {
@@ -137,17 +146,30 @@ export const router = createBrowserRouter([
                     {
                         path: "dm/:userId?",
                         element: <DirectMessagePage/>,
-                        loader: async ({ params }: LoaderFunctionArgs): Promise<{ userId: string | undefined, channelId: string | null }> => {
+                        loader: async ({ params }: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
                             const userId: string | undefined = params.userId;
 
                             if (!userId) {
-                                return { userId, channelId: null };
+                                return { channelId: null, channelSummary: null };
                             }
 
-                            const response =
-                                await channelService.getDirectMessageConversationId(userId);
+                            const channelIdResponse: ServiceResponse<string> =
+                                await channelService.getDirectMessageChannelId(userId);
 
-                            return { userId, channelId: response.data ?? null };
+                            if (!channelIdResponse.success) {
+                                return { channelId: null, channelSummary: null };
+                            }
+
+                            const channelId: string = channelIdResponse.data!;
+
+                            const dmChannelSummary: ServiceResponse<DirectMessageChannelSummary> =
+                                await channelService.getDirectMessageChannelSummary(channelId);
+
+                            if (!dmChannelSummary.success) {
+                                return { channelId: channelId, channelSummary: null };
+                            }
+
+                            return { channelId: channelId, channelSummary: dmChannelSummary.data! };
                         }
                     },
                 ]

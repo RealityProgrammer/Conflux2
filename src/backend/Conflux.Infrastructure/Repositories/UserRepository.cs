@@ -72,7 +72,7 @@ internal sealed class UserRepository(
     public async Task<Result<UserBasicProfileSummary>> GetUserBasicProfileAsync(Guid userId) {
         UserBasicProfileSummary? result = await dbContext.Users
             .Where(u => u.Id == userId)
-            .Select(u => new UserBasicProfileSummary(u.UserName!, u.DisplayName!, u.HasAvatar))
+            .Select(u => new UserBasicProfileSummary(u.Id, u.UserName!, u.DisplayName!, u.HasAvatar))
             .FirstOrDefaultAsync();
 
         return result == null ? 
