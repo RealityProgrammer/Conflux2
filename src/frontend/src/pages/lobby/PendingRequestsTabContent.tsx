@@ -175,12 +175,19 @@ export default function PendingRequestsTabContent() {
             </div>
 
             <VirtualizedScrollList
+                className="flex-1"
+                viewportClassName="rounded-md border-2 border-gray-600"
                 items={allElements}
                 isLoading={isLoading}
-                itemHeight={ITEM_HEIGHT}
+                estimateSize={ITEM_HEIGHT}
                 fetchNextPage={() => { fetchNextPage() }}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
+                renderEmpty={() => (
+                    <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+                        No items found.
+                    </div>
+                )}
                 renderItem={(item: QueryPendingRequestElement) => (
                     <Row element={item} removeCacheElement={removeCacheElement}/>
                 )}
@@ -190,7 +197,12 @@ export default function PendingRequestsTabContent() {
                                             style={{ height: `${ITEM_HEIGHT}px` }}/>
                 )}
                 renderFetchingNext={() => (
-                    <Spinner className="fill-white size-6 align-middle"/>
+                    <div
+                        className="flex w-full items-center justify-center"
+                        style={{ height: `${ITEM_HEIGHT}px` }}
+                    >
+                        <Spinner className="size-6 fill-white align-middle" />
+                    </div>
                 )}/>
         </div>
     );

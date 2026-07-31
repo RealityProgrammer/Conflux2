@@ -1,11 +1,20 @@
-import {type ReactNode, type RefObject, useEffect, useRef} from "react";
+import {
+    type ComponentPropsWithoutRef,
+    type HTMLAttributes,
+    type ReactNode,
+    type RefObject,
+    useEffect,
+    useRef
+} from "react";
 import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
-interface VirtualizedScrollListProps<T> {
+interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof ScrollArea.Root> {
+    viewportClassName?: string;
+
     items: T[];
     isLoading: boolean;
-    itemHeight: number;
+    estimateSize: ((index: number) => number) | number;
     pageSize?: number;
     overscan?: number;
 
@@ -13,26 +22,28 @@ interface VirtualizedScrollListProps<T> {
     isFetchingNextPage: boolean;
     fetchNextPage: () => void | Promise<void>;
 
-    emptyState?: ReactNode;
-
+    renderEmpty?: () => ReactNode;
     renderItem: (item: T, index: number) => ReactNode;
     renderSkeletonItem?: (index: number) => ReactNode;
     renderFetchingNext?: () => ReactNode;
 }
 
 export default function VirtualizedScrollList<T>({
+    className,
+    viewportClassName,
     items,
     isLoading,
-    itemHeight,
+    estimateSize,
     pageSize = 20,
     overscan = 5,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-    emptyState,
+    renderEmpty,
     renderItem,
     renderSkeletonItem,
     renderFetchingNext,
+    ...props
 }: VirtualizedScrollListProps<T>) {
     const scrollViewportRef = useRef<HTMLDivElement>(null!);
 
@@ -41,7 +52,7 @@ export default function VirtualizedScrollList<T>({
     const virtualizer = useVirtualizer({
         count: virtualCount,
         getScrollElement: () => scrollViewportRef.current,
-        estimateSize: () => itemHeight,
+        estimateSize: typeof estimateSize === 'function' ? estimateSize : () => estimateSize,
         overscan,
     });
 
@@ -61,17 +72,13 @@ export default function VirtualizedScrollList<T>({
     }, [virtualItems, items.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
-        <ScrollArea.Root className="flex-1 overflow-hidden rounded">
+        <ScrollArea.Root className={`overflow-hidden ${className}`} {...props}>
             <ScrollArea.Viewport
                 ref={scrollViewportRef}
-                className="size-full rounded-md border-2 border-gray-600 [&>div]:flex! [&>div]:min-h-full [&>div]:flex-col"
+                className={`size-full [&>div]:flex! [&>div]:min-h-full [&>div]:flex-col ${viewportClassName || ""}`}
             >
                 {items.length === 0 && !isLoading ? (
-                    emptyState || (
-                        <div className="flex flex-1 select-none items-center justify-center text-gray-400">
-                            No items found.
-                        </div>
-                    )
+                    renderEmpty?.()
                 ) : isLoading ? (
                     /* Rendering items skeleton */
                     renderSkeletonItem && (
@@ -89,9 +96,11 @@ export default function VirtualizedScrollList<T>({
                             return (
                                 <div
                                     key={virtualItem.key}
+                                    // according to https://tanstack.com/virtual/latest/docs/api/virtualizer#measureelement-2
+                                    data-index={virtualItem.index}
+                                    ref={virtualizer.measureElement}
                                     className={`absolute left-0 top-0 flex w-full flex-row items-center gap-1 transition-colors duration-150 ease-linear hover-highlight`}
                                     style={{
-                                        height: `${virtualItem.size}px`,
                                         transform: `translateY(${virtualItem.start}px)`,
                                     }}
                                 >

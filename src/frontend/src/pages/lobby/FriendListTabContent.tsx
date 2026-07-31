@@ -166,12 +166,19 @@ export default function FriendListTabContent() {
             </div>
 
             <VirtualizedScrollList
+                className="flex-1"
+                viewportClassName="rounded-md border-2 border-gray-600"
                 items={allElements}
                 isLoading={isLoading}
-                itemHeight={ITEM_HEIGHT}
+                estimateSize={ITEM_HEIGHT}
                 fetchNextPage={() => { fetchNextPage() }}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
+                renderEmpty={() => (
+                    <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+                        No items found.
+                    </div>
+                )}
                 renderItem={(item: QueryFriendElement) =>
                     <Row element={item}
                          removeUserFromCache={() => handleRemoveUserFromCache(item.userId)}
@@ -183,7 +190,12 @@ export default function FriendListTabContent() {
                                             style={{ height: `${ITEM_HEIGHT}px` }}/>
                 )}
                 renderFetchingNext={() => (
-                    <Spinner className="fill-white size-6 align-middle"/>
+                    <div
+                        className="flex w-full items-center justify-center"
+                        style={{ height: `${ITEM_HEIGHT}px` }}
+                    >
+                        <Spinner className="size-6 fill-white align-middle" />
+                    </div>
                 )}/>
         </div>
     );
@@ -210,7 +222,7 @@ function Row({ element, removeUserFromCache, navigateToDirectMessage }: RowProps
                             className="w-full p-1.5"
                             style={{ height: `${ITEM_HEIGHT}px` }}
         >
-            <IconButton theme="default" onClick={toDirectMessage}>
+            <IconButton theme="default" onClick={toDirectMessage} className="size-6" isLoading={false}>
                 <BsChatSquareText className="size-6"/>
             </IconButton>
 

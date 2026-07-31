@@ -86,60 +86,6 @@ export default function AddFriendTabContent() {
         );
     };
 
-    // const handleAction = async (userId: string, actionType: FriendActionType) => {
-    //     setExecutingActions(prev => new Map(prev).set(userId, actionType));
-    //     try {
-    //         let success = false;
-    //         let targetStatus = UserRelationshipStatus.Stranger;
-    //
-    //         switch (actionType) {
-    //             case 'send': {
-    //                 const response: ServiceResponse<SendFriendRequestResponse> =
-    //                     await friendService.sendFriendRequest(userId);
-    //
-    //                 success = response.success;
-    //
-    //                 if (success && response.data) {
-    //                     targetStatus = response.data.result === SendFriendRequestResult.Friended
-    //                         ? UserRelationshipStatus.Friended
-    //                         : UserRelationshipStatus.OutcomingRequest;
-    //                 }
-    //                 break;
-    //             }
-    //
-    //             case 'accept':
-    //                 success = (await friendService.acceptFriendRequest(userId)).success;
-    //                 targetStatus = UserRelationshipStatus.Friended;
-    //                 break;
-    //
-    //             case 'reject':
-    //                 success = (await friendService.rejectFriendRequest(userId)).success;
-    //                 targetStatus = UserRelationshipStatus.Stranger; // Or whatever your UI expects
-    //                 break;
-    //
-    //             case 'cancel':
-    //                 success = (await friendService.cancelFriendRequest(userId)).success;
-    //                 targetStatus = UserRelationshipStatus.Stranger;
-    //                 break;
-    //
-    //             case 'unfriend':
-    //                 success = (await friendService.unfriend(userId)).success;
-    //                 targetStatus = UserRelationshipStatus.Stranger;
-    //                 break;
-    //         }
-    //
-    //         if (success) {
-    //             updateCacheStatus(userId, targetStatus);
-    //         }
-    //     } finally {
-    //         setExecutingActions(prev => {
-    //             const next = new Map(prev);
-    //             next.delete(userId);
-    //             return next;
-    //         });
-    //     }
-    // }
-
     // handle realtime modification
     useGlobalEvent("lobby:friendRequestReceived", (notif: FriendRequestReceivedNotification) => {
         updateCacheStatus(notif.senderUserId, UserRelationshipStatus.IncomingRequest);
@@ -180,23 +126,36 @@ export default function AddFriendTabContent() {
                        }}/>
             </section>
 
-            <VirtualizedScrollList items={allElements}
-                                   isLoading={isLoading}
-                                   itemHeight={ITEM_HEIGHT}
-                                   fetchNextPage={() => { fetchNextPage() }}
-                                   hasNextPage={hasNextPage}
-                                   isFetchingNextPage={isFetchingNextPage}
-                                   renderItem={(item) => (
-                                       <Row user={item} updateCacheStatus={updateCacheStatus}/>
-                                   )}
-                                   renderSkeletonItem={(index) =>
-                                       <UserNameplate.Skeleton key={index}
-                                                               className="p-1.5"
-                                                               style={{ height: `${ITEM_HEIGHT}px` }}/>
-                                   }
-                                   renderFetchingNext={() =>
-                                       <Spinner className="fill-white size-6 align-middle"/>
-                                   }
+            <VirtualizedScrollList
+                className="flex-1"
+                viewportClassName="rounded-md border-2 border-gray-600"
+                items={allElements}
+                isLoading={isLoading}
+                estimateSize={ITEM_HEIGHT}
+                fetchNextPage={() => { fetchNextPage() }}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                renderEmpty={() => (
+                    <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+                        No items found.
+                    </div>
+                )}
+                renderItem={(item) => (
+                    <Row user={item} updateCacheStatus={updateCacheStatus}/>
+                )}
+                renderSkeletonItem={(index) =>
+                    <UserNameplate.Skeleton key={index}
+                                            className="p-1.5"
+                                            style={{ height: `${ITEM_HEIGHT}px` }}/>
+                }
+                renderFetchingNext={() => (
+                    <div
+                        className="flex w-full items-center justify-center"
+                        style={{ height: `${ITEM_HEIGHT}px` }}
+                    >
+                        <Spinner className="size-6 fill-white align-middle" />
+                    </div>
+                )}
             />
         </div>
     );
