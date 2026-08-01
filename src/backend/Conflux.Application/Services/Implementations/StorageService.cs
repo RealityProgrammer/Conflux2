@@ -1,5 +1,6 @@
 using Amazon.S3;
 using Amazon.S3.Model;
+using Conflux.Application.Dto.Requests;
 using Conflux.Domain;
 using Microsoft.Extensions.Configuration;
 using System.Net;
@@ -14,17 +15,84 @@ internal sealed class StorageService(
 ) : IStorageService {
     public async Task<Result<string>> UploadUserAvatarAsync(
         Guid userId,
-        Stream stream, 
+        UploadItem avatar,
+        CancellationToken cancellationToken = default
+    ) {
+        string uniqueKey = CreateAvatarUniqueKey(userId);
+
+        var result = await UploadToS3Storage(uniqueKey, avatar.Stream, avatar.ContentType, cancellationToken);
+
+        if (result.IsSuccess) {
+            return Result<string>.Success(uniqueKey);
+        }
+
+        return result.Error;
+    }
+
+    public async Task<Result> DeleteUserAvatarAsync(Guid userId, CancellationToken cancellationToken = default) {
+        var uniqueKey = CreateAvatarUniqueKey(userId);
+        return await DeleteFromS3Storage(uniqueKey, cancellationToken);
+    }
+
+    public Result<string> GetUserAvatarUrl(Guid userId, bool useHttps) {
+        var bucketName = config["MediaAWS:BucketName"];
+        var uniqueKey = CreateAvatarUniqueKey(userId);
+
+        var request = new GetPreSignedUrlRequest {
+            BucketName = bucketName,
+            Key = uniqueKey,
+            Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
+            Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
+        };
+        
+        return Result<string>.Success(s3Client.GetPreSignedURL(request));
+    }
+
+    public async Task<Result<List<Guid>>> UploadMessageAttachmentsAsync(
+        IEnumerable<UploadItem> attachments, 
+        CancellationToken cancellationToken = default
+    ) {
+        List<Guid> outputs = [];
+        
+        foreach (var attachment in attachments) {
+            Guid attachmentId = Guid.NewGuid();
+            string key = CreateAttachmentUniqueKey(attachmentId);
+
+            Result result = await UploadToS3Storage(key, attachment.Stream, attachment.ContentType, cancellationToken);
+
+            if (result.IsSuccess) {
+                outputs.Add(attachmentId);
+            } else {
+                // shit got wrecked, delete uploaded and bail out early.
+                foreach (var uploadedAttachmentId in outputs) {
+                    key = CreateAttachmentUniqueKey(uploadedAttachmentId);
+                    await DeleteFromS3Storage(key, CancellationToken.None);
+                }
+
+                return Errors.AttachmentUploadFailure();
+            }
+        }
+
+        return Result<List<Guid>>.Success(outputs);
+    }
+
+    public async Task<Result> DeleteMessageAttachmentAsync(Guid attachmentId, CancellationToken cancellationToken = default) {
+        string key = CreateAttachmentUniqueKey(attachmentId);
+        return await DeleteFromS3Storage(key, cancellationToken);
+    }
+
+    private async Task<Result> UploadToS3Storage(
+        string key,
+        Stream stream,
         string contentType,
         CancellationToken cancellationToken = default
     ) {
         var bucketName = config["MediaAWS:BucketName"];
-        string uniqueKey = CreateAvatarUniqueKey(userId);
         
         var uploadRequest = new PutObjectRequest {
             InputStream = stream,
             BucketName = bucketName,
-            Key = uniqueKey,
+            Key = key,
             ContentType = contentType,
         };
 
@@ -33,7 +101,7 @@ internal sealed class StorageService(
 
             switch (response.HttpStatusCode) {
                 case HttpStatusCode.OK or HttpStatusCode.Created:
-                    return Result<string>.Success(uniqueKey);
+                    return Result.Success();
 
                 case HttpStatusCode.Unauthorized:
                     return Errors.InvalidCredentials("S3");
@@ -54,9 +122,8 @@ internal sealed class StorageService(
         }
     }
 
-    public async Task<Result> DeleteUserAvatarAsync(Guid userId, CancellationToken cancellationToken = default) {
+    private async Task<Result> DeleteFromS3Storage(string uniqueKey, CancellationToken cancellationToken = default) {
         var bucketName = config["MediaAWS:BucketName"];
-        var uniqueKey = CreateAvatarUniqueKey(userId);
         
         try {
             var response = await s3Client.DeleteObjectAsync(bucketName, uniqueKey, cancellationToken);
@@ -66,7 +133,7 @@ internal sealed class StorageService(
                     return Result.Success();
                 
                 case HttpStatusCode.NotFound:
-                    return Errors.ResourceNotFound("Avatar");
+                    return Errors.ResourceNotFound();
                 
                 default:
                     logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
@@ -78,21 +145,11 @@ internal sealed class StorageService(
         }
     }
 
-    public Result<string> GetUserAvatarUrl(Guid userId, bool useHttps) {
-        var bucketName = config["MediaAWS:BucketName"];
-        var uniqueKey = CreateAvatarUniqueKey(userId);
-
-        var request = new GetPreSignedUrlRequest {
-            BucketName = bucketName,
-            Key = uniqueKey,
-            Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
-            Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
-        };
-        
-        return Result<string>.Success(s3Client.GetPreSignedURL(request));
-    }
-
     private static string CreateAvatarUniqueKey(Guid userId) {
         return $"avatars/users/{userId}";
+    }
+
+    private static string CreateAttachmentUniqueKey(Guid attachmentId) {
+        return $"attachments/{attachmentId}";
     }
 }

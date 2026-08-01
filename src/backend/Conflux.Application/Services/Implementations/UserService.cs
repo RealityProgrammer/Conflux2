@@ -30,7 +30,7 @@ internal sealed class UserService(
         }
         
         // upload file first.
-        Result<string> result = await storageService.UploadUserAvatarAsync(userId, avatarStream, contentType);
+        Result<string> result = await storageService.UploadUserAvatarAsync(userId, new(avatarStream, contentType));
 
         if (!result.IsSuccess) {
             return result.Error;
