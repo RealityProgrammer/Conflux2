@@ -33,7 +33,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Conflux.Application\Conflux.Application.csproj" />
       <ProjectReference Include="..\Conflux.Infrastructure\Conflux.Infrastructure.csproj" />
     </ItemGroup>
 

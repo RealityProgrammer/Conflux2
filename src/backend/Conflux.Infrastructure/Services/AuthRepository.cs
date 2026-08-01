@@ -2,7 +2,7 @@ using Conflux.Domain;
 using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
-namespace Conflux.Infrastructure.Repositories;
+namespace Conflux.Infrastructure.Services;
 
 public sealed class AuthRepository(
     UserManager<ApplicationUser> userManager,

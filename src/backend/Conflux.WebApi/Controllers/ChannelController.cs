@@ -1,4 +1,4 @@
-using Conflux.Application.Services;
+using Conflux.Application.Interfaces;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Microsoft.AspNetCore.Authorization;

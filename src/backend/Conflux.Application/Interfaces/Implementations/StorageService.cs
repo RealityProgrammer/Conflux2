@@ -5,7 +5,7 @@ using Conflux.Domain;
 using Microsoft.Extensions.Configuration;
 using System.Net;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Interfaces.Implementations;
 
 internal sealed class StorageService(
     IAmazonS3 s3Client,

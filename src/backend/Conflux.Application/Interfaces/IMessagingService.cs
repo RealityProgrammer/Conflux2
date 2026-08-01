@@ -1,6 +1,6 @@
 using Conflux.Domain;
 
-namespace Conflux.Application.Services;
+namespace Conflux.Application.Interfaces;
 
 public interface IMessagingService {
     Task<Result> SendMessageAsync(

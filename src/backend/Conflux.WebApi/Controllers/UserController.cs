@@ -1,8 +1,8 @@
 using Conflux.Application;
 using Conflux.Application.Dto.Requests;
 using Conflux.Application.Dto.Responses;
-using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
+using Conflux.Application.Interfaces;
+using Conflux.Application.Interfaces.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Humanizer;

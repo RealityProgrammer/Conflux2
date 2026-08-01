@@ -2,11 +2,11 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Infrastructure.Repositories;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class ChannelRepository(
     ApplicationDbContext dbContext,
-    IFriendRepository friendRepository,
+    IFriendRequestRepository friendRequestRepository,
     TimeProvider timeProvider
 ) : IChannelRepository {
     public async Task<Result<ConversationPostingContext>> GetConversationPostingContext(Guid userId, Guid channelId) {
@@ -53,12 +53,8 @@ internal sealed class ChannelRepository(
     }
 
     public async Task<Result<ChannelResolutionResult>> GetOrCreateDirectMessageChannelAsync(Guid user1, Guid user2) {
-        // no tracking
-        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-        
         // we want to keep chat history even if users are unfriended (no friended request due to unfriending) so
         // have to do this join query
-
         var friendRequestSummary = await dbContext.FriendRequests
             .Where(fr =>
                 fr.SenderUserId == user1 && fr.ReceiverUserId == user2 ||

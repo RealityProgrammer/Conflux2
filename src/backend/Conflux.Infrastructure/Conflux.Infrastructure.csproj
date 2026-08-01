@@ -22,7 +22,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\Conflux.Domain\Conflux.Domain.csproj" />
+      <ProjectReference Include="..\Conflux.Application\Conflux.Application.csproj" />
     </ItemGroup>
     
     <ItemGroup>

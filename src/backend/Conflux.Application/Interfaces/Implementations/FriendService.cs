@@ -1,20 +1,17 @@
-using Conflux.Application.Dto;
 using Conflux.Application.Dto.Notifications;
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Extensions;
+using Conflux.Domain.Exceptions;
 using Conflux.Domain.Repositories;
 using Mediator;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using System.Diagnostics;
 using FriendRequestStatus = Conflux.Domain.FriendRequestStatus;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Interfaces.Implementations;
 
 internal sealed class FriendService(
-    IFriendRepository friendRepository,
+    IFriendRequestRepository friendRequestRepository,
+    IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
 ) : IFriendService {
@@ -28,14 +25,14 @@ internal sealed class FriendService(
         // check if there was a friend request between 2 users
         // if it's status is None or Rejected, update to Pending with sender and receiver assigned accordingly.
 
-        var requestSummary = await friendRepository.GetRequestSummaryAsync(fromUserId, toUserId);
+        var requestSummary = await friendRequestRepository.GetRequestSummaryAsync(fromUserId, toUserId);
         
         if (requestSummary != null) {
             switch (requestSummary.Status) {
                 case FriendRequestStatus.None or FriendRequestStatus.Rejected or FriendRequestStatus.Canceled:
                 default:    // treat all other invalid states as stranger
                     // has friend request, but it has been in one of "stranger" states.
-                    bool changed = await friendRepository.ReactivateRequestAsPendingAsync(
+                    bool changed = await friendRequestRepository.ReactivateRequestAsPendingAsync(
                         requestSummary.Id, 
                         fromUserId, 
                         toUserId, 
@@ -62,9 +59,19 @@ internal sealed class FriendService(
                     
                     // this user send request to the receiver, but the receiver already sent a request to this
                     // user, thus auto accept friend request
-                    if (await friendRepository.AcceptRequestAsync(requestSummary.Id, utcNow)) {
-                        await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
+                    
+                    bool success = await friendRequestRepository.TryTransitionStatusAsync(
+                        requestSummary.Id,
+                        FriendRequestStatus.Pending,
+                        FriendRequestStatus.Accepted,
+                        DateTimeOffset.UtcNow
+                    );
+
+                    if (!success) {
+                        return Errors.OperationFailure("reject friend request due to state changed.");
                     }
+                    
+                    await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
 
                     return Result<SendFriendRequestResponse>.Success(new(
                         UserRelationshipStatus.Friended
@@ -77,33 +84,35 @@ internal sealed class FriendService(
             }
         }
         
-        // create and add request
-        var status = await friendRepository.CreateOrResolveRequestAsync(fromUserId, toUserId, utcNow);
+        FriendRequest newRequest = new() {
+            SenderUserId = fromUserId,
+            ReceiverUserId = toUserId,
+            Status = FriendRequestStatus.Pending,
+            CreatedAt = utcNow,
+        };
 
-        switch (status) {
-            case CreateFriendRequestStatus.Success or CreateFriendRequestStatus.AlreadyExist:
-                await mediator.Publish(new FriendRequestSentNotification(fromUserId, toUserId));
-                
-                return Result<SendFriendRequestResponse>.Success(new(
-                    UserRelationshipStatus.OutcomingRequest
-                ));
+        friendRequestRepository.Add(newRequest);
+
+        try {
+            await unitOfWork.SaveChangesAsync();
             
-            case CreateFriendRequestStatus.AutoAccept:
-                await mediator.Publish(new FriendRequestAcceptedNotification(fromUserId, toUserId));
-                
-                return Result<SendFriendRequestResponse>.Success(new(
-                    UserRelationshipStatus.Friended
-                ));
-            
-            default:
-                throw new UnreachableException();
+            await mediator.Publish(new FriendRequestSentNotification(fromUserId, toUserId));
+            return Result<SendFriendRequestResponse>.Success(new(UserRelationshipStatus.OutcomingRequest));
+        } catch (UniqueConstraintException) {
+            var acceptedId = await friendRequestRepository.TryAcceptReverseRequestAsync(fromUserId, toUserId, timeProvider.GetUtcNow());
+
+            if (acceptedId.HasValue) {
+                await mediator.Publish(new FriendRequestAcceptedNotification(toUserId, fromUserId));
+                return Result<SendFriendRequestResponse>.Success(new(UserRelationshipStatus.Friended));
+            }
+
+            // likely means the user just clicked "Add Friend" twice very fast.
+            return Result<SendFriendRequestResponse>.Success(new(UserRelationshipStatus.OutcomingRequest));
         }
     }
 
     public async Task<Result> CancelFriendRequestAsync(Guid senderUserId, Guid toUserId) {
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
-
-        var requestSummary = await friendRepository.GetRequestSummaryAsync(senderUserId, toUserId);
+        var requestSummary = await friendRequestRepository.GetRequestSummaryAsync(senderUserId, toUserId);
 
         if (requestSummary == null) {
             return Errors.ResourceNotFound("Friend request");
@@ -119,14 +128,19 @@ internal sealed class FriendService(
                 return Result.Success();
             
             case FriendRequestStatus.Pending:
-                bool changed = await friendRepository.CancelRequestAsync(requestSummary.Id, utcNow);
-                
-                if (changed) {
-                    await mediator.Publish(new FriendRequestCanceledNotification(senderUserId, toUserId));
-                    return Result.Success();
+                bool success = await friendRequestRepository.TryTransitionStatusAsync(
+                    requestSummary.Id,
+                    FriendRequestStatus.Pending,
+                    FriendRequestStatus.Canceled,
+                    DateTimeOffset.UtcNow
+                );
+
+                if (!success) {
+                    return Errors.OperationFailure("cancel friend request due to state changed.");
                 }
 
-                return Errors.OperationFailure("cancel friend request due to state changed.");
+                await mediator.Publish(new FriendRequestCanceledNotification(senderUserId, toUserId));
+                return Result.Success();
             
             case FriendRequestStatus.Accepted:
                 return Errors.AlreadyFriended();
@@ -144,9 +158,7 @@ internal sealed class FriendService(
     public async Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid senderUserId) {
         // copy-paste from CancelFriendRequestAsync, future modification should be applied accordingly
         // if CancelFriendRequestAsync changes
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
-        
-        var requestSummary = await friendRepository.GetRequestSummaryAsync(receiverUserId, senderUserId);
+        var requestSummary = await friendRequestRepository.GetRequestSummaryAsync(receiverUserId, senderUserId);
 
         if (requestSummary == null) {
             return Errors.ResourceNotFound("Friend request");
@@ -162,9 +174,14 @@ internal sealed class FriendService(
                 return Result.Success();
             
             case FriendRequestStatus.Pending:
-                bool changed = await friendRepository.RejectRequestAsync(requestSummary.Id, utcNow);
+                bool success = await friendRequestRepository.TryTransitionStatusAsync(
+                    requestSummary.Id,
+                    FriendRequestStatus.Pending,
+                    FriendRequestStatus.Rejected,
+                    DateTimeOffset.UtcNow
+                );
 
-                if (changed) {
+                if (success) {
                     await mediator.Publish(new FriendRequestRejectedNotification(receiverUserId, senderUserId));
                     return Result.Success();
                 }
@@ -187,9 +204,7 @@ internal sealed class FriendService(
     public async Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid senderUserId) {
         // copy-paste from RejectFriendRequestAsync, future modification should be applied accordingly
         // if CancelFriendRequestAsync changes
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
-
-        var requestSummary = await friendRepository.GetRequestSummaryAsync(senderUserId, receiverUserId);
+        var requestSummary = await friendRequestRepository.GetRequestSummaryAsync(senderUserId, receiverUserId);
         
         if (requestSummary == null) {
             return Errors.ResourceNotFound("Friend request");
@@ -205,9 +220,14 @@ internal sealed class FriendService(
                 return Result.Success();
             
             case FriendRequestStatus.Pending:
-                bool changed = await friendRepository.AcceptRequestAsync(requestSummary.Id, utcNow);
+                bool success = await friendRequestRepository.TryTransitionStatusAsync(
+                    requestSummary.Id,
+                    FriendRequestStatus.Pending,
+                    FriendRequestStatus.Accepted,
+                    DateTimeOffset.UtcNow
+                );
 
-                if (changed) {
+                if (success) {
                     await mediator.Publish(new FriendRequestAcceptedNotification(receiverUserId, senderUserId));
                     return Result.Success();
                 }
@@ -228,9 +248,7 @@ internal sealed class FriendService(
     }
 
     public async Task<Result> UnfriendAsync(Guid invokerUserId, Guid otherUserId) {
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
-        
-        var requestSummary = await friendRepository.GetRequestSummaryAsync(invokerUserId, otherUserId);
+        var requestSummary = await friendRequestRepository.GetRequestSummaryAsync(invokerUserId, otherUserId);
         
         if (requestSummary == null) {
             return Errors.ResourceNotFound("Friend request");
@@ -239,10 +257,15 @@ internal sealed class FriendService(
         if (requestSummary.Status != FriendRequestStatus.Accepted) {
             return Errors.NotFriend();
         }
+        
+        bool success = await friendRequestRepository.TryTransitionStatusAsync(
+            requestSummary.Id,
+            FriendRequestStatus.Accepted,
+            FriendRequestStatus.None,
+            DateTimeOffset.UtcNow
+        );
 
-        bool changed = await friendRepository.UnfriendAsync(requestSummary.Id, utcNow);
-
-        if (changed) {
+        if (success) {
             await mediator.Publish(new UnfriendNotification(invokerUserId, otherUserId));
             return Result.Success();
         }
@@ -256,7 +279,7 @@ internal sealed class FriendService(
         int offset, 
         int count
     ) {
-        var result = await friendRepository.GetPaginatedFriendDiscoveryAsync(
+        var result = await friendRequestRepository.GetPaginatedFriendDiscoveryAsync(
             searchingUserId, 
             nameFilter, 
             offset, 
@@ -273,7 +296,7 @@ internal sealed class FriendService(
         int count
     ) {
         return Result<PaginatedResult<FriendSummary>>.Success(
-            await friendRepository.GetPaginatedFriendsAsync(searchingUserId, nameFilter, offset, count)
+            await friendRequestRepository.GetPaginatedFriendsAsync(searchingUserId, nameFilter, offset, count)
         );
     }
 
@@ -284,7 +307,7 @@ internal sealed class FriendService(
         int count
     ) {
         return Result<PaginatedResult<PendingFriendRequestSummary>>.Success(
-            await friendRepository.GetPaginatedPendingRequestsAsync(searchingUserId, nameFilter, offset, count)
+            await friendRequestRepository.GetPaginatedPendingRequestsAsync(searchingUserId, nameFilter, offset, count)
         );
     }
 }

@@ -1,5 +1,3 @@
-using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
@@ -10,9 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application;
+using Conflux.Application.Interfaces;
+using Conflux.Application.Interfaces.Implementations;
 using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
-using Conflux.Infrastructure.Repositories;
+using Conflux.Infrastructure.Services;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Hubs;
@@ -100,6 +100,7 @@ builder.Services.AddSignalR();
 
 // Conflux services.
 builder.Services
+    .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IStorageService, StorageService>()
         
     .AddScoped<IAuthRepository, AuthRepository>()
@@ -110,13 +111,13 @@ builder.Services
     .AddScoped<IUserService, UserService>()
     .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
     
-    .AddScoped<IFriendRepository, FriendRepository>()
+    .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IFriendService, FriendService>()
     
     .AddScoped<IChannelRepository, ChannelRepository>()
     .AddScoped<IChannelService, ChannelService>()
     
-    .AddScoped<IMessagingRepository, MessagingRepository>()
+    .AddScoped<IMessageRepository, MessageRepository>()
     .AddScoped<IMessagingService, MessagingService>()
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
     

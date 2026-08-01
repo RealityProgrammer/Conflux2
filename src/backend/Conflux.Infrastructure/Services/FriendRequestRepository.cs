@@ -2,13 +2,12 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Extensions;
 using Conflux.Domain.Repositories;
-using Npgsql;
 
-namespace Conflux.Infrastructure.Repositories;
+namespace Conflux.Infrastructure.Services;
 
-internal sealed class FriendRepository(
+internal sealed class FriendRequestRepository(
     ApplicationDbContext dbContext
-) : IFriendRepository {
+) : IFriendRequestRepository {
     public async Task<FriendRequestSummary?> GetRequestSummaryAsync(Guid user1, Guid user2) {
         return await dbContext.FriendRequests
             .Where(r =>
@@ -17,6 +16,22 @@ internal sealed class FriendRepository(
             )
             .Select(r => new FriendRequestSummary(r.Id, r.Status, r.SenderUserId))
             .FirstOrDefaultAsync();
+    }
+
+    public void Add(FriendRequest friendRequest) {
+        dbContext.FriendRequests.Add(friendRequest);
+    }
+
+    public async Task<Guid?> TryAcceptReverseRequestAsync(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default) {
+        var updatedId = await dbContext.Database.SqlQuery<Guid>(
+            $"""
+             UPDATE "FriendRequests"
+             SET "Status" = {(int)FriendRequestStatus.Accepted}, "UpdatedAt" = {utcNow}
+             WHERE "SenderUserId" = {receiverId} AND "ReceiverUserId" = {senderId} AND "Status" = {(int)FriendRequestStatus.Pending}
+             RETURNING "Id"
+             """).FirstOrDefaultAsync(cancellationToken);
+
+        return updatedId == Guid.Empty ? null : updatedId;
     }
 
     public async Task<bool> ReactivateRequestAsPendingAsync(
@@ -40,95 +55,21 @@ internal sealed class FriendRepository(
         return numChanged > 0;
     }
 
-    public async Task<bool> AcceptRequestAsync(
-        Guid requestId, 
+    public async Task<bool> TryTransitionStatusAsync(
+        Guid requestId,
+        FriendRequestStatus expectedStatus,
+        FriendRequestStatus newStatus,
         DateTimeOffset utcTime,
         CancellationToken cancellationToken = default
     ) {
         int numChanged = await dbContext.FriendRequests
-            .Where(r => r.Id == requestId)
-            .ExecuteUpdateAsync(setter => {
-                setter
-                    .SetProperty(r => r.Status, FriendRequestStatus.Accepted)
-                    .SetProperty(r => r.UpdatedAt, utcTime);
-            }, cancellationToken);
+            .Where(r => r.Id == requestId && r.Status == expectedStatus)
+            .ExecuteUpdateAsync(setter => setter
+                    .SetProperty(r => r.Status, newStatus)
+                    .SetProperty(r => r.UpdatedAt, utcTime), 
+                cancellationToken);
 
         return numChanged > 0;
-    }
-
-    public async Task<bool> CancelRequestAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default) {
-        int numChanged = await dbContext.FriendRequests
-            .Where(r => r.Id == requestId && r.Status == FriendRequestStatus.Pending)
-            .ExecuteUpdateAsync(setter => {
-                setter
-                    .SetProperty(r => r.Status, FriendRequestStatus.Canceled)
-                    .SetProperty(r => r.UpdatedAt, utcTime);
-            }, cancellationToken);
-
-        return numChanged > 0;
-    }
-
-    public async Task<bool> RejectRequestAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default) {
-        int numChanged = await dbContext.FriendRequests
-            .Where(r => r.Id == requestId && r.Status == FriendRequestStatus.Pending)
-            .ExecuteUpdateAsync(setter => {
-                setter
-                    .SetProperty(r => r.Status, FriendRequestStatus.Rejected)
-                    .SetProperty(r => r.UpdatedAt, utcTime);
-            }, cancellationToken);
-
-        return numChanged > 0;
-    }
-
-    public async Task<bool> UnfriendAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default) {
-        int numChanged = await dbContext.FriendRequests
-            .Where(r => r.Id == requestId && r.Status == FriendRequestStatus.Accepted)
-            .ExecuteUpdateAsync(setter => {
-                setter
-                    .SetProperty(r => r.Status, FriendRequestStatus.None)
-                    .SetProperty(r => r.UpdatedAt, utcTime);
-            }, cancellationToken: cancellationToken);
-
-        return numChanged > 0;
-    }
-
-    public async Task<CreateFriendRequestStatus> CreateOrResolveRequestAsync(
-        Guid senderId, 
-        Guid receiverId, 
-        DateTimeOffset utcNow, 
-        CancellationToken cancellationToken = default
-    ) {
-        FriendRequest newRequest = new() {
-            SenderUserId = senderId,
-            ReceiverUserId = receiverId,
-            Status = FriendRequestStatus.Pending,
-            CreatedAt = utcNow,
-        };
-
-        dbContext.FriendRequests.Add(newRequest);
-
-        try {
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return CreateFriendRequestStatus.Success;
-        } catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) {
-            // conflict, automatically friend if the existing is from the "toUser".
-            
-            // TODO: Not doing raw SQL query once EF supports returning clause.
-            var updatedId = await dbContext.Database.SqlQuery<Guid>(
-                $"""
-                 UPDATE "FriendRequests"
-                 SET "Status" = {(int)FriendRequestStatus.Accepted}, "UpdatedAt" = {utcNow}
-                 WHERE "SenderUserId" = {receiverId} AND "ReceiverUserId" = {senderId}
-                 RETURNING "Id"
-                 """).FirstOrDefaultAsync(cancellationToken);
-
-            if (updatedId != Guid.Empty) {
-                return CreateFriendRequestStatus.AutoAccept;
-            }
-            
-            // likely caused by the user sent the exact same request twice at the same time
-            return CreateFriendRequestStatus.AlreadyExist;
-        }
     }
 
     public async Task<PaginatedResult<DiscoverFriendSummary>> GetPaginatedFriendDiscoveryAsync(

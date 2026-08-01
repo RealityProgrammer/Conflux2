@@ -1,17 +1,10 @@
-using Amazon.S3;
-using Amazon.S3.Model;
-using Conflux.Application.Dto;
 using Conflux.Application.Dto.Requests;
-using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System.Net;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Interfaces.Implementations;
 
 public class UserServiceOptions {
     public long MaxAvatarSizeBytes { get; set; } = 1048576;

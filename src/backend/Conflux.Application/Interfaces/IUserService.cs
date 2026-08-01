@@ -1,9 +1,8 @@
 using Conflux.Application.Dto.Requests;
-using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 
-namespace Conflux.Application.Services;
+namespace Conflux.Application.Interfaces;
 
 public interface IUserService {
     Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream, string contentType);

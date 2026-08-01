@@ -1,7 +1,7 @@
 using Conflux.Domain;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Interfaces.Implementations;
 
 public class MessagingServiceOptions {
     public int MaxAttachmentsCount { get; set; } = 4;
@@ -9,9 +9,11 @@ public class MessagingServiceOptions {
 }
 
 internal sealed class MessagingService(
-    IMessagingRepository messagingRepository,
+    IUnitOfWork unitOfWork,
+    IMessageRepository messageRepository,
     IChannelRepository channelRepository,
-    IStorageService storageService
+    IStorageService storageService,
+    TimeProvider timeProvider
 ) : IMessagingService {
     public async Task<Result> SendMessageAsync(
         Guid senderUserId,
@@ -27,19 +29,18 @@ internal sealed class MessagingService(
             return postingContext.Error;
         }
         
-        Result result = await messagingRepository.CreateMessageAsync(
-            senderUserId,
-            postingContext.Value.ConversationId,
-            body,
-            [.. attachmentKeys], 
-            cancellationToken
-        );
+        Message message = new() {
+            Body = body,
+            AttachmentIds = [..attachmentKeys],
+            SenderUserId = senderUserId,
+            ConversationId = postingContext.Value.ConversationId,
+            CreatedAt = timeProvider.GetUtcNow(),
+        };
 
-        if (!result.IsSuccess) {
-            return result;
-        }
+        messageRepository.Add(message);
         
-        // TODO: Broadcast to others.
-        return result;
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
     }
 }

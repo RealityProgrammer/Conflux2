@@ -2,15 +2,12 @@ using Conflux.Domain.Dto;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IFriendRepository {
-    Task<FriendRequestSummary?> GetRequestSummaryAsync(Guid user1, Guid user2);
+public interface IFriendRequestRepository {
+    void Add(FriendRequest friendRequest);
     
-    Task<CreateFriendRequestStatus> CreateOrResolveRequestAsync(
-        Guid senderId,
-        Guid receiverId,
-        DateTimeOffset utcNow,
-        CancellationToken cancellationToken = default
-    );
+    Task<FriendRequestSummary?> GetRequestSummaryAsync(Guid user1, Guid user2);
+
+    Task<Guid?> TryAcceptReverseRequestAsync(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default);
     
     Task<bool> ReactivateRequestAsPendingAsync(
         Guid requestId, 
@@ -19,11 +16,14 @@ public interface IFriendRepository {
         DateTimeOffset utcTime,
         CancellationToken cancellationToken = default
     );
-    
-    Task<bool> AcceptRequestAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default);
-    Task<bool> CancelRequestAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default);
-    Task<bool> RejectRequestAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default);
-    Task<bool> UnfriendAsync(Guid requestId, DateTimeOffset utcTime, CancellationToken cancellationToken = default);
+
+    Task<bool> TryTransitionStatusAsync(
+        Guid requestId, 
+        FriendRequestStatus expectedStatus, 
+        FriendRequestStatus newStatus, 
+        DateTimeOffset utcTime, 
+        CancellationToken cancellationToken = default
+    );
     
     Task<PaginatedResult<DiscoverFriendSummary>> GetPaginatedFriendDiscoveryAsync(
         Guid searcherId, 

@@ -2,7 +2,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Interfaces.Implementations;
 
 internal sealed class ChannelService(
     IChannelRepository channelRepository

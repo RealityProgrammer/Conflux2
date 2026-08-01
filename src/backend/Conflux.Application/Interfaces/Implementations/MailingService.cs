@@ -1,10 +1,10 @@
 using Conflux.Domain;
-using Microsoft.Extensions.Configuration;
-using MimeKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.Extensions.Configuration;
+using MimeKit;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Interfaces.Implementations;
 
 internal sealed class MailingService(
     IConfiguration config
