@@ -42,28 +42,4 @@ public class FriendRequest : IHasCreatedAt {
     public DateTimeOffset? UpdatedAt { get; set; }
     
     public Channel? ConversationChannel { get; set; }
-
-    public void Accept(DateTimeOffset utcNow) {
-        if (Status != FriendRequestStatus.Pending)
-            throw new InvalidOperationException("Can only accept pending requests.");
-
-        Status = FriendRequestStatus.Accepted;
-        UpdatedAt = utcNow;
-    }
-    
-    public void Cancel(DateTimeOffset utcNow) {
-        if (Status != FriendRequestStatus.Pending)
-            throw new InvalidOperationException("Can only cancel pending requests.");
-
-        Status = FriendRequestStatus.Canceled;
-        UpdatedAt = utcNow;
-    }
-    
-    public void Reject(DateTimeOffset utcNow) {
-        if (Status != FriendRequestStatus.Pending)
-            throw new InvalidOperationException("Can only reject pending requests.");
-
-        Status = FriendRequestStatus.Rejected;
-        UpdatedAt = utcNow;
-    }
 }
