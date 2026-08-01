@@ -5,12 +5,19 @@ import {BsPaperclip, BsSend} from "react-icons/bs";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
-import ChatInput from "../../components/ChatInput.tsx";
+import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
+import {messagingService} from "../../api/messagingService.ts";
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
 
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
+
+    const handleSendMessage = async (messagePayload: ChatInputMessageState) => {
+        if (!channelId) return;
+
+        await messagingService.sendMessage(channelId, messagePayload.messageBody, messagePayload.attachments);
+    };
 
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -46,7 +53,8 @@ export default function DirectMessagePage() {
                     );
                 }}/>
 
-            <ChatInput disabled={!channelId || !channelSummary}/>
+            <ChatInput disabled={!channelId || !channelSummary}
+                       onSendMessage={handleSendMessage}/>
         </div>
     );
 }

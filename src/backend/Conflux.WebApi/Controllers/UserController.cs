@@ -2,12 +2,13 @@ using Conflux.Application;
 using Conflux.Application.Dto.Requests;
 using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
+using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -162,12 +163,11 @@ public sealed class UserController : ControllerBase {
                     yield return new("Avatar is using unsupported format.", [ nameof(File) ]);
                 }
                 
-                var configuration = context.GetRequiredService<IConfiguration>();
+                var configuration = context.GetService<IConfiguration>()!;
+                var options = configuration.GetSection("Services:User").Get<UserServiceOptions>()!;
                 
-                long maxSize = configuration.GetValue<long>("Services:User:MaxAvatarSizeBytes", 1048576);
-
-                if (File.Length > maxSize) {
-                    yield return new($"Avatar must be smaller than {maxSize.Bytes():MB}.");
+                if (File.Length > options.MaxAvatarSizeBytes) {
+                    yield return new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.");
                 }
             }
         }

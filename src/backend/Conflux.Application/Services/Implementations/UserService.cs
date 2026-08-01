@@ -13,6 +13,10 @@ using System.Net;
 
 namespace Conflux.Application.Services.Implementations;
 
+public class UserServiceOptions {
+    public long MaxAvatarSizeBytes { get; set; } = 1048576;
+}
+
 internal sealed class UserService(
     IUserRepository userRepository,
     IAmazonS3 s3Client,

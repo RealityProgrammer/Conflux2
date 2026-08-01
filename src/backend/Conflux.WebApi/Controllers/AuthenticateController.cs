@@ -1,4 +1,3 @@
-using Conflux.Application;
 using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
@@ -8,8 +7,7 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.Controllers;
 

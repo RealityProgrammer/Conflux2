@@ -1,12 +1,10 @@
-using Conflux.Application;
 using Conflux.Application.Dto.Responses;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.WebApi.Attributes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.Controllers;
 

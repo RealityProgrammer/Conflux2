@@ -106,12 +106,17 @@ builder.Services
 
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IUserService, UserService>()
+    .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
     
     .AddScoped<IFriendRepository, FriendRepository>()
     .AddScoped<IFriendService, FriendService>()
     
     .AddScoped<IChannelRepository, ChannelRepository>()
     .AddScoped<IChannelService, ChannelService>()
+    
+    .AddScoped<IMessagingRepository, MessagingRepository>()
+    .AddScoped<IMessagingService, MessagingService>()
+    .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
     
     .AddSingleton<IMailingService, MailingService>();
 
