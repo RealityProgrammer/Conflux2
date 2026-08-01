@@ -15,14 +15,18 @@ public sealed class MessagingController(
     IMessagingService messagingService
 ) : ControllerBase {
     [HttpPost]
-    public async Task<ActionResult<ApiResponse>> SendMessage(Guid channelId, [FromForm] SendMessageRequest request) {
+    public async Task<ActionResult<ApiResponse>> SendMessage(
+        Guid channelId, 
+        [FromForm] SendMessageRequest request,
+        CancellationToken cancellationToken
+    ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await messagingService.SendMessageAsync(request.Body, []);
+        Result result = await messagingService.SendMessageAsync(request.Body, [], cancellationToken);
 
         if (result.IsSuccess) {
             return Created();
