@@ -51,6 +51,9 @@ public static class Errors {
 
     public static Error Discontinued(string description) => new(nameof(Discontinued), description);
 
+    public static Error ResourceNotFound() =>
+        new(nameof(ResourceNotFound), $"Resource not found.");
+    
     public static Error ResourceNotFound(string typeOfResource) =>
         new(nameof(ResourceNotFound), $"{typeOfResource} not found.");
 
@@ -89,4 +92,7 @@ public static class Errors {
 
     public static Error NoDirectMessageChannelWithId() =>
         new(nameof(NoDirectMessageChannelWithId), "No direct message channel with the given ID.");
+
+    public static Error AttachmentUploadFailure() =>
+        new(nameof(AttachmentUploadFailure), "Failed to upload attachments.");
 }
