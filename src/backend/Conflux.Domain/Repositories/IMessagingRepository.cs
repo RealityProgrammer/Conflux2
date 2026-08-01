@@ -1,10 +1,11 @@
 namespace Conflux.Domain.Repositories;
 
 public interface IMessagingRepository {
-    Task<Result> CreateMessageAsync(
+    Task<Result<Message>> CreateMessageAsync(
         Guid senderUserId,
+        Guid conversationId,
         string? body,
-        IList<Guid> attachmentIds,
+        Guid[] attachmentIds,
         CancellationToken cancellationToken = default
     );
 }

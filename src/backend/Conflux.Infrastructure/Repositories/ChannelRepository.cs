@@ -9,6 +9,19 @@ internal sealed class ChannelRepository(
     IFriendRepository friendRepository,
     TimeProvider timeProvider
 ) : IChannelRepository {
+    public async Task<Result<ConversationPostingContext>> GetConversationPostingContext(Guid userId, Guid channelId) {
+        ConversationPostingContext? result = await dbContext.Channels
+            .Where(c => c.Id == channelId)
+            .Select(c => new ConversationPostingContext(c.ConversationId))
+            .FirstOrDefaultAsync();
+
+        if (result == null) {
+            return Errors.NoChannelWithId();
+        }
+        
+        return Result<ConversationPostingContext>.Success(result);
+    }
+
     public async Task<Result<DirectMessageChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId) {
         var summary = await dbContext.Channels
             .Where(c =>

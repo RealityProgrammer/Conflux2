@@ -1,3 +1,4 @@
+using Conflux.Application.Dto.Requests;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
@@ -12,7 +13,8 @@ namespace Conflux.WebApi.Controllers;
 [Route("/api/channels/{channelId:guid}/messages")]
 [Authorize]
 public sealed class MessagingController(
-    IMessagingService messagingService
+    IMessagingService messagingService,
+    IStorageService storageService
 ) : ControllerBase {
     [HttpPost]
     public async Task<ActionResult<ApiResponse>> SendMessage(
@@ -25,11 +27,40 @@ public sealed class MessagingController(
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
+
+        IList<Guid> attachmentIds = [];
+
+        if (request.Attachments is { Length: > 0 }) {
+            UploadItem[] uploadItems = 
+                [..request.Attachments.Select(r => new UploadItem(r.OpenReadStream(), r.ContentType))];
+
+            try {
+                var uploadResult = await storageService.UploadMessageAttachmentsAsync(
+                    uploadItems,
+                    cancellationToken
+                );
+
+                if (uploadResult.IsSuccess) {
+                    attachmentIds = uploadResult.Value!;
+                } else {
+                    return StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(Errors.AttachmentUploadFailure()));
+                }
+            } finally {
+                foreach (var item in uploadItems) {
+                    await item.Stream.DisposeAsync();
+                }
+            }
+        }
         
-        Result result = await messagingService.SendMessageAsync(request.Body, [], cancellationToken);
+        Result result = await messagingService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
 
         if (result.IsSuccess) {
             return Created();
+        }
+        
+        // delete uploaded files, hope shit wouldn't break
+        foreach (var attachmentId in attachmentIds) {
+            await storageService.DeleteMessageAttachmentAsync(attachmentId, CancellationToken.None);
         }
         
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
@@ -57,7 +88,7 @@ public sealed class MessagingController(
                 yield return result;
             }
 
-            if (Attachments != null && Attachments.Length > 0) {
+            if (Attachments is { Length: > 0 }) {
                 var configuration = validationContext.GetService<IConfiguration>()!;
                 var options = configuration.GetSection("Services:User").Get<MessagingServiceOptions>()!;
                 

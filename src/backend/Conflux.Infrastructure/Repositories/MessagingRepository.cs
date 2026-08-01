@@ -4,14 +4,28 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class MessagingRepository(
-    ApplicationDbContext dbContext
+    ApplicationDbContext dbContext,
+    TimeProvider timeProvider
 ) : IMessagingRepository {
-    public Task<Result> CreateMessageAsync(
+    public async Task<Result<Message>> CreateMessageAsync(
         Guid senderUserId, 
+        Guid conversationId,
         string? body, 
-        IList<Guid> attachmentIds, 
+        Guid[] attachmentIds, 
         CancellationToken cancellationToken = default
     ) {
-        throw new NotImplementedException();
+        Message message = new() {
+            Body = body,
+            AttachmentIds = attachmentIds,
+            SenderUserId = senderUserId,
+            ConversationId = conversationId,
+            CreatedAt = timeProvider.GetUtcNow(),
+        };
+
+        dbContext.Add(message);
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Result<Message>.Success(message);
     }
 }

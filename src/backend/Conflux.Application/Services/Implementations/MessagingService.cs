@@ -9,13 +9,37 @@ public class MessagingServiceOptions {
 }
 
 internal sealed class MessagingService(
-    IMessagingRepository messagingRepository
+    IMessagingRepository messagingRepository,
+    IChannelRepository channelRepository,
+    IStorageService storageService
 ) : IMessagingService {
     public async Task<Result> SendMessageAsync(
+        Guid senderUserId,
+        Guid channelId,
         string? body, 
-        Stream[]? attachmentStreams, 
+        IList<Guid> attachmentKeys,
         CancellationToken cancellationToken = default
     ) {
-        throw new NotImplementedException();
+        var postingContext = 
+            await channelRepository.GetConversationPostingContext(senderUserId, channelId);
+
+        if (postingContext.Value == null) {
+            return postingContext.Error;
+        }
+        
+        Result result = await messagingRepository.CreateMessageAsync(
+            senderUserId,
+            postingContext.Value.ConversationId,
+            body,
+            [.. attachmentKeys], 
+            cancellationToken
+        );
+
+        if (!result.IsSuccess) {
+            return result;
+        }
+        
+        // TODO: Broadcast to others.
+        return result;
     }
 }

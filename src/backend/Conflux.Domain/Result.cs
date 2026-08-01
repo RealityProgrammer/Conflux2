@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Conflux.Domain;
 
 public readonly record struct Result {
@@ -24,7 +26,8 @@ public readonly record struct Result<T> {
     public bool IsSuccess { get; }
     public Error Error { get; }
 
-    public T Value 
+    [MemberNotNullWhen(true, nameof(IsSuccess))]
+    public T? Value 
         => IsSuccess ? field : throw new InvalidOperationException("The value of a failure result can not be accessed.");
     
     private Result(bool isSuccess, T value, Error error) {
