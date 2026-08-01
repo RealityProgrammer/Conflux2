@@ -98,8 +98,10 @@ builder.Services.AddMediator();
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSignalR();
 
-// API related services.
+// Conflux services.
 builder.Services
+    .AddScoped<IStorageService, StorageService>()
+        
     .AddScoped<IAuthRepository, AuthRepository>()
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
