@@ -65,7 +65,7 @@ export default function IconButton({
             {...props}
             onClick={handleClick}
             disabled={isCurrentlyLoading || disabled}
-            className={`inline-flex items-center justify-center button-cursor ${themeClass} ${className}`}
+            className={`inline-flex items-center justify-center button-cursor pointer-events-auto ${themeClass} ${className}`}
         >
             {isCurrentlyLoading ? (
                 <Spinner className="size-full fill-white"/>

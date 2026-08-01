@@ -5,6 +5,7 @@ import {BsPaperclip, BsSend} from "react-icons/bs";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
+import ChatInput from "../../components/ChatInput.tsx";
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
@@ -45,17 +46,7 @@ export default function DirectMessagePage() {
                     );
                 }}/>
 
-            <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-row items-center gap-2">
-                <IconButton isLoading={false} className="size-6 flex-none">
-                    <BsPaperclip className="size-6"/>
-                </IconButton>
-
-                <input className="input-field h-10 w-full flex-1" placeholder="Message body goes here"/>
-
-                <IconButton isLoading={false} className="size-6 flex-none">
-                    <BsSend className="size-6"/>
-                </IconButton>
-            </footer>
+            <ChatInput disabled={!channelId || !channelSummary}/>
         </div>
     );
 }

@@ -92,7 +92,7 @@ internal sealed class ChannelRepository(
                 new() {
                     UserId = user2,
                 },
-            }
+            },
         };
 
         try {
@@ -108,7 +108,7 @@ internal sealed class ChannelRepository(
                 .Select(c => c.Id)
                 .FirstAsync();
 
-            return Result<ChannelResolutionResult>.Success(new(channel.Id, ChannelResolutionStatus.Existing));
+            return Result<ChannelResolutionResult>.Success(new(raceConditionChannelId, ChannelResolutionStatus.Existing));
         }
     }
 }
