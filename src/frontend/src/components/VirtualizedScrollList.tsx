@@ -140,6 +140,7 @@ export default function VirtualizedScrollList<T>({
             <ScrollArea.Viewport
                 ref={scrollViewportRef}
                 className={`size-full [&>div]:flex! [&>div]:min-h-full [&>div]:flex-col ${viewportClassName || ""}`}
+                style={{ overflowAnchor: 'none' }}
             >
                 {items.length === 0 && !isLoading ? (
                     renderEmpty?.()
@@ -178,13 +179,6 @@ export default function VirtualizedScrollList<T>({
                                         renderFetchingNext && renderFetchingNext() :
                                         renderItem(item, virtualItem.index)
                                     }
-
-                                    {/*{shouldRenderFetchingNext ?*/}
-                                    {/*    renderFetchingNext ?*/}
-                                    {/*        renderFetchingNext() :*/}
-                                    {/*        null :*/}
-                                    {/*    renderItem(item, virtualItem.index)*/}
-                                    {/*}*/}
                                 </div>
                             );
                         })}

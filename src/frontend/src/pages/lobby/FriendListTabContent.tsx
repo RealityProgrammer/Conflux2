@@ -15,7 +15,7 @@ import Spinner from "../../components/Spinner.tsx";
 import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
 import type {FriendRequestAcceptedNotification, UnfriendedNotification} from "../../api/notifications.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
-import useFriendActions from "../../hooks/useFriendActions.tsx";
+import useFriendActions from "../../hooks/useFriendActions.ts";
 import {useCacheService} from "../../hooks/useCacheService.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";

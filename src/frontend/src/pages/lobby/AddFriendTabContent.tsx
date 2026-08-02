@@ -22,7 +22,7 @@ import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
-import useFriendActions from "../../hooks/useFriendActions.tsx";
+import useFriendActions from "../../hooks/useFriendActions.ts";
 
 interface RowProps {
     user: DiscoverFriendElement;

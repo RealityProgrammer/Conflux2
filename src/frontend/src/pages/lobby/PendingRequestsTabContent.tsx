@@ -20,7 +20,7 @@ import type {
     FriendRequestReceivedNotification,
     FriendRequestRejectedNotification
 } from "../../api/notifications.ts";
-import useFriendActions from "../../hooks/useFriendActions.tsx";
+import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import {useCacheService} from "../../hooks/useCacheService.ts";
 

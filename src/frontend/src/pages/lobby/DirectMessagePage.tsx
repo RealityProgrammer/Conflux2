@@ -12,7 +12,7 @@ import Spinner from "../../components/Spinner.tsx";
 import {useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer} from "@tanstack/react-virtual";
 
-const LOAD_COUNT = 50;
+const LOAD_COUNT = 20;
 
 export default function DirectMessagePage() {
     type PageParams = {
@@ -40,6 +40,8 @@ export default function DirectMessagePage() {
         enabled: !!channelId && !!channelSummary,
         queryKey: ["conversation", channelId],
         queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
             const response = await messageService.getMessages({
                 channelId: channelId!,
                 direction: pageParam.direction,
@@ -140,13 +142,17 @@ export default function DirectMessagePage() {
                     }
                 }}
                 renderFetchingPrevious={() => (
-                    <Spinner className="size-6 fill-white"/>
+                    <div className="size-6 flex flex-row justify-center items-center w-full">
+                        <Spinner className="size-6 fill-white"/>
+                    </div>
                 )}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
                 fetchNextPage={() => { fetchNextPage() }}
                 renderFetchingNext={() => (
-                    <Spinner className="size-6 fill-white"/>
+                    <div className="size-6 flex flex-row justify-center items-center w-full">
+                        <Spinner className="size-6 fill-white"/>
+                    </div>
                 )}
                 renderEmpty={() => (
                     <div className="flex flex-1 select-none justify-center items-end text-gray-300 pb-3">
