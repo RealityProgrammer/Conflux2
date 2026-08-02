@@ -118,7 +118,7 @@ builder.Services
     .AddScoped<IChannelService, ChannelService>()
     
     .AddScoped<IMessageRepository, MessageRepository>()
-    .AddScoped<IMessagingService, MessagingService>()
+    .AddScoped<IMessageService, MessageService>()
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
     
     .AddSingleton<IMailingService, MailingService>();

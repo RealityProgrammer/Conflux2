@@ -89,3 +89,17 @@ export type DirectMessageResolutionResponse = {
 export type DirectMessageChannelSummary = {
     otherUser: UserBasicProfileSummary;
 }
+
+export type MessageDto = {
+    id: string;
+    senderUserId: string;
+    body?: string;
+    attachmentIds: string[];
+    createdAt: Date;
+}
+
+export type GetMessagesResponse = {
+    messages: MessageDto[];
+    hasMoreBefore?: boolean;
+    hasMoreAfter?: boolean;
+}

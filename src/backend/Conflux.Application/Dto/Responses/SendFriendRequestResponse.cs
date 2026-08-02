@@ -1,4 +1,5 @@
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Dto.Responses;
 

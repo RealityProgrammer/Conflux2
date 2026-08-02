@@ -1,4 +1,6 @@
 using Conflux.Domain;
+using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Interfaces.Implementations;
@@ -7,13 +9,12 @@ public class MessagingServiceOptions {
     public long MaxAttachmentSizeBytes { get; set; } = 10485760;
 }
 
-internal sealed class MessagingService(
+internal sealed class MessageService(
     IUnitOfWork unitOfWork,
     IMessageRepository messageRepository,
     IChannelRepository channelRepository,
-    IStorageService storageService,
     TimeProvider timeProvider
-) : IMessagingService {
+) : IMessageService {
     public async Task<Result> SendMessageAsync(
         Guid senderUserId,
         Guid channelId,
@@ -41,5 +42,30 @@ internal sealed class MessagingService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
+    }
+
+    public async Task<Result<GetMessagesResult>> GetMessagesAsync(
+        Guid channelId,
+        MessageLoadDirection? direction,
+        Guid? cursorMessageId,
+        int count,
+        CancellationToken cancellationToken = default
+    ) {
+        var result = 
+            await channelRepository.GetConversationPostingContext(Guid.Empty, channelId);
+
+        if (result.IsSuccess) {
+            var postingContext = result.Value;
+            
+            return await messageRepository.GetMessagesAsync(
+                postingContext!.ConversationId, 
+                direction, 
+                cursorMessageId,
+                count,
+                cancellationToken
+            );
+        }
+
+        return result.Error;
     }
 }

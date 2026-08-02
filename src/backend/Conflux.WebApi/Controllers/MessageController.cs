@@ -2,6 +2,8 @@ using Conflux.Application.Dto.Requests;
 using Conflux.Application.Interfaces;
 using Conflux.Application.Interfaces.Implementations;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +15,7 @@ namespace Conflux.WebApi.Controllers;
 [Route("/api/channels/{channelId:guid}/messages")]
 [Authorize]
 public sealed class MessageController(
-    IMessagingService messagingService,
+    IMessageService messageService,
     IStorageService storageService
 ) : ControllerBase {
     [HttpPost]
@@ -52,7 +54,7 @@ public sealed class MessageController(
             }
         }
         
-        Result result = await messagingService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
+        Result result = await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
 
         if (result.IsSuccess) {
             return Created();
@@ -67,10 +69,10 @@ public sealed class MessageController(
     }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponse>> LoadMessage(
+    public async Task<ActionResult<ApiResponse<GetMessagesResult>>> LoadMessage(
         Guid channelId,
-        [FromQuery, Required] MessageLoadDirection direction,
-        [FromQuery, Required] Guid cursor,
+        [FromQuery] MessageLoadDirection? direction,
+        [FromQuery] Guid? cursor,
         [FromQuery, Required] int count,
         CancellationToken cancellationToken
     ) {
@@ -81,12 +83,15 @@ public sealed class MessageController(
         }
         
         // TODO: Check if user has permission to view messages at this channel at service.
-        return StatusCode(StatusCodes.Status501NotImplemented);
-    }
 
-    public enum MessageLoadDirection {
-        Before,
-        After,
+        Result<GetMessagesResult> result = 
+            await messageService.GetMessagesAsync(channelId, direction, cursor, count, cancellationToken);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<GetMessagesResult>(result.Value, Error.None));
+        }
+        
+        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResult>(null, result.Error));
     }
 
     public record SendMessageRequest(

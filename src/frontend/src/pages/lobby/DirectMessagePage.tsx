@@ -1,22 +1,102 @@
 import {useLoaderData, useParams} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
-import IconButton from "../../components/IconButton.tsx";
-import {BsPaperclip, BsSend} from "react-icons/bs";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
-import {messagingService} from "../../api/messagingService.ts";
+import {messageService} from "../../api/messageService.ts";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import type {GetMessagesResponse, MessageDto} from "../../api/responses.ts";
+import type {MessageLoadDirection} from "../../api/requests.ts";
+import Spinner from "../../components/Spinner.tsx";
+import {useEffect, useRef} from "react";
+import type {ReactVirtualizer} from "@tanstack/react-virtual";
 
 export default function DirectMessagePage() {
+    type PageParams = {
+        cursorId?: string;
+        direction: MessageLoadDirection;
+    }
+
     useDocumentTitle("DM - Conflux");
 
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
+    const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
+
+    const {
+        data,
+        hasPreviousPage,
+        isFetchingPreviousPage,
+        fetchPreviousPage,
+        hasNextPage,
+        isFetchingNextPage,
+        fetchNextPage,
+        isLoading,
+    } = useInfiniteQuery({
+        enabled: !!channelId && !!channelSummary,
+        queryKey: ["conversation", channelId],
+        queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
+            const response = await messageService.getMessages({
+                channelId: channelId!,
+                direction: pageParam.direction,
+                cursor: pageParam.cursorId,
+                count: 50,
+            });
+
+            return response.data;
+        },
+        initialPageParam: {
+            cursorId: undefined,
+            direction: "Before",
+        },
+
+        getPreviousPageParam: (firstPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
+            if (firstPage?.hasMoreBefore && firstPage.messages.length > 0) {
+                const oldestMessage = firstPage.messages[0];
+
+                return {
+                    cursorId: oldestMessage.id,
+                    direction: 'Before'
+                };
+            }
+
+            return undefined;
+        },
+
+        getNextPageParam: (lastPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
+            if (lastPage?.hasMoreAfter && lastPage.messages.length > 0) {
+                const newestMessage = lastPage.messages[lastPage.messages.length - 1];
+
+                return {
+                    cursorId: newestMessage.id,
+                    direction: 'After'
+                };
+            }
+
+            return undefined;
+        },
+        staleTime: 60 * 30,
+    });
+
+    const allMessages: MessageDto[] = data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
+
+    useEffect(() => {
+        if (allMessages.length > 0 && !isFetchingPreviousPage) {
+            requestAnimationFrame(() => {
+                const virtualizer = virtualizerRef.current;
+                if (!virtualizer) return;
+
+                const totalVirtualItems = virtualizer.options.count;
+
+                virtualizer.scrollToIndex(totalVirtualItems - 1, { align: 'end' });
+            });
+        }
+    }, [data, isFetchingPreviousPage]);
 
     const handleSendMessage = async (messagePayload: ChatInputMessageState) => {
         if (!channelId) return;
 
-        await messagingService.sendMessage(channelId, messagePayload.messageBody, messagePayload.attachments);
+        await messageService.sendMessage(channelId, messagePayload.messageBody, messagePayload.attachments);
     };
 
     return (
@@ -35,13 +115,23 @@ export default function DirectMessagePage() {
             </header>
 
             <VirtualizedScrollList
+                virtualizerRef={virtualizerRef}
                 className="flex-1 min-h-0"
-                items={[]}
-                isLoading={false}
+                items={allMessages}
+                isLoading={isLoading}
                 estimateSize={52}
-                hasNextPage={false}
-                isFetchingNextPage={false}
-                fetchNextPage={() => {}}
+                hasPreviousPage={hasPreviousPage}
+                isFetchingPreviousPage={isFetchingPreviousPage}
+                fetchPreviousPage={() => { fetchPreviousPage() }}
+                renderFetchingPrevious={() => (
+                    <Spinner className="size-6 fill-white"/>
+                )}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                fetchNextPage={() => { fetchNextPage() }}
+                renderFetchingNext={() => (
+                    <Spinner className="size-6 fill-white"/>
+                )}
                 renderEmpty={() => (
                     <div className="flex flex-1 select-none justify-center items-end text-gray-300 pb-3">
                         And our story begin...
@@ -49,7 +139,7 @@ export default function DirectMessagePage() {
                 )}
                 renderItem={(item) => {
                     return (
-                        <p>Value {item}</p>
+                        <p style={{height: '52px'}}>{item?.body ?? "null"}</p>
                     );
                 }}/>
 

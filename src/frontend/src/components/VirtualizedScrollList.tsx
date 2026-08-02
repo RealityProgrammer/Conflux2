@@ -3,13 +3,14 @@ import {
     type HTMLAttributes,
     type ReactNode,
     type RefObject,
-    useEffect,
+    useEffect, useImperativeHandle,
     useRef
 } from "react";
-import {useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
+import {type ReactVirtualizer, useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof ScrollArea.Root> {
+    virtualizerRef?: RefObject<ReactVirtualizer<HTMLDivElement, Element>>
     viewportClassName?: string;
 
     items: T[];
@@ -29,10 +30,13 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     renderEmpty?: () => ReactNode;
     renderItem: (item: T, index: number) => ReactNode;
     renderSkeletonItem?: (index: number) => ReactNode;
+
+    renderFetchingPrevious?: () => ReactNode;
     renderFetchingNext?: () => ReactNode;
 }
 
 export default function VirtualizedScrollList<T>({
+    virtualizerRef,
     className,
     viewportClassName,
     items,
@@ -49,6 +53,7 @@ export default function VirtualizedScrollList<T>({
     renderEmpty,
     renderItem,
     renderSkeletonItem,
+    renderFetchingPrevious,
     renderFetchingNext,
     ...props
 }: VirtualizedScrollListProps<T>) {
@@ -65,6 +70,8 @@ export default function VirtualizedScrollList<T>({
         overscan,
     });
 
+    useImperativeHandle(virtualizerRef, () => virtualizer, [virtualizer]);
+
     const virtualItems = virtualizer.getVirtualItems();
     const totalHeight = virtualizer.getTotalSize();
 
@@ -73,8 +80,8 @@ export default function VirtualizedScrollList<T>({
         if (!fetchPreviousPage || virtualItems.length === 0) return;
 
         const lastVirtualItem = virtualItems[virtualItems.length - 1];
-        if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+        if (lastVirtualItem.index >= virtualCount - 1 && hasPreviousPage && !isFetchingPreviousPage) {
+            fetchPreviousPage();
         }
     }, [virtualItems, hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage]);
 
@@ -107,8 +114,8 @@ export default function VirtualizedScrollList<T>({
                     /* Virtualized List Container */
                     <div className="relative w-full" style={{ height: `${totalHeight}px` }}>
                         {virtualItems.map((virtualItem) => {
-                            const isFetchingPrev = hasPreviousPage && virtualItem.index === 0;
-                            const isFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
+                            const shouldRenderFetchingPrevious = hasPreviousPage && virtualItem.index === 0;
+                            const shouldRenderFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
 
                             // Shift the array index back by 1 if there's a previous loader at index 0
                             const itemIndex = virtualItem.index - prevOffset;
@@ -120,17 +127,24 @@ export default function VirtualizedScrollList<T>({
                                     // according to https://tanstack.com/virtual/latest/docs/api/virtualizer#measureelement-2
                                     data-index={virtualItem.index}
                                     ref={virtualizer.measureElement}
-                                    className={`absolute left-0 top-0 flex w-full flex-row items-center gap-1 transition-colors duration-150 ease-linear hover-highlight`}
+                                    className={`absolute left-0 top-0 flex w-full`}
                                     style={{
                                         transform: `translateY(${virtualItem.start}px)`,
                                     }}
                                 >
-                                    {isFetchingNext ?
-                                        renderFetchingNext ?
-                                            renderFetchingNext() :
-                                            null :
+                                    {shouldRenderFetchingPrevious ?
+                                        renderFetchingPrevious && renderFetchingPrevious() :
+                                    shouldRenderFetchingNext ?
+                                        renderFetchingNext && renderFetchingNext() :
                                         renderItem(item, virtualItem.index)
                                     }
+
+                                    {/*{shouldRenderFetchingNext ?*/}
+                                    {/*    renderFetchingNext ?*/}
+                                    {/*        renderFetchingNext() :*/}
+                                    {/*        null :*/}
+                                    {/*    renderItem(item, virtualItem.index)*/}
+                                    {/*}*/}
                                 </div>
                             );
                         })}

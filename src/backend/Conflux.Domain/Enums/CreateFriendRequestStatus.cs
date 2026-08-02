@@ -1,4 +1,4 @@
-namespace Conflux.Domain.Dto;
+namespace Conflux.Domain.Enums;
 
 public enum CreateFriendRequestStatus {
     Success,

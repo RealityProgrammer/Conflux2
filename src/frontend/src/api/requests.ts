@@ -28,3 +28,12 @@ export class NoAvatarModification {
 }
 
 export type AvatarOperation = SetAvatar | DeleteAvatar | NoAvatarModification;
+
+export type MessageLoadDirection = "Before" | "After" | "Around";
+
+export type GetMessagesRequest = {
+    channelId: string;
+    direction?: MessageLoadDirection;
+    cursor?: string;
+    count: number;
+};
