@@ -11,7 +11,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
 
     return useInfiniteQuery({
         enabled: !!channelId,
-        queryKey: ["conversation", channelId],
+        queryKey: ["channelConversation", channelId],
         queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
             await new Promise(resolve => setTimeout(resolve, 1000));
 
