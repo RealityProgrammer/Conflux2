@@ -10,7 +10,8 @@ import {type ReactVirtualizer, useVirtualizer, type VirtualItem} from "@tanstack
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof ScrollArea.Root> {
-    virtualizerRef?: RefObject<ReactVirtualizer<HTMLDivElement, Element>>
+    virtualizerRef?: RefObject<ReactVirtualizer<HTMLDivElement, Element>>;
+    viewportRef?: RefObject<HTMLDivElement | null>;
     viewportClassName?: string;
 
     items: T[];
@@ -29,7 +30,7 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     fetchNextPage: () => void | Promise<void>;
 
     renderEmpty?: () => ReactNode;
-    renderItem: (item: T, index: number) => ReactNode;
+    renderItem: (item: T, virtualItem: VirtualItem) => ReactNode;
     renderSkeletonItem?: (index: number) => ReactNode;
 
     renderFetchingPrevious?: () => ReactNode;
@@ -38,6 +39,7 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
 
 export default function VirtualizedScrollList<T>({
     virtualizerRef,
+    viewportRef,
     className,
     viewportClassName,
     items,
@@ -138,7 +140,13 @@ export default function VirtualizedScrollList<T>({
     return (
         <ScrollArea.Root className={`overflow-hidden ${className}`} {...props}>
             <ScrollArea.Viewport
-                ref={scrollViewportRef}
+                ref={(node) => {
+                    scrollViewportRef.current = node!;
+
+                    if (viewportRef) {
+                        viewportRef.current = node!;
+                    }
+                }}
                 className={`size-full [&>div]:flex! [&>div]:min-h-full [&>div]:flex-col ${viewportClassName || ""}`}
                 style={{ overflowAnchor: 'none' }}
             >
@@ -171,13 +179,14 @@ export default function VirtualizedScrollList<T>({
                                     className={`absolute left-0 top-0 flex w-full`}
                                     style={{
                                         transform: `translateY(${virtualItem.start}px)`,
+                                        height: `${virtualItem.size}px`,
                                     }}
                                 >
                                     {shouldRenderFetchingPrevious ?
                                         renderFetchingPrevious && renderFetchingPrevious() :
                                     shouldRenderFetchingNext ?
                                         renderFetchingNext && renderFetchingNext() :
-                                        renderItem(item, virtualItem.index)
+                                        renderItem(item, virtualItem)
                                     }
                                 </div>
                             );
