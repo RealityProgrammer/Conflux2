@@ -1,9 +1,9 @@
 import {
     type ComponentPropsWithoutRef,
-    type HTMLAttributes,
+    type HTMLAttributes, type Key,
     type ReactNode,
     type RefObject,
-    useEffect, useImperativeHandle,
+    useEffect, useImperativeHandle, useLayoutEffect,
     useRef
 } from "react";
 import {type ReactVirtualizer, useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
@@ -18,6 +18,7 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     estimateSize: ((index: number) => number) | number;
     pageSize?: number;
     overscan?: number;
+    keyExtractor?: (item: T, index: number) => Key;
 
     hasPreviousPage?: boolean;
     isFetchingPreviousPage?: boolean;
@@ -44,6 +45,7 @@ export default function VirtualizedScrollList<T>({
     estimateSize,
     pageSize = 20,
     overscan = 5,
+    keyExtractor,
     hasPreviousPage,
     isFetchingPreviousPage,
     fetchPreviousPage,
@@ -68,19 +70,57 @@ export default function VirtualizedScrollList<T>({
         getScrollElement: () => scrollViewportRef.current,
         estimateSize: typeof estimateSize === 'function' ? estimateSize : () => estimateSize,
         overscan,
+        getItemKey: (index) => {
+            if (index === 0 && hasPreviousPage) return '__loader-prev';
+            if (index === virtualCount - 1 && hasNextPage) return '__loader-next';
+
+            const itemIndex = index - prevOffset;
+            const item = items[itemIndex];
+            if (keyExtractor && item) {
+                return keyExtractor(item, itemIndex);
+            }
+            return index;
+        }
     });
 
     useImperativeHandle(virtualizerRef, () => virtualizer, [virtualizer]);
+
+    const prevFirstItem = useRef<T | undefined>(undefined);
+    const prevTotalSize = useRef(0);
+    const justPrepended = useRef(false);
+
+    useLayoutEffect(() => {
+        const currentTotalSize = virtualizer.getTotalSize();
+        const currentFirstItem = items[0];
+
+        if (currentFirstItem && prevFirstItem.current && currentFirstItem !== prevFirstItem.current) {
+            const sizeDiff = currentTotalSize - prevTotalSize.current;
+            if (scrollViewportRef.current && sizeDiff > 0) {
+                scrollViewportRef.current.scrollTop += sizeDiff;
+
+                justPrepended.current = true;
+                requestAnimationFrame(() => {
+                    justPrepended.current = false;
+                });
+            }
+        }
+
+        prevFirstItem.current = currentFirstItem;
+    }, [items, virtualizer]);
+
+    useLayoutEffect(() => {
+        prevTotalSize.current = virtualizer.getTotalSize();
+    });
 
     const virtualItems = virtualizer.getVirtualItems();
     const totalHeight = virtualizer.getTotalSize();
 
     // trigger previous page load
     useEffect(() => {
-        if (!fetchPreviousPage || virtualItems.length === 0) return;
+        if (justPrepended.current || !fetchPreviousPage || virtualItems.length === 0) return;
 
-        const lastVirtualItem = virtualItems[virtualItems.length - 1];
-        if (lastVirtualItem.index >= virtualCount - 1 && hasPreviousPage && !isFetchingPreviousPage) {
+        const firstVirtualItem = virtualItems[0];
+        if (firstVirtualItem.index === 0 && hasPreviousPage && !isFetchingPreviousPage) {
             fetchPreviousPage();
         }
     }, [virtualItems, hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage]);

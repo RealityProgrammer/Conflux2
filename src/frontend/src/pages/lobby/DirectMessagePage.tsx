@@ -9,8 +9,10 @@ import {useInfiniteQuery} from "@tanstack/react-query";
 import type {GetMessagesResponse, MessageDto} from "../../api/responses.ts";
 import type {MessageLoadDirection} from "../../api/requests.ts";
 import Spinner from "../../components/Spinner.tsx";
-import {useEffect, useRef} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer} from "@tanstack/react-virtual";
+
+const LOAD_COUNT = 50;
 
 export default function DirectMessagePage() {
     type PageParams = {
@@ -22,6 +24,8 @@ export default function DirectMessagePage() {
 
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
+
+    const [isReady, setIsReady] = useState(false);
 
     const {
         data,
@@ -40,7 +44,7 @@ export default function DirectMessagePage() {
                 channelId: channelId!,
                 direction: pageParam.direction,
                 cursor: pageParam.cursorId,
-                count: 50,
+                count: LOAD_COUNT,
             });
 
             return response.data;
@@ -76,12 +80,13 @@ export default function DirectMessagePage() {
             return undefined;
         },
         staleTime: 60 * 30,
+        refetchOnWindowFocus: false,
     });
 
     const allMessages: MessageDto[] = data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
 
-    useEffect(() => {
-        if (allMessages.length > 0 && !isFetchingPreviousPage) {
+    useLayoutEffect(() => {
+        if (allMessages.length > 0 && !isReady) {
             requestAnimationFrame(() => {
                 const virtualizer = virtualizerRef.current;
                 if (!virtualizer) return;
@@ -89,9 +94,15 @@ export default function DirectMessagePage() {
                 const totalVirtualItems = virtualizer.options.count;
 
                 virtualizer.scrollToIndex(totalVirtualItems - 1, { align: 'end' });
+
+                requestAnimationFrame(() => {
+                    setIsReady(true);
+                });
             });
+        } else if (!isLoading && allMessages.length === 0) {
+            setIsReady(true);
         }
-    }, [data, isFetchingPreviousPage]);
+    }, [allMessages.length, isLoading, isReady]);
 
     const handleSendMessage = async (messagePayload: ChatInputMessageState) => {
         if (!channelId) return;
@@ -118,11 +129,16 @@ export default function DirectMessagePage() {
                 virtualizerRef={virtualizerRef}
                 className="flex-1 min-h-0"
                 items={allMessages}
+                keyExtractor={(item) => item.id}
                 isLoading={isLoading}
                 estimateSize={52}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
-                fetchPreviousPage={() => { fetchPreviousPage() }}
+                fetchPreviousPage={() => {
+                    if (isReady) {
+                        fetchPreviousPage()
+                    }
+                }}
                 renderFetchingPrevious={() => (
                     <Spinner className="size-6 fill-white"/>
                 )}
