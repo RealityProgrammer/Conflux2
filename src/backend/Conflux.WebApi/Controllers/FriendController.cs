@@ -128,8 +128,8 @@ public sealed class FriendController(
     [Authorize]
     public async Task<ActionResult<ApiResponse<PaginatedResult<DiscoverFriendSummary>>>> DiscoverUsers(
         [FromQuery] string? name,
-        [FromQuery] int offset,
-        [FromQuery] int count
+        [FromQuery, Required] int offset,
+        [FromQuery, Required] int count
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -156,8 +156,8 @@ public sealed class FriendController(
     [Authorize]
     public async Task<ActionResult<ApiResponse<PaginatedResult<FriendSummary>>>> QueryFriends(
         [FromQuery] string? name,
-        [FromQuery] int offset,
-        [FromQuery] int count
+        [FromQuery, Required] int offset,
+        [FromQuery, Required] int count
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -184,8 +184,8 @@ public sealed class FriendController(
     [Authorize]
     public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestSummary>>>> QueryPendingRequests(
         [FromQuery] string? name,
-        [FromQuery] int offset,
-        [FromQuery] int count
+        [FromQuery, Required] int offset,
+        [FromQuery, Required] int count
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 

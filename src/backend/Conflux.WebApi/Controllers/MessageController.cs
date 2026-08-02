@@ -66,6 +66,29 @@ public sealed class MessageController(
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
     }
 
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse>> LoadMessage(
+        Guid channelId,
+        [FromQuery, Required] MessageLoadDirection direction,
+        [FromQuery, Required] Guid cursor,
+        [FromQuery, Required] int count,
+        CancellationToken cancellationToken
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        // TODO: Check if user has permission to view messages at this channel at service.
+        return StatusCode(StatusCodes.Status501NotImplemented);
+    }
+
+    public enum MessageLoadDirection {
+        Before,
+        After,
+    }
+
     public record SendMessageRequest(
         [StringLength(1024, ErrorMessage = "Message body surpassed 1024 characters.")]
         string? Body,
