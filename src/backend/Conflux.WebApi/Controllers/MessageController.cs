@@ -115,7 +115,7 @@ public sealed class MessageController(
                 var configuration = validationContext.GetService<IConfiguration>()!;
                 var options = configuration.GetSection("Services:User").Get<MessagingServiceOptions>()!;
                 
-                if (Attachments.Length > options.MaxAttachmentsCount) {
+                if (Attachments.Length > 4) {
                     yield return new("Only 4 attachments allowed in a message.", [
                         nameof(Attachments),
                     ]);

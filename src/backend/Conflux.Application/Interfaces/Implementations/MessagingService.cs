@@ -4,7 +4,6 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Interfaces.Implementations;
 
 public class MessagingServiceOptions {
-    public int MaxAttachmentsCount { get; set; } = 4;
     public long MaxAttachmentSizeBytes { get; set; } = 10485760;
 }
 
