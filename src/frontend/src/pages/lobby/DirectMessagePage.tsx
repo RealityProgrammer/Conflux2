@@ -1,25 +1,19 @@
-import {useLoaderData, useParams} from "react-router";
+import {useLoaderData} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import {useInfiniteQuery} from "@tanstack/react-query";
-import type {GetMessagesResponse, MessageDto} from "../../api/responses.ts";
-import type {MessageLoadDirection} from "../../api/requests.ts";
+import type {MessageDto} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer} from "@tanstack/react-virtual";
+import useGetMessages from "../../hooks/useGetMessages.ts";
 
 const LOAD_COUNT = 20;
 
 export default function DirectMessagePage() {
-    type PageParams = {
-        cursorId?: string;
-        direction: MessageLoadDirection;
-    }
-
     useDocumentTitle("DM - Conflux");
 
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
@@ -36,54 +30,7 @@ export default function DirectMessagePage() {
         isFetchingNextPage,
         fetchNextPage,
         isLoading,
-    } = useInfiniteQuery({
-        enabled: !!channelId && !!channelSummary,
-        queryKey: ["conversation", channelId],
-        queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-
-            const response = await messageService.getMessages({
-                channelId: channelId!,
-                direction: pageParam.direction,
-                cursor: pageParam.cursorId,
-                count: LOAD_COUNT,
-            });
-
-            return response.data;
-        },
-        initialPageParam: {
-            cursorId: undefined,
-            direction: "Before",
-        },
-
-        getPreviousPageParam: (firstPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
-            if (firstPage?.hasMoreBefore && firstPage.messages.length > 0) {
-                const oldestMessage = firstPage.messages[0];
-
-                return {
-                    cursorId: oldestMessage.id,
-                    direction: 'Before'
-                };
-            }
-
-            return undefined;
-        },
-
-        getNextPageParam: (lastPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
-            if (lastPage?.hasMoreAfter && lastPage.messages.length > 0) {
-                const newestMessage = lastPage.messages[lastPage.messages.length - 1];
-
-                return {
-                    cursorId: newestMessage.id,
-                    direction: 'After'
-                };
-            }
-
-            return undefined;
-        },
-        staleTime: 60 * 30,
-        refetchOnWindowFocus: false,
-    });
+    } = useGetMessages(channelId, LOAD_COUNT);
 
     const allMessages: MessageDto[] = data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
 
