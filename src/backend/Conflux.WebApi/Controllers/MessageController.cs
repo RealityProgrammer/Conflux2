@@ -12,7 +12,7 @@ namespace Conflux.WebApi.Controllers;
 [ApiController]
 [Route("/api/channels/{channelId:guid}/messages")]
 [Authorize]
-public sealed class MessagingController(
+public sealed class MessageController(
     IMessagingService messagingService,
     IStorageService storageService
 ) : ControllerBase {
