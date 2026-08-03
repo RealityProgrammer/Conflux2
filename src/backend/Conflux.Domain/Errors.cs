@@ -98,4 +98,7 @@ public static class Errors {
 
     public static Error AttachmentUploadFailure() =>
         new(nameof(AttachmentUploadFailure), "Failed to upload attachments.");
+    
+    public static Error EmptyMessageContent() =>
+        new(nameof(EmptyMessageContent), "Empty message content.");
 }

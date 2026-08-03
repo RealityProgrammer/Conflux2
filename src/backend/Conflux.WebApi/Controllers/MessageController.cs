@@ -30,6 +30,10 @@ public sealed class MessageController(
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
         }
 
+        if (request.Body.AsSpan().Trim().IsEmpty && request.Attachments is not { Length: > 0 }) {
+            return BadRequest(new ApiResponse<MessageDto>(null, Errors.EmptyMessageContent()));
+        }
+
         IList<Guid> attachmentIds = [];
 
         if (request.Attachments is { Length: > 0 }) {
