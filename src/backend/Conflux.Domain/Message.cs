@@ -6,7 +6,7 @@ public class Message : IHasCreatedAt {
     public Guid Id { get; set; }
     [MaxLength(1024)] public string? Body { get; set; }
 
-    public Guid[] AttachmentIds { get; set; } = [];
+    public Attachment[] Attachments { get; set; } = [];
     
     public Guid SenderUserId { get; set; }
     public ApplicationUser Sender { get; set; } = null!;

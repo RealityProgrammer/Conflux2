@@ -34,20 +34,25 @@ public sealed class MessageController(
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.EmptyMessageContent()));
         }
 
-        IList<Guid> attachmentIds = [];
+        IList<Attachment> attachments = [];
 
         if (request.Attachments is { Length: > 0 }) {
             UploadItem[] uploadItems = 
                 [..request.Attachments.Select(r => new UploadItem(r.OpenReadStream(), r.ContentType))];
 
             try {
-                var uploadResult = await storageService.UploadMessageAttachmentsAsync(
+                Result<List<Guid>> uploadedAttachmentIds = await storageService.UploadMessageAttachmentsAsync(
                     uploadItems,
                     cancellationToken
                 );
 
-                if (uploadResult.IsSuccess) {
-                    attachmentIds = uploadResult.Value!;
+                if (uploadedAttachmentIds.IsSuccess) {
+                    attachments = [..uploadedAttachmentIds.Value!
+                        .Zip(uploadItems, (id, item) => new Attachment {
+                            Id = id,
+                            Type = item.ContentType
+                        }),
+                    ];
                 } else {
                     return StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(Errors.AttachmentUploadFailure()));
                 }
@@ -59,15 +64,15 @@ public sealed class MessageController(
         }
         
         Result<MessageDto> result = 
-            await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
+            await messageService.SendMessageAsync(userId, channelId, request.Body, attachments, cancellationToken);
 
         if (result.IsSuccess) {
             return Created((string?)null, new ApiResponse<MessageDto>(result.Value, Error.None));
         }
         
         // delete uploaded files, hope shit wouldn't break
-        foreach (var attachmentId in attachmentIds) {
-            await storageService.DeleteMessageAttachmentAsync(attachmentId, CancellationToken.None);
+        foreach (var attachment in attachments) {
+            await storageService.DeleteMessageAttachmentAsync(attachment.Id, CancellationToken.None);
         }
         
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError()));

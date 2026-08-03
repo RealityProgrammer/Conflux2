@@ -19,7 +19,7 @@ internal sealed class MessageService(
         Guid senderUserId,
         Guid channelId,
         string? body, 
-        IList<Guid> attachmentKeys,
+        IList<Attachment> attachments,
         CancellationToken cancellationToken = default
     ) {
         var postingContext = 
@@ -31,7 +31,7 @@ internal sealed class MessageService(
         
         Message message = new() {
             Body = body,
-            AttachmentIds = [..attachmentKeys],
+            Attachments = [..attachments],
             SenderUserId = senderUserId,
             ConversationId = postingContext.Value.ConversationId,
             CreatedAt = timeProvider.GetUtcNow(),
@@ -45,7 +45,7 @@ internal sealed class MessageService(
             message.Id,
             senderUserId, 
             body, 
-            message.AttachmentIds,
+            message.Attachments,
             message.CreatedAt
         ));
     }
