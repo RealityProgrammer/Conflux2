@@ -119,6 +119,19 @@ internal sealed class StorageService(
         } catch (AmazonS3Exception e) {
             logger.LogError(e, "S3 threw exception.");
             return Errors.UnexpectedError();
+        } catch (HttpRequestException e) {
+            switch (e.HttpRequestError) {
+                case HttpRequestError.ConnectionError:
+                    return Errors.ConnectionFailure("S3");
+
+                default:
+                    logger.LogError(e, "S3 threw exception.");
+                    return Errors.UnexpectedError();
+
+            }
+        } catch (Exception e) {
+            logger.LogError(e, "S3 threw exception.");
+            return Errors.UnexpectedError();
         }
     }
 
@@ -137,6 +150,18 @@ internal sealed class StorageService(
                 
                 default:
                     logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
+                    return Errors.UnexpectedError();
+            }
+        } catch (AmazonS3Exception e) {
+            logger.LogError(e, "S3 threw exception.");
+            return Errors.UnexpectedError();
+        } catch (HttpRequestException e) {
+            switch (e.HttpRequestError) {
+                case HttpRequestError.ConnectionError:
+                    return Errors.ConnectionFailure("S3");
+
+                default:
+                    logger.LogError(e, "S3 threw exception.");
                     return Errors.UnexpectedError();
             }
         } catch (Exception e) {

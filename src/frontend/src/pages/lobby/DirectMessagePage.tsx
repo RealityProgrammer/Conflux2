@@ -7,18 +7,20 @@ import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.
 import {messageService} from "../../api/messageService.ts";
 import type {GetMessagesResponse, MessageDto, ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
-import {type HTMLAttributes, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer, VirtualItem} from "@tanstack/react-virtual";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {ScrollArea} from "radix-ui";
 
 // https://tanstack.com/virtual/latest/docs/framework/react/examples/pretext?panel=code
 
 const LOAD_COUNT = 50;
 const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BODY_LINE_HEIGHT = 24;
+const MESSAGE_ATTACHMENT_BOTTOM_PADDING = 4;
 
 const preparedCache = new Map<string, PreparedText>();
 
@@ -65,7 +67,7 @@ function getPreparedMessage(message: MessageDto): PreparedText | null {
     return prepared;
 }
 
-function estimateMessageHeight(message: MessageDto, viewportWidth: number, showProfile: boolean): number {
+function estimateMessageBodyHeight(message: MessageDto, viewportWidth: number, showProfile: boolean): number {
     viewportWidth = viewportWidth - 16 - 52;
 
     if (!message.body) return 0;
@@ -171,7 +173,7 @@ export default function DirectMessagePage() {
                 body: payload.data.messageBody,
                 senderUserId: authorization.userProfile?.id ?? `arbitrary-${new Date()}`,
                 createdAt: new Date(),
-                attachmentIds: [],
+                attachmentIds: payload.data.attachments.map((_file, index) => `attachment-${index}`),
                 __status: 'sending',
             };
 
@@ -281,11 +283,18 @@ export default function DirectMessagePage() {
                         return 52;  // should it be happened? shouldn't be, right?
                     }
 
-                    return estimateMessageHeight(
+                    const bodyHeight = estimateMessageBodyHeight(
                         message,
                         viewportWidth,
                         !(message as QueuedMessage).__status && !!displayInfo.userInfo
                     );
+
+                    const attachmentHeight = message.attachmentIds && message.attachmentIds.length > 0 ?
+                        (message as QueuedMessage).__status ?
+                            24 : 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING
+                        : 0;
+
+                    return bodyHeight + attachmentHeight;
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -343,28 +352,57 @@ function MessageRow({ message, displayInfo }: MessageRowProps) {
                             userId={message.senderUserId}
                             className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
 
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <p className="text-base text-white">{displayInfo.userInfo.userName}</p>
 
                             <MessageRowContent message={message}/>
                         </div>
                     </>
                 ) : (
-                    <MessageRowContent message={message} className="ml-13"/>
+                    <div className="ml-13 min-w-0">
+                        <MessageRowContent message={message}/>
+                    </div>
                 )}
             </div>
         </div>
     );
 }
 
-function MessageRowContent({ message, ...props }: { message: MessageDto } & HTMLAttributes<HTMLDivElement>) {
+function MessageRowContent({ message }: { message: MessageDto }) {
     const messageStatus: "sending" | "error" | undefined = (message as QueuedMessage).__status;
 
     return (
-        <div {...props}>
+        <>
             {message.body && (
                 <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : messageStatus === "error" ? "text-red-500" : "text-white"}`}>{message.body}</p>
             )}
-        </div>
-    )
+
+            {message.attachmentIds && message.attachmentIds.length > 0 && (
+                messageStatus ? (
+                    <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : "text-red-500"}`}>{`<${message.attachmentIds.length} attachment>${message.attachmentIds.length && 's'}`}</p>
+                ) : (
+                    <ScrollArea.Root className="h-32 w-full overflow-hidden group">
+                        <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
+                            <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
+                                {message.attachmentIds.map((attachmentId) => {
+                                    return (
+                                        <div className="flex-none overflow-hidden relative group h-full aspect-square bg-red-500">
+
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </ScrollArea.Viewport>
+
+                        <ScrollArea.Scrollbar
+                            className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
+                            orientation="horizontal"
+                        >
+                            <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2" />
+                        </ScrollArea.Scrollbar>
+                    </ScrollArea.Root>
+                )
+            )}
+        </>
+    );
 }

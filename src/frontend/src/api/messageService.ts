@@ -25,7 +25,7 @@ export const messageService = {
 
             if (attachments) {
                 for (let i = 0; i < attachments.length; i++) {
-                    formData.append("attachments[]", attachments[i]);
+                    formData.append("attachments", attachments[i]);
                 }
             }
 
