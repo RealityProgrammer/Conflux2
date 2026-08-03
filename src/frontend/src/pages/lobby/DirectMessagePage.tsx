@@ -18,26 +18,30 @@ const LOAD_COUNT = 20;
 const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BODY_LINE_HEIGHT = 24;
 
-const preparedCache = new Map<string, ReturnType<typeof prepare>>();
+const preparedCache = new Map<string, PreparedText>();
 
 function fallbackTextHeight(text: string, width: number) {
-    const averageCharacterWidth = 7
+    const averageCharacterWidth = 7;
     const charactersPerLine = Math.max(
         1,
         Math.floor(width / averageCharacterWidth),
-    )
+    );
 
     return text.split('\n').reduce((height, paragraph) => {
         const lineCount = Math.max(
             1,
             Math.ceil(paragraph.length / charactersPerLine),
-        )
-        return height + lineCount * BODY_LINE_HEIGHT
-    }, 0)
+        );
+        return height + lineCount * BODY_LINE_HEIGHT;
+    }, 0);
 }
 
-function getPreparedMessage(message: MessageDto): PreparedText {
-    const key = `${message.id}:${message.body}`;
+function getPreparedMessage(message: MessageDto): PreparedText | null {
+    if (!message.body) {
+        return null;
+    }
+
+    const key = message.id;
     const cached = preparedCache.get(key);
 
     if (cached) {
@@ -54,6 +58,8 @@ function getPreparedMessage(message: MessageDto): PreparedText {
 }
 
 function estimateMessageHeight(message: MessageDto, viewportWidth: number): number {
+    if (!message.body) return 0;
+
     const textWidth = Math.max(1, viewportWidth);
 
     const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
@@ -62,7 +68,7 @@ function estimateMessageHeight(message: MessageDto, viewportWidth: number): numb
         return fallbackTextHeight(message.body, textWidth);
     }
 
-    const layoutResult: LayoutResult = layout(getPreparedMessage(message), textWidth, BODY_LINE_HEIGHT);
+    const layoutResult: LayoutResult = layout(getPreparedMessage(message)!, textWidth, BODY_LINE_HEIGHT);
 
     return layoutResult.height;
 }
@@ -82,17 +88,18 @@ export default function DirectMessagePage() {
     });
 
     const {
-        data,
-        hasPreviousPage,
-        isFetchingPreviousPage,
-        fetchPreviousPage,
-        hasNextPage,
-        isFetchingNextPage,
-        fetchNextPage,
-        isLoading,
+        useInfiniteQueryResult: {
+            hasPreviousPage,
+            isFetchingPreviousPage,
+            fetchPreviousPage,
+            hasNextPage,
+            isFetchingNextPage,
+            fetchNextPage,
+            isLoading,
+        },
+        allMessages,
+        userMap
     } = useGetMessages(channelId, LOAD_COUNT);
-
-    const allMessages: MessageDto[] = data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
 
     // jump to the bottom when the messages are rendered
     useLayoutEffect(() => {
@@ -135,49 +142,6 @@ export default function DirectMessagePage() {
                 )}
             </header>
 
-            {/*<VirtualizedScrollList*/}
-            {/*    virtualizerRef={virtualizerRef}*/}
-            {/*    viewportRef={viewportRef}*/}
-            {/*    className="flex-1 min-h-0"*/}
-            {/*    items={allMessages}*/}
-            {/*    keyExtractor={(item) => item.id}*/}
-            {/*    isLoading={false}*/}
-            {/*    estimateSize={(index) => {*/}
-            {/*        const message: MessageDto | undefined = allMessages[index];*/}
-
-            {/*        if (!message) {*/}
-            {/*            return 52;  // should it be happen? shouldn't be, right?*/}
-            {/*        }*/}
-
-            {/*        return estimateMessageHeight(message, viewportWidth);*/}
-            {/*    }}*/}
-            {/*    hasPreviousPage={false}*/}
-            {/*    isFetchingPreviousPage={false}*/}
-            {/*    fetchPreviousPage={() => {}}*/}
-            {/*    renderFetchingPrevious={() => (*/}
-            {/*        <div className="size-6 flex flex-row justify-center items-center w-full">*/}
-            {/*            <Spinner className="size-6 fill-white"/>*/}
-            {/*        </div>*/}
-            {/*    )}*/}
-            {/*    hasNextPage={false}*/}
-            {/*    isFetchingNextPage={false}*/}
-            {/*    fetchNextPage={() => { }}*/}
-            {/*    renderFetchingNext={() => (*/}
-            {/*        <div className="size-6 flex flex-row justify-center items-center w-full">*/}
-            {/*            <Spinner className="size-6 fill-white"/>*/}
-            {/*        </div>*/}
-            {/*    )}*/}
-            {/*    renderEmpty={() => (*/}
-            {/*        <div className="flex flex-1 select-none justify-center items-end text-gray-300 pb-3">*/}
-            {/*            And our story begin...*/}
-            {/*        </div>*/}
-            {/*    )}*/}
-            {/*    renderItem={(item, virtualItem) => {*/}
-            {/*        return (*/}
-            {/*            <p className="text-sm leading-6 hover-highlight w-full whitespace-pre-wrap break-normal">{item?.body ?? "null"}</p>*/}
-            {/*        );*/}
-            {/*    }}/>*/}
-
             <VirtualizedScrollList
                 virtualizerRef={virtualizerRef}
                 viewportRef={viewportRef}
@@ -189,11 +153,7 @@ export default function DirectMessagePage() {
                     const prevOffset = hasPreviousPage ? 1 : 0;
 
                     // if it is loaders, hardcode the size.
-                    if (hasPreviousPage && index == 0) {
-                        return 30;
-                    }
-
-                    if (hasNextPage && index == prevOffset + allMessages.length) {
+                    if ((hasPreviousPage && index == 0) || (hasNextPage && index == prevOffset + allMessages.length)) {
                         return 30;
                     }
 
