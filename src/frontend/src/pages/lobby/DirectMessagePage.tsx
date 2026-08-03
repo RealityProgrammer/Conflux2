@@ -5,10 +5,10 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import type {MessageDto} from "../../api/responses.ts";
+import type {MessageDto, UserBasicProfileSummary} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {useLayoutEffect, useRef, useState} from "react";
-import type {ReactVirtualizer} from "@tanstack/react-virtual";
+import type {ReactVirtualizer, VirtualItem} from "@tanstack/react-virtual";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 
@@ -190,14 +190,25 @@ export default function DirectMessagePage() {
                         And our story begin...
                     </div>
                 )}
-                renderItem={(item, virtualItem) => {
-                    return (
-                        <p style={{height: `${virtualItem.size}px`}} className="text-sm leading-6 hover-highlight w-full whitespace-pre-wrap">{item?.body ?? "null"}</p>
-                    );
-                }}/>
+                renderItem={(item, virtualItem) => (
+                    <MessageRow message={item} virtualItem={virtualItem} allMessages={allMessages} userMap={userMap}/>
+                )}/>
 
             <ChatInput disabled={!channelId || !channelSummary}
                        onSendMessage={handleSendMessage}/>
         </div>
+    );
+}
+
+interface MessageRowProps {
+    message: MessageDto;
+    allMessages: MessageDto[];
+    virtualItem: VirtualItem;
+    userMap: Map<string, UserBasicProfileSummary>;
+}
+
+function MessageRow({ message, virtualItem, allMessages, userMap }: MessageRowProps) {
+    return (
+        <p style={{height: `${virtualItem.size}px`}} className="text-sm leading-6 hover-highlight w-full whitespace-pre-wrap">{item?.body ?? "null"}</p>
     );
 }
