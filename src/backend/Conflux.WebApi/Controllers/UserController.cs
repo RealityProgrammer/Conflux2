@@ -76,9 +76,9 @@ public sealed class UserController(
 
     [HttpGet("avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult<ApiResponse<GetAvatarUrlResponse>>> GetAvatarUrl([FromQuery] string userId) {
+    public async Task<ActionResult> GetAvatarUrl([FromQuery] string userId) {
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userIdGuid)) {
-            return BadRequest(new ApiResponse<GetAvatarUrlResponse>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
         var result = userService.GetAvatarUrl(userIdGuid, Request.IsHttps);

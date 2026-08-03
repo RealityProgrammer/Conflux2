@@ -20,4 +20,6 @@ public interface IMessageService {
         int count,
         CancellationToken cancellationToken = default
     );
+    
+    string GetAttachmentUrl(Guid attachmentId, bool useHttps);
 }

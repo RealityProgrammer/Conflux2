@@ -34,7 +34,7 @@ internal sealed class StorageService(
         return await DeleteFromS3Storage(uniqueKey, cancellationToken);
     }
 
-    public Result<string> GetUserAvatarUrl(Guid userId, bool useHttps) {
+    public string GetUserAvatarPreSignedUrl(Guid userId, bool useHttps) {
         var bucketName = config["MediaAWS:BucketName"];
         var uniqueKey = CreateAvatarUniqueKey(userId);
 
@@ -45,7 +45,7 @@ internal sealed class StorageService(
             Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
         };
         
-        return Result<string>.Success(s3Client.GetPreSignedURL(request));
+        return s3Client.GetPreSignedURL(request);
     }
 
     public async Task<Result<List<Guid>>> UploadMessageAttachmentsAsync(
@@ -168,6 +168,20 @@ internal sealed class StorageService(
             logger.LogError(e, "S3 threw exception.");
             return Errors.UnexpectedError();
         }
+    }
+    
+    public string GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool useHttps) {
+        var bucketName = config["MediaAWS:BucketName"];
+        var uniqueKey = CreateAttachmentUniqueKey(attachmentId);
+
+        var request = new GetPreSignedUrlRequest {
+            BucketName = bucketName,
+            Key = uniqueKey,
+            Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
+            Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
+        };
+        
+        return s3Client.GetPreSignedURL(request);
     }
 
     private static string CreateAvatarUniqueKey(Guid userId) {

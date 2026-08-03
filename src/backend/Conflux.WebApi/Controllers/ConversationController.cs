@@ -12,13 +12,13 @@ using Microsoft.IdentityModel.JsonWebTokens;
 namespace Conflux.WebApi.Controllers;
 
 [ApiController]
-[Route("/api/channels/{channelId:guid}/messages")]
+[Route("api")]
 [Authorize]
-public sealed class MessageController(
+public sealed class ConversationController(
     IMessageService messageService,
     IStorageService storageService
 ) : ControllerBase {
-    [HttpPost]
+    [HttpPost("channels/{channelId:guid}/messages")]
     public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
         Guid channelId, 
         [FromForm] SendMessageRequest request,
@@ -78,7 +78,7 @@ public sealed class MessageController(
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError()));
     }
 
-    [HttpGet]
+    [HttpGet("channels/{channelId:guid}/messages")]
     public async Task<ActionResult<ApiResponse<GetMessagesResult>>> LoadMessage(
         Guid channelId,
         [FromQuery] MessageLoadDirection? direction,
@@ -88,7 +88,7 @@ public sealed class MessageController(
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
@@ -102,6 +102,19 @@ public sealed class MessageController(
         }
         
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResult>(null, result.Error));
+    }
+    
+    [HttpGet("attachments/{attachmentId:guid}")]
+    [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
+    public async Task<ActionResult> GetAvatarUrl(Guid attachmentId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = messageService.GetAttachmentUrl(attachmentId, Request.IsHttps);
+        return Redirect(result);
     }
 
     public record SendMessageRequest(

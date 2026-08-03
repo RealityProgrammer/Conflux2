@@ -12,7 +12,7 @@ public interface IStorageService {
 
     Task<Result> DeleteUserAvatarAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    Result<string> GetUserAvatarUrl(Guid userId, bool useHttps);
+    string GetUserAvatarPreSignedUrl(Guid userId, bool useHttps);
 
     Task<Result<List<Guid>>> UploadMessageAttachmentsAsync(
         IEnumerable<UploadItem> attachments, 
@@ -20,4 +20,6 @@ public interface IStorageService {
     );
 
     Task<Result> DeleteMessageAttachmentAsync(Guid attachmentId, CancellationToken cancellationToken = default);
+    
+    string GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool useHttps);
 }

@@ -269,7 +269,7 @@ export default function DirectMessagePage() {
             <VirtualizedScrollList
                 virtualizerRef={virtualizerRef}
                 viewportRef={viewportRef}
-                className="flex-1 min-h-0"
+                className="flex-1 min-h-0 pb-2"
                 containerClassName="mt-auto"
                 items={displayMessages}
                 keyExtractor={(item) => item.id}
@@ -350,7 +350,7 @@ interface MessageRowProps {
 
 function MessageRow({ message, displayInfo }: MessageRowProps) {
     return (
-        <div className="hover-highlight w-full">
+        <div className={`w-full ${(message as QueuedMessage).__status ? "" : "hover-highlight"}`}>
             <div className="flex flex-row gap-3 mx-2">
                 {displayInfo.userInfo ? (
                     <>
@@ -391,11 +391,25 @@ function MessageRowContent({ message }: { message: MessageDto }) {
                     <ScrollArea.Root className="h-32 w-full overflow-hidden group">
                         <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
                             <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
-                                {message.attachments.map((attachmentId) => {
-                                    return (
-                                        <div className="flex-none overflow-hidden relative group h-full aspect-square bg-red-500">
+                                {message.attachments.map((attachment) => {
+                                    const mediaType: string = attachment.type.slice(0, attachment.type.indexOf("/"));
 
-                                        </div>
+                                    return (
+                                        <>
+                                            {mediaType === "image" ? (
+                                                <div className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer">
+                                                    <img
+                                                        src={messageService.getAttachmentUrl(attachment.id, false)}
+                                                        alt="attachment"
+                                                        className="object-cover size-full"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer">
+
+                                                </div>
+                                            )}
+                                        </>
                                     );
                                 })}
                             </div>

@@ -71,4 +71,18 @@ export const messageService = {
             return handleAxiosError(axiosError);
         }
     },
+
+    getAttachmentUrl: (attachmentId: string, forceRefresh: boolean): string => {
+        let refreshParam: string;
+
+        if (forceRefresh) {
+            const params = new URLSearchParams();
+            params.append("t", new Date().getTime().toString());
+            refreshParam = `?${params.toString()}`;
+        } else {
+            refreshParam = "";
+        }
+
+        return `${import.meta.env.VITE_BACKEND_API_URL}/attachments/${encodeURIComponent(attachmentId)}${refreshParam}`;
+    },
 }

@@ -41,7 +41,7 @@ internal sealed class UserService(
     }
 
     public string GetAvatarUrl(Guid userId, bool useHttps) {
-        return storageService.GetUserAvatarUrl(userId, useHttps).Value;
+        return storageService.GetUserAvatarPreSignedUrl(userId, useHttps);
     }
 
     public async Task<Result> DeleteAvatarAsync(Guid userId) {

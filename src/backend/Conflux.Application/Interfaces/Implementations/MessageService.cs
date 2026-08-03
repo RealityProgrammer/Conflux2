@@ -13,6 +13,7 @@ internal sealed class MessageService(
     IUnitOfWork unitOfWork,
     IMessageRepository messageRepository,
     IChannelRepository channelRepository,
+    IStorageService storageService,
     TimeProvider timeProvider
 ) : IMessageService {
     public async Task<Result<MessageDto>> SendMessageAsync(
@@ -73,5 +74,9 @@ internal sealed class MessageService(
         }
 
         return result.Error;
+    }
+
+    public string GetAttachmentUrl(Guid attachmentId, bool useHttps) {
+        return storageService.GetMessageAttachmentPreSignedUrl(attachmentId, useHttps);
     }
 }
