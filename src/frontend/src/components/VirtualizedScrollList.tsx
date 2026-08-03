@@ -30,7 +30,7 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     fetchNextPage: () => void | Promise<void>;
 
     renderEmpty?: () => ReactNode;
-    renderItem: (item: T, virtualItem: VirtualItem) => ReactNode;
+    renderItem: (item: T, virtualItem: VirtualItem, itemIndex: number) => ReactNode;
     renderSkeletonItem?: (index: number) => ReactNode;
 
     renderFetchingPrevious?: () => ReactNode;
@@ -186,7 +186,7 @@ export default function VirtualizedScrollList<T>({
                                         renderFetchingPrevious && renderFetchingPrevious() :
                                     shouldRenderFetchingNext ?
                                         renderFetchingNext && renderFetchingNext() :
-                                        renderItem(item, virtualItem)
+                                        renderItem(item, virtualItem, itemIndex)
                                     }
                                 </div>
                             );
