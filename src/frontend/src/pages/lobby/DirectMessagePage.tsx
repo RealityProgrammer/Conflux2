@@ -20,6 +20,7 @@ import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/p
 import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {ScrollArea} from "radix-ui";
+import MediaPreviewGallery from "../../components/MediaPreviewGallery.tsx";
 
 // https://tanstack.com/virtual/latest/docs/framework/react/examples/pretext?panel=code
 
@@ -92,6 +93,11 @@ function estimateMessageBodyHeight(message: MessageDto, viewportWidth: number): 
 }
 
 export default function DirectMessagePage() {
+    type MediaGalleryState = {
+        items: Attachment[];
+        currentIndex: number;
+    };
+
     useDocumentTitle("DM - Conflux");
 
     const authorization = useAuthorization();
@@ -251,6 +257,18 @@ export default function DirectMessagePage() {
         previousMessageCount.current = displayMessages.length;
     }, [displayMessages.length, isReady]);
 
+    const [galleryState, setGalleryState] = useState<MediaGalleryState | null>(null);
+
+    const handleAttachmentClick = (messageAttachments: Attachment[], clickedIndex: number) => {
+        setGalleryState({
+            items: messageAttachments.map(att => ({
+                id: att.id,
+                type: att.type
+            })),
+            currentIndex: clickedIndex
+        });
+    };
+
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
             <header className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2">
@@ -265,6 +283,37 @@ export default function DirectMessagePage() {
                     <p>But nobody came...</p>
                 )}
             </header>
+
+            <MediaPreviewGallery
+                open={galleryState != null}
+                onOpenChange={(state) => {
+                    if (!state) {
+                        setGalleryState(null);
+                    }
+                }}
+                initialItem={galleryState ? { source: messageService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false), type: galleryState.items[galleryState.currentIndex].type } : { source: "", type: "" }}
+                hasPreviousItem={() => galleryState !== null && galleryState.currentIndex > 0}
+                getPreviousItem={() => {
+                    const prevIndex = galleryState!.currentIndex - 1;
+                    setGalleryState({ ...galleryState!, currentIndex: prevIndex });
+                    const prevAttachment = galleryState!.items[prevIndex];
+
+                    return {
+                        source: messageService.getAttachmentUrl(prevAttachment.id, false),
+                        type: prevAttachment.type
+                    };
+                }}
+                hasNextItem={() => galleryState !== null && galleryState.currentIndex < galleryState.items.length - 1}
+                getNextItem={() => {
+                    const nextIndex = galleryState!.currentIndex + 1;
+                    setGalleryState({ ...galleryState!, currentIndex: nextIndex });
+                    const nextAttachment = galleryState!.items[nextIndex];
+
+                    return {
+                        source: messageService.getAttachmentUrl(nextAttachment.id, false),
+                        type: nextAttachment.type
+                    };
+                }}/>
 
             <VirtualizedScrollList
                 virtualizerRef={virtualizerRef}
@@ -328,11 +377,10 @@ export default function DirectMessagePage() {
                         And our story begin...
                     </div>
                 )}
-                renderItem={(item, virtualItem, itemIndex) => (
+                renderItem={(item, _virtualItem, itemIndex) => (
                     <MessageRow message={item}
-                                virtualItem={virtualItem}
-                                userMap={userMap}
-                                displayInfo={messageDisplayInfo[itemIndex] ?? { userInfo: undefined }}/>
+                                displayInfo={messageDisplayInfo[itemIndex] ?? { userInfo: undefined }}
+                                onAttachmentClick={handleAttachmentClick}/>
                 )}/>
 
             <ChatInput disabled={!channelId || !channelSummary}
@@ -343,12 +391,11 @@ export default function DirectMessagePage() {
 
 interface MessageRowProps {
     message: MessageDto;
-    virtualItem: VirtualItem;
-    userMap: Map<string, UserBasicProfileSummary>;
     displayInfo: MessageDisplayInfo;
+    onAttachmentClick: (attachments: Attachment[], index: number) => void;
 }
 
-function MessageRow({ message, displayInfo }: MessageRowProps) {
+function MessageRow({ message, displayInfo, onAttachmentClick }: MessageRowProps) {
     return (
         <div className={`w-full ${(message as QueuedMessage).__status ? "" : "hover-highlight"}`}>
             <div className="flex flex-row gap-3 mx-2">
@@ -362,12 +409,12 @@ function MessageRow({ message, displayInfo }: MessageRowProps) {
                         <div className="flex-1 min-w-0">
                             <p className="text-base text-white">{displayInfo.userInfo.userName}</p>
 
-                            <MessageRowContent message={message}/>
+                            <MessageRowContent message={message} onAttachmentClick={onAttachmentClick}/>
                         </div>
                     </>
                 ) : (
                     <div className="ml-13 min-w-0">
-                        <MessageRowContent message={message}/>
+                        <MessageRowContent message={message} onAttachmentClick={onAttachmentClick}/>
                     </div>
                 )}
             </div>
@@ -375,7 +422,7 @@ function MessageRow({ message, displayInfo }: MessageRowProps) {
     );
 }
 
-function MessageRowContent({ message }: { message: MessageDto }) {
+function MessageRowContent({ message, onAttachmentClick }: { message: MessageDto, onAttachmentClick: (attachments: Attachment[], index: number) => void }) {
     const messageStatus: "sending" | "error" | undefined = (message as QueuedMessage).__status;
 
     return (
@@ -391,25 +438,27 @@ function MessageRowContent({ message }: { message: MessageDto }) {
                     <ScrollArea.Root className="h-32 w-full overflow-hidden group">
                         <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
                             <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
-                                {message.attachments.map((attachment) => {
-                                    const mediaType: string = attachment.type.slice(0, attachment.type.indexOf("/"));
+                                {message.attachments.map((attachment, index) => {
+                                    return attachment.type.startsWith("image") ? (
+                                        <div
+                                            key={attachment.id}
+                                            className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
+                                            onClick={() => onAttachmentClick(message.attachments, index)}
+                                        >
+                                            <img
+                                                src={messageService.getAttachmentUrl(attachment.id, false)}
+                                                alt="attachment"
+                                                className="object-cover size-full"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div
+                                            key={attachment.id}
+                                            className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
+                                            onClick={() => onAttachmentClick(message.attachments, index)}
+                                        >
 
-                                    return (
-                                        <>
-                                            {mediaType === "image" ? (
-                                                <div className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer">
-                                                    <img
-                                                        src={messageService.getAttachmentUrl(attachment.id, false)}
-                                                        alt="attachment"
-                                                        className="object-cover size-full"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer">
-
-                                                </div>
-                                            )}
-                                        </>
+                                        </div>
                                     );
                                 })}
                             </div>
