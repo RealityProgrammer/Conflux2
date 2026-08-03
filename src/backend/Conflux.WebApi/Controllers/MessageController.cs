@@ -19,7 +19,7 @@ public sealed class MessageController(
     IStorageService storageService
 ) : ControllerBase {
     [HttpPost]
-    public async Task<ActionResult<ApiResponse>> SendMessage(
+    public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
         Guid channelId, 
         [FromForm] SendMessageRequest request,
         CancellationToken cancellationToken
@@ -27,7 +27,7 @@ public sealed class MessageController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
         }
 
         IList<Guid> attachmentIds = [];
@@ -54,7 +54,8 @@ public sealed class MessageController(
             }
         }
         
-        Result result = await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
+        Result<MessageDto> result = 
+            await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
 
         if (result.IsSuccess) {
             return Created();

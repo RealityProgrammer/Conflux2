@@ -5,7 +5,7 @@ using Conflux.Domain.Enums;
 namespace Conflux.Application.Interfaces;
 
 public interface IMessageService {
-    Task<Result> SendMessageAsync(
+    Task<Result<MessageDto>> SendMessageAsync(
         Guid senderUserId,
         Guid channelId,
         string? body, 

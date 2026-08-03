@@ -15,7 +15,7 @@ internal sealed class MessageService(
     IChannelRepository channelRepository,
     TimeProvider timeProvider
 ) : IMessageService {
-    public async Task<Result> SendMessageAsync(
+    public async Task<Result<MessageDto>> SendMessageAsync(
         Guid senderUserId,
         Guid channelId,
         string? body, 
@@ -41,7 +41,13 @@ internal sealed class MessageService(
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success();
+        return Result<MessageDto>.Success(new(
+            message.Id,
+            senderUserId, 
+            body, 
+            message.AttachmentIds,
+            message.CreatedAt
+        ));
     }
 
     public async Task<Result<GetMessagesResult>> GetMessagesAsync(
