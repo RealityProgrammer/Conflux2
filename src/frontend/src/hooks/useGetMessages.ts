@@ -2,12 +2,12 @@ import {type InfiniteData, useInfiniteQuery, type UseInfiniteQueryResult} from "
 import type {GetMessagesResponse, MessageDto, UserBasicProfileSummary} from "../api/responses.ts";
 import {messageService} from "../api/messageService.ts";
 import type {MessageLoadDirection} from "../api/requests.ts";
-import {useMemo} from "react";
 
 interface UseGetMessagesResult {
     useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
     allMessages: MessageDto[];
     userMap: Map<string, UserBasicProfileSummary>;
+    queryKey: (string | null | undefined)[];
 }
 
 export default function useGetMessages(channelId: string | null | undefined, loadCount: number): UseGetMessagesResult {
@@ -16,9 +16,11 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         direction: MessageLoadDirection;
     }
 
+    const queryKey = ["channelConversation", channelId];
+
     const queryResult = useInfiniteQuery({
         enabled: !!channelId,
-        queryKey: ["channelConversation", channelId],
+        queryKey,
         queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
             const response = await messageService.getMessages({
                 channelId: channelId!,
@@ -78,5 +80,5 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         }
     }
 
-    return { useInfiniteQueryResult: queryResult, allMessages, userMap };
+    return { useInfiniteQueryResult: queryResult, allMessages, userMap, queryKey };
 }

@@ -5,16 +5,18 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import type {MessageDto, UserBasicProfileSummary} from "../../api/responses.ts";
+import type {MessageDto, ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
-import {type HTMLAttributes, useLayoutEffect, useRef, useState} from "react";
+import {type HTMLAttributes, useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer, VirtualItem} from "@tanstack/react-virtual";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {useAuthorization} from "../../contexts/AuthContext.tsx";
 
 // https://tanstack.com/virtual/latest/docs/framework/react/examples/pretext?panel=code
 
-const LOAD_COUNT = 20;
+const LOAD_COUNT = 50;
 const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BODY_LINE_HEIGHT = 24;
 
@@ -23,6 +25,8 @@ const preparedCache = new Map<string, PreparedText>();
 type MessageDisplayInfo = {
     userInfo?: UserBasicProfileSummary;
 }
+
+type QueuedMessage = MessageDto & { __status: 'sending' | 'error' };
 
 function fallbackTextHeight(text: string, width: number) {
     const averageCharacterWidth = 7;
@@ -82,8 +86,11 @@ function estimateMessageHeight(message: MessageDto, viewportWidth: number, showP
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
 
+    const authorization = useAuthorization();
+
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
 
+    const queryClient = useQueryClient();
     const viewportRef = useRef<HTMLDivElement>(null!);
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
 
@@ -104,20 +111,27 @@ export default function DirectMessagePage() {
             isLoading,
         },
         allMessages,
-        userMap
+        userMap,
+        queryKey
     } = useGetMessages(channelId, LOAD_COUNT);
 
-    // bake the rendering info
-    const messageDisplayInfo: MessageDisplayInfo[] = new Array(allMessages.length);
+    const [pendingQueue, setPendingQueue] = useState<QueuedMessage[]>([]);
 
-    if (allMessages.length > 0) {
+    console.log("pending queue:", JSON.stringify(pendingQueue));
+
+    const displayMessages = [...allMessages, ...pendingQueue];
+
+    // bake the rendering info
+    const messageDisplayInfo: MessageDisplayInfo[] = new Array(displayMessages.length);
+
+    if (displayMessages.length > 0) {
         messageDisplayInfo[0] = {
-            userInfo: userMap.get(allMessages[0].senderUserId),
+            userInfo: userMap.get(displayMessages[0].senderUserId),
         }
 
-        for (let i = 1; i < allMessages.length; i += 1) {
-            const previousMessage = allMessages[i - 1];
-            const currentMessage = allMessages[i];
+        for (let i = 1; i < displayMessages.length; i += 1) {
+            const previousMessage = displayMessages[i - 1];
+            const currentMessage = displayMessages[i];
 
             messageDisplayInfo[i] = {
                 userInfo: previousMessage.senderUserId === currentMessage.senderUserId ?
@@ -129,7 +143,7 @@ export default function DirectMessagePage() {
 
     // jump to the bottom when the messages are rendered
     useLayoutEffect(() => {
-        if (allMessages.length > 0 && !isReady) {
+        if (displayMessages.length > 0 && !isReady) {
             requestAnimationFrame(() => {
                 const virtualizer = virtualizerRef.current;
                 if (!virtualizer) return;
@@ -142,16 +156,74 @@ export default function DirectMessagePage() {
                     setIsReady(true);
                 });
             });
-        } else if (!isLoading && allMessages.length === 0) {
+        } else if (!isLoading && displayMessages.length === 0) {
             setIsReady(true);
         }
-    }, [allMessages.length, isLoading, isReady]);
+    }, [displayMessages.length, isLoading, isReady]);
+
+    const sendMessageMutation = useMutation({
+        mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }) => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
+        },
+        onMutate: async (payload: { tempId: string, data: ChatInputMessageState }) => {
+            const queuedMessage: QueuedMessage = {
+                id: payload.tempId,
+                body: payload.data.messageBody,
+                senderUserId: authorization.userProfile?.id ?? `arbitrary-${new Date()}`,
+                createdAt: new Date(),
+                attachmentIds: [],
+                __status: 'sending',
+            };
+
+            setPendingQueue((prev) => [...prev, queuedMessage]);
+        },
+        onSuccess: async (data: ServiceResponse, payload: { tempId: string, data: ChatInputMessageState }) => {
+            if (!data.success) {
+                setPendingQueue((prev) => prev.map(m =>
+                    m.id === payload.tempId ? { ...m, __status: 'error' } : m
+                ));
+
+                return;
+            }
+
+            // invalidate the query, await to allow it to finish
+            await queryClient.invalidateQueries({ queryKey });
+
+            // remove the query
+            setPendingQueue((prev) => prev.filter(m => m.id !== payload.tempId));
+        },
+        onError: (err, payload: { tempId: string, data: ChatInputMessageState }) => {
+            setPendingQueue((prev) => prev.map(m =>
+                m.id === payload.tempId ? { ...m, __status: 'error' } : m
+            ));
+        },
+    })
 
     const handleSendMessage = async (messagePayload: ChatInputMessageState) => {
         if (!channelId) return;
 
-        await messageService.sendMessage(channelId, messagePayload.messageBody, messagePayload.attachments);
+        const tempId = `__queue_message-${Date.now()}`;
+        sendMessageMutation.mutate({ tempId, data: messagePayload });
     };
+
+    const previousMessageCount = useRef(displayMessages.length);
+
+    useEffect(() => {
+        // array grew means a new message arrived, or user send something that causes queue array to changed
+        if (displayMessages.length > previousMessageCount.current && isReady) {
+            requestAnimationFrame(() => {
+                const virtualizer = virtualizerRef.current;
+                if (!virtualizer) return;
+
+                // Jump to the newest message
+                virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
+            });
+        }
+
+        previousMessageCount.current = displayMessages.length;
+    }, [displayMessages.length, isReady]);
 
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -172,25 +244,30 @@ export default function DirectMessagePage() {
                 virtualizerRef={virtualizerRef}
                 viewportRef={viewportRef}
                 className="flex-1 min-h-0"
-                items={allMessages}
+                containerClassName="mt-auto"
+                items={displayMessages}
                 keyExtractor={(item) => item.id}
                 isLoading={isLoading}
                 estimateSize={(index) => {
                     const prevOffset = hasPreviousPage ? 1 : 0;
 
                     // if it is loaders, hardcode the size.
-                    if ((hasPreviousPage && index == 0) || (hasNextPage && index == prevOffset + allMessages.length)) {
+                    if ((hasPreviousPage && index == 0) || (hasNextPage && index == prevOffset + displayMessages.length)) {
                         return 30;
                     }
 
-                    const message: MessageDto | undefined = allMessages[index - prevOffset];
+                    const message: MessageDto | undefined = displayMessages[index - prevOffset];
                     const displayInfo = messageDisplayInfo[index - prevOffset];
 
                     if (!message) {
-                        return 52;  // should it be happen? shouldn't be, right?
+                        return 52;  // should it be happened? shouldn't be, right?
                     }
 
-                    return estimateMessageHeight(message, viewportWidth, !!displayInfo.userInfo);
+                    return estimateMessageHeight(
+                        message,
+                        viewportWidth,
+                        !(message as QueuedMessage).__status && !!displayInfo.userInfo
+                    );
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -221,7 +298,7 @@ export default function DirectMessagePage() {
                     <MessageRow message={item}
                                 virtualItem={virtualItem}
                                 userMap={userMap}
-                                displayInfo={messageDisplayInfo[itemIndex]}/>
+                                displayInfo={messageDisplayInfo[itemIndex] ?? { userInfo: undefined }}/>
                 )}/>
 
             <ChatInput disabled={!channelId || !channelSummary}
@@ -237,9 +314,9 @@ interface MessageRowProps {
     displayInfo: MessageDisplayInfo;
 }
 
-function MessageRow({ message, virtualItem, displayInfo }: MessageRowProps) {
+function MessageRow({ message, displayInfo }: MessageRowProps) {
     return (
-        <div style={{height: `${virtualItem.size}px`}} className="hover-highlight w-full">
+        <div className="hover-highlight w-full">
             <div className="flex flex-row gap-3 mx-2">
                 {displayInfo.userInfo ? (
                     <>
@@ -263,10 +340,12 @@ function MessageRow({ message, virtualItem, displayInfo }: MessageRowProps) {
 }
 
 function MessageRowContent({ message, ...props }: { message: MessageDto } & HTMLAttributes<HTMLDivElement>) {
+    const messageStatus: "sending" | "error" | undefined = (message as QueuedMessage).__status;
+
     return (
         <div {...props}>
             {message.body && (
-                <p className="text-sm leading-6 whitespace-pre-wrap text-white">{message.body}</p>
+                <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : messageStatus === "error" ? "text-red-500" : "text-white"}`}>{message.body}</p>
             )}
         </div>
     )

@@ -13,6 +13,7 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     virtualizerRef?: RefObject<ReactVirtualizer<HTMLDivElement, Element>>;
     viewportRef?: RefObject<HTMLDivElement | null>;
     viewportClassName?: string;
+    containerClassName?: string;
 
     items: T[];
     isLoading: boolean;
@@ -42,6 +43,7 @@ export default function VirtualizedScrollList<T>({
     viewportRef,
     className,
     viewportClassName,
+    containerClassName,
     items,
     isLoading,
     estimateSize,
@@ -161,7 +163,7 @@ export default function VirtualizedScrollList<T>({
                     )
                 ) : (
                     /* Virtualized List Container */
-                    <div className="relative w-full" style={{ height: `${totalHeight}px` }}>
+                    <div className={`relative w-full ${containerClassName ?? ""}`} style={{ height: `${totalHeight}px` }}>
                         {virtualItems.map((virtualItem) => {
                             const shouldRenderFetchingPrevious = hasPreviousPage && virtualItem.index === 0;
                             const shouldRenderFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
