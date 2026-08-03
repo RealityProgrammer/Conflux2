@@ -5,13 +5,13 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import type {MessageDto, ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
+import type {GetMessagesResponse, MessageDto, ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {type HTMLAttributes, useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer, VirtualItem} from "@tanstack/react-virtual";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
-import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 
 // https://tanstack.com/virtual/latest/docs/framework/react/examples/pretext?panel=code
@@ -117,8 +117,6 @@ export default function DirectMessagePage() {
 
     const [pendingQueue, setPendingQueue] = useState<QueuedMessage[]>([]);
 
-    console.log("pending queue:", JSON.stringify(pendingQueue));
-
     const displayMessages = [...allMessages, ...pendingQueue];
 
     // bake the rendering info
@@ -130,8 +128,8 @@ export default function DirectMessagePage() {
         }
 
         for (let i = 1; i < displayMessages.length; i += 1) {
-            const previousMessage = displayMessages[i - 1];
-            const currentMessage = displayMessages[i];
+            const previousMessage: MessageDto = displayMessages[i - 1];
+            const currentMessage: MessageDto = displayMessages[i];
 
             messageDisplayInfo[i] = {
                 userInfo: previousMessage.senderUserId === currentMessage.senderUserId ?
@@ -162,7 +160,7 @@ export default function DirectMessagePage() {
     }, [displayMessages.length, isLoading, isReady]);
 
     const sendMessageMutation = useMutation({
-        mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }) => {
+        mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }): Promise<ServiceResponse<MessageDto>> => {
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
@@ -179,17 +177,37 @@ export default function DirectMessagePage() {
 
             setPendingQueue((prev) => [...prev, queuedMessage]);
         },
-        onSuccess: async (data: ServiceResponse, payload: { tempId: string, data: ChatInputMessageState }) => {
+        onSuccess: async (data: ServiceResponse<MessageDto>, payload: { tempId: string, data: ChatInputMessageState }) => {
             if (!data.success) {
                 setPendingQueue((prev) => prev.map(m =>
                     m.id === payload.tempId ? { ...m, __status: 'error' } : m
                 ));
-
                 return;
             }
 
-            // invalidate the query, await to allow it to finish
-            await queryClient.invalidateQueries({ queryKey });
+            const newMessage = data.data!;
+
+            queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
+                queryKey,
+                (oldData) => {
+                    if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+                        return oldData;
+                    }
+
+                    const newPages = [...oldData.pages];
+                    const lastPageIndex = newPages.length - 1;
+
+                    newPages[lastPageIndex] = {
+                        ...newPages[lastPageIndex]!,
+                        messages: [...newPages[lastPageIndex]!.messages, newMessage],
+                    };
+
+                    return {
+                        ...oldData,
+                        pages: newPages,
+                    };
+                }
+            );
 
             // remove the query
             setPendingQueue((prev) => prev.filter(m => m.id !== payload.tempId));

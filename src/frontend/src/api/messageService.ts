@@ -1,11 +1,11 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type {BackendResponse, GetMessagesResponse, ServiceResponse} from "./responses.ts";
+import type {BackendResponse, GetMessagesResponse, MessageDto, ServiceResponse} from "./responses.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import apiClient from "./client.ts";
 import type {GetMessagesRequest} from "./requests.ts";
 
 export const messageService = {
-    sendMessage: async (channelId: string, body?: string, attachments?: File[]): Promise<ServiceResponse> => {
+    sendMessage: async (channelId: string, body?: string, attachments?: File[]): Promise<ServiceResponse<MessageDto>> => {
         const trimmedBody = body?.trim();
 
         if (!trimmedBody && !attachments) {
@@ -25,11 +25,11 @@ export const messageService = {
 
             if (attachments) {
                 for (let i = 0; i < attachments.length; i++) {
-                    formData.append("fileToUpload[]", attachments[i]);
+                    formData.append("attachments[]", attachments[i]);
                 }
             }
 
-            const response: AxiosResponse<BackendResponse> =
+            const response: AxiosResponse<BackendResponse<MessageDto>> =
                 await apiClient.post(`/channels/${encodeURIComponent(channelId)}/messages`, formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
@@ -39,6 +39,7 @@ export const messageService = {
             return {
                 success: true,
                 statusCode: response.status,
+                data: response.data.data,
             };
         } catch (error) {
             const axiosError = error as AxiosError<BackendResponse>;

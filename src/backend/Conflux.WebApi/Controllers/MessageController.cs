@@ -58,7 +58,7 @@ public sealed class MessageController(
             await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentIds, cancellationToken);
 
         if (result.IsSuccess) {
-            return Created();
+            return Created((string?)null, new ApiResponse<MessageDto>(result.Value, Error.None));
         }
         
         // delete uploaded files, hope shit wouldn't break
@@ -66,7 +66,7 @@ public sealed class MessageController(
             await storageService.DeleteMessageAttachmentAsync(attachmentId, CancellationToken.None);
         }
         
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
+        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError()));
     }
 
     [HttpGet]
