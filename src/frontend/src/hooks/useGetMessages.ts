@@ -20,8 +20,6 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         enabled: !!channelId,
         queryKey: ["channelConversation", channelId],
         queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
             const response = await messageService.getMessages({
                 channelId: channelId!,
                 direction: pageParam.direction,
@@ -61,6 +59,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
 
             return undefined;
         },
+
         staleTime: 60 * 30,
         refetchOnWindowFocus: false,
     });

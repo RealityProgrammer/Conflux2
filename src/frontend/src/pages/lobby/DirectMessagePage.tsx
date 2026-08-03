@@ -7,7 +7,7 @@ import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.
 import {messageService} from "../../api/messageService.ts";
 import type {MessageDto, UserBasicProfileSummary} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
-import {useLayoutEffect, useRef, useState} from "react";
+import {type HTMLAttributes, useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer, VirtualItem} from "@tanstack/react-virtual";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
@@ -19,6 +19,10 @@ const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemF
 const BODY_LINE_HEIGHT = 24;
 
 const preparedCache = new Map<string, PreparedText>();
+
+type MessageDisplayInfo = {
+    userInfo?: UserBasicProfileSummary;
+}
 
 function fallbackTextHeight(text: string, width: number) {
     const averageCharacterWidth = 7;
@@ -57,7 +61,9 @@ function getPreparedMessage(message: MessageDto): PreparedText | null {
     return prepared;
 }
 
-function estimateMessageHeight(message: MessageDto, viewportWidth: number): number {
+function estimateMessageHeight(message: MessageDto, viewportWidth: number, showProfile: boolean): number {
+    viewportWidth = viewportWidth - 16 - 52;
+
     if (!message.body) return 0;
 
     const textWidth = Math.max(1, viewportWidth);
@@ -70,7 +76,7 @@ function estimateMessageHeight(message: MessageDto, viewportWidth: number): numb
 
     const layoutResult: LayoutResult = layout(getPreparedMessage(message)!, textWidth, BODY_LINE_HEIGHT);
 
-    return layoutResult.height;
+    return layoutResult.height + (showProfile ? 24 : 0);
 }
 
 export default function DirectMessagePage() {
@@ -100,6 +106,26 @@ export default function DirectMessagePage() {
         allMessages,
         userMap
     } = useGetMessages(channelId, LOAD_COUNT);
+
+    // bake the rendering info
+    const messageDisplayInfo: MessageDisplayInfo[] = new Array(allMessages.length);
+
+    if (allMessages.length > 0) {
+        messageDisplayInfo[0] = {
+            userInfo: userMap.get(allMessages[0].senderUserId),
+        }
+
+        for (let i = 1; i < allMessages.length; i += 1) {
+            const previousMessage = allMessages[i - 1];
+            const currentMessage = allMessages[i];
+
+            messageDisplayInfo[i] = {
+                userInfo: previousMessage.senderUserId === currentMessage.senderUserId ?
+                    undefined :
+                    userMap.get(currentMessage.senderUserId),
+            };
+        }
+    }
 
     // jump to the bottom when the messages are rendered
     useLayoutEffect(() => {
@@ -158,12 +184,13 @@ export default function DirectMessagePage() {
                     }
 
                     const message: MessageDto | undefined = allMessages[index - prevOffset];
+                    const displayInfo = messageDisplayInfo[index - prevOffset];
 
                     if (!message) {
                         return 52;  // should it be happen? shouldn't be, right?
                     }
 
-                    return estimateMessageHeight(message, viewportWidth);
+                    return estimateMessageHeight(message, viewportWidth, !!displayInfo.userInfo);
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -190,8 +217,11 @@ export default function DirectMessagePage() {
                         And our story begin...
                     </div>
                 )}
-                renderItem={(item, virtualItem) => (
-                    <MessageRow message={item} virtualItem={virtualItem} allMessages={allMessages} userMap={userMap}/>
+                renderItem={(item, virtualItem, itemIndex) => (
+                    <MessageRow message={item}
+                                virtualItem={virtualItem}
+                                userMap={userMap}
+                                displayInfo={messageDisplayInfo[itemIndex]}/>
                 )}/>
 
             <ChatInput disabled={!channelId || !channelSummary}
@@ -202,13 +232,42 @@ export default function DirectMessagePage() {
 
 interface MessageRowProps {
     message: MessageDto;
-    allMessages: MessageDto[];
     virtualItem: VirtualItem;
     userMap: Map<string, UserBasicProfileSummary>;
+    displayInfo: MessageDisplayInfo;
 }
 
-function MessageRow({ message, virtualItem, allMessages, userMap }: MessageRowProps) {
+function MessageRow({ message, virtualItem, displayInfo }: MessageRowProps) {
     return (
-        <p style={{height: `${virtualItem.size}px`}} className="text-sm leading-6 hover-highlight w-full whitespace-pre-wrap">{item?.body ?? "null"}</p>
+        <div style={{height: `${virtualItem.size}px`}} className="hover-highlight w-full">
+            <div className="flex flex-row gap-3 mx-2">
+                {displayInfo.userInfo ? (
+                    <>
+                        <UserAvatar
+                            hasAvatar={displayInfo.userInfo?.hasAvatar ?? false}
+                            userId={message.senderUserId}
+                            className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
+
+                        <div className="flex-1">
+                            <p className="text-base text-white">{displayInfo.userInfo.userName}</p>
+
+                            <MessageRowContent message={message}/>
+                        </div>
+                    </>
+                ) : (
+                    <MessageRowContent message={message} className="ml-13"/>
+                )}
+            </div>
+        </div>
     );
+}
+
+function MessageRowContent({ message, ...props }: { message: MessageDto } & HTMLAttributes<HTMLDivElement>) {
+    return (
+        <div {...props}>
+            {message.body && (
+                <p className="text-sm leading-6 whitespace-pre-wrap text-white">{message.body}</p>
+            )}
+        </div>
+    )
 }
