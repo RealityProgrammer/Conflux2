@@ -90,11 +90,16 @@ export type DirectMessageChannelSummary = {
     otherUser: UserBasicProfileSummary;
 }
 
+export type Attachment = {
+    id: string;
+    type: string;
+}
+
 export type MessageDto = {
     id: string;
     senderUserId: string;
     body?: string;
-    attachmentIds: string[];
+    attachments: Attachment[];
     createdAt: Date;
 }
 

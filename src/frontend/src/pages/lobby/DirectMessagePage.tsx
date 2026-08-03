@@ -5,7 +5,13 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import type {GetMessagesResponse, MessageDto, ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
+import type {
+    Attachment,
+    GetMessagesResponse,
+    MessageDto,
+    ServiceResponse,
+    UserBasicProfileSummary
+} from "../../api/responses.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer, VirtualItem} from "@tanstack/react-virtual";
@@ -67,7 +73,7 @@ function getPreparedMessage(message: MessageDto): PreparedText | null {
     return prepared;
 }
 
-function estimateMessageBodyHeight(message: MessageDto, viewportWidth: number, showProfile: boolean): number {
+function estimateMessageBodyHeight(message: MessageDto, viewportWidth: number): number {
     viewportWidth = viewportWidth - 16 - 52;
 
     if (!message.body) return 0;
@@ -82,7 +88,7 @@ function estimateMessageBodyHeight(message: MessageDto, viewportWidth: number, s
 
     const layoutResult: LayoutResult = layout(getPreparedMessage(message)!, textWidth, BODY_LINE_HEIGHT);
 
-    return layoutResult.height + (showProfile ? 24 : 0);
+    return layoutResult.height;
 }
 
 export default function DirectMessagePage() {
@@ -173,7 +179,7 @@ export default function DirectMessagePage() {
                 body: payload.data.messageBody,
                 senderUserId: authorization.userProfile?.id ?? `arbitrary-${new Date()}`,
                 createdAt: new Date(),
-                attachmentIds: payload.data.attachments.map((_file, index) => `attachment-${index}`),
+                attachments: payload.data.attachments.map((_file, index) => ({ id: `attachment-${index}`, type: '__loading' })),
                 __status: 'sending',
             };
 
@@ -283,18 +289,19 @@ export default function DirectMessagePage() {
                         return 52;  // should it be happened? shouldn't be, right?
                     }
 
+                    const showProfile = !(message as QueuedMessage).__status && !!displayInfo.userInfo;
+
                     const bodyHeight = estimateMessageBodyHeight(
                         message,
-                        viewportWidth,
-                        !(message as QueuedMessage).__status && !!displayInfo.userInfo
+                        viewportWidth
                     );
 
-                    const attachmentHeight = message.attachmentIds && message.attachmentIds.length > 0 ?
+                    const attachmentHeight = message.attachments && message.attachments.length > 0 ?
                         (message as QueuedMessage).__status ?
                             24 : 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING
                         : 0;
 
-                    return bodyHeight + attachmentHeight;
+                    return bodyHeight + attachmentHeight + (showProfile ? 24 : 0);
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -377,14 +384,14 @@ function MessageRowContent({ message }: { message: MessageDto }) {
                 <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : messageStatus === "error" ? "text-red-500" : "text-white"}`}>{message.body}</p>
             )}
 
-            {message.attachmentIds && message.attachmentIds.length > 0 && (
+            {message.attachments && message.attachments.length > 0 && (
                 messageStatus ? (
-                    <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : "text-red-500"}`}>{`<${message.attachmentIds.length} attachment>${message.attachmentIds.length && 's'}`}</p>
+                    <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : "text-red-500"}`}>{`<${message.attachments.length} attachment${message.attachments.length && 's'}>`}</p>
                 ) : (
                     <ScrollArea.Root className="h-32 w-full overflow-hidden group">
                         <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
                             <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
-                                {message.attachmentIds.map((attachmentId) => {
+                                {message.attachments.map((attachmentId) => {
                                     return (
                                         <div className="flex-none overflow-hidden relative group h-full aspect-square bg-red-500">
 
