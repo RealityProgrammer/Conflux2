@@ -5,6 +5,8 @@ using Conflux.Application.Interfaces;
 using Conflux.Application.Interfaces.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using FileSignatures;
+using FileSignatures.Formats;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,27 +17,48 @@ namespace Conflux.WebApi.Controllers;
 [ApiController]
 [Route("api/user")]
 [Authorize]
-public sealed class UserController : ControllerBase {
-    private readonly IUserService _userService;
-    private readonly IConfiguration _config;
-
-    public UserController(IUserService userService, IConfiguration config) {
-        _userService = userService;
-        _config = config;
-    }
-    
+public sealed class UserController(
+    IUserService userService, 
+    IFileFormatInspector fileFormatInspector
+) : ControllerBase {
     [HttpPost("avatar")]
     public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return Unauthorized();
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
         var file = request.File;
         
         await using var fileStream = file.OpenReadStream();
-        var result = await _userService.UploadAvatarAsync(userId, fileStream, file.ContentType);
+
+        if (fileFormatInspector.DetermineFileFormat(fileStream) is not { } fileFormat) {
+            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccured(new() {
+                [nameof(UploadAvatarRequest.File)] = [
+                    "Unknown file format.",
+                ]
+            })));
+        }
+
+        if (fileFormat is not Image) {
+            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccured(new() {
+                [nameof(UploadAvatarRequest.File)] = [
+                    "Image file format required.",
+                ],
+            })));
+        }
+
+        if (fileFormat.MediaType is not "image/png" and not "image/jpeg") {
+            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccured(new() {
+                [nameof(UploadAvatarRequest.File)] = [
+                    "Only PNG or JPEG image formats are supported.",
+                ],
+            })));
+        }
+        
+        fileStream.Position = 0;
+        var result = await userService.UploadAvatarAsync(userId, fileStream, fileFormat.MediaType);
         
         if (result.IsSuccess) {
             return Ok();
@@ -58,7 +81,7 @@ public sealed class UserController : ControllerBase {
             return BadRequest(new ApiResponse<GetAvatarUrlResponse>(null, Errors.InvalidIdentifier()));
         }
         
-        var result = _userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
+        var result = userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
         return Redirect(result);
     }
 
@@ -70,7 +93,7 @@ public sealed class UserController : ControllerBase {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await _userService.DeleteAvatarAsync(userId);
+        var result = await userService.DeleteAvatarAsync(userId);
         
         if (result.IsSuccess) {
             return NoContent();
@@ -95,7 +118,7 @@ public sealed class UserController : ControllerBase {
             return BadRequest(new ApiResponse<UserBasicProfileSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        Result<UserBasicProfileSummary> result = await _userService.GetUserBasicProfileAsync(userId);
+        Result<UserBasicProfileSummary> result = await userService.GetUserBasicProfileAsync(userId);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserBasicProfileSummary>(result.Value, Error.None));
@@ -109,7 +132,7 @@ public sealed class UserController : ControllerBase {
     
     [HttpGet("{id:guid}/profile")]
     public async Task<ActionResult<ApiResponse<UserBasicProfileSummary>>> GetUserBasicProfile(Guid id) {
-        Result<UserBasicProfileSummary> result = await _userService.GetUserBasicProfileAsync(id);
+        Result<UserBasicProfileSummary> result = await userService.GetUserBasicProfileAsync(id);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserBasicProfileSummary>(result.Value, Error.None));
@@ -131,7 +154,7 @@ public sealed class UserController : ControllerBase {
 
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
         
-        Result result = await _userService.SetupProfileAsync(new(
+        Result result = await userService.SetupProfileAsync(new(
             userId,
             request.UserName,
             request.DisplayName,
@@ -153,16 +176,6 @@ public sealed class UserController : ControllerBase {
             if (File == null!) {
                 yield return new("Avatar file is required.", [ nameof(File) ]);
             } else {
-                if (!File.ContentType.StartsWith("image/")) {
-                    yield return new("Avatar is not an image file.", [ nameof(File) ]);
-                }
-
-                ReadOnlySpan<char> subtype = File.ContentType.AsSpan(6);
-
-                if (subtype is not "png" and not "jpeg") {
-                    yield return new("Avatar is using unsupported format.", [ nameof(File) ]);
-                }
-                
                 var configuration = context.GetService<IConfiguration>()!;
                 var options = configuration.GetSection("Services:User").Get<UserServiceOptions>()!;
                 

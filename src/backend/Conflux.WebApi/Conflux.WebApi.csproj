@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="FileSignatures" Version="7.2.1" />
         <PackageReference Include="Mediator.SourceGenerator" Version="3.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -17,6 +17,7 @@ using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Hubs;
 using Conflux.WebApi.Miscs;
+using FileSignatures;
 using Microsoft.AspNetCore.SignalR;
 using ScottBrady91.AspNetCore.Identity;
 using System.Text.Json;
@@ -93,6 +94,7 @@ builder.Services.AddCors(options => {
 // require stuffs
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator();
+builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector());
 
 // necessary because signalr default uses ClaimNames.NameIdentifier instead of JwtRegisteredClaimNames.Sub
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
