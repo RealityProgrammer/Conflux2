@@ -16,8 +16,6 @@ import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-qu
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {ChatView, type MessageDisplayInfo, type QueueableMessage} from "../../components/ChatView.tsx";
 
-// https://tanstack.com/virtual/latest/docs/framework/react/examples/pretext?panel=code
-
 const LOAD_COUNT = 50;
 
 export default function DirectMessagePage() {
