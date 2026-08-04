@@ -143,7 +143,7 @@ function LocationSidebar() {
 export default function LobbyLayout() {
     useDocumentTitle("Lobby - Conflux");
 
-    const connection = useSignalR(`${import.meta.env.VITE_BACKEND_HUBS_URL}/user-lobby`, {
+    useSignalR(`${import.meta.env.VITE_BACKEND_HUBS_URL}/user-lobby`, {
         FriendRequestReceived: (notification: FriendRequestReceivedNotification) => {
             emitGlobalEvent("lobby:friendRequestReceived", notification);
         },
