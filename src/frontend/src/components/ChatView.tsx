@@ -127,12 +127,19 @@ export function ChatView({
 
     useEffect(() => {
         if (messages.length > previousMessageCount.current && isReady) {
-            requestAnimationFrame(() => {
-                const virtualizer = virtualizerRef.current;
-                if (!virtualizer) return;
+            const distanceFromBottom = viewportRef.current.scrollHeight - viewportRef.current.scrollTop - viewportRef.current.clientHeight;
 
-                virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
-            });
+            // why not == 0? idk im too tired to think about it lmao
+            const isNearBottom = distanceFromBottom < 50;
+
+            if (isNearBottom) {
+                requestAnimationFrame(() => {
+                    const virtualizer = virtualizerRef.current;
+                    if (!virtualizer) return;
+
+                    virtualizer.scrollToIndex(virtualizer.options.count - 1, {align: 'end'});
+                });
+            }
         }
 
         previousMessageCount.current = messages.length;
