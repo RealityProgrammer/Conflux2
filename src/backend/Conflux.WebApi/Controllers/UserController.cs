@@ -32,33 +32,9 @@ public sealed class UserController(
         var file = request.File;
         
         await using var fileStream = file.OpenReadStream();
-
-        if (fileFormatInspector.DetermineFileFormat(fileStream) is not { } fileFormat) {
-            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccured(new() {
-                [nameof(UploadAvatarRequest.File)] = [
-                    "Unknown file format.",
-                ]
-            })));
-        }
-
-        if (fileFormat is not Image) {
-            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccured(new() {
-                [nameof(UploadAvatarRequest.File)] = [
-                    "Image file format required.",
-                ],
-            })));
-        }
-
-        if (fileFormat.MediaType is not "image/png" and not "image/jpeg") {
-            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccured(new() {
-                [nameof(UploadAvatarRequest.File)] = [
-                    "Only PNG or JPEG image formats are supported.",
-                ],
-            })));
-        }
         
         fileStream.Position = 0;
-        var result = await userService.UploadAvatarAsync(userId, fileStream, fileFormat.MediaType);
+        var result = await userService.UploadAvatarAsync(userId, fileStream);
         
         if (result.IsSuccess) {
             return Ok();

@@ -2,6 +2,8 @@ using Conflux.Application.Dto.Requests;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
+using FileSignatures;
+using FileSignatures.Formats;
 using Microsoft.Extensions.Configuration;
 
 namespace Conflux.Application.Interfaces.Implementations;
@@ -15,15 +17,40 @@ internal sealed class UserService(
     IStorageService storageService,
     TimeProvider timeProvider,
     IConfiguration config,
+    IFileFormatInspector fileFormatInspector,
     ILogger<UserService> logger
 ) : IUserService {
-    public async Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream, string contentType) {
+    public async Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream) {
+        if (fileFormatInspector.DetermineFileFormat(avatarStream) is not { } fileFormat) {
+            return Errors.ValidationErrorsOccured(new() {
+                [nameof(avatarStream)] = [
+                    "Unknown file format.",
+                ]
+            });
+        }
+
+        if (fileFormat is not Image imageFormat) {
+            return Errors.ValidationErrorsOccured(new() {
+                [nameof(avatarStream)] = [
+                    "Image file format required.",
+                ],
+            });
+        }
+
+        if (fileFormat.MediaType is not "image/png" and not "image/jpeg") {
+            return Errors.ValidationErrorsOccured(new() {
+                [nameof(avatarStream)] = [
+                    "Only PNG or JPEG image formats are supported.",
+                ],
+            });
+        }
+        
         if (avatarStream is { CanSeek: true, Position: > 0 }) {
             avatarStream.Position = 0;
         }
         
         // upload file first.
-        Result<string> result = await storageService.UploadUserAvatarAsync(userId, new(avatarStream, contentType));
+        Result<string> result = await storageService.UploadUserAvatarAsync(userId, new(avatarStream, imageFormat.MediaType));
 
         if (!result.IsSuccess) {
             return result.Error;
@@ -77,11 +104,8 @@ internal sealed class UserService(
                 if (request.AvatarOperation.AvatarStream is not { } stream) {
                     return Errors.MissingArgument("Avatar stream");
                 }
-                if (request.AvatarOperation.ContentType is not { } contentType) {
-                    return Errors.MissingArgument("Avatar content type");
-                }
-                
-                await UploadAvatarAsync(request.UserId, stream, contentType);
+
+                await UploadAvatarAsync(request.UserId, stream);
                 break;
             
             case AvatarOperationType.Delete:

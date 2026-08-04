@@ -48,32 +48,20 @@ internal sealed class StorageService(
         return s3Client.GetPreSignedURL(request);
     }
 
-    public async Task<Result<List<Guid>>> UploadMessageAttachmentsAsync(
-        IEnumerable<UploadItem> attachments, 
+    public async Task<Result<Guid>> UploadMessageAttachmentAsync(
+        UploadItem attachment, 
         CancellationToken cancellationToken = default
     ) {
-        List<Guid> outputs = [];
-        
-        foreach (var attachment in attachments) {
-            Guid attachmentId = Guid.NewGuid();
-            string key = CreateAttachmentUniqueKey(attachmentId);
+        Guid attachmentId = Guid.NewGuid();
+        string key = CreateAttachmentUniqueKey(attachmentId);
 
-            Result result = await UploadToS3Storage(key, attachment.Stream, attachment.ContentType, cancellationToken);
+        Result result = await UploadToS3Storage(key, attachment.Stream, attachment.ContentType, cancellationToken);
 
-            if (result.IsSuccess) {
-                outputs.Add(attachmentId);
-            } else {
-                // shit got wrecked, delete uploaded and bail out early.
-                foreach (var uploadedAttachmentId in outputs) {
-                    key = CreateAttachmentUniqueKey(uploadedAttachmentId);
-                    await DeleteFromS3Storage(key, CancellationToken.None);
-                }
-
-                return Errors.AttachmentUploadFailure();
-            }
+        if (result.IsSuccess) {
+            return Result<Guid>.Success(attachmentId);
         }
-
-        return Result<List<Guid>>.Success(outputs);
+        
+        return result.Error;
     }
 
     public async Task<Result> DeleteMessageAttachmentAsync(Guid attachmentId, CancellationToken cancellationToken = default) {

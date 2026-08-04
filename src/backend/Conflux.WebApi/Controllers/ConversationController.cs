@@ -34,48 +34,36 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.EmptyMessageContent()));
         }
 
-        IList<Attachment> attachments = [];
+        Stream[] attachmentStreams;
 
         if (request.Attachments is { Length: > 0 }) {
-            UploadItem[] uploadItems = 
-                [..request.Attachments.Select(r => new UploadItem(r.OpenReadStream(), r.ContentType))];
+            attachmentStreams = new Stream[request.Attachments.Length];
 
-            try {
-                Result<List<Guid>> uploadedAttachmentIds = await storageService.UploadMessageAttachmentsAsync(
-                    uploadItems,
-                    cancellationToken
-                );
+            for (int i = 0; i < attachmentStreams.Length; i++) {
+                attachmentStreams[i] = request.Attachments[i].OpenReadStream();
+            }
+        } else {
+            attachmentStreams = [];
+        }
 
-                if (uploadedAttachmentIds.IsSuccess) {
-                    attachments = [..uploadedAttachmentIds.Value!
-                        .Zip(uploadItems, (id, item) => new Attachment {
-                            Id = id,
-                            Type = item.ContentType
-                        }),
-                    ];
-                } else {
-                    return StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(Errors.AttachmentUploadFailure()));
-                }
-            } finally {
-                foreach (var item in uploadItems) {
-                    await item.Stream.DisposeAsync();
-                }
+        try {
+            Result<MessageDto> result = 
+                await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentStreams, cancellationToken);
+
+            if (result.IsSuccess) {
+                return Created((string?)null, new ApiResponse<MessageDto>(result.Value, Error.None));
+            }
+
+            return result.Error.Code switch {
+                nameof(Errors.ValidationErrorsOccured) => BadRequest(new ApiResponse(result.Error)),
+                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(result.Error)),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError())),
+            };
+        } finally {
+            foreach (var stream in attachmentStreams) {
+                await stream.DisposeAsync();
             }
         }
-        
-        Result<MessageDto> result = 
-            await messageService.SendMessageAsync(userId, channelId, request.Body, attachments, cancellationToken);
-
-        if (result.IsSuccess) {
-            return Created((string?)null, new ApiResponse<MessageDto>(result.Value, Error.None));
-        }
-        
-        // delete uploaded files, hope shit wouldn't break
-        foreach (var attachment in attachments) {
-            await storageService.DeleteMessageAttachmentAsync(attachment.Id, CancellationToken.None);
-        }
-        
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError()));
     }
 
     [HttpGet("channels/{channelId:guid}/messages")]

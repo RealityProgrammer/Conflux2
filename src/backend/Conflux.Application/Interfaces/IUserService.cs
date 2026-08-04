@@ -5,7 +5,7 @@ using Conflux.Domain.Dto;
 namespace Conflux.Application.Interfaces;
 
 public interface IUserService {
-    Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream, string contentType);
+    Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream);
     Task<Result> DeleteAvatarAsync(Guid userId);
     string GetAvatarUrl(Guid userId, bool useHttps);
 

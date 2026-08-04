@@ -14,8 +14,8 @@ public interface IStorageService {
 
     string GetUserAvatarPreSignedUrl(Guid userId, bool useHttps);
 
-    Task<Result<List<Guid>>> UploadMessageAttachmentsAsync(
-        IEnumerable<UploadItem> attachments, 
+    Task<Result<Guid>> UploadMessageAttachmentAsync(
+        UploadItem attachment, 
         CancellationToken cancellationToken = default
     );
 
