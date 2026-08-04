@@ -9,12 +9,15 @@ import type {
     MessageDto,
     ServiceResponse
 } from "../../api/responses.ts";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
-import type {ReactVirtualizer} from "@tanstack/react-virtual";
+import {useEffect, useState} from "react";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {ChatView, type MessageDisplayInfo, type QueueableMessage} from "../../components/ChatView.tsx";
+import type {MessageReceivedEvent} from "../../api/events.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
+import {HubConnectionState} from "@microsoft/signalr";
 
 const LOAD_COUNT = 50;
 
@@ -24,6 +27,26 @@ export default function DirectMessagePage() {
     const authorization = useAuthorization();
 
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
+
+    const signalrContext = useSignalRConnection();
+
+    useEffect(() => {
+        const connection = signalrContext.connection;
+
+        if (!channelId || !channelSummary || !signalrContext.isConnected || !connection) return;
+
+        let joinPromise: Promise<void> = connection!.invoke("JoinChannel", channelId).then(() => {
+            console.log("Channel joined");
+        });
+
+        return () => {
+            joinPromise.then(() => {
+                if (connection.state === HubConnectionState.Connected) {
+                    connection!.invoke("LeaveChannel", channelId);
+                }
+            });
+        }
+    }, [channelId, signalrContext.isConnected]);
 
     const queryClient = useQueryClient();
 
@@ -62,10 +85,32 @@ export default function DirectMessagePage() {
     }
 
     // sending messages
+    const pushNewMessage = (newMessage: MessageDto) => {
+        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+                    return oldData;
+                }
+
+                const newPages = [...oldData.pages];
+                const lastPageIndex = newPages.length - 1;
+
+                newPages[lastPageIndex] = {
+                    ...newPages[lastPageIndex]!,
+                    messages: [...newPages[lastPageIndex]!.messages, newMessage],
+                };
+
+                return {
+                    ...oldData,
+                    pages: newPages,
+                };
+            }
+        );
+    };
+
     const sendMessageMutation = useMutation({
         mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }): Promise<ServiceResponse<MessageDto>> => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
             return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
         },
         onMutate: async (payload: { tempId: string, data: ChatInputMessageState }) => {
@@ -88,29 +133,7 @@ export default function DirectMessagePage() {
                 return;
             }
 
-            const newMessage = data.data!;
-
-            queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
-                queryKey,
-                (oldData) => {
-                    if (!oldData || !oldData.pages || oldData.pages.length === 0) {
-                        return oldData;
-                    }
-
-                    const newPages = [...oldData.pages];
-                    const lastPageIndex = newPages.length - 1;
-
-                    newPages[lastPageIndex] = {
-                        ...newPages[lastPageIndex]!,
-                        messages: [...newPages[lastPageIndex]!.messages, newMessage],
-                    };
-
-                    return {
-                        ...oldData,
-                        pages: newPages,
-                    };
-                }
-            );
+            pushNewMessage(data.data!);
 
             // remove the query
             setPendingQueue((prev) => prev.filter(m => m.id !== payload.tempId));
@@ -128,6 +151,11 @@ export default function DirectMessagePage() {
         const tempId = `__queue_message-${Date.now()}`;
         sendMessageMutation.mutate({ tempId, data: messagePayload });
     };
+
+    // change the cache pages when message received
+    useSignalREvent("MessageReceived", (event: MessageReceivedEvent) => {
+        pushNewMessage(event.message);
+    });
 
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">

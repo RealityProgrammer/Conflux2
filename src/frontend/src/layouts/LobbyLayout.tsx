@@ -1,18 +1,10 @@
 import { useAuthorization } from "../contexts/AuthContext.tsx";
 import {Avatar, Separator, Tooltip} from "radix-ui";
-import { userService } from "../api/userService.ts";
 import {NavLink, Outlet, useLocation, useNavigate} from "react-router";
 import {BsMegaphone, BsPeople, BsPerson} from "react-icons/bs";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {useRef} from "react";
 import UserAvatar from "../components/UserAvatar.tsx";
-import {useSignalR} from "../hooks/useSignalR.ts";
-import {emitGlobalEvent} from "../hooks/useGlobalEvent.ts";
-import type {
-    FriendRequestAcceptedNotification,
-    FriendRequestCanceledNotification,
-    FriendRequestReceivedNotification, FriendRequestRejectedNotification, UnfriendedNotification
-} from "../api/notifications.ts";
 import {useDocumentTitle} from "usehooks-ts";
 
 function Sidebar() {
@@ -142,28 +134,6 @@ function LocationSidebar() {
 
 export default function LobbyLayout() {
     useDocumentTitle("Lobby - Conflux");
-
-    useSignalR(`${import.meta.env.VITE_BACKEND_HUBS_URL}/user-lobby`, {
-        FriendRequestReceived: (notification: FriendRequestReceivedNotification) => {
-            emitGlobalEvent("lobby:friendRequestReceived", notification);
-        },
-
-        FriendRequestCanceled: (notification: FriendRequestCanceledNotification) => {
-            emitGlobalEvent("lobby:friendRequestCanceled", notification);
-        },
-
-        FriendRequestAccepted: (notification: FriendRequestAcceptedNotification) => {
-            emitGlobalEvent("lobby:friendRequestAccepted", notification);
-        },
-
-        FriendRequestRejected: (notification: FriendRequestRejectedNotification) => {
-            emitGlobalEvent("lobby:friendRequestRejected", notification);
-        },
-
-        Unfriended: (notification: UnfriendedNotification) => {
-            emitGlobalEvent("lobby:unfriended", notification);
-        },
-    });
 
     return (
         <div className="h-dvh w-dvw overflow-hidden flex flex-row">

@@ -14,7 +14,7 @@ const AuthorizationContext = createContext<AuthorizationContextType | null>(null
 
 export const useAuthorization = () => {
     const context = useContext(AuthorizationContext);
-    if (!context) throw new Error("useAuth must be used within an AuthProvider");
+    if (!context) throw new Error("useAuth must be used within an AuthProvider.");
     return context;
 };
 
@@ -57,5 +57,5 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         }}>
             {children}
         </AuthorizationContext.Provider>
-    )
+    );
 }

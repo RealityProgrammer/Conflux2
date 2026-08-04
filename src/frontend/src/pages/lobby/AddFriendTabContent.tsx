@@ -8,14 +8,13 @@ import {
     UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
-import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
 import type {
-    FriendRequestAcceptedNotification,
-    FriendRequestCanceledNotification,
-    FriendRequestReceivedNotification,
-    FriendRequestRejectedNotification,
-    UnfriendedNotification
-} from "../../api/notifications.ts";
+    FriendRequestAcceptedEvent,
+    FriendRequestCanceledEvent,
+    FriendRequestReceivedEvent,
+    FriendRequestRejectedEvent,
+    UnfriendedEvent
+} from "../../api/events.ts";
 import {DropdownMenu} from "radix-ui";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
@@ -23,6 +22,7 @@ import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
 
 interface RowProps {
     user: DiscoverFriendElement;
@@ -87,23 +87,23 @@ export default function AddFriendTabContent() {
     };
 
     // handle realtime modification
-    useGlobalEvent("lobby:friendRequestReceived", (notif: FriendRequestReceivedNotification) => {
+    useSignalREvent("FriendRequestReceived", (notif: FriendRequestReceivedEvent) => {
         updateCacheStatus(notif.senderUserId, UserRelationshipStatus.IncomingRequest);
     });
 
-    useGlobalEvent("lobby:friendRequestCanceled", (notif: FriendRequestCanceledNotification) => {
+    useSignalREvent("FriendRequestCanceled", (notif: FriendRequestCanceledEvent) => {
         updateCacheStatus(notif.senderUserId, UserRelationshipStatus.Stranger);
     });
 
-    useGlobalEvent("lobby:friendRequestAccepted", (notif: FriendRequestAcceptedNotification) => {
+    useSignalREvent("FriendRequestAccepted", (notif: FriendRequestAcceptedEvent) => {
         updateCacheStatus(notif.acceptorUserId, UserRelationshipStatus.Friended);
     });
 
-    useGlobalEvent("lobby:friendRequestRejected", (notif: FriendRequestRejectedNotification) => {
+    useSignalREvent("FriendRequestRejected", (notif: FriendRequestRejectedEvent) => {
         updateCacheStatus(notif.rejecterUserId, UserRelationshipStatus.Stranger);
     });
 
-    useGlobalEvent("lobby:unfriended", (notif: UnfriendedNotification) => {
+    useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
         updateCacheStatus(notif.invokerUserId, UserRelationshipStatus.Stranger);
     });
 

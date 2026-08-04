@@ -12,13 +12,13 @@ import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import Spinner from "../../components/Spinner.tsx";
-import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
-import type {FriendRequestAcceptedNotification, UnfriendedNotification} from "../../api/notifications.ts";
+import type {FriendRequestAcceptedEvent, UnfriendedEvent} from "../../api/events.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import {useCacheService} from "../../hooks/useCacheService.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -103,11 +103,11 @@ export default function FriendListTabContent() {
 
     const { fetchUserBasicProfile } = useCacheService();
 
-    useGlobalEvent("lobby:unfriended", (notif: UnfriendedNotification) => {
+    useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
         handleRemoveUserFromCache(notif.invokerUserId);
     });
 
-    useGlobalEvent("lobby:friendRequestAccepted", async (notif: FriendRequestAcceptedNotification) => {
+    useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
         const profileResponse = await fetchUserBasicProfile(notif.acceptorUserId);
 
         if (!profileResponse.success) return;

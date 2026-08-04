@@ -15,8 +15,8 @@ using Conflux.Infrastructure;
 using Conflux.Infrastructure.Services;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
-using Conflux.WebApi.Hubs;
 using Conflux.WebApi.Miscs;
+using Conflux.WebApi.SignalR;
 using FileSignatures;
 using Microsoft.AspNetCore.SignalR;
 using ScottBrady91.AspNetCore.Identity;
@@ -221,6 +221,6 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.MapControllers();
-app.MapHub<UserLobbyHub>("/hubs/user-lobby");
+app.MapHub<GatewayHub>("/hub");
 
 app.Run();

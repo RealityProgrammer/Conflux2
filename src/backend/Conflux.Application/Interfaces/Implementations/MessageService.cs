@@ -1,9 +1,11 @@
+using Conflux.Application.Dto.Notifications;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
+using Mediator;
 
 namespace Conflux.Application.Interfaces.Implementations;
 
@@ -17,7 +19,8 @@ internal sealed class MessageService(
     IChannelRepository channelRepository,
     IStorageService storageService,
     IFileFormatInspector fileFormatInspector,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IMediator mediator
 ) : IMessageService {
     public async Task<Result<MessageDto>> SendMessageAsync(
         Guid senderUserId,
@@ -91,13 +94,17 @@ internal sealed class MessageService(
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<MessageDto>.Success(new(
+            MessageDto dto = new(
                 message.Id,
                 senderUserId,
                 body,
                 message.Attachments,
                 message.CreatedAt
-            ));
+            );
+
+            await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
+
+            return Result<MessageDto>.Success(dto);
         } catch (OperationCanceledException) {
             await DeleteUploadedAttachments();
             throw;

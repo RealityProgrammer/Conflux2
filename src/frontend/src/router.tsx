@@ -19,6 +19,7 @@ import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import {channelService} from "./api/channelService.ts";
+import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
 
 export type DirectMessagePageLoaderProps = {
     channelId: string | null;
@@ -129,7 +130,11 @@ export const router = createBrowserRouter([
                 shouldRevalidate: ({ currentUrl, nextUrl }) => {
                     return currentUrl.pathname !== nextUrl.pathname;
                 },
-                element: <LobbyLayout/>,
+                element: (
+                    <SignalRConnectionProvider>
+                        <LobbyLayout/>
+                    </SignalRConnectionProvider>
+                ),
                 children: [
                     {
                         index: true,

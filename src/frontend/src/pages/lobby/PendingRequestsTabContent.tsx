@@ -13,16 +13,16 @@ import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
-import {useGlobalEvent} from "../../hooks/useGlobalEvent.ts";
 import type {
-    FriendRequestAcceptedNotification,
-    FriendRequestCanceledNotification,
-    FriendRequestReceivedNotification,
-    FriendRequestRejectedNotification
-} from "../../api/notifications.ts";
+    FriendRequestAcceptedEvent,
+    FriendRequestCanceledEvent,
+    FriendRequestReceivedEvent,
+    FriendRequestRejectedEvent
+} from "../../api/events.ts";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import {useCacheService} from "../../hooks/useCacheService.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -104,7 +104,7 @@ export default function PendingRequestsTabContent() {
 
     const { fetchUserBasicProfile } = useCacheService();
 
-    useGlobalEvent("lobby:friendRequestReceived", async (notif: FriendRequestReceivedNotification) => {
+    useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
         const profileResponse = await fetchUserBasicProfile(notif.senderUserId);
 
         if (!profileResponse.success) return;
@@ -150,15 +150,15 @@ export default function PendingRequestsTabContent() {
         );
     });
 
-    useGlobalEvent("lobby:friendRequestRejected", (notif: FriendRequestRejectedNotification) => {
+    useSignalREvent("FriendRequestRejected", (notif: FriendRequestRejectedEvent) => {
         removeCacheElement(notif.rejecterUserId);
     });
 
-    useGlobalEvent("lobby:friendRequestAccepted", (notif: FriendRequestAcceptedNotification) => {
+    useSignalREvent("FriendRequestAccepted", (notif: FriendRequestAcceptedEvent) => {
         removeCacheElement(notif.acceptorUserId);
     });
 
-    useGlobalEvent("lobby:friendRequestCanceled", (notif: FriendRequestCanceledNotification) => {
+    useSignalREvent("FriendRequestCanceled", (notif: FriendRequestCanceledEvent) => {
         removeCacheElement(notif.senderUserId);
     });
 
