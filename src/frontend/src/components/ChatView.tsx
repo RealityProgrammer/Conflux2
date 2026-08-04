@@ -106,6 +106,7 @@ export function ChatView({
     const [isReady, setIsReady] = useState(false);
     const { width: viewportWidth = 0 } = useResizeObserver({ ref: viewportRef });
 
+    // jump to the bottom when the messages are rendered
     useLayoutEffect(() => {
         if (messages.length > 0 && !isReady) {
             requestAnimationFrame(() => {
@@ -121,19 +122,23 @@ export function ChatView({
         }
     }, [messages.length, isLoading, isReady]);
 
+    // jump to bottom automatically when something arrive.
     const previousMessageCount = useRef(messages.length);
+
     useEffect(() => {
         if (messages.length > previousMessageCount.current && isReady) {
             requestAnimationFrame(() => {
                 const virtualizer = virtualizerRef.current;
                 if (!virtualizer) return;
+
                 virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
             });
         }
+
         previousMessageCount.current = messages.length;
     }, [messages.length, isReady]);
 
-    // 3. Gallery Logic
+    // gallery
     const [galleryState, setGalleryState] = useState<MediaGalleryState | null>(null);
 
     const handleAttachmentClick = (messageAttachments: Attachment[], clickedIndex: number) => {

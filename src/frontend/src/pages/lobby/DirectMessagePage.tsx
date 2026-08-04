@@ -9,7 +9,7 @@ import type {
     MessageDto,
     ServiceResponse
 } from "../../api/responses.ts";
-import {Fragment, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {ReactVirtualizer} from "@tanstack/react-virtual";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
@@ -26,9 +26,6 @@ export default function DirectMessagePage() {
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
 
     const queryClient = useQueryClient();
-    const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
-
-    const [isReady, setIsReady] = useState(false);
 
     const {
         useInfiniteQueryResult: {
@@ -63,26 +60,6 @@ export default function DirectMessagePage() {
             };
         }
     }
-
-    // jump to the bottom when the messages are rendered
-    useLayoutEffect(() => {
-        if (displayMessages.length > 0 && !isReady) {
-            requestAnimationFrame(() => {
-                const virtualizer: ReactVirtualizer<HTMLDivElement, Element> = virtualizerRef.current;
-                if (!virtualizer) return;
-
-                const totalVirtualItems = virtualizer.options.count;
-
-                virtualizer.scrollToIndex(totalVirtualItems - 1, { align: 'end' });
-
-                requestAnimationFrame(() => {
-                    setIsReady(true);
-                });
-            });
-        } else if (!isLoading && displayMessages.length === 0) {
-            setIsReady(true);
-        }
-    }, [displayMessages.length, isLoading, isReady]);
 
     // sending messages
     const sendMessageMutation = useMutation({
@@ -151,24 +128,6 @@ export default function DirectMessagePage() {
         const tempId = `__queue_message-${Date.now()}`;
         sendMessageMutation.mutate({ tempId, data: messagePayload });
     };
-
-    // jump to bottom automatically when something arrive.
-    const previousMessageCount = useRef(displayMessages.length);
-
-    useEffect(() => {
-        // array grew means a new message arrived, or user send something that causes queue array to changed
-        if (displayMessages.length > previousMessageCount.current && isReady) {
-            requestAnimationFrame(() => {
-                const virtualizer = virtualizerRef.current;
-                if (!virtualizer) return;
-
-                // Jump to the newest message
-                virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
-            });
-        }
-
-        previousMessageCount.current = displayMessages.length;
-    }, [displayMessages.length, isReady]);
 
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
