@@ -105,7 +105,7 @@ export type MessageDto = {
 
 export type GetMessagesResponse = {
     messages: MessageDto[];
-    users: Map<string, UserBasicProfileSummary>;
+    users: Record<string, UserBasicProfileSummary>;
     hasMoreBefore?: boolean;
     hasMoreAfter?: boolean;
 }

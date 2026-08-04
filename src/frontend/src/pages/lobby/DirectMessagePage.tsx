@@ -7,7 +7,7 @@ import {messageService} from "../../api/messageService.ts";
 import type {
     GetMessagesResponse,
     MessageDto,
-    ServiceResponse
+    ServiceResponse, UserBasicProfileSummary
 } from "../../api/responses.ts";
 import {useEffect, useState} from "react";
 import useGetMessages from "../../hooks/useGetMessages.ts";
@@ -18,6 +18,7 @@ import type {MessageReceivedEvent} from "../../api/events.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 import {HubConnectionState} from "@microsoft/signalr";
+import {userService} from "../../api/userService.ts";
 
 const LOAD_COUNT = 50;
 
@@ -69,7 +70,7 @@ export default function DirectMessagePage() {
 
     if (displayMessages.length > 0) {
         messageDisplayInfo[0] = {
-            userInfo: userMap.get(displayMessages[0].senderUserId),
+            userInfo: userMap[displayMessages[0].senderUserId],
         }
 
         for (let i = 1; i < displayMessages.length; i += 1) {
@@ -79,13 +80,13 @@ export default function DirectMessagePage() {
             messageDisplayInfo[i] = {
                 userInfo: previousMessage.senderUserId === currentMessage.senderUserId ?
                     undefined :
-                    userMap.get(currentMessage.senderUserId),
+                    userMap[currentMessage.senderUserId],
             };
         }
     }
 
     // sending messages
-    const pushNewMessage = (newMessage: MessageDto) => {
+    const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
         queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
             queryKey,
             (oldData) => {
@@ -95,10 +96,16 @@ export default function DirectMessagePage() {
 
                 const newPages = [...oldData.pages];
                 const lastPageIndex = newPages.length - 1;
+                const lastPage = newPages[lastPageIndex]!;
+
+                if (userSummary && !lastPage.users[newMessage.senderUserId]) {
+                    lastPage.users[newMessage.senderUserId] = userSummary;
+                }
 
                 newPages[lastPageIndex] = {
                     ...newPages[lastPageIndex]!,
                     messages: [...newPages[lastPageIndex]!.messages, newMessage],
+                    users: lastPage.users,
                 };
 
                 return {
@@ -133,7 +140,7 @@ export default function DirectMessagePage() {
                 return;
             }
 
-            pushNewMessage(data.data!);
+            pushNewMessage(data.data!, authorization.userProfile ?? undefined);
 
             // remove the query
             setPendingQueue((prev) => prev.filter(m => m.id !== payload.tempId));
@@ -153,8 +160,38 @@ export default function DirectMessagePage() {
     };
 
     // change the cache pages when message received
-    useSignalREvent("MessageReceived", (event: MessageReceivedEvent) => {
-        pushNewMessage(event.message);
+    useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
+        const senderId = event.message.senderUserId;
+
+        // check if there is this user summary in any page
+        const currentCache = queryClient.getQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(queryKey);
+        let knownUser: UserBasicProfileSummary | undefined = undefined;
+
+        if (currentCache?.pages) {
+            for (const page of currentCache.pages) {
+                if (!page?.users) continue;
+
+                const cached = page.users[senderId];
+
+                if (cached) {
+                    knownUser = cached;
+                    break;
+                }
+            }
+        }
+
+        // if we don't know this user, fetch from api
+        if (!knownUser) {
+            try {
+                // Replace with your actual user service fetch call
+                const response = await userService.getUserBasicProfile(senderId);
+                knownUser = response.data ?? undefined;
+            } catch (error) {
+                console.error("Failed to fetch user summary for new message", error);
+            }
+        }
+
+        pushNewMessage(event.message, knownUser);
     });
 
     return (

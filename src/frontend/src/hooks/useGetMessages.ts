@@ -6,7 +6,7 @@ import type {MessageLoadDirection} from "../api/requests.ts";
 interface UseGetMessagesResult {
     useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
     allMessages: MessageDto[];
-    userMap: Map<string, UserBasicProfileSummary>;
+    userMap: Record<string, UserBasicProfileSummary>;
     queryKey: (string | null | undefined)[];
 }
 
@@ -68,13 +68,13 @@ export default function useGetMessages(channelId: string | null | undefined, loa
 
     const allMessages: MessageDto[] = queryResult.data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
 
-    const userMap = new Map<string, UserBasicProfileSummary>();
+    const userMap: Record<string, UserBasicProfileSummary> = {};
 
     if (queryResult.data?.pages) {
         for (const page of queryResult.data?.pages) {
             if (page?.users) {
                 for (const [userId, user] of Object.entries(page.users)) {
-                    userMap.set(userId, user);
+                    userMap[userId] = user;
                 }
             }
         }
