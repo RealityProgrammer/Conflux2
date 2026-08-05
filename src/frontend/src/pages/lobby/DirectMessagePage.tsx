@@ -2,25 +2,30 @@ import {useLoaderData} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
-import {type ChatInputMessageState} from "../../components/ChatInput.tsx";
+import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import type {
-    GetMessagesResponse,
-    MessageDto,
-    ServiceResponse, UserBasicProfileSummary
-} from "../../api/responses.ts";
+import type {GetMessagesResponse, MessageDto,MessageGroup,ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
 import {useEffect, useState} from "react";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import {ChatView, type MessageDisplayInfo, type QueueableMessage} from "../../components/ChatView.tsx";
+import {ChatView} from "../../components/ChatView.tsx";
 import type {MessageReceivedEvent} from "../../api/events.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 import {HubConnectionState} from "@microsoft/signalr";
 import {userService} from "../../api/userService.ts";
+import Spinner from "../../components/Spinner.tsx";
+import { DropdownMenu } from "radix-ui";
 
 const LOAD_COUNT = 50;
+
+export type QueueingMessage = {
+    tempId: string;
+    body: string | undefined;
+    attachmentCount: number;
+    error?: boolean;
+};
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
@@ -56,34 +61,10 @@ export default function DirectMessagePage() {
             hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage, hasNextPage, isFetchingNextPage, fetchNextPage,
             isLoading,
         },
-        allMessages,
+        allMessageGroups,
         userMap,
         queryKey
     } = useGetMessages(channelId, LOAD_COUNT);
-
-    const [pendingQueue, setPendingQueue] = useState<QueueableMessage[]>([]);
-
-    const displayMessages = [...allMessages, ...pendingQueue];
-
-    // bake the rendering info
-    const messageDisplayInfo: MessageDisplayInfo[] = new Array(displayMessages.length);
-
-    if (displayMessages.length > 0) {
-        messageDisplayInfo[0] = {
-            userInfo: userMap[displayMessages[0].senderUserId],
-        }
-
-        for (let i = 1; i < displayMessages.length; i += 1) {
-            const previousMessage: MessageDto = displayMessages[i - 1];
-            const currentMessage: MessageDto = displayMessages[i];
-
-            messageDisplayInfo[i] = {
-                userInfo: previousMessage.senderUserId === currentMessage.senderUserId ?
-                    undefined :
-                    userMap[currentMessage.senderUserId],
-            };
-        }
-    }
 
     // sending messages
     const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
@@ -94,60 +75,84 @@ export default function DirectMessagePage() {
                     return oldData;
                 }
 
-                const newPages = [...oldData.pages];
-                const lastPageIndex = newPages.length - 1;
-                const lastPage = newPages[lastPageIndex]!;
+                const lastPage = oldData.pages.at(-1)!;
+                const updatedLastPage = { ...lastPage };
 
-                if (userSummary && !lastPage.users[newMessage.senderUserId]) {
-                    lastPage.users[newMessage.senderUserId] = userSummary;
+                if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
+                    updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
                 }
 
-                newPages[lastPageIndex] = {
-                    ...newPages[lastPageIndex]!,
-                    messages: [...newPages[lastPageIndex]!.messages, newMessage],
-                    users: lastPage.users,
-                };
+                const currentGroups = updatedLastPage.messageGroups || [];
+
+                if (lastPage.messageGroups?.length > 0) {
+                    const lastMessageGroup = lastPage.messageGroups.at(-1)!;
+
+                    // was the new message sent by the same person on the last group of the last page?
+                    const isSameUser =
+                        lastMessageGroup.senderUserId == newMessage.senderUserId;
+
+                    if (isSameUser) {
+                        const updatedGroup: MessageGroup = {
+                            ...lastMessageGroup,
+                            messages: [...lastMessageGroup.messages, newMessage],
+                        };
+
+                        updatedLastPage.messageGroups = [
+                            ...currentGroups.slice(0, -1),
+                            updatedGroup,
+                        ];
+                    } else {
+                        updatedLastPage.messageGroups = [
+                            ...currentGroups,
+                            {
+                                senderUserId: newMessage.senderUserId,
+                                messages: [newMessage],
+                            },
+                        ];
+                    }
+                } else {
+                    updatedLastPage.messageGroups = [
+                        {
+                            senderUserId: newMessage.senderUserId,
+                            messages: [newMessage],
+                        },
+                    ];
+                }
 
                 return {
                     ...oldData,
-                    pages: newPages,
+                    pages: [...oldData.pages.slice(0, -1), updatedLastPage],
                 };
             }
         );
     };
 
+    const [queueingMessages, setQueueingMessages] = useState<QueueingMessage[]>([]);
+
     const sendMessageMutation = useMutation({
         mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }): Promise<ServiceResponse<MessageDto>> => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
         },
         onMutate: async (payload: { tempId: string, data: ChatInputMessageState }) => {
-            const message: QueueableMessage = {
-                id: payload.tempId,
+            const queueingMessage: QueueingMessage = {
+                tempId: payload.tempId,
                 body: payload.data.messageBody,
-                senderUserId: authorization.userProfile?.id ?? `arbitrary-${new Date()}`,
-                createdAt: new Date(),
-                attachments: payload.data.attachments.map((_file, index) => ({ id: `attachment-${index}`, type: '__loading' })),
-                queueStatus: 'sending',
+                attachmentCount: payload.data.attachments.length,
             };
 
-            setPendingQueue((prev) => [...prev, message]);
+            setQueueingMessages((prev) => [...prev, queueingMessage]);
         },
         onSuccess: async (data: ServiceResponse<MessageDto>, payload: { tempId: string, data: ChatInputMessageState }) => {
-            if (!data.success) {
-                setPendingQueue((prev) => prev.map(m =>
-                    m.id === payload.tempId ? { ...m, queueStatus: 'error' } : m
-                ));
-                return;
-            }
-
             pushNewMessage(data.data!, authorization.userProfile ?? undefined);
 
             // remove the query
-            setPendingQueue((prev) => prev.filter(m => m.id !== payload.tempId));
+            setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
         },
         onError: (_err, payload: { tempId: string, data: ChatInputMessageState }) => {
-            setPendingQueue((prev) => prev.map(m =>
-                m.id === payload.tempId ? { ...m, queueStatus: 'error' } : m
+            setQueueingMessages((prev) => prev.map(m =>
+                m.tempId === payload.tempId ? { ...m, error: true } : m
             ));
         },
     });
@@ -171,7 +176,7 @@ export default function DirectMessagePage() {
             for (const page of currentCache.pages) {
                 if (!page?.users) continue;
 
-                const cached = page.users[senderId];
+                const cached = page.users.find((value) => value.id == senderId);
 
                 if (cached) {
                     knownUser = cached;
@@ -209,22 +214,72 @@ export default function DirectMessagePage() {
                 )}
             </header>
 
-            <ChatView
-                messages={displayMessages}
-                messageDisplayInfo={messageDisplayInfo}
-                isLoading={isLoading}
-                hasPreviousPage={hasPreviousPage}
-                isFetchingPreviousPage={isFetchingPreviousPage}
-                fetchPreviousPage={fetchPreviousPage}
-                hasNextPage={hasNextPage}
-                isFetchingNextPage={isFetchingNextPage}
-                fetchNextPage={fetchNextPage}
-                onSendMessage={handleSendMessage}
-                isInputDisabled={!channelId || !channelSummary}
-                emptyState={() => {
-                    return <p className="text-base gray-500">And our story begin...</p>
-                }}
-            />
+            <div className="flex-1 min-h-0 flex flex-col relative">
+                {queueingMessages.length > 0 && (
+                    <section className="absolute top-2 inset-x-2 h-10 flex flex-row flex-nowrap gap-2 overflow-hidden z-20">
+                        {queueingMessages.map((message) => (
+                           	<DropdownMenu.Root key={message.tempId}>
+                                <DropdownMenu.Trigger asChild>
+                                    <div className="h-full aspect-square bg-gray-750 rounded-md flex justify-center items-center cursor-pointer">
+                                        <Spinner className="size-6 fill-white"/>
+                                    </div>
+                                </DropdownMenu.Trigger>
+
+                          		<DropdownMenu.Portal>
+                         			<DropdownMenu.Content
+                        				className="w-125 rounded-md bg-gray-625 p-5 border border-gray-400 text-white"
+                        				sideOffset={5}
+                         			>
+                                        <div className="w-full flex flex-col">
+                                            <div className="flex flex-row gap-3">
+                                                <UserAvatar
+                                                    hasAvatar={authorization.userProfile?.hasAvatar ?? false}
+                                                    userId={authorization.userProfile?.id ?? undefined}
+                                                    className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle"
+                                                />
+
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-base text-white">{authorization.userProfile?.displayName ?? "Unknown sender"}</p>
+
+                                                    <p className="max-h-20 overflow-y-auto text-sm leading-6 whitespace-pre-wrap">
+                                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                                                    </p>
+
+                                                    {message.attachmentCount > 0 && (
+                                                        <p className="mt-2">With {message.attachmentCount} attachment{message.attachmentCount > 1 ? 's' : ''}.</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                        				<DropdownMenu.Arrow className="fill-gray-600" />
+                         			</DropdownMenu.Content>
+                          		</DropdownMenu.Portal>
+                           	</DropdownMenu.Root>
+                        ))}
+                    </section>
+                )}
+
+                <ChatView
+                    messageGroups={allMessageGroups}
+                    userProfiles={userMap}
+                    isLoading={isLoading}
+                    hasPreviousPage={hasPreviousPage}
+                    isFetchingPreviousPage={isFetchingPreviousPage}
+                    fetchPreviousPage={fetchPreviousPage}
+                    hasNextPage={hasNextPage}
+                    isFetchingNextPage={isFetchingNextPage}
+                    fetchNextPage={fetchNextPage}
+                    emptyState={() => {
+                        return <p className="text-base gray-500">And our story begin...</p>
+                    }}
+                />
+
+                <ChatInput
+                    disabled={!channelId || !channelSummary}
+                    onSendMessage={handleSendMessage}
+                />
+            </div>
         </div>
     );
 }

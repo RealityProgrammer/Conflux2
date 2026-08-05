@@ -1,7 +1,7 @@
 import IconButton from "./IconButton.tsx";
 import {BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
 import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from "react";
-import {AspectRatio, Dialog, ScrollArea} from "radix-ui";
+import {ScrollArea} from "radix-ui";
 import FilePreviewGallery, {type GalleryPreviewItem} from "./FilePreviewGallery.tsx";
 
 export interface ChatInputProps {

@@ -95,6 +95,18 @@ export type Attachment = {
     type: string;
 }
 
+export type MessageElement = {
+    id: string;
+    body?: string;
+    attachments: Attachment[];
+    createdAt: Date;
+}
+
+export type MessageGroup = {
+    senderUserId: string;
+    messages: MessageElement[];
+}
+
 export type MessageDto = {
     id: string;
     senderUserId: string;
@@ -104,8 +116,8 @@ export type MessageDto = {
 }
 
 export type GetMessagesResponse = {
-    messages: MessageDto[];
-    users: Record<string, UserBasicProfileSummary>;
+    messageGroups: MessageGroup[];
+    users: UserBasicProfileSummary[];
     hasMoreBefore?: boolean;
     hasMoreAfter?: boolean;
 }

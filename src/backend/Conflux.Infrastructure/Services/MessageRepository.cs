@@ -12,7 +12,7 @@ internal sealed class MessageRepository(
         dbContext.Messages.Add(message);
     }
 
-    public async Task<Result<GetMessagesResult>> GetMessagesAsync(
+    public async Task<Result<PagedMessageResult>> GetMessagesAsync(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId, 
@@ -105,22 +105,6 @@ internal sealed class MessageRepository(
             }
         }
 
-        Dictionary<Guid, UserBasicProfileSummary> users;
-
-        if (messages.Count == 0) {
-            users = [];
-        } else {
-            var uniqueUserIds = messages
-                .Select(m => m.SenderUserId)
-                .Distinct()
-                .ToList();
-            
-            users = await dbContext.Users
-                .Where(u => uniqueUserIds.Contains(u.Id))
-                .Select(u => new UserBasicProfileSummary(u.Id, u.UserName, u.DisplayName, u.HasAvatar))
-                .ToDictionaryAsync(u => u.Id, cancellationToken);
-        }
-
-        return Result<GetMessagesResult>.Success(new(messages, users, hasMoreBefore, hasMoreAfter));
+        return Result<PagedMessageResult>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
 }

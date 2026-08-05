@@ -9,18 +9,20 @@ import {
 import {type ReactVirtualizer, useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
-interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof ScrollArea.Root> {
+export type EstimateHeightTarget = 'previousLoader' | 'nextLoader' | { itemIndex: number };
+
+export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<typeof ScrollArea.Root> {
     virtualizerRef?: RefObject<ReactVirtualizer<HTMLDivElement, Element>>;
     viewportRef?: RefObject<HTMLDivElement | null>;
     viewportClassName?: string;
     containerClassName?: string;
 
-    items: T[];
+    itemCount: number;
     isLoading: boolean;
-    estimateSize: ((index: number) => number) | number;
+    estimateSize: (target: EstimateHeightTarget) => number;
     pageSize?: number;
     overscan?: number;
-    keyExtractor?: (item: T, index: number) => Key;
+    keyExtractor?: (index: number) => Key;
 
     hasPreviousPage?: boolean;
     isFetchingPreviousPage?: boolean;
@@ -31,20 +33,20 @@ interface VirtualizedScrollListProps<T> extends ComponentPropsWithoutRef<typeof 
     fetchNextPage: () => void | Promise<void>;
 
     renderEmpty?: () => ReactNode;
-    renderItem: (item: T, virtualItem: VirtualItem, itemIndex: number) => ReactNode;
+    renderItem: (itemIndex: number, virtualItem: VirtualItem) => ReactNode;
     renderSkeletonItem?: (index: number) => ReactNode;
 
     renderFetchingPrevious?: () => ReactNode;
     renderFetchingNext?: () => ReactNode;
 }
 
-export default function VirtualizedScrollList<T>({
+export default function VirtualizedScrollList({
     virtualizerRef,
     viewportRef,
     className,
     viewportClassName,
     containerClassName,
-    items,
+    itemCount,
     isLoading,
     estimateSize,
     pageSize = 20,
@@ -62,26 +64,31 @@ export default function VirtualizedScrollList<T>({
     renderFetchingPrevious,
     renderFetchingNext,
     ...props
-}: VirtualizedScrollListProps<T>) {
+}: VirtualizedScrollListProps) {
     const scrollViewportRef = useRef<HTMLDivElement>(null!);
 
     const prevOffset = hasPreviousPage ? 1 : 0;
     const nextOffset = hasNextPage ? 1 : 0;
-    const virtualCount = prevOffset + items.length + nextOffset;
+    const virtualCount = prevOffset + itemCount + nextOffset;
 
     const virtualizer = useVirtualizer({
         count: virtualCount,
         getScrollElement: () => scrollViewportRef.current,
-        estimateSize: typeof estimateSize === 'function' ? estimateSize : () => estimateSize,
+        estimateSize: (index) => {
+            if (hasPreviousPage && index == 0) return estimateSize('previousLoader');
+            if (hasNextPage && index == virtualCount - 1) return estimateSize('nextLoader');
+
+            return estimateSize({ itemIndex: index - prevOffset });
+        },
         overscan,
         getItemKey: (index) => {
             if (index === 0 && hasPreviousPage) return '__loader-prev';
             if (index === virtualCount - 1 && hasNextPage) return '__loader-next';
 
             const itemIndex = index - prevOffset;
-            const item = items[itemIndex];
-            if (keyExtractor && item) {
-                return keyExtractor(item, itemIndex);
+
+            if (keyExtractor) {
+                return keyExtractor(itemIndex);
             }
             return index;
         }
@@ -89,15 +96,15 @@ export default function VirtualizedScrollList<T>({
 
     useImperativeHandle(virtualizerRef, () => virtualizer, [virtualizer]);
 
-    const prevFirstItem = useRef<T | undefined>(undefined);
+    const prevFirstItemKey = useRef<Key | null>(null);
     const prevTotalSize = useRef(0);
     const justPrepended = useRef(false);
 
     useLayoutEffect(() => {
         const currentTotalSize = virtualizer.getTotalSize();
-        const currentFirstItem = items[0];
+        const currentFirstItemKey = itemCount > 0 && keyExtractor ? keyExtractor(0) : null;
 
-        if (currentFirstItem && prevFirstItem.current && currentFirstItem !== prevFirstItem.current) {
+        if (currentFirstItemKey !== null && prevFirstItemKey.current !== null && currentFirstItemKey !== prevFirstItemKey.current) {
             const sizeDiff = currentTotalSize - prevTotalSize.current;
             if (scrollViewportRef.current && sizeDiff > 0) {
                 scrollViewportRef.current.scrollTop += sizeDiff;
@@ -109,8 +116,8 @@ export default function VirtualizedScrollList<T>({
             }
         }
 
-        prevFirstItem.current = currentFirstItem;
-    }, [items, virtualizer]);
+        prevFirstItemKey.current = currentFirstItemKey;
+    }, [itemCount, keyExtractor, virtualizer]);
 
     useLayoutEffect(() => {
         prevTotalSize.current = virtualizer.getTotalSize();
@@ -133,11 +140,11 @@ export default function VirtualizedScrollList<T>({
     useEffect(() => {
         if (!fetchNextPage || virtualItems.length === 0) return;
 
-        const lastVirtualItem = virtualItems[virtualItems.length - 1];
+        const lastVirtualItem = virtualItems.at(-1)!;
         if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [virtualItems, items.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [virtualItems, itemCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
         <ScrollArea.Root className={`overflow-hidden ${className}`} {...props}>
@@ -152,7 +159,7 @@ export default function VirtualizedScrollList<T>({
                 className={`size-full [&>div]:flex! [&>div]:min-h-full [&>div]:flex-col ${viewportClassName || ""}`}
                 style={{ overflowAnchor: 'none' }}
             >
-                {items.length === 0 && !isLoading ? (
+                {itemCount === 0 && !isLoading ? (
                     renderEmpty?.()
                 ) : isLoading ? (
                     /* Rendering items skeleton */
@@ -168,9 +175,7 @@ export default function VirtualizedScrollList<T>({
                             const shouldRenderFetchingPrevious = hasPreviousPage && virtualItem.index === 0;
                             const shouldRenderFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
 
-                            // Shift the array index back by 1 if there's a previous loader at index 0
                             const itemIndex = virtualItem.index - prevOffset;
-                            const item = items[itemIndex];
 
                             return (
                                 <div
@@ -188,7 +193,7 @@ export default function VirtualizedScrollList<T>({
                                         renderFetchingPrevious && renderFetchingPrevious() :
                                     shouldRenderFetchingNext ?
                                         renderFetchingNext && renderFetchingNext() :
-                                        renderItem(item, virtualItem, itemIndex)
+                                        renderItem(itemIndex, virtualItem)
                                     }
                                 </div>
                             );

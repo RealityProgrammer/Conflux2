@@ -1,8 +1,7 @@
 namespace Conflux.Domain.Dto;
 
-public sealed record GetMessagesResult(
+public sealed record PagedMessageResult(
     List<MessageDto> Messages, 
-    Dictionary<Guid, UserBasicProfileSummary> Users,
     bool? HasMoreBefore, 
     bool? HasMoreAfter
 );

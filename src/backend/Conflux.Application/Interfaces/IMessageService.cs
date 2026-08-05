@@ -1,3 +1,4 @@
+using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
@@ -13,7 +14,7 @@ public interface IMessageService {
         CancellationToken cancellationToken = default
     );
 
-    Task<Result<GetMessagesResult>> GetMessagesAsync(
+    Task<Result<GetMessagesResponse>> GetMessagesAsync(
         Guid channelId,
         MessageLoadDirection? direction,
         Guid? cursorMessageId,

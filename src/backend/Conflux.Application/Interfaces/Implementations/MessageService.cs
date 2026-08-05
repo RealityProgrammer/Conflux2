@@ -1,4 +1,5 @@
 using Conflux.Application.Dto.Notifications;
+using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
@@ -16,6 +17,7 @@ public class MessagingServiceOptions {
 internal sealed class MessageService(
     IUnitOfWork unitOfWork,
     IMessageRepository messageRepository,
+    IUserRepository userRepository,
     IChannelRepository channelRepository,
     IStorageService storageService,
     IFileFormatInspector fileFormatInspector,
@@ -71,10 +73,15 @@ internal sealed class MessageService(
                 Result<Guid> uploadResult =
                     await storageService.UploadMessageAttachmentAsync(new(stream, imageFormat.MediaType), cancellationToken);
 
-                attachments[i] = new() {
-                    Id = uploadResult.Value,
-                    Type = imageFormat.MediaType,
-                };
+                if (uploadResult.IsSuccess) {
+                    attachments[i] = new() {
+                        Id = uploadResult.Value,
+                        Type = imageFormat.MediaType,
+                    };
+                } else {
+                    await DeleteUploadedAttachments();
+                    return Errors.AttachmentUploadFailure();
+                }
             } catch (OperationCanceledException) {
                 await DeleteUploadedAttachments();
                 throw;
@@ -119,7 +126,7 @@ internal sealed class MessageService(
         }
     }
 
-    public async Task<Result<GetMessagesResult>> GetMessagesAsync(
+    public async Task<Result<GetMessagesResponse>> GetMessagesAsync(
         Guid channelId,
         MessageLoadDirection? direction,
         Guid? cursorMessageId,
@@ -132,13 +139,53 @@ internal sealed class MessageService(
         if (result.IsSuccess) {
             var postingContext = result.Value;
             
-            return await messageRepository.GetMessagesAsync(
+            Result<PagedMessageResult> getMessagesResult = await messageRepository.GetMessagesAsync(
                 postingContext!.ConversationId, 
                 direction, 
                 cursorMessageId,
                 count,
                 cancellationToken
             );
+            
+            if (getMessagesResult.IsSuccess) {
+                var messagePage = getMessagesResult.Value!;
+                
+                // bail out early
+                if (messagePage.Messages.Count == 0) {
+                    return Result<GetMessagesResponse>.Success(new([], [], messagePage.HasMoreBefore, messagePage.HasMoreAfter));
+                }
+                
+                // group the messages
+                var groups = new List<MessageGroup>();
+                MessageGroup? currentGroup = null;
+
+                foreach (MessageDto message in getMessagesResult.Value!.Messages) {
+                    var element = new MessageElement(message.Id, message.Body, message.Attachments, message.CreatedAt);
+
+                    // if same sender as the last message, append to the current group
+                    if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {
+                        currentGroup.Messages.Add(element);
+                    } else {
+                        // else, create a new group and add it to the list
+                        currentGroup = new(message.SenderUserId, [element]);
+                        groups.Add(currentGroup);
+                    }
+                }
+
+                // must have at least 1 user
+                List<UserBasicProfileSummary> userProfiles =
+                    await userRepository.GetProfileSummariesAsync(
+                        [..groups.Select(g => g.SenderUserId).Distinct()], 
+                        cancellationToken
+                    );
+                
+                return Result<GetMessagesResponse>.Success(new(
+                    groups, 
+                    userProfiles, 
+                    messagePage.HasMoreBefore, 
+                    messagePage.HasMoreAfter
+                ));
+            }
         }
 
         return result.Error;

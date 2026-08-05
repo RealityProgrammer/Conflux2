@@ -1,8 +1,7 @@
-import type {Attachment, MessageDto, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 import {type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
-import ChatInput, {type ChatInputMessageState} from "./ChatInput.tsx";
-import type {ReactVirtualizer} from "@tanstack/react-virtual";
+import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
@@ -10,12 +9,7 @@ import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
 import Spinner from "./Spinner.tsx";
 import UserAvatar from "./UserAvatar.tsx";
 import {ScrollArea} from "radix-ui";
-
-export type QueueableMessage = MessageDto & { queueStatus?: 'sending' | 'error' };
-
-export type MessageDisplayInfo = {
-    userInfo?: UserBasicProfileSummary;
-};
+import MessageGroupRow from "./MessageGroupRow.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -27,6 +21,7 @@ const BODY_LINE_HEIGHT = 24;
 const MESSAGE_ATTACHMENT_BOTTOM_PADDING = 4;
 
 const preparedCache = new Map<string, PreparedText>();
+const MAX_PREPARED_CACHE_SIZE = 512;
 
 function fallbackTextHeight(text: string, width: number) {
     const averageCharacterWidth = 7;
@@ -38,42 +33,57 @@ function fallbackTextHeight(text: string, width: number) {
     }, 0);
 }
 
-function getPreparedMessage(message: MessageDto): PreparedText | null {
-    if (!message.body) return null;
+function getPreparedMessage(id: string, content: string): PreparedText | null {
+    if (!content) return null;
 
-    const key = message.id;
-    const cached = preparedCache.get(key);
+    // re-insert on hit to refresh the position
+    if (preparedCache.has(id)) {
+        const cached = preparedCache.get(id)!;
+        preparedCache.delete(id);
+        preparedCache.set(id, cached);
+        return cached;
+    }
 
-    if (cached) return cached;
+    // evict the oldest text if passed the cache size
+    if (preparedCache.size >= MAX_PREPARED_CACHE_SIZE) {
+        const oldestKey = preparedCache.keys().next().value;
+        if (oldestKey) preparedCache.delete(oldestKey);
+    }
 
-    const prepared = prepare(message.body, BODY_FONT, {
+    const prepared = prepare(content, BODY_FONT, {
         whiteSpace: 'pre-wrap',
         wordBreak: 'normal',
     });
 
-    preparedCache.set(key, prepared);
+    preparedCache.set(id, prepared);
     return prepared;
 }
 
-function estimateMessageBodyHeight(message: MessageDto, viewportWidth: number): number {
-    viewportWidth = viewportWidth - 16 - 52;
-
-    if (!message.body) return 0;
-
-    const textWidth = Math.max(1, viewportWidth);
+function estimateMessageGroupHeight(messageGroup: MessageGroup, displayAreaWidth: number): number {
+    displayAreaWidth = Math.max(1, displayAreaWidth);
     const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
 
-    if (!isSupported) {
-        return fallbackTextHeight(message.body, textWidth);
-    }
+    return messageGroup.messages.reduce((acc: number, msg: MessageElement) => {
+        if (!msg.body) return acc;
 
-    const layoutResult: LayoutResult = layout(getPreparedMessage(message)!, textWidth, BODY_LINE_HEIGHT);
-    return layoutResult.height;
+        if (!isSupported) {
+            acc += fallbackTextHeight(msg.body, displayAreaWidth);
+        } else {
+            const layoutResult: LayoutResult = layout(getPreparedMessage(msg.id, msg.body)!, displayAreaWidth, BODY_LINE_HEIGHT);
+            acc += layoutResult.height;
+        }
+
+        if (msg.attachments && msg.attachments.length > 0) {
+            acc += 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING;
+        }
+
+        return acc;
+    }, 24);
 }
 
 export interface ChatViewProps {
-    messages: QueueableMessage[];
-    messageDisplayInfo: MessageDisplayInfo[];
+    messageGroups: MessageGroup[];
+    userProfiles: Record<string, UserBasicProfileSummary>;
     isLoading: boolean;
     hasPreviousPage: boolean;
     isFetchingPreviousPage: boolean;
@@ -81,14 +91,12 @@ export interface ChatViewProps {
     hasNextPage: boolean;
     isFetchingNextPage: boolean;
     fetchNextPage: () => void;
-    onSendMessage: (payload: ChatInputMessageState) => void;
-    isInputDisabled?: boolean;
     emptyState?: () => ReactNode;
 }
 
 export function ChatView({
-     messages,
-     messageDisplayInfo,
+     messageGroups,
+     userProfiles,
      isLoading,
      hasPreviousPage,
      isFetchingPreviousPage,
@@ -96,8 +104,6 @@ export function ChatView({
      hasNextPage,
      isFetchingNextPage,
      fetchNextPage,
-     onSendMessage,
-     isInputDisabled,
      emptyState,
  }: ChatViewProps) {
     const viewportRef = useRef<HTMLDivElement>(null!);
@@ -108,7 +114,7 @@ export function ChatView({
 
     // jump to the bottom when the messages are rendered
     useLayoutEffect(() => {
-        if (messages.length > 0 && !isReady) {
+        if (messageGroups.length > 0 && !isReady) {
             requestAnimationFrame(() => {
                 const virtualizer = virtualizerRef.current;
                 if (!virtualizer) return;
@@ -117,20 +123,25 @@ export function ChatView({
 
                 requestAnimationFrame(() => setIsReady(true));
             });
-        } else if (!isLoading && messages.length === 0) {
+        } else if (!isLoading && messageGroups.length === 0) {
             setIsReady(true);
         }
-    }, [messages.length, isLoading, isReady]);
+    }, [messageGroups.length, isLoading, isReady]);
 
     // jump to bottom automatically when something arrive.
-    const previousMessageCount = useRef(messages.length);
+    const lastGroupMessageCount = messageGroups.length === 0 ? null : messageGroups.length;
+
+    const previousMessageCount = useRef({
+        groupCount: messageGroups.length,
+        lastGroupCount: lastGroupMessageCount,
+    });
 
     useEffect(() => {
-        if (messages.length > previousMessageCount.current && isReady) {
+        if ((messageGroups.length > previousMessageCount.current.groupCount || (lastGroupMessageCount && previousMessageCount.current.lastGroupCount && lastGroupMessageCount > previousMessageCount.current.lastGroupCount)) && isReady) {
             const distanceFromBottom = viewportRef.current.scrollHeight - viewportRef.current.scrollTop - viewportRef.current.clientHeight;
 
             // why not == 0? idk im too tired to think about it lmao
-            const isNearBottom = distanceFromBottom < 50;
+            const isNearBottom = distanceFromBottom < 10;
 
             if (isNearBottom) {
                 requestAnimationFrame(() => {
@@ -142,8 +153,11 @@ export function ChatView({
             }
         }
 
-        previousMessageCount.current = messages.length;
-    }, [messages.length, isReady]);
+        previousMessageCount.current = {
+            groupCount: messageGroups.length,
+            lastGroupCount: lastGroupMessageCount,
+        };
+    }, [messageGroups.length, messageGroups.at(-1)?.messages.length ?? 0, isReady]);
 
     // gallery
     const [galleryState, setGalleryState] = useState<MediaGalleryState | null>(null);
@@ -156,7 +170,7 @@ export function ChatView({
     };
 
     return (
-        <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
+        <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
             <MediaPreviewGallery
                 open={galleryState !== null}
                 onOpenChange={(state) => {
@@ -191,28 +205,15 @@ export function ChatView({
             <VirtualizedScrollList
                 virtualizerRef={virtualizerRef}
                 viewportRef={viewportRef}
-                className="flex-1 min-h-0 pb-2"
+                className="flex-1"
                 containerClassName="mt-auto"
-                items={messages}
-                keyExtractor={(item) => item.id}
+                itemCount={messageGroups.length}
+                keyExtractor={(itemIndex) => messageGroups[itemIndex].messages[0].id}
                 isLoading={isLoading}
-                estimateSize={(index) => {
-                    const prevOffset = hasPreviousPage ? 1 : 0;
-                    if ((hasPreviousPage && index == 0) || (hasNextPage && index == prevOffset + messages.length)) {
-                        return 30; // Loader size
-                    }
+                estimateSize={(target) => {
+                    if (target === 'previousLoader' || target === 'nextLoader') return 30;
 
-                    const message = messages[index - prevOffset];
-                    const displayInfo = messageDisplayInfo[index - prevOffset];
-                    if (!message) return 52;
-
-                    const showProfile = !message.queueStatus && !!displayInfo?.userInfo;
-                    const bodyHeight = estimateMessageBodyHeight(message, viewportWidth);
-                    const attachmentHeight = message.attachments && message.attachments.length > 0
-                        ? (message.queueStatus ? 24 : 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING)
-                        : 0;
-
-                    return bodyHeight + attachmentHeight + (showProfile ? 24 : 0);
+                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52);
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -241,96 +242,15 @@ export function ChatView({
                         </div>
                     );
                 }}
-                renderItem={(item, _virtualItem, itemIndex) => (
-                    <MessageRow
-                        message={item}
-                        displayInfo={messageDisplayInfo[itemIndex] ?? { userInfo: undefined }}
+                renderItem={(itemIndex, virtualItem) => (
+                    <MessageGroupRow
+                        key={virtualItem.key}
+                        messageGroup={messageGroups[itemIndex]}
+                        userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
                         onAttachmentClick={handleAttachmentClick}
                     />
                 )}
             />
-
-            <ChatInput
-                disabled={isInputDisabled}
-                onSendMessage={onSendMessage}
-            />
         </div>
-    );
-}
-
-interface MessageRowProps {
-    message: QueueableMessage;
-    displayInfo: MessageDisplayInfo;
-    onAttachmentClick: (attachments: Attachment[], index: number) => void;
-}
-
-function MessageRow({ message, displayInfo, onAttachmentClick }: MessageRowProps) {
-    return (
-        <div className={`w-full ${message.queueStatus ? "" : "hover-highlight"}`}>
-            <div className="flex flex-row gap-3 mx-2">
-                {displayInfo.userInfo ? (
-                    <>
-                        <UserAvatar
-                            hasAvatar={displayInfo.userInfo.hasAvatar}
-                            userId={message.senderUserId}
-                            className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-                        />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-base text-white">{displayInfo.userInfo.userName}</p>
-                            <MessageRowContent message={message} onAttachmentClick={onAttachmentClick}/>
-                        </div>
-                    </>
-                ) : (
-                    <div className="ml-13 min-w-0">
-                        <MessageRowContent message={message} onAttachmentClick={onAttachmentClick}/>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function MessageRowContent({ message, onAttachmentClick }: { message: QueueableMessage, onAttachmentClick: (attachments: Attachment[], index: number) => void }) {
-    const messageStatus = message.queueStatus;
-
-    return (
-        <>
-            {message.body && (
-                <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : messageStatus === "error" ? "text-red-500" : "text-white"}`}>
-                    {message.body}
-                </p>
-            )}
-
-            {message.attachments && message.attachments.length > 0 && (
-                messageStatus ? (
-                    <p className={`text-sm leading-6 whitespace-pre-wrap ${messageStatus === "sending" ? "text-gray-400 animate-pulse" : "text-red-500"}`}>{`<${message.attachments.length} attachment${message.attachments.length > 1 ? 's' : ''}>`}</p>
-                ) : (
-                    <ScrollArea.Root className="h-32 w-full overflow-hidden group">
-                        <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
-                            <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
-                                {message.attachments.map((attachment, index) => (
-                                    <div
-                                        key={attachment.id}
-                                        className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
-                                        onClick={() => onAttachmentClick(message.attachments, index)}
-                                    >
-                                        {attachment.type.startsWith("image") && (
-                                            <img
-                                                src={messageService.getAttachmentUrl(attachment.id, false)}
-                                                alt="attachment"
-                                                className="object-cover size-full"
-                                            />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </ScrollArea.Viewport>
-                        <ScrollArea.Scrollbar className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight" orientation="horizontal">
-                            <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2" />
-                        </ScrollArea.Scrollbar>
-                    </ScrollArea.Root>
-                )
-            )}
-        </>
     );
 }

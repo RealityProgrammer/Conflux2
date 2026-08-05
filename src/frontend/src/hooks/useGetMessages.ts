@@ -1,11 +1,11 @@
 import {type InfiniteData, useInfiniteQuery, type UseInfiniteQueryResult} from "@tanstack/react-query";
-import type {GetMessagesResponse, MessageDto, UserBasicProfileSummary} from "../api/responses.ts";
+import type {GetMessagesResponse, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
 import {messageService} from "../api/messageService.ts";
 import type {MessageLoadDirection} from "../api/requests.ts";
 
 interface UseGetMessagesResult {
     useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
-    allMessages: MessageDto[];
+    allMessageGroups: MessageGroup[];
     userMap: Record<string, UserBasicProfileSummary>;
     queryKey: (string | null | undefined)[];
 }
@@ -37,11 +37,11 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         },
 
         getPreviousPageParam: (firstPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
-            if (firstPage?.hasMoreBefore && firstPage.messages.length > 0) {
-                const oldestMessage = firstPage.messages[0];
+            if (firstPage?.hasMoreBefore && firstPage.messageGroups.length > 0) {
+                const oldestMessage = firstPage.messageGroups[0];
 
                 return {
-                    cursorId: oldestMessage.id,
+                    cursorId: oldestMessage.messages[0].id,
                     direction: 'Before'
                 };
             }
@@ -50,11 +50,9 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         },
 
         getNextPageParam: (lastPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
-            if (lastPage?.hasMoreAfter && lastPage.messages.length > 0) {
-                const newestMessage = lastPage.messages[lastPage.messages.length - 1];
-
+            if (lastPage?.hasMoreAfter && lastPage.messageGroups.length > 0) {
                 return {
-                    cursorId: newestMessage.id,
+                    cursorId: lastPage.messageGroups.at(-1)?.messages.at(-1)?.id,
                     direction: 'After'
                 };
             }
@@ -66,19 +64,38 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         refetchOnWindowFocus: false,
     });
 
-    const allMessages: MessageDto[] = queryResult.data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
+    const allMessageGroups: MessageGroup[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
+
+    // allMessageGroups is basically a flatten groups, if page N end and page N+1 have same sender id, it still considered
+    // as separate group
+    const mergedGroups: MessageGroup[] = allMessageGroups.reduce<MessageGroup[]>((acc, currentGroup) => {
+        const lastGroup = acc.at(-1);
+
+        if (lastGroup && lastGroup.senderUserId === currentGroup.senderUserId) {
+            // replace the last group with a new object containing both element arrays
+            acc[acc.length - 1] = {
+                ...lastGroup,
+                messages: [...lastGroup.messages, ...currentGroup.messages],
+            };
+        } else {
+            // just push the group into the array
+            acc.push(currentGroup);
+        }
+
+        return acc;
+    }, []);
 
     const userMap: Record<string, UserBasicProfileSummary> = {};
 
     if (queryResult.data?.pages) {
         for (const page of queryResult.data?.pages) {
             if (page?.users) {
-                for (const [userId, user] of Object.entries(page.users)) {
-                    userMap[userId] = user;
+                for (const user of page.users) {
+                    userMap[user.id] = user;
                 }
             }
         }
     }
 
-    return { useInfiniteQueryResult: queryResult, allMessages, userMap, queryKey };
+    return { useInfiniteQueryResult: queryResult, allMessageGroups: mergedGroups, userMap, queryKey };
 }

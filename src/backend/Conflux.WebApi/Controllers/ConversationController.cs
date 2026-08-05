@@ -1,4 +1,5 @@
 using Conflux.Application.Dto.Requests;
+using Conflux.Application.Dto.Responses;
 using Conflux.Application.Interfaces;
 using Conflux.Application.Interfaces.Implementations;
 using Conflux.Domain;
@@ -15,17 +16,16 @@ namespace Conflux.WebApi.Controllers;
 [Route("api")]
 [Authorize]
 public sealed class ConversationController(
-    IMessageService messageService,
-    IStorageService storageService
+    IMessageService messageService
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
     public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
-        Guid channelId, 
+        Guid channelId,
         [FromForm] SendMessageRequest request,
         CancellationToken cancellationToken
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
+
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
         }
@@ -47,7 +47,7 @@ public sealed class ConversationController(
         }
 
         try {
-            Result<MessageDto> result = 
+            Result<MessageDto> result =
                 await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentStreams, cancellationToken);
 
             if (result.IsSuccess) {
@@ -67,7 +67,7 @@ public sealed class ConversationController(
     }
 
     [HttpGet("channels/{channelId:guid}/messages")]
-    public async Task<ActionResult<ApiResponse<GetMessagesResult>>> LoadMessage(
+    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> LoadMessage(
         Guid channelId,
         [FromQuery] MessageLoadDirection? direction,
         [FromQuery] Guid? cursor,
@@ -75,32 +75,32 @@ public sealed class ConversationController(
         CancellationToken cancellationToken
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
+
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
-        
+
         // TODO: Check if user has permission to view messages at this channel at service.
 
-        Result<GetMessagesResult> result = 
+        Result<GetMessagesResponse> result =
             await messageService.GetMessagesAsync(channelId, direction, cursor, count, cancellationToken);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<GetMessagesResult>(result.Value, Error.None));
+            return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));
         }
-        
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResult>(null, result.Error));
+
+        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error));
     }
-    
+
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
     public async Task<ActionResult> GetAvatarUrl(Guid attachmentId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
+
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
-        
+
         var result = messageService.GetAttachmentUrl(attachmentId, Request.IsHttps);
         return Redirect(result);
     }
@@ -114,11 +114,11 @@ public sealed class ConversationController(
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             var results = new List<ValidationResult>();
-            
+
             Validator.TryValidateProperty(Body, new(this, null, null) {
                 MemberName = nameof(Body),
             }, results);
-            
+
             Validator.TryValidateProperty(Attachments, new(this, null, null) {
                 MemberName = nameof(Attachments),
             }, results);
@@ -130,7 +130,7 @@ public sealed class ConversationController(
             if (Attachments is { Length: > 0 }) {
                 var configuration = validationContext.GetService<IConfiguration>()!;
                 var options = configuration.GetSection("Services:User").Get<MessagingServiceOptions>()!;
-                
+
                 if (Attachments.Length > 4) {
                     yield return new("Only 4 attachments allowed in a message.", [
                         nameof(Attachments),

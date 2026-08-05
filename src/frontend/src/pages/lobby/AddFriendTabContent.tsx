@@ -129,9 +129,9 @@ export default function AddFriendTabContent() {
             <VirtualizedScrollList
                 className="flex-1"
                 viewportClassName="rounded-md border-2 border-gray-600"
-                items={allElements}
+                itemCount={allElements.length}
                 isLoading={isLoading}
-                estimateSize={ITEM_HEIGHT}
+                estimateSize={() => ITEM_HEIGHT}
                 fetchNextPage={() => { fetchNextPage() }}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
@@ -140,8 +140,8 @@ export default function AddFriendTabContent() {
                         No items found.
                     </div>
                 )}
-                renderItem={(item) => (
-                    <Row user={item} updateCacheStatus={updateCacheStatus}/>
+                renderItem={(itemIndex: number) => (
+                    <Row user={allElements[itemIndex]} updateCacheStatus={updateCacheStatus}/>
                 )}
                 renderSkeletonItem={(index) =>
                     <UserNameplate.Skeleton key={index}

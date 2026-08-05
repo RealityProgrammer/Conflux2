@@ -69,14 +69,29 @@ internal sealed class UserRepository(
         return Errors.NoUserFoundFromId();
     }
 
-    public async Task<Result<UserBasicProfileSummary>> GetUserBasicProfileAsync(Guid userId) {
+    public async Task<Result<UserBasicProfileSummary>> GetProfileSummaryAsync(
+        Guid userId, 
+        CancellationToken cancellationToken = default
+    ) {
         UserBasicProfileSummary? result = await dbContext.Users
             .Where(u => u.Id == userId)
             .Select(u => new UserBasicProfileSummary(u.Id, u.UserName!, u.DisplayName!, u.HasAvatar))
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         return result == null ? 
             Errors.NoUserFoundFromId() : 
             Result<UserBasicProfileSummary>.Success(result);
+    }
+    
+    public async Task<List<UserBasicProfileSummary>> GetProfileSummariesAsync(
+        IReadOnlyCollection<Guid> userIds, 
+        CancellationToken cancellationToken = default
+    ) {
+        List<UserBasicProfileSummary> results = await dbContext.Users
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new UserBasicProfileSummary(u.Id, u.UserName!, u.DisplayName!, u.HasAvatar))
+            .ToListAsync(cancellationToken);
+
+        return results;
     }
 }

@@ -177,9 +177,9 @@ export default function PendingRequestsTabContent() {
             <VirtualizedScrollList
                 className="flex-1"
                 viewportClassName="rounded-md border-2 border-gray-600"
-                items={allElements}
+                itemCount={allElements.length}
                 isLoading={isLoading}
-                estimateSize={ITEM_HEIGHT}
+                estimateSize={() => ITEM_HEIGHT}
                 fetchNextPage={() => { fetchNextPage() }}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
@@ -188,8 +188,8 @@ export default function PendingRequestsTabContent() {
                         No items found.
                     </div>
                 )}
-                renderItem={(item: QueryPendingRequestElement) => (
-                    <Row element={item} removeCacheElement={removeCacheElement}/>
+                renderItem={(itemIndex: number) => (
+                    <Row element={allElements[itemIndex]} removeCacheElement={removeCacheElement}/>
                 )}
                 renderSkeletonItem={(index) => (
                     <UserNameplate.Skeleton key={index}

@@ -16,5 +16,12 @@ public interface IUserRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<Result<UserBasicProfileSummary>> GetUserBasicProfileAsync(Guid userId);
+    Task<Result<UserBasicProfileSummary>> GetProfileSummaryAsync(
+        Guid userId, 
+        CancellationToken cancellationToken = default
+    );
+    Task<List<UserBasicProfileSummary>> GetProfileSummariesAsync(
+        IReadOnlyCollection<Guid> userIds, 
+        CancellationToken cancellationToken = default
+    );
 }
