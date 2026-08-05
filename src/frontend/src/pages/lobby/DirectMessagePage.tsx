@@ -131,8 +131,6 @@ export default function DirectMessagePage() {
 
     const sendMessageMutation = useMutation({
         mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }): Promise<ServiceResponse<MessageDto>> => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
             return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
         },
         onMutate: async (payload: { tempId: string, data: ChatInputMessageState }) => {
