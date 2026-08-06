@@ -500,8 +500,10 @@ function MessageEditor({ initialValue, onSave, onCancel, disabled }: MessageEdit
             textarea.style.height = "auto";
             textarea.style.height = `${textarea.scrollHeight}px`;
 
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            requestAnimationFrame(() => {
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            });
         }
     }, []);
 
