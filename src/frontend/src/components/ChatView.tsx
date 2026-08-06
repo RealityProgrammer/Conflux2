@@ -1,13 +1,16 @@
-import type {Attachment, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, MessageDto, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
-import {type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ChangeEvent} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
 import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
 import Spinner from "./Spinner.tsx";
-import MessageGroupRow from "./MessageGroupRow.tsx";
+import { ContextMenu, ScrollArea } from "radix-ui";
+import { BsCopy, BsPencil, BsTrash } from "react-icons/bs";
+import UserAvatar from "./UserAvatar.tsx";
+import { useAuthorization } from "../contexts/AuthContext.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -16,6 +19,7 @@ type MediaGalleryState = {
 
 const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BODY_LINE_HEIGHT = 24;
+const BODY_ATTACHMENT_PADDING = 4;
 const MESSAGE_ATTACHMENT_BOTTOM_PADDING = 4;
 
 const preparedCache = new Map<string, PreparedText>();
@@ -57,21 +61,37 @@ function getPreparedMessage(id: string, content: string): PreparedText | null {
     return prepared;
 }
 
-function estimateMessageGroupHeight(messageGroup: MessageGroup, displayAreaWidth: number): number {
-    displayAreaWidth = Math.max(1, displayAreaWidth);
+function estimateMessageContentHeight(id: string, content: string, displayAreaWidth: number): number {
     const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
 
-    return messageGroup.messages.reduce((acc: number, msg: MessageElement) => {
-        if (!msg.body) return acc;
+    if (!isSupported) {
+        return fallbackTextHeight(content, displayAreaWidth);
+    } else {
+        const layoutResult: LayoutResult = layout(getPreparedMessage(id, content)!, displayAreaWidth, BODY_LINE_HEIGHT);
+        return layoutResult.height;
+    }
+}
 
-        if (!isSupported) {
-            acc += fallbackTextHeight(msg.body, displayAreaWidth);
-        } else {
-            const layoutResult: LayoutResult = layout(getPreparedMessage(msg.id, msg.body)!, displayAreaWidth, BODY_LINE_HEIGHT);
-            acc += layoutResult.height;
+function estimateMessageGroupHeight(messageGroup: MessageGroup, displayAreaWidth: number, editingMessageId: string): number {
+    displayAreaWidth = Math.max(1, displayAreaWidth);
+
+    return messageGroup.messages.reduce((acc: number, msg: MessageElement) => {
+        if (msg.body) {
+            if (msg.id === editingMessageId) {
+                // add 16 cuz input is py-2, subtract 24 cuz input hs px-3
+
+                acc += estimateMessageContentHeight(msg.id, msg.body, displayAreaWidth - 24);   // subtract 24 for textarea x padding
+                acc += 16;  // textarea y padding
+                acc += 20;  // 16 for the escape to cancel, enter to save message, 4 for gap between it and textarea above
+            } else {
+                acc += estimateMessageContentHeight(msg.id, msg.body, displayAreaWidth);
+            }
         }
 
         if (msg.attachments && msg.attachments.length > 0) {
+            // if has body, add a small padding between them
+            acc += msg.body ? BODY_ATTACHMENT_PADDING : 0;
+
             acc += 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING;
         }
 
@@ -167,6 +187,9 @@ export function ChatView({
         });
     };
 
+    // message editing
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
             <MediaPreviewGallery
@@ -211,7 +234,7 @@ export function ChatView({
                 estimateSize={(target) => {
                     if (target === 'previousLoader' || target === 'nextLoader') return 30;
 
-                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52);
+                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessageId);
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -240,15 +263,298 @@ export function ChatView({
                         </div>
                     );
                 }}
-                renderItem={(itemIndex, virtualItem) => (
-                    <MessageGroupRow
-                        key={virtualItem.key}
-                        messageGroup={messageGroups[itemIndex]}
-                        userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
-                        onAttachmentClick={handleAttachmentClick}
-                    />
-                )}
+                renderItem={(itemIndex, virtualItem) => {
+                    return (
+                        <MessageGroupRow
+                            key={virtualItem.key}
+                            messageGroup={messageGroups[itemIndex]}
+                            userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
+                            onAttachmentClick={handleAttachmentClick}
+                            editingMessageId={editingMessageId || undefined}
+                            onEditTriggered={(messageId) => {
+                                setEditingMessageId(messageId);
+                            }}
+                            onEditCanceled={() => {
+                                setEditingMessageId(null);
+                            }}
+                            onEditSaved={(newBody: string) => {
+                                console.log("update message", editingMessageId, "to new body:", newBody);
+                                setEditingMessageId(null);
+                            }}
+                        />
+                    );
+                }}
             />
+        </div>
+    );
+}
+
+interface MessageGroupRowProps {
+    messageGroup: MessageGroup;
+    userProfile: UserBasicProfileSummary | undefined | null;
+    onAttachmentClick: (attachments: Attachment[], index: number) => void;
+    editingMessageId?: string;
+    onEditTriggered?: (messageId: string) => void;
+    onEditCanceled: () => void;
+    onEditSaved: (newBody: string) => void;
+}
+
+function MessageGroupRow({
+    messageGroup,
+    userProfile,
+    onAttachmentClick,
+    editingMessageId,
+    onEditTriggered,
+    onEditCanceled,
+    onEditSaved
+}: MessageGroupRowProps) {
+    const auth = useAuthorization();
+
+    const [selectedMessage, setSelectedMessage] = useState<MessageDto | null>(null);
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        const messageElement = target.closest<HTMLElement>("[data-message-id]");
+
+        if (messageElement?.dataset.messageId) {
+            const found = messageGroup.messages.find((m) => m.id === messageElement.dataset.messageId);
+
+            if (found) {
+                setSelectedMessage({
+                    senderUserId: messageGroup.senderUserId,
+                    ...found,
+                });
+                return;
+            }
+        }
+
+        setSelectedMessage(null);
+    };
+
+    return (
+        <ContextMenu.Root>
+            <ContextMenu.Trigger
+                className="w-full flex flex-col"
+                onContextMenu={handleContextMenu}
+            >
+                {/* Header message */}
+                <div
+                    data-message-id={messageGroup.messages[0].id}
+                    className="hover-highlight flex flex-row gap-3 px-2"
+                >
+                    <UserAvatar
+                        hasAvatar={userProfile?.hasAvatar ?? false}
+                        userId={userProfile?.id ?? undefined}
+                        className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                    />
+
+                    <div className="flex-1 min-w-0">
+                        <p className="text-base text-white">{userProfile?.userName ?? "Unknown Sender"}</p>
+
+                        <MessageElement
+                            message={messageGroup.messages[0]}
+                            onAttachmentClick={onAttachmentClick}
+                            mode={editingMessageId === messageGroup.messages[0].id ? 'edit' : 'view'}
+                            onEditCanceled={onEditCanceled}
+                            onEditSaved={onEditSaved}
+                        />
+                    </div>
+                </div>
+
+                {/* Consecutive messages */}
+                {messageGroup.messages.slice(1).map((message) => (
+                    <div
+                        key={message.id}
+                        data-message-id={message.id}
+                        className="hover-highlight pl-15 pr-2"
+                    >
+                        <MessageElement
+                            message={message}
+                            onAttachmentClick={onAttachmentClick}
+                            mode={editingMessageId === message.id ? 'edit' : 'view'}
+                            onEditCanceled={onEditCanceled}
+                            onEditSaved={onEditSaved}
+                        />
+                    </div>
+                ))}
+            </ContextMenu.Trigger>
+
+            <ContextMenu.Portal>
+                <ContextMenu.Content
+                    className="min-w-60 overflow-hidden rounded-md bg-gray-725 shadow-lg p-1 text-white text-sm border border-gray-500"
+                    alignOffset={5}
+                >
+                    {auth.userAuthorization?.id && auth.userAuthorization.id === messageGroup.senderUserId && (
+                        <>
+                            <ContextMenu.Item
+                                className="dropdown-item-default"
+                                onSelect={() => {
+                                    if (!selectedMessage) return;
+
+                                    onEditTriggered?.(selectedMessage.id);
+                                }}
+                            >
+                                Edit message <BsPencil className="fill-white size-4 ml-auto"/>
+                            </ContextMenu.Item>
+
+                            <ContextMenu.Item
+                                className="dropdown-item-danger"
+                                onSelect={() => {
+                                    if (!selectedMessage) return;
+                                }}
+                            >
+                                Delete message <BsTrash className="fill-red-500 size-4 ml-auto"/>
+                            </ContextMenu.Item>
+                        </>
+                    )}
+
+                    <ContextMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+
+                    {selectedMessage?.body && (
+                        <ContextMenu.Item
+                            className="dropdown-item-default"
+                            onSelect={() => {
+                                if (!selectedMessage?.body) return;
+
+                                navigator.clipboard.writeText(selectedMessage.body);
+                            }}
+                        >
+                            Copy text <BsCopy className="fill-white size-4 ml-auto"/>
+                        </ContextMenu.Item>
+                    )}
+                </ContextMenu.Content>
+            </ContextMenu.Portal>
+        </ContextMenu.Root>
+    );
+}
+
+interface MessageElementProps {
+    message: MessageElement;
+    onAttachmentClick: (attachments: Attachment[], index: number) => void;
+    mode: 'view' | 'edit';
+    onEditCanceled: () => void;
+    onEditSaved: (newBody: string) => void;
+}
+
+function MessageElement({ message, onAttachmentClick, mode = 'view', onEditCanceled, onEditSaved }: MessageElementProps) {
+    return (
+        <>
+            {message.body && (
+                mode === 'edit' ? (
+                    <MessageEditor
+                        initialValue={message.body}
+                        onCancel={onEditCanceled}
+                        onSave={onEditSaved}
+                    />
+                ): (
+                    <p className="text-sm leading-6 whitespace-pre-wrap">
+                        {message.body}
+                    </p>
+                )
+            )}
+
+            {message.attachments && message.attachments.length > 0 && (
+                <ScrollArea.Root className={`h-32 w-full overflow-hidden group mb-1 ${message.body ? 'mt-1' : ''}`}>
+                    <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
+                        <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
+                            {message.attachments.map((attachment, index) => (
+                                <div
+                                    key={attachment.id}
+                                    className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
+                                    onClick={() => onAttachmentClick(message.attachments, index)}
+                                >
+                                    {attachment.type.startsWith("image") && (
+                                        <img
+                                            src={messageService.getAttachmentUrl(attachment.id, false)}
+                                            alt="attachment"
+                                            className="object-cover size-full"
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea.Viewport>
+                    <ScrollArea.Scrollbar className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight" orientation="horizontal">
+                        <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2" />
+                    </ScrollArea.Scrollbar>
+                </ScrollArea.Root>
+            )}
+        </>
+    );
+}
+
+interface MessageEditorProps {
+    initialValue: string;
+    onSave: (newBody: string) => void;
+    onCancel: () => void;
+    disabled?: boolean;
+}
+
+function MessageEditor({ initialValue, onSave, onCancel, disabled }: MessageEditorProps) {
+    const [editBody, setEditBody] = useState(initialValue);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+    }, []);
+
+    const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
+        setEditBody(e.target.value);
+
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            submitEdit();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+        }
+    };
+
+    const submitEdit = () => {
+        const trimmedBody = editBody.trim();
+
+        if (trimmedBody.length === 0) return;
+        if (trimmedBody === initialValue) {
+            onCancel();
+            return;
+        }
+
+        onSave(trimmedBody);
+    };
+
+    return (
+        <div className="flex flex-col w-full gap-1">
+            <textarea
+                ref={textareaRef}
+                rows={1}
+                value={editBody}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                disabled={disabled}
+                maxLength={1024}
+                className="block input-field min-h-10 max-h-40 w-full text-sm resize-none py-2 px-3 overflow-y-auto leading-6"
+            />
+
+            <span className="text-xs text-gray-400">
+                Escape to <span className="text-blue-400 cursor-pointer hover:underline" onClick={onCancel}>cancel</span>
+                {" "}&#x2E31;{" "}  {/*Explicit spacing*/}
+                Enter to <span className="text-blue-400 cursor-pointer hover:underline" onClick={submitEdit}>save</span>
+            </span>
         </div>
     );
 }
