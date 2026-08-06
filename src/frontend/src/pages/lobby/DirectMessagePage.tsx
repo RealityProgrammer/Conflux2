@@ -17,14 +17,15 @@ import {HubConnectionState} from "@microsoft/signalr";
 import {userService} from "../../api/userService.ts";
 import Spinner from "../../components/Spinner.tsx";
 import { DropdownMenu } from "radix-ui";
+import { HttpStatusCode } from "axios";
+import { BsExclamationTriangle } from "react-icons/bs";
 
 const LOAD_COUNT = 50;
 
 export type QueueingMessage = {
     tempId: string;
-    body: string | undefined;
-    attachmentCount: number;
-    error?: boolean;
+    state: ChatInputMessageState;
+    errorMessage?: string;
 };
 
 export default function DirectMessagePage() {
@@ -131,18 +132,43 @@ export default function DirectMessagePage() {
 
     const sendMessageMutation = useMutation({
         mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }): Promise<ServiceResponse<MessageDto>> => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
         },
         onMutate: async (payload: { tempId: string, data: ChatInputMessageState }) => {
-            const queueingMessage: QueueingMessage = {
-                tempId: payload.tempId,
-                body: payload.data.messageBody,
-                attachmentCount: payload.data.attachments.length,
-            };
+            // check if the message is already queued, likely due to retry sending
 
-            setQueueingMessages((prev) => [...prev, queueingMessage]);
+            const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
+
+            if (queuedMessage) {
+                // append to last, clear out the error message.
+                setQueueingMessages((prev) => [...prev.filter(m => m.tempId != payload.tempId), { ...queuedMessage, errorMessage: undefined }]);
+            } else {
+                const queueingMessage: QueueingMessage = {
+                    tempId: payload.tempId,
+                    state: payload.data,
+                };
+
+                setQueueingMessages((prev) => [...prev, queueingMessage]);
+            }
         },
         onSuccess: async (data: ServiceResponse<MessageDto>, payload: { tempId: string, data: ChatInputMessageState }) => {
+            if (!data.success) {
+                let reason: string;
+
+                if (data.statusCode === HttpStatusCode.InternalServerError) {
+                    reason = " due to internal server error.";
+                } else {
+                    reason = `. Reason: ${data.error!.message}`;
+                }
+
+                setQueueingMessages((prev) => prev.map(m =>
+                    m.tempId === payload.tempId ? { ...m, errorMessage: `Failed to send message${reason}` } : m
+                ));
+                return;
+            }
+
             pushNewMessage(data.data!, authorization.userProfile ?? undefined);
 
             // remove the query
@@ -150,16 +176,16 @@ export default function DirectMessagePage() {
         },
         onError: (_err, payload: { tempId: string, data: ChatInputMessageState }) => {
             setQueueingMessages((prev) => prev.map(m =>
-                m.tempId === payload.tempId ? { ...m, error: true } : m
+                m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to send message due to unknown reason." } : m
             ));
         },
     });
 
-    const handleSendMessage = async (messagePayload: ChatInputMessageState) => {
+    const handleSendMessage = async (state: ChatInputMessageState) => {
         if (!channelId) return;
 
         const tempId = `__queue_message-${Date.now()}`;
-        sendMessageMutation.mutate({ tempId, data: messagePayload });
+        sendMessageMutation.mutate({ tempId, data: state });
     };
 
     // change the cache pages when message received
@@ -197,6 +223,20 @@ export default function DirectMessagePage() {
         pushNewMessage(event.message, knownUser);
     });
 
+    const handleCancelSendErrorMessage = (tempId: string) => {
+        setQueueingMessages((prev) => prev.filter(m => m.tempId != tempId));
+    };
+
+    const handleRetrySendMessage = async (tempId: string) => {
+        const msg: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == tempId && !!m.errorMessage);
+
+        if (!msg) {
+            return;
+        }
+
+        sendMessageMutation.mutate({ tempId, data: msg.state });
+    };
+
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
             <header className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2">
@@ -218,14 +258,18 @@ export default function DirectMessagePage() {
                         {queueingMessages.map((message) => (
                            	<DropdownMenu.Root key={message.tempId}>
                                 <DropdownMenu.Trigger asChild>
-                                    <div className="h-full aspect-square bg-gray-750 rounded-md flex justify-center items-center cursor-pointer">
-                                        <Spinner className="size-6 fill-white"/>
+                                    <div className={`h-full aspect-square ${message.errorMessage ? 'bg-[#B93A58]' : 'bg-gray-750'} rounded-md flex justify-center items-center cursor-pointer`}>
+                                        {message.errorMessage ? (
+                                            <BsExclamationTriangle className="size-6 fill-white"/>
+                                        ): (
+                                            <Spinner className="size-6 fill-white" />
+                                        )}
                                     </div>
                                 </DropdownMenu.Trigger>
 
                           		<DropdownMenu.Portal>
                          			<DropdownMenu.Content
-                        				className="w-125 rounded-md bg-gray-625 p-5 border border-gray-400 text-white"
+                                        className={`w-125 rounded-md ${message.errorMessage ? 'bg-[#655060] border-red-500' : 'bg-gray-625 border-gray-400'} p-4 border text-white`}
                         				sideOffset={5}
                          			>
                                         <div className="w-full flex flex-col">
@@ -240,14 +284,30 @@ export default function DirectMessagePage() {
                                                     <p className="text-base text-white">{authorization.userProfile?.displayName ?? "Unknown sender"}</p>
 
                                                     <p className="max-h-20 overflow-y-auto text-sm leading-6 whitespace-pre-wrap">
-                                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                                                        {message.state.messageBody}
                                                     </p>
 
-                                                    {message.attachmentCount > 0 && (
-                                                        <p className="mt-2">With {message.attachmentCount} attachment{message.attachmentCount > 1 ? 's' : ''}.</p>
+                                                    {message.state.attachments.length > 0 && (
+                                                        <p className="mt-2">With {message.state.attachments.length} attachment{message.state.attachments.length > 1 ? 's' : ''}.</p>
                                                     )}
                                                 </div>
                                             </div>
+
+                                            {message.errorMessage && (
+                                                <footer className="flex flex-col mt-4">
+                                                    <p><BsExclamationTriangle className="size-5 fill-white inline" /> {message.errorMessage}</p>
+
+                                                    <div className="flex flex-row gap-2 justify-center items-center mt-4 mx-3">
+                                                        <button className="button-theme-danger h-10 flex-1 cursor-pointer rounded-md" onClick={() => handleCancelSendErrorMessage(message.tempId)}>
+                                                            Cancel Message
+                                                        </button>
+
+                                                        <button className="button-theme-primary h-10 flex-1 cursor-pointer rounded-md" onClick={() => handleRetrySendMessage(message.tempId)}>
+                                                            Resend Message
+                                                        </button>
+                                                    </div>
+                                                </footer>
+                                            )}
                                         </div>
 
                         				<DropdownMenu.Arrow className="fill-gray-600" />

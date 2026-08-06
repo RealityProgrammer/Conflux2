@@ -7,8 +7,6 @@ import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
 import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
 import Spinner from "./Spinner.tsx";
-import UserAvatar from "./UserAvatar.tsx";
-import {ScrollArea} from "radix-ui";
 import MessageGroupRow from "./MessageGroupRow.tsx";
 
 type MediaGalleryState = {
