@@ -156,20 +156,20 @@ function estimateMessageGroupHeight(
 
 export interface QueryModification {
     pushNewMessage: (message: MessageDto, userProfile?: UserBasicProfileSummary) => void;
-    editMessage: (message: MessageDto) => void;
+    editMessage: (messageId: string, newBody: string | null) => void;
 }
 
 export interface ChatViewProps {
     channelId: string;
     emptyState?: () => ReactNode;
-    onMessageEdited: (message: MessageDto) => void;
+    onMessageEditRequested: (messageId: string, newBody: string | null) => void;
     queryModificationRef?: RefObject<QueryModification>;
 }
 
 export function ChatView({
     channelId,
     emptyState,
-    onMessageEdited,
+    onMessageEditRequested,
     queryModificationRef,
  }: ChatViewProps) {
     const viewportRef = useRef<HTMLDivElement>(null!);
@@ -312,7 +312,7 @@ export function ChatView({
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
 
-    const editMessage = (newMessage: MessageDto) => {
+    const editMessage = (messageId: string, newBody: string | null) => {
         queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
             queryKey,
             (oldData) => {
@@ -326,14 +326,14 @@ export function ChatView({
                     if (!page) return page;
 
                     const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
-                        const messageIndex = messageGroup.messages.findIndex((m) => m.id === newMessage.id);
+                        const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
                         if (messageIndex !== -1) {
                             isMessageFound = true;
 
                             const updatedMessages = [...messageGroup.messages];
 
-                            updatedMessages[messageIndex] = newMessage;
+                            updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], body: newBody};
 
                             return {
                                 ...messageGroup,
@@ -372,11 +372,7 @@ export function ChatView({
         setEditingMessageId(null);
         setEditingMessageDraft(null);
 
-        const response: ServiceResponse<MessageDto> = await messageService.editMessage(editingMessageId, newBody.trim());
-
-        if (response.success) {
-            onMessageEdited(response.data!);
-        }
+        onMessageEditRequested(editingMessageId, newBody.trim());
     };
 
     // signalr events

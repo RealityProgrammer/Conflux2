@@ -97,7 +97,7 @@ export type Attachment = {
 
 export type MessageElement = {
     id: string;
-    body?: string;
+    body: string | null;
     attachments: Attachment[];
     createdAt: Date;
 }
@@ -110,7 +110,7 @@ export type MessageGroup = {
 export type MessageDto = {
     id: string;
     senderUserId: string;
-    body?: string;
+    body: string | null;
     attachments: Attachment[];
     createdAt: Date;
 }

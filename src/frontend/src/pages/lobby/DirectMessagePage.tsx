@@ -4,17 +4,13 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
-import type {GetMessagesResponse, MessageDto,MessageGroup,ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
+import type {MessageDto,ServiceResponse} from "../../api/responses.ts";
 import {useEffect, useRef, useState} from "react";
-import useGetMessages from "../../hooks/useGetMessages.ts";
-import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
+import {useMutation} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {ChatView, type QueryModification} from "../../components/ChatView.tsx";
-import type {MessageReceivedEvent} from "../../api/events.ts";
-import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 import {HubConnectionState} from "@microsoft/signalr";
-import {userService} from "../../api/userService.ts";
 import Spinner from "../../components/Spinner.tsx";
 import { DropdownMenu } from "radix-ui";
 import { HttpStatusCode } from "axios";
@@ -22,11 +18,16 @@ import { BsExclamationTriangle } from "react-icons/bs";
 
 const LOAD_COUNT = 50;
 
-export type QueueingMessage = {
+type QueueingMessage = {
     tempId: string;
-    state: ChatInputMessageState;
     errorMessage?: string;
-};
+} & ({
+    type: "send",
+    state: ChatInputMessageState
+} | {
+    type: "edit",
+    body: string | null,
+});
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
@@ -59,13 +60,14 @@ export default function DirectMessagePage() {
 
     const [queueingMessages, setQueueingMessages] = useState<QueueingMessage[]>([]);
 
+    type SendMessagePayload = { tempId: string, data: ChatInputMessageState };
+
     const sendMessageMutation = useMutation({
-        mutationFn: async (payload: { tempId: string, data: ChatInputMessageState }): Promise<ServiceResponse<MessageDto>> => {
+        mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<MessageDto>> => {
             return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
         },
-        onMutate: async (payload: { tempId: string, data: ChatInputMessageState }) => {
+        onMutate: async (payload: SendMessagePayload) => {
             // check if the message is already queued, likely due to retry sending
-
             const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
 
             if (queuedMessage) {
@@ -74,13 +76,14 @@ export default function DirectMessagePage() {
             } else {
                 const queueingMessage: QueueingMessage = {
                     tempId: payload.tempId,
+                    type: "send",
                     state: payload.data,
                 };
 
                 setQueueingMessages((prev) => [...prev, queueingMessage]);
             }
         },
-        onSuccess: async (data: ServiceResponse<MessageDto>, payload: { tempId: string, data: ChatInputMessageState }) => {
+        onSuccess: async (data: ServiceResponse<MessageDto>, payload: SendMessagePayload) => {
             if (!data.success) {
                 let reason: string;
 
@@ -103,7 +106,7 @@ export default function DirectMessagePage() {
             // remove the query
             setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
         },
-        onError: (_err, payload: { tempId: string, data: ChatInputMessageState }) => {
+        onError: (_err, payload: SendMessagePayload) => {
             setQueueingMessages((prev) => prev.map(m =>
                 m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to send message due to unknown reason." } : m
             ));
@@ -117,10 +120,64 @@ export default function DirectMessagePage() {
         sendMessageMutation.mutate({ tempId, data: state });
     };
 
-    const handleMessageEdited = (message: MessageDto) => {
-        if (messageQueryUpdate.current) {
-            messageQueryUpdate.current.editMessage(message);
-        }
+    type EditMessagePayload = { tempId: string, messageId: string, newBody: string | null };
+
+    const editMessageMutation = useMutation({
+        mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<MessageDto>> => {
+            return await messageService.editMessage(payload.messageId, payload.newBody);
+        },
+        onMutate: async (payload: EditMessagePayload) => {
+            // check if the message is already queued, likely due to retry editing
+            const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
+
+            if (queuedMessage) {
+                // append to last, clear out the error message.
+                setQueueingMessages((prev) => [...prev.filter(m => m.tempId != payload.tempId), { ...queuedMessage, errorMessage: undefined }]);
+            } else {
+                const queueingMessage: QueueingMessage = {
+                    tempId: payload.tempId,
+                    type: "edit",
+                    body: payload.newBody,
+                };
+
+                setQueueingMessages((prev) => [...prev, queueingMessage]);
+            }
+        },
+        onSuccess: async (data: ServiceResponse<MessageDto>, payload: EditMessagePayload) => {
+            if (!data.success) {
+                let reason: string;
+
+                if (data.statusCode === HttpStatusCode.InternalServerError) {
+                    reason = " due to internal server error.";
+                } else {
+                    reason = `. Reason: ${data.error!.message}`;
+                }
+
+                setQueueingMessages((prev) => prev.map(m =>
+                    m.tempId === payload.tempId ? { ...m, errorMessage: `Failed to edit message${reason}` } : m
+                ));
+                return;
+            }
+
+            if (messageQueryUpdate.current) {
+                messageQueryUpdate.current.editMessage(payload.messageId, payload.newBody);
+            }
+
+            // remove the query
+            setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
+        },
+        onError: (_err, payload: EditMessagePayload) => {
+            setQueueingMessages((prev) => prev.map(m =>
+                m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to edit message due to unknown reason." } : m
+            ));
+        },
+    });
+
+    const handleMessageEdited = async (messageId: string, newBody: string | null) => {
+        if (!channelId) return;
+
+        const tempId = `__queue_message-${Date.now()}`;
+        editMessageMutation.mutate({ tempId, messageId, newBody });
     };
 
     const handleCancelSendErrorMessage = (tempId: string) => {
@@ -130,7 +187,7 @@ export default function DirectMessagePage() {
     const handleRetrySendMessage = async (tempId: string) => {
         const msg: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == tempId && !!m.errorMessage);
 
-        if (!msg) {
+        if (!msg || msg.type != "send") {
             return;
         }
 
@@ -184,12 +241,12 @@ export default function DirectMessagePage() {
                                                     <p className="text-base text-white">{authorization.userProfile?.displayName ?? "Unknown sender"}</p>
 
                                                     <p className="max-h-20 overflow-y-auto text-sm leading-6 whitespace-pre-wrap">
-                                                        {message.state.messageBody}
+                                                        {message.type == "send" ? message.state.messageBody : message.body}
                                                     </p>
 
-                                                    {message.state.attachments.length > 0 && (
+                                                    {message.type == "send" ? message.state.attachments.length > 0 && (
                                                         <p className="mt-2">With {message.state.attachments.length} attachment{message.state.attachments.length > 1 ? 's' : ''}.</p>
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                             </div>
 
@@ -223,7 +280,7 @@ export default function DirectMessagePage() {
                     emptyState={() => {
                         return <p className="text-base gray-500">And our story begin...</p>
                     }}
-                    onMessageEdited={handleMessageEdited}
+                    onMessageEditRequested={handleMessageEdited}
                     queryModificationRef={messageQueryUpdate}
                 />
 
