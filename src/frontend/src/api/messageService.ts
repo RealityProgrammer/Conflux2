@@ -75,6 +75,21 @@ export const messageService = {
         }
     },
 
+    deleteMessage: async (messageId: string): Promise<ServiceResponse> => {
+        try {
+            const response: AxiosResponse<BackendResponse<MessageDto>> =
+                await apiClient.delete(`/messages/${encodeURIComponent(messageId)}`);
+
+            return {
+                success: true,
+                statusCode: response.status,
+            };
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
     getMessages: async (request: GetMessagesRequest): Promise<ServiceResponse<GetMessagesResponse>> => {
         try {
             const searchParams = new URLSearchParams();

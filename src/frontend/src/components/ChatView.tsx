@@ -16,6 +16,7 @@ import { userService } from "../api/userService.ts";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts";
+import { useCacheService } from "../hooks/useCacheService.ts";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -25,7 +26,7 @@ type MediaGalleryState = {
 type CachedMessage = {
     prepared: PreparedText;
     content: string;
-}
+};
 
 const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BODY_LINE_HEIGHT = 24;
@@ -117,10 +118,6 @@ function estimateMessageGroupHeight(
                 const draftId = `${msg.id}_edit-draft`;
                 let currentDraft: string = editingMessageDraft ?? msg.body ?? "";
 
-                // if (currentDraft.endsWith('\n')) {
-                //     currentDraft += '\u200b';
-                // }
-
                 ensurePreparedMessage(draftId, currentDraft);
 
                 // add 16 cuz input is py-2, subtract 24 cuz input hs px-3
@@ -151,18 +148,20 @@ function estimateMessageGroupHeight(
         }
 
         return acc;
-    }, 24);
+    }, 24); // name header
 }
 
 export interface QueryModification {
     pushNewMessage: (message: MessageDto, userProfile?: UserBasicProfileSummary) => void;
     editMessage: (messageId: string, newBody: string | null) => void;
+    deleteMessage: (messageId: string) => void;
 }
 
 export interface ChatViewProps {
     channelId: string;
     emptyState?: () => ReactNode;
     onMessageEditRequested: (messageId: string, newBody: string | null) => void;
+    onMessageDeleteRequested: (message: MessageDto) => void;
     queryModificationRef?: RefObject<QueryModification>;
 }
 
@@ -170,11 +169,13 @@ export function ChatView({
     channelId,
     emptyState,
     onMessageEditRequested,
+    onMessageDeleteRequested,
     queryModificationRef,
  }: ChatViewProps) {
     const viewportRef = useRef<HTMLDivElement>(null!);
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
 
+    const cacheService = useCacheService();
     const queryClient = useQueryClient();
 
     // querying
@@ -248,7 +249,7 @@ export function ChatView({
         });
     };
 
-    const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
+    const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined, unknown>) => InfiniteData<GetMessagesResponse | null | undefined, unknown>) => {
         queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
             queryKey,
             (oldData) => {
@@ -256,117 +257,162 @@ export function ChatView({
                     return oldData;
                 }
 
-                const lastPage = oldData.pages.at(-1)!;
-                const updatedLastPage = { ...lastPage };
+                return callback(oldData);
+            });
+    }
 
-                if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
-                    updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
-                }
+    const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
+        modifyMessageData((oldData) => {
+            const lastPage = oldData.pages.at(-1)!;
+            const updatedLastPage = { ...lastPage };
 
-                const currentGroups = updatedLastPage.messageGroups || [];
+            if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
+                updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
+            }
 
-                if (lastPage.messageGroups?.length > 0) {
-                    const lastMessageGroup = lastPage.messageGroups.at(-1)!;
+            const currentGroups = updatedLastPage.messageGroups || [];
 
-                    // was the new message sent by the same person on the last group of the last page?
-                    const isSameUser =
-                        lastMessageGroup.senderUserId == newMessage.senderUserId;
+            if (lastPage.messageGroups?.length > 0) {
+                const lastMessageGroup = lastPage.messageGroups.at(-1)!;
 
-                    if (isSameUser) {
-                        const updatedGroup: MessageGroup = {
-                            ...lastMessageGroup,
-                            messages: [...lastMessageGroup.messages, newMessage],
-                        };
+                // was the new message sent by the same person on the last group of the last page?
+                const isSameUser =
+                    lastMessageGroup.senderUserId == newMessage.senderUserId;
 
-                        updatedLastPage.messageGroups = [
-                            ...currentGroups.slice(0, -1),
-                            updatedGroup,
-                        ];
-                    } else {
-                        updatedLastPage.messageGroups = [
-                            ...currentGroups,
-                            {
-                                senderUserId: newMessage.senderUserId,
-                                messages: [newMessage],
-                            },
-                        ];
-                    }
+                if (isSameUser) {
+                    const updatedGroup: MessageGroup = {
+                        ...lastMessageGroup,
+                        messages: [...lastMessageGroup.messages, newMessage],
+                    };
+
+                    updatedLastPage.messageGroups = [
+                        ...currentGroups.slice(0, -1),
+                        updatedGroup,
+                    ];
                 } else {
                     updatedLastPage.messageGroups = [
+                        ...currentGroups,
                         {
                             senderUserId: newMessage.senderUserId,
                             messages: [newMessage],
                         },
                     ];
                 }
+            } else {
+                updatedLastPage.messageGroups = [
+                    {
+                        senderUserId: newMessage.senderUserId,
+                        messages: [newMessage],
+                    },
+                ];
+            }
+
+            return {
+                ...oldData,
+                pages: [...oldData.pages.slice(0, -1), updatedLastPage],
+            };
+        });
+    };
+
+    const editMessage = (messageId: string, newBody: string | null) => {
+        modifyMessageData((oldData) => {
+            let isMessageFound = false;
+
+            const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
+                if (!page) return page;
+
+                const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
+                    const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
+
+                    if (messageIndex !== -1) {
+                        isMessageFound = true;
+
+                        const updatedMessages = [...messageGroup.messages];
+
+                        updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], body: newBody};
+
+                        return {
+                            ...messageGroup,
+                            messages: updatedMessages,
+                        };
+                    }
+
+                    return messageGroup;
+                });
+
+                if (!isMessageFound) {
+                    return page;
+                }
 
                 return {
-                    ...oldData,
-                    pages: [...oldData.pages.slice(0, -1), updatedLastPage],
+                    ...page,
+                    messageGroups: updatedMessageGroups,
                 };
+            });
+
+            if (!isMessageFound) {
+                return oldData;
             }
-        );
+
+            return {
+                ...oldData,
+                pages: updatedPages,
+            };
+        });
     };
+
+    const deleteMessage = (messageId: string) => {
+        modifyMessageData((oldData) => {
+            let isMessageFound = false;
+
+            const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
+                if (!page) return page;
+
+                const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup | null => {
+                    const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
+
+                    if (messageIndex === -1) {
+                        return messageGroup;
+                    }
+
+                    isMessageFound = true;
+
+                    const updatedMessages = [
+                        ...messageGroup.messages.slice(0, messageIndex),
+                        ...messageGroup.messages.slice(messageIndex + 1)
+                    ]
+
+                    return updatedMessages.length === 0
+                        ? null
+                        : { ...messageGroup, messages: updatedMessages };
+                }).filter((group) => group !== null);
+
+                if (!isMessageFound) {
+                    return page;
+                }
+
+                return {
+                    ...page,
+                    messageGroups: updatedMessageGroups,
+                };
+            });
+
+            if (!isMessageFound) {
+                return oldData;
+            }
+
+            return {
+                ...oldData,
+                pages: updatedPages,
+            };
+        });
+    }
 
     // message editing
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
 
-    const editMessage = (messageId: string, newBody: string | null) => {
-        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
-            queryKey,
-            (oldData) => {
-                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
-                    return oldData;
-                }
-
-                let isMessageFound = false;
-
-                const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
-                    if (!page) return page;
-
-                    const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
-                        const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
-
-                        if (messageIndex !== -1) {
-                            isMessageFound = true;
-
-                            const updatedMessages = [...messageGroup.messages];
-
-                            updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], body: newBody};
-
-                            return {
-                                ...messageGroup,
-                                messages: updatedMessages,
-                            };
-                        }
-
-                        return messageGroup;
-                    });
-
-                    if (!isMessageFound) {
-                        return page;
-                    }
-
-                    return {
-                        ...page,
-                        messageGroups: updatedMessageGroups,
-                    };
-                });
-
-                if (!isMessageFound) {
-                    return oldData;
-                }
-
-                return {
-                    ...oldData,
-                    pages: updatedPages,
-                };
-            }
-        );
-    };
-
-    const handleEditSaved = async (newBody: string) => {
+    const handleSaveEdit = async (newBody: string) => {
         if (!editingMessageId) return;
 
         setEditingMessageId(null);
@@ -374,6 +420,10 @@ export function ChatView({
 
         onMessageEditRequested(editingMessageId, newBody.trim());
     };
+
+    const handleMessageDelete = async (message: MessageDto) => {
+        onMessageDeleteRequested(message);
+    }
 
     // signalr events
     // change the cache pages when message received
@@ -401,7 +451,7 @@ export function ChatView({
         if (!knownUser) {
             try {
                 // Replace with your actual user service fetch call
-                const response = await userService.getUserBasicProfile(senderId);
+                const response = await cacheService.getUserBasicProfile(senderId);
                 knownUser = response.data ?? undefined;
             } catch (error) {
                 console.error("Failed to fetch user summary for new message", error);
@@ -420,7 +470,8 @@ export function ChatView({
     useImperativeHandle(queryModificationRef, () => ({
         pushNewMessage,
         editMessage,
-    }), [channelId]);
+        deleteMessage
+    }), [pushNewMessage, editMessage, deleteMessage]);
 
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
@@ -510,11 +561,14 @@ export function ChatView({
                             onEditTriggered={(messageId) => {
                                 setEditingMessageId(messageId);
                             }}
+                            onDeleteTriggered={(message) => {
+                                handleMessageDelete(message);
+                            }}
                             onEditCanceled={() => {
                                 setEditingMessageId(null);
                                 setEditingMessageDraft(null);
                             }}
-                            onEditSaved={handleEditSaved}
+                            onEditSaved={handleSaveEdit}
                         />
                     );
                 }}
@@ -527,10 +581,11 @@ interface MessageGroupRowProps {
     messageGroup: MessageGroup;
     userProfile: UserBasicProfileSummary | undefined | null;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
+    onEditTriggered?: (messageId: string) => void;
+    onDeleteTriggered?: (message: MessageDto) => void;
     editingMessageId?: string;
     editingMessageDraft?: string | null;
     onEditDraftChange: (draft: string) => void;
-    onEditTriggered?: (messageId: string) => void;
     onEditCanceled: () => void;
     onEditSaved: (newBody: string) => void;
 }
@@ -539,10 +594,11 @@ function MessageGroupRow({
     messageGroup,
     userProfile,
     onAttachmentClick,
+    onEditTriggered,
+    onDeleteTriggered,
     editingMessageId,
     editingMessageDraft,
     onEditDraftChange,
-    onEditTriggered,
     onEditCanceled,
     onEditSaved
 }: MessageGroupRowProps) {
@@ -643,6 +699,8 @@ function MessageGroupRow({
                                 className="dropdown-item-danger"
                                 onSelect={() => {
                                     if (!selectedMessage) return;
+
+                                    onDeleteTriggered?.(selectedMessage);
                                 }}
                             >
                                 Delete message <BsTrash className="fill-red-500 size-4 ml-auto"/>

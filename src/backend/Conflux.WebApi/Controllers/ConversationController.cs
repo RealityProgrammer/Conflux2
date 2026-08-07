@@ -24,8 +24,6 @@ public sealed class ConversationController(
         [FromForm] SendMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        await Task.Delay(2000, cancellationToken);
-        
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -74,8 +72,6 @@ public sealed class ConversationController(
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        await Task.Delay(2000, cancellationToken);
-        
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -93,6 +89,28 @@ public sealed class ConversationController(
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<MessageDto>(null, result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<MessageDto>(null, result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, result.Error)),
+        };
+    }
+
+    [HttpDelete("messages/{messageId:guid}")]
+    public async Task<ActionResult> DeleteMessage(Guid messageId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result =
+            await messageService.DeleteMessageAsync(messageId, userId);
+
+        if (result.IsSuccess) {
+            return NoContent();
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
 
@@ -125,7 +143,7 @@ public sealed class ConversationController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error)),
         };
     }
-
+    
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
     public ActionResult GetAvatarUrl(Guid attachmentId) {

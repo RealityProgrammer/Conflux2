@@ -146,8 +146,6 @@ internal sealed class MessageService(
             return Errors.ResourceNotFound("Message");
         }
        
-        // check if user can access the conversation (probably a bit overkill since we're gonna check for message
-        // ownership anyway but hey extra safety can't hurt).
         Result<ConversationPostingContext> getPostingContextResult = 
             await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
 
@@ -194,6 +192,41 @@ internal sealed class MessageService(
         await mediator.Publish(new MessageEditedNotification(postingContext.ChannelId, dto), CancellationToken.None);
         
         return Result<MessageDto>.Success(dto);
+    }
+
+    public async Task<Result> DeleteMessageAsync(Guid messageId, Guid requesterUserId) {
+        var message = await messageRepository.GetByIdAsync(messageId);
+        
+        if (message == null) {
+            return Errors.ResourceNotFound("Message");
+        }
+        
+        Result<ConversationPostingContext> getPostingContextResult = 
+            await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
+
+        if (!getPostingContextResult.IsSuccess) {
+            return getPostingContextResult.Error;
+        }
+
+        ConversationPostingContext postingContext = getPostingContextResult.Value!;
+
+        Result accessibilityResult = ValidateConversationAccessibility(postingContext, requesterUserId);
+
+        if (!accessibilityResult.IsSuccess) {
+            return accessibilityResult.Error;
+        }
+        
+        if (message.SenderUserId != requesterUserId) {
+            return Errors.Forbidden("You do not have permission to delete this message.");
+        }
+
+        message.DeletedAt = timeProvider.GetUtcNow();
+        
+        await unitOfWork.SaveChangesAsync();
+        
+        await mediator.Publish(new MessageDeletedNotification(postingContext.ChannelId, message.Id), CancellationToken.None);
+        
+        return Result.Success();
     }
 
     public async Task<Result<GetMessagesResponse>> GetMessagesAsync(

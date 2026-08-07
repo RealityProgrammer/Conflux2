@@ -21,6 +21,11 @@ public interface IMessageService {
         CancellationToken cancellationToken = default
     );
 
+    Task<Result> DeleteMessageAsync(
+        Guid messageId,
+        Guid requesterUserId
+    );
+
     Task<Result<GetMessagesResponse>> GetMessagesAsync(
         Guid requesterUserId,
         Guid channelId,

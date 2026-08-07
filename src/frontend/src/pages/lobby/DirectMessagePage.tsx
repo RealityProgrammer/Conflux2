@@ -16,8 +16,6 @@ import { DropdownMenu } from "radix-ui";
 import { HttpStatusCode } from "axios";
 import { BsExclamationTriangle } from "react-icons/bs";
 
-const LOAD_COUNT = 50;
-
 type QueueingMessage = {
     tempId: string;
     errorMessage?: string;
@@ -56,11 +54,14 @@ export default function DirectMessagePage() {
         }
     }, [channelId, signalrContext.isConnected]);
 
-    const messageQueryUpdate = useRef<QueryModification>(null!);
+    const messageQueryModification = useRef<QueryModification>(null!);
 
     const [queueingMessages, setQueueingMessages] = useState<QueueingMessage[]>([]);
 
+    // message mutations
     type SendMessagePayload = { tempId: string, data: ChatInputMessageState };
+    type EditMessagePayload = { tempId: string, messageId: string, newBody: string | null };
+    type DeleteMessagePayload = { message: MessageDto };
 
     const sendMessageMutation = useMutation({
         mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<MessageDto>> => {
@@ -99,8 +100,8 @@ export default function DirectMessagePage() {
                 return;
             }
 
-            if (messageQueryUpdate.current) {
-                messageQueryUpdate.current.pushNewMessage(data.data!, authorization.userProfile ?? undefined);
+            if (messageQueryModification.current) {
+                messageQueryModification.current.pushNewMessage(data.data!, authorization.userProfile ?? undefined);
             }
 
             // remove the query
@@ -112,15 +113,6 @@ export default function DirectMessagePage() {
             ));
         },
     });
-
-    const handleSendMessage = async (state: ChatInputMessageState) => {
-        if (!channelId) return;
-
-        const tempId = `__queue_message-${Date.now()}`;
-        sendMessageMutation.mutate({ tempId, data: state });
-    };
-
-    type EditMessagePayload = { tempId: string, messageId: string, newBody: string | null };
 
     const editMessageMutation = useMutation({
         mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<MessageDto>> => {
@@ -159,8 +151,8 @@ export default function DirectMessagePage() {
                 return;
             }
 
-            if (messageQueryUpdate.current) {
-                messageQueryUpdate.current.editMessage(payload.messageId, payload.newBody);
+            if (messageQueryModification.current) {
+                messageQueryModification.current.editMessage(payload.messageId, payload.newBody);
             }
 
             // remove the query
@@ -173,12 +165,77 @@ export default function DirectMessagePage() {
         },
     });
 
+    const deleteMessageMutation = useMutation({
+        mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            return await messageService.deleteMessage(payload.message.id);
+        },
+        onMutate: async (payload: DeleteMessagePayload) => {
+            // const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
+
+            // if (queuedMessage) {
+            //     // append to last, clear out the error message.
+            //     setQueueingMessages((prev) => [...prev.filter(m => m.tempId != payload.tempId), { ...queuedMessage, errorMessage: undefined }]);
+            // } else {
+            //     const queueingMessage: QueueingMessage = {
+            //         tempId: payload.tempId,
+            //         type: "edit",
+            //         body: payload.newBody,
+            //     };
+
+            //     setQueueingMessages((prev) => [...prev, queueingMessage]);
+            // }
+        },
+        onSuccess: async (data: ServiceResponse, payload: DeleteMessagePayload) => {
+            // if (!data.success) {
+            //     let reason: string;
+
+            //     if (data.statusCode === HttpStatusCode.InternalServerError) {
+            //         reason = " due to internal server error.";
+            //     } else {
+            //         reason = `. Reason: ${data.error!.message}`;
+            //     }
+
+            //     setQueueingMessages((prev) => prev.map(m =>
+            //         m.tempId === payload.tempId ? { ...m, errorMessage: `Failed to edit message${reason}` } : m
+            //     ));
+            //     return;
+            // }
+
+            if (messageQueryModification.current) {
+                messageQueryModification.current.deleteMessage(payload.message.id);
+            }
+
+            // remove the query
+            // setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
+        },
+        onError: (_err, payload: DeleteMessagePayload) => {
+            // setQueueingMessages((prev) => prev.map(m =>
+            //     m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to edit message due to unknown reason." } : m
+            // ));
+        },
+    });
+
+    const handleSendMessage = async (state: ChatInputMessageState) => {
+        if (!channelId) return;
+
+        const tempId = `__queue_message-${Date.now()}`;
+        sendMessageMutation.mutate({ tempId, data: state });
+    };
+
     const handleMessageEdited = async (messageId: string, newBody: string | null) => {
         if (!channelId) return;
 
         const tempId = `__queue_message-${Date.now()}`;
         editMessageMutation.mutate({ tempId, messageId, newBody });
     };
+
+    const handleMessageDelete = async (message: MessageDto) => {
+        if (!channelId) return;
+
+        deleteMessageMutation.mutate({ message: message });
+    }
 
     const handleCancelSendErrorMessage = (tempId: string) => {
         setQueueingMessages((prev) => prev.filter(m => m.tempId != tempId));
@@ -281,7 +338,8 @@ export default function DirectMessagePage() {
                         return <p className="text-base gray-500">And our story begin...</p>
                     }}
                     onMessageEditRequested={handleMessageEdited}
-                    queryModificationRef={messageQueryUpdate}
+                    onMessageDeleteRequested={handleMessageDelete}
+                    queryModificationRef={messageQueryModification}
                 />
 
                 <ChatInput
