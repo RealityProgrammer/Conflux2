@@ -17,12 +17,17 @@ type MediaGalleryState = {
     currentIndex: number;
 };
 
+type CachedMessage = {
+    prepared: PreparedText;
+    content: string;
+}
+
 const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const BODY_LINE_HEIGHT = 24;
 const BODY_ATTACHMENT_PADDING = 4;
 const MESSAGE_ATTACHMENT_BOTTOM_PADDING = 4;
 
-const preparedCache = new Map<string, PreparedText>();
+const preparedCache = new Map<string, CachedMessage>();
 const MAX_PREPARED_CACHE_SIZE = 512;
 
 function fallbackTextHeight(text: string, width: number) {
@@ -35,15 +40,19 @@ function fallbackTextHeight(text: string, width: number) {
     }, 0);
 }
 
-function getPreparedMessage(id: string, content: string): PreparedText | null {
+function ensurePreparedMessage(id: string, content: string): PreparedText | null {
     if (!content) return null;
 
     // re-insert on hit to refresh the position
     if (preparedCache.has(id)) {
         const cached = preparedCache.get(id)!;
-        preparedCache.delete(id);
-        preparedCache.set(id, cached);
-        return cached;
+
+        if (cached.content === content) {
+            // Re-insert on hit to refresh LRU order
+            preparedCache.delete(id);
+            preparedCache.set(id, cached);
+            return cached.prepared;
+        }
     }
 
     // evict the oldest text if passed the cache size
@@ -57,42 +66,83 @@ function getPreparedMessage(id: string, content: string): PreparedText | null {
         wordBreak: 'normal',
     });
 
-    preparedCache.set(id, prepared);
+    preparedCache.set(id, { prepared, content });
     return prepared;
 }
 
-function estimateMessageContentHeight(id: string, content: string, displayAreaWidth: number): number {
+function getPreparedMessage(id: string): CachedMessage | null {
+  if (!preparedCache.has(id)) return null;
+
+  const cached = preparedCache.get(id)!;
+  preparedCache.delete(id);
+  preparedCache.set(id, cached);
+  return cached;
+}
+
+function estimateMessageContentHeight(id: string, displayAreaWidth: number): number {
+    const cached = getPreparedMessage(id);
+    if (!cached) return BODY_LINE_HEIGHT;
+
     const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
 
     if (!isSupported) {
-        return fallbackTextHeight(content, displayAreaWidth);
+        return fallbackTextHeight(cached.content, displayAreaWidth);
     } else {
-        const layoutResult: LayoutResult = layout(getPreparedMessage(id, content)!, displayAreaWidth, BODY_LINE_HEIGHT);
+        const layoutResult: LayoutResult = layout(cached.prepared, displayAreaWidth, BODY_LINE_HEIGHT);
         return layoutResult.height;
     }
 }
 
-function estimateMessageGroupHeight(messageGroup: MessageGroup, displayAreaWidth: number, editingMessageId: string): number {
+function estimateMessageGroupHeight(
+    messageGroup: MessageGroup,
+    displayAreaWidth: number,
+    editingMessageId: string | null,
+    editingMessageDraft: string | null
+): number {
     displayAreaWidth = Math.max(1, displayAreaWidth);
 
     return messageGroup.messages.reduce((acc: number, msg: MessageElement) => {
-        if (msg.body) {
-            if (msg.id === editingMessageId) {
-                // add 16 cuz input is py-2, subtract 24 cuz input hs px-3
+        const isEditing = msg.id === editingMessageId;
 
-                acc += estimateMessageContentHeight(msg.id, msg.body, displayAreaWidth - 24);   // subtract 24 for textarea x padding
-                acc += 16;  // textarea y padding
-                acc += 20;  // 16 for the escape to cancel, enter to save message, 4 for gap between it and textarea above
+        if (msg.body) {
+            if (isEditing) {
+                // alright trailing new line breaks the height calculation for some reason that im too tired to give a damn so...
+                // imma use a hack for this: calculate the amount of trailing new line, and multiply with line height
+
+                const draftId = `${msg.id}_edit-draft`;
+                let currentDraft: string = editingMessageDraft ?? msg.body ?? "";
+
+                // if (currentDraft.endsWith('\n')) {
+                //     currentDraft += '\u200b';
+                // }
+
+                ensurePreparedMessage(draftId, currentDraft);
+
+                // add 16 cuz input is py-2, subtract 24 cuz input hs px-3
+                let contentHeight = estimateMessageContentHeight(draftId, displayAreaWidth - 24);   // subtract 24 for textarea x padding
+
+                if (currentDraft.endsWith("\n")) {
+                    contentHeight += BODY_LINE_HEIGHT;  // pretext doesn't include the last line break to calculate height for some reason
+                }
+
+                const textareaHeight = contentHeight + 16;  // textarea y padding
+                const constrainedTextareHeight = Math.min(textareaHeight, 160); // textarea has max-h-40
+
+                acc += constrainedTextareHeight;
             } else {
-                acc += estimateMessageContentHeight(msg.id, msg.body, displayAreaWidth);
+                ensurePreparedMessage(msg.id, msg.body);
+                acc += estimateMessageContentHeight(msg.id, displayAreaWidth);
             }
         }
 
         if (msg.attachments && msg.attachments.length > 0) {
             // if has body, add a small padding between them
             acc += msg.body ? BODY_ATTACHMENT_PADDING : 0;
-
             acc += 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING;
+        }
+
+        if (isEditing) {
+            acc += 20;  // 16 for the escape to cancel, enter to save message, 4 for gap between it and textarea above
         }
 
         return acc;
@@ -189,6 +239,7 @@ export function ChatView({
 
     // message editing
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
 
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
@@ -234,7 +285,7 @@ export function ChatView({
                 estimateSize={(target) => {
                     if (target === 'previousLoader' || target === 'nextLoader') return 30;
 
-                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessageId);
+                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessageId, editingMessageDraft);
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -271,15 +322,19 @@ export function ChatView({
                             userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
                             onAttachmentClick={handleAttachmentClick}
                             editingMessageId={editingMessageId || undefined}
+                            editingMessageDraft={editingMessageDraft} // 👈 NEW
+                            onEditDraftChange={setEditingMessageDraft} // 👈 NEW
                             onEditTriggered={(messageId) => {
                                 setEditingMessageId(messageId);
                             }}
                             onEditCanceled={() => {
                                 setEditingMessageId(null);
+                                setEditingMessageDraft(null);
                             }}
                             onEditSaved={(newBody: string) => {
                                 console.log("update message", editingMessageId, "to new body:", newBody);
                                 setEditingMessageId(null);
+                                setEditingMessageDraft(null);
                             }}
                         />
                     );
@@ -294,6 +349,8 @@ interface MessageGroupRowProps {
     userProfile: UserBasicProfileSummary | undefined | null;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     editingMessageId?: string;
+    editingMessageDraft?: string | null;
+    onEditDraftChange: (draft: string) => void;
     onEditTriggered?: (messageId: string) => void;
     onEditCanceled: () => void;
     onEditSaved: (newBody: string) => void;
@@ -304,6 +361,8 @@ function MessageGroupRow({
     userProfile,
     onAttachmentClick,
     editingMessageId,
+    editingMessageDraft,
+    onEditDraftChange,
     onEditTriggered,
     onEditCanceled,
     onEditSaved
@@ -355,6 +414,8 @@ function MessageGroupRow({
                             message={messageGroup.messages[0]}
                             onAttachmentClick={onAttachmentClick}
                             mode={editingMessageId === messageGroup.messages[0].id ? 'edit' : 'view'}
+                            editingMessageDraft={editingMessageDraft}
+                            onEditDraftChange={onEditDraftChange}
                             onEditCanceled={onEditCanceled}
                             onEditSaved={onEditSaved}
                         />
@@ -372,6 +433,8 @@ function MessageGroupRow({
                             message={message}
                             onAttachmentClick={onAttachmentClick}
                             mode={editingMessageId === message.id ? 'edit' : 'view'}
+                            editingMessageDraft={editingMessageDraft}
+                            onEditDraftChange={onEditDraftChange}
                             onEditCanceled={onEditCanceled}
                             onEditSaved={onEditSaved}
                         />
@@ -432,17 +495,29 @@ interface MessageElementProps {
     message: MessageElement;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     mode: 'view' | 'edit';
+    editingMessageDraft?: string | null;
+    onEditDraftChange: (draft: string) => void;
     onEditCanceled: () => void;
     onEditSaved: (newBody: string) => void;
 }
 
-function MessageElement({ message, onAttachmentClick, mode = 'view', onEditCanceled, onEditSaved }: MessageElementProps) {
+function MessageElement({
+    message,
+    onAttachmentClick,
+    mode,
+    editingMessageDraft,
+    onEditDraftChange,
+    onEditCanceled,
+    onEditSaved
+}: MessageElementProps) {
     return (
         <>
             {message.body && (
                 mode === 'edit' ? (
                     <MessageEditor
                         initialValue={message.body}
+                        draftValue={editingMessageDraft}
+                        onDraftChange={onEditDraftChange}
                         onCancel={onEditCanceled}
                         onSave={onEditSaved}
                     />
@@ -485,13 +560,15 @@ function MessageElement({ message, onAttachmentClick, mode = 'view', onEditCance
 
 interface MessageEditorProps {
     initialValue: string;
+    draftValue?: string | null;
+    onDraftChange: (newDraft: string) => void;
     onSave: (newBody: string) => void;
     onCancel: () => void;
     disabled?: boolean;
 }
 
-function MessageEditor({ initialValue, onSave, onCancel, disabled }: MessageEditorProps) {
-    const [editBody, setEditBody] = useState(initialValue);
+function MessageEditor({ initialValue, draftValue, onDraftChange, onSave, onCancel, disabled }: MessageEditorProps) {
+    const currentText = draftValue ?? initialValue;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -508,7 +585,8 @@ function MessageEditor({ initialValue, onSave, onCancel, disabled }: MessageEdit
     }, []);
 
     const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
-        setEditBody(e.target.value);
+        const newValue = e.target.value;
+        onDraftChange(newValue);
 
         const textarea = textareaRef.current;
         if (textarea) {
@@ -528,9 +606,10 @@ function MessageEditor({ initialValue, onSave, onCancel, disabled }: MessageEdit
     };
 
     const submitEdit = () => {
-        const trimmedBody = editBody.trim();
+        const trimmedBody = currentText.trim();
 
         if (trimmedBody.length === 0) return;
+
         if (trimmedBody === initialValue) {
             onCancel();
             return;
@@ -544,12 +623,12 @@ function MessageEditor({ initialValue, onSave, onCancel, disabled }: MessageEdit
             <textarea
                 ref={textareaRef}
                 rows={1}
-                value={editBody}
+                value={currentText}
                 onChange={handleInput}
                 onKeyDown={handleKeyDown}
                 disabled={disabled}
                 maxLength={1024}
-                className="block input-field min-h-10 max-h-40 w-full text-sm resize-none py-2 px-3 overflow-y-auto leading-6"
+                className="block input-field min-h-10 max-h-40 w-full text-sm resize-none py-2 px-3 overflow-y-auto leading-6 whitespace-pre-wrap"
             />
 
             <span className="text-xs text-gray-400">
