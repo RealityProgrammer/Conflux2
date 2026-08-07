@@ -19,7 +19,8 @@ internal sealed class ChannelRepository(
                 c.Type, 
                 c.Type == ChannelType.DirectMessage ? 
                     new DMConversationContext(
-                        c.FriendRequest!.SenderUserId == userId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId, 
+                        c.FriendRequest!.SenderUserId, 
+                        c.FriendRequest.ReceiverUserId, 
                         c.FriendRequest.Status == FriendRequestStatus.Accepted
                     )
                     : null,
@@ -43,7 +44,8 @@ internal sealed class ChannelRepository(
                 c.Type, 
                 c.Type == ChannelType.DirectMessage ? 
                     new DMConversationContext(
-                        c.FriendRequest!.SenderUserId == userId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId, 
+                        c.FriendRequest!.SenderUserId, 
+                        c.FriendRequest.ReceiverUserId,
                         c.FriendRequest.Status == FriendRequestStatus.Accepted
                     )
                     : null,

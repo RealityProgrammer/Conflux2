@@ -3,7 +3,8 @@ using Conflux.Domain.Enums;
 namespace Conflux.Domain.Dto;
 
 public sealed record DMConversationContext(
-    Guid OtherUserId,
+    Guid SenderUserId,
+    Guid ReceiverUserId,
     bool IsFriended
 );
 

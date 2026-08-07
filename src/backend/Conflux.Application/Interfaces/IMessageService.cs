@@ -22,6 +22,7 @@ public interface IMessageService {
     );
 
     Task<Result<GetMessagesResponse>> GetMessagesAsync(
+        Guid requesterUserId,
         Guid channelId,
         MessageLoadDirection? direction,
         Guid? cursorMessageId,

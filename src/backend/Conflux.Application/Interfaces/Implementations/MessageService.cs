@@ -33,14 +33,20 @@ internal sealed class MessageService(
         IReadOnlyList<Stream> attachmentStreams,
         CancellationToken cancellationToken = default
     ) {
-        var postingContext = 
+        Result<ConversationPostingContext> getPostingContextResult = 
             await channelRepository.GetPostingContextFromChannelIdAsync(senderUserId, channelId);
 
-        if (postingContext.Value == null) {
-            return postingContext.Error;
+        if (!getPostingContextResult.IsSuccess) {
+            return getPostingContextResult.Error;
         }
-        
-        // TODO: Validate permissions.
+
+        ConversationPostingContext postingContext = getPostingContextResult.Value!;
+
+        Result accessibilityResult = ValidateConversationAccessibility(postingContext, senderUserId);
+
+        if (!accessibilityResult.IsSuccess) {
+            return accessibilityResult.Error;
+        }
         
         // upload attachments
         Attachment[] attachments = attachmentStreams.Count == 0 ? [] : new Attachment[attachmentStreams.Count];
@@ -94,7 +100,7 @@ internal sealed class MessageService(
             Body = body,
             Attachments = attachments,
             SenderUserId = senderUserId,
-            ConversationId = postingContext.Value.ConversationId,
+            ConversationId = postingContext.ConversationId,
             CreatedAt = timeProvider.GetUtcNow(),
         };
 
@@ -139,19 +145,26 @@ internal sealed class MessageService(
         if (message == null) {
             return Errors.ResourceNotFound("Message");
         }
+       
+        // check if user can access the conversation (probably a bit overkill since we're gonna check for message
+        // ownership anyway but hey extra safety can't hurt).
+        Result<ConversationPostingContext> getPostingContextResult = 
+            await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
+
+        if (!getPostingContextResult.IsSuccess) {
+            return getPostingContextResult.Error;
+        }
+
+        ConversationPostingContext postingContext = getPostingContextResult.Value!;
+
+        Result accessibilityResult = ValidateConversationAccessibility(postingContext, requesterUserId);
+
+        if (!accessibilityResult.IsSuccess) {
+            return accessibilityResult.Error;
+        }
         
         if (message.SenderUserId != requesterUserId) {
             return Errors.Forbidden("You do not have permission to edit this message.");
-        }
-        
-        // get the channel id from the conversation id from message's conversation id.
-        Result<ConversationPostingContext> postingContext =
-            await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
-
-        if (!postingContext.IsSuccess) {
-            logger.LogError("Failed to edit message due to cannot retrieve posting context from conversation with id {id}.", message.ConversationId);
-            
-            return Errors.OperationFailure("edit message");
         }
         
         // if body is not changed, return success instantly.
@@ -178,12 +191,13 @@ internal sealed class MessageService(
             message.CreatedAt
         );
         
-        await mediator.Publish(new MessageEditedNotification(postingContext.Value!.ChannelId, dto), CancellationToken.None);
+        await mediator.Publish(new MessageEditedNotification(postingContext.ChannelId, dto), CancellationToken.None);
         
         return Result<MessageDto>.Success(dto);
     }
 
     public async Task<Result<GetMessagesResponse>> GetMessagesAsync(
+        Guid requesterUserId,
         Guid channelId,
         MessageLoadDirection? direction,
         Guid? cursorMessageId,
@@ -191,64 +205,97 @@ internal sealed class MessageService(
         CancellationToken cancellationToken = default
     ) {
         var result = 
-            await channelRepository.GetPostingContextFromChannelIdAsync(Guid.Empty, channelId);
+            await channelRepository.GetPostingContextFromChannelIdAsync(requesterUserId, channelId);
 
-        if (result.IsSuccess) {
-            var postingContext = result.Value;
-            
-            Result<PagedMessageResult> getMessagesResult = await messageRepository.GetMessagesAsync(
-                postingContext!.ConversationId, 
-                direction, 
-                cursorMessageId,
-                count,
-                cancellationToken
-            );
-            
-            if (getMessagesResult.IsSuccess) {
-                var messagePage = getMessagesResult.Value!;
-                
-                // bail out early
-                if (messagePage.Messages.Count == 0) {
-                    return Result<GetMessagesResponse>.Success(new([], [], messagePage.HasMoreBefore, messagePage.HasMoreAfter));
+        if (!result.IsSuccess) {
+            return result.Error;
+        }
+        
+        // validate ownership.
+        ConversationPostingContext postingContext = result.Value!;
+
+        switch (postingContext.ChannelType) {
+            case ChannelType.DirectMessage:
+                // check if user can access the direct message
+                var dmContext = postingContext.DmContext!;
+
+                if (dmContext.SenderUserId != requesterUserId && dmContext.ReceiverUserId != requesterUserId) {
+                    return Errors.Forbidden("You are not associated with the conversation.");
                 }
-                
-                // group the messages
-                var groups = new List<MessageGroup>();
-                MessageGroup? currentGroup = null;
+                break;
+            
+            // TODO: Server validate.
+        }
+        
+        Result<PagedMessageResult> getMessagesResult = await messageRepository.GetMessagesAsync(
+            postingContext.ConversationId, 
+            direction, 
+            cursorMessageId,
+            count,
+            cancellationToken
+        );
 
-                foreach (MessageDto message in getMessagesResult.Value!.Messages) {
-                    var element = new MessageElement(message.Id, message.Body, message.Attachments, message.CreatedAt);
+        if (!getMessagesResult.IsSuccess) {
+            return getMessagesResult.Error;
+        }
+        
+        var messagePage = getMessagesResult.Value!;
+        
+        // bail out early
+        if (messagePage.Messages.Count == 0) {
+            return Result<GetMessagesResponse>.Success(new([], [], messagePage.HasMoreBefore, messagePage.HasMoreAfter));
+        }
+        
+        // group the messages
+        var groups = new List<MessageGroup>();
+        MessageGroup? currentGroup = null;
 
-                    // if same sender as the last message, append to the current group
-                    if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {
-                        currentGroup.Messages.Add(element);
-                    } else {
-                        // else, create a new group and add it to the list
-                        currentGroup = new(message.SenderUserId, [element]);
-                        groups.Add(currentGroup);
-                    }
-                }
+        foreach (MessageDto message in getMessagesResult.Value!.Messages) {
+            var element = new MessageElement(message.Id, message.Body, message.Attachments, message.CreatedAt);
 
-                // must have at least 1 user
-                List<UserBasicProfileDto> userProfiles =
-                    await userRepository.GetProfileSummariesAsync(
-                        [..groups.Select(g => g.SenderUserId).Distinct()], 
-                        cancellationToken
-                    );
-                
-                return Result<GetMessagesResponse>.Success(new(
-                    groups, 
-                    userProfiles, 
-                    messagePage.HasMoreBefore, 
-                    messagePage.HasMoreAfter
-                ));
+            // if same sender as the last message, append to the current group
+            if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {
+                currentGroup.Messages.Add(element);
+            } else {
+                // else, create a new group and add it to the list
+                currentGroup = new(message.SenderUserId, [element]);
+                groups.Add(currentGroup);
             }
         }
 
-        return result.Error;
+        // must have at least 1 user
+        List<UserBasicProfileDto> userProfiles =
+            await userRepository.GetProfileSummariesAsync(
+                [..groups.Select(g => g.SenderUserId).Distinct()], 
+                cancellationToken
+            );
+        
+        return Result<GetMessagesResponse>.Success(new(
+            groups, 
+            userProfiles, 
+            messagePage.HasMoreBefore, 
+            messagePage.HasMoreAfter
+        ));
     }
 
     public string GetAttachmentUrl(Guid attachmentId, bool useHttps) {
         return storageService.GetMessageAttachmentPreSignedUrl(attachmentId, useHttps);
+    }
+
+    private Result ValidateConversationAccessibility(ConversationPostingContext postingContext, Guid requesterUserId) {
+        switch (postingContext.ChannelType) {
+            case ChannelType.DirectMessage:
+                // check if user can access the direct message
+                var dmContext = postingContext.DmContext!;
+
+                if (dmContext.SenderUserId != requesterUserId && dmContext.ReceiverUserId != requesterUserId) {
+                    return Errors.Forbidden("You are not associated with the conversation.");
+                }
+
+                return Result.Success();
+            
+            default:
+                return Errors.Forbidden("Unknown conversation type.");
+        }
     }
 }

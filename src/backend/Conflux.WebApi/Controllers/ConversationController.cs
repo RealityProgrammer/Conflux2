@@ -70,7 +70,6 @@ public sealed class ConversationController(
 
     [HttpPatch("messages/{messageId:guid}")]
     public async Task<ActionResult<ApiResponse<MessageDto>>> EditMessage(
-        Guid channelId,
         Guid messageId,
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
@@ -107,14 +106,14 @@ public sealed class ConversationController(
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
         // TODO: Check if user has permission to view messages at this channel at service.
 
         Result<GetMessagesResponse> result =
-            await messageService.GetMessagesAsync(channelId, direction, cursor, count, cancellationToken);
+            await messageService.GetMessagesAsync(userId, channelId, direction, cursor, count, cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));
@@ -122,6 +121,7 @@ public sealed class ConversationController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<GetMessagesResponse>(null, result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<GetMessagesResponse>(null, result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error)),
         };
     }
