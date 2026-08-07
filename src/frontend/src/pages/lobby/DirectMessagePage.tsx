@@ -5,11 +5,11 @@ import UserAvatar from "../../components/UserAvatar.tsx";
 import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
 import type {GetMessagesResponse, MessageDto,MessageGroup,ServiceResponse, UserBasicProfileSummary} from "../../api/responses.ts";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import useGetMessages from "../../hooks/useGetMessages.ts";
 import {type InfiniteData, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import {ChatView} from "../../components/ChatView.tsx";
+import {ChatView, type QueryModification} from "../../components/ChatView.tsx";
 import type {MessageReceivedEvent} from "../../api/events.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
@@ -55,78 +55,7 @@ export default function DirectMessagePage() {
         }
     }, [channelId, signalrContext.isConnected]);
 
-    const queryClient = useQueryClient();
-
-    const {
-        useInfiniteQueryResult: {
-            hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage, hasNextPage, isFetchingNextPage, fetchNextPage,
-            isLoading,
-        },
-        allMessageGroups,
-        userMap,
-        queryKey
-    } = useGetMessages(channelId, LOAD_COUNT);
-
-    // sending messages
-    const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
-        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
-            queryKey,
-            (oldData) => {
-                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
-                    return oldData;
-                }
-
-                const lastPage = oldData.pages.at(-1)!;
-                const updatedLastPage = { ...lastPage };
-
-                if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
-                    updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
-                }
-
-                const currentGroups = updatedLastPage.messageGroups || [];
-
-                if (lastPage.messageGroups?.length > 0) {
-                    const lastMessageGroup = lastPage.messageGroups.at(-1)!;
-
-                    // was the new message sent by the same person on the last group of the last page?
-                    const isSameUser =
-                        lastMessageGroup.senderUserId == newMessage.senderUserId;
-
-                    if (isSameUser) {
-                        const updatedGroup: MessageGroup = {
-                            ...lastMessageGroup,
-                            messages: [...lastMessageGroup.messages, newMessage],
-                        };
-
-                        updatedLastPage.messageGroups = [
-                            ...currentGroups.slice(0, -1),
-                            updatedGroup,
-                        ];
-                    } else {
-                        updatedLastPage.messageGroups = [
-                            ...currentGroups,
-                            {
-                                senderUserId: newMessage.senderUserId,
-                                messages: [newMessage],
-                            },
-                        ];
-                    }
-                } else {
-                    updatedLastPage.messageGroups = [
-                        {
-                            senderUserId: newMessage.senderUserId,
-                            messages: [newMessage],
-                        },
-                    ];
-                }
-
-                return {
-                    ...oldData,
-                    pages: [...oldData.pages.slice(0, -1), updatedLastPage],
-                };
-            }
-        );
-    };
+    const messageQueryUpdate = useRef<QueryModification>(null!);
 
     const [queueingMessages, setQueueingMessages] = useState<QueueingMessage[]>([]);
 
@@ -167,7 +96,9 @@ export default function DirectMessagePage() {
                 return;
             }
 
-            pushNewMessage(data.data!, authorization.userProfile ?? undefined);
+            if (messageQueryUpdate.current) {
+                messageQueryUpdate.current.pushNewMessage(data.data!, authorization.userProfile ?? undefined);
+            }
 
             // remove the query
             setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
@@ -186,100 +117,10 @@ export default function DirectMessagePage() {
         sendMessageMutation.mutate({ tempId, data: state });
     };
 
-    // change the cache pages when message received
-    useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
-        const senderId = event.message.senderUserId;
-
-        // check if there is this user summary in any page
-        const currentCache = queryClient.getQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(queryKey);
-        let knownUser: UserBasicProfileSummary | undefined = undefined;
-
-        if (currentCache?.pages) {
-            for (const page of currentCache.pages) {
-                if (!page?.users) continue;
-
-                const cached = page.users.find((value) => value.id == senderId);
-
-                if (cached) {
-                    knownUser = cached;
-                    break;
-                }
-            }
-        }
-
-        // if we don't know this user, fetch from api
-        if (!knownUser) {
-            try {
-                // Replace with your actual user service fetch call
-                const response = await userService.getUserBasicProfile(senderId);
-                knownUser = response.data ?? undefined;
-            } catch (error) {
-                console.error("Failed to fetch user summary for new message", error);
-            }
-        }
-
-        pushNewMessage(event.message, knownUser);
-    });
-
-    // message edit
-    const editMessage = (newMessage: MessageDto) => {
-        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
-            queryKey,
-            (oldData) => {
-                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
-                    return oldData;
-                }
-
-                let isMessageFound = false;
-
-                const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
-                    if (!page) return page;
-
-                    const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
-                        const messageIndex = messageGroup.messages.findIndex((m) => m.id === newMessage.id);
-
-                        if (messageIndex !== -1) {
-                            isMessageFound = true;
-
-                            const updatedMessages = [...messageGroup.messages];
-
-                            updatedMessages[messageIndex] = newMessage;
-
-                            return {
-                                ...messageGroup,
-                                messages: updatedMessages,
-                            };
-                        }
-
-                        return messageGroup;
-                    });
-
-                    if (!isMessageFound) {
-                        return page;
-                    }
-
-                    return {
-                        ...page,
-                        messageGroups: updatedMessageGroups,
-                    };
-                });
-
-                // Performance optimization: If the message wasn't in the cache at all,
-                // return the exact old state to prevent an unnecessary React re-render.
-                if (!isMessageFound) {
-                    return oldData;
-                }
-
-                return {
-                    ...oldData,
-                    pages: updatedPages,
-                };
-            }
-        );
-    };
-
     const handleMessageEdited = (message: MessageDto) => {
-        editMessage(message);
+        if (messageQueryUpdate.current) {
+            messageQueryUpdate.current.editMessage(message);
+        }
     };
 
     const handleCancelSendErrorMessage = (tempId: string) => {
@@ -378,19 +219,12 @@ export default function DirectMessagePage() {
                 )}
 
                 <ChatView
-                    messageGroups={allMessageGroups}
-                    userProfiles={userMap}
-                    isLoading={isLoading}
-                    hasPreviousPage={hasPreviousPage}
-                    isFetchingPreviousPage={isFetchingPreviousPage}
-                    fetchPreviousPage={fetchPreviousPage}
-                    hasNextPage={hasNextPage}
-                    isFetchingNextPage={isFetchingNextPage}
-                    fetchNextPage={fetchNextPage}
+                    channelId={channelId!}
                     emptyState={() => {
                         return <p className="text-base gray-500">And our story begin...</p>
                     }}
                     onMessageEdited={handleMessageEdited}
+                    queryModificationRef={messageQueryUpdate}
                 />
 
                 <ChatInput

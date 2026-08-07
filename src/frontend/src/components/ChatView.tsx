@@ -1,6 +1,6 @@
-import type {Attachment, MessageDto, MessageElement, MessageGroup, ServiceResponse, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, GetMessagesResponse, MessageDto, MessageElement, MessageGroup, ServiceResponse, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
-import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ChangeEvent} from "react";
+import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ChangeEvent, type RefObject, useImperativeHandle} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
@@ -11,6 +11,11 @@ import { ContextMenu, ScrollArea } from "radix-ui";
 import { BsCopy, BsPencil, BsTrash } from "react-icons/bs";
 import UserAvatar from "./UserAvatar.tsx";
 import { useAuthorization } from "../contexts/AuthContext.tsx";
+import useGetMessages from "../hooks/useGetMessages.ts";
+import { userService } from "../api/userService.ts";
+import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import useSignalREvent from "../hooks/useSignalREvent.ts";
+import type { MessageReceivedEvent } from "../api/events.ts";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -149,35 +154,39 @@ function estimateMessageGroupHeight(
     }, 24);
 }
 
+export interface QueryModification {
+    pushNewMessage: (message: MessageDto, userProfile?: UserBasicProfileSummary) => void;
+    editMessage: (message: MessageDto) => void;
+}
+
 export interface ChatViewProps {
-    messageGroups: MessageGroup[];
-    userProfiles: Record<string, UserBasicProfileSummary>;
-    isLoading: boolean;
-    hasPreviousPage: boolean;
-    isFetchingPreviousPage: boolean;
-    fetchPreviousPage: () => void;
-    hasNextPage: boolean;
-    isFetchingNextPage: boolean;
-    fetchNextPage: () => void;
+    channelId: string;
     emptyState?: () => ReactNode;
     onMessageEdited: (message: MessageDto) => void;
+    queryModificationRef?: RefObject<QueryModification>;
 }
 
 export function ChatView({
-     messageGroups,
-     userProfiles,
-     isLoading,
-     hasPreviousPage,
-     isFetchingPreviousPage,
-     fetchPreviousPage,
-     hasNextPage,
-     isFetchingNextPage,
-     fetchNextPage,
-     emptyState,
-     onMessageEdited,
+    channelId,
+    emptyState,
+    onMessageEdited,
+    queryModificationRef,
  }: ChatViewProps) {
     const viewportRef = useRef<HTMLDivElement>(null!);
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
+
+    const queryClient = useQueryClient();
+
+    // querying
+    const {
+        useInfiniteQueryResult: {
+            hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage, hasNextPage, isFetchingNextPage, fetchNextPage,
+            isLoading,
+        },
+        allMessageGroups: messageGroups,
+        userProfiles,
+        queryKey
+    } = useGetMessages(channelId, 50);
 
     const [isReady, setIsReady] = useState(false);
     const { width: viewportWidth = 0 } = useResizeObserver({ ref: viewportRef });
@@ -239,9 +248,123 @@ export function ChatView({
         });
     };
 
+    const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
+        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+                    return oldData;
+                }
+
+                const lastPage = oldData.pages.at(-1)!;
+                const updatedLastPage = { ...lastPage };
+
+                if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
+                    updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
+                }
+
+                const currentGroups = updatedLastPage.messageGroups || [];
+
+                if (lastPage.messageGroups?.length > 0) {
+                    const lastMessageGroup = lastPage.messageGroups.at(-1)!;
+
+                    // was the new message sent by the same person on the last group of the last page?
+                    const isSameUser =
+                        lastMessageGroup.senderUserId == newMessage.senderUserId;
+
+                    if (isSameUser) {
+                        const updatedGroup: MessageGroup = {
+                            ...lastMessageGroup,
+                            messages: [...lastMessageGroup.messages, newMessage],
+                        };
+
+                        updatedLastPage.messageGroups = [
+                            ...currentGroups.slice(0, -1),
+                            updatedGroup,
+                        ];
+                    } else {
+                        updatedLastPage.messageGroups = [
+                            ...currentGroups,
+                            {
+                                senderUserId: newMessage.senderUserId,
+                                messages: [newMessage],
+                            },
+                        ];
+                    }
+                } else {
+                    updatedLastPage.messageGroups = [
+                        {
+                            senderUserId: newMessage.senderUserId,
+                            messages: [newMessage],
+                        },
+                    ];
+                }
+
+                return {
+                    ...oldData,
+                    pages: [...oldData.pages.slice(0, -1), updatedLastPage],
+                };
+            }
+        );
+    };
+
     // message editing
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+
+    const editMessage = (newMessage: MessageDto) => {
+        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+                    return oldData;
+                }
+
+                let isMessageFound = false;
+
+                const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
+                    if (!page) return page;
+
+                    const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
+                        const messageIndex = messageGroup.messages.findIndex((m) => m.id === newMessage.id);
+
+                        if (messageIndex !== -1) {
+                            isMessageFound = true;
+
+                            const updatedMessages = [...messageGroup.messages];
+
+                            updatedMessages[messageIndex] = newMessage;
+
+                            return {
+                                ...messageGroup,
+                                messages: updatedMessages,
+                            };
+                        }
+
+                        return messageGroup;
+                    });
+
+                    if (!isMessageFound) {
+                        return page;
+                    }
+
+                    return {
+                        ...page,
+                        messageGroups: updatedMessageGroups,
+                    };
+                });
+
+                if (!isMessageFound) {
+                    return oldData;
+                }
+
+                return {
+                    ...oldData,
+                    pages: updatedPages,
+                };
+            }
+        );
+    };
 
     const handleEditSaved = async (newBody: string) => {
         if (!editingMessageId) return;
@@ -255,6 +378,47 @@ export function ChatView({
             onMessageEdited(response.data!);
         }
     };
+
+    // signalr events
+    // change the cache pages when message received
+    useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
+        const senderId = event.message.senderUserId;
+
+        // check if there is this user summary in any page
+        const currentCache = queryClient.getQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(queryKey);
+        let knownUser: UserBasicProfileSummary | undefined = undefined;
+
+        if (currentCache?.pages) {
+            for (const page of currentCache.pages) {
+                if (!page?.users) continue;
+
+                const cached = page.users.find((value) => value.id == senderId);
+
+                if (cached) {
+                    knownUser = cached;
+                    break;
+                }
+            }
+        }
+
+        // if we don't know this user, fetch from api
+        if (!knownUser) {
+            try {
+                // Replace with your actual user service fetch call
+                const response = await userService.getUserBasicProfile(senderId);
+                knownUser = response.data ?? undefined;
+            } catch (error) {
+                console.error("Failed to fetch user summary for new message", error);
+            }
+        }
+
+        pushNewMessage(event.message, knownUser);
+    });
+
+    useImperativeHandle(queryModificationRef, () => ({
+        pushNewMessage,
+        editMessage,
+    }), [channelId]);
 
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
@@ -316,7 +480,9 @@ export function ChatView({
                 )}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
-                fetchNextPage={fetchNextPage}
+                fetchNextPage={() => {
+                    fetchNextPage();
+                }}
                 renderFetchingNext={() => (
                     <div className="size-6 flex flex-row justify-center items-center w-full">
                         <Spinner className="size-6 fill-white"/>

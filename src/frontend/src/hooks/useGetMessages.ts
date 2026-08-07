@@ -3,10 +3,10 @@ import type {GetMessagesResponse, MessageGroup, UserBasicProfileSummary} from ".
 import {messageService} from "../api/messageService.ts";
 import type {MessageLoadDirection} from "../api/requests.ts";
 
-interface UseGetMessagesResult {
+export interface UseGetMessagesResult {
     useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
     allMessageGroups: MessageGroup[];
-    userMap: Record<string, UserBasicProfileSummary>;
+    userProfiles: Record<string, UserBasicProfileSummary>;
     queryKey: (string | null | undefined)[];
 }
 
@@ -85,17 +85,17 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         return acc;
     }, []);
 
-    const userMap: Record<string, UserBasicProfileSummary> = {};
+    const userProfiles: Record<string, UserBasicProfileSummary> = {};
 
     if (queryResult.data?.pages) {
         for (const page of queryResult.data?.pages) {
             if (page?.users) {
                 for (const user of page.users) {
-                    userMap[user.id] = user;
+                    userProfiles[user.id] = user;
                 }
             }
         }
     }
 
-    return { useInfiniteQueryResult: queryResult, allMessageGroups: mergedGroups, userMap, queryKey };
+    return { useInfiniteQueryResult: queryResult, allMessageGroups: mergedGroups, userProfiles, queryKey };
 }

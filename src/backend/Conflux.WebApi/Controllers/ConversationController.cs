@@ -73,6 +73,8 @@ public sealed class ConversationController(
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
     ) {
+        await Task.Delay(2000, cancellationToken);
+        
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
