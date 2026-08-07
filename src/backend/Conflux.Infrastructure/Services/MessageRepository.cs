@@ -13,6 +13,12 @@ internal sealed class MessageRepository(
         dbContext.Messages.Add(message);
     }
 
+    public Task<Message?> GetByIdAsync(Guid messageId, CancellationToken cancellationToken = default) {
+        return dbContext.Messages
+            .Where(r => r.Id == messageId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<Result<PagedMessageResult>> GetMessagesAsync(
         Guid conversationId, 
         MessageLoadDirection? direction, 

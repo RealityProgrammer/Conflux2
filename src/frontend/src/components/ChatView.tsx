@@ -1,4 +1,4 @@
-import type {Attachment, MessageDto, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, MessageDto, MessageElement, MessageGroup, ServiceResponse, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ChangeEvent} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
@@ -160,6 +160,7 @@ export interface ChatViewProps {
     isFetchingNextPage: boolean;
     fetchNextPage: () => void;
     emptyState?: () => ReactNode;
+    onMessageEdited: (message: MessageDto) => void;
 }
 
 export function ChatView({
@@ -173,6 +174,7 @@ export function ChatView({
      isFetchingNextPage,
      fetchNextPage,
      emptyState,
+     onMessageEdited,
  }: ChatViewProps) {
     const viewportRef = useRef<HTMLDivElement>(null!);
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
@@ -240,6 +242,19 @@ export function ChatView({
     // message editing
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+
+    const handleEditSaved = async (newBody: string) => {
+        if (!editingMessageId) return;
+
+        setEditingMessageId(null);
+        setEditingMessageDraft(null);
+
+        const response: ServiceResponse<MessageDto> = await messageService.editMessage(editingMessageId, newBody.trim());
+
+        if (response.success) {
+            onMessageEdited(response.data!);
+        }
+    };
 
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
@@ -331,11 +346,7 @@ export function ChatView({
                                 setEditingMessageId(null);
                                 setEditingMessageDraft(null);
                             }}
-                            onEditSaved={(newBody: string) => {
-                                console.log("update message", editingMessageId, "to new body:", newBody);
-                                setEditingMessageId(null);
-                                setEditingMessageDraft(null);
-                            }}
+                            onEditSaved={handleEditSaved}
                         />
                     );
                 }}

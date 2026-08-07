@@ -66,6 +66,33 @@ public sealed class ConversationController(
         }
     }
 
+    [HttpPatch("messages/{messageId:guid}")]
+    public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
+        Guid channelId,
+        Guid messageId,
+        [FromForm] PatchMessageRequest request,
+        CancellationToken cancellationToken
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
+        }
+
+        Result<MessageDto> result =
+            await messageService.EditMessageAsync(messageId, userId, request.Body, cancellationToken);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<MessageDto>(null, result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<MessageDto>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, result.Error)),
+        };
+    }
+
     [HttpGet("channels/{channelId:guid}/messages")]
     public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> LoadMessage(
         Guid channelId,
@@ -94,7 +121,7 @@ public sealed class ConversationController(
 
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAvatarUrl(Guid attachmentId) {
+    public ActionResult GetAvatarUrl(Guid attachmentId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
@@ -106,7 +133,7 @@ public sealed class ConversationController(
     }
 
     public record SendMessageRequest(
-        [StringLength(1024, ErrorMessage = "Message body surpassed 1024 characters.")]
+        [StringLength(1024, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
         string? Body,
 
         [MaxLength(4, ErrorMessage = "Only 4 attachments allowed in a message.")]
@@ -151,6 +178,21 @@ public sealed class ConversationController(
                     }
                 }
             }
+        }
+    }
+
+    public record PatchMessageRequest(
+        [StringLength(1024, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
+        string? Body
+    ) : IValidatableObject {
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+            var results = new List<ValidationResult>();
+
+            Validator.TryValidateProperty(Body, new(this, null, null) {
+                MemberName = nameof(Body),
+            }, results);
+
+            return results;
         }
     }
 }

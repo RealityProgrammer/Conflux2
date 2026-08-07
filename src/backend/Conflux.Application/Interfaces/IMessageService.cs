@@ -14,6 +14,13 @@ public interface IMessageService {
         CancellationToken cancellationToken = default
     );
 
+    Task<Result<MessageDto>> EditMessageAsync(
+        Guid messageId,
+        Guid requesterUserId,
+        string? newBody,
+        CancellationToken cancellationToken = default
+    );
+
     Task<Result<GetMessagesResponse>> GetMessagesAsync(
         Guid channelId,
         MessageLoadDirection? direction,

@@ -127,6 +127,51 @@ internal sealed class MessageService(
         }
     }
 
+    public async Task<Result<MessageDto>> EditMessageAsync(
+        Guid messageId, 
+        Guid requesterUserId, 
+        string? newBody, 
+        CancellationToken cancellationToken = default
+    ) {
+        var message = await messageRepository.GetByIdAsync(messageId, cancellationToken);
+        
+        if (message == null) {
+            return Errors.ResourceNotFound("Message");
+        }
+        
+        if (message.SenderUserId != requesterUserId) {
+            return Errors.Forbidden("You do not have permission to edit this message.");
+        }
+        
+        // if body is not changed, return success instantly.
+        if (message.Body == newBody) {
+            return Result<MessageDto>.Success(new(
+                message.Id, 
+                message.SenderUserId,
+                newBody,
+                message.Attachments,
+                message.CreatedAt
+            ));
+        }
+        
+        message.Body = newBody;
+        message.UpdatedAt = timeProvider.GetUtcNow();
+        
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        MessageDto dto = new(
+            message.Id,
+            message.SenderUserId,
+            message.Body,
+            message.Attachments,
+            message.CreatedAt
+        );
+        
+        await mediator.Publish(new MessageEditedNotification(message.ConversationId, dto), CancellationToken.None);
+        
+        return Result<MessageDto>.Success(dto);
+    }
+
     public async Task<Result<GetMessagesResponse>> GetMessagesAsync(
         Guid channelId,
         MessageLoadDirection? direction,

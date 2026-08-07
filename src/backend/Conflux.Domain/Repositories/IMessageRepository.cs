@@ -7,6 +7,8 @@ namespace Conflux.Domain.Repositories;
 public interface IMessageRepository {
     void Add(Message message);
 
+    Task<Message?> GetByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
+
     Task<Result<PagedMessageResult>> GetMessagesAsync(
         Guid conversationId, 
         MessageLoadDirection? direction, 

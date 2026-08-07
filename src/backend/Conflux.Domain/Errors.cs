@@ -101,4 +101,7 @@ public static class Errors {
     
     public static Error EmptyMessageContent() =>
         new(nameof(EmptyMessageContent), "Empty message content.");
+    
+    public static Error Forbidden(string message) =>
+        new(nameof(Forbidden), message);
 }

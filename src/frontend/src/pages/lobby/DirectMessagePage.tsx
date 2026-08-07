@@ -221,6 +221,67 @@ export default function DirectMessagePage() {
         pushNewMessage(event.message, knownUser);
     });
 
+    // message edit
+    const editMessage = (newMessage: MessageDto) => {
+        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+                    return oldData;
+                }
+
+                let isMessageFound = false;
+
+                const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
+                    if (!page) return page;
+
+                    const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
+                        const messageIndex = messageGroup.messages.findIndex((m) => m.id === newMessage.id);
+
+                        if (messageIndex !== -1) {
+                            isMessageFound = true;
+
+                            const updatedMessages = [...messageGroup.messages];
+
+                            updatedMessages[messageIndex] = newMessage;
+
+                            return {
+                                ...messageGroup,
+                                messages: updatedMessages,
+                            };
+                        }
+
+                        return messageGroup;
+                    });
+
+                    if (!isMessageFound) {
+                        return page;
+                    }
+
+                    return {
+                        ...page,
+                        messageGroups: updatedMessageGroups,
+                    };
+                });
+
+                // Performance optimization: If the message wasn't in the cache at all,
+                // return the exact old state to prevent an unnecessary React re-render.
+                if (!isMessageFound) {
+                    return oldData;
+                }
+
+                return {
+                    ...oldData,
+                    pages: updatedPages,
+                };
+            }
+        );
+    };
+
+    const handleMessageEdited = (message: MessageDto) => {
+        editMessage(message);
+    };
+
     const handleCancelSendErrorMessage = (tempId: string) => {
         setQueueingMessages((prev) => prev.filter(m => m.tempId != tempId));
     };
@@ -329,6 +390,7 @@ export default function DirectMessagePage() {
                     emptyState={() => {
                         return <p className="text-base gray-500">And our story begin...</p>
                     }}
+                    onMessageEdited={handleMessageEdited}
                 />
 
                 <ChatInput

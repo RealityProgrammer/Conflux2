@@ -47,6 +47,34 @@ export const messageService = {
         }
     },
 
+    editMessage: async (messageId: string, newBody: string | null): Promise<ServiceResponse<MessageDto>> => {
+        const trimmedBody = newBody?.trim();
+
+        try {
+            const formData = new FormData();
+
+            if (trimmedBody) {
+                formData.append("body", trimmedBody);
+            }
+
+            const response: AxiosResponse<BackendResponse<MessageDto>> =
+                await apiClient.patch(`/messages/${encodeURIComponent(messageId)}`, formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    }
+                });
+
+            return {
+                success: true,
+                statusCode: response.status,
+                data: response.data.data,
+            };
+        } catch (error) {
+            const axiosError = error as AxiosError<BackendResponse>;
+            return handleAxiosError(axiosError);
+        }
+    },
+
     getMessages: async (request: GetMessagesRequest): Promise<ServiceResponse<GetMessagesResponse>> => {
         try {
             const searchParams = new URLSearchParams();
