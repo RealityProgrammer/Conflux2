@@ -67,7 +67,7 @@ public sealed class ConversationController(
     }
 
     [HttpPatch("messages/{messageId:guid}")]
-    public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
+    public async Task<ActionResult<ApiResponse<MessageDto>>> EditMessage(
         Guid channelId,
         Guid messageId,
         [FromForm] PatchMessageRequest request,
@@ -94,7 +94,7 @@ public sealed class ConversationController(
     }
 
     [HttpGet("channels/{channelId:guid}/messages")]
-    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> LoadMessage(
+    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetMessages(
         Guid channelId,
         [FromQuery] MessageLoadDirection? direction,
         [FromQuery] Guid? cursor,
