@@ -23,3 +23,7 @@ export type UnfriendedEvent = {
 export type MessageReceivedEvent = {
     message: MessageDto;
 }
+
+export type MessageEditedEvent = {
+    message: MessageDto;
+}

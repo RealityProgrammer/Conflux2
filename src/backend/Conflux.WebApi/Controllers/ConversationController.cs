@@ -120,7 +120,10 @@ public sealed class ConversationController(
             return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));
         }
 
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error));
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<GetMessagesResponse>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error)),
+        };
     }
 
     [HttpGet("attachments/{attachmentId:guid}")]

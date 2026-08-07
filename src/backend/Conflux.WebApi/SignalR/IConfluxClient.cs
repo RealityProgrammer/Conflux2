@@ -8,4 +8,5 @@ public interface IConfluxClient {
     Task Unfriended(UnfriendedEvent data, CancellationToken cancellationToken = default);
     
     Task MessageReceived(MessageReceivedEvent data, CancellationToken cancellationToken = default);
+    Task MessageEdited(MessageEditedEvent data, CancellationToken cancellationToken = default);
 }

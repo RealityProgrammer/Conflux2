@@ -15,7 +15,7 @@ import useGetMessages from "../hooks/useGetMessages.ts";
 import { userService } from "../api/userService.ts";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type { MessageReceivedEvent } from "../api/events.ts";
+import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -409,6 +409,12 @@ export function ChatView({
         }
 
         pushNewMessage(event.message, knownUser);
+    });
+
+    useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
+        console.log("received message edited event:", JSON.stringify(event));
+
+        editMessage(event.message.id, event.message.body);
     });
 
     useImperativeHandle(queryModificationRef, () => ({

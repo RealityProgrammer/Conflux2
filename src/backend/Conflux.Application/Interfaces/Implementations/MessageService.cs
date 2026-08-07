@@ -23,7 +23,8 @@ internal sealed class MessageService(
     IStorageService storageService,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider,
-    IMediator mediator
+    IMediator mediator,
+    ILogger<MessageService> logger
 ) : IMessageService {
     public async Task<Result<MessageDto>> SendMessageAsync(
         Guid senderUserId,
@@ -33,7 +34,7 @@ internal sealed class MessageService(
         CancellationToken cancellationToken = default
     ) {
         var postingContext = 
-            await channelRepository.GetConversationPostingContext(senderUserId, channelId);
+            await channelRepository.GetPostingContextFromChannelIdAsync(senderUserId, channelId);
 
         if (postingContext.Value == null) {
             return postingContext.Error;
@@ -143,6 +144,16 @@ internal sealed class MessageService(
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
         
+        // get the channel id from the conversation id from message's conversation id.
+        Result<ConversationPostingContext> postingContext =
+            await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
+
+        if (!postingContext.IsSuccess) {
+            logger.LogError("Failed to edit message due to cannot retrieve posting context from conversation with id {id}.", message.ConversationId);
+            
+            return Errors.OperationFailure("edit message");
+        }
+        
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {
             return Result<MessageDto>.Success(new(
@@ -167,7 +178,7 @@ internal sealed class MessageService(
             message.CreatedAt
         );
         
-        await mediator.Publish(new MessageEditedNotification(message.ConversationId, dto), CancellationToken.None);
+        await mediator.Publish(new MessageEditedNotification(postingContext.Value!.ChannelId, dto), CancellationToken.None);
         
         return Result<MessageDto>.Success(dto);
     }
@@ -180,7 +191,7 @@ internal sealed class MessageService(
         CancellationToken cancellationToken = default
     ) {
         var result = 
-            await channelRepository.GetConversationPostingContext(Guid.Empty, channelId);
+            await channelRepository.GetPostingContextFromChannelIdAsync(Guid.Empty, channelId);
 
         if (result.IsSuccess) {
             var postingContext = result.Value;

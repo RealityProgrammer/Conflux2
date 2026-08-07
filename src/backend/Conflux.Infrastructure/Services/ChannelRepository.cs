@@ -8,17 +8,29 @@ namespace Conflux.Infrastructure.Services;
 
 internal sealed class ChannelRepository(
     ApplicationDbContext dbContext,
-    IFriendRequestRepository friendRequestRepository,
     TimeProvider timeProvider
 ) : IChannelRepository {
-    public async Task<Result<ConversationPostingContext>> GetConversationPostingContext(Guid userId, Guid channelId) {
+    public async Task<Result<ConversationPostingContext>> GetPostingContextFromChannelIdAsync(Guid userId, Guid channelId) {
         ConversationPostingContext? result = await dbContext.Channels
             .Where(c => c.Id == channelId)
-            .Select(c => new ConversationPostingContext(c.ConversationId))
+            .Select(c => new ConversationPostingContext(channelId, c.ConversationId))
             .FirstOrDefaultAsync();
 
         if (result == null) {
-            return Errors.NoChannelWithId();
+            return Errors.ResourceNotFound("Channel");
+        }
+        
+        return Result<ConversationPostingContext>.Success(result);
+    }
+
+    public async Task<Result<ConversationPostingContext>> GetPostingContextFromConversationId(Guid userId, Guid conversationId) {
+        ConversationPostingContext? result = await dbContext.Channels
+            .Where(c => c.ConversationId == conversationId)
+            .Select(c => new ConversationPostingContext(c.Id, conversationId))
+            .FirstOrDefaultAsync();
+
+        if (result == null) {
+            return Errors.ResourceNotFound("Conversation");
         }
         
         return Result<ConversationPostingContext>.Success(result);
