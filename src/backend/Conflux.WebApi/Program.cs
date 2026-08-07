@@ -10,6 +10,7 @@ using Amazon.S3;
 using Conflux.Application;
 using Conflux.Application.Interfaces;
 using Conflux.Application.Interfaces.Implementations;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using Conflux.Infrastructure.Services;

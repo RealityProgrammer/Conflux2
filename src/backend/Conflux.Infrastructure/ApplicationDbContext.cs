@@ -1,4 +1,5 @@
 using Conflux.Domain;
+using Conflux.Domain.Entities;
 using Conflux.Infrastructure.Config;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

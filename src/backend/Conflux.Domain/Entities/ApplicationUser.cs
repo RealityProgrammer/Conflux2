@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Conflux.Domain;
+namespace Conflux.Domain.Entities;
 
 public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public bool IsProfileSetup { get; set; }

@@ -1,5 +1,6 @@
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;

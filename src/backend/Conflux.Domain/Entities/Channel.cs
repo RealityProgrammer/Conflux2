@@ -1,4 +1,6 @@
-namespace Conflux.Domain;
+using Conflux.Domain.Enums;
+
+namespace Conflux.Domain.Entities;
 
 public class Channel : IHasCreatedAt {
     public Guid Id { get; set; }

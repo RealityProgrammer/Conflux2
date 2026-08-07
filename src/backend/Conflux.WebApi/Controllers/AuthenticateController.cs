@@ -59,7 +59,7 @@ public sealed class AuthenticateController : ControllerBase {
 
         var response = loginResult.Value;
 
-        SetAccessTokenCookie(response.AccessToken);
+        SetAccessTokenCookie(response!.AccessToken);
         SetRefreshTokenCookie(request.Email, response.RefreshToken);
     
         return Ok(new ApiResponse<LoginResponse>(
@@ -131,7 +131,7 @@ public sealed class AuthenticateController : ControllerBase {
         
         var value = result.Value;
         
-        SetAccessTokenCookie(value.AccessToken);
+        SetAccessTokenCookie(value!.AccessToken);
         
         return Ok(new ApiResponse<RefreshResponse>(
             new(value.AuthorizationInfo, value.TokenType, value.AccessToken), 

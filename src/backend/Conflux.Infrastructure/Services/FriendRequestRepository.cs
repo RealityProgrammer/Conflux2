@@ -1,5 +1,6 @@
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Extensions;
 using Conflux.Domain.Repositories;

@@ -35,7 +35,7 @@ internal sealed class AntiforgeryValidationFilter(IAntiforgery antiforgery) : IA
 
         try {
             await antiforgery.ValidateRequestAsync(context.HttpContext);
-        } catch (AntiforgeryValidationException e) {
+        } catch (AntiforgeryValidationException) {
             context.Result = new BadRequestObjectResult(new ApiResponse(Errors.AntiforgeryTokenVerificationFailed()));
         }
     }

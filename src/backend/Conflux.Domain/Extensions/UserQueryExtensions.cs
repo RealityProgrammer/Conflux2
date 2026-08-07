@@ -1,3 +1,4 @@
+using Conflux.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Domain.Extensions;

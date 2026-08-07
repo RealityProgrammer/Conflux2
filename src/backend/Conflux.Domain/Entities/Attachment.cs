@@ -1,4 +1,4 @@
-namespace Conflux.Domain;
+namespace Conflux.Domain.Entities;
 
 public sealed class Attachment {
     public Guid Id { get; set; }

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conflux.Domain;
+namespace Conflux.Domain.Entities;
 
 public class Message : IHasCreatedAt {
     public Guid Id { get; set; }

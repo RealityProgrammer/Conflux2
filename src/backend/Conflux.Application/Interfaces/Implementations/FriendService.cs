@@ -2,11 +2,11 @@ using Conflux.Application.Dto.Notifications;
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Exceptions;
 using Conflux.Domain.Repositories;
 using Mediator;
-using FriendRequestStatus = Conflux.Domain.FriendRequestStatus;
 
 namespace Conflux.Application.Interfaces.Implementations;
 

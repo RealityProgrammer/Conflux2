@@ -18,8 +18,7 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/user")]
 [Authorize]
 public sealed class UserController(
-    IUserService userService, 
-    IFileFormatInspector fileFormatInspector
+    IUserService userService
 ) : ControllerBase {
     [HttpPost("avatar")]
     public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {

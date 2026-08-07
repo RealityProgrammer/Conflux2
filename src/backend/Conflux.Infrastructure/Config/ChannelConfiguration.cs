@@ -1,4 +1,5 @@
 using Conflux.Domain;
+using Conflux.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conflux.Infrastructure.Config;
