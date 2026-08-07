@@ -1,4 +1,4 @@
-import type {Attachment, GetMessagesResponse, MessageDto, MessageElement, MessageGroup, ServiceResponse, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, GetMessagesResponse, MessageDto, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ChangeEvent, type RefObject, useImperativeHandle} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";

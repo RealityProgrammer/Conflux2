@@ -18,14 +18,14 @@ public interface IFriendService {
         int count
     );
 
-    Task<Result<PaginatedResult<FriendSummary>>> QueryFriendsAsync(
+    Task<Result<PaginatedResult<UserBasicProfileDto>>> QueryFriendsAsync(
         Guid searchingUserId,
         string? nameFilter,
         int offset,
         int count
     );
     
-    Task<Result<PaginatedResult<PendingFriendRequestSummary>>> QueryPendingRequestsAsync(
+    Task<Result<PaginatedResult<PendingFriendRequestDto>>> QueryPendingRequestsAsync(
         Guid searchingUserId,
         string? nameFilter,
         int offset,

@@ -134,7 +134,7 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileSummary>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserBasicProfileDto>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
@@ -154,7 +154,7 @@ public sealed class FriendController(
     
     [HttpGet("friends")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<FriendSummary>>>> QueryFriends(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<UserBasicProfileDto>>>> QueryFriends(
         [FromQuery] string? name,
         [FromQuery, Required] int offset,
         [FromQuery, Required] int count
@@ -162,27 +162,27 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<FriendSummary>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserBasicProfileDto>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResult<FriendSummary>> result = await friendService.QueryFriendsAsync(userId, name, offset, count);
+        Result<PaginatedResult<UserBasicProfileDto>> result = await friendService.QueryFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<FriendSummary>>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResult<UserBasicProfileDto>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<FriendSummary>>(null, result.Error)
+            new ApiResponse<PaginatedResult<UserBasicProfileDto>>(null, result.Error)
         );
     }
 
     [HttpGet("pending-requests")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestSummary>>>> QueryPendingRequests(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestDto>>>> QueryPendingRequests(
         [FromQuery] string? name,
         [FromQuery, Required] int offset,
         [FromQuery, Required] int count
@@ -190,22 +190,22 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<PendingFriendRequestSummary>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResult<PendingFriendRequestSummary>> result = 
+        Result<PaginatedResult<PendingFriendRequestDto>> result = 
             await friendService.QueryPendingRequestsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestSummary>>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<PendingFriendRequestSummary>>(null, result.Error)
+            new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(null, result.Error)
         );
     }
 }

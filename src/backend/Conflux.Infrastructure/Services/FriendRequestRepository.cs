@@ -115,7 +115,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<FriendSummary>> GetPaginatedFriendsAsync(
+    public async Task<PaginatedResult<UserBasicProfileDto>> GetPaginatedFriendsAsync(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -133,7 +133,7 @@ internal sealed class FriendRequestRepository(
             .OrderBy(u => u.UserName)
             .Skip(offset)
             .Take(count)
-            .Select(u => new FriendSummary(
+            .Select(u => new UserBasicProfileDto(
                 u.Id,
                 u.UserName!,
                 u.DisplayName!,
@@ -144,7 +144,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<PendingFriendRequestSummary>> GetPaginatedPendingRequestsAsync(
+    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPaginatedPendingRequestsAsync(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -176,7 +176,7 @@ internal sealed class FriendRequestRepository(
             .OrderBy(t => t.Other.UserName)
             .Skip(offset)
             .Take(count)
-            .Select(t => new PendingFriendRequestSummary(
+            .Select(t => new PendingFriendRequestDto(
                 t.Other.Id,
                 t.Other.UserName!,
                 t.Other.DisplayName!,

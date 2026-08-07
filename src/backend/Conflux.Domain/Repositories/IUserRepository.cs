@@ -17,11 +17,11 @@ public interface IUserRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<Result<UserBasicProfileSummary>> GetProfileSummaryAsync(
+    Task<Result<UserBasicProfileDto>> GetProfileSummaryAsync(
         Guid userId, 
         CancellationToken cancellationToken = default
     );
-    Task<List<UserBasicProfileSummary>> GetProfileSummariesAsync(
+    Task<List<UserBasicProfileDto>> GetProfileSummariesAsync(
         IReadOnlyCollection<Guid> userIds, 
         CancellationToken cancellationToken = default
     );

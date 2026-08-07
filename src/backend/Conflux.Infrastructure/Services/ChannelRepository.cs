@@ -13,7 +13,18 @@ internal sealed class ChannelRepository(
     public async Task<Result<ConversationPostingContext>> GetPostingContextFromChannelIdAsync(Guid userId, Guid channelId) {
         ConversationPostingContext? result = await dbContext.Channels
             .Where(c => c.Id == channelId)
-            .Select(c => new ConversationPostingContext(channelId, c.ConversationId))
+            .Include(c => c.Conversation)
+            .Select(c => new ConversationPostingContext(
+                channelId,
+                c.Type, 
+                c.Type == ChannelType.DirectMessage ? 
+                    new DMConversationContext(
+                        c.FriendRequest!.SenderUserId == userId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId, 
+                        c.FriendRequest.Status == FriendRequestStatus.Accepted
+                    )
+                    : null,
+                c.ConversationId
+            ))
             .FirstOrDefaultAsync();
 
         if (result == null) {
@@ -26,7 +37,18 @@ internal sealed class ChannelRepository(
     public async Task<Result<ConversationPostingContext>> GetPostingContextFromConversationId(Guid userId, Guid conversationId) {
         ConversationPostingContext? result = await dbContext.Channels
             .Where(c => c.ConversationId == conversationId)
-            .Select(c => new ConversationPostingContext(c.Id, conversationId))
+            .Include(c => c.Conversation)
+            .Select(c => new ConversationPostingContext(
+                c.Id,
+                c.Type, 
+                c.Type == ChannelType.DirectMessage ? 
+                    new DMConversationContext(
+                        c.FriendRequest!.SenderUserId == userId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId, 
+                        c.FriendRequest.Status == FriendRequestStatus.Accepted
+                    )
+                    : null,
+                conversationId
+            ))
             .FirstOrDefaultAsync();
 
         if (result == null) {

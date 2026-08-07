@@ -290,24 +290,24 @@ internal sealed class FriendService(
         return Result<PaginatedResult<DiscoverFriendSummary>>.Success(result);
     }
 
-    public async Task<Result<PaginatedResult<FriendSummary>>> QueryFriendsAsync(
+    public async Task<Result<PaginatedResult<UserBasicProfileDto>>> QueryFriendsAsync(
         Guid searchingUserId, 
         string? nameFilter, 
         int offset, 
         int count
     ) {
-        return Result<PaginatedResult<FriendSummary>>.Success(
+        return Result<PaginatedResult<UserBasicProfileDto>>.Success(
             await friendRequestRepository.GetPaginatedFriendsAsync(searchingUserId, nameFilter, offset, count)
         );
     }
 
-    public async Task<Result<PaginatedResult<PendingFriendRequestSummary>>> QueryPendingRequestsAsync(
+    public async Task<Result<PaginatedResult<PendingFriendRequestDto>>> QueryPendingRequestsAsync(
         Guid searchingUserId, 
         string? nameFilter, 
         int offset, 
         int count
     ) {
-        return Result<PaginatedResult<PendingFriendRequestSummary>>.Success(
+        return Result<PaginatedResult<PendingFriendRequestDto>>.Success(
             await friendRequestRepository.GetPaginatedPendingRequestsAsync(searchingUserId, nameFilter, offset, count)
         );
     }

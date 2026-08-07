@@ -116,7 +116,7 @@ internal sealed class UserService(
         return await userRepository.SetupProfileAsync(request.UserId, request.UserName, request.DisplayName);
     }
 
-    public async Task<Result<UserBasicProfileSummary>> GetUserBasicProfileAsync(Guid userId) {
+    public async Task<Result<UserBasicProfileDto>> GetUserBasicProfileAsync(Guid userId) {
         return await userRepository.GetProfileSummaryAsync(userId);
     }
 }

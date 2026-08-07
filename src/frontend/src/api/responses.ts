@@ -56,13 +56,6 @@ export type DiscoverFriendElement = {
     status: UserRelationshipStatus;
 }
 
-export type QueryFriendElement = {
-    userId: string;
-    userName: string;
-    displayName: string;
-    hasAvatar: boolean;
-}
-
 export type QueryPendingRequestElement = {
     userId: string;
     userName: string;

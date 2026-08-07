@@ -230,7 +230,7 @@ internal sealed class MessageService(
                 }
 
                 // must have at least 1 user
-                List<UserBasicProfileSummary> userProfiles =
+                List<UserBasicProfileDto> userProfiles =
                     await userRepository.GetProfileSummariesAsync(
                         [..groups.Select(g => g.SenderUserId).Distinct()], 
                         cancellationToken

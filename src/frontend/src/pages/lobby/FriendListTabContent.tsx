@@ -4,8 +4,8 @@ import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
     type PaginatedResponse,
-    type QueryFriendElement, type QueryPendingRequestElement,
-    type ServiceResponse, UserRelationshipStatus
+    type QueryPendingRequestElement,
+    type ServiceResponse, type UserBasicProfileSummary, UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
@@ -23,7 +23,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
-    element: QueryFriendElement;
+    element: UserBasicProfileSummary;
     removeUserFromCache: (userId: string) => void;
     navigateToDirectMessage: (userId: string) => void;
 }
@@ -46,8 +46,8 @@ export default function FriendListTabContent() {
         isLoading,
     } = useInfiniteQuery({
         queryKey: queryKey,
-        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<QueryFriendElement> | null | undefined> => {
-            const response: ServiceResponse<PaginatedResponse<QueryFriendElement>> =
+        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<UserBasicProfileSummary> | null | undefined> => {
+            const response: ServiceResponse<PaginatedResponse<UserBasicProfileSummary>> =
                 await friendService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
 
             return response.data;
@@ -68,13 +68,13 @@ export default function FriendListTabContent() {
     const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
     const handleRemoveUserFromCache = (userId: string) => {
-        queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryFriendElement>>>(
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<UserBasicProfileSummary>>>(
             queryKey,
             (oldData) => {
                 if (!oldData) return oldData;
 
                 const elementExists = oldData.pages.some(page =>
-                    page?.elements.some(element => element.userId === userId)
+                    page?.elements.some(element => element.id === userId)
                 );
 
                 if (!elementExists) return oldData;
@@ -85,7 +85,7 @@ export default function FriendListTabContent() {
                         if (!page) return page;
 
                         const filteredElements = page.elements.filter(
-                            (element) => element.userId !== userId
+                            (element) => element.id !== userId
                         );
 
                         const removedCount = page.elements.length - filteredElements.length;
@@ -101,34 +101,26 @@ export default function FriendListTabContent() {
         );
     };
 
-    const { fetchUserBasicProfile } = useCacheService();
+    const cacheService = useCacheService();
 
     useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
         handleRemoveUserFromCache(notif.invokerUserId);
     });
 
     useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
-        const profileResponse = await fetchUserBasicProfile(notif.acceptorUserId);
+        const profileResponse = await cacheService.getUserBasicProfile(notif.acceptorUserId);
 
         if (!profileResponse.success) return;
 
         const userProfile = profileResponse.data!;
 
-        const newElement: QueryPendingRequestElement = {
-            userId: notif.acceptorUserId,
-            userName: userProfile.userName,
-            displayName: userProfile.displayName,
-            hasAvatar: userProfile.hasAvatar,
-            status: UserRelationshipStatus.IncomingRequest,
-        }
-
-        queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<UserBasicProfileSummary> | null | undefined>>(
             queryKey,
             (oldData) => {
                 if (!oldData || oldData.pages.length === 0) return oldData;
 
                 const alreadyExists = oldData.pages.some(page =>
-                    page?.elements.some(el => el.userId === notif.acceptorUserId)
+                    page?.elements.some(el => el.id === notif.acceptorUserId)
                 );
 
                 if (alreadyExists) return oldData;
@@ -139,7 +131,7 @@ export default function FriendListTabContent() {
                         if (!page) return page;
 
                         const updatedElements = index === 0
-                            ? [newElement, ...page.elements]
+                            ? [userProfile, ...page.elements]
                             : page.elements;
 
                         return {
@@ -181,7 +173,7 @@ export default function FriendListTabContent() {
                 )}
                 renderItem={(itemIndex: number) =>
                     <Row element={allElements[itemIndex]}
-                         removeUserFromCache={() => handleRemoveUserFromCache(allElements[itemIndex].userId)}
+                         removeUserFromCache={() => handleRemoveUserFromCache(allElements[itemIndex].id)}
                          navigateToDirectMessage={(userId) => navigation(`/lobby/dm/${encodeURIComponent(userId)}`)}/>
                 }
                 renderSkeletonItem={(index) => (
@@ -202,20 +194,20 @@ export default function FriendListTabContent() {
 }
 
 function Row({ element, removeUserFromCache, navigateToDirectMessage }: RowProps) {
-    const { mutation, activeAction } = useFriendActions(element.userId);
+    const { mutation, activeAction } = useFriendActions(element.id);
 
     const handleUnfriend = () => mutation.mutate('unfriend', {
         onSuccess: (response: ServiceResponse) => {
             if (response.success) {
-                removeUserFromCache(element.userId)
+                removeUserFromCache(element.id)
             }
         }
     });
 
-    const toDirectMessage = () => navigateToDirectMessage(element.userId);
+    const toDirectMessage = () => navigateToDirectMessage(element.id);
 
     return (
-        <UserNameplate.Root userId={element.userId}
+        <UserNameplate.Root userId={element.id}
                             userName={element.userName}
                             displayName={element.displayName}
                             hasAvatar={element.hasAvatar}
