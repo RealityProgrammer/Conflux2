@@ -220,6 +220,10 @@ internal sealed class MessageService(
             return Errors.Forbidden("You do not have permission to delete this message.");
         }
 
+        if (message.DeletedAt != null) {
+            return Result.Success();
+        }
+
         message.DeletedAt = timeProvider.GetUtcNow();
         
         await unitOfWork.SaveChangesAsync();
