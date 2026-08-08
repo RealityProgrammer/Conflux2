@@ -1,0 +1,24 @@
+services:
+  redis:
+    container_name: Conflux_Redis
+    image: redis:8.10.0-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis-insight-data:/data
+    depends_on:
+      - redis
+
+volumes:
+  redis-data:
+  redis-insight-data:

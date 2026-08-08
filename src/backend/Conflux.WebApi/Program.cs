@@ -16,6 +16,8 @@ using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Miscs;
+using Conflux.WebApi.Services;
+using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using Microsoft.AspNetCore.SignalR;
@@ -102,6 +104,11 @@ builder.Services.AddSignalR();
 
 // Conflux services.
 builder.Services
+    .AddStackExchangeRedisCache(options => {
+        options.Configuration = builder.Configuration.GetConnectionString("Redis");
+        options.InstanceName = "Conflux";
+    })
+    .AddSingleton<IIdempotencyService, IdempotencyService>()
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IStorageService, StorageService>()
         
