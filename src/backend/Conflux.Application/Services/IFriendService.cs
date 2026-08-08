@@ -2,7 +2,7 @@ using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 
-namespace Conflux.Application.Interfaces;
+namespace Conflux.Application.Services;
 
 public interface IFriendService {
     Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUserId, Guid toUserId);

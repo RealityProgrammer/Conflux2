@@ -1,8 +1,8 @@
-using Conflux.Application.Interfaces;
+using Conflux.Application.Services;
 using Conflux.Domain.Exceptions;
 using Npgsql;
 
-namespace Conflux.Infrastructure.Services;
+namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork {
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) {

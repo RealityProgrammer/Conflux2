@@ -8,7 +8,7 @@ using Conflux.Domain.Exceptions;
 using Conflux.Domain.Repositories;
 using Mediator;
 
-namespace Conflux.Application.Interfaces.Implementations;
+namespace Conflux.Application.Services.Implementations;
 
 internal sealed class FriendService(
     IFriendRequestRepository friendRequestRepository,

@@ -3,7 +3,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 
-namespace Conflux.Application.Interfaces;
+namespace Conflux.Application.Services;
 
 public interface IMessageService {
     Task<Result<MessageDto>> SendMessageAsync(

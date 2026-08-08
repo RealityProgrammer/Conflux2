@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 using System.Web;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
-namespace Conflux.Application.Interfaces.Implementations;
+namespace Conflux.Application.Services.Implementations;
 
 public class AuthServiceOptions {
     public int AccessTokenDuration { get; set; } = TimeSpan.FromMinutes(30).Seconds;

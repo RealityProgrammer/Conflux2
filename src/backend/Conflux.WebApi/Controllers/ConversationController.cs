@@ -1,7 +1,6 @@
-using Conflux.Application.Dto.Requests;
 using Conflux.Application.Dto.Responses;
-using Conflux.Application.Interfaces;
-using Conflux.Application.Interfaces.Implementations;
+using Conflux.Application.Services;
+using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
@@ -22,6 +21,7 @@ public sealed class ConversationController(
     public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
         Guid channelId,
         [FromForm] SendMessageRequest request,
+        [FromHeader] string idempotencyKey,
         CancellationToken cancellationToken
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;

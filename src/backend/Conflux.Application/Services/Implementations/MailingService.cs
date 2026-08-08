@@ -4,7 +4,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 
-namespace Conflux.Application.Interfaces.Implementations;
+namespace Conflux.Application.Services.Implementations;
 
 internal sealed class MailingService(
     IConfiguration config

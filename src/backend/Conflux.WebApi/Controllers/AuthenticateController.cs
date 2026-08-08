@@ -1,6 +1,6 @@
 using Conflux.Application.Dto.Responses;
-using Conflux.Application.Interfaces;
-using Conflux.Application.Interfaces.Implementations;
+using Conflux.Application.Services;
+using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.WebApi.Attributes;
 using Microsoft.AspNetCore.Antiforgery;

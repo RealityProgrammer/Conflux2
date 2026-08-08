@@ -1,7 +1,7 @@
 using Conflux.Application.Dto.Requests;
 using Conflux.Domain;
 
-namespace Conflux.Application.Interfaces;
+namespace Conflux.Application.Services;
 
 public interface IStorageService {
     Task<Result<string>> UploadUserAvatarAsync(

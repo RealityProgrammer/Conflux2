@@ -6,7 +6,7 @@ using FileSignatures;
 using FileSignatures.Formats;
 using Microsoft.Extensions.Configuration;
 
-namespace Conflux.Application.Interfaces.Implementations;
+namespace Conflux.Application.Services.Implementations;
 
 public class UserServiceOptions {
     public long MaxAvatarSizeBytes { get; set; } = 1048576;

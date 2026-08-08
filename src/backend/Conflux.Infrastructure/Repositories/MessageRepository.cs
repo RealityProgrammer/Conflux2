@@ -4,7 +4,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Infrastructure.Services;
+namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class MessageRepository(
     ApplicationDbContext dbContext

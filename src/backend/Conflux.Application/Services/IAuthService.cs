@@ -1,7 +1,7 @@
 using Conflux.Application.Dto.Responses;
 using Conflux.Domain;
 
-namespace Conflux.Application.Interfaces;
+namespace Conflux.Application.Services;
 
 public interface IAuthService {
     Task<Result> RegisterAsync(string email, string password);

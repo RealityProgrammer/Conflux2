@@ -1,7 +1,7 @@
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 
-namespace Conflux.Application.Interfaces;
+namespace Conflux.Application.Services;
 
 public interface IChannelService {
     Task<Result<DirectMessageChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId);
