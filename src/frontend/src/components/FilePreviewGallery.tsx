@@ -53,7 +53,7 @@ export default function FilePreviewGallery({ open, onOpenChange, items, initialI
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/80 z-50"/>
+                <Dialog.Overlay className="backdrop-overlay"/>
 
                 <Dialog.Close asChild>
                     <IconButton

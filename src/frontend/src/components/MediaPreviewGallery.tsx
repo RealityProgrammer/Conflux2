@@ -79,7 +79,7 @@ export default function MediaPreviewGallery({
             <Dialog.Portal>
                 <Dialog.Title className="sr-only">Media preview gallery</Dialog.Title>
 
-                <Dialog.Overlay className="fixed inset-0 bg-black/80 z-50"/>
+                <Dialog.Overlay className="backdrop-overlay"/>
 
                 <Dialog.Close asChild>
                     <IconButton

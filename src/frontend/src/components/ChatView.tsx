@@ -1,14 +1,14 @@
 import type {Attachment, GetMessagesResponse, MessageDto, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
-import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ChangeEvent, type RefObject, useImperativeHandle} from "react";
+import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type RefObject, useImperativeHandle} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
 import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
 import Spinner from "./Spinner.tsx";
-import { ContextMenu, ScrollArea } from "radix-ui";
-import { BsCopy, BsPencil, BsTrash } from "react-icons/bs";
+import {AlertDialog, ContextMenu, ScrollArea} from "radix-ui";
+import {BsCopy, BsPencil, BsTrash} from "react-icons/bs";
 import UserAvatar from "./UserAvatar.tsx";
 import { useAuthorization } from "../contexts/AuthContext.tsx";
 import useGetMessages from "../hooks/useGetMessages.ts";
@@ -17,6 +17,7 @@ import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts";
 import { useCacheService } from "../hooks/useCacheService.ts";
 import MessageEditor from "./MessageEditor.tsx"
+import AlertActionDialog from "./AlertActionDialog.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -436,9 +437,7 @@ export function ChatView({
         onMessageEditRequested(editingMessage, newBody.trim());
     };
 
-    const handleMessageDelete = async (message: MessageDto) => {
-        onMessageDeleteRequested(message);
-    }
+    const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
 
     // signalr events
     // change the cache pages when message received
@@ -571,14 +570,10 @@ export function ChatView({
                             userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
                             onAttachmentClick={handleAttachmentClick}
                             editingMessageId={editingMessageId || undefined}
-                            editingMessageDraft={editingMessageDraft} // 👈 NEW
-                            onEditDraftChange={setEditingMessageDraft} // 👈 NEW
-                            onEditTriggered={(messageId) => {
-                                setEditingMessageId(messageId);
-                            }}
-                            onDeleteTriggered={(message) => {
-                                handleMessageDelete(message);
-                            }}
+                            editingMessageDraft={editingMessageDraft}
+                            onEditDraftChange={setEditingMessageDraft}
+                            onEditTriggered={setEditingMessageId}
+                            onDeleteTriggered={setDeletingMessage}
                             onEditCanceled={() => {
                                 setEditingMessageId(null);
                                 setEditingMessageDraft(null);
@@ -587,6 +582,23 @@ export function ChatView({
                         />
                     );
                 }}
+            />
+
+            <AlertActionDialog
+                panelClassName="w-128"
+                title={"Are you sure?"}
+                description={"This action cannot be undone. You will never see this message and its attachments ever again."}
+                open={!!deletingMessage}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingMessage(undefined);
+                    }
+                }}
+                actionButton={(
+                    <button className="button-theme-danger cursor-pointer px-3 py-2 rounded-md" onClick={() => deletingMessage && onMessageDeleteRequested(deletingMessage)}>
+                        Delete message
+                    </button>
+                )}
             />
         </div>
     );
@@ -621,7 +633,7 @@ function MessageGroupRow({
 
     const [selectedMessage, setSelectedMessage] = useState<MessageDto | null>(null);
 
-    const handleContextMenu = (e: React.MouseEvent) => {
+    const handleContextMenu = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
         const messageElement = target.closest<HTMLElement>("[data-message-id]");
 

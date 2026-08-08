@@ -68,7 +68,7 @@ function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string,
                     <>
                         <Dialog.Overlay
                             ref={overlayRef}
-                            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+                            className="backdrop-overlay backdrop-blur-sm"
                             style={{ opacity: 0 }}
                         />
 
