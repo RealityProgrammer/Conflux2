@@ -5,7 +5,7 @@ import apiClient from "./client.ts";
 import type {GetMessagesRequest} from "./requests.ts";
 
 export const messageService = {
-    sendMessage: async (channelId: string, body?: string, attachments?: File[]): Promise<ServiceResponse<MessageDto>> => {
+    sendMessage: async (channelId: string, idempotencyKey: string, body: string | null, attachments?: File[]): Promise<ServiceResponse<MessageDto>> => {
         const trimmedBody = body?.trim();
 
         if (!trimmedBody && !attachments) {
@@ -28,8 +28,6 @@ export const messageService = {
                     formData.append("attachments", attachments[i]);
                 }
             }
-
-            const idempotencyKey = crypto.randomUUID();  // cannot find namespace crypto
 
             const response: AxiosResponse<BackendResponse<MessageDto>> =
                 await apiClient.post(`/channels/${encodeURIComponent(channelId)}/messages`, formData, {

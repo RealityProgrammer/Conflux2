@@ -160,7 +160,7 @@ export interface QueryModification {
 export interface ChatViewProps {
     channelId: string;
     emptyState?: () => ReactNode;
-    onMessageEditRequested: (messageId: string, newBody: string | null) => void;
+    onMessageEditRequested: (message: MessageDto, newBody: string | null) => void;
     onMessageDeleteRequested: (message: MessageDto) => void;
     queryModificationRef?: RefObject<QueryModification>;
 }
@@ -415,10 +415,25 @@ export function ChatView({
     const handleSaveEdit = async (newBody: string) => {
         if (!editingMessageId) return;
 
+        let editingMessage: MessageDto | undefined = undefined;
+
+        for (let messageGroup of messageGroups) {
+            const messageSearch = messageGroup.messages.find(m => m.id === editingMessageId);
+
+            if (!!messageSearch) {
+                editingMessage = { ...messageSearch, senderUserId: messageGroup.senderUserId };
+                break;
+            }
+        }
+
+        if (editingMessage === undefined) {
+            return;
+        }
+
         setEditingMessageId(null);
         setEditingMessageDraft(null);
 
-        onMessageEditRequested(editingMessageId, newBody.trim());
+        onMessageEditRequested(editingMessage, newBody.trim());
     };
 
     const handleMessageDelete = async (message: MessageDto) => {

@@ -19,7 +19,7 @@ public sealed class ConversationController(
     IMessageService messageService
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
-    [Idempotent(24 * 60)]
+    [Idempotent(60)]
     public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
         Guid channelId,
         [FromForm] SendMessageRequest request,
@@ -56,8 +56,6 @@ public sealed class ConversationController(
         } else {
             attachmentStreams = [];
         }
-        
-        await Task.Delay(60000, CancellationToken.None);
 
         // invokes send and cleanup the opened streams
         try {

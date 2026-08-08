@@ -1,3 +1,3 @@
 namespace Conflux.WebApi;
 
-public sealed record IdempotentResponse(ApiResponse ApiResponse, int StatusCode);
+public sealed record IdempotentResponse(string JsonBody, int StatusCode);

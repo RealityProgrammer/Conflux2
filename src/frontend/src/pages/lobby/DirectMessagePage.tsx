@@ -14,18 +14,59 @@ import {HubConnectionState} from "@microsoft/signalr";
 import Spinner from "../../components/Spinner.tsx";
 import { DropdownMenu } from "radix-ui";
 import { HttpStatusCode } from "axios";
-import { BsExclamationTriangle } from "react-icons/bs";
+import {BsExclamationTriangle, BsPaperclip} from "react-icons/bs";
 
-type QueueingMessage = {
-    tempId: string;
-    errorMessage?: string;
-} & ({
-    type: "send",
-    state: ChatInputMessageState
-} | {
-    type: "edit",
-    body: string | null,
-});
+type SendingMessageOperation = {
+    type: "sending";
+    state: ChatInputMessageState;
+    idempotencyKey: string;
+};
+
+type EditMessageOperation = {
+    type: "edit";
+    originalMessage: MessageDto;
+    newBody: string | null;
+};
+
+type DeleteMessageOperation = {
+    type: "delete";
+    message: MessageDto;
+};
+
+type RetryOperation = SendingMessageOperation | EditMessageOperation | DeleteMessageOperation;
+
+type ErrorMessageOperation = {
+    type: "error";
+    errorMessage: string;
+    retryOperation: RetryOperation;
+};
+
+type MessageOperation = {
+    operationId: string;
+    operation: SendingMessageOperation | EditMessageOperation | DeleteMessageOperation | ErrorMessageOperation;
+};
+
+function getOperationBodyDisplayInfo(
+    operation: SendingMessageOperation | EditMessageOperation | DeleteMessageOperation | ErrorMessageOperation
+): [string | null, number] {
+    const operationInfoGetter = (operation: SendingMessageOperation | EditMessageOperation | DeleteMessageOperation): [string | null, number] => {
+        switch (operation.type) {
+            case "sending":
+                return [operation.state.messageBody, operation.state.attachments.length];
+
+            case "edit":
+                return [operation.newBody, 0];
+
+            case "delete":
+                return [operation.message.body, operation.message.attachments.length];
+
+            default:
+                return [null, 0];
+        }
+    }
+
+    return operationInfoGetter(operation.type === "error" ? operation.retryOperation : operation);
+}
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
@@ -56,32 +97,47 @@ export default function DirectMessagePage() {
 
     const messageQueryModification = useRef<QueryModification>(null!);
 
-    const [queueingMessages, setQueueingMessages] = useState<QueueingMessage[]>([]);
+    const [processingOperations, setProcessingOperations] = useState<MessageOperation[]>([]);
 
     // message mutations
-    type SendMessagePayload = { tempId: string, data: ChatInputMessageState };
-    type EditMessagePayload = { tempId: string, messageId: string, newBody: string | null };
-    type DeleteMessagePayload = { message: MessageDto };
+    type SendMessagePayload = { operationId: string, data: ChatInputMessageState, idempotencyKey: string };
+    type EditMessagePayload = { operationId: string, originalMessage: MessageDto, newBody: string | null };
+    type DeleteMessagePayload = { operationId: string, message: MessageDto };
 
     const sendMessageMutation = useMutation({
         mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<MessageDto>> => {
-            return await messageService.sendMessage(channelId!, payload.data.messageBody, payload.data.attachments);
+            return await messageService.sendMessage(
+                channelId!,
+                payload.idempotencyKey,
+                payload.data.messageBody,
+                payload.data.attachments
+            );
         },
         onMutate: async (payload: SendMessagePayload) => {
-            // check if the message is already queued, likely due to retry sending
-            const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
+            const processingMessage: MessageOperation | undefined =
+                processingOperations.find(op => op.operationId == payload.operationId);
 
-            if (queuedMessage) {
-                // append to last, clear out the error message.
-                setQueueingMessages((prev) => [...prev.filter(m => m.tempId != payload.tempId), { ...queuedMessage, errorMessage: undefined }]);
-            } else {
-                const queueingMessage: QueueingMessage = {
-                    tempId: payload.tempId,
-                    type: "send",
-                    state: payload.data,
+            if (processingMessage === undefined) {
+                const newProcessingMessage: MessageOperation = {
+                    operationId: payload.operationId,
+                    operation: {
+                        type: "sending",
+                        state: payload.data,
+                        idempotencyKey: payload.idempotencyKey,
+                    },
                 };
 
-                setQueueingMessages((prev) => [...prev, queueingMessage]);
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => [...prev, newProcessingMessage]);
+            } else if (processingMessage.operation.type === "error") {
+                // retry
+                const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
+
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
+                    op.operationId === payload.operationId ? {
+                        operationId: payload.operationId,
+                        operation: retryOperation as SendingMessageOperation,
+                    } : op
+                )));
             }
         },
         onSuccess: async (data: ServiceResponse<MessageDto>, payload: SendMessagePayload) => {
@@ -91,11 +147,18 @@ export default function DirectMessagePage() {
                 if (data.statusCode === HttpStatusCode.InternalServerError) {
                     reason = " due to internal server error.";
                 } else {
-                    reason = `. Reason: ${data.error!.message}`;
+                    reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
                 }
 
-                setQueueingMessages((prev) => prev.map(m =>
-                    m.tempId === payload.tempId ? { ...m, errorMessage: `Failed to send message${reason}` } : m
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
+                    op.operationId === payload.operationId ? {
+                        operationId: payload.operationId,
+                        operation: {
+                            type: "error",
+                            errorMessage: `Cannot send message${reason}`,
+                            retryOperation: op.operation as RetryOperation,
+                        },
+                    } : op
                 ));
                 return;
             }
@@ -105,34 +168,38 @@ export default function DirectMessagePage() {
             }
 
             // remove the query
-            setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
-        },
-        onError: (_err, payload: SendMessagePayload) => {
-            setQueueingMessages((prev) => prev.map(m =>
-                m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to send message due to unknown reason." } : m
-            ));
+            setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
         },
     });
 
     const editMessageMutation = useMutation({
         mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<MessageDto>> => {
-            return await messageService.editMessage(payload.messageId, payload.newBody);
+            return await messageService.editMessage(payload.originalMessage.id, payload.newBody);
         },
         onMutate: async (payload: EditMessagePayload) => {
-            // check if the message is already queued, likely due to retry editing
-            const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
+            const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
 
-            if (queuedMessage) {
-                // append to last, clear out the error message.
-                setQueueingMessages((prev) => [...prev.filter(m => m.tempId != payload.tempId), { ...queuedMessage, errorMessage: undefined }]);
-            } else {
-                const queueingMessage: QueueingMessage = {
-                    tempId: payload.tempId,
-                    type: "edit",
-                    body: payload.newBody,
+            if (processingMessage === undefined) {
+                const newProcessingMessage: MessageOperation = {
+                    operationId: payload.operationId,
+                    operation: {
+                        type: "edit",
+                        originalMessage: payload.originalMessage,
+                        newBody: payload.newBody,
+                    },
                 };
 
-                setQueueingMessages((prev) => [...prev, queueingMessage]);
+                setProcessingOperations((prev) => [...prev, newProcessingMessage]);
+            } else if (processingMessage.operation.type === "error") {
+                // retry
+                const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
+
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
+                    op.operationId === payload.operationId ? {
+                        operationId: payload.operationId,
+                        operation: retryOperation as EditMessageOperation,
+                    } : op
+                )));
             }
         },
         onSuccess: async (data: ServiceResponse<MessageDto>, payload: EditMessagePayload) => {
@@ -142,113 +209,151 @@ export default function DirectMessagePage() {
                 if (data.statusCode === HttpStatusCode.InternalServerError) {
                     reason = " due to internal server error.";
                 } else {
-                    reason = `. Reason: ${data.error!.message}`;
+                    reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
                 }
 
-                setQueueingMessages((prev) => prev.map(m =>
-                    m.tempId === payload.tempId ? { ...m, errorMessage: `Failed to edit message${reason}` } : m
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
+                    op.operationId === payload.operationId ? {
+                        operationId: payload.operationId,
+                        operation: {
+                            type: "error",
+                            errorMessage: `Cannot edit message${reason}`,
+                            retryOperation: op.operation as RetryOperation,
+                        },
+                    } : op
                 ));
                 return;
             }
 
             if (messageQueryModification.current) {
-                messageQueryModification.current.editMessage(payload.messageId, payload.newBody);
+                messageQueryModification.current.editMessage(payload.originalMessage.id, payload.newBody);
             }
 
             // remove the query
-            setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
-        },
-        onError: (_err, payload: EditMessagePayload) => {
-            setQueueingMessages((prev) => prev.map(m =>
-                m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to edit message due to unknown reason." } : m
-            ));
+            setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
         },
     });
 
     const deleteMessageMutation = useMutation({
         mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
             return await messageService.deleteMessage(payload.message.id);
         },
         onMutate: async (payload: DeleteMessagePayload) => {
-            // const queuedMessage: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == payload.tempId && !!m.errorMessage);
+            const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
 
-            // if (queuedMessage) {
-            //     // append to last, clear out the error message.
-            //     setQueueingMessages((prev) => [...prev.filter(m => m.tempId != payload.tempId), { ...queuedMessage, errorMessage: undefined }]);
-            // } else {
-            //     const queueingMessage: QueueingMessage = {
-            //         tempId: payload.tempId,
-            //         type: "edit",
-            //         body: payload.newBody,
-            //     };
+            if (processingMessage === undefined) {
+                const newProcessingMessage: MessageOperation = {
+                    operationId: payload.operationId,
+                    operation: {
+                        type: "delete",
+                        message: payload.message,
+                    },
+                };
 
-            //     setQueueingMessages((prev) => [...prev, queueingMessage]);
-            // }
+                setProcessingOperations((prev) => [...prev, newProcessingMessage]);
+            } else if (processingMessage.operation.type === "error") {
+                // retry
+                const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
+
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
+                    op.operationId === payload.operationId ? {
+                        operationId: payload.operationId,
+                        operation: retryOperation as DeleteMessageOperation,
+                    } : op
+                )));
+            }
         },
         onSuccess: async (data: ServiceResponse, payload: DeleteMessagePayload) => {
-            // if (!data.success) {
-            //     let reason: string;
+            if (!data.success) {
+                let reason: string;
 
-            //     if (data.statusCode === HttpStatusCode.InternalServerError) {
-            //         reason = " due to internal server error.";
-            //     } else {
-            //         reason = `. Reason: ${data.error!.message}`;
-            //     }
+                if (data.statusCode === HttpStatusCode.InternalServerError) {
+                    reason = " due to internal server error.";
+                } else {
+                    reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
+                }
 
-            //     setQueueingMessages((prev) => prev.map(m =>
-            //         m.tempId === payload.tempId ? { ...m, errorMessage: `Failed to edit message${reason}` } : m
-            //     ));
-            //     return;
-            // }
+                setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
+                    op.operationId === payload.operationId ? {
+                        operationId: payload.operationId,
+                        operation: {
+                            type: "error",
+                            errorMessage: `Cannot delete message${reason}`,
+                            retryOperation: op.operation as RetryOperation,
+                        },
+                    } : op
+                ));
+                return;
+            }
 
             if (messageQueryModification.current) {
                 messageQueryModification.current.deleteMessage(payload.message.id);
             }
 
             // remove the query
-            // setQueueingMessages((prev) => prev.filter(m => m.tempId !== payload.tempId));
-        },
-        onError: (_err, payload: DeleteMessagePayload) => {
-            // setQueueingMessages((prev) => prev.map(m =>
-            //     m.tempId === payload.tempId ? { ...m, errorMessage: "Failed to edit message due to unknown reason." } : m
-            // ));
+            setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
         },
     });
 
     const handleSendMessage = async (state: ChatInputMessageState) => {
         if (!channelId) return;
 
-        const tempId = `__queue_message-${Date.now()}`;
-        sendMessageMutation.mutate({ tempId, data: state });
+        const operationId = `__queue_message-${crypto.randomUUID()}`;
+        const idempotencyKey = crypto.randomUUID();
+        sendMessageMutation.mutate({ operationId, data: state, idempotencyKey });
     };
 
-    const handleMessageEdited = async (messageId: string, newBody: string | null) => {
+    const handleMessageEdited = async (originalMessage: MessageDto, newBody: string | null) => {
         if (!channelId) return;
 
-        const tempId = `__queue_message-${Date.now()}`;
-        editMessageMutation.mutate({ tempId, messageId, newBody });
+        const operationId = `__queue_message-${crypto.randomUUID()}`;
+        editMessageMutation.mutate({ operationId, originalMessage, newBody });
     };
 
     const handleMessageDelete = async (message: MessageDto) => {
         if (!channelId) return;
 
-        deleteMessageMutation.mutate({ message: message });
+        const operationId = `__queue_message-${crypto.randomUUID()}`;
+        deleteMessageMutation.mutate({ operationId, message: message });
     }
 
-    const handleCancelSendErrorMessage = (tempId: string) => {
-        setQueueingMessages((prev) => prev.filter(m => m.tempId != tempId));
-    };
+    const handleRetryOperation = async (operationId: string) => {
+        if (!channelId) return;
 
-    const handleRetrySendMessage = async (tempId: string) => {
-        const msg: QueueingMessage | undefined = queueingMessages.find(m => m.tempId == tempId && !!m.errorMessage);
+        const operation = processingOperations.find(m => m.operationId === operationId && m.operation.type == "error");
 
-        if (!msg || msg.type != "send") {
-            return;
+        if (!operation  || operation.operation.type !== "error") return;
+
+        const retryOperation: RetryOperation = (operation.operation as ErrorMessageOperation).retryOperation;
+
+        switch (retryOperation.type) {
+            case "sending":
+                sendMessageMutation.mutate({
+                    operationId: operationId,
+                    data: retryOperation.state,
+                    idempotencyKey: retryOperation.idempotencyKey
+                });
+                break;
+
+            case "edit":
+                editMessageMutation.mutate({
+                    operationId,
+                    originalMessage: retryOperation.originalMessage,
+                    newBody: retryOperation.newBody,
+                });
+                break;
+
+            case "delete":
+                deleteMessageMutation.mutate({
+                    operationId,
+                    message: retryOperation.message,
+                });
+                break;
         }
+    }
 
-        sendMessageMutation.mutate({ tempId, data: msg.state });
+    const handleCancelSendErrorMessage = (operationId: string) => {
+        setProcessingOperations((prev) => prev.filter(m => m.operationId != operationId));
     };
 
     return (
@@ -267,68 +372,76 @@ export default function DirectMessagePage() {
             </header>
 
             <div className="flex-1 min-h-0 flex flex-col relative">
-                {queueingMessages.length > 0 && (
+                {processingOperations.length > 0 && (
                     <section className="absolute top-2 inset-x-2 h-10 flex flex-row flex-nowrap gap-2 overflow-hidden z-20">
-                        {queueingMessages.map((message) => (
-                           	<DropdownMenu.Root key={message.tempId}>
-                                <DropdownMenu.Trigger asChild>
-                                    <div className={`h-full aspect-square ${message.errorMessage ? 'bg-[#B93A58]' : 'bg-gray-750'} rounded-md flex justify-center items-center cursor-pointer`}>
-                                        {message.errorMessage ? (
-                                            <BsExclamationTriangle className="size-6 fill-white"/>
-                                        ): (
-                                            <Spinner className="size-6 fill-white" />
-                                        )}
-                                    </div>
-                                </DropdownMenu.Trigger>
+                        {processingOperations.map((message) => {
+                            const isError = message.operation.type == "error";
 
-                          		<DropdownMenu.Portal>
-                         			<DropdownMenu.Content
-                                        className={`w-125 rounded-md ${message.errorMessage ? 'bg-[#655060] border-red-500' : 'bg-gray-625 border-gray-400'} p-4 border text-white`}
-                        				sideOffset={5}
-                         			>
-                                        <div className="w-full flex flex-col">
-                                            <div className="flex flex-row gap-3">
-                                                <UserAvatar
-                                                    hasAvatar={authorization.userProfile?.hasAvatar ?? false}
-                                                    userId={authorization.userProfile?.id ?? undefined}
-                                                    className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle"
-                                                />
+                            const [body, attachmentCount] = getOperationBodyDisplayInfo(message.operation);
 
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-base text-white">{authorization.userProfile?.displayName ?? "Unknown sender"}</p>
-
-                                                    <p className="max-h-20 overflow-y-auto text-sm leading-6 whitespace-pre-wrap">
-                                                        {message.type == "send" ? message.state.messageBody : message.body}
-                                                    </p>
-
-                                                    {message.type == "send" ? message.state.attachments.length > 0 && (
-                                                        <p className="mt-2">With {message.state.attachments.length} attachment{message.state.attachments.length > 1 ? 's' : ''}.</p>
-                                                    ) : null}
-                                                </div>
-                                            </div>
-
-                                            {message.errorMessage && (
-                                                <footer className="flex flex-col mt-4">
-                                                    <p><BsExclamationTriangle className="size-5 fill-white inline" /> {message.errorMessage}</p>
-
-                                                    <div className="flex flex-row gap-2 justify-center items-center mt-4 mx-3">
-                                                        <button className="button-theme-danger h-10 flex-1 cursor-pointer rounded-md" onClick={() => handleCancelSendErrorMessage(message.tempId)}>
-                                                            Cancel Message
-                                                        </button>
-
-                                                        <button className="button-theme-primary h-10 flex-1 cursor-pointer rounded-md" onClick={() => handleRetrySendMessage(message.tempId)}>
-                                                            Resend Message
-                                                        </button>
-                                                    </div>
-                                                </footer>
+                            return (
+                                <DropdownMenu.Root key={message.operationId}>
+                                    <DropdownMenu.Trigger asChild>
+                                        <div className={`h-full aspect-square ${isError ? 'bg-[#B93A58]' : 'bg-gray-750'} rounded-md flex justify-center items-center cursor-pointer`}>
+                                            {isError ? (
+                                                <BsExclamationTriangle className="size-6 fill-white"/>
+                                            ): (
+                                                <Spinner className="size-6 fill-white" />
                                             )}
                                         </div>
+                                    </DropdownMenu.Trigger>
 
-                        				<DropdownMenu.Arrow className="fill-gray-600" />
-                         			</DropdownMenu.Content>
-                          		</DropdownMenu.Portal>
-                           	</DropdownMenu.Root>
-                        ))}
+                                    <DropdownMenu.Portal>
+                                        <DropdownMenu.Content
+                                            className={`w-125 rounded-md ${message.operation.type === "error" ? 'bg-[#655060] border-red-500' : 'bg-gray-625 border-gray-400'} p-4 border text-white`}
+                                            sideOffset={5}
+                                        >
+                                            <div className="w-full flex flex-col">
+                                                <div className="flex flex-row gap-3">
+                                                    <UserAvatar
+                                                        hasAvatar={authorization.userProfile?.hasAvatar ?? false}
+                                                        userId={authorization.userProfile?.id ?? undefined}
+                                                        className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle"
+                                                    />
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-base text-white">{authorization.userProfile?.displayName ?? "Unknown sender"}</p>
+
+                                                        {body && (
+                                                            <p className="max-h-20 overflow-y-auto text-sm leading-6 whitespace-pre-wrap">
+                                                                { body }
+                                                            </p>
+                                                        )}
+
+                                                        {attachmentCount > 0 && (
+                                                            <p className="text-sm mt-1"><BsPaperclip className="fill-white size-4 inline"/> With {attachmentCount} attachment{attachmentCount > 1 ? 's' : ''}.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {isError && (
+                                                    <footer className="flex flex-col mt-4">
+                                                        <p><BsExclamationTriangle className="size-5 fill-white inline"/> {(message.operation as ErrorMessageOperation).errorMessage}</p>
+
+                                                        <div className="flex flex-row gap-2 justify-center items-center mt-4 mx-3">
+                                                            <button className="button-theme-danger h-10 flex-1 cursor-pointer rounded-md" onClick={() => handleCancelSendErrorMessage(message.operationId)}>
+                                                                Cancel Message
+                                                            </button>
+
+                                                            <button className="button-theme-primary h-10 flex-1 cursor-pointer rounded-md" onClick={() => handleRetryOperation(message.operationId)}>
+                                                                Retry Message
+                                                            </button>
+                                                        </div>
+                                                    </footer>
+                                                )}
+                                            </div>
+
+                                            <DropdownMenu.Arrow className="fill-gray-600" />
+                                        </DropdownMenu.Content>
+                                    </DropdownMenu.Portal>
+                                </DropdownMenu.Root>
+                            );
+                        })}
                     </section>
                 )}
 
