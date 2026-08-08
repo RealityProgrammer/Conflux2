@@ -29,6 +29,8 @@
         
         <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.10" />
         
+        <PackageReference Include="RedLock.net" Version="2.3.2" />
+        
         <PackageReference Include="ScottBrady91.AspNetCore.Identity.Argon2PasswordHasher" Version="2.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.3" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />

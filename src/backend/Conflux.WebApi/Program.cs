@@ -16,12 +16,14 @@ using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.Miscs;
-using Conflux.WebApi.Services;
-using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using Microsoft.AspNetCore.SignalR;
+using RedLockNet;
+using RedLockNet.SERedis;
+using RedLockNet.SERedis.Configuration;
 using ScottBrady91.AspNetCore.Identity;
+using StackExchange.Redis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -81,7 +83,7 @@ builder.Services.AddAntiforgery(options => {
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
-// Security reinforcement.
+// Policies and other security related services.
 builder.Services.AddCors(options => {
     options.AddPolicy("FrontendPolicy", policy => {
         var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.");
@@ -93,22 +95,35 @@ builder.Services.AddCors(options => {
     });
 });
 
-// require stuffs
+// redis related services
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? 
+                            throw new InvalidOperationException("Missing Redis connection string.");
+
+await using ConnectionMultiplexer multiplexer = await ConnectionMultiplexer.ConnectAsync(redisConnectionString);
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+
+builder.Services
+    .AddStackExchangeRedisCache(options => {
+        options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
+        options.InstanceName = "Conflux";
+    });
+
+using var redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> {
+    new(multiplexer),
+});
+
+builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
+
+// general services needed
+builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector());
+builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator();
-builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector());
-
-// necessary because signalr default uses ClaimNames.NameIdentifier instead of JwtRegisteredClaimNames.Sub
-builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSignalR();
 
 // Conflux services.
 builder.Services
-    .AddStackExchangeRedisCache(options => {
-        options.Configuration = builder.Configuration.GetConnectionString("Redis");
-        options.InstanceName = "Conflux";
-    })
-    .AddSingleton<IIdempotencyService, IdempotencyService>()
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IStorageService, StorageService>()
         

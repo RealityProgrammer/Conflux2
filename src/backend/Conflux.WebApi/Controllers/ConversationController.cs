@@ -4,6 +4,7 @@ using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
+using Conflux.WebApi.Attributes;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +19,10 @@ public sealed class ConversationController(
     IMessageService messageService
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
+    [Idempotent(24 * 60)]
     public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
         Guid channelId,
         [FromForm] SendMessageRequest request,
-        [FromHeader] string idempotencyKey,
         CancellationToken cancellationToken
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
@@ -38,25 +39,38 @@ public sealed class ConversationController(
 
         if (request.Attachments is { Length: > 0 }) {
             attachmentStreams = new Stream[request.Attachments.Length];
-
+            
             for (int i = 0; i < attachmentStreams.Length; i++) {
-                attachmentStreams[i] = request.Attachments[i].OpenReadStream();
+                try {
+                    attachmentStreams[i] = request.Attachments[i].OpenReadStream();
+                } catch {
+                    foreach (var stream in attachmentStreams) {
+                        if (stream != null!) {
+                            await stream.DisposeAsync();
+                        }
+                    }
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.OperationFailure("open attachment stream")));
+                }
             }
         } else {
             attachmentStreams = [];
         }
+        
+        await Task.Delay(60000, CancellationToken.None);
 
+        // invokes send and cleanup the opened streams
         try {
             Result<MessageDto> result =
                 await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentStreams, cancellationToken);
 
             if (result.IsSuccess) {
-                return Created((string?)null, new ApiResponse<MessageDto>(result.Value, Error.None));
+                return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
             }
-
+        
             return result.Error.Code switch {
-                nameof(Errors.ValidationErrorsOccured) => BadRequest(new ApiResponse(result.Error)),
-                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(result.Error)),
+                nameof(Errors.ValidationErrorsOccured) => BadRequest(new ApiResponse<MessageDto>(null, result.Error)),
+                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse<MessageDto>(null, result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError())),
             };
         } finally {

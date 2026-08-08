@@ -29,11 +29,15 @@ export const messageService = {
                 }
             }
 
+            const idempotencyKey = crypto.randomUUID();  // cannot find namespace crypto
+
             const response: AxiosResponse<BackendResponse<MessageDto>> =
                 await apiClient.post(`/channels/${encodeURIComponent(channelId)}/messages`, formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
-                    }
+                        "Idempotency-Key": idempotencyKey,
+                    },
+                    timeout: 5000,
                 });
 
             return {
