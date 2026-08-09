@@ -93,11 +93,19 @@ export type TimelineMessageBlockDto = {
     messages: TimelineMessageDto[];
 }
 
+export type ReplyToMessageDto = {
+    messageId: string;
+    senderUserId: string;
+    body: string | null;
+    attachmentCount: number;
+}
+
 export type TimelineMessageDto = {
     id: string;
     body: string | null;
     attachments: Attachment[];
     createdAt: Date;
+    replyTo?: ReplyToMessageDto;
 }
 
 export type MessageDto = {

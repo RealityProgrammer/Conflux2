@@ -241,7 +241,7 @@ internal sealed class MessageService(
         return Result.Success();
     }
 
-    public async Task<Result<GetMessagesResponse>> GetMessagesAsync(
+    public async Task<Result<GetMessagesResponse>> GetTimelineMessagesAsync(
         Guid requesterUserId,
         Guid channelId,
         MessageLoadDirection? direction,
@@ -272,7 +272,7 @@ internal sealed class MessageService(
             // TODO: Server validate.
         }
         
-        Result<PagedMessageResult> getMessagesResult = await messageRepository.GetMessagesAsync(
+        Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessagesAsync(
             postingContext.ConversationId, 
             direction, 
             cursorMessageId,
@@ -295,8 +295,14 @@ internal sealed class MessageService(
         var groups = new List<TimelineMessageBlockDto>();
         TimelineMessageBlockDto? currentGroup = null;
 
-        foreach (MessageDto message in getMessagesResult.Value!.Messages) {
-            var element = new TimelineMessageDto(message.Id, message.Body, message.Attachments, message.CreatedAt);
+        foreach (TimelineMessageProjection message in getMessagesResult.Value!.Messages) {
+            var element = new TimelineMessageDto(
+                message.Id, 
+                message.Body, 
+                message.Attachments, 
+                message.CreatedAt,
+                message.ReplyTo
+            );
 
             // if same sender as the last message, append to the current group
             if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {

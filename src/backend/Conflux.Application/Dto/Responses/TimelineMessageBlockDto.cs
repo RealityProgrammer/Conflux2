@@ -1,15 +1,17 @@
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 
 namespace Conflux.Application.Dto.Responses;
 
-public record TimelineMessageBlockDto(
+public sealed record TimelineMessageBlockDto(
     Guid SenderUserId,
     List<TimelineMessageDto> Messages
 );
 
-public record TimelineMessageDto(
+public sealed record TimelineMessageDto(
     Guid Id,
     string? Body,
     Attachment[] Attachments,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    ReplyToMessageProjection? ReplyTo
 );

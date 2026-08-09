@@ -19,7 +19,7 @@ internal sealed class MessageRepository(
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<Result<PagedMessageResult>> GetMessagesAsync(
+    public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessagesAsync(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId, 
@@ -29,14 +29,23 @@ internal sealed class MessageRepository(
         var baseQuery = dbContext.Messages
             .Where(m => m.ConversationId == conversationId);
 
-        List<MessageDto> messages;
+        List<TimelineMessageProjection> messages;
         bool? hasMoreBefore, hasMoreAfter;
         
         // if no cursor message is provided, mean load latest messages, ignore the direction parameter
         if (cursorMessageId is not { } cursorId) {
             messages = await baseQuery
                 .OrderByDescending(m => m.Id)   // uuidv7 btw
-                .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
+                .Select(m => new TimelineMessageProjection(
+                    m.Id, 
+                    m.SenderUserId, 
+                    m.Body, 
+                    m.Attachments, 
+                    m.CreatedAt, 
+                    m.ReplyTo == null ? 
+                        null : 
+                        new ReplyToMessageProjection(m.ReplyTo.Id, m.ReplyTo.SenderUserId, m.ReplyTo.Body, m.ReplyTo.Attachments.Length)
+                ))
                 .Take(limit)
                 .Reverse()  // return the messages in chronological order
                 .ToListAsync(cancellationToken);
@@ -49,7 +58,16 @@ internal sealed class MessageRepository(
                     messages = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) < 0)
                         .OrderByDescending(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
+                        .Select(m => new TimelineMessageProjection(
+                            m.Id, 
+                            m.SenderUserId, 
+                            m.Body, 
+                            m.Attachments, 
+                            m.CreatedAt, 
+                            m.ReplyTo == null ? 
+                                null : 
+                                new ReplyToMessageProjection(m.ReplyTo.Id, m.ReplyTo.SenderUserId, m.ReplyTo.Body, m.ReplyTo.Attachments.Length)
+                        ))
                         .Take(limit)
                         .Reverse()
                         .ToListAsync(cancellationToken);
@@ -63,7 +81,16 @@ internal sealed class MessageRepository(
                     messages = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) > 0)
                         .OrderBy(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
+                        .Select(m => new TimelineMessageProjection(
+                            m.Id, 
+                            m.SenderUserId, 
+                            m.Body, 
+                            m.Attachments, 
+                            m.CreatedAt, 
+                            m.ReplyTo == null ? 
+                                null : 
+                                new ReplyToMessageProjection(m.ReplyTo.Id, m.ReplyTo.SenderUserId, m.ReplyTo.Body, m.ReplyTo.Attachments.Length)
+                        ))
                         .Take(limit)
                         .ToListAsync(cancellationToken);
 
@@ -78,7 +105,16 @@ internal sealed class MessageRepository(
                     var before = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) < 0)
                         .OrderByDescending(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
+                        .Select(m => new TimelineMessageProjection(
+                            m.Id, 
+                            m.SenderUserId, 
+                            m.Body, 
+                            m.Attachments, 
+                            m.CreatedAt, 
+                            m.ReplyTo == null ? 
+                                null : 
+                                new ReplyToMessageProjection(m.ReplyTo.Id, m.ReplyTo.SenderUserId, m.ReplyTo.Body, m.ReplyTo.Attachments.Length)
+                        ))
                         .Take(halfLimit)
                         .Reverse()
                         .ToListAsync(cancellationToken);
@@ -86,7 +122,16 @@ internal sealed class MessageRepository(
                     var after = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) >= 0) // can't forget the cursor message too lmao
                         .OrderBy(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
+                        .Select(m => new TimelineMessageProjection(
+                            m.Id, 
+                            m.SenderUserId, 
+                            m.Body, 
+                            m.Attachments, 
+                            m.CreatedAt, 
+                            m.ReplyTo == null ? 
+                                null : 
+                                new ReplyToMessageProjection(m.ReplyTo.Id, m.ReplyTo.SenderUserId, m.ReplyTo.Body, m.ReplyTo.Attachments.Length)
+                        ))
                         .Take(halfLimit + 1)
                         .ToListAsync(cancellationToken);
 
@@ -112,6 +157,6 @@ internal sealed class MessageRepository(
             }
         }
 
-        return Result<PagedMessageResult>.Success(new(messages, hasMoreBefore, hasMoreAfter));
+        return Result<PagedTimelineMessageResult>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
 }

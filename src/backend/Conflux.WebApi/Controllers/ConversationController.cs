@@ -133,7 +133,7 @@ public sealed class ConversationController(
     }
 
     [HttpGet("channels/{channelId:guid}/messages")]
-    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetMessages(
+    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetTimelineMessages(
         Guid channelId,
         [FromQuery] MessageLoadDirection? direction,
         [FromQuery] Guid? cursor,
@@ -149,7 +149,7 @@ public sealed class ConversationController(
         // TODO: Check if user has permission to view messages at this channel at service.
 
         Result<GetMessagesResponse> result =
-            await messageService.GetMessagesAsync(userId, channelId, direction, cursor, count, cancellationToken);
+            await messageService.GetTimelineMessagesAsync(userId, channelId, direction, cursor, count, cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));
