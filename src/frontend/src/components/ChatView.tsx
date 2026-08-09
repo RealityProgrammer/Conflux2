@@ -12,9 +12,8 @@ import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts";
 import { useCacheService } from "../hooks/useCacheService.ts";
-import MessageEditor from "./MessageEditor.tsx"
 import AlertActionDialog from "./AlertActionDialog.tsx";
-import MessageBlock, {type MessageGroupRowProps} from "./MessageBlock.tsx";
+import SenderMessageCluster, {type MessageGroupRowProps} from "./SenderMessageCluster.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -406,7 +405,7 @@ export function ChatView({
                 }}
                 renderItem={(itemIndex, virtualItem) => {
                     return (
-                        <MessageBlock
+                        <SenderMessageCluster
                             key={virtualItem.key}
                             messageGroup={messageGroups[itemIndex]}
                             userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}

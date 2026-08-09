@@ -19,7 +19,7 @@ export interface MessageGroupRowProps {
     onEditSaved: (newBody: string) => void;
 }
 
-export default function MessageBlock({
+export default function SenderMessageCluster({
     messageGroup,
     userProfile,
     onAttachmentClick,
@@ -73,7 +73,7 @@ export default function MessageBlock({
                     <div className="flex-1 min-w-0">
                         <p className="text-base text-white">{userProfile?.userName ?? "Unknown Sender"}</p>
 
-                        <MessageElementRow
+                        <ClusterMessage
                             message={messageGroup.messages[0]}
                             onAttachmentClick={onAttachmentClick}
                             mode={editingMessageId === messageGroup.messages[0].id ? 'edit' : 'view'}
@@ -92,7 +92,7 @@ export default function MessageBlock({
                         data-message-id={message.id}
                         className="hover-highlight pl-15 pr-2"
                     >
-                        <MessageElementRow
+                        <ClusterMessage
                             message={message}
                             onAttachmentClick={onAttachmentClick}
                             mode={editingMessageId === message.id ? 'edit' : 'view'}
@@ -177,7 +177,7 @@ interface MessageElementRowProps {
     onEditSaved: (newBody: string) => void;
 }
 
-function MessageElementRow({
+function ClusterMessage({
     message,
     onAttachmentClick,
     mode,
