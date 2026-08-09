@@ -7,8 +7,8 @@ import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
 import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
 import Spinner from "./Spinner.tsx";
-import {AlertDialog, ContextMenu, ScrollArea} from "radix-ui";
-import {BsCopy, BsPencil, BsTrash} from "react-icons/bs";
+import {ContextMenu, ScrollArea} from "radix-ui";
+import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
 import UserAvatar from "./UserAvatar.tsx";
 import { useAuthorization } from "../contexts/AuthContext.tsx";
 import useGetMessages from "../hooks/useGetMessages.ts";
@@ -18,6 +18,7 @@ import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts"
 import { useCacheService } from "../hooks/useCacheService.ts";
 import MessageEditor from "./MessageEditor.tsx"
 import AlertActionDialog from "./AlertActionDialog.tsx";
+import MessageGroupRow, {type MessageGroupRowProps} from "./MessageGroupRow.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -103,7 +104,7 @@ function estimateMessageContentHeight(id: string, displayAreaWidth: number): num
 function estimateMessageGroupHeight(
     messageGroup: MessageGroup,
     displayAreaWidth: number,
-    editingMessageId: string | null,
+    editingMessageId: string | undefined,
     editingMessageDraft: string | null
 ): number {
     displayAreaWidth = Math.max(1, displayAreaWidth);
@@ -153,26 +154,28 @@ function estimateMessageGroupHeight(
 }
 
 export interface QueryModification {
-    pushNewMessage: (message: MessageDto, userProfile?: UserBasicProfileSummary) => void;
+    appendMessage: (message: MessageDto, userProfile?: UserBasicProfileSummary) => void;
     editMessage: (messageId: string, newBody: string | null) => void;
     deleteMessage: (messageId: string) => void;
 }
 
 export interface ChatViewProps {
     channelId: string;
-    emptyState?: () => ReactNode;
+    renderEmptyState?: () => ReactNode;
     onMessageEditRequested: (message: MessageDto, newBody: string | null) => void;
     onMessageDeleteRequested: (message: MessageDto) => void;
+    onMessageReplyRequested: (message: MessageDto) => void;
     queryModificationRef?: RefObject<QueryModification>;
 }
 
 export function ChatView({
     channelId,
-    emptyState,
+    renderEmptyState,
     onMessageEditRequested,
     onMessageDeleteRequested,
+    onMessageReplyRequested,
     queryModificationRef,
- }: ChatViewProps) {
+}: ChatViewProps) {
     const viewportRef = useRef<HTMLDivElement>(null!);
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
 
@@ -187,7 +190,10 @@ export function ChatView({
         },
         allMessageGroups: messageGroups,
         userProfiles,
-        queryKey
+        queryKey,
+        appendMessage,
+        editMessage,
+        deleteMessage,
     } = useGetMessages(channelId, 50);
 
     const [isReady, setIsReady] = useState(false);
@@ -250,194 +256,36 @@ export function ChatView({
         });
     };
 
-    const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined, unknown>) => InfiniteData<GetMessagesResponse | null | undefined, unknown>) => {
-        queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
-            queryKey,
-            (oldData) => {
-                if (!oldData || !oldData.pages || oldData.pages.length === 0) {
-                    return oldData;
-                }
-
-                return callback(oldData);
-            });
-    }
-
-    const pushNewMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
-        modifyMessageData((oldData) => {
-            const lastPage = oldData.pages.at(-1)!;
-            const updatedLastPage = { ...lastPage };
-
-            if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
-                updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
-            }
-
-            const currentGroups = updatedLastPage.messageGroups || [];
-
-            if (lastPage.messageGroups?.length > 0) {
-                const lastMessageGroup = lastPage.messageGroups.at(-1)!;
-
-                // was the new message sent by the same person on the last group of the last page?
-                const isSameUser =
-                    lastMessageGroup.senderUserId == newMessage.senderUserId;
-
-                if (isSameUser) {
-                    const updatedGroup: MessageGroup = {
-                        ...lastMessageGroup,
-                        messages: [...lastMessageGroup.messages, newMessage],
-                    };
-
-                    updatedLastPage.messageGroups = [
-                        ...currentGroups.slice(0, -1),
-                        updatedGroup,
-                    ];
-                } else {
-                    updatedLastPage.messageGroups = [
-                        ...currentGroups,
-                        {
-                            senderUserId: newMessage.senderUserId,
-                            messages: [newMessage],
-                        },
-                    ];
-                }
-            } else {
-                updatedLastPage.messageGroups = [
-                    {
-                        senderUserId: newMessage.senderUserId,
-                        messages: [newMessage],
-                    },
-                ];
-            }
-
-            return {
-                ...oldData,
-                pages: [...oldData.pages.slice(0, -1), updatedLastPage],
-            };
-        });
-    };
-
-    const editMessage = (messageId: string, newBody: string | null) => {
-        modifyMessageData((oldData) => {
-            let isMessageFound = false;
-
-            const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
-                if (!page) return page;
-
-                const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
-                    const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
-
-                    if (messageIndex !== -1) {
-                        isMessageFound = true;
-
-                        const updatedMessages = [...messageGroup.messages];
-
-                        updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], body: newBody};
-
-                        return {
-                            ...messageGroup,
-                            messages: updatedMessages,
-                        };
-                    }
-
-                    return messageGroup;
-                });
-
-                if (!isMessageFound) {
-                    return page;
-                }
-
-                return {
-                    ...page,
-                    messageGroups: updatedMessageGroups,
-                };
-            });
-
-            if (!isMessageFound) {
-                return oldData;
-            }
-
-            return {
-                ...oldData,
-                pages: updatedPages,
-            };
-        });
-    };
-
-    const deleteMessage = (messageId: string) => {
-        modifyMessageData((oldData) => {
-            let isMessageFound = false;
-
-            const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
-                if (!page) return page;
-
-                const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup | null => {
-                    const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
-
-                    if (messageIndex === -1) {
-                        return messageGroup;
-                    }
-
-                    isMessageFound = true;
-
-                    const updatedMessages = [
-                        ...messageGroup.messages.slice(0, messageIndex),
-                        ...messageGroup.messages.slice(messageIndex + 1)
-                    ]
-
-                    return updatedMessages.length === 0
-                        ? null
-                        : { ...messageGroup, messages: updatedMessages };
-                }).filter((group) => group !== null);
-
-                if (!isMessageFound) {
-                    return page;
-                }
-
-                return {
-                    ...page,
-                    messageGroups: updatedMessageGroups,
-                };
-            });
-
-            if (!isMessageFound) {
-                return oldData;
-            }
-
-            return {
-                ...oldData,
-                pages: updatedPages,
-            };
-        });
-    }
-
     // message editing
-    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editingMessage, setEditingMessage] = useState<MessageDto | undefined>(undefined);
     const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
 
     const handleSaveEdit = async (newBody: string) => {
-        if (!editingMessageId) return;
+        if (editingMessage === undefined) return;
 
-        let editingMessage: MessageDto | undefined = undefined;
-
-        for (let messageGroup of messageGroups) {
-            const messageSearch = messageGroup.messages.find(m => m.id === editingMessageId);
-
-            if (!!messageSearch) {
-                editingMessage = { ...messageSearch, senderUserId: messageGroup.senderUserId };
-                break;
-            }
-        }
-
-        if (editingMessage === undefined) {
-            return;
-        }
-
-        setEditingMessageId(null);
+        setEditingMessage(undefined);
         setEditingMessageDraft(null);
 
         onMessageEditRequested(editingMessage, newBody.trim());
     };
 
     const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
+
+    const handleMessageAction: MessageGroupRowProps['onActionTriggered'] = (action, message) => {
+        switch (action) {
+            case "delete":
+                setDeletingMessage(message);
+                break;
+
+            case "edit":
+                setEditingMessage(message);
+                break;
+
+            case "reply":
+                onMessageReplyRequested(message);
+                break;
+        }
+    };
 
     // signalr events
     // change the cache pages when message received
@@ -472,20 +320,18 @@ export function ChatView({
             }
         }
 
-        pushNewMessage(event.message, knownUser);
+        appendMessage(event.message, knownUser);
     });
 
     useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
-        console.log("received message edited event:", JSON.stringify(event));
-
         editMessage(event.message.id, event.message.body);
     });
 
     useImperativeHandle(queryModificationRef, () => ({
-        pushNewMessage,
+        appendMessage,
         editMessage,
         deleteMessage
-    }), [pushNewMessage, editMessage, deleteMessage]);
+    }), [appendMessage, editMessage, deleteMessage]);
 
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
@@ -531,7 +377,7 @@ export function ChatView({
                 estimateSize={(target) => {
                     if (target === 'previousLoader' || target === 'nextLoader') return 30;
 
-                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessageId, editingMessageDraft);
+                    return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessage?.id, editingMessageDraft);
                 }}
                 hasPreviousPage={hasPreviousPage}
                 isFetchingPreviousPage={isFetchingPreviousPage}
@@ -556,9 +402,9 @@ export function ChatView({
                     </div>
                 )}
                 renderEmpty={() => {
-                    return emptyState && (
+                    return renderEmptyState && (
                         <div className="flex flex-1 select-none justify-center items-end text-gray-300 pb-3">
-                            {emptyState()}
+                            {renderEmptyState()}
                         </div>
                     );
                 }}
@@ -569,13 +415,12 @@ export function ChatView({
                             messageGroup={messageGroups[itemIndex]}
                             userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
                             onAttachmentClick={handleAttachmentClick}
-                            editingMessageId={editingMessageId || undefined}
+                            editingMessageId={editingMessage?.id}
                             editingMessageDraft={editingMessageDraft}
                             onEditDraftChange={setEditingMessageDraft}
-                            onEditTriggered={setEditingMessageId}
-                            onDeleteTriggered={setDeletingMessage}
+                            onActionTriggered={handleMessageAction}
                             onEditCanceled={() => {
-                                setEditingMessageId(null);
+                                setEditingMessage(undefined);
                                 setEditingMessageDraft(null);
                             }}
                             onEditSaved={handleSaveEdit}
@@ -601,223 +446,5 @@ export function ChatView({
                 )}
             />
         </div>
-    );
-}
-
-interface MessageGroupRowProps {
-    messageGroup: MessageGroup;
-    userProfile: UserBasicProfileSummary | undefined | null;
-    onAttachmentClick: (attachments: Attachment[], index: number) => void;
-    onEditTriggered?: (messageId: string) => void;
-    onDeleteTriggered?: (message: MessageDto) => void;
-    editingMessageId?: string;
-    editingMessageDraft?: string | null;
-    onEditDraftChange: (draft: string) => void;
-    onEditCanceled: () => void;
-    onEditSaved: (newBody: string) => void;
-}
-
-function MessageGroupRow({
-    messageGroup,
-    userProfile,
-    onAttachmentClick,
-    onEditTriggered,
-    onDeleteTriggered,
-    editingMessageId,
-    editingMessageDraft,
-    onEditDraftChange,
-    onEditCanceled,
-    onEditSaved
-}: MessageGroupRowProps) {
-    const auth = useAuthorization();
-
-    const [selectedMessage, setSelectedMessage] = useState<MessageDto | null>(null);
-
-    const handleContextMenu = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        const messageElement = target.closest<HTMLElement>("[data-message-id]");
-
-        if (messageElement?.dataset.messageId) {
-            const found = messageGroup.messages.find((m) => m.id === messageElement.dataset.messageId);
-
-            if (found) {
-                setSelectedMessage({
-                    senderUserId: messageGroup.senderUserId,
-                    ...found,
-                });
-                return;
-            }
-        }
-
-        setSelectedMessage(null);
-    };
-
-    return (
-        <ContextMenu.Root>
-            <ContextMenu.Trigger
-                className="w-full flex flex-col"
-                onContextMenu={handleContextMenu}
-            >
-                {/* Header message */}
-                <div
-                    data-message-id={messageGroup.messages[0].id}
-                    className="hover-highlight flex flex-row gap-3 px-2"
-                >
-                    <UserAvatar
-                        hasAvatar={userProfile?.hasAvatar ?? false}
-                        userId={userProfile?.id ?? undefined}
-                        className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-                    />
-
-                    <div className="flex-1 min-w-0">
-                        <p className="text-base text-white">{userProfile?.userName ?? "Unknown Sender"}</p>
-
-                        <MessageElement
-                            message={messageGroup.messages[0]}
-                            onAttachmentClick={onAttachmentClick}
-                            mode={editingMessageId === messageGroup.messages[0].id ? 'edit' : 'view'}
-                            editingMessageDraft={editingMessageDraft}
-                            onEditDraftChange={onEditDraftChange}
-                            onEditCanceled={onEditCanceled}
-                            onEditSaved={onEditSaved}
-                        />
-                    </div>
-                </div>
-
-                {/* Consecutive messages */}
-                {messageGroup.messages.slice(1).map((message) => (
-                    <div
-                        key={message.id}
-                        data-message-id={message.id}
-                        className="hover-highlight pl-15 pr-2"
-                    >
-                        <MessageElement
-                            message={message}
-                            onAttachmentClick={onAttachmentClick}
-                            mode={editingMessageId === message.id ? 'edit' : 'view'}
-                            editingMessageDraft={editingMessageDraft}
-                            onEditDraftChange={onEditDraftChange}
-                            onEditCanceled={onEditCanceled}
-                            onEditSaved={onEditSaved}
-                        />
-                    </div>
-                ))}
-            </ContextMenu.Trigger>
-
-            <ContextMenu.Portal>
-                <ContextMenu.Content
-                    className="min-w-60 overflow-hidden rounded-md bg-gray-725 shadow-lg p-1 text-white text-sm border border-gray-500"
-                    alignOffset={5}
-                >
-                    {auth.userAuthorization?.id && auth.userAuthorization.id === messageGroup.senderUserId && (
-                        <>
-                            <ContextMenu.Item
-                                className="dropdown-item-default"
-                                onSelect={() => {
-                                    if (!selectedMessage) return;
-
-                                    onEditTriggered?.(selectedMessage.id);
-                                }}
-                            >
-                                Edit message <BsPencil className="fill-white size-4 ml-auto"/>
-                            </ContextMenu.Item>
-
-                            <ContextMenu.Item
-                                className="dropdown-item-danger"
-                                onSelect={() => {
-                                    if (!selectedMessage) return;
-
-                                    onDeleteTriggered?.(selectedMessage);
-                                }}
-                            >
-                                Delete message <BsTrash className="fill-red-500 size-4 ml-auto"/>
-                            </ContextMenu.Item>
-                        </>
-                    )}
-
-                    <ContextMenu.Separator className="h-px bg-gray-500 my-1.5"/>
-
-                    {selectedMessage?.body && (
-                        <ContextMenu.Item
-                            className="dropdown-item-default"
-                            onSelect={() => {
-                                if (!selectedMessage?.body) return;
-
-                                navigator.clipboard.writeText(selectedMessage.body);
-                            }}
-                        >
-                            Copy text <BsCopy className="fill-white size-4 ml-auto"/>
-                        </ContextMenu.Item>
-                    )}
-                </ContextMenu.Content>
-            </ContextMenu.Portal>
-        </ContextMenu.Root>
-    );
-}
-
-interface MessageElementProps {
-    message: MessageElement;
-    onAttachmentClick: (attachments: Attachment[], index: number) => void;
-    mode: 'view' | 'edit';
-    editingMessageDraft?: string | null;
-    onEditDraftChange: (draft: string) => void;
-    onEditCanceled: () => void;
-    onEditSaved: (newBody: string) => void;
-}
-
-function MessageElement({
-    message,
-    onAttachmentClick,
-    mode,
-    editingMessageDraft,
-    onEditDraftChange,
-    onEditCanceled,
-    onEditSaved
-}: MessageElementProps) {
-    return (
-        <>
-            {message.body && (
-                mode === 'edit' ? (
-                    <MessageEditor
-                        initialValue={message.body}
-                        draftValue={editingMessageDraft}
-                        onDraftChange={onEditDraftChange}
-                        onCancel={onEditCanceled}
-                        onSave={onEditSaved}
-                    />
-                ): (
-                    <p className="text-sm leading-6 whitespace-pre-wrap">
-                        {message.body}
-                    </p>
-                )
-            )}
-
-            {message.attachments && message.attachments.length > 0 && (
-                <ScrollArea.Root className={`h-32 w-full overflow-hidden group mb-1 ${message.body ? 'mt-1' : ''}`}>
-                    <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
-                        <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
-                            {message.attachments.map((attachment, index) => (
-                                <div
-                                    key={attachment.id}
-                                    className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
-                                    onClick={() => onAttachmentClick(message.attachments, index)}
-                                >
-                                    {attachment.type.startsWith("image") && (
-                                        <img
-                                            src={messageService.getAttachmentUrl(attachment.id, false)}
-                                            alt="attachment"
-                                            className="object-cover size-full"
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </ScrollArea.Viewport>
-                    <ScrollArea.Scrollbar className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight" orientation="horizontal">
-                        <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2" />
-                    </ScrollArea.Scrollbar>
-                </ScrollArea.Root>
-            )}
-        </>
     );
 }

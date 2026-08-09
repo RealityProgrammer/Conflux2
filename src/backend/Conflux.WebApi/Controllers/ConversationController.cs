@@ -59,8 +59,14 @@ public sealed class ConversationController(
 
         // invokes send and cleanup the opened streams
         try {
-            Result<MessageDto> result =
-                await messageService.SendMessageAsync(userId, channelId, request.Body, attachmentStreams, cancellationToken);
+            Result<MessageDto> result = await messageService.SendMessageAsync(
+                userId, 
+                channelId, 
+                request.Body, 
+                attachmentStreams,
+                request.ReplyToId,
+                cancellationToken
+            );
 
             if (result.IsSuccess) {
                 return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
@@ -174,7 +180,9 @@ public sealed class ConversationController(
         string? Body,
 
         [MaxLength(4, ErrorMessage = "Only 4 attachments allowed in a message.")]
-        IFormFile[]? Attachments
+        IFormFile[]? Attachments,
+        
+        Guid? ReplyToId
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             var results = new List<ValidationResult>();

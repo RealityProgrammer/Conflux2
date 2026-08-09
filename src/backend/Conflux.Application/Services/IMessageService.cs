@@ -10,7 +10,8 @@ public interface IMessageService {
         Guid senderUserId,
         Guid channelId,
         string? body, 
-        IReadOnlyList<Stream> attachmentStreams, 
+        IReadOnlyList<Stream> attachmentStreams,
+        Guid? replyToId,
         CancellationToken cancellationToken = default
     );
 

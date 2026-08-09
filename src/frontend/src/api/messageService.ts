@@ -5,7 +5,7 @@ import apiClient from "./client.ts";
 import type {GetMessagesRequest} from "./requests.ts";
 
 export const messageService = {
-    sendMessage: async (channelId: string, idempotencyKey: string, body: string | null, attachments?: File[]): Promise<ServiceResponse<MessageDto>> => {
+    sendMessage: async (channelId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<MessageDto>> => {
         const trimmedBody = body?.trim();
 
         if (!trimmedBody && !attachments) {
@@ -29,13 +29,16 @@ export const messageService = {
                 }
             }
 
+            if (replyToId) {
+                formData.append("replyToId", replyToId);
+            }
+
             const response: AxiosResponse<BackendResponse<MessageDto>> =
                 await apiClient.post(`/channels/${encodeURIComponent(channelId)}/messages`, formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
                         "Idempotency-Key": idempotencyKey,
                     },
-                    timeout: 5000,
                 });
 
             return {

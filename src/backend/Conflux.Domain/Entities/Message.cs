@@ -17,4 +17,12 @@ public class Message : IHasCreatedAt {
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
+    
+    public Guid? ReplyToId { get; set; }
+    public Message? ReplyTo { get; set; }
+    
+    /// <summary>
+    /// Messages that reply to this message instance.
+    /// </summary>
+    public virtual ICollection<Message> Replies { get; set; }
 }

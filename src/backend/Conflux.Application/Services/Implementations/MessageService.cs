@@ -31,6 +31,7 @@ internal sealed class MessageService(
         Guid channelId,
         string? body, 
         IReadOnlyList<Stream> attachmentStreams,
+        Guid? replyToId,
         CancellationToken cancellationToken = default
     ) {
         Result<ConversationPostingContext> getPostingContextResult = 
@@ -101,6 +102,7 @@ internal sealed class MessageService(
             Attachments = attachments,
             SenderUserId = senderUserId,
             ConversationId = postingContext.ConversationId,
+            ReplyToId = replyToId,
             CreatedAt = timeProvider.GetUtcNow(),
         };
 
@@ -108,22 +110,26 @@ internal sealed class MessageService(
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            MessageDto dto = new(
-                message.Id,
-                senderUserId,
-                body,
-                message.Attachments,
-                message.CreatedAt
-            );
-
-            await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
-
-            return Result<MessageDto>.Success(dto);
         } catch (OperationCanceledException) {
             await DeleteUploadedAttachments();
             throw;
+        } catch {
+            await DeleteUploadedAttachments();
+            return Errors.OperationFailure("send message.");
         }
+        
+        MessageDto dto = new(
+            message.Id,
+            senderUserId,
+            body,
+            message.Attachments,
+            message.CreatedAt,
+            message.ReplyToId
+        );
+
+        await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
+
+        return Result<MessageDto>.Success(dto);
 
         async ValueTask DeleteUploadedAttachments() {
             foreach (var attachment in attachments) {
@@ -172,7 +178,8 @@ internal sealed class MessageService(
                 message.SenderUserId,
                 newBody,
                 message.Attachments,
-                message.CreatedAt
+                message.CreatedAt,
+                message.ReplyToId
             ));
         }
         
@@ -186,7 +193,8 @@ internal sealed class MessageService(
             message.SenderUserId,
             message.Body,
             message.Attachments,
-            message.CreatedAt
+            message.CreatedAt,
+            message.ReplyToId
         );
         
         await mediator.Publish(new MessageEditedNotification(postingContext.ChannelId, dto), CancellationToken.None);

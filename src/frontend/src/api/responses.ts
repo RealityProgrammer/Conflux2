@@ -106,6 +106,7 @@ export type MessageDto = {
     body: string | null;
     attachments: Attachment[];
     createdAt: Date;
+    replyToId: string;
 }
 
 export type GetMessagesResponse = {

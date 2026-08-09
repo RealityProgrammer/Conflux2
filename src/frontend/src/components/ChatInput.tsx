@@ -3,15 +3,19 @@ import {BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
 import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from "react";
 import {ScrollArea} from "radix-ui";
 import FilePreviewGallery, {type GalleryPreviewItem} from "./FilePreviewGallery.tsx";
+import type {MessageDto} from "../api/responses.ts";
 
 export interface ChatInputProps {
     disabled?: boolean;
-    onSendMessage?: (state: ChatInputMessageState) => void;
+    onSendMessage?: (state: MessageInput) => void;
+    replyingMessage?: MessageDto | undefined;
+    onCancelReply?: () => void;
 }
 
-export type ChatInputMessageState = {
+export type MessageInput = {
     messageBody: string;
     attachments: File[];
+    replyingMessage?: MessageDto | undefined;
 }
 
 export interface AttachmentThumbnailProps {
@@ -27,7 +31,7 @@ type AttachmentItem = {
     previewUrl?: string;
 }
 
-export default function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
+export default function ChatInput({ disabled, onSendMessage, replyingMessage, onCancelReply }: ChatInputProps) {
     const [messageBody, setMessageBody] = useState("");
     const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
@@ -106,6 +110,7 @@ export default function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
         onSendMessage?.({
             messageBody: messageBody,
             attachments: attachments.map(attachment => attachment.file),
+            replyingMessage: replyingMessage,
         });
 
         attachments.forEach(item => {
@@ -132,9 +137,26 @@ export default function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
     const [previewIndex, setPreviewIndex] = useState(0);
 
     return (
-        <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2">
+        <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
+            { replyingMessage && (
+                <section>
+                    <div className="flex flex-row gap-2 mb-1">
+                        <p className="text-sm flex-1">Replying to:</p>
+
+                        <IconButton isLoading={false} theme="default" className="ml-auto flex-none" onClick={onCancelReply}>
+                            <BsX className="size-5 cursor-pointer"/>
+                        </IconButton>
+                    </div>
+
+                    {/* https://stackoverflow.com/a/79634869 */}
+                    <p className="overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
+                        <span className="line-clamp-2">{replyingMessage.body}</span>
+                    </p>
+                </section>
+            )}
+
             {attachments.length > 0 && (
-                <>
+                <section>
                     <ScrollArea.Root className="h-20 w-full overflow-hidden">
                         <ScrollArea.Viewport className="size-full">
                             <div className="flex flex-row gap-2 w-max h-20 pr-4 pb-3">
@@ -169,7 +191,7 @@ export default function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
                         }))}
                         initialIndex={previewIndex}
                     />
-                </>
+                </section>
             )}
 
             <section className="flex flex-row items-end gap-2">

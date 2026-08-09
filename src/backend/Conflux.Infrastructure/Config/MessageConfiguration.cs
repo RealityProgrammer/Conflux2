@@ -29,6 +29,19 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
             .HasForeignKey(m => m.SenderUserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);  // delete messages when user is deleted
+
+        builder.HasOne(m => m.ReplyTo)
+            .WithMany(m => m.Replies)
+            .HasForeignKey(m => m.ReplyToId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        // constraints
+        builder.ToTable(tableBuilder => tableBuilder.HasCheckConstraint(
+            "CK_Message_CannotReplyToSelf",
+            """
+            "Id" <> "ReplyToId"
+            """
+        ));
         
         // filters
         builder.HasQueryFilter("SoftDeletionFilter", b => b.DeletedAt == null);

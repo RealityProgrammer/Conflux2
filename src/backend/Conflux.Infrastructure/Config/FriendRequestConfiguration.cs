@@ -10,7 +10,7 @@ internal sealed class FriendRequestConfiguration : IEntityTypeConfiguration<Frie
         builder.HasKey(x => x.Id);
         
         // preventing self friend request on DB level
-        builder.ToTable(x => x.HasCheckConstraint(
+        builder.ToTable(tableBuilder => tableBuilder.HasCheckConstraint(
             "CK_FriendRequest_NotSelf",
             """
             "SenderUserId" <> "ReceiverUserId"

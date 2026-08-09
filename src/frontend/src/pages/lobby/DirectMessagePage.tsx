@@ -2,7 +2,7 @@ import {useLoaderData} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
-import ChatInput, {type ChatInputMessageState} from "../../components/ChatInput.tsx";
+import ChatInput, {type MessageInput} from "../../components/ChatInput.tsx";
 import {messageService} from "../../api/messageService.ts";
 import type {MessageDto,ServiceResponse} from "../../api/responses.ts";
 import {useEffect, useRef, useState} from "react";
@@ -18,7 +18,7 @@ import {BsExclamationTriangle, BsPaperclip} from "react-icons/bs";
 
 type SendingMessageOperation = {
     type: "sending";
-    state: ChatInputMessageState;
+    state: MessageInput;
     idempotencyKey: string;
 };
 
@@ -100,7 +100,7 @@ export default function DirectMessagePage() {
     const [processingOperations, setProcessingOperations] = useState<MessageOperation[]>([]);
 
     // message mutations
-    type SendMessagePayload = { operationId: string, data: ChatInputMessageState, idempotencyKey: string };
+    type SendMessagePayload = { operationId: string, data: MessageInput, idempotencyKey: string };
     type EditMessagePayload = { operationId: string, originalMessage: MessageDto, newBody: string | null };
     type DeleteMessagePayload = { operationId: string, message: MessageDto };
 
@@ -110,7 +110,8 @@ export default function DirectMessagePage() {
                 channelId!,
                 payload.idempotencyKey,
                 payload.data.messageBody,
-                payload.data.attachments
+                payload.data.attachments,
+                payload.data.replyingMessage?.id
             );
         },
         onMutate: async (payload: SendMessagePayload) => {
@@ -164,7 +165,7 @@ export default function DirectMessagePage() {
             }
 
             if (messageQueryModification.current) {
-                messageQueryModification.current.pushNewMessage(data.data!, authorization.userProfile ?? undefined);
+                messageQueryModification.current.appendMessage(data.data!, authorization.userProfile ?? undefined);
             }
 
             // remove the query
@@ -295,12 +296,14 @@ export default function DirectMessagePage() {
         },
     });
 
-    const handleSendMessage = async (state: ChatInputMessageState) => {
+    const handleSendMessage = async (state: MessageInput) => {
         if (!channelId) return;
 
         const operationId = `__queue_message-${crypto.randomUUID()}`;
         const idempotencyKey = crypto.randomUUID();
         sendMessageMutation.mutate({ operationId, data: state, idempotencyKey });
+
+        setReplyingMessage(undefined);
     };
 
     const handleMessageEdited = async (originalMessage: MessageDto, newBody: string | null) => {
@@ -355,6 +358,8 @@ export default function DirectMessagePage() {
     const handleCancelSendErrorMessage = (operationId: string) => {
         setProcessingOperations((prev) => prev.filter(m => m.operationId != operationId));
     };
+
+    const [replyingMessage, setReplyingMessage] = useState<MessageDto | undefined>(undefined);
 
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -447,17 +452,20 @@ export default function DirectMessagePage() {
 
                 <ChatView
                     channelId={channelId!}
-                    emptyState={() => {
+                    renderEmptyState={() => {
                         return <p className="text-base gray-500">And our story begin...</p>
                     }}
                     onMessageEditRequested={handleMessageEdited}
                     onMessageDeleteRequested={handleMessageDelete}
+                    onMessageReplyRequested={setReplyingMessage}
                     queryModificationRef={messageQueryModification}
                 />
 
                 <ChatInput
                     disabled={!channelId || !channelSummary}
                     onSendMessage={handleSendMessage}
+                    replyingMessage={replyingMessage}
+                    onCancelReply={() => setReplyingMessage(undefined)}
                 />
             </div>
         </div>

@@ -36,7 +36,7 @@ internal sealed class MessageRepository(
         if (cursorMessageId is not { } cursorId) {
             messages = await baseQuery
                 .OrderByDescending(m => m.Id)   // uuidv7 btw
-                .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt))
+                .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
                 .Take(limit)
                 .Reverse()  // return the messages in chronological order
                 .ToListAsync(cancellationToken);
@@ -49,7 +49,7 @@ internal sealed class MessageRepository(
                     messages = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) < 0)
                         .OrderByDescending(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt))
+                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
                         .Take(limit)
                         .Reverse()
                         .ToListAsync(cancellationToken);
@@ -63,7 +63,7 @@ internal sealed class MessageRepository(
                     messages = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) > 0)
                         .OrderBy(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt))
+                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
                         .Take(limit)
                         .ToListAsync(cancellationToken);
 
@@ -78,7 +78,7 @@ internal sealed class MessageRepository(
                     var before = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) < 0)
                         .OrderByDescending(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt))
+                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
                         .Take(halfLimit)
                         .Reverse()
                         .ToListAsync(cancellationToken);
@@ -86,7 +86,7 @@ internal sealed class MessageRepository(
                     var after = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) >= 0) // can't forget the cursor message too lmao
                         .OrderBy(m => m.Id)
-                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt))
+                        .Select(m => new MessageDto(m.Id, m.SenderUserId, m.Body, m.Attachments, m.CreatedAt, m.ReplyToId))
                         .Take(halfLimit + 1)
                         .ToListAsync(cancellationToken);
 

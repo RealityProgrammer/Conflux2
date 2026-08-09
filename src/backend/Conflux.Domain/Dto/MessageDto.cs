@@ -7,5 +7,6 @@ public record MessageDto(
     Guid SenderUserId,
     string? Body,
     Attachment[] Attachments,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    Guid? ReplyToId
 );
