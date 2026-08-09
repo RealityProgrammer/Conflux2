@@ -1,4 +1,4 @@
-import type {Attachment, MessageDto, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, MessageDto, TimelineMessageDto, TimelineMessageBlockDto, UserBasicProfileSummary} from "../api/responses.ts";
 import {useAuthorization} from "../contexts/AuthContext.tsx";
 import {type MouseEvent, useState} from "react";
 import {ContextMenu, ScrollArea} from "radix-ui";
@@ -8,7 +8,7 @@ import MessageEditor from "./MessageEditor.tsx";
 import {messageService} from "../api/messageService.ts";
 
 export interface MessageGroupRowProps {
-    messageGroup: MessageGroup;
+    messageGroup: TimelineMessageBlockDto;
     userProfile: UserBasicProfileSummary | undefined | null;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     onActionTriggered: (action: "edit" | "delete" | "reply", message: MessageDto) => void;
@@ -19,7 +19,7 @@ export interface MessageGroupRowProps {
     onEditSaved: (newBody: string) => void;
 }
 
-export default function MessageGroupRow({
+export default function MessageBlock({
     messageGroup,
     userProfile,
     onAttachmentClick,
@@ -168,7 +168,7 @@ export default function MessageGroupRow({
 }
 
 interface MessageElementRowProps {
-    message: MessageElement;
+    message: TimelineMessageDto;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     mode: 'view' | 'edit';
     editingMessageDraft?: string | null;

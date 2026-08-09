@@ -1,11 +1,11 @@
 import {type InfiniteData, useInfiniteQuery, type UseInfiniteQueryResult, useQueryClient} from "@tanstack/react-query";
-import type {GetMessagesResponse, MessageDto, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
+import type {GetMessagesResponse, MessageDto, TimelineMessageBlockDto, UserBasicProfileSummary} from "../api/responses.ts";
 import {messageService} from "../api/messageService.ts";
 import type {MessageLoadDirection} from "../api/requests.ts";
 
 export interface UseGetMessagesResult {
     useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
-    allMessageGroups: MessageGroup[];
+    allMessageGroups: TimelineMessageBlockDto[];
     userProfiles: Record<string, UserBasicProfileSummary>;
     queryKey: (string | null | undefined)[];
     appendMessage: (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => void;
@@ -67,11 +67,11 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         refetchOnWindowFocus: false,
     });
 
-    const allMessageGroups: MessageGroup[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
+    const allMessageGroups: TimelineMessageBlockDto[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
 
     // allMessageGroups is basically a flatten groups, if page N end and page N+1 have same sender id, it still considered
     // as separate group
-    const mergedGroups: MessageGroup[] = allMessageGroups.reduce<MessageGroup[]>((acc, currentGroup) => {
+    const mergedGroups: TimelineMessageBlockDto[] = allMessageGroups.reduce<TimelineMessageBlockDto[]>((acc, currentGroup) => {
         const lastGroup = acc.at(-1);
 
         if (lastGroup && lastGroup.senderUserId === currentGroup.senderUserId) {
@@ -135,7 +135,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
                     lastMessageGroup.senderUserId == newMessage.senderUserId;
 
                 if (isSameUser) {
-                    const updatedGroup: MessageGroup = {
+                    const updatedGroup: TimelineMessageBlockDto = {
                         ...lastMessageGroup,
                         messages: [...lastMessageGroup.messages, newMessage],
                     };
@@ -176,7 +176,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
             const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
                 if (!page) return page;
 
-                const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup => {
+                const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageBlockDto): TimelineMessageBlockDto => {
                     const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
                     if (messageIndex !== -1) {
@@ -223,7 +223,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
             const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
                 if (!page) return page;
 
-                const updatedMessageGroups = page.messageGroups.map((messageGroup: MessageGroup): MessageGroup | null => {
+                const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageBlockDto): TimelineMessageBlockDto | null => {
                     const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
                     if (messageIndex === -1) {

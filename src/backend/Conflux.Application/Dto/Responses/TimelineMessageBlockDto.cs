@@ -1,14 +1,13 @@
-using Conflux.Domain;
 using Conflux.Domain.Entities;
 
 namespace Conflux.Application.Dto.Responses;
 
-public record MessageGroup(
+public record TimelineMessageBlockDto(
     Guid SenderUserId,
-    List<MessageElement> Messages
+    List<TimelineMessageDto> Messages
 );
 
-public record MessageElement(
+public record TimelineMessageDto(
     Guid Id,
     string? Body,
     Attachment[] Attachments,

@@ -292,11 +292,11 @@ internal sealed class MessageService(
         }
         
         // group the messages
-        var groups = new List<MessageGroup>();
-        MessageGroup? currentGroup = null;
+        var groups = new List<TimelineMessageBlockDto>();
+        TimelineMessageBlockDto? currentGroup = null;
 
         foreach (MessageDto message in getMessagesResult.Value!.Messages) {
-            var element = new MessageElement(message.Id, message.Body, message.Attachments, message.CreatedAt);
+            var element = new TimelineMessageDto(message.Id, message.Body, message.Attachments, message.CreatedAt);
 
             // if same sender as the last message, append to the current group
             if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {

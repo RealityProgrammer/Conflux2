@@ -1,16 +1,12 @@
-import type {Attachment, GetMessagesResponse, MessageDto, MessageElement, MessageGroup, UserBasicProfileSummary} from "../api/responses.ts";
+import type {Attachment, GetMessagesResponse, MessageDto, TimelineMessageDto, TimelineMessageBlockDto, UserBasicProfileSummary} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
-import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type RefObject, useImperativeHandle} from "react";
+import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type RefObject, useImperativeHandle} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
 import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
 import Spinner from "./Spinner.tsx";
-import {ContextMenu, ScrollArea} from "radix-ui";
-import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
-import UserAvatar from "./UserAvatar.tsx";
-import { useAuthorization } from "../contexts/AuthContext.tsx";
 import useGetMessages from "../hooks/useGetMessages.ts";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
@@ -18,7 +14,7 @@ import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts"
 import { useCacheService } from "../hooks/useCacheService.ts";
 import MessageEditor from "./MessageEditor.tsx"
 import AlertActionDialog from "./AlertActionDialog.tsx";
-import MessageGroupRow, {type MessageGroupRowProps} from "./MessageGroupRow.tsx";
+import MessageBlock, {type MessageGroupRowProps} from "./MessageBlock.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -102,14 +98,14 @@ function estimateMessageContentHeight(id: string, displayAreaWidth: number): num
 }
 
 function estimateMessageGroupHeight(
-    messageGroup: MessageGroup,
+    messageGroup: TimelineMessageBlockDto,
     displayAreaWidth: number,
     editingMessageId: string | undefined,
     editingMessageDraft: string | null
 ): number {
     displayAreaWidth = Math.max(1, displayAreaWidth);
 
-    return messageGroup.messages.reduce((acc: number, msg: MessageElement) => {
+    return messageGroup.messages.reduce((acc: number, msg: TimelineMessageDto) => {
         const isEditing = msg.id === editingMessageId;
 
         if (msg.body) {
@@ -410,7 +406,7 @@ export function ChatView({
                 }}
                 renderItem={(itemIndex, virtualItem) => {
                     return (
-                        <MessageGroupRow
+                        <MessageBlock
                             key={virtualItem.key}
                             messageGroup={messageGroups[itemIndex]}
                             userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}

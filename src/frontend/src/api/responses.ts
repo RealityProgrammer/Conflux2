@@ -88,16 +88,16 @@ export type Attachment = {
     type: string;
 }
 
-export type MessageElement = {
+export type TimelineMessageBlockDto = {
+    senderUserId: string;
+    messages: TimelineMessageDto[];
+}
+
+export type TimelineMessageDto = {
     id: string;
     body: string | null;
     attachments: Attachment[];
     createdAt: Date;
-}
-
-export type MessageGroup = {
-    senderUserId: string;
-    messages: MessageElement[];
 }
 
 export type MessageDto = {
@@ -106,11 +106,11 @@ export type MessageDto = {
     body: string | null;
     attachments: Attachment[];
     createdAt: Date;
-    replyToId: string;
+    replyToId?: string;
 }
 
 export type GetMessagesResponse = {
-    messageGroups: MessageGroup[];
+    messageGroups: TimelineMessageBlockDto[];
     users: UserBasicProfileSummary[];
     hasMoreBefore?: boolean;
     hasMoreAfter?: boolean;
