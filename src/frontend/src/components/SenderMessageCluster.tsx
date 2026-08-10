@@ -133,6 +133,7 @@ export default function SenderMessageCluster({
 
                                     onActionTriggered("edit", selectedMessage);
                                 }}
+                                disabled={editingMessageId === selectedMessage?.id}
                             >
                                 Edit message <BsPencil className="fill-white size-4 ml-auto"/>
                             </ContextMenu.Item>
@@ -191,36 +192,34 @@ function ClusterMessage({
 }: MessageElementRowProps) {
     return (
         <>
-            {message.body && (
-                mode === 'edit' ? (
-                    <MessageEditor
-                        initialValue={message.body}
-                        draftValue={editingMessageDraft}
-                        onDraftChange={onEditDraftChange}
-                        onCancel={onEditCanceled}
-                        onSave={onEditSaved}
-                    />
-                ): (
-                    <div className="text-sm">
-                        { mode === "view" && message.replyTo && (
-                            <>
-                                <p className="text-xs mb-1">Somebody sent:</p>
+            {mode === "edit" ? (
+                <MessageEditor
+                    initialValue={message.body || ""}
+                    draftValue={editingMessageDraft}
+                    onDraftChange={onEditDraftChange}
+                    onCancel={onEditCanceled}
+                    onSave={onEditSaved}
+                />
+            ) : (
+                <div className="text-sm">
+                    { mode === "view" && message.replyTo && (
+                        <>
+                            <p className="text-xs mb-1">Somebody sent:</p>
 
-                                {!!message.replyTo.body ? (
-                                    <p className="leading-6 whitespace-pre-wrap overflow-hidden ring ring-gray-500 bg-black/8 rounded-md px-1 py-0.5">
-                                        <span className="line-clamp-2">{message.replyTo.body}</span>
-                                    </p>
-                                ) : (
-                                    <p>{message.replyTo.attachmentCount} attachment{message.replyTo.attachmentCount > 1 ? 's' : ''}.</p>
-                                )}
-                            </>
-                        )}
+                            {!!message.replyTo.body ? (
+                                <p className="leading-6 whitespace-pre-wrap overflow-hidden ring ring-gray-500 bg-black/8 rounded-md px-1 py-0.5">
+                                    <span className="line-clamp-2">{message.replyTo.body}</span>
+                                </p>
+                            ) : (
+                                <p>{message.replyTo.attachmentCount} attachment{message.replyTo.attachmentCount > 1 ? 's' : ''}.</p>
+                            )}
+                        </>
+                    )}
 
-                        <p className="leading-6 whitespace-pre-wrap">
-                            {message.body}
-                        </p>
-                    </div>
-                )
+                    <p className="leading-6 whitespace-pre-wrap">
+                        {message.body}
+                    </p>
+                </div>
             )}
 
             {message.attachments && message.attachments.length > 0 && (
