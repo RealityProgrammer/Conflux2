@@ -139,6 +139,9 @@ builder.Services.AddSignalR();
 
 // Conflux services.
 builder.Services
+    .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
+    .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
+        
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IStorageService, StorageService>()
         

@@ -244,7 +244,6 @@ function ClusterMessage({
                                         <video
                                             src={messageService.getAttachmentUrl(attachment.id, false)}
                                             className="object-cover size-full"
-                                            preload="none"
                                             autoPlay={false}
                                         />
                                     ) : attachment.type.startsWith("audio") ? (

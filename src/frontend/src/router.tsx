@@ -6,7 +6,7 @@ import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
 import { authService } from "./api/authService.ts";
 import { HttpStatusCode } from "axios";
 import type {
-    DirectMessageChannelSummary,
+    DmChannelSummary,
     ServiceResponse,
     UserAuthorizationInfo,
 } from "./api/responses.ts";
@@ -24,7 +24,7 @@ import Egg from "./components/Egg.tsx";
 
 export type DirectMessagePageLoaderProps = {
     channelId: string | null;
-    channelSummary: DirectMessageChannelSummary | null;
+    channelSummary: DmChannelSummary | null;
 };
 
 export const router = createBrowserRouter([
@@ -168,8 +168,8 @@ export const router = createBrowserRouter([
 
                             const channelId: string = channelIdResponse.data!;
 
-                            const dmChannelSummary: ServiceResponse<DirectMessageChannelSummary> =
-                                await channelService.getDirectMessageChannelSummary(channelId);
+                            const dmChannelSummary: ServiceResponse<DmChannelSummary> =
+                                await channelService.getDmChannelSummary(channelId);
 
                             if (!dmChannelSummary.success) {
                                 return { channelId: channelId, channelSummary: null };

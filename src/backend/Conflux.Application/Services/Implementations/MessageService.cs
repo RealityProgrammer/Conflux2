@@ -22,6 +22,7 @@ internal sealed class MessageService(
     IUserRepository userRepository,
     IChannelRepository channelRepository,
     IStorageService storageService,
+    IChannelAuthorizationService channelAuthorizationService,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider,
     IMediator mediator,
@@ -35,19 +36,29 @@ internal sealed class MessageService(
         Guid? replyToId,
         CancellationToken cancellationToken = default
     ) {
-        Result<ConversationPostingContext> getPostingContextResult = 
-            await channelRepository.GetPostingContextFromChannelIdAsync(senderUserId, channelId);
+        Result<ChannelMetadata> getChannelMetadataResult = 
+            await channelRepository.GetChannelMetadataFromChannelIdAsync(channelId, cancellationToken);
+        
+        if (!getChannelMetadataResult.IsSuccess) {
+            return getChannelMetadataResult.Error;
+        }
+        
+        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
 
-        if (!getPostingContextResult.IsSuccess) {
-            return getPostingContextResult.Error;
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+            senderUserId, 
+            channelId, 
+            channelMetadata.ChannelType
+        );
+
+        if (!authResult.IsSuccess) {
+            return authResult.Error;
         }
 
-        ConversationPostingContext postingContext = getPostingContextResult.Value!;
+        MessagingPermissions permissions = authResult.Value;
 
-        Result accessibilityResult = ValidateConversationAccessibility(postingContext, senderUserId);
-
-        if (!accessibilityResult.IsSuccess) {
-            return accessibilityResult.Error;
+        if (!permissions.HasFlag(MessagingPermissions.SendMessage)) {
+            return Errors.Forbidden("You do not have permission to send message.");
         }
         
         // upload attachments
@@ -145,7 +156,7 @@ internal sealed class MessageService(
             Body = body,
             Attachments = attachments!,
             SenderUserId = senderUserId,
-            ConversationId = postingContext.ConversationId,
+            ConversationId = channelMetadata.ConversationId,
             ReplyToId = replyToId,
             CreatedAt = timeProvider.GetUtcNow(),
         };
@@ -195,23 +206,33 @@ internal sealed class MessageService(
         if (message == null) {
             return Errors.ResourceNotFound("Message");
         }
-       
-        Result<ConversationPostingContext> getPostingContextResult = 
-            await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
-
-        if (!getPostingContextResult.IsSuccess) {
-            return getPostingContextResult.Error;
-        }
-
-        ConversationPostingContext postingContext = getPostingContextResult.Value!;
-
-        Result accessibilityResult = ValidateConversationAccessibility(postingContext, requesterUserId);
-
-        if (!accessibilityResult.IsSuccess) {
-            return accessibilityResult.Error;
-        }
         
         if (message.SenderUserId != requesterUserId) {
+            return Errors.Forbidden("You do not have permission to edit this message.");
+        }
+       
+        Result<ChannelMetadata> getChannelMetadataResult = 
+            await channelRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId, cancellationToken);
+        
+        if (!getChannelMetadataResult.IsSuccess) {
+            return getChannelMetadataResult.Error;
+        }
+        
+        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+            requesterUserId, 
+            channelMetadata.ChannelId, 
+            channelMetadata.ChannelType
+        );
+
+        if (!authResult.IsSuccess) {
+            return authResult.Error;
+        }
+
+        MessagingPermissions permissions = authResult.Value;
+
+        if (!permissions.HasFlag(MessagingPermissions.EditMessage)) {
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
         
@@ -241,7 +262,7 @@ internal sealed class MessageService(
             message.ReplyToId
         );
         
-        await mediator.Publish(new MessageEditedNotification(postingContext.ChannelId, dto), CancellationToken.None);
+        await mediator.Publish(new MessageEditedNotification(channelMetadata.ChannelId, dto), CancellationToken.None);
         
         return Result<MessageDto>.Success(dto);
     }
@@ -253,22 +274,32 @@ internal sealed class MessageService(
             return Errors.ResourceNotFound("Message");
         }
         
-        Result<ConversationPostingContext> getPostingContextResult = 
-            await channelRepository.GetPostingContextFromConversationId(requesterUserId, message.ConversationId);
-
-        if (!getPostingContextResult.IsSuccess) {
-            return getPostingContextResult.Error;
+        if (message.SenderUserId != requesterUserId) {
+            return Errors.Forbidden("You do not have permission to delete this message.");
         }
-
-        ConversationPostingContext postingContext = getPostingContextResult.Value!;
-
-        Result accessibilityResult = ValidateConversationAccessibility(postingContext, requesterUserId);
-
-        if (!accessibilityResult.IsSuccess) {
-            return accessibilityResult.Error;
+       
+        Result<ChannelMetadata> getChannelMetadataResult = 
+            await channelRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId);
+        
+        if (!getChannelMetadataResult.IsSuccess) {
+            return getChannelMetadataResult.Error;
         }
         
-        if (message.SenderUserId != requesterUserId) {
+        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+            requesterUserId, 
+            channelMetadata.ChannelId, 
+            channelMetadata.ChannelType
+        );
+
+        if (!authResult.IsSuccess) {
+            return authResult.Error;
+        }
+
+        MessagingPermissions permissions = authResult.Value;
+
+        if (!permissions.HasFlag(MessagingPermissions.DeleteMessage)) {
             return Errors.Forbidden("You do not have permission to delete this message.");
         }
 
@@ -280,7 +311,7 @@ internal sealed class MessageService(
         
         await unitOfWork.SaveChangesAsync();
         
-        await mediator.Publish(new MessageDeletedNotification(postingContext.ChannelId, message.Id), CancellationToken.None);
+        await mediator.Publish(new MessageDeletedNotification(channelMetadata.ChannelId, message.Id), CancellationToken.None);
         
         return Result.Success();
     }
@@ -293,31 +324,33 @@ internal sealed class MessageService(
         int count,
         CancellationToken cancellationToken = default
     ) {
-        var result = 
-            await channelRepository.GetPostingContextFromChannelIdAsync(requesterUserId, channelId);
-
-        if (!result.IsSuccess) {
-            return result.Error;
+        Result<ChannelMetadata> getChannelMetadataResult = 
+            await channelRepository.GetChannelMetadataFromChannelIdAsync(channelId, cancellationToken);
+        
+        if (!getChannelMetadataResult.IsSuccess) {
+            return getChannelMetadataResult.Error;
         }
         
-        // validate ownership.
-        ConversationPostingContext postingContext = result.Value!;
+        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+            requesterUserId, 
+            channelMetadata.ChannelId, 
+            channelMetadata.ChannelType
+        );
 
-        switch (postingContext.ChannelType) {
-            case ChannelType.DirectMessage:
-                // check if user can access the direct message
-                var dmContext = postingContext.DmContext!;
+        if (!authResult.IsSuccess) {
+            return authResult.Error;
+        }
 
-                if (dmContext.SenderUserId != requesterUserId && dmContext.ReceiverUserId != requesterUserId) {
-                    return Errors.Forbidden("You are not associated with the conversation.");
-                }
-                break;
-            
-            // TODO: Server validate.
+        MessagingPermissions permissions = authResult.Value;
+
+        if (!permissions.HasFlag(MessagingPermissions.ViewMessage)) {
+            return Errors.Forbidden("You do not have permission to view this channel.");
         }
         
         Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessagesAsync(
-            postingContext.ConversationId, 
+            channelMetadata.ConversationId, 
             direction, 
             cursorMessageId,
             count,
@@ -385,22 +418,5 @@ internal sealed class MessageService(
 
     public string GetAttachmentUrl(Guid attachmentId, bool useHttps) {
         return storageService.GetMessageAttachmentPreSignedUrl(attachmentId, useHttps);
-    }
-
-    private Result ValidateConversationAccessibility(ConversationPostingContext postingContext, Guid requesterUserId) {
-        switch (postingContext.ChannelType) {
-            case ChannelType.DirectMessage:
-                // check if user can access the direct message
-                var dmContext = postingContext.DmContext!;
-
-                if (dmContext.SenderUserId != requesterUserId && dmContext.ReceiverUserId != requesterUserId) {
-                    return Errors.Forbidden("You are not associated with the conversation.");
-                }
-
-                return Result.Success();
-            
-            default:
-                return Errors.Forbidden("Unknown conversation type.");
-        }
     }
 }

@@ -1,5 +1,5 @@
 namespace Conflux.Domain.Dto;
 
-public sealed record DirectMessageChannelSummary(
+public sealed record DmChannelSummary(
     UserBasicProfileDto OtherUser
 );

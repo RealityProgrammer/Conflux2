@@ -79,7 +79,7 @@ export type DirectMessageResolutionResponse = {
     channelId: string;
 }
 
-export type DirectMessageChannelSummary = {
+export type DmChannelSummary = {
     otherUser: UserBasicProfileSummary;
 }
 

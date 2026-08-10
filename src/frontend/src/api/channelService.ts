@@ -1,6 +1,6 @@
 import type {
     BackendResponse,
-    DirectMessageChannelSummary,
+    DmChannelSummary,
     DirectMessageResolutionResponse,
     ServiceResponse
 } from "./responses.ts";
@@ -9,10 +9,10 @@ import {handleAxiosError} from "./errorHandling.ts";
 import type {AxiosError, AxiosResponse} from "axios";
 
 export const channelService = {
-    getDirectMessageChannelSummary: async (channelId: string): Promise<ServiceResponse<DirectMessageChannelSummary>> => {
+    getDmChannelSummary: async (channelId: string): Promise<ServiceResponse<DmChannelSummary>> => {
         try {
-            const response: AxiosResponse<BackendResponse<DirectMessageChannelSummary>> =
-                await apiClient.get<BackendResponse<DirectMessageChannelSummary>>(
+            const response: AxiosResponse<BackendResponse<DmChannelSummary>> =
+                await apiClient.get<BackendResponse<DmChannelSummary>>(
                     `/channels/dm/${encodeURIComponent(channelId)}/summary`
                 );
 
@@ -22,7 +22,7 @@ export const channelService = {
                 data: response.data.data,
             };
         } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse<DirectMessageChannelSummary>>;
+            const axiosError = error as AxiosError<BackendResponse<DmChannelSummary>>;
             return handleAxiosError(axiosError);
         }
     },

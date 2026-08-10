@@ -7,7 +7,7 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class ChannelService(
     IChannelRepository channelRepository
 ) : IChannelService {
-    public async Task<Result<DirectMessageChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId) {
+    public async Task<Result<DmChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId) {
         return await channelRepository.GetDirectMessageChannelSummaryAsync(userId, channelId);
     }
 

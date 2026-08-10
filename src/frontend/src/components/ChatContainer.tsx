@@ -439,7 +439,7 @@ export default function ChatContainer({ channelId }: ChatContainerProps) {
                 channelId={channelId}
                 replyingMessage={replyingMessage}
                 onSendMessage={handleSendMessage}
-                onMessageEdit={setReplyingMessage}
+                onMessageEdit={handleMessageEdited}
                 onMessageDelete={handleMessageDelete}
                 onMessageReplyRequested={(msg) => setReplyingMessage(msg)}
                 onCancelMessageReply={() => setReplyingMessage(undefined)}

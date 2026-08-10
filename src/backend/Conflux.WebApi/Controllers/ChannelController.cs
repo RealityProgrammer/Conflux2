@@ -15,23 +15,23 @@ public sealed class ChannelController(
     IChannelService channelService
 ) : ControllerBase {
     [HttpGet("dm/{channelId:guid}/summary")]
-    public async Task<ActionResult<ApiResponse<DirectMessageChannelSummary>>> GetDirectMessageChannelSummary(
+    public async Task<ActionResult<ApiResponse<DmChannelSummary>>> GetDirectMessageChannelSummary(
         Guid channelId
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var currentUserId)) {
-            return BadRequest(new ApiResponse<DirectMessageChannelSummary>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<DmChannelSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        Result<DirectMessageChannelSummary> result =
+        Result<DmChannelSummary> result =
             await channelService.GetDirectMessageChannelSummaryAsync(currentUserId, channelId);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<DirectMessageChannelSummary>(result.Value, Error.None));
+            return Ok(new ApiResponse<DmChannelSummary>(result.Value, Error.None));
         }
 
-        var errorResponse = new ApiResponse<DirectMessageChannelSummary>(null, result.Error);
+        var errorResponse = new ApiResponse<DmChannelSummary>(null, result.Error);
         
         return result.Error.Code switch {
             nameof(Errors.NoDirectMessageChannelWithId) => NotFound(errorResponse),
