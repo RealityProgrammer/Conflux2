@@ -9,7 +9,8 @@ import {messageService} from "../api/messageService.ts";
 
 export interface MessageGroupRowProps {
     messageGroup: TimelineMessageBlockDto;
-    userProfile: UserBasicProfileSummary | undefined | null;
+    // userProfile: UserBasicProfileSummary | undefined | null;
+    userProfiles: Record<string, UserBasicProfileSummary>;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     onActionTriggered: (action: "edit" | "delete" | "reply", message: MessageDto) => void;
     editingMessageId?: string;
@@ -21,7 +22,7 @@ export interface MessageGroupRowProps {
 
 export default function SenderMessageCluster({
     messageGroup,
-    userProfile,
+    userProfiles,
     onAttachmentClick,
     onActionTriggered,
     editingMessageId,
@@ -53,6 +54,8 @@ export default function SenderMessageCluster({
         setSelectedMessage(null);
     };
 
+    const senderProfile = userProfiles[messageGroup.senderUserId];
+
     return (
         <ContextMenu.Root>
             <ContextMenu.Trigger
@@ -65,13 +68,13 @@ export default function SenderMessageCluster({
                     className="hover-highlight flex flex-row gap-3 px-2"
                 >
                     <UserAvatar
-                        hasAvatar={userProfile?.hasAvatar ?? false}
-                        userId={userProfile?.id ?? undefined}
+                        hasAvatar={senderProfile?.hasAvatar ?? false}
+                        userId={senderProfile?.id ?? undefined}
                         className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
                     />
 
                     <div className="flex-1 min-w-0">
-                        <p className="text-base text-white">{userProfile?.userName ?? "Unknown Sender"}</p>
+                        <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
 
                         <ClusterMessage
                             message={messageGroup.messages[0]}
@@ -198,9 +201,25 @@ function ClusterMessage({
                         onSave={onEditSaved}
                     />
                 ): (
-                    <p className="text-sm leading-6 whitespace-pre-wrap">
-                        {message.body}
-                    </p>
+                    <div className="text-sm">
+                        { mode === "view" && message.replyTo && (
+                            <>
+                                <p className="text-xs mb-1">Somebody sent:</p>
+
+                                {!!message.replyTo.body ? (
+                                    <p className="leading-6 whitespace-pre-wrap overflow-hidden ring ring-gray-500 bg-black/8 rounded-md px-1 py-0.5">
+                                        <span className="line-clamp-2">{message.replyTo.body}</span>
+                                    </p>
+                                ) : (
+                                    <p>{message.replyTo.attachmentCount} attachment{message.replyTo.attachmentCount > 1 ? 's' : ''}.</p>
+                                )}
+                            </>
+                        )}
+
+                        <p className="leading-6 whitespace-pre-wrap">
+                            {message.body}
+                        </p>
+                    </div>
                 )
             )}
 

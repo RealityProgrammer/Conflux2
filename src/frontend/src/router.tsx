@@ -20,6 +20,7 @@ import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
+import Egg from "./components/Egg.tsx";
 
 export type DirectMessagePageLoaderProps = {
     channelId: string | null;

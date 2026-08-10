@@ -259,6 +259,13 @@
     @apply fixed inset-0 bg-black/80 z-50
 }
 
+@font-face {
+    font-family: 'DeterminationMono';
+    src: url('/public/fonts/DeterminationMono.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 @layer base {
     * {
         scrollbar-width: thin;

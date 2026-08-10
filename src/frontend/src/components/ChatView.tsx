@@ -33,15 +33,15 @@ const MESSAGE_ATTACHMENT_BOTTOM_PADDING = 4;
 const preparedCache = new Map<string, CachedMessage>();
 const MAX_PREPARED_CACHE_SIZE = 512;
 
-function fallbackTextHeight(text: string, width: number) {
-    const averageCharacterWidth = 7;
-    const charactersPerLine = Math.max(1, Math.floor(width / averageCharacterWidth));
-
-    return text.split('\n').reduce((height, paragraph) => {
-        const lineCount = Math.max(1, Math.ceil(paragraph.length / charactersPerLine));
-        return height + lineCount * BODY_LINE_HEIGHT;
-    }, 0);
-}
+// function fallbackTextHeight(text: string, width: number) {
+//     const averageCharacterWidth = 7;
+//     const charactersPerLine = Math.max(1, Math.floor(width / averageCharacterWidth));
+//
+//     return text.split('\n').reduce((height, paragraph) => {
+//         const lineCount = Math.max(1, Math.ceil(paragraph.length / charactersPerLine));
+//         return height + lineCount * BODY_LINE_HEIGHT;
+//     }, 0);
+// }
 
 function ensurePreparedMessage(id: string, content: string): PreparedText | null {
     if (!content) return null;
@@ -82,17 +82,18 @@ function getPreparedMessage(id: string): CachedMessage | null {
   return cached;
 }
 
-function estimateMessageContentHeight(id: string, displayAreaWidth: number): number {
+function estimateMessageContentLayout(id: string, displayAreaWidth: number): { height: number, lineCount: number } {
     const cached = getPreparedMessage(id);
-    if (!cached) return BODY_LINE_HEIGHT;
+    if (!cached) return { height: BODY_LINE_HEIGHT, lineCount: 1 };
 
     const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
 
     if (!isSupported) {
-        return fallbackTextHeight(cached.content, displayAreaWidth);
+        console.error("pretext is not supported.");
+        return { height: 0, lineCount: 0 };
     } else {
         const layoutResult: LayoutResult = layout(cached.prepared, displayAreaWidth, BODY_LINE_HEIGHT);
-        return layoutResult.height;
+        return { height: layoutResult.height, lineCount: layoutResult.lineCount };
     }
 }
 
@@ -107,45 +108,66 @@ function estimateMessageGroupHeight(
     return messageGroup.messages.reduce((acc: number, msg: TimelineMessageDto) => {
         const isEditing = msg.id === editingMessageId;
 
-        if (msg.body) {
-            if (isEditing) {
-                // alright trailing new line breaks the height calculation for some reason that im too tired to give a damn so...
-                // imma use a hack for this: calculate the amount of trailing new line, and multiply with line height
+        // calculate the reply
+        if (msg.replyTo) {
+            // the size of the text displaying "<Sender name" sent:" plus mb-1
+            acc += 16 + 4;
 
-                const draftId = `${msg.id}_edit-draft`;
-                let currentDraft: string = editingMessageDraft ?? msg.body ?? "";
+            // if the reply message has body
+            if (msg.replyTo.body) {
+                // add at maximum 2 lines of content
+                ensurePreparedMessage(msg.replyTo.messageId, msg.replyTo.body);
 
-                ensurePreparedMessage(draftId, currentDraft);
-
-                // add 16 cuz input is py-2, subtract 24 cuz input hs px-3
-                let contentHeight = estimateMessageContentHeight(draftId, displayAreaWidth - 24);   // subtract 24 for textarea x padding
-
-                if (currentDraft.endsWith("\n")) {
-                    contentHeight += BODY_LINE_HEIGHT;  // pretext doesn't include the last line break to calculate height for some reason
-                }
-
-                const textareaHeight = contentHeight + 16;  // textarea y padding
-                const constrainedTextareHeight = Math.min(textareaHeight, 160); // textarea has max-h-40
-
-                acc += constrainedTextareHeight;
+                const { lineCount } = estimateMessageContentLayout(msg.replyTo.messageId, displayAreaWidth);
+                const effectiveLines = Math.min(lineCount, 2);
+                acc += effectiveLines * BODY_LINE_HEIGHT;
+                acc += 4;   // py-0.5
             } else {
-                ensurePreparedMessage(msg.id, msg.body);
-                acc += estimateMessageContentHeight(msg.id, displayAreaWidth);
+                // 1 line to show how many attachment it has
+                acc += BODY_LINE_HEIGHT;
             }
         }
 
+        // if the message is being edited, calculate the height of the draft textarea
+        if (isEditing) {
+            const draftId = `${msg.id}_edit-draft`;
+            let currentDraft: string = editingMessageDraft ?? msg.body ?? "";
+
+            ensurePreparedMessage(draftId, currentDraft);
+
+            // subtract 24 cuz textarea because px-3
+            let contentHeight = estimateMessageContentLayout(draftId, displayAreaWidth - 24).height;
+            contentHeight = Math.max(BODY_LINE_HEIGHT, contentHeight);  // ensure it has 1 line worth of text if draft empty
+
+            // pretext doesn't include the last line break to calculate height for some reason
+            if (currentDraft.endsWith("\n")) {
+                contentHeight += BODY_LINE_HEIGHT;
+            }
+
+            const textareaHeight = contentHeight + 16;  // textarea has py-2
+            const constrainedTextareHeight = Math.min(textareaHeight, 160); // textarea has max-h-40
+
+            acc += constrainedTextareHeight;
+        } else if (msg.body) {
+            // add height of message body
+            ensurePreparedMessage(msg.id, msg.body);
+            acc += estimateMessageContentLayout(msg.id, displayAreaWidth).height;
+        }
+
+        // attachments
         if (msg.attachments && msg.attachments.length > 0) {
-            // if has body, add a small padding between them
+            // if message has body, add a small padding between them
             acc += msg.body ? BODY_ATTACHMENT_PADDING : 0;
             acc += 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING;
         }
 
+        // the key instructions when the message is being edited (enter and escape).
         if (isEditing) {
-            acc += 20;  // 16 for the escape to cancel, enter to save message, 4 for gap between it and textarea above
+            acc += 20;  // 16 for the text, 4 for gap between it above
         }
 
         return acc;
-    }, 24); // name header
+    }, BODY_LINE_HEIGHT);   // username header start
 }
 
 export interface QueryModification {
@@ -211,7 +233,7 @@ export function ChatView({
     }, [messageGroups.length, isLoading, isReady]);
 
     // jump to bottom automatically when something arrive.
-    const lastGroupMessageCount = messageGroups.length === 0 ? null : messageGroups.length;
+    const lastGroupMessageCount = messageGroups.length === 0 ? null : messageGroups.at(-1)?.messages.length;
 
     const previousMessageCount = useRef({
         groupCount: messageGroups.length,
@@ -223,7 +245,7 @@ export function ChatView({
             const distanceFromBottom = viewportRef.current.scrollHeight - viewportRef.current.scrollTop - viewportRef.current.clientHeight;
 
             // why not == 0? idk im too tired to think about it lmao
-            const isNearBottom = distanceFromBottom < 10;
+            const isNearBottom = distanceFromBottom < 50;
 
             if (isNearBottom) {
                 requestAnimationFrame(() => {
@@ -408,7 +430,7 @@ export function ChatView({
                         <SenderMessageCluster
                             key={virtualItem.key}
                             messageGroup={messageGroups[itemIndex]}
-                            userProfile={userProfiles[messageGroups[itemIndex].senderUserId] ?? undefined}
+                            userProfiles={userProfiles}
                             onAttachmentClick={handleAttachmentClick}
                             editingMessageId={editingMessage?.id}
                             editingMessageDraft={editingMessageDraft}

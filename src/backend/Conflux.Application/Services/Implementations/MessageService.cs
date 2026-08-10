@@ -317,7 +317,17 @@ internal sealed class MessageService(
         // must have at least 1 user
         List<UserBasicProfileDto> userProfiles =
             await userRepository.GetProfileSummariesAsync(
-                [..groups.Select(g => g.SenderUserId).Distinct()], 
+                [..groups
+                    .Select(g => g.SenderUserId)
+                    .Concat(
+                        // include the sender user ids from replying
+                        groups
+                            .SelectMany(g => g.Messages)
+                            .Where(m => m.ReplyTo != null)
+                            .Select(m => m.ReplyTo!.SenderUserId)
+                        )
+                    .Distinct(),
+                ],
                 cancellationToken
             );
         
