@@ -64,6 +64,8 @@ internal sealed class ChannelRepository(
         var summary = await dbContext.Channels
             .Where(c =>
                 c.Type == ChannelType.DirectMessage &&
+                c.FriendRequest != null &&
+                (c.FriendRequest.SenderUserId == userId || c.FriendRequest.ReceiverUserId == userId) &&
                 c.Id == channelId
             )
             .Join(
