@@ -97,6 +97,10 @@ internal sealed class MessageService(
                 
                 // TODO: Add .webm once FileSignatures add it
                 
+                case Wav wavFormat:
+                    mediaType = wavFormat.MediaType;
+                    break;
+                
                 case null:
                     await DeleteUploadedAttachments();
 

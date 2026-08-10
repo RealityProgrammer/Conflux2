@@ -129,6 +129,7 @@ builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
         new Mpeg4Iso4(),
         new MP4(),
         new MP4V1(),
+        new Wav(),
     ]
 ));
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();

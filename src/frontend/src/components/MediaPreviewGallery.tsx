@@ -1,6 +1,6 @@
 import {Dialog} from "radix-ui";
 import IconButton from "./IconButton.tsx";
-import {BsChevronLeft, BsChevronRight, BsX} from "react-icons/bs";
+import {BsChevronLeft, BsChevronRight, BsMusicNote, BsX} from "react-icons/bs";
 import {useEffect, useState, type MouseEvent} from "react";
 import {useEventListener} from "usehooks-ts";
 
@@ -10,69 +10,52 @@ export type MediaGalleryItem = {
 }
 
 export interface MediaGalleryProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+    open: boolean;                 // Brought this back
+    onOpenChange: (open: boolean) => void; // Brought this back
 
-    initialItem: MediaGalleryItem;
-    hasPreviousItem: () => boolean;
-    getPreviousItem: () => MediaGalleryItem;
-    hasNextItem: () => boolean;
-    getNextItem: () => MediaGalleryItem;
+    currentItem: MediaGalleryItem;
+
+    hasPreviousItem: boolean;      // Can just be a boolean now instead of a function
+    onPrevious: () => void;        // Renamed from getPreviousItem
+
+    hasNextItem: boolean;          // Can just be a boolean
+    onNext: () => void;            // Renamed from getNextItem
 }
 
 export default function MediaPreviewGallery({
-    open,
-    onOpenChange,
-    initialItem,
-    hasPreviousItem: hasPreviousItemFn,
-    getPreviousItem: getPreviousItemFn,
-    hasNextItem: hasNextItemFn,
-    getNextItem: getNextItemFn,
-}: MediaGalleryProps) {
+                                                open,
+                                                onOpenChange,
+                                                currentItem,
+                                                hasPreviousItem,
+                                                onPrevious,
+                                                hasNextItem,
+                                                onNext,
+                                            }: MediaGalleryProps) {
     const [isZoomed, setIsZoomed] = useState(false);
-    const [currentItem, setCurrentItem] = useState<MediaGalleryItem>(initialItem);
 
+    // Automatically reset zoom whenever the current item changes
     useEffect(() => {
-        if (open) {
-            setCurrentItem(initialItem);
-            setIsZoomed(false);
-        }
-    }, [initialItem, open]);
+        setIsZoomed(false);
+    }, [currentItem.source]);
 
-    const hasPreviousItem = hasPreviousItemFn();
     const handlePrev = (e?: MouseEvent<HTMLButtonElement>) => {
         e?.preventDefault();
         e?.stopPropagation();
-
-        if (hasPreviousItem) {
-            setCurrentItem(getPreviousItemFn());
-            setIsZoomed(false);
-        }
+        if (hasPreviousItem) onPrevious();
     };
 
-    const hasNextItem = hasNextItemFn();
     const handleNext = (e?: MouseEvent<HTMLButtonElement>) => {
         e?.preventDefault();
         e?.stopPropagation();
-
-        if (hasNextItem) {
-            setCurrentItem(getNextItemFn());
-            setIsZoomed(false);
-        }
+        if (hasNextItem) onNext();
     };
 
-    // arrow navigation goes hard
-    useEffect(() => {
+    useEventListener("keydown", (e: KeyboardEvent) => {
         if (!open) return;
 
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "ArrowLeft") handlePrev();
-            if (e.key === "ArrowRight") handleNext();
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [open, handlePrev, handleNext]);
+        if (e.key === "ArrowLeft" && hasPreviousItem) handlePrev();
+        if (e.key === "ArrowRight" && hasNextItem) handleNext();
+    });
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -113,14 +96,14 @@ export default function MediaPreviewGallery({
                     </IconButton>
                 )}
 
-                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 gap-4 shadow-lg duration-200 outline-none w-auto h-[95dvh] aspect-auto cursor-zoom-in overflow-auto flex flex-row items-center">
+                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 gap-4 shadow-lg duration-200 outline-none w-auto h-[95dvh] aspect-auto overflow-auto flex flex-row items-center">
                     {currentItem.type.startsWith("image") ? (
                         <img
                             src={currentItem.source}
-                            alt="Alt"
+                            alt="Preview"
                             onClick={() => setIsZoomed(!isZoomed)}
-                            className={`transition-all duration-200 ${isZoomed ? 
-                                "w-auto h-auto max-w-none max-h-none cursor-zoom-out" : 
+                            className={`transition-all duration-200 ${isZoomed ?
+                                "w-auto h-auto max-w-none max-h-none cursor-zoom-out" :
                                 "w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain cursor-zoom-in"
                             }`}
                         />
@@ -130,6 +113,13 @@ export default function MediaPreviewGallery({
                             controls
                             autoPlay={false}
                             className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain"
+                        />
+                    ) : currentItem.type.startsWith("audio") ? (
+                        <audio
+                            src={currentItem.source}
+                            controls
+                            autoPlay={false}
+                            className="w-full h-auto max-w-[95vw]"
                         />
                     ) : (
                         <div className="bg-gray-800 p-10 rounded-lg flex flex-col items-center justify-center text-gray-300 w-[50vw] max-w-md h-[30vh]">

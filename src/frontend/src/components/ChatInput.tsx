@@ -1,10 +1,10 @@
 import IconButton from "./IconButton.tsx";
-import {BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
+import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
 import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from "react";
 import {ScrollArea} from "radix-ui";
-import FilePreviewGallery, {type GalleryPreviewItem} from "./FilePreviewGallery.tsx";
 import type {MessageDto} from "../api/responses.ts";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
+import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 
 export interface ChatInputProps {
     disabled?: boolean;
@@ -66,12 +66,12 @@ export default function ChatInput({ disabled }: ChatInputProps) {
         }
 
         const newAttachments = Array.from(files).map<AttachmentItem>(file => {
-            const isImage = file.type.startsWith('image/');
+            const objectURL = URL.createObjectURL(file);
 
             return {
                 file,
                 id: crypto.randomUUID(),
-                previewUrl: isImage ? URL.createObjectURL(file) : undefined,
+                previewUrl: objectURL,
             };
         });
 
@@ -133,8 +133,13 @@ export default function ChatInput({ disabled }: ChatInputProps) {
     };
 
     // gallery states
-    const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewIndex, setPreviewIndex] = useState(0);
+    const [previewGalleryState, setPreviewGalleryState] = useState({ open: false, index: 0 });
+
+    const safeIndex = Math.min(
+        Math.max(0, previewGalleryState.index),
+        Math.max(0, attachments.length - 1)
+    );
+    const activeAttachment = attachments[safeIndex];
 
     return (
         <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
@@ -161,14 +166,17 @@ export default function ChatInput({ disabled }: ChatInputProps) {
                         <ScrollArea.Viewport className="size-full">
                             <div className="flex flex-row gap-2 w-max h-20 pr-4 pb-3">
                                 {attachments.map((item, index) => (
-                                    <AttachmentThumbnail key={item.id}
-                                                         file={item.file}
-                                                         onRemove={() => handleRemoveAttachment(item.id)}
-                                                         previewUrl={item.previewUrl}
-                                                         onClick={() => {
-                                                             setPreviewIndex(index);
-                                                             setPreviewOpen(true);
-                                                         }}
+                                    <AttachmentThumbnail
+                                        key={item.id}
+                                        file={item.file}
+                                        onRemove={() => handleRemoveAttachment(item.id)}
+                                        previewUrl={item.previewUrl}
+                                        onClick={() => {
+                                            setPreviewGalleryState({
+                                                open: true,
+                                                index,
+                                            });
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -182,14 +190,31 @@ export default function ChatInput({ disabled }: ChatInputProps) {
                         </ScrollArea.Scrollbar>
                     </ScrollArea.Root>
 
-                    <FilePreviewGallery
-                        open={previewOpen}
-                        onOpenChange={setPreviewOpen}
-                        items={attachments.map<GalleryPreviewItem>(attachment => ({
-                            file: attachment.file,
-                            previewUrl: attachment.previewUrl,
-                        }))}
-                        initialIndex={previewIndex}
+                    <MediaPreviewGallery
+                        open={previewGalleryState.open}
+                        onOpenChange={(state) => {
+                            if (!state) {
+                                setPreviewGalleryState((prev) => ({ ...prev, open: false, }));
+                            }
+                        }}
+                        currentItem={{
+                            source: activeAttachment.previewUrl!,
+                            type: activeAttachment.file.type,
+                        }}
+                        hasPreviousItem={previewGalleryState.index > 0}
+                        onPrevious={() => {
+                            setPreviewGalleryState((prev) => ({
+                                ...prev,
+                                index: prev.index - 1
+                            }));
+                        }}
+                        hasNextItem={previewGalleryState.index < attachments.length - 1}
+                        onNext={() => {
+                            setPreviewGalleryState((prev) => ({
+                                ...prev,
+                                index: prev.index + 1
+                            }));
+                        }}
                     />
                 </section>
             )}
@@ -227,17 +252,23 @@ export default function ChatInput({ disabled }: ChatInputProps) {
 }
 
 function AttachmentThumbnail({ file, previewUrl, onRemove, onClick }: AttachmentThumbnailProps) {
-    const isImage = file.type.startsWith('image/');
-
     return (
-        <div className={`flex-none overflow-hidden h-full aspect-square rounded-md relative group ${isImage ? "" : "border border-gray-500 hover:border-gray-400 transition-colors duration-200"}`}>
-            {isImage && previewUrl ? (
+        <div className={`flex-none overflow-hidden h-full aspect-square rounded-md relative group ${file.type.startsWith('image/') ? "" : "border border-gray-500 hover:border-gray-400 transition-colors duration-200"}`}>
+            {file.type.startsWith("image") && previewUrl ? (
                 <img
                     src={previewUrl}
                     alt={file.name}
                     onClick={onClick}
                     className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                 />
+            ) : file.type.startsWith("video") ? (
+                <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
+                    <BsCameraVideo className="size-6 fill-white"/>
+                </div>
+            ) : file.type.startsWith("audio") ? (
+                <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
+                    <BsMusicNote className="size-6 fill-white"/>
+                </div>
             ) : (
                 <div
                     onClick={onClick}

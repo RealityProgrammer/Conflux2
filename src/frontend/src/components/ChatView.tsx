@@ -259,7 +259,10 @@ export function ChatView({
     }, [messageGroups.length, messageGroups.at(-1)?.messages.length ?? 0, isReady]);
 
     // gallery
-    const [galleryState, setGalleryState] = useState<MediaGalleryState | null>(null);
+    const [galleryState, setGalleryState] = useState<MediaGalleryState>({
+        items: [],
+        currentIndex: 0,
+    });
 
     const handleAttachmentClick = (messageAttachments: Attachment[], clickedIndex: number) => {
         setGalleryState({
@@ -347,36 +350,37 @@ export function ChatView({
 
     return (
         <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
-            <MediaPreviewGallery
-                open={galleryState !== null}
-                onOpenChange={(state) => {
-                    if (!state) setGalleryState(null);
-                }}
-                initialItem={galleryState ? {
-                    source: messageService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false),
-                    type: galleryState.items[galleryState.currentIndex].type
-                } : { source: "", type: "" }}
-                hasPreviousItem={() => galleryState !== null && galleryState.currentIndex > 0}
-                getPreviousItem={() => {
-                    const prevIndex = galleryState!.currentIndex - 1;
-                    setGalleryState({ ...galleryState!, currentIndex: prevIndex });
-
-                    return {
-                        source: messageService.getAttachmentUrl(galleryState!.items[prevIndex].id, false),
-                        type: galleryState!.items[prevIndex].type
-                    };
-                }}
-                hasNextItem={() => galleryState !== null && galleryState.currentIndex < galleryState.items.length - 1}
-                getNextItem={() => {
-                    const nextIndex = galleryState!.currentIndex + 1;
-                    setGalleryState({ ...galleryState!, currentIndex: nextIndex });
-
-                    return {
-                        source: messageService.getAttachmentUrl(galleryState!.items[nextIndex].id, false),
-                        type: galleryState!.items[nextIndex].type
-                    };
-                }}
-            />
+            {galleryState.items && galleryState.items.length > 0 && (
+                <MediaPreviewGallery
+                    open={!!galleryState.items}
+                    onOpenChange={(state) => {
+                        if (!state) {
+                            setGalleryState((prev) => ({
+                                ...prev,
+                                items: [],
+                            }));
+                        }
+                    }}
+                    currentItem={{
+                        source: messageService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false),
+                        type: galleryState.items[galleryState.currentIndex].type
+                    }}
+                    hasPreviousItem={galleryState.currentIndex > 0}
+                    onPrevious={() => {
+                        setGalleryState((prev) => ({
+                            ...prev,
+                            currentIndex: prev.currentIndex - 1,
+                        }));
+                    }}
+                    hasNextItem={galleryState.currentIndex < galleryState.items.length - 1}
+                    onNext={() => {
+                        setGalleryState((prev) => ({
+                            ...prev,
+                            currentIndex: prev.currentIndex + 1,
+                        }));
+                    }}
+                />
+            )}
 
             <VirtualizedScrollList
                 virtualizerRef={virtualizerRef}

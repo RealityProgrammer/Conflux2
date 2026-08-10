@@ -3,7 +3,7 @@ import {useAuthorization} from "../contexts/AuthContext.tsx";
 import {type MouseEvent, useState} from "react";
 import {ContextMenu, ScrollArea} from "radix-ui";
 import UserAvatar from "./UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
+import {BsArrowReturnLeft, BsCopy, BsMusicNote, BsPencil, BsTrash} from "react-icons/bs";
 import MessageEditor from "./MessageEditor.tsx";
 import {messageService} from "../api/messageService.ts";
 
@@ -247,6 +247,10 @@ function ClusterMessage({
                                             preload="none"
                                             autoPlay={false}
                                         />
+                                    ) : attachment.type.startsWith("audio") ? (
+                                        <div className="flex flex-row justify-center items-center size-full">
+                                            <BsMusicNote className="size-16 fill-white"/>
+                                        </div>
                                     ) : null}
                                 </div>
                             ))}
