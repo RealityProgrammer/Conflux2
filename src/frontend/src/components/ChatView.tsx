@@ -14,6 +14,7 @@ import type { MessageEditedEvent, MessageReceivedEvent } from "../api/events.ts"
 import { useCacheService } from "../hooks/useCacheService.ts";
 import AlertActionDialog from "./AlertActionDialog.tsx";
 import SenderMessageCluster, {type MessageGroupRowProps} from "./SenderMessageCluster.tsx";
+import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 
 type MediaGalleryState = {
     items: { id: string; type: string }[];
@@ -177,22 +178,16 @@ export interface QueryModification {
 }
 
 export interface ChatViewProps {
-    channelId: string;
     renderEmptyState?: () => ReactNode;
-    onMessageEditRequested: (message: MessageDto, newBody: string | null) => void;
-    onMessageDeleteRequested: (message: MessageDto) => void;
-    onMessageReplyRequested: (message: MessageDto) => void;
     queryModificationRef?: RefObject<QueryModification>;
 }
 
 export function ChatView({
-    channelId,
     renderEmptyState,
-    onMessageEditRequested,
-    onMessageDeleteRequested,
-    onMessageReplyRequested,
     queryModificationRef,
 }: ChatViewProps) {
+    const { channelId, onMessageEdit, onMessageDelete, onMessageReplyRequested } = useChatContainerContext()!;
+
     const viewportRef = useRef<HTMLDivElement>(null!);
     const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
 
@@ -283,7 +278,7 @@ export function ChatView({
         setEditingMessage(undefined);
         setEditingMessageDraft(null);
 
-        onMessageEditRequested(editingMessage, newBody.trim());
+        onMessageEdit(editingMessage, newBody.trim());
     };
 
     const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
@@ -457,7 +452,7 @@ export function ChatView({
                     }
                 }}
                 actionButton={(
-                    <button className="button-theme-danger cursor-pointer px-3 py-2 rounded-md" onClick={() => deletingMessage && onMessageDeleteRequested(deletingMessage)}>
+                    <button className="button-theme-danger cursor-pointer px-3 py-2 rounded-md" onClick={() => deletingMessage && onMessageDelete(deletingMessage)}>
                         Delete message
                     </button>
                 )}

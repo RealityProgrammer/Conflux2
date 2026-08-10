@@ -12,6 +12,7 @@ import {useMutation} from "@tanstack/react-query";
 import {messageService} from "../api/messageService.ts";
 import {HttpStatusCode} from "axios";
 import {useAuthorization} from "../contexts/AuthContext.tsx";
+import ChatContainerContextProvider from "../contexts/ChatContainerContext.tsx";
 
 type SendingMessageOperation = {
     type: "sending";
@@ -67,7 +68,6 @@ function getOperationBodyDisplayInfo(
 
 export interface ChatContainerProps {
     channelId: string;
-
 }
 
 export default function ChatContainer({ channelId }: ChatContainerProps) {
@@ -435,23 +435,24 @@ export default function ChatContainer({ channelId }: ChatContainerProps) {
                 </section>
             )}
 
-            <ChatView
-                channelId={channelId!}
-                renderEmptyState={() => {
-                    return <p className="text-base gray-500">And our story begin...</p>
-                }}
-                onMessageEditRequested={handleMessageEdited}
-                onMessageDeleteRequested={handleMessageDelete}
-                onMessageReplyRequested={setReplyingMessage}
-                queryModificationRef={messageQueryModification}
-            />
-
-            <ChatInput
-                disabled={!channelId}
-                onSendMessage={handleSendMessage}
+            <ChatContainerContextProvider
+                channelId={channelId}
                 replyingMessage={replyingMessage}
-                onCancelReply={() => setReplyingMessage(undefined)}
-            />
+                onSendMessage={handleSendMessage}
+                onMessageEdit={setReplyingMessage}
+                onMessageDelete={handleMessageDelete}
+                onMessageReplyRequested={(msg) => setReplyingMessage(msg)}
+                onCancelMessageReply={() => setReplyingMessage(undefined)}
+            >
+                <ChatView
+                    renderEmptyState={() => {
+                        return <p className="text-base gray-500">And our story begin...</p>
+                    }}
+                    queryModificationRef={messageQueryModification}
+                />
+
+                <ChatInput/>
+            </ChatContainerContextProvider>
         </>
     );
 }

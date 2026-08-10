@@ -124,9 +124,16 @@ export default function MediaPreviewGallery({
                                 "w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain cursor-zoom-in"
                             }`}
                         />
+                    ) : currentItem.type.startsWith("video") ? (
+                        <video
+                            src={currentItem.source}
+                            controls
+                            autoPlay={false}
+                            className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain"
+                        />
                     ) : (
                         <div className="bg-gray-800 p-10 rounded-lg flex flex-col items-center justify-center text-gray-300 w-[50vw] max-w-md h-[30vh]">
-                            <span className="text-lg font-medium text-center truncate w-full px-4">Preview is not available for this type of attachment</span>
+                            <span className="text-lg font-medium text-center w-full px-4">Preview is not available for this type of attachment</span>
                         </div>
                     )}
                 </Dialog.Content>

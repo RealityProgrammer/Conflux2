@@ -4,12 +4,10 @@ import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from 
 import {ScrollArea} from "radix-ui";
 import FilePreviewGallery, {type GalleryPreviewItem} from "./FilePreviewGallery.tsx";
 import type {MessageDto} from "../api/responses.ts";
+import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 
 export interface ChatInputProps {
     disabled?: boolean;
-    onSendMessage?: (state: MessageInput) => void;
-    replyingMessage?: MessageDto | undefined;
-    onCancelReply?: () => void;
 }
 
 export type MessageInput = {
@@ -31,7 +29,9 @@ type AttachmentItem = {
     previewUrl?: string;
 }
 
-export default function ChatInput({ disabled, onSendMessage, replyingMessage, onCancelReply }: ChatInputProps) {
+export default function ChatInput({ disabled }: ChatInputProps) {
+    const { replyingMessage, onSendMessage, onCancelMessageReply } = useChatContainerContext()!;
+
     const [messageBody, setMessageBody] = useState("");
     const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
@@ -143,7 +143,7 @@ export default function ChatInput({ disabled, onSendMessage, replyingMessage, on
                     <div className="flex flex-row gap-2 mb-1">
                         <p className="text-sm flex-1">Replying to:</p>
 
-                        <IconButton isLoading={false} theme="default" className="ml-auto flex-none" onClick={onCancelReply}>
+                        <IconButton isLoading={false} theme="default" className="ml-auto flex-none" onClick={onCancelMessageReply}>
                             <BsX className="size-5 cursor-pointer"/>
                         </IconButton>
                     </div>

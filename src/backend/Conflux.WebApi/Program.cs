@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
+using Conflux.Application.FileFormats;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain.Entities;
@@ -18,6 +19,7 @@ using Conflux.WebApi.Filters;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
+using FileSignatures.Formats;
 using Microsoft.AspNetCore.SignalR;
 using RedLockNet;
 using RedLockNet.SERedis;
@@ -116,7 +118,19 @@ using var redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> {
 builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
 
 // general services needed
-builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector());
+builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
+    [
+        new Png(),
+        new Gif(),
+        new Jpeg(),
+        new Mpeg3(),
+        new Ogg(),
+        new Webp(),
+        new Mpeg4Iso4(),
+        new MP4(),
+        new MP4V1(),
+    ]
+));
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator();

@@ -215,12 +215,6 @@ public sealed class ConversationController(
                             nameof(Attachments),
                         ]);
                     }
-
-                    if (!attachment.ContentType.StartsWith("image/")) {
-                        yield return new($"Attachment must be an image.", [
-                            nameof(Attachments),
-                        ]);
-                    }
                 }
             }
         }

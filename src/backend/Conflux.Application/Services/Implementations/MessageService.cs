@@ -1,5 +1,6 @@
 using Conflux.Application.Dto.Notifications;
 using Conflux.Application.Dto.Responses;
+using Conflux.Application.FileFormats;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
@@ -50,42 +51,81 @@ internal sealed class MessageService(
         }
         
         // upload attachments
-        Attachment[] attachments = attachmentStreams.Count == 0 ? [] : new Attachment[attachmentStreams.Count];
+        Attachment?[] attachments = attachmentStreams.Count == 0 ? [] : new Attachment?[attachmentStreams.Count];
 
         for (int i = 0; i < attachments.Length; i++) {
             var stream = attachmentStreams[i];
-            
-            // validate the content
-            if (fileFormatInspector.DetermineFileFormat(stream) is not Image imageFormat) {
-                await DeleteUploadedAttachments();
+            string mediaType;
 
-                return Errors.ValidationErrorsOccured(new() {
-                    [nameof(attachmentStreams)] = [
-                        "One of the attachments doesn't have image format.",
-                    ],
-                });
+            switch (fileFormatInspector.DetermineFileFormat(stream)) {
+                case Image imageFormat:
+                    switch (imageFormat) {
+                        case Png pngFormat:
+                            mediaType = pngFormat.MediaType;
+                            break;
+                        
+                        case Jpeg jpegFormat:
+                            mediaType = jpegFormat.MediaType;
+                            break;
+                        
+                        case Gif gifFormat:
+                            mediaType = gifFormat.MediaType;
+                            break;
+                        
+                        case Webp webpFormat:
+                            mediaType = webpFormat.MediaType;
+                            break;
+                        
+                        default:
+                            await DeleteUploadedAttachments();
+
+                            return Errors.ValidationErrorsOccured(new() {
+                                [nameof(attachmentStreams)] = [
+                                    "One of the attachments doesn't have the supported image format.",
+                                ],
+                            });
+                    }
+                    break;
+                
+                case MP4V1 mp4Format:
+                    mediaType = mp4Format.MediaType;
+                    break;
+                
+                case Mpeg4Iso4 mpeg4Iso4Format:
+                    mediaType = mpeg4Iso4Format.MediaType;
+                    break;
+                
+                // TODO: Add .webm once FileSignatures add it
+                
+                case null:
+                    await DeleteUploadedAttachments();
+
+                    return Errors.ValidationErrorsOccured(new() {
+                        [nameof(attachmentStreams)] = [
+                            "One of the attachments have an unknown file format.",
+                        ],
+                    });
+                
+                default:
+                    await DeleteUploadedAttachments();
+
+                    return Errors.ValidationErrorsOccured(new() {
+                        [nameof(attachmentStreams)] = [
+                            "One of the attachments doesn't have supported file format.",
+                        ],
+                    });
             }
 
-            if (imageFormat.MediaType is not "image/jpeg" and not "image/png") {
-                await DeleteUploadedAttachments();
-
-                return Errors.ValidationErrorsOccured(new() {
-                    [nameof(attachmentStreams)] = [
-                        "One of the attachments doesn't have the supported image format.",
-                    ],
-                });
-            }
-            
             stream.Position = 0;
 
             try {
                 Result<Guid> uploadResult =
-                    await storageService.UploadMessageAttachmentAsync(new(stream, imageFormat.MediaType), cancellationToken);
+                    await storageService.UploadMessageAttachmentAsync(new(stream, mediaType), cancellationToken);
 
                 if (uploadResult.IsSuccess) {
                     attachments[i] = new() {
                         Id = uploadResult.Value,
-                        Type = imageFormat.MediaType,
+                        Type = mediaType,
                     };
                 } else {
                     await DeleteUploadedAttachments();
@@ -99,7 +139,7 @@ internal sealed class MessageService(
         
         Message message = new() {
             Body = body,
-            Attachments = attachments,
+            Attachments = attachments!,
             SenderUserId = senderUserId,
             ConversationId = postingContext.ConversationId,
             ReplyToId = replyToId,
@@ -133,7 +173,7 @@ internal sealed class MessageService(
 
         async ValueTask DeleteUploadedAttachments() {
             foreach (var attachment in attachments) {
-                if (attachment.Id != Guid.Empty) {
+                if (attachment != null && attachment.Id != Guid.Empty) {
                     await storageService.DeleteMessageAttachmentAsync(attachment.Id, CancellationToken.None);
                 }
             }

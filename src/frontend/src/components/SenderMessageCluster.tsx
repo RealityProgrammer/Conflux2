@@ -233,13 +233,21 @@ function ClusterMessage({
                                     className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
                                     onClick={() => onAttachmentClick(message.attachments, index)}
                                 >
-                                    {attachment.type.startsWith("image") && (
+                                    {attachment.type.startsWith("image") ? (
                                         <img
                                             src={messageService.getAttachmentUrl(attachment.id, false)}
                                             alt="attachment"
                                             className="object-cover size-full"
+                                            loading="lazy"
                                         />
-                                    )}
+                                    ) : attachment.type.startsWith("video") ? (
+                                        <video
+                                            src={messageService.getAttachmentUrl(attachment.id, false)}
+                                            className="object-cover size-full"
+                                            preload="none"
+                                            autoPlay={false}
+                                        />
+                                    ) : null}
                                 </div>
                             ))}
                         </div>
