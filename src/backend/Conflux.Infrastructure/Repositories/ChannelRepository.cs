@@ -180,4 +180,37 @@ internal sealed class ChannelRepository(
             return Result<ChannelResolutionResult>.Success(new(raceConditionChannelId, ChannelResolutionStatus.Existing));
         }
     }
+
+    public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversationsAsync(
+        Guid userId, 
+        int offset, 
+        int count
+    ) {
+        var query = dbContext.Channels
+            .Where(c => c.Type == ChannelType.DirectMessage)
+            .Include(c => c.FriendRequest)
+            .Include(c => c.Conversation)
+            .Where(c => c.FriendRequest!.SenderUserId == userId || c.FriendRequest.ReceiverUserId == userId)
+            .Where(c => c.Conversation.LatestMessageAt != null);    // only get message that has any message history
+        
+        int totalCount = await query.CountAsync();
+
+        var paginated = await query
+            .OrderByDescending(c => c.Conversation.LatestMessageAt)
+            .Select(c => new {
+                Channel = c,
+                OtherUser = c.FriendRequest!.SenderUserId == userId ? c.FriendRequest.Receiver : c.FriendRequest.Sender,
+            })
+            .Select(cu =>
+                new DmConversationListItemDto(
+                    cu.Channel.Id,
+                    new(cu.OtherUser.Id, cu.OtherUser.UserName!, cu.OtherUser.DisplayName!, cu.OtherUser.HasAvatar)
+                )
+            )
+            .Skip(offset)
+            .Take(count)
+            .ToListAsync();
+
+        return new(paginated, totalCount);
+    }
 }

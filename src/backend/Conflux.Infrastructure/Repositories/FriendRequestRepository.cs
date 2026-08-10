@@ -73,7 +73,7 @@ internal sealed class FriendRequestRepository(
         return numChanged > 0;
     }
 
-    public async Task<PaginatedResult<DiscoverFriendSummary>> GetPaginatedFriendDiscoveryAsync(
+    public async Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscoveryAsync(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -114,7 +114,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<UserBasicProfileDto>> GetPaginatedFriendsAsync(
+    public async Task<PaginatedResult<UserBasicProfileDto>> GetFriendsAsync(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -143,7 +143,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPaginatedPendingRequestsAsync(
+    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequestsAsync(
         Guid searcherId, 
         string? nameFilter,
         int offset,

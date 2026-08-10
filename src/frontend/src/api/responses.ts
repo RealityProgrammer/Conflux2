@@ -22,7 +22,7 @@ export interface UserAuthorizationInfo {
     permissions: string[];
 }
 
-export type UserBasicProfileSummary = {
+export type UserBasicProfileDto = {
     id: string;
     userName: string;
     displayName: string;
@@ -80,7 +80,7 @@ export type DirectMessageResolutionResponse = {
 }
 
 export type DmChannelSummary = {
-    otherUser: UserBasicProfileSummary;
+    otherUser: UserBasicProfileDto;
 }
 
 export type Attachment = {
@@ -119,7 +119,12 @@ export type MessageDto = {
 
 export type GetMessagesResponse = {
     messageGroups: TimelineMessageBlockDto[];
-    users: UserBasicProfileSummary[];
+    users: UserBasicProfileDto[];
     hasMoreBefore?: boolean;
     hasMoreAfter?: boolean;
+}
+
+export type DmConversationListItemDto = {
+    channelId: string;
+    userProfile: UserBasicProfileDto;
 }

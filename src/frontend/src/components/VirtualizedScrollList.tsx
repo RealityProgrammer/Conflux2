@@ -147,7 +147,7 @@ export default function VirtualizedScrollList({
     }, [virtualItems, itemCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     return (
-        <ScrollArea.Root className={`overflow-hidden ${className}`} {...props}>
+        <ScrollArea.Root className={`overflow-hidden ${className ?? ''}`} {...props}>
             <ScrollArea.Viewport
                 ref={(node) => {
                     scrollViewportRef.current = node!;

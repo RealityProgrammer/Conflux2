@@ -280,7 +280,7 @@ internal sealed class FriendService(
         int offset, 
         int count
     ) {
-        var result = await friendRequestRepository.GetPaginatedFriendDiscoveryAsync(
+        var result = await friendRequestRepository.GetFriendDiscoveryAsync(
             searchingUserId, 
             nameFilter, 
             offset, 
@@ -297,7 +297,7 @@ internal sealed class FriendService(
         int count
     ) {
         return Result<PaginatedResult<UserBasicProfileDto>>.Success(
-            await friendRequestRepository.GetPaginatedFriendsAsync(searchingUserId, nameFilter, offset, count)
+            await friendRequestRepository.GetFriendsAsync(searchingUserId, nameFilter, offset, count)
         );
     }
 
@@ -308,7 +308,7 @@ internal sealed class FriendService(
         int count
     ) {
         return Result<PaginatedResult<PendingFriendRequestDto>>.Success(
-            await friendRequestRepository.GetPaginatedPendingRequestsAsync(searchingUserId, nameFilter, offset, count)
+            await friendRequestRepository.GetPendingRequestsAsync(searchingUserId, nameFilter, offset, count)
         );
     }
 }

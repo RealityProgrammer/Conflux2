@@ -4,8 +4,8 @@ import {random} from "animejs";
 
 interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
     userId: string;
-    userName: string;
     displayName: string;
+    userName?: string;
     hasAvatar?: boolean;
     children?: ReactNode;
 }
@@ -18,14 +18,14 @@ function Root({ userId, userName, displayName, hasAvatar, children, className, .
                 hasAvatar={hasAvatar ?? false}
                 className="flex-none min-h-10 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
 
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 select-none">
                 <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
                     {displayName}
                 </p>
 
-                <p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                {userName && (<p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
                     @{userName}
-                </p>
+                </p>)}
             </div>
 
             <div className="flex-none flex flex-row items-center gap-2">

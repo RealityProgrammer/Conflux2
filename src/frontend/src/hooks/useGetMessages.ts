@@ -1,14 +1,14 @@
 import {type InfiniteData, useInfiniteQuery, type UseInfiniteQueryResult, useQueryClient} from "@tanstack/react-query";
-import type {GetMessagesResponse, MessageDto, TimelineMessageBlockDto, UserBasicProfileSummary} from "../api/responses.ts";
+import type {GetMessagesResponse, MessageDto, TimelineMessageBlockDto, UserBasicProfileDto} from "../api/responses.ts";
 import {messageService} from "../api/messageService.ts";
 import type {MessageLoadDirection} from "../api/requests.ts";
 
 export interface UseGetMessagesResult {
     useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
     allMessageGroups: TimelineMessageBlockDto[];
-    userProfiles: Record<string, UserBasicProfileSummary>;
+    userProfiles: Record<string, UserBasicProfileDto>;
     queryKey: (string | null | undefined)[];
-    appendMessage: (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => void;
+    appendMessage: (newMessage: MessageDto, userSummary?: UserBasicProfileDto) => void;
     editMessage: (messageId: string, newBody: string | null) => void;
     deleteMessage: (messageId: string) => void;
 }
@@ -88,7 +88,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         return acc;
     }, []);
 
-    const userProfiles: Record<string, UserBasicProfileSummary> = {};
+    const userProfiles: Record<string, UserBasicProfileDto> = {};
 
     if (queryResult.data?.pages) {
         for (const page of queryResult.data?.pages) {
@@ -116,7 +116,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
         );
     }
 
-    const appendMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileSummary) => {
+    const appendMessage = (newMessage: MessageDto, userSummary?: UserBasicProfileDto) => {
         modifyMessageData((oldData) => {
             const lastPage = oldData.pages.at(-1)!;
             const updatedLastPage = { ...lastPage };

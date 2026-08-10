@@ -6,6 +6,17 @@ import {useVirtualizer} from "@tanstack/react-virtual";
 import {useRef} from "react";
 import UserAvatar from "../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
+import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
+import {useInfiniteQuery} from "@tanstack/react-query";
+import type {
+    DmConversationListItemDto,
+    PaginatedResponse,
+    ServiceResponse,
+    UserBasicProfileDto
+} from "../api/responses.ts";
+import {friendService} from "../api/friendService.ts";
+import {channelService} from "../api/channelService.ts";
+import {UserNameplate} from "../components/UserNameplate.tsx";
 
 function Sidebar() {
     const auth = useAuthorization();
@@ -47,58 +58,147 @@ function Sidebar() {
 }
 
 function DirectMessagesList() {
-    const items = [...Array(10000).keys()];
     const navigate = useNavigate();
 
-    const parentRef = useRef<HTMLDivElement | null>(null);
+    const queryKey = ["queryDirectMessages"];
 
-    const rowVirtualizer = useVirtualizer({
-        count: items.length,
-        getScrollElement: () => parentRef.current,
-        estimateSize: () => 48,
-        overscan: 5,
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+    } = useInfiniteQuery({
+        queryKey: queryKey,
+        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<DmConversationListItemDto> | null | undefined> => {
+            const response: ServiceResponse<PaginatedResponse<DmConversationListItemDto>> =
+                await channelService.getDmConversations(pageParam, 30);
+
+            return response.data;
+        },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            if (!lastPage) return undefined;
+
+            const loadedCount = allPages.reduce(
+                (acc, page) => acc + (page?.elements.length ?? 0),
+                0
+            );
+
+            return loadedCount < lastPage.totalCount ? loadedCount : undefined;
+        },
     });
 
+    const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
+
     return (
-        <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
-            <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                    const value = items[virtualItem.index];
+        <VirtualizedScrollList
+            className="flex-1"
+            itemCount={allElements.length}
+            isLoading={isLoading}
+            estimateSize={() => 52}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={() => { fetchNextPage() }}
+            renderItem={(itemIndex, virtualItem) => {
+                const item = allElements[itemIndex];
 
-                    return (
-                        <button
-                            key={virtualItem.key}
-                            className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight rounded-lg cursor-pointer"
-                            style={{
-                                height: `${virtualItem.size}px`,
-                                transform: `translateY(${virtualItem.start}px)`,
-                            }}
-                            onClick={() => {
-                                navigate("/lobby/dm/" + crypto.randomUUID());
-                            }}
-                        >
-                            <Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">
-                                <Avatar.Image
-                                    className="size-full rounded-[inherit] object-cover"
-                                    src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
-                                    alt="Test"
-                                />
-                                <Avatar.Fallback
-                                    className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
-                                    delayMs={600}
-                                >
-                                    <BsPerson className="fill-black size-5/6" />
-                                </Avatar.Fallback>
-                            </Avatar.Root>
+                return (
+                    <UserNameplate.Root
+                        userId={item.userProfile.id}
+                        displayName={item.userProfile.displayName}
+                        hasAvatar={item.userProfile.hasAvatar}
+                        className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
+                        style={{
+                            height: `${virtualItem.size}px`,
+                            transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                        onClick={() => {
+                            navigate("/lobby/dm/" + item.userProfile.id);
+                        }}
+                    />
 
-                            <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                                Element Number {value}
-                            </p>
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
+                    // <button
+                    //     key={item.channelId}
+                    //     className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight rounded-lg cursor-pointer"
+                    //     style={{
+                    //         height: `${virtualItem.size}px`,
+                    //         transform: `translateY(${virtualItem.start}px)`,
+                    //     }}
+                    //     onClick={() => {
+                    //         navigate("/lobby/dm/" + item.channelId);
+                    //     }}
+                    // >
+                    //     <UserNameplate.Root
+                    //         userId={item.userProfile.id}
+                    //         userName={item.userProfile.userName}
+                    //         displayName={item.userProfile.displayName}
+                    //         hasAvatar={item.userProfile.hasAvatar}
+                    //         className="w-full p-1.5"
+                    //         style={{ height: `${ITEM_HEIGHT}px`}}
+                    //     />
+                    //
+                    //     {/*<Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">*/}
+                    //     {/*    <Avatar.Image*/}
+                    //     {/*        className="size-full rounded-[inherit] object-cover"*/}
+                    //     {/*        src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"*/}
+                    //     {/*        alt="Test"*/}
+                    //     {/*    />*/}
+                    //     {/*    <Avatar.Fallback*/}
+                    //     {/*        className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"*/}
+                    //     {/*        delayMs={600}*/}
+                    //     {/*    >*/}
+                    //     {/*        <BsPerson className="fill-black size-5/6" />*/}
+                    //     {/*    </Avatar.Fallback>*/}
+                    //     {/*</Avatar.Root>*/}
+                    //
+                    //     {/*<p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">*/}
+                    //     {/*    {item.userProfile.displayName}*/}
+                    //     {/*</p>*/}
+                    // </button>
+                );
+            }}
+        />
+
+        // <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
+        //     <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+        //         {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+        //             const value = items[virtualItem.index];
+        //
+        //             return (
+        //                 <button
+        //                     key={virtualItem.key}
+        //                     className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight rounded-lg cursor-pointer"
+        //                     style={{
+        //                         height: `${virtualItem.size}px`,
+        //                         transform: `translateY(${virtualItem.start}px)`,
+        //                     }}
+        //                     onClick={() => {
+        //                         navigate("/lobby/dm/" + crypto.randomUUID());
+        //                     }}
+        //                 >
+        //                     <Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">
+        //                         <Avatar.Image
+        //                             className="size-full rounded-[inherit] object-cover"
+        //                             src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
+        //                             alt="Test"
+        //                         />
+        //                         <Avatar.Fallback
+        //                             className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
+        //                             delayMs={600}
+        //                         >
+        //                             <BsPerson className="fill-black size-5/6" />
+        //                         </Avatar.Fallback>
+        //                     </Avatar.Root>
+        //
+        //                     <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
+        //                         Element Number {value}
+        //                     </p>
+        //                 </button>
+        //             );
+        //         })}
+        //     </div>
+        // </div>
     );
 }
 

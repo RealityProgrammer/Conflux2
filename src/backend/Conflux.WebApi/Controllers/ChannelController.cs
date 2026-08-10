@@ -66,5 +66,25 @@ public sealed class ChannelController(
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<DirectMessageResolutionResponse>(null, result.Error));
     }
 
+    [HttpGet("dm")]
+    public async Task<ActionResult<ApiResponse<PaginatedResult<DmConversationListItemDto>>>> GetDirectMessageChannels(
+        [FromQuery] int offset, 
+        [FromQuery] int count
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse<DirectMessageResolutionResponse>(null, Errors.InvalidIdentifier()));
+        }
+        
+        offset = int.Max(offset, 0);
+        count = int.Max(count, 1);
+
+        PaginatedResult<DmConversationListItemDto> result =
+            await channelService.GetUserConversationsAsync(userId, offset, count);
+
+        return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
+    }
+
     public record DirectMessageResolutionResponse(Guid ChannelId);
 }

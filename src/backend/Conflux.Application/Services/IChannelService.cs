@@ -6,4 +6,6 @@ namespace Conflux.Application.Services;
 public interface IChannelService {
     Task<Result<DmChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId);
     Task<Result<ChannelResolutionResult>> GetOrCreateDirectMessageChannelAsync(Guid user1, Guid user2);
+
+    Task<PaginatedResult<DmConversationListItemDto>> GetUserConversationsAsync(Guid userId, int offset, int count);
 }

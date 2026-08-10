@@ -102,10 +102,10 @@ export default function PendingRequestsTabContent() {
         );
     };
 
-    const { fetchUserBasicProfile } = useCacheService();
+    const { getUserBasicProfile } = useCacheService();
 
     useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
-        const profileResponse = await fetchUserBasicProfile(notif.senderUserId);
+        const profileResponse = await getUserBasicProfile(notif.senderUserId);
 
         if (!profileResponse.success) return;
 

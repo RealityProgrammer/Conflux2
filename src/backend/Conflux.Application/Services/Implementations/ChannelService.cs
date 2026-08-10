@@ -14,4 +14,12 @@ internal sealed class ChannelService(
     public async Task<Result<ChannelResolutionResult>> GetOrCreateDirectMessageChannelAsync(Guid user1, Guid user2) {
         return await channelRepository.GetOrCreateDirectMessageChannelAsync(user1, user2);
     }
+
+    public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversationsAsync(
+        Guid userId, 
+        int offset, 
+        int count
+    ) {
+        return await channelRepository.GetUserConversationsAsync(userId, offset, count);
+    }
 }

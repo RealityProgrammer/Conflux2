@@ -1,9 +1,9 @@
 import {useQueryClient} from "@tanstack/react-query";
 import {userService} from "../api/userService.ts";
-import type {ServiceResponse, UserBasicProfileSummary} from "../api/responses.ts";
+import type {ServiceResponse, UserBasicProfileDto} from "../api/responses.ts";
 
 interface UseCacheServiceResult {
-    getUserBasicProfile: (userId: string, staleTime?: number) => Promise<ServiceResponse<UserBasicProfileSummary>>;
+    getUserBasicProfile: (userId: string, staleTime?: number) => Promise<ServiceResponse<UserBasicProfileDto>>;
 }
 
 export const useCacheService = (): UseCacheServiceResult => {

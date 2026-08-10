@@ -1,5 +1,5 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type {BackendResponse, ServiceResponse, UserBasicProfileSummary} from "./responses.ts";
+import type {BackendResponse, ServiceResponse, UserBasicProfileDto} from "./responses.ts";
 import apiClient from "./client.ts";
 import type { AvatarOperation } from "./requests.ts";
 import { handleAxiosError } from "./errorHandling.ts";
@@ -88,10 +88,10 @@ export const userService = {
         }
     },
 
-    getUserBasicProfile: async (userId: string): Promise<ServiceResponse<UserBasicProfileSummary>> => {
+    getUserBasicProfile: async (userId: string): Promise<ServiceResponse<UserBasicProfileDto>> => {
         try {
-            const response: AxiosResponse<BackendResponse<UserBasicProfileSummary>> =
-                await apiClient.get<BackendResponse<UserBasicProfileSummary>>(`/user/${encodeURIComponent(userId)}/profile`);
+            const response: AxiosResponse<BackendResponse<UserBasicProfileDto>> =
+                await apiClient.get<BackendResponse<UserBasicProfileDto>>(`/user/${encodeURIComponent(userId)}/profile`);
 
             return {
                 success: true,
@@ -104,10 +104,10 @@ export const userService = {
         }
     },
 
-    getSessionUserBasicProfile: async (): Promise<ServiceResponse<UserBasicProfileSummary>> => {
+    getSessionUserBasicProfile: async (): Promise<ServiceResponse<UserBasicProfileDto>> => {
         try {
-            const response: AxiosResponse<BackendResponse<UserBasicProfileSummary>> =
-                await apiClient.get<BackendResponse<UserBasicProfileSummary>>("/user/profile");
+            const response: AxiosResponse<BackendResponse<UserBasicProfileDto>> =
+                await apiClient.get<BackendResponse<UserBasicProfileDto>>("/user/profile");
 
             return {
                 success: true,

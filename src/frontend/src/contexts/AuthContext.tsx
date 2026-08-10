@@ -1,12 +1,12 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
 import { useRevalidator, useNavigate, useRouteLoaderData } from "react-router";
 import { authService } from "../api/authService.ts";
-import type { UserBasicProfileSummary, UserAuthorizationInfo } from "../api/responses.ts";
+import type { UserBasicProfileDto, UserAuthorizationInfo } from "../api/responses.ts";
 
 interface AuthorizationContextType {
     userAuthorization: UserAuthorizationInfo | null;
-    userProfile: UserBasicProfileSummary | null;
-    updateUserProfile: (updates: Partial<UserBasicProfileSummary>) => void;
+    userProfile: UserBasicProfileDto | null;
+    updateUserProfile: (updates: Partial<UserBasicProfileDto>) => void;
     logout: () => void;
 }
 
@@ -24,13 +24,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
     const loaderData = useRouteLoaderData("root") as {
         authorizationInfo: UserAuthorizationInfo | null,
-        userProfile: UserBasicProfileSummary | null
+        userProfile: UserBasicProfileDto | null
     } | null;
 
     const authorizationInfo: UserAuthorizationInfo | null = loaderData?.authorizationInfo ?? null;
-    const [userProfile, setUserProfile] = useState<UserBasicProfileSummary | null>(loaderData?.userProfile ?? null);
+    const [userProfile, setUserProfile] = useState<UserBasicProfileDto | null>(loaderData?.userProfile ?? null);
 
-    const updateUserProfile = (updates: Partial<UserBasicProfileSummary>) => {
+    const updateUserProfile = (updates: Partial<UserBasicProfileDto>) => {
         setUserProfile(prev => {
             if (!prev) return null;
             return { ...prev, ...updates };

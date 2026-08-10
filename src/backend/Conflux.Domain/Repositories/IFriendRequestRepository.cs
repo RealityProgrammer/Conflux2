@@ -27,7 +27,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
     
-    Task<PaginatedResult<DiscoverFriendSummary>> GetPaginatedFriendDiscoveryAsync(
+    Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscoveryAsync(
         Guid searcherId, 
         string? nameFilter, 
         int offset,
@@ -35,7 +35,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<PaginatedResult<UserBasicProfileDto>> GetPaginatedFriendsAsync(
+    Task<PaginatedResult<UserBasicProfileDto>> GetFriendsAsync(
         Guid searcherId,
         string? nameFilter,
         int offset,
@@ -43,7 +43,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<PaginatedResult<PendingFriendRequestDto>> GetPaginatedPendingRequestsAsync(
+    Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequestsAsync(
         Guid searcherId,
         string? nameFilter,
         int offset,
