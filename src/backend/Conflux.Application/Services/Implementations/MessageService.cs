@@ -23,6 +23,7 @@ internal sealed class MessageService(
     IChannelRepository channelRepository,
     IStorageService storageService,
     IChannelAuthorizationService channelAuthorizationService,
+    IConversationRepository conversationRepository,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider,
     IMediator mediator,
@@ -60,6 +61,8 @@ internal sealed class MessageService(
         if (!permissions.HasFlag(MessagingPermissions.SendMessage)) {
             return Errors.Forbidden("You do not have permission to send message.");
         }
+
+        var utcNow = timeProvider.GetUtcNow();
         
         // upload attachments
         Attachment?[] attachments = attachmentStreams.Count == 0 ? [] : new Attachment?[attachmentStreams.Count];
@@ -158,7 +161,7 @@ internal sealed class MessageService(
             SenderUserId = senderUserId,
             ConversationId = channelMetadata.ConversationId,
             ReplyToId = replyToId,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = utcNow,
         };
 
         messageRepository.Add(message);
@@ -172,6 +175,8 @@ internal sealed class MessageService(
             await DeleteUploadedAttachments();
             return Errors.OperationFailure("send message.");
         }
+
+        await conversationRepository.UpdateLatestMessageTimeAsync(channelMetadata.ConversationId, utcNow);
         
         MessageDto dto = new(
             message.Id,
@@ -212,7 +217,7 @@ internal sealed class MessageService(
         }
        
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId, cancellationToken);
+            await conversationRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -279,7 +284,7 @@ internal sealed class MessageService(
         }
        
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId);
+            await conversationRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;

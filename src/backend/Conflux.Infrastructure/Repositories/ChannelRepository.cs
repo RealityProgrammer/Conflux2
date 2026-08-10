@@ -29,26 +29,6 @@ internal sealed class ChannelRepository(
 
         return Result<ChannelMetadata>.Success(context);
     }
-    
-    public async Task<Result<ChannelMetadata>> GetChannelMetadataFromConversationIdAsync(
-        Guid conversationId,
-        CancellationToken cancellationToken = default
-    ) {
-        ChannelMetadata? context = await dbContext.Channels
-            .Where(c => c.ConversationId == conversationId && c.Type == ChannelType.DirectMessage)
-            .Select(c => new ChannelMetadata(
-                c.Id,
-                conversationId,
-                c.Type
-            ))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (context == null) {
-            return Errors.ResourceNotFound("Channel");
-        }
-
-        return Result<ChannelMetadata>.Success(context);
-    }
 
     // public async Task<Result<DmConversationContext>> GetPostingContextFromChannelIdAsync(Guid userId, Guid channelId) {
     //     DmConversationContext? result = await dbContext.Channels
