@@ -305,6 +305,8 @@ export function ChatView({
     // signalr events
     // change the cache pages when message received
     useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
+        console.log("received message", JSON.stringify(event));
+
         const senderId = event.message.senderUserId;
 
         // check if there is this user summary in any page

@@ -27,3 +27,8 @@ export type MessageReceivedEvent = {
 export type MessageEditedEvent = {
     message: MessageDto;
 }
+
+export type UpdateDmConversationListEvent = {
+    channelId: string;
+    unreadCount: number;
+}

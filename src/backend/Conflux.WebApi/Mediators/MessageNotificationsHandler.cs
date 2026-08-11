@@ -1,4 +1,5 @@
 using Conflux.Application.Dto.Notifications;
+using Conflux.Application.Services;
 using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
@@ -10,11 +11,18 @@ public sealed class MessageNotificationsHandler(
     IHttpContextAccessor httpContextAccessor,
     ILogger<MessageNotificationsHandler> logger
 ) : INotificationHandler<MessageReceivedNotification>,
-    INotificationHandler<MessageEditedNotification>
+    INotificationHandler<MessageEditedNotification>,
+    INotificationHandler<UpdateDmConversationListNotification>
 {
     public async ValueTask Handle(MessageReceivedNotification notification, CancellationToken cancellationToken) {
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+        
+        logger.LogInformation(
+            "Sender connection id {connectId}, channel id: {channelId}", 
+            connectionId,
+            notification.ChannelId
+        );
         
         var target = string.IsNullOrEmpty(connectionId)
             ? hubContext.Clients.Group($"channel:{notification.ChannelId}")
@@ -32,5 +40,13 @@ public sealed class MessageNotificationsHandler(
             : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
         
         await target.MessageEdited(new(notification.Message), cancellationToken);
+    }
+
+    public async ValueTask Handle(UpdateDmConversationListNotification notification, CancellationToken cancellationToken) {
+        await hubContext.Clients.User(notification.SenderUserId.ToString())
+            .UpdateDmConversationList(new(notification.ChannelId, 0), cancellationToken);
+
+        await hubContext.Clients.User(notification.ReceiverUserId.ToString())
+            .UpdateDmConversationList(new(notification.ChannelId, 69), cancellationToken);
     }
 }

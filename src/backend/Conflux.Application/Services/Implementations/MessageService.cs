@@ -9,6 +9,7 @@ using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
 using Mediator;
+using System.Diagnostics;
 
 namespace Conflux.Application.Services.Implementations;
 
@@ -24,6 +25,7 @@ internal sealed class MessageService(
     IStorageService storageService,
     IChannelAuthorizationService channelAuthorizationService,
     IConversationRepository conversationRepository,
+    IChannelService channelService,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider,
     IMediator mediator,
@@ -188,6 +190,19 @@ internal sealed class MessageService(
         );
 
         await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
+        
+        // if the channel type is DM, emit the notification to update the conversation list on the sidebar
+        if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
+            var dmSummary = 
+                (await channelService.GetDmChannelSummaryAsync(senderUserId, channelId)).Value!;
+            
+            await mediator.Publish(new UpdateDmConversationListNotification(
+                senderUserId,
+                channelMetadata.ChannelId,
+                dmSummary.OtherUser.Id,
+                0
+            ), CancellationToken.None);
+        }
 
         return Result<MessageDto>.Success(dto);
 
@@ -217,7 +232,7 @@ internal sealed class MessageService(
         }
        
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await conversationRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId, cancellationToken);
+            await conversationRepository.GetChannelMetadataAsync(message.ConversationId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -284,7 +299,7 @@ internal sealed class MessageService(
         }
        
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await conversationRepository.GetChannelMetadataFromConversationIdAsync(message.ConversationId);
+            await conversationRepository.GetChannelMetadataAsync(message.ConversationId);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;

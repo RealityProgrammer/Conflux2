@@ -15,7 +15,14 @@ internal sealed class FriendRequestRepository(
                 r.SenderUserId == user1 && r.ReceiverUserId == user2 ||
                 r.SenderUserId == user2 && r.ReceiverUserId == user1
             )
-            .Select(r => new FriendRequestSummary(r.Id, r.Status, r.SenderUserId))
+            .Include(r => r.Sender)
+            .Include(r => r.Receiver)
+            .Select(r => new FriendRequestSummary(
+                r.Id, 
+                r.Status, 
+                new(r.Sender.Id, r.Sender.UserName, r.Sender.DisplayName, r.Sender.HasAvatar),
+                new(r.Receiver.Id, r.Receiver.UserName, r.Receiver.DisplayName, r.Receiver.HasAvatar)
+            ))
             .FirstOrDefaultAsync();
     }
 

@@ -7,7 +7,7 @@ import {useRef} from "react";
 import UserAvatar from "../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
-import {useInfiniteQuery} from "@tanstack/react-query";
+import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import type {
     DmConversationListItemDto,
     PaginatedResponse,
@@ -17,6 +17,9 @@ import type {
 import {friendService} from "../api/friendService.ts";
 import {channelService} from "../api/channelService.ts";
 import {UserNameplate} from "../components/UserNameplate.tsx";
+import useSignalREvent from "../hooks/useSignalREvent.ts";
+import {useCacheService} from "../hooks/useCacheService.ts";
+import type {UpdateDmConversationListEvent} from "../api/events.ts";
 
 function Sidebar() {
     const auth = useAuthorization();
@@ -60,7 +63,10 @@ function Sidebar() {
 function DirectMessagesList() {
     const navigate = useNavigate();
 
-    const queryKey = ["queryDirectMessages"];
+    const queryKey = ["dmConversations"];
+
+    const cacheService = useCacheService();
+    const queryClient = useQueryClient();
 
     const {
         data,
@@ -91,12 +97,47 @@ function DirectMessagesList() {
 
     const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
+    useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent) => {
+        console.log(JSON.stringify(event));
+
+        // const dmChannelSummary = await cacheService.getDmChannelSummary(event.channelId);
+        //
+        // queryClient.setQueryData<InfiniteData<PaginatedResponse<DmConversationListItemDto> | undefined | null>>(
+        //     queryKey,
+        //     (oldData) => {
+        //         if (!oldData || oldData.pages.length === 0) {
+        //             return oldData;
+        //         }
+        //
+        //         const updatedPages = oldData.pages.map((page: PaginatedResponse<DmConversationListItemDto> | null | undefined) => ({
+        //             ...page!,
+        //             elements: page!.elements.filter(item => item.channelId !== event.channelId)
+        //         }));
+        //
+        //         const updatedChannel = {
+        //             channelId: event.channelId,
+        //             userProfile: dmChannelSummary.data!.otherUser,
+        //         };
+        //
+        //         updatedPages[0] = {
+        //             ...updatedPages[0],
+        //             elements: [updatedChannel, ...updatedPages[0].elements],
+        //         };
+        //
+        //         return {
+        //             ...oldData,
+        //             pages: updatedPages,
+        //         };
+        //     }
+        // );
+    });
+
     return (
         <VirtualizedScrollList
             className="flex-1"
             itemCount={allElements.length}
             isLoading={isLoading}
-            estimateSize={() => 52}
+            estimateSize={() => 44}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
             fetchNextPage={() => { fetchNextPage() }}
@@ -109,96 +150,13 @@ function DirectMessagesList() {
                         displayName={item.userProfile.displayName}
                         hasAvatar={item.userProfile.hasAvatar}
                         className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
-                        style={{
-                            height: `${virtualItem.size}px`,
-                            transform: `translateY(${virtualItem.start}px)`,
-                        }}
                         onClick={() => {
                             navigate("/lobby/dm/" + item.userProfile.id);
                         }}
                     />
-
-                    // <button
-                    //     key={item.channelId}
-                    //     className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight rounded-lg cursor-pointer"
-                    //     style={{
-                    //         height: `${virtualItem.size}px`,
-                    //         transform: `translateY(${virtualItem.start}px)`,
-                    //     }}
-                    //     onClick={() => {
-                    //         navigate("/lobby/dm/" + item.channelId);
-                    //     }}
-                    // >
-                    //     <UserNameplate.Root
-                    //         userId={item.userProfile.id}
-                    //         userName={item.userProfile.userName}
-                    //         displayName={item.userProfile.displayName}
-                    //         hasAvatar={item.userProfile.hasAvatar}
-                    //         className="w-full p-1.5"
-                    //         style={{ height: `${ITEM_HEIGHT}px`}}
-                    //     />
-                    //
-                    //     {/*<Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">*/}
-                    //     {/*    <Avatar.Image*/}
-                    //     {/*        className="size-full rounded-[inherit] object-cover"*/}
-                    //     {/*        src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"*/}
-                    //     {/*        alt="Test"*/}
-                    //     {/*    />*/}
-                    //     {/*    <Avatar.Fallback*/}
-                    //     {/*        className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"*/}
-                    //     {/*        delayMs={600}*/}
-                    //     {/*    >*/}
-                    //     {/*        <BsPerson className="fill-black size-5/6" />*/}
-                    //     {/*    </Avatar.Fallback>*/}
-                    //     {/*</Avatar.Root>*/}
-                    //
-                    //     {/*<p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">*/}
-                    //     {/*    {item.userProfile.displayName}*/}
-                    //     {/*</p>*/}
-                    // </button>
                 );
             }}
         />
-
-        // <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
-        //     <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-        //         {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-        //             const value = items[virtualItem.index];
-        //
-        //             return (
-        //                 <button
-        //                     key={virtualItem.key}
-        //                     className="absolute top-0 left-0 w-full p-1.5 flex flex-row gap-1 items-center hover-highlight rounded-lg cursor-pointer"
-        //                     style={{
-        //                         height: `${virtualItem.size}px`,
-        //                         transform: `translateY(${virtualItem.start}px)`,
-        //                     }}
-        //                     onClick={() => {
-        //                         navigate("/lobby/dm/" + crypto.randomUUID());
-        //                     }}
-        //                 >
-        //                     <Avatar.Root className="flex-none size-9 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer">
-        //                         <Avatar.Image
-        //                             className="size-full rounded-[inherit] object-cover"
-        //                             src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
-        //                             alt="Test"
-        //                         />
-        //                         <Avatar.Fallback
-        //                             className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
-        //                             delayMs={600}
-        //                         >
-        //                             <BsPerson className="fill-black size-5/6" />
-        //                         </Avatar.Fallback>
-        //                     </Avatar.Root>
-        //
-        //                     <p className="ml-2 whitespace-nowrap overflow-hidden text-ellipsis">
-        //                         Element Number {value}
-        //                     </p>
-        //                 </button>
-        //             );
-        //         })}
-        //     </div>
-        // </div>
     );
 }
 

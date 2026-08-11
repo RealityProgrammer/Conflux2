@@ -52,7 +52,7 @@ internal sealed class FriendService(
                 
                 case FriendRequestStatus.Pending:
                     // idempotency: the user already requested to receiver
-                    if (requestSummary.SenderId == fromUserId) {
+                    if (requestSummary.Sender.Id == fromUserId) {
                         return Result<SendFriendRequestResponse>.Success(new(
                             UserRelationshipStatus.OutcomingRequest
                         ));
@@ -119,7 +119,7 @@ internal sealed class FriendService(
             return Errors.ResourceNotFound("Friend request");
         }
 
-        if (requestSummary.SenderId != senderUserId) {
+        if (requestSummary.Sender.Id != senderUserId) {
             return Errors.Unauthorized("Only the sender can cancel their own request.");
         }
 
@@ -165,7 +165,7 @@ internal sealed class FriendService(
             return Errors.ResourceNotFound("Friend request");
         }
 
-        if (requestSummary.SenderId == receiverUserId) {
+        if (requestSummary.Sender.Id == receiverUserId) {
             return Errors.Unauthorized("Only the receiver can reject request.");
         }
 
@@ -211,7 +211,7 @@ internal sealed class FriendService(
             return Errors.ResourceNotFound("Friend request");
         }
 
-        if (requestSummary.SenderId == receiverUserId) {
+        if (requestSummary.Sender.Id == receiverUserId) {
             return Errors.Unauthorized("Only the receiver can accept request.");
         }
 

@@ -10,7 +10,7 @@ internal sealed class DmChannelAuthorizationStrategy(
     public ChannelType ChannelType => ChannelType.DirectMessage;
 
     public async Task<Result<MessagingPermissions>> GetMessagingPermissionsAsync(Guid userId, Guid channelId) {
-        Result<DmChannelSummary> result = await channelService.GetDirectMessageChannelSummaryAsync(userId, channelId);
+        Result<DmChannelSummary> result = await channelService.GetDmChannelSummaryAsync(userId, channelId);
 
         if (!result.IsSuccess) {
             return Errors.ResourceNotFound("Channel");

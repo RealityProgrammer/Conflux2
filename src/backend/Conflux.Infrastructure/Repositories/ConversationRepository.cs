@@ -8,7 +8,7 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class ConversationRepository(
     ApplicationDbContext dbContext
 ) : IConversationRepository {
-    public async Task<Result<ChannelMetadata>> GetChannelMetadataFromConversationIdAsync(
+    public async Task<Result<ChannelMetadata>> GetChannelMetadataAsync(
         Guid conversationId,
         CancellationToken cancellationToken = default
     ) {

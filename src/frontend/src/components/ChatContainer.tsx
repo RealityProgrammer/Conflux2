@@ -66,6 +66,8 @@ function getOperationBodyDisplayInfo(
     return operationInfoGetter(operation.type === "error" ? operation.retryOperation : operation);
 }
 
+const channelOperationQueues = new Map<string, Promise<void>>();
+
 export interface ChatContainerProps {
     channelId: string;
 }
@@ -343,22 +345,46 @@ export default function ChatContainer({ channelId }: ChatContainerProps) {
     const signalrContext = useSignalRConnection();
 
     useEffect(() => {
+        // blame strict mode for this fucked up code
         const connection = signalrContext.connection;
 
         if (!channelId || !signalrContext.isConnected || !connection) return;
 
-        let joinPromise: Promise<void> = connection!.invoke("JoinChannel", channelId).then(() => {
-            console.log("Channel joined");
-        });
+        let isMounted = true;
+        let hasJoined = false;
+
+        if (!channelOperationQueues.has(channelId)) {
+            channelOperationQueues.set(channelId, Promise.resolve());
+        }
+
+        let currentQueue = channelOperationQueues.get(channelId)!;
+
+        currentQueue = currentQueue.then(async () => {
+            if (!isMounted || connection.state !== HubConnectionState.Connected) return;
+
+            await connection.invoke("JoinChannel", channelId);
+            hasJoined = true;
+            console.log(`Channel joined: ${channelId}`);
+        }).catch(console.error);
+
+        channelOperationQueues.set(channelId, currentQueue);
 
         return () => {
-            joinPromise.then(() => {
-                if (connection.state === HubConnectionState.Connected) {
-                    connection!.invoke("LeaveChannel", channelId);
+            isMounted = false;
+
+            let cleanupQueue = channelOperationQueues.get(channelId)!;
+
+            cleanupQueue = cleanupQueue.then(async () => {
+                if (hasJoined && connection.state === HubConnectionState.Connected) {
+                    await connection.invoke("LeaveChannel", channelId);
+                    console.log(`Channel leaved: ${channelId}`);
                 }
-            });
-        }
-    }, [channelId, signalrContext.isConnected]);
+            }).catch(console.error);
+
+            // Save the updated queue
+            channelOperationQueues.set(channelId, cleanupQueue);
+        };
+    }, [channelId, signalrContext.isConnected, signalrContext.connection]);
 
     return (
         <>

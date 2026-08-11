@@ -30,56 +30,6 @@ internal sealed class ChannelRepository(
         return Result<ChannelMetadata>.Success(context);
     }
 
-    // public async Task<Result<DmConversationContext>> GetPostingContextFromChannelIdAsync(Guid userId, Guid channelId) {
-    //     DmConversationContext? result = await dbContext.Channels
-    //         .Where(c => c.Id == channelId)
-    //         .Include(c => c.Conversation)
-    //         .Select(c => new DmConversationContext(
-    //             channelId,
-    //             c.Type, 
-    //             c.Type == ChannelType.DirectMessage ? 
-    //                 new DmConversationContext(
-    //                     c.FriendRequest!.SenderUserId, 
-    //                     c.FriendRequest.ReceiverUserId, 
-    //                     c.FriendRequest.Status == FriendRequestStatus.Accepted
-    //                 )
-    //                 : null,
-    //             c.ConversationId
-    //         ))
-    //         .FirstOrDefaultAsync();
-    //
-    //     if (result == null) {
-    //         return Errors.ResourceNotFound("Channel");
-    //     }
-    //     
-    //     return Result<DmConversationContext>.Success(result);
-    // }
-    //
-    // public async Task<Result<DmConversationContext>> GetPostingContextFromConversationId(Guid userId, Guid conversationId) {
-    //     DmConversationContext? result = await dbContext.Channels
-    //         .Where(c => c.ConversationId == conversationId)
-    //         .Include(c => c.Conversation)
-    //         .Select(c => new DmConversationContext(
-    //             c.Id,
-    //             c.Type, 
-    //             c.Type == ChannelType.DirectMessage ? 
-    //                 new DmConversationContext(
-    //                     c.FriendRequest!.SenderUserId, 
-    //                     c.FriendRequest.ReceiverUserId,
-    //                     c.FriendRequest.Status == FriendRequestStatus.Accepted
-    //                 )
-    //                 : null,
-    //             conversationId
-    //         ))
-    //         .FirstOrDefaultAsync();
-    //
-    //     if (result == null) {
-    //         return Errors.ResourceNotFound("Conversation");
-    //     }
-    //     
-    //     return Result<DmConversationContext>.Success(result);
-    // }
-
     public async Task<Result<DmChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId) {
         var summary = await dbContext.Channels
             .Where(c =>

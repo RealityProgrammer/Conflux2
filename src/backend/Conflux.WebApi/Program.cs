@@ -135,6 +135,8 @@ builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator();
+
+builder.Services.AddSingleton<ActiveChannelTracker>();
 builder.Services.AddSignalR();
 
 // Conflux services.
