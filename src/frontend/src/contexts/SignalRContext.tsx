@@ -58,8 +58,6 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
                     setConnection(newConnection);
                     setIsConnected(true);
 
-                    console.log("signalr connection id:", newConnection.connectionId);
-
                     if (newConnection.connectionId) {
                         apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
                     }

@@ -17,13 +17,7 @@ public sealed class MessageNotificationsHandler(
     public async ValueTask Handle(MessageReceivedNotification notification, CancellationToken cancellationToken) {
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
-        
-        logger.LogInformation(
-            "Sender connection id {connectId}, channel id: {channelId}", 
-            connectionId,
-            notification.ChannelId
-        );
-        
+
         var target = string.IsNullOrEmpty(connectionId)
             ? hubContext.Clients.Group($"channel:{notification.ChannelId}")
             : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);

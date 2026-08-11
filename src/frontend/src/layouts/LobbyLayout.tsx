@@ -98,38 +98,36 @@ function DirectMessagesList() {
     const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
     useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent) => {
-        console.log(JSON.stringify(event));
+        const dmChannelSummary = await cacheService.getDmChannelSummary(event.channelId);
 
-        // const dmChannelSummary = await cacheService.getDmChannelSummary(event.channelId);
-        //
-        // queryClient.setQueryData<InfiniteData<PaginatedResponse<DmConversationListItemDto> | undefined | null>>(
-        //     queryKey,
-        //     (oldData) => {
-        //         if (!oldData || oldData.pages.length === 0) {
-        //             return oldData;
-        //         }
-        //
-        //         const updatedPages = oldData.pages.map((page: PaginatedResponse<DmConversationListItemDto> | null | undefined) => ({
-        //             ...page!,
-        //             elements: page!.elements.filter(item => item.channelId !== event.channelId)
-        //         }));
-        //
-        //         const updatedChannel = {
-        //             channelId: event.channelId,
-        //             userProfile: dmChannelSummary.data!.otherUser,
-        //         };
-        //
-        //         updatedPages[0] = {
-        //             ...updatedPages[0],
-        //             elements: [updatedChannel, ...updatedPages[0].elements],
-        //         };
-        //
-        //         return {
-        //             ...oldData,
-        //             pages: updatedPages,
-        //         };
-        //     }
-        // );
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<DmConversationListItemDto> | undefined | null>>(
+            queryKey,
+            (oldData) => {
+                if (!oldData || oldData.pages.length === 0) {
+                    return oldData;
+                }
+
+                const updatedPages = oldData.pages.map((page: PaginatedResponse<DmConversationListItemDto> | null | undefined) => ({
+                    ...page!,
+                    elements: page!.elements.filter(item => item.channelId !== event.channelId)
+                }));
+
+                const updatedChannel = {
+                    channelId: event.channelId,
+                    userProfile: dmChannelSummary.data!.otherUser,
+                };
+
+                updatedPages[0] = {
+                    ...updatedPages[0],
+                    elements: [updatedChannel, ...updatedPages[0].elements],
+                };
+
+                return {
+                    ...oldData,
+                    pages: updatedPages,
+                };
+            }
+        );
     });
 
     return (

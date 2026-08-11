@@ -11,16 +11,12 @@ public sealed class GatewayHub(
     public async Task JoinChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;
         
-        logger.LogInformation("Connect {connectionId} to channel {channelId}", connectionId, channelId);
-        
         await Groups.AddToGroupAsync(connectionId, $"channel:{channelId}");
         await channelTracker.AddActiveChannel(connectionId, channelId.ToString());
     }
 
     public async Task LeaveChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;
-        
-        logger.LogInformation("Remove {connectionId} from channel {channelId}", connectionId, channelId);
         
         await Groups.RemoveFromGroupAsync(connectionId, $"channel:{channelId}");
         await channelTracker.RemoveActiveChannel(connectionId, channelId.ToString());
