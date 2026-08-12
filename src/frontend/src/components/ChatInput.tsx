@@ -144,7 +144,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
   return (
     <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
       {replyingMessage && (
-        <section>
+        <section className="flex flex-col min-w-0">
           <div className="flex flex-row gap-2 mb-1">
             <p className="text-sm flex-1">Replying to:</p>
 
@@ -154,8 +154,8 @@ export default function ChatInput({disabled}: ChatInputProps) {
           </div>
 
           {/* https://stackoverflow.com/a/79634869 */}
-          <p className="overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
-            <span className="line-clamp-2">{replyingMessage.body}</span>
+          <p className="min-w-0 overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
+            <span className="line-clamp-2 break-all">{replyingMessage.body}</span>
           </p>
         </section>
       )}

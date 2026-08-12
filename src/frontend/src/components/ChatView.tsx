@@ -19,7 +19,7 @@ import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
 import AlertActionDialog from "./AlertActionDialog.tsx";
-import SenderMessageCluster, {type MessageGroupRowProps} from "./SenderMessageCluster.tsx";
+import SenderMessageCluster, {type SenderMessageCluster} from "./SenderMessageCluster.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {useFetchUserBasicProfile} from "../hooks/fetchUserBasicProfile.ts";
 
@@ -294,7 +294,7 @@ export function ChatView({
 
   const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
 
-  const handleMessageAction: MessageGroupRowProps['onActionTriggered'] = (action, message) => {
+  const handleMessageAction: SenderMessageCluster['onActionTriggered'] = (action, message) => {
     switch (action) {
       case "delete":
         setDeletingMessage(message);

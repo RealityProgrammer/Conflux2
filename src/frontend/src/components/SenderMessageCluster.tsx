@@ -13,7 +13,7 @@ import {BsArrowReturnLeft, BsCopy, BsMusicNote, BsPencil, BsTrash} from "react-i
 import MessageEditor from "./MessageEditor.tsx";
 import {messageService} from "../api/messageService.ts";
 
-export interface MessageGroupRowProps {
+export interface SenderMessageClusterProps {
   messageGroup: TimelineMessageBlockDto;
   // userProfile: UserBasicProfileDto | undefined | null;
   userProfiles: Record<string, UserIdentityProfileDto>;
@@ -27,16 +27,16 @@ export interface MessageGroupRowProps {
 }
 
 export default function SenderMessageCluster({
-                                               messageGroup,
-                                               userProfiles,
-                                               onAttachmentClick,
-                                               onActionTriggered,
-                                               editingMessageId,
-                                               editingMessageDraft,
-                                               onEditDraftChange,
-                                               onEditCanceled,
-                                               onEditSaved
-                                             }: MessageGroupRowProps) {
+  messageGroup,
+  userProfiles,
+  onAttachmentClick,
+  onActionTriggered,
+  editingMessageId,
+  editingMessageDraft,
+  onEditDraftChange,
+  onEditCanceled,
+  onEditSaved
+}: SenderMessageClusterProps) {
   const auth = useAuthorization();
 
   const [selectedMessage, setSelectedMessage] = useState<MessageDto | null>(null);
@@ -209,21 +209,22 @@ function ClusterMessage({
       ) : (
         <div className="text-sm">
           {mode === "view" && message.replyTo && (
-            <>
+            <div className="min-w-0">
               <p className="text-xs mb-1">Somebody sent:</p>
 
               {!!message.replyTo.body ? (
-                <p
-                  className="leading-6 whitespace-pre-wrap overflow-hidden ring ring-gray-500 bg-black/8 rounded-md px-1 py-0.5">
-                  <span className="line-clamp-2">{message.replyTo.body}</span>
+                <p className="leading-6 whitespace-pre-wrap wrap-break-word overflow-hidden ring ring-gray-500 bg-black/8 rounded-md px-1 py-0.5">
+                  <span className="line-clamp-2 whitespace-pre-wrap wrap-break-word">
+                    {message.replyTo.body}
+                  </span>
                 </p>
               ) : (
                 <p>{message.replyTo.attachmentCount} attachment{message.replyTo.attachmentCount > 1 ? 's' : ''}.</p>
               )}
-            </>
+            </div>
           )}
 
-          <p className="leading-6 whitespace-pre-wrap">
+          <p className="leading-6 whitespace-pre-wrap wrap-break-word">
             {message.body}
           </p>
         </div>

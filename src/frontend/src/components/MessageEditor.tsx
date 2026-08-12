@@ -10,13 +10,13 @@ export interface MessageEditorProps {
 }
 
 export default function MessageEditor({
-                                        initialValue,
-                                        draftValue,
-                                        onDraftChange,
-                                        onSave,
-                                        onCancel,
-                                        disabled
-                                      }: MessageEditorProps) {
+  initialValue,
+  draftValue,
+  onDraftChange,
+  onSave,
+  onCancel,
+  disabled
+}: MessageEditorProps) {
   const currentText = draftValue ?? initialValue;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -25,6 +25,8 @@ export default function MessageEditor({
     if (textarea) {
       textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
+
+      console.log("textarea height:", textarea.style.height);
 
       requestAnimationFrame(() => {
         textarea.focus();
@@ -41,6 +43,8 @@ export default function MessageEditor({
     if (textarea) {
       textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
+
+      console.log("textarea height:", textarea.style.height);
     }
   };
 
