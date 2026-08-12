@@ -15,10 +15,7 @@ public class UserServiceOptions {
 internal sealed class UserService(
     IUserRepository userRepository,
     IStorageService storageService,
-    TimeProvider timeProvider,
-    IConfiguration config,
-    IFileFormatInspector fileFormatInspector,
-    ILogger<UserService> logger
+    IFileFormatInspector fileFormatInspector
 ) : IUserService {
     public async Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream) {
         if (fileFormatInspector.DetermineFileFormat(avatarStream) is not { } fileFormat) {
@@ -116,7 +113,11 @@ internal sealed class UserService(
         return await userRepository.SetupProfileAsync(request.UserId, request.UserName, request.DisplayName);
     }
 
-    public async Task<Result<UserBasicProfileDto>> GetUserBasicProfileAsync(Guid userId) {
-        return await userRepository.GetProfileSummaryAsync(userId);
+    public async Task<Result<UserProfileDto>> GetProfileAsync(Guid userId, UserProfileQueryFlags queryFlags) {
+        return await userRepository.GetProfileAsync(userId, queryFlags);
+    }
+
+    public async Task<Result<UserIdentityProfileDto>> GetIdentityProfileAsync(Guid userId) {
+        return await userRepository.GetIdentityProfileAsync(userId);
     }
 }

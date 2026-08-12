@@ -52,7 +52,7 @@ internal sealed class ChannelRepository(
             )
             .Select(cfru => 
                 new DmChannelSummary(
-                    new(cfru.User.Id, cfru.User.UserName, cfru.User.DisplayName, cfru.User.HasAvatar)
+                    new(cfru.User.Id, cfru.User.UserName!, cfru.User.DisplayName!, cfru.User.HasAvatar)
                 )
             )
             .FirstOrDefaultAsync();

@@ -135,7 +135,7 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserProfileDto>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
@@ -155,7 +155,7 @@ public sealed class FriendController(
     
     [HttpGet("friends")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<UserBasicProfileDto>>>> QueryFriends(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> QueryFriends(
         [FromQuery] string? name,
         [FromQuery, Required] int offset,
         [FromQuery, Required] int count
@@ -163,7 +163,7 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserBasicProfileDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<UserIdentityProfileDto>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
@@ -172,12 +172,12 @@ public sealed class FriendController(
         var result = await friendService.QueryFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<UserBasicProfileDto>>(result.Value, Error.None));
+            return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result.Value, Error.None));
         }
 
         return StatusCode(
             StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<UserBasicProfileDto>>(null, result.Error)
+            new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(null, result.Error)
         );
     }
 

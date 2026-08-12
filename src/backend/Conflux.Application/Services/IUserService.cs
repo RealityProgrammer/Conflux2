@@ -10,5 +10,6 @@ public interface IUserService {
     string GetAvatarUrl(Guid userId, bool useHttps);
 
     Task<Result> SetupProfileAsync(SetupProfileRequest request);
-    Task<Result<UserBasicProfileDto>> GetUserBasicProfileAsync(Guid userId);
+    Task<Result<UserProfileDto>> GetProfileAsync(Guid userId, UserProfileQueryFlags queryFlags);
+    Task<Result<UserIdentityProfileDto>> GetIdentityProfileAsync(Guid userId);
 }

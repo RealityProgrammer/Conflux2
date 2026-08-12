@@ -18,7 +18,7 @@ public interface IFriendService {
         int count
     );
 
-    Task<Result<PaginatedResult<UserBasicProfileDto>>> QueryFriendsAsync(
+    Task<Result<PaginatedResult<UserIdentityProfileDto>>> QueryFriendsAsync(
         Guid searchingUserId,
         string? nameFilter,
         int offset,

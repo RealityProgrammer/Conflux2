@@ -16,6 +16,8 @@ using Conflux.Infrastructure;
 using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
+using Conflux.WebApi.GraphQL.Queries;
+using Conflux.WebApi.GraphQL.Types;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
@@ -116,6 +118,13 @@ using var redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> {
 });
 
 builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
+
+// GraphQL
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<UserQuery>()
+    .AddType<UserType>()
+    .AddProjections();
 
 // general services needed
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
@@ -264,6 +273,7 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.MapControllers();
+app.MapGraphQL();
 app.MapHub<GatewayHub>("/hub");
 
 app.Run();

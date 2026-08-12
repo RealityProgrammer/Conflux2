@@ -70,27 +70,78 @@ internal sealed class UserRepository(
         return Errors.NoUserFoundFromId();
     }
 
-    public async Task<Result<UserBasicProfileDto>> GetProfileSummaryAsync(
+    public async Task<Result<UserProfileDto>> GetProfileAsync(
         Guid userId, 
+        UserProfileQueryFlags queryFlags,
         CancellationToken cancellationToken = default
     ) {
-        UserBasicProfileDto? result = await dbContext.Users
+        UserProfileDto? result = await dbContext.Users
             .Where(u => u.Id == userId)
-            .Select(u => new UserBasicProfileDto(u.Id, u.UserName!, u.DisplayName!, u.HasAvatar))
+            .Select(u => new UserProfileDto(
+                u.Id, 
+                queryFlags.HasFlag(UserProfileQueryFlags.UserName) ? u.UserName : null, 
+                queryFlags.HasFlag(UserProfileQueryFlags.DisplayName) ? u.DisplayName : null, 
+                queryFlags.HasFlag(UserProfileQueryFlags.Avatar) ? u.HasAvatar : null,
+                queryFlags.HasFlag(UserProfileQueryFlags.Biography) ? u.Biography : null,
+                queryFlags.HasFlag(UserProfileQueryFlags.Pronouns) ? u.Pronouns : null,
+                queryFlags.HasFlag(UserProfileQueryFlags.CreatedAt) ? u.CreatedAt : null
+            ))
             .FirstOrDefaultAsync(cancellationToken);
 
         return result == null ? 
             Errors.NoUserFoundFromId() : 
-            Result<UserBasicProfileDto>.Success(result);
+            Result<UserProfileDto>.Success(result);
     }
     
-    public async Task<List<UserBasicProfileDto>> GetProfileSummariesAsync(
-        IReadOnlyCollection<Guid> userIds, 
+    public async Task<List<UserProfileDto>> GetProfilesAsync(
+        IReadOnlyCollection<Guid> userIds,
+        UserProfileQueryFlags queryFlags,
         CancellationToken cancellationToken = default
     ) {
-        List<UserBasicProfileDto> results = await dbContext.Users
+        List<UserProfileDto> results = await dbContext.Users
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new UserBasicProfileDto(u.Id, u.UserName!, u.DisplayName!, u.HasAvatar))
+            .Select(u => new UserProfileDto(
+                u.Id, 
+                queryFlags.HasFlag(UserProfileQueryFlags.UserName) ? u.UserName : null, 
+                queryFlags.HasFlag(UserProfileQueryFlags.DisplayName) ? u.DisplayName : null, 
+                queryFlags.HasFlag(UserProfileQueryFlags.Avatar) ? u.HasAvatar : null,
+                queryFlags.HasFlag(UserProfileQueryFlags.Biography) ? u.Biography : null,
+                queryFlags.HasFlag(UserProfileQueryFlags.Pronouns) ? u.Pronouns : null,
+                queryFlags.HasFlag(UserProfileQueryFlags.CreatedAt) ? u.CreatedAt : null
+            ))
+            .ToListAsync(cancellationToken);
+
+        return results;
+    }
+
+    public async Task<Result<UserIdentityProfileDto>> GetIdentityProfileAsync(Guid userId, CancellationToken cancellationToken = default) {
+        UserIdentityProfileDto? result = await dbContext.Users
+            .Where(u => u.Id == userId)
+            .Select(u => new UserIdentityProfileDto(
+                u.Id, 
+                u.UserName!, 
+                u.DisplayName!, 
+                u.HasAvatar
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return result == null ? 
+            Errors.NoUserFoundFromId() : 
+            Result<UserIdentityProfileDto>.Success(result);
+    }
+
+    public async Task<List<UserIdentityProfileDto>> GetIdentityProfilesAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken = default
+    ) {
+        List<UserIdentityProfileDto> results = await dbContext.Users
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new UserIdentityProfileDto(
+                u.Id, 
+                u.UserName!, 
+                u.DisplayName!, 
+                u.HasAvatar
+            ))
             .ToListAsync(cancellationToken);
 
         return results;

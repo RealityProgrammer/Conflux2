@@ -4,7 +4,7 @@ namespace Conflux.Application.Dto.Responses;
 
 public sealed record GetMessagesResponse(
     List<TimelineMessageBlockDto> MessageGroups,
-    List<UserBasicProfileDto> Users,
+    List<UserIdentityProfileDto> Users,
     bool? HasMoreBefore,
     bool? HasMoreAfter
 );

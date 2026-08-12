@@ -35,7 +35,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<PaginatedResult<UserBasicProfileDto>> GetFriendsAsync(
+    Task<PaginatedResult<UserIdentityProfileDto>> GetFriendsAsync(
         Guid searcherId,
         string? nameFilter,
         int offset,

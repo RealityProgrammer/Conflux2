@@ -412,8 +412,8 @@ internal sealed class MessageService(
         }
 
         // must have at least 1 user
-        List<UserBasicProfileDto> userProfiles =
-            await userRepository.GetProfileSummariesAsync(
+        List<UserIdentityProfileDto> userProfiles =
+            await userRepository.GetIdentityProfilesAsync(
                 [..groups
                     .Select(g => g.SenderUserId)
                     .Concat(
