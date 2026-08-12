@@ -1,11 +1,11 @@
-import { apiClient } from "./client.ts";
+import {apiClient} from "./client.ts";
 import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./requests.ts";
 import type {
-    BackendResponse,
-    LoginResponse,
-    RefreshResponse,
-    ServiceResponse,
-    UserAuthorizationInfo
+  BackendResponse,
+  LoginResponse,
+  RefreshResponse,
+  ServiceResponse,
+  UserAuthorizationInfo
 } from "./responses.ts";
 import axios, {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import Cookies from "js-cookie";
@@ -15,204 +15,204 @@ import {csrfService} from "./csrfService.ts";
 let activeRefreshPromise: Promise<ServiceResponse<RefreshResponse>> | null = null;
 let activeGetAuthorizationInfoPromise: Promise<ServiceResponse<UserAuthorizationInfo | null>> | null = null;
 
-let cachedAuthorization : UserAuthorizationInfo | null = null;
+let cachedAuthorization: UserAuthorizationInfo | null = null;
 
 export const authService = {
-    login: async (request: LoginRequest): Promise<ServiceResponse<LoginResponse>> => {
+  login: async (request: LoginRequest): Promise<ServiceResponse<LoginResponse>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<LoginResponse>> =
+        await apiClient.post("/auth/login", request);
+
+      localStorage.setItem("hasSession", "true");
+      cachedAuthorization = response.data.data?.authorization!;
+
+      await csrfService.requestCsrfToken();
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<LoginResponse>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  register: async (request: RegisterRequest): Promise<ServiceResponse> => {
+    try {
+      const response = await apiClient.post<BackendResponse>("/auth/register", request);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  refresh: async (): Promise<ServiceResponse<RefreshResponse>> => {
+    // optimization: since unlogged in user can also trigger refresh, we gonna keep a flag that denotes
+    // whether there is a session around, it will allow us to bail out early without having new user
+    // tanking the server.
+
+    // NOTE: THIS FLAG IS ONLY USED FOR REFRESHING OPTIMIZATION
+
+    if (localStorage.getItem("hasSession") !== "true") {
+      return {
+        success: false,
+        statusCode: HttpStatusCode.Unauthorized,
+        error: {
+          code: "InactiveSession",
+          message: "No active session.",
+        }
+      };
+    }
+
+    // prevent multiple refresh requests.
+    if (!activeRefreshPromise) {
+      // manually attach header, no idea if this is needed but im too lazy to test
+      const csrfToken = Cookies.get('XSRF-TOKEN');
+      const headers: Record<string, string> = {'Content-Type': 'application/json'};
+      if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken;
+      }
+
+      // use raw axios to prevent interception
+      activeRefreshPromise = axios.post<BackendResponse<RefreshResponse>>(
+        `${import.meta.env.VITE_BACKEND_API_URL}/auth/refresh`,
+        {},
+        {headers}
+      ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {
+        localStorage.setItem("hasSession", "true");
+        cachedAuthorization = response.data.data?.authorization!;
+
+        await csrfService.requestCsrfToken();
+
+        return {
+          success: true,
+          statusCode: response.status,
+          data: response.data?.data,
+        }
+      }).catch(async (err: any): Promise<ServiceResponse<RefreshResponse>> => {
+        const axiosError = err as AxiosError<BackendResponse<RefreshResponse>>;
+
+        localStorage.removeItem("hasSession");
+        cachedAuthorization = null;
+
         try {
-            const response: AxiosResponse<BackendResponse<LoginResponse>> =
-                await apiClient.post("/auth/login", request);
-
-            localStorage.setItem("hasSession", "true");
-            cachedAuthorization = response.data.data?.authorization!;
-
-            await csrfService.requestCsrfToken();
-
-            return {
-                success: true,
-                statusCode: response.status,
-                data: response.data.data,
-            };
-        } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse<LoginResponse>>;
-            return handleAxiosError(axiosError);
-        }
-    },
-
-    register: async (request: RegisterRequest): Promise<ServiceResponse> => {
-        try {
-            const response = await apiClient.post<BackendResponse>("/auth/register", request);
-
-            return {
-                success: true,
-                statusCode: response.status,
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse>;
-            return handleAxiosError(axiosError);
-        }
-    },
-
-    refresh: async (): Promise<ServiceResponse<RefreshResponse>> => {
-        // optimization: since unlogged in user can also trigger refresh, we gonna keep a flag that denotes
-        // whether there is a session around, it will allow us to bail out early without having new user
-        // tanking the server.
-
-        // NOTE: THIS FLAG IS ONLY USED FOR REFRESHING OPTIMIZATION
-
-        if (localStorage.getItem("hasSession") !== "true") {
-            return {
-                success: false,
-                statusCode: HttpStatusCode.Unauthorized,
-                error: {
-                    code: "InactiveSession",
-                    message: "No active session.",
-                }
-            };
+          // get anonymous token to wipe out the old ones because antiforgery token is identity-based
+          await csrfService.requestCsrfToken();
+        } catch (csrfErr) {
+          console.error("Failed to reset to anonymous CSRF token after refresh failure", csrfErr);
         }
 
-        // prevent multiple refresh requests.
-        if (!activeRefreshPromise) {
-            // manually attach header, no idea if this is needed but im too lazy to test
-            const csrfToken = Cookies.get('XSRF-TOKEN');
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (csrfToken) {
-                headers['X-CSRF-TOKEN'] = csrfToken;
-            }
+        return handleAxiosError(axiosError);
+      }).finally(() => {
+        activeRefreshPromise = null;    // clear when finish
+      });
+    }
 
-            // use raw axios to prevent interception
-            activeRefreshPromise = axios.post<BackendResponse<RefreshResponse>>(
-                `${import.meta.env.VITE_BACKEND_API_URL}/auth/refresh`,
-                {},
-                { headers }
-            ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {
-                localStorage.setItem("hasSession", "true");
-                cachedAuthorization = response.data.data?.authorization!;
+    return activeRefreshPromise;
+  },
 
-                await csrfService.requestCsrfToken();
+  logout: async (): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse = await apiClient.post<BackendResponse>('/auth/logout');
+      cachedAuthorization = null;
+      localStorage.removeItem("hasSession");
 
-                return {
-                    success: true,
-                    statusCode: response.status,
-                    data: response.data?.data,
-                }
-            }).catch(async (err: any): Promise<ServiceResponse<RefreshResponse>> => {
-                const axiosError = err as AxiosError<BackendResponse<RefreshResponse>>;
+      await csrfService.requestCsrfToken();
 
-                localStorage.removeItem("hasSession");
-                cachedAuthorization = null;
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 
-                try {
-                    // get anonymous token to wipe out the old ones because antiforgery token is identity-based
-                    await csrfService.requestCsrfToken();
-                } catch (csrfErr) {
-                    console.error("Failed to reset to anonymous CSRF token after refresh failure", csrfErr);
-                }
+  hasAuthorizationInfo: () => {
+    return !!cachedAuthorization;
+  },
 
-                return handleAxiosError(axiosError);
-            }).finally(() => {
-                activeRefreshPromise = null;    // clear when finish
-            });
-        }
+  getAuthorizationInfo: async (): Promise<ServiceResponse<UserAuthorizationInfo>> => {
+    if (cachedAuthorization) {
+      return {
+        success: true,
+        statusCode: HttpStatusCode.Ok,
+        data: cachedAuthorization,
+      };
+    }
 
-        return activeRefreshPromise;
-    },
+    if (localStorage.getItem("hasSession") !== "true") {
+      return {
+        success: false,
+        statusCode: HttpStatusCode.Unauthorized,
+        data: null,
+      };
+    }
 
-    logout: async (): Promise<ServiceResponse> => {
-        try {
-            const response: AxiosResponse = await apiClient.post<BackendResponse>('/auth/logout');
-            cachedAuthorization = null;
-            localStorage.removeItem("hasSession");
+    if (!activeGetAuthorizationInfoPromise) {
+      activeGetAuthorizationInfoPromise = apiClient
+        .get<BackendResponse<UserAuthorizationInfo>>("/auth/authorization-info")
+        .then((response: AxiosResponse<BackendResponse<UserAuthorizationInfo>>): ServiceResponse<UserAuthorizationInfo> => {
+          cachedAuthorization = response.data.data!;
 
-            await csrfService.requestCsrfToken();
+          return {
+            success: true,
+            statusCode: response.status,
+            data: response.data.data,
+          };
+        }).catch((err) => {
+          cachedAuthorization = null;
+          localStorage.removeItem("hasSession");
 
-            return {
-                success: true,
-                statusCode: response.status,
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse>;
-            return handleAxiosError(axiosError);
-        }
-    },
+          return handleAxiosError(err);
+        }).finally(() => {
+          activeGetAuthorizationInfoPromise = null;
+        });
+    }
 
-    hasAuthorizationInfo: () => {
-        return !!cachedAuthorization;
-    },
+    return activeGetAuthorizationInfoPromise;
+  },
 
-    getAuthorizationInfo: async (): Promise<ServiceResponse<UserAuthorizationInfo>> => {
-        if (cachedAuthorization) {
-            return {
-                success: true,
-                statusCode: HttpStatusCode.Ok,
-                data: cachedAuthorization,
-            };
-        }
+  sendVerifyEmail: async (): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>("/auth/send-verify-email");
 
-        if (localStorage.getItem("hasSession") !== "true") {
-            return {
-                success: false,
-                statusCode: HttpStatusCode.Unauthorized,
-                data: null,
-            };
-        }
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 
-        if (!activeGetAuthorizationInfoPromise) {
-            activeGetAuthorizationInfoPromise = apiClient
-                .get<BackendResponse<UserAuthorizationInfo>>("/auth/authorization-info")
-                .then((response: AxiosResponse<BackendResponse<UserAuthorizationInfo>>): ServiceResponse<UserAuthorizationInfo> => {
-                    cachedAuthorization = response.data.data!;
+  confirmEmail: async (request: EmailConfirmationRequest): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>("/auth/confirm-email", request);
 
-                    return {
-                        success: true,
-                        statusCode: response.status,
-                        data: response.data.data,
-                    };
-                }).catch((err) => {
-                    cachedAuthorization = null;
-                    localStorage.removeItem("hasSession");
+      if (response.status === HttpStatusCode.Ok) {
+        // refresh the authorization information.
+        await authService.refresh();
+      }
 
-                    return handleAxiosError(err);
-                }).finally(() => {
-                    activeGetAuthorizationInfoPromise = null;
-                });
-        }
-
-        return activeGetAuthorizationInfoPromise;
-    },
-
-    sendVerifyEmail: async (): Promise<ServiceResponse> => {
-        try {
-            const response: AxiosResponse<BackendResponse> =
-                await apiClient.post<BackendResponse>("/auth/send-verify-email");
-
-            return {
-                success: true,
-                statusCode: response.status,
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse>;
-            return handleAxiosError(axiosError);
-        }
-    },
-
-    confirmEmail: async (request: EmailConfirmationRequest): Promise<ServiceResponse> => {
-        try {
-            const response: AxiosResponse<BackendResponse> =
-                await apiClient.post<BackendResponse>("/auth/confirm-email", request);
-
-            if (response.status === HttpStatusCode.Ok) {
-                // refresh the authorization information.
-                await authService.refresh();
-            }
-
-            return {
-                success: true,
-                statusCode: response.status,
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse>;
-            return handleAxiosError(axiosError);
-        }
-    },
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 };

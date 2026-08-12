@@ -1,130 +1,130 @@
-import type { HttpStatusCode } from "axios";
+import type {HttpStatusCode} from "axios";
 
 export type Error = {
-    code: string;
-    message: string;
-    details?: any | null;
+  code: string;
+  message: string;
+  details?: any | null;
 };
 
 export type ServiceResponse<T = void> = {
-    success: boolean;
-    statusCode: HttpStatusCode;
-    error?: Error | null;
+  success: boolean;
+  statusCode: HttpStatusCode;
+  error?: Error | null;
 } & (T extends void ? {} : { data?: T | null });
 
 export type BackendResponse<T = void> = Omit<ServiceResponse<T>, 'success'>;
 
 export interface UserAuthorizationInfo {
-    id: string;
-    isVerified: boolean;
-    isProfileSetup: boolean;
-    roles: string[];
-    permissions: string[];
+  id: string;
+  isVerified: boolean;
+  isProfileSetup: boolean;
+  roles: string[];
+  permissions: string[];
 }
 
 export type UserIdentityProfileDto = {
-    id: string;
-    userName: string;
-    displayName: string;
-    hasAvatar: boolean;
+  id: string;
+  userName: string;
+  displayName: string;
+  hasAvatar: boolean;
 }
 
 export interface LoginResponse {
-    authorization: UserAuthorizationInfo;
-    tokenType: string;
-    accessToken: string;
+  authorization: UserAuthorizationInfo;
+  tokenType: string;
+  accessToken: string;
 }
 
 export interface RefreshResponse {
-    authorization: UserAuthorizationInfo;
-    tokenType: string;
-    accessToken: string;
+  authorization: UserAuthorizationInfo;
+  tokenType: string;
+  accessToken: string;
 }
 
 export enum UserRelationshipStatus {
-    Stranger = "Stranger",
-    OutcomingRequest = "OutcomingRequest",
-    IncomingRequest = "IncomingRequest",
-    Friended = "Friended",
+  Stranger = "Stranger",
+  OutcomingRequest = "OutcomingRequest",
+  IncomingRequest = "IncomingRequest",
+  Friended = "Friended",
 }
 
 export type DiscoverFriendElement = {
-    userId: string;
-    userName: string;
-    displayName: string;
-    hasAvatar: boolean;
-    status: UserRelationshipStatus;
+  userId: string;
+  userName: string;
+  displayName: string;
+  hasAvatar: boolean;
+  status: UserRelationshipStatus;
 }
 
 export type QueryPendingRequestElement = {
-    userId: string;
-    userName: string;
-    displayName: string;
-    hasAvatar: boolean;
-    status: UserRelationshipStatus;
+  userId: string;
+  userName: string;
+  displayName: string;
+  hasAvatar: boolean;
+  status: UserRelationshipStatus;
 }
 
 export type PaginatedResponse<T> = {
-    elements: T[];
-    totalCount: number;
+  elements: T[];
+  totalCount: number;
 }
 
 export type FieldErrors<F extends keyof any> = Record<F, string[]>;
 
 export interface SendFriendRequestResponse {
-    status: UserRelationshipStatus;
+  status: UserRelationshipStatus;
 }
 
 export type DirectMessageResolutionResponse = {
-    channelId: string;
+  channelId: string;
 }
 
 export type DmChannelSummary = {
-    otherUser: UserIdentityProfileDto;
+  otherUser: UserIdentityProfileDto;
 }
 
 export type Attachment = {
-    id: string;
-    type: string;
+  id: string;
+  type: string;
 }
 
 export type TimelineMessageBlockDto = {
-    senderUserId: string;
-    messages: TimelineMessageDto[];
+  senderUserId: string;
+  messages: TimelineMessageDto[];
 }
 
 export type ReplyToMessageDto = {
-    messageId: string;
-    senderUserId: string;
-    body: string | null;
-    attachmentCount: number;
+  messageId: string;
+  senderUserId: string;
+  body: string | null;
+  attachmentCount: number;
 }
 
 export type TimelineMessageDto = {
-    id: string;
-    body: string | null;
-    attachments: Attachment[];
-    createdAt: Date;
-    replyTo?: ReplyToMessageDto;
+  id: string;
+  body: string | null;
+  attachments: Attachment[];
+  createdAt: Date;
+  replyTo?: ReplyToMessageDto;
 }
 
 export type MessageDto = {
-    id: string;
-    senderUserId: string;
-    body: string | null;
-    attachments: Attachment[];
-    createdAt: Date;
-    replyToId?: string;
+  id: string;
+  senderUserId: string;
+  body: string | null;
+  attachments: Attachment[];
+  createdAt: Date;
+  replyToId?: string;
 }
 
 export type GetMessagesResponse = {
-    messageGroups: TimelineMessageBlockDto[];
-    users: UserIdentityProfileDto[];
-    hasMoreBefore?: boolean;
-    hasMoreAfter?: boolean;
+  messageGroups: TimelineMessageBlockDto[];
+  users: UserIdentityProfileDto[];
+  hasMoreBefore?: boolean;
+  hasMoreAfter?: boolean;
 }
 
 export type DmConversationListItemDto = {
-    channelId: string;
-    userProfile: UserIdentityProfileDto;
+  channelId: string;
+  userProfile: UserIdentityProfileDto;
 }

@@ -1,6 +1,6 @@
 /* eslint-disable */
 import * as types from './graphql';
-import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import type {TypedDocumentNode as DocumentNode} from '@graphql-typed-document-node/core';
 
 /**
  * Map of all GraphQL operations in the project.
@@ -14,10 +14,10 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-    "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": typeof types.GetUserIdentityProfileDocument,
+  "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": typeof types.GetUserIdentityProfileDocument,
 };
 const documents: Documents = {
-    "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": types.GetUserIdentityProfileDocument,
+  "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": types.GetUserIdentityProfileDocument,
 };
 
 /**
@@ -43,4 +43,4 @@ export function gql(source: string) {
   return (documents as any)[source] ?? {};
 }
 
-export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<  infer TType,  any>  ? TType  : never;
+export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<infer TType, any> ? TType : never;

@@ -30,19 +30,33 @@
     }
 
     @keyframes animated-gradient {
-        0% { background-position: 0 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0 50%; }
+        0% {
+            background-position: 0 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0 50%;
+        }
     }
 
     @keyframes animate-overlayShow {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
+        0% {
+            opacity: 0;
+        }
+        100% {
+            opacity: 1;
+        }
     }
 
     @keyframes animate-overlayHide {
-        0% { opacity: 100; }
-        100% { opacity: 0; }
+        0% {
+            opacity: 100;
+        }
+        100% {
+            opacity: 0;
+        }
     }
 
     .shimmer {
@@ -59,7 +73,7 @@
     }
 
     .hover-rising {
-        @apply hover:-translate-y-1 hover:scale-[1.02] transition-[translate,scale] duration-[250ms,250ms] ease-[linear,linear]
+        @apply hover:-translate-y-1 hover:scale-[1.02] transition-[translate, scale] duration-[250ms,250ms] ease-[linear, linear]
     }
 
     .button-group {
@@ -248,11 +262,11 @@
 }
 
 @utility button-theme-danger {
-    @apply  bg-red-500  hover:bg-red-400 active:bg-red-600 disabled:bg-red-500/35 disabled:hover:bg-red-500/35;
+    @apply bg-red-500  hover:bg-red-400 active:bg-red-600 disabled:bg-red-500/35 disabled:hover:bg-red-500/35;
 }
 
 @utility button-theme-success {
-    @apply  bg-green-600  hover:bg-green-500 active:bg-green-700 disabled:bg-green-600/35 disabled:hover:bg-green-600/35;
+    @apply bg-green-600  hover:bg-green-500 active:bg-green-700 disabled:bg-green-600/35 disabled:hover:bg-green-600/35;
 }
 
 @utility backdrop-overlay {
