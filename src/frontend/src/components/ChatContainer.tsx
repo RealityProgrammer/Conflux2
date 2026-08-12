@@ -470,14 +470,16 @@ export default function ChatContainer({ channelId }: ChatContainerProps) {
                 onMessageReplyRequested={(msg) => setReplyingMessage(msg)}
                 onCancelMessageReply={() => setReplyingMessage(undefined)}
             >
-                <ChatView
-                    renderEmptyState={() => {
-                        return <p className="text-base gray-500">And our story begin...</p>
-                    }}
-                    queryModificationRef={messageQueryModification}
-                />
+                <div className="flex flex-col flex-1">
+                    <ChatView
+                        renderEmptyState={() => {
+                            return <p className="text-base gray-500">And our story begin...</p>
+                        }}
+                        queryModificationRef={messageQueryModification}
+                    />
 
-                <ChatInput/>
+                    <ChatInput/>
+                </div>
             </ChatContainerContextProvider>
         </>
     );

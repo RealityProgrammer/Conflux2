@@ -18,7 +18,6 @@ export default function UserAvatar({ userId, hasAvatar, ...props }: UserAvatarPr
             />
             <Avatar.Fallback
                 className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
-                delayMs={1000}
             >
                 <BsPerson className="fill-black size-5/6"/>
             </Avatar.Fallback>

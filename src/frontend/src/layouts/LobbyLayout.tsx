@@ -160,7 +160,7 @@ function DirectMessagesList() {
 
 function LocationSidebar() {
     return (
-        <nav className="flex-none basis-72 px-1.5 pt-1.5 h-full bg-gray-725 border-r-2 border-r-gray-600 text-white overflow-y-auto flex flex-col overflow-hidden">
+        <nav className="flex-none basis-64 px-1.5 pt-1.5 h-full bg-gray-725 border-r-2 border-r-gray-600 text-white overflow-y-auto flex flex-col overflow-hidden">
             <section className="flex-none">
                 <header className="text-xs mb-1.5 font-bold text-gray-400 uppercase">System</header>
 

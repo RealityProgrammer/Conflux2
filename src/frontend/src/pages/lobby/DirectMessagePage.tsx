@@ -2,26 +2,19 @@ import {useLoaderData} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
-import ChatInput, {type MessageInput} from "../../components/ChatInput.tsx";
-import {messageService} from "../../api/messageService.ts";
-import type {MessageDto,ServiceResponse} from "../../api/responses.ts";
-import {useEffect, useRef, useState} from "react";
-import {useMutation} from "@tanstack/react-query";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import {ChatView, type QueryModification} from "../../components/ChatView.tsx";
-import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
-import {HubConnectionState} from "@microsoft/signalr";
-import Spinner from "../../components/Spinner.tsx";
-import {AspectRatio, DropdownMenu} from "radix-ui";
-import { HttpStatusCode } from "axios";
-import {BsExclamationTriangle, BsPaperclip} from "react-icons/bs";
+import {useState} from "react";
+import {BsPerson} from "react-icons/bs";
 import ChatContainer from "../../components/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
+import IconButton from "../../components/IconButton.tsx";
+import UserProfileContent from "../../components/UserProfileContent.tsx";
 
 export default function DirectMessagePage() {
     useDocumentTitle("DM - Conflux");
 
     const { channelId, channelSummary }: DirectMessagePageLoaderProps = useLoaderData();
+
+    const [showProfile, setShowProfile] = useState(true);
 
     return (
         <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -32,6 +25,15 @@ export default function DirectMessagePage() {
                                     className="size-8 overflow-hidden rounded-full"/>
 
                         <p>{channelSummary.otherUser.userName}</p>
+
+                        <IconButton
+                            isLoading={false}
+                            onClick={() => setShowProfile(!showProfile)}
+                            className="ml-auto"
+                            theme="default"
+                        >
+                            <BsPerson className="size-6"/>
+                        </IconButton>
                     </>
                 ) : (
                     <p>But nobody came...</p>
@@ -39,8 +41,23 @@ export default function DirectMessagePage() {
             </header>
 
             {channelId && channelSummary ? (
-                <div className="flex-1 min-h-0 flex flex-col relative">
+                <div className="flex-1 min-h-0 flex flex-row relative">
                     <ChatContainer channelId={channelId!}/>
+
+                    {showProfile && (
+                        <div className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725">
+                            <UserProfileContent
+                                userId={channelSummary.otherUser.id}
+                                username={channelSummary.otherUser.userName}
+                                displayName={channelSummary.otherUser.displayName}
+                                hasAvatar={channelSummary.otherUser.hasAvatar}
+                                joinDate={new Date()}
+                                friendedDate={new Date()}
+                                gender="nut"
+                                bio="the bigger the nut, the more nut per nut"
+                            />
+                        </div>
+                    )}
                 </div>
             ) : Math.random() * 100 >= 2 ? (
                 <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">

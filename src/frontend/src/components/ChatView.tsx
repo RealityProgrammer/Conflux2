@@ -349,7 +349,7 @@ export function ChatView({
     }), [appendMessage, editMessage, deleteMessage]);
 
     return (
-        <div className="flex flex-col overflow-hidden h-full text-white bg-gray-700">
+        <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
             {galleryState.items && galleryState.items.length > 0 && (
                 <MediaPreviewGallery
                     open={!!galleryState.items}
