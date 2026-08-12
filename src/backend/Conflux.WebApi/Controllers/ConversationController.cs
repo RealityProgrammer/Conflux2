@@ -9,6 +9,7 @@ using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -59,7 +60,7 @@ public sealed class ConversationController(
 
         // invokes send and cleanup the opened streams
         try {
-            Result<MessageDto> result = await messageService.SendMessageAsync(
+            var result = await messageService.SendMessageAsync(
                 userId, 
                 channelId, 
                 request.Body, 
@@ -96,8 +97,7 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
         }
 
-        Result<MessageDto> result =
-            await messageService.EditMessageAsync(messageId, userId, request.Body, cancellationToken);
+        var result = await messageService.EditMessageAsync(messageId, userId, request.Body, cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
@@ -148,7 +148,7 @@ public sealed class ConversationController(
 
         // TODO: Check if user has permission to view messages at this channel at service.
 
-        Result<GetMessagesResponse> result =
+        var result =
             await messageService.GetTimelineMessagesAsync(userId, channelId, direction, cursor, count, cancellationToken);
 
         if (result.IsSuccess) {

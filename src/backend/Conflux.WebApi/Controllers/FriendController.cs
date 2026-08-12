@@ -5,6 +5,7 @@ using Conflux.Domain.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -23,7 +24,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        Result<SendFriendRequestResponse> result = await friendService.SendFriendRequestAsync(userId, toUserId);
+        var result = await friendService.SendFriendRequestAsync(userId, toUserId);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<SendFriendRequestResponse>(result.Value, Error.None));
@@ -140,7 +141,7 @@ public sealed class FriendController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResult<DiscoverFriendSummary>> result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
+        var result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result.Value, Error.None));
@@ -168,7 +169,7 @@ public sealed class FriendController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResult<UserBasicProfileDto>> result = await friendService.QueryFriendsAsync(userId, name, offset, count);
+        var result = await friendService.QueryFriendsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<PaginatedResult<UserBasicProfileDto>>(result.Value, Error.None));
@@ -196,8 +197,7 @@ public sealed class FriendController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        Result<PaginatedResult<PendingFriendRequestDto>> result = 
-            await friendService.QueryPendingRequestsAsync(userId, name, offset, count);
+        var result = await friendService.QueryPendingRequestsAsync(userId, name, offset, count);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result.Value, Error.None));

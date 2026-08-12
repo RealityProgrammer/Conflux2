@@ -5,6 +5,7 @@ using Conflux.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -24,7 +25,7 @@ public sealed class ChannelController(
             return BadRequest(new ApiResponse<DmChannelSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        Result<DmChannelSummary> result =
+        var result =
             await channelService.GetDmChannelSummaryAsync(currentUserId, channelId);
 
         if (result.IsSuccess) {
@@ -49,7 +50,7 @@ public sealed class ChannelController(
             return BadRequest(new ApiResponse<DirectMessageResolutionResponse>(null, Errors.InvalidIdentifier()));
         }
 
-        Result<ChannelResolutionResult> result = 
+        var result = 
             await channelService.GetOrCreateDmChannelAsync(currentUserId, toUserId);
 
         if (result.IsSuccess) {

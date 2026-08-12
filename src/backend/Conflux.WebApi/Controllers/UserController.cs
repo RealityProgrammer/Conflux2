@@ -7,6 +7,7 @@ using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -89,7 +90,7 @@ public sealed class UserController(
             return BadRequest(new ApiResponse<UserBasicProfileDto>(null, Errors.InvalidIdentifier()));
         }
         
-        Result<UserBasicProfileDto> result = await userService.GetUserBasicProfileAsync(userId);
+        var result = await userService.GetUserBasicProfileAsync(userId);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserBasicProfileDto>(result.Value, Error.None));
@@ -103,7 +104,7 @@ public sealed class UserController(
     
     [HttpGet("{id:guid}/profile")]
     public async Task<ActionResult<ApiResponse<UserBasicProfileDto>>> GetUserBasicProfile(Guid id) {
-        Result<UserBasicProfileDto> result = await userService.GetUserBasicProfileAsync(id);
+        var result = await userService.GetUserBasicProfileAsync(id);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserBasicProfileDto>(result.Value, Error.None));

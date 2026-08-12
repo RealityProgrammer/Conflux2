@@ -15,6 +15,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.0" />
+        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.0" />
         <PackageReference Include="Mediator.SourceGenerator" Version="3.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -38,6 +40,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Conflux.Infrastructure\Conflux.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="GraphQL\" />
     </ItemGroup>
 
 </Project>

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -122,7 +123,7 @@ public sealed class AuthenticateController : ControllerBase {
         string email = decodedPayload[..firstColon];
         string refreshToken = decodedPayload[(firstColon + 1)..];
 
-        Result<Application.Dto.Responses.RefreshResponse> result = await _authService.RefreshAsync(email, refreshToken);
+        var result = await _authService.RefreshAsync(email, refreshToken);
 
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.

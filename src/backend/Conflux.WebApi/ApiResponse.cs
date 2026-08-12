@@ -1,5 +1,5 @@
-using Conflux.Domain;
 using System.Text.Json.Serialization;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi;
 
