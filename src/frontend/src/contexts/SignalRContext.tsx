@@ -6,7 +6,7 @@ import {
     HubConnectionState,
     LogLevel
 } from "@microsoft/signalr";
-import apiClient from "../api/client.ts";
+import { apiClient } from "../api/client.ts";
 
 interface SignalRContextType {
     connection: HubConnection | null;

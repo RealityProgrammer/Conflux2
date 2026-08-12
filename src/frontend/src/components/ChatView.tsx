@@ -1,4 +1,4 @@
-import type {Attachment, GetMessagesResponse, MessageDto, TimelineMessageDto, TimelineMessageBlockDto, UserBasicProfileDto} from "../api/responses.ts";
+import type {Attachment, GetMessagesResponse, MessageDto, TimelineMessageDto, TimelineMessageBlockDto, UserIdentityProfileDto} from "../api/responses.ts";
 import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 import {type ReactNode, useEffect, useLayoutEffect, useRef, useState, type RefObject, useImperativeHandle} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
@@ -172,7 +172,7 @@ function estimateMessageGroupHeight(
 }
 
 export interface QueryModification {
-    appendMessage: (message: MessageDto, userProfile?: UserBasicProfileDto) => void;
+    appendMessage: (message: MessageDto, userProfile?: UserIdentityProfileDto) => void;
     editMessage: (messageId: string, newBody: string | null) => void;
     deleteMessage: (messageId: string) => void;
 }
@@ -309,7 +309,7 @@ export function ChatView({
 
         // check if there is this user summary in any page
         const currentCache = queryClient.getQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(queryKey);
-        let knownUser: UserBasicProfileDto | undefined = undefined;
+        let knownUser: UserIdentityProfileDto | undefined = undefined;
 
         if (currentCache?.pages) {
             for (const page of currentCache.pages) {

@@ -1,7 +1,7 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import type {BackendResponse, GetMessagesResponse, MessageDto, ServiceResponse} from "./responses.ts";
 import {handleAxiosError} from "./errorHandling.ts";
-import apiClient from "./client.ts";
+import { apiClient } from "./client.ts";
 import type {GetMessagesRequest} from "./requests.ts";
 
 export const messageService = {

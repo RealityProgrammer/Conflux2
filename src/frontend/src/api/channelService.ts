@@ -4,7 +4,7 @@ import type {
     DirectMessageResolutionResponse,
     ServiceResponse, DmConversationListItemDto, PaginatedResponse
 } from "./responses.ts";
-import apiClient from "./client.ts";
+import { apiClient } from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import type {AxiosError, AxiosResponse} from "axios";
 

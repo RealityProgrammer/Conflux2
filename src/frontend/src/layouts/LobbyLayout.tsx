@@ -12,7 +12,7 @@ import type {
     DmConversationListItemDto,
     PaginatedResponse,
     ServiceResponse,
-    UserBasicProfileDto
+    UserIdentityProfileDto
 } from "../api/responses.ts";
 import {friendService} from "../api/friendService.ts";
 import {channelService} from "../api/channelService.ts";

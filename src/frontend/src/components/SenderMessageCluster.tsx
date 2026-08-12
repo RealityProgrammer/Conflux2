@@ -1,4 +1,4 @@
-import type {Attachment, MessageDto, TimelineMessageDto, TimelineMessageBlockDto, UserBasicProfileDto} from "../api/responses.ts";
+import type {Attachment, MessageDto, TimelineMessageDto, TimelineMessageBlockDto, UserIdentityProfileDto} from "../api/responses.ts";
 import {useAuthorization} from "../contexts/AuthContext.tsx";
 import {type MouseEvent, useState} from "react";
 import {ContextMenu, ScrollArea} from "radix-ui";
@@ -10,7 +10,7 @@ import {messageService} from "../api/messageService.ts";
 export interface MessageGroupRowProps {
     messageGroup: TimelineMessageBlockDto;
     // userProfile: UserBasicProfileDto | undefined | null;
-    userProfiles: Record<string, UserBasicProfileDto>;
+    userProfiles: Record<string, UserIdentityProfileDto>;
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     onActionTriggered: (action: "edit" | "delete" | "reply", message: MessageDto) => void;
     editingMessageId?: string;

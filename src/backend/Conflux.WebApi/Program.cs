@@ -22,6 +22,9 @@ using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
+using HotChocolate.AspNetCore;
+using HotChocolate.AspNetCore.Formatters;
+using HotChocolate.AspNetCore.Parsers;
 using Microsoft.AspNetCore.SignalR;
 using RedLockNet;
 using RedLockNet.SERedis;
@@ -124,7 +127,8 @@ builder.Services
     .AddGraphQLServer()
     .AddQueryType<UserQuery>()
     .AddType<UserType>()
-    .AddProjections();
+    .AddProjections()
+    .AddAuthorization();
 
 // general services needed
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(

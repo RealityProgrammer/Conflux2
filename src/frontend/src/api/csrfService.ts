@@ -1,4 +1,4 @@
-import apiClient from "./client.ts";
+import { apiClient } from "./client.ts";
 import type {
     BackendResponse,
     ServiceResponse,

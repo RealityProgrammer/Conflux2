@@ -1,9 +1,21 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type {BackendResponse, ServiceResponse, UserBasicProfileDto} from "./responses.ts";
-import apiClient from "./client.ts";
-import type { AvatarOperation } from "./requests.ts";
-import { handleAxiosError } from "./errorHandling.ts";
+import type {BackendResponse, ServiceResponse, UserIdentityProfileDto} from "./responses.ts";
+import {apiClient, executeGraphQL} from "./client.ts";
+import type {AvatarOperation} from "./requests.ts";
+import {handleAxiosError} from "./errorHandling.ts";
 import {authService} from "./authService.ts";
+import {gql} from "../gql";
+
+const GET_USER_IDENTITY_PROFILE = gql(`
+  query GetUserIdentityProfile($id: UUID!) {
+    userById(id: $id) {
+      id,
+      userName,
+      displayName,
+      hasAvatar
+    }
+  }
+`);
 
 export const userService = {
     uploadAvatar: async (file: File): Promise<ServiceResponse> => {
@@ -88,31 +100,34 @@ export const userService = {
         }
     },
 
-    getUserBasicProfile: async (userId: string): Promise<ServiceResponse<UserBasicProfileDto>> => {
+    getUserIdentityProfile: async (userId: string): Promise<ServiceResponse<UserIdentityProfileDto>> => {
         try {
-            const response: AxiosResponse<BackendResponse<UserBasicProfileDto>> =
-                await apiClient.get<BackendResponse<UserBasicProfileDto>>(`/user/${encodeURIComponent(userId)}/profile`);
+            // const response: AxiosResponse<BackendResponse<UserIdentityProfileDto>> =
+            //     await graphqlClient.post<BackendResponse<UserIdentityProfileDto>>(
+            //         '',
+            //         `
+            //         query {
+            //             userById(id: "${userId}") {
+            //                 id,
+            //                 username,
+            //                 displayName,
+            //                 hasAvatar
+            //             }
+            //         }`
+            //     );
+            //
+            // return {
+            //     success: true,
+            //     statusCode: response.status,
+            //     data: response.data!.data,
+            // }
+
+            const data = await executeGraphQL(GET_USER_IDENTITY_PROFILE, { id: userId });
 
             return {
                 success: true,
-                statusCode: response.status,
-                data: response.data!.data,
-            }
-        } catch (error) {
-            const axiosError = error as AxiosError<BackendResponse>;
-            return handleAxiosError(axiosError);
-        }
-    },
-
-    getSessionUserBasicProfile: async (): Promise<ServiceResponse<UserBasicProfileDto>> => {
-        try {
-            const response: AxiosResponse<BackendResponse<UserBasicProfileDto>> =
-                await apiClient.get<BackendResponse<UserBasicProfileDto>>("/user/profile");
-
-            return {
-                success: true,
-                statusCode: response.status,
-                data: response.data!.data,
+                statusCode: data.userById.length > 0 ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
+                data: (data.userById[0] as unknown) as UserIdentityProfileDto,
             }
         } catch (error) {
             const axiosError = error as AxiosError<BackendResponse>;

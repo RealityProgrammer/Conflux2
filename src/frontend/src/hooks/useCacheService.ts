@@ -1,10 +1,10 @@
 import {useQueryClient} from "@tanstack/react-query";
 import {userService} from "../api/userService.ts";
-import type {DmChannelSummary, ServiceResponse, UserBasicProfileDto} from "../api/responses.ts";
+import type {DmChannelSummary, ServiceResponse, UserIdentityProfileDto} from "../api/responses.ts";
 import {channelService} from "../api/channelService.ts";
 
 interface UseCacheServiceResult {
-    getUserBasicProfile: (userId: string, staleTime?: number) => Promise<ServiceResponse<UserBasicProfileDto>>;
+    getUserBasicProfile: (userId: string, staleTime?: number) => Promise<ServiceResponse<UserIdentityProfileDto>>;
     getDmChannelSummary: (channelId: string) => Promise<ServiceResponse<DmChannelSummary>>;
 }
 
@@ -14,7 +14,7 @@ export const useCacheService = (): UseCacheServiceResult => {
     const getUserBasicProfile = async (userId: string, staleTime?: number) => {
         return await queryClient.fetchQuery({
             queryKey: ["userProfile", userId],
-            queryFn: () => userService.getUserBasicProfile(userId),
+            queryFn: () => userService.getUserIdentityProfile(userId),
             staleTime: staleTime || 900,
         });
     };

@@ -5,7 +5,7 @@ import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/rea
 import {
     type PaginatedResponse,
     type QueryPendingRequestElement,
-    type ServiceResponse, type UserBasicProfileDto, UserRelationshipStatus
+    type ServiceResponse, type UserIdentityProfileDto, UserRelationshipStatus
 } from "../../api/responses.ts";
 import {friendService} from "../../api/friendService.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
@@ -23,7 +23,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
-    element: UserBasicProfileDto;
+    element: UserIdentityProfileDto;
     removeUserFromCache: (userId: string) => void;
     navigateToDirectMessage: (userId: string) => void;
 }
@@ -46,8 +46,8 @@ export default function FriendListTabContent() {
         isLoading,
     } = useInfiniteQuery({
         queryKey: queryKey,
-        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<UserBasicProfileDto> | null | undefined> => {
-            const response: ServiceResponse<PaginatedResponse<UserBasicProfileDto>> =
+        queryFn: async ({ pageParam = 0 }): Promise<PaginatedResponse<UserIdentityProfileDto> | null | undefined> => {
+            const response: ServiceResponse<PaginatedResponse<UserIdentityProfileDto>> =
                 await friendService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
 
             return response.data;
@@ -68,7 +68,7 @@ export default function FriendListTabContent() {
     const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
     const handleRemoveUserFromCache = (userId: string) => {
-        queryClient.setQueryData<InfiniteData<PaginatedResponse<UserBasicProfileDto>>>(
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto>>>(
             queryKey,
             (oldData) => {
                 if (!oldData) return oldData;
@@ -114,7 +114,7 @@ export default function FriendListTabContent() {
 
         const userProfile = profileResponse.data!;
 
-        queryClient.setQueryData<InfiniteData<PaginatedResponse<UserBasicProfileDto> | null | undefined>>(
+        queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto> | null | undefined>>(
             queryKey,
             (oldData) => {
                 if (!oldData || oldData.pages.length === 0) return oldData;

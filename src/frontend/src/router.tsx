@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
 
             if (authInfo?.id) {
                 try {
-                    const profileResponse = await userService.getSessionUserBasicProfile();
+                    const profileResponse = await userService.getUserIdentityProfile(authInfo.id);
                     profileInfo = profileResponse.data;
                 } catch (error) {
                     console.error("Failed to load user profile: ", error);

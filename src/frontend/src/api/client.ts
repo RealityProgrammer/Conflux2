@@ -3,13 +3,24 @@ import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import {csrfService} from "./csrfService.ts";
 import type {BackendResponse} from "./responses.ts";
+import type {TypedDocumentNode} from "@graphql-typed-document-node/core";
+import { print } from 'graphql';
 
 axios.defaults.withCredentials = true;
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_API_URL,
     headers: {
         'Content-Type': 'application/json',
+    },
+    withCredentials: true,
+});
+
+export const graphqlClient = apiClient.create({
+    baseURL: `${import.meta.env.VITE_BACKEND_URL}/graphql`,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
     },
     withCredentials: true,
 });
@@ -78,4 +89,22 @@ function registerAuthenticateExpirationInterception() {
 
 registerAuthenticateExpirationInterception();
 
-export default apiClient;
+export async function executeGraphQL<TData, TVariables>(
+    document: TypedDocumentNode<TData, TVariables>,
+    variables?: TVariables
+): Promise<TData> {
+
+    // Convert the AST object back into a string for the HTTP request
+    const query = print(document);
+
+    const response = await graphqlClient.post('', {
+        query,
+        variables,
+    });
+
+    if (response.data.errors?.length > 0) {
+        throw new Error(`GraphQL Error:\n${response.data.errors.map((e: any) => e.message).join('\n')}`);
+    }
+
+    return response.data.data;
+}

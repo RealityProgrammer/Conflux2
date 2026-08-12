@@ -1,4 +1,4 @@
-import apiClient from "./client.ts";
+import { apiClient } from "./client.ts";
 import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./requests.ts";
 import type {
     BackendResponse,

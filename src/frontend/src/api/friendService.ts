@@ -3,10 +3,10 @@ import type {
     PaginatedResponse, QueryPendingRequestElement,
     SendFriendRequestResponse,
     ServiceResponse,
-    UserBasicProfileDto
+    UserIdentityProfileDto
 } from "./responses.ts";
 import type {AxiosError, AxiosResponse} from "axios";
-import apiClient from "./client.ts";
+import { apiClient } from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 
 export const friendService = {
@@ -111,7 +111,7 @@ export const friendService = {
         }
     },
 
-    queryFriends: async (name: string | null, offset: number, count: number) : Promise<ServiceResponse<PaginatedResponse<UserBasicProfileDto>>> => {
+    queryFriends: async (name: string | null, offset: number, count: number) : Promise<ServiceResponse<PaginatedResponse<UserIdentityProfileDto>>> => {
         try {
             const searchParams = new URLSearchParams();
 
@@ -122,8 +122,8 @@ export const friendService = {
             searchParams.append("offset", String(offset));
             searchParams.append("count", String(count));
 
-            const response: AxiosResponse<BackendResponse<PaginatedResponse<UserBasicProfileDto>>> =
-                await apiClient.get<BackendResponse<PaginatedResponse<UserBasicProfileDto>>>(`/friend/friends?${searchParams.toString()}`);
+            const response: AxiosResponse<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>> =
+                await apiClient.get<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>>(`/friend/friends?${searchParams.toString()}`);
 
             return {
                 success: true,

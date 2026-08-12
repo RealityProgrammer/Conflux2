@@ -82,39 +82,39 @@ public sealed class UserController(
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
     }
 
-    [HttpGet("profile")]
-    public async Task<ActionResult<ApiResponse<UserIdentityProfileDto>>> GetSessionUserIdentityProfile() {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserIdentityProfileDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        var result = await userService.GetIdentityProfileAsync(userId);
-
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));
-        }
-        
-        return result.Error.Code switch {
-            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
-        };
-    }
-    
-    [HttpGet("{id:guid}/profile")]
-    public async Task<ActionResult<ApiResponse<UserIdentityProfileDto>>> GetIdentityProfile(Guid id) {
-        var result = await userService.GetIdentityProfileAsync(id);
-
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));
-        }
-        
-        return result.Error.Code switch {
-            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
-        };
-    }
+    // [HttpGet("profile")]
+    // public async Task<ActionResult<ApiResponse<UserIdentityProfileDto>>> GetSessionUserIdentityProfile() {
+    //     var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+    //     
+    //     if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+    //         return BadRequest(new ApiResponse<UserIdentityProfileDto>(null, Errors.InvalidIdentifier()));
+    //     }
+    //     
+    //     var result = await userService.GetIdentityProfileAsync(userId);
+    //
+    //     if (result.IsSuccess) {
+    //         return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));
+    //     }
+    //     
+    //     return result.Error.Code switch {
+    //         nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
+    //         _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
+    //     };
+    // }
+    //
+    // [HttpGet("{id:guid}/profile")]
+    // public async Task<ActionResult<ApiResponse<UserIdentityProfileDto>>> GetIdentityProfile(Guid id) {
+    //     var result = await userService.GetIdentityProfileAsync(id);
+    //
+    //     if (result.IsSuccess) {
+    //         return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));
+    //     }
+    //     
+    //     return result.Error.Code switch {
+    //         nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
+    //         _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
+    //     };
+    // }
 
     [HttpPost("setup-profile")]
     public async Task<ActionResult<ApiResponse>> SetupProfile([FromForm] SetupProfileRequest request) {
