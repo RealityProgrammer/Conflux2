@@ -73,7 +73,7 @@
     }
 
     .hover-rising {
-        @apply hover:-translate-y-1 hover:scale-[1.02] transition-[translate, scale] duration-[250ms,250ms] ease-[linear, linear]
+        @apply hover:-translate-y-1 hover:scale-[1.02] transition-[translate_scale] duration-[250ms,250ms] ease-linear
     }
 
     .button-group {
