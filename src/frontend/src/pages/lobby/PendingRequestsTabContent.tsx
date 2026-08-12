@@ -21,8 +21,8 @@ import type {
 } from "../../api/events.ts";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
-import {useCacheService} from "../../hooks/useCacheService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -102,7 +102,7 @@ export default function PendingRequestsTabContent() {
     );
   };
 
-  const {getUserBasicProfile} = useCacheService();
+  const getUserBasicProfile = useFetchUserBasicProfile();
 
   useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
     const profileResponse = await getUserBasicProfile(notif.senderUserId);

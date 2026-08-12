@@ -10,8 +10,8 @@ import type {DmConversationListItemDto, PaginatedResponse, ServiceResponse} from
 import {channelService} from "../api/channelService.ts";
 import {UserNameplate} from "../components/UserNameplate.tsx";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
-import {useCacheService} from "../hooks/useCacheService.ts";
 import type {UpdateDmConversationListEvent} from "../api/events.ts";
+import {useFetchDmChannelSummary} from "../hooks/fetchDmChannelSummary.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -57,7 +57,7 @@ function DirectMessagesList() {
 
   const queryKey = ["dmConversations"];
 
-  const cacheService = useCacheService();
+  const getDmChannelSummary = useFetchDmChannelSummary();
   const queryClient = useQueryClient();
 
   const {
@@ -90,7 +90,7 @@ function DirectMessagesList() {
   const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent) => {
-    const dmChannelSummary = await cacheService.getDmChannelSummary(event.channelId);
+    const dmChannelSummary = await getDmChannelSummary(event.channelId);
 
     queryClient.setQueryData<InfiniteData<PaginatedResponse<DmConversationListItemDto> | undefined | null>>(
       queryKey,
@@ -133,7 +133,7 @@ function DirectMessagesList() {
       fetchNextPage={() => {
         fetchNextPage()
       }}
-      renderItem={(itemIndex, virtualItem) => {
+      renderItem={(itemIndex) => {
         const item = allElements[itemIndex];
 
         return (

@@ -9,6 +9,7 @@ public sealed class UserQuery {
         return context.Users;
     }
     
+    [UseFirstOrDefault]
     [UseProjection]
     public IQueryable<ApplicationUser> GetUserById([Service] ApplicationDbContext context, Guid id) {
         return context.Users.Where(u => u.Id == id);

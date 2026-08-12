@@ -9,10 +9,14 @@ const config: CodegenConfig = {
             preset: 'client',
             config: {
                 useTypeImports: true,
+                scalars: {
+                    UUID: 'string',
+                    DateTime: 'string',
+                }
             },
             presetConfig: {
                 gqlTagName: 'gql',
-            }
+            },
         }
     }
 };

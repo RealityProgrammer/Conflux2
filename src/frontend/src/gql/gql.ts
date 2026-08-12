@@ -1,6 +1,6 @@
 /* eslint-disable */
 import * as types from './graphql';
-import type {TypedDocumentNode as DocumentNode} from '@graphql-typed-document-node/core';
+import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 
 /**
  * Map of all GraphQL operations in the project.
@@ -14,10 +14,12 @@ import type {TypedDocumentNode as DocumentNode} from '@graphql-typed-document-no
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-  "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": typeof types.GetUserIdentityProfileDocument,
+    "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": typeof types.GetUserIdentityProfileDocument,
+    "\n  query GetUserFullProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar,\n      biography,\n      pronouns,\n      createdAt,\n      numMutualFriends\n    }\n  }\n": typeof types.GetUserFullProfileDocument,
 };
 const documents: Documents = {
-  "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": types.GetUserIdentityProfileDocument,
+    "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": types.GetUserIdentityProfileDocument,
+    "\n  query GetUserFullProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar,\n      biography,\n      pronouns,\n      createdAt,\n      numMutualFriends\n    }\n  }\n": types.GetUserFullProfileDocument,
 };
 
 /**
@@ -38,9 +40,13 @@ export function gql(source: string): unknown;
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n"): (typeof documents)["\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\n  query GetUserFullProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar,\n      biography,\n      pronouns,\n      createdAt,\n      numMutualFriends\n    }\n  }\n"): (typeof documents)["\n  query GetUserFullProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar,\n      biography,\n      pronouns,\n      createdAt,\n      numMutualFriends\n    }\n  }\n"];
 
 export function gql(source: string) {
   return (documents as any)[source] ?? {};
 }
 
-export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<infer TType, any> ? TType : never;
+export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<  infer TType,  any>  ? TType  : never;

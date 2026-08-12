@@ -29,6 +29,17 @@ export type UserIdentityProfileDto = {
   hasAvatar: boolean;
 }
 
+export type UserFullProfileDto = {
+  id: string;
+  userName: string;
+  displayName: string;
+  hasAvatar: boolean;
+  biography: string | null;
+  pronouns: string | null;
+  createdAt: Date;
+  numMutualFriends: number;
+}
+
 export interface LoginResponse {
   authorization: UserAuthorizationInfo;
   tokenType: string;

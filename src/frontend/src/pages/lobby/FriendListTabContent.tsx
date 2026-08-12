@@ -11,10 +11,10 @@ import Spinner from "../../components/Spinner.tsx";
 import type {FriendRequestAcceptedEvent, UnfriendedEvent} from "../../api/events.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
-import {useCacheService} from "../../hooks/useCacheService.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -97,14 +97,14 @@ export default function FriendListTabContent() {
     );
   };
 
-  const cacheService = useCacheService();
-
   useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
     handleRemoveUserFromCache(notif.invokerUserId);
   });
 
+  const getUserBasicProfile = useFetchUserBasicProfile();
+
   useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
-    const profileResponse = await cacheService.getUserBasicProfile(notif.acceptorUserId);
+    const profileResponse = await getUserBasicProfile(notif.acceptorUserId);
 
     if (!profileResponse.success) return;
 

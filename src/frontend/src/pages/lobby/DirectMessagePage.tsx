@@ -7,7 +7,7 @@ import {BsPerson} from "react-icons/bs";
 import ChatContainer from "../../components/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
-import UserProfileContent from "../../components/UserProfileContent.tsx";
+import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 
 export default function DirectMessagePage() {
   useDocumentTitle("DM - Conflux");
@@ -42,22 +42,20 @@ export default function DirectMessagePage() {
       </header>
 
       {channelId && channelSummary ? (
-        <div className="flex-1 min-h-0 flex flex-row relative">
+        <div className="flex-1 min-h-0 flex flex-row relative gap-0">
           <ChatContainer channelId={channelId!}/>
 
           {showProfile && (
-            <div className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725">
-              <UserProfileContent
-                userId={channelSummary.otherUser.id}
-                username={channelSummary.otherUser.userName}
-                displayName={channelSummary.otherUser.displayName}
-                hasAvatar={channelSummary.otherUser.hasAvatar}
-                joinDate={new Date()}
-                friendedDate={new Date()}
-                gender="nut"
-                bio="the bigger the nut, the more nut per nut"
-              />
-            </div>
+            <UserProfilePanel
+              className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
+              userId={channelSummary.otherUser.id}
+            />
+
+            // <div className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725">
+            //   <UserProfilePanel
+            //     userId={channelSummary.otherUser.id}
+            //   />
+            // </div>
           )}
         </div>
       ) : Math.random() * 100 >= 2 ? (

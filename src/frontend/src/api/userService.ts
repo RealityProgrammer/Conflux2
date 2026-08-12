@@ -1,5 +1,5 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type {BackendResponse, ServiceResponse, UserIdentityProfileDto} from "./responses.ts";
+import type {BackendResponse, ServiceResponse, UserFullProfileDto, UserIdentityProfileDto} from "./responses.ts";
 import {apiClient, executeGraphQL} from "./client.ts";
 import type {AvatarOperation} from "./requests.ts";
 import {handleAxiosError} from "./errorHandling.ts";
@@ -13,6 +13,21 @@ const GET_USER_IDENTITY_PROFILE = gql(`
       userName,
       displayName,
       hasAvatar
+    }
+  }
+`);
+
+const GET_USER_FULL_PROFILE = gql(`
+  query GetUserFullProfile($id: UUID!) {
+    userById(id: $id) {
+      id,
+      userName,
+      displayName,
+      hasAvatar,
+      biography,
+      pronouns,
+      createdAt,
+      numMutualFriends
     }
   }
 `);
@@ -106,12 +121,30 @@ export const userService = {
 
       return {
         success: true,
-        statusCode: data.userById.length > 0 ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
-        data: (data.userById[0] as unknown) as UserIdentityProfileDto,
+        statusCode: !!data.userById ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
+        data: (data.userById as unknown) as UserIdentityProfileDto,
       }
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
+
+  getUserFullProfile: async (userId: string): Promise<ServiceResponse<UserFullProfileDto>> => {
+    try {
+      const data = await executeGraphQL(GET_USER_FULL_PROFILE, {id: userId});
+
+      return {
+        success: true,
+        statusCode: !!data.userById ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
+        data: {
+          ...data.userById,
+          createdAt: new Date(data.userById?.createdAt ?? "")
+        } as UserFullProfileDto,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  }
 }

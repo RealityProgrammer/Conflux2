@@ -11,21 +11,23 @@ interface UserProfileContentProps {
   bannerUrl?: string;
   joinDate?: Date;
   friendedDate?: Date;
-  gender?: string;
+  pronouns?: string;
   bio?: string;
+  mutualFriendsCount: number;
 }
 
 export default function UserProfileContent({
-                                             userId,
-                                             username,
-                                             displayName,
-                                             hasAvatar,
-                                             bannerUrl,
-                                             joinDate,
-                                             gender,
-                                             bio,
-                                             friendedDate,
-                                           }: UserProfileContentProps) {
+  userId,
+  username,
+  displayName,
+  hasAvatar,
+  bannerUrl,
+  joinDate,
+  pronouns,
+  bio,
+  friendedDate,
+  mutualFriendsCount
+}: UserProfileContentProps) {
   return (
     <>
       <div className="relative aspect-video w-full">
@@ -46,47 +48,48 @@ export default function UserProfileContent({
         />
       </div>
 
-      <div className="px-4 pb-6 pt-12">
-                <span className="text-xl font-bold leading-tight text-gray-50 inline">
-                    {displayName}
-                </span>
+      <div className="mt-12 px-2">
+        <span className="text-xl font-bold leading-none text-gray-50">
+          {displayName}
+        </span>
 
-        <span className="ml-2 text-sm font-medium text-gray-400 inline">
-                    @{username}
-                </span>
+        <span className="ml-2 text-sm font-medium leading-none text-gray-400">
+          @{username}
+        </span>
 
         <div className="grid grid-cols-2 gap-x-2 text-[13px]">
           {joinDate && (
             <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-                            <FaBirthdayCake className="size-4 fill-gray-50 mr-2"/>
-              {joinDate.toLocaleDateString()}
-                        </span>
+              <FaBirthdayCake className="size-4 fill-gray-50 mr-2"/>
+              {joinDate?.toLocaleDateString() || ""}
+            </span>
           )}
 
           {friendedDate && (
-            <span className="mt-1 inline-flex justify-end items-center text-sm text-gray-50">
-                            <FaHandshake className="size-4 fill-gray-50 mr-2"/>
-              {friendedDate.toLocaleDateString()}
-                        </span>
+            <span className="mt-1 inline-flex items-center text-sm text-gray-50">
+              <FaHandshake className="size-4 fill-gray-50 mr-2"/>
+              {friendedDate?.toLocaleDateString() || ""}
+            </span>
           )}
 
-          {gender && (
+          {pronouns && (
             <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-                            <FaMarsAndVenus className="size-4 fill-gray-50 mr-2"/>
-              {gender}
-                        </span>
+              <FaMarsAndVenus className="size-4 fill-gray-50 mr-2"/>
+              {pronouns || ""}
+            </span>
           )}
         </div>
 
         <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-2 flex-none"/>
 
         {bio && (
-          <p className="text-[13px] text-gray-50">{bio}</p>
+          <>
+            <p className="text-[13px] text-gray-50">{bio}</p>
+            <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-2 flex-none"/>
+          </>
         )}
 
-        <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-2 flex-none"/>
-
-        <span className="text-xs block">N mutual friends.</span>
+        <span className="text-xs block">{mutualFriendsCount} mutual friends.</span>
         <span className="text-xs block">N mutual server.</span>
       </div>
     </>
