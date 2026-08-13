@@ -128,32 +128,16 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
   const [editingMessage, setEditingMessage] = useState<MessageDto | undefined>(undefined);
   const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
 
-  const handleSaveEdit = async (newBody: string) => {
+  const handleSaveEdit = async (newBody: string | null) => {
     if (editingMessage === undefined) return;
 
     setEditingMessage(undefined);
     setEditingMessageDraft(null);
 
-    onMessageEdit(editingMessage, newBody.trim());
+    onMessageEdit(editingMessage, newBody?.trim() ?? null);
   };
 
   const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
-
-  // const handleMessageAction: SenderMessageCluster['onActionTriggered'] = (action, message) => {
-  //   switch (action) {
-  //     case "delete":
-  //       setDeletingMessage(message);
-  //       break;
-  //
-  //     case "edit":
-  //       setEditingMessage(message);
-  //       break;
-  //
-  //     case "reply":
-  //       onMessageReplyRequested(message);
-  //       break;
-  //   }
-  // };
 
   // signalr events
   // change the cache pages when message received
@@ -202,13 +186,22 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
   }), [appendMessage, editMessage, deleteMessage]);
 
   // timeline entries
-  const timelineItems = useTimelineEntries(messageGroups, userProfiles);
+  const timelineItems = useTimelineEntries(messageGroups, userProfiles, editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
     actions: {
-      onMessageDeleteRequest: (message) => setDeletingMessage(message),
+      onMessageDeleteTrigger: setDeletingMessage,
+      onMessageEditTrigger: setEditingMessage,
+      onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
+      onEditCancel: () => {
+        setEditingMessage(undefined);
+        setEditingMessageDraft(null);
+      },
+      onAttachmentClick: handleAttachmentClick,
+      onEditSaved: (newBody) => handleSaveEdit(newBody),
     },
     states: {
       viewportWidth: viewportWidth,
+      editingMessageDraft: editingMessageDraft,
     }
   };
 
@@ -258,8 +251,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
           if (target === 'previousLoader' || target === 'nextLoader') return 30;
 
           const entry = timelineItems[target.itemIndex];
-          return entry.measureHeight(viewportWidth - 16 - 52, timelineContext);
-          // return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessage?.id, editingMessageDraft);
+          return entry.measureHeight(timelineContext);
         }}
         hasPreviousPage={hasPreviousPage}
         isFetchingPreviousPage={isFetchingPreviousPage}

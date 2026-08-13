@@ -20,7 +20,6 @@ export default function MessageAttachments({
             <div
               key={attachment.id}
               className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
-              onClick={() => onAttachmentClick(index)}
             >
               {attachment.type.startsWith("image") ? (
                 <img
@@ -28,15 +27,20 @@ export default function MessageAttachments({
                   alt="attachment"
                   className="object-cover size-full"
                   loading="lazy"
+                  onClick={() => onAttachmentClick(index)}
                 />
               ) : attachment.type.startsWith("video") ? (
                 <video
                   src={messageService.getAttachmentUrl(attachment.id, false)}
                   className="object-cover size-full"
                   autoPlay={false}
+                  onClick={() => onAttachmentClick(index)}
                 />
               ) : attachment.type.startsWith("audio") ? (
-                <div className="flex flex-row justify-center items-center size-full">
+                <div
+                  className="flex flex-row justify-center items-center size-full"
+                  onClick={() => onAttachmentClick(index)}
+                >
                   <BsMusicNote className="size-16 fill-white"/>
                 </div>
               ) : null}

@@ -1,11 +1,19 @@
-import type {MessageDto} from "../../api/responses.ts";
+import type {Attachment, MessageDto} from "../../api/responses.ts";
 
 export interface TimelineContext {
   actions: {
-    onMessageDeleteRequest: (message: MessageDto) => void;
+    onMessageDeleteTrigger: (message: MessageDto) => void;
+    onMessageEditTrigger: (message: MessageDto) => void;
+
+    onEditCancel: () => void;
+    onEditDraftChange: (body: string | null) => void;
+    onEditSaved: (newBody: string | null) => void;
+
+    onAttachmentClick: (attachments: Attachment[], index: number) => void;
   };
 
   states: {
     viewportWidth: number;
+    editingMessageDraft: string | null;
   }
 }

@@ -20,13 +20,11 @@ export type MessageItemProps = {
 }
 
 export class MessageItem extends TimelineItem<MessageItemProps> {
-  readonly type = "message_cluster";
-
   constructor(data: MessageItemProps) {
     super(data);
   }
 
-  measureHeight(displayWidth: number, context: TimelineContext): number {
+  measureHeight(context: TimelineContext): number {
     let height = 0;
 
     if (this.data.showHeader) {
@@ -38,7 +36,8 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     if (message.body) {
       const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
 
-      height += estimateMessageLayout(message.id, message.body, messageDisplayWidth, 24).height;
+      const layout = estimateMessageLayout(message.id, message.body, messageDisplayWidth, 24);
+      height += layout.height;
     }
 
     if (message.attachments && message.attachments.length > 0) {
@@ -50,7 +49,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 
   render(measuredHeight: number, context: TimelineContext): ReactNode {
     return (
-      <MessageWithHeaderView
+      <MessageView
         key={`message-${this.data.message.id}`}
         senderProfile={this.data.senderProfile}
         message={this.data.message}
@@ -61,19 +60,19 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
   }
 }
 
-interface MessageWithHeaderViewProps {
+interface MessageViewProps {
   senderProfile: UserIdentityProfileDto;
   message: TimelineMessageDto;
   showHeader: boolean;
   context: TimelineContext;
 }
 
-export default function MessageWithHeaderView({
+export default function MessageView({
   senderProfile,
   message,
   showHeader,
   context,
-}: MessageWithHeaderViewProps) {
+}: MessageViewProps) {
   const auth = useAuthorization();
 
   return (
@@ -93,12 +92,18 @@ export default function MessageWithHeaderView({
               <div className="flex-1 min-w-0">
                 <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
 
-                <MessageContentView message={message}/>
+                <MessageContentView
+                  message={message}
+                  onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
+                />
               </div>
             </div>
           ) : (
             <div className="ml-13">
-              <MessageContentView message={message}/>
+              <MessageContentView
+                message={message}
+                onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
+              />
             </div>
           )}
         </div>
@@ -123,7 +128,10 @@ export default function MessageWithHeaderView({
               <ContextMenu.Item
                 className="dropdown-item-default"
                 onSelect={() => {
-                  // onActionTriggered("edit", selectedMessage);
+                  context.actions.onMessageEditTrigger({
+                    ...message,
+                    senderUserId: senderProfile.id,
+                  });
                 }}
               >
                 Edit message <BsPencil className="fill-white size-4 ml-auto"/>
@@ -132,7 +140,7 @@ export default function MessageWithHeaderView({
               <ContextMenu.Item
                 className="dropdown-item-danger"
                 onSelect={() => {
-                  context.actions.onMessageDeleteRequest({
+                  context.actions.onMessageDeleteTrigger({
                     ...message,
                     senderUserId: senderProfile.id,
                   })
@@ -161,7 +169,7 @@ export default function MessageWithHeaderView({
   );
 }
 
-function MessageContentView({message}: { message: TimelineMessageDto }) {
+function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
   return (
     <>
       <div className="text-sm">
@@ -189,7 +197,7 @@ function MessageContentView({message}: { message: TimelineMessageDto }) {
       {message.attachments && message.attachments.length > 0 && (
         <MessageAttachments
           attachments={message.attachments}
-          onAttachmentClick={(index) => {}}
+          onAttachmentClick={onAttachmentClick}
         />
       )}
     </>

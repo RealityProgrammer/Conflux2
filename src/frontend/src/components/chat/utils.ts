@@ -10,9 +10,7 @@ type CachedMessage = {
 const preparedCache = new Map<string, CachedMessage>();
 const MAX_PREPARED_CACHE_SIZE = 512;
 
-function ensurePreparedMessage(id: string, content: string): PreparedText | null {
-  if (!content) return null;
-
+function getPreparedMessage(id: string, content: string): PreparedText {
   if (preparedCache.has(id)) {
     const cached = preparedCache.get(id)!;
 
@@ -37,18 +35,8 @@ function ensurePreparedMessage(id: string, content: string): PreparedText | null
   return prepared;
 }
 
-function getPreparedMessage(id: string): CachedMessage | null {
-  if (!preparedCache.has(id)) return null;
-
-  const cached = preparedCache.get(id)!;
-  preparedCache.delete(id);
-  preparedCache.set(id, cached);
-  return cached;
-}
-
 export function estimateMessageLayout(id: string, content: string, displayAreaWidth: number, lineHeight: number): { height: number, lineCount: number } {
-  const cached = getPreparedMessage(id);
-  if (!cached) return {height: lineHeight, lineCount: 1};
+  const prepared = getPreparedMessage(id, content);
 
   const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
 
@@ -56,9 +44,7 @@ export function estimateMessageLayout(id: string, content: string, displayAreaWi
     console.error("pretext is not supported.");
     return {height: 0, lineCount: 0};
   } else {
-    ensurePreparedMessage(id, content);
-
-    const layoutResult: LayoutResult = layout(cached.prepared, displayAreaWidth, lineHeight);
+    const layoutResult: LayoutResult = layout(prepared, displayAreaWidth, lineHeight);
     return {height: layoutResult.height, lineCount: layoutResult.lineCount};
   }
 }
