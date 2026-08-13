@@ -2,11 +2,8 @@ import type {
   Attachment,
   GetMessagesResponse,
   MessageDto,
-  TimelineMessageBlockDto,
-  TimelineMessageDto,
   UserIdentityProfileDto
 } from "../api/responses.ts";
-import {layout, type LayoutResult, prepare, type PreparedText} from "@chenglou/pretext";
 import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";
@@ -19,164 +16,15 @@ import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
 import AlertActionDialog from "./AlertActionDialog.tsx";
-import SenderMessageCluster, {type SenderMessageCluster} from "./SenderMessageCluster.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {useFetchUserBasicProfile} from "../hooks/fetchUserBasicProfile.ts";
+import useTimelineEntries from "../hooks/useTimelineEntries.ts";
+import type {TimelineContext} from "./chat/TimelineContext.ts";
 
 type MediaGalleryState = {
   items: { id: string; type: string }[];
   currentIndex: number;
 };
-
-type CachedMessage = {
-  prepared: PreparedText;
-  content: string;
-};
-
-const BODY_FONT = '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-const BODY_LINE_HEIGHT = 24;
-const BODY_ATTACHMENT_PADDING = 4;
-const MESSAGE_ATTACHMENT_BOTTOM_PADDING = 4;
-
-const preparedCache = new Map<string, CachedMessage>();
-const MAX_PREPARED_CACHE_SIZE = 512;
-
-// function fallbackTextHeight(text: string, width: number) {
-//     const averageCharacterWidth = 7;
-//     const charactersPerLine = Math.max(1, Math.floor(width / averageCharacterWidth));
-//
-//     return text.split('\n').reduce((height, paragraph) => {
-//         const lineCount = Math.max(1, Math.ceil(paragraph.length / charactersPerLine));
-//         return height + lineCount * BODY_LINE_HEIGHT;
-//     }, 0);
-// }
-
-function ensurePreparedMessage(id: string, content: string): PreparedText | null {
-  if (!content) return null;
-
-  // re-insert on hit to refresh the position
-  if (preparedCache.has(id)) {
-    const cached = preparedCache.get(id)!;
-
-    if (cached.content === content) {
-      // Re-insert on hit to refresh LRU order
-      preparedCache.delete(id);
-      preparedCache.set(id, cached);
-      return cached.prepared;
-    }
-  }
-
-  // evict the oldest text if passed the cache size
-  if (preparedCache.size >= MAX_PREPARED_CACHE_SIZE) {
-    const oldestKey = preparedCache.keys().next().value;
-    if (oldestKey) preparedCache.delete(oldestKey);
-  }
-
-  const prepared = prepare(content, BODY_FONT, {
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'normal',
-  });
-
-  preparedCache.set(id, {prepared, content});
-  return prepared;
-}
-
-function getPreparedMessage(id: string): CachedMessage | null {
-  if (!preparedCache.has(id)) return null;
-
-  const cached = preparedCache.get(id)!;
-  preparedCache.delete(id);
-  preparedCache.set(id, cached);
-  return cached;
-}
-
-function estimateMessageContentLayout(id: string, displayAreaWidth: number): { height: number, lineCount: number } {
-  const cached = getPreparedMessage(id);
-  if (!cached) return {height: BODY_LINE_HEIGHT, lineCount: 1};
-
-  const isSupported: boolean = typeof Intl !== 'undefined' && 'Segmenter' in Intl;
-
-  if (!isSupported) {
-    console.error("pretext is not supported.");
-    return {height: 0, lineCount: 0};
-  } else {
-    const layoutResult: LayoutResult = layout(cached.prepared, displayAreaWidth, BODY_LINE_HEIGHT);
-    return {height: layoutResult.height, lineCount: layoutResult.lineCount};
-  }
-}
-
-function estimateMessageGroupHeight(
-  messageGroup: TimelineMessageBlockDto,
-  displayAreaWidth: number,
-  editingMessageId: string | undefined,
-  editingMessageDraft: string | null
-): number {
-  displayAreaWidth = Math.max(1, displayAreaWidth);
-
-  return messageGroup.messages.reduce((acc: number, msg: TimelineMessageDto) => {
-    const isEditing = msg.id === editingMessageId;
-
-    // calculate the reply
-    if (msg.replyTo) {
-      // the size of the text displaying "<Sender name" sent:" plus mb-1
-      acc += 16 + 4;
-
-      // if the reply message has body
-      if (msg.replyTo.body) {
-        // add at maximum 2 lines of content
-        ensurePreparedMessage(msg.replyTo.messageId, msg.replyTo.body);
-
-        const {lineCount} = estimateMessageContentLayout(msg.replyTo.messageId, displayAreaWidth);
-        const effectiveLines = Math.min(lineCount, 2);
-        acc += effectiveLines * BODY_LINE_HEIGHT;
-        acc += 4;   // py-0.5
-      } else {
-        // 1 line to show how many attachment it has
-        acc += BODY_LINE_HEIGHT;
-      }
-    }
-
-    // if the message is being edited, calculate the height of the draft textarea
-    if (isEditing) {
-      const draftId = `${msg.id}_edit-draft`;
-      let currentDraft: string = editingMessageDraft ?? msg.body ?? "";
-
-      ensurePreparedMessage(draftId, currentDraft);
-
-      // subtract 24 cuz textarea because px-3
-      let contentHeight = estimateMessageContentLayout(draftId, displayAreaWidth - 24).height;
-      contentHeight = Math.max(BODY_LINE_HEIGHT, contentHeight);  // ensure it has 1 line worth of text if draft empty
-
-      // pretext doesn't include the last line break to calculate height for some reason
-      if (currentDraft.endsWith("\n")) {
-        contentHeight += BODY_LINE_HEIGHT;
-      }
-
-      const textareaHeight = contentHeight + 16;  // textarea has py-2
-      const constrainedTextareHeight = Math.min(textareaHeight, 160); // textarea has max-h-40
-
-      acc += constrainedTextareHeight;
-    } else if (msg.body) {
-      // add height of message body
-      ensurePreparedMessage(msg.id, msg.body);
-      acc += estimateMessageContentLayout(msg.id, displayAreaWidth).height;
-    }
-
-    // attachments
-    if (msg.attachments && msg.attachments.length > 0) {
-      // if message has body, add a small padding between them
-      acc += msg.body ? BODY_ATTACHMENT_PADDING : 0;
-      acc += 128 + MESSAGE_ATTACHMENT_BOTTOM_PADDING;
-    }
-
-    // the key instructions when the message is being edited (enter and escape).
-    if (isEditing) {
-      acc += 20;  // 16 for the text, 4 for gap between it above
-    }
-
-    return acc;
-  }, BODY_LINE_HEIGHT);   // username header start
-}
 
 export interface QueryModification {
   appendMessage: (message: MessageDto, userProfile?: UserIdentityProfileDto) => void;
@@ -189,10 +37,7 @@ export interface ChatViewProps {
   queryModificationRef?: RefObject<QueryModification>;
 }
 
-export function ChatView({
-                           renderEmptyState,
-                           queryModificationRef,
-                         }: ChatViewProps) {
+export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps) {
   const {channelId, onMessageEdit, onMessageDelete, onMessageReplyRequested} = useChatContainerContext()!;
 
   const viewportRef = useRef<HTMLDivElement>(null!);
@@ -294,21 +139,21 @@ export function ChatView({
 
   const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
 
-  const handleMessageAction: SenderMessageCluster['onActionTriggered'] = (action, message) => {
-    switch (action) {
-      case "delete":
-        setDeletingMessage(message);
-        break;
-
-      case "edit":
-        setEditingMessage(message);
-        break;
-
-      case "reply":
-        onMessageReplyRequested(message);
-        break;
-    }
-  };
+  // const handleMessageAction: SenderMessageCluster['onActionTriggered'] = (action, message) => {
+  //   switch (action) {
+  //     case "delete":
+  //       setDeletingMessage(message);
+  //       break;
+  //
+  //     case "edit":
+  //       setEditingMessage(message);
+  //       break;
+  //
+  //     case "reply":
+  //       onMessageReplyRequested(message);
+  //       break;
+  //   }
+  // };
 
   // signalr events
   // change the cache pages when message received
@@ -356,6 +201,17 @@ export function ChatView({
     deleteMessage
   }), [appendMessage, editMessage, deleteMessage]);
 
+  // timeline entries
+  const timelineItems = useTimelineEntries(messageGroups, userProfiles);
+  const timelineContext: TimelineContext = {
+    actions: {
+      onMessageDeleteRequest: (message) => setDeletingMessage(message),
+    },
+    states: {
+      viewportWidth: viewportWidth,
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
       {galleryState.items && galleryState.items.length > 0 && (
@@ -395,13 +251,15 @@ export function ChatView({
         viewportRef={viewportRef}
         className="flex-1"
         containerClassName="mt-auto"
-        itemCount={messageGroups.length}
-        keyExtractor={(itemIndex) => messageGroups[itemIndex].messages[0].id}
+        itemCount={timelineItems.length}
+        keyExtractor={(itemIndex) => itemIndex} // TODO: stable key extraction
         isLoading={isLoading}
         estimateSize={(target) => {
           if (target === 'previousLoader' || target === 'nextLoader') return 30;
 
-          return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessage?.id, editingMessageDraft);
+          const entry = timelineItems[target.itemIndex];
+          return entry.measureHeight(viewportWidth - 16 - 52, timelineContext);
+          // return estimateMessageGroupHeight(messageGroups[target.itemIndex], viewportWidth - 16 - 52, editingMessage?.id, editingMessageDraft);
         }}
         hasPreviousPage={hasPreviousPage}
         isFetchingPreviousPage={isFetchingPreviousPage}
@@ -433,23 +291,7 @@ export function ChatView({
           );
         }}
         renderItem={(itemIndex, virtualItem) => {
-          return (
-            <SenderMessageCluster
-              key={virtualItem.key}
-              messageGroup={messageGroups[itemIndex]}
-              userProfiles={userProfiles}
-              onAttachmentClick={handleAttachmentClick}
-              editingMessageId={editingMessage?.id}
-              editingMessageDraft={editingMessageDraft}
-              onEditDraftChange={setEditingMessageDraft}
-              onActionTriggered={handleMessageAction}
-              onEditCanceled={() => {
-                setEditingMessage(undefined);
-                setEditingMessageDraft(null);
-              }}
-              onEditSaved={handleSaveEdit}
-            />
-          );
+          return timelineItems[itemIndex].render(virtualItem.size, timelineContext);
         }}
       />
 
