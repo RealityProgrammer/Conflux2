@@ -4,6 +4,7 @@ export interface TimelineContext {
   actions: {
     onMessageDeleteTrigger: (message: MessageDto) => void;
     onMessageEditTrigger: (message: MessageDto) => void;
+    onMessageReplyTrigger: (message: MessageDto) => void;
 
     onEditCancel: () => void;
     onEditDraftChange: (body: string | null) => void;

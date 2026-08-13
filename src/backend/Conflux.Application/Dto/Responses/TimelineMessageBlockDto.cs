@@ -13,5 +13,5 @@ public sealed record TimelineMessageDto(
     string? Body,
     Attachment[] Attachments,
     DateTimeOffset CreatedAt,
-    ReplyToMessageProjection? ReplyTo
+    ReplyToMessageDto? ReplyTo
 );

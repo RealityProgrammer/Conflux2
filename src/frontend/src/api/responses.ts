@@ -107,7 +107,8 @@ export type TimelineMessageBlockDto = {
 export type ReplyToMessageDto = {
   messageId: string;
   senderUserId: string;
-  body: string | null;
+  bodySnippet: string | null;
+  hasMoreBody: boolean;
   attachmentCount: number;
 }
 

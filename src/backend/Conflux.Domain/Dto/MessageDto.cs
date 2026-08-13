@@ -8,5 +8,5 @@ public record MessageDto(
     string? Body,
     Attachment[] Attachments,
     DateTimeOffset CreatedAt,
-    Guid? ReplyToId
+    ReplyToMessageDto? ReplyTo
 );

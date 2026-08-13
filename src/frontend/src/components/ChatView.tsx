@@ -191,6 +191,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
       onMessageEditTrigger: setEditingMessage,
+      onMessageReplyTrigger: onMessageReplyRequested,
       onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
       onEditCancel: () => {
         setEditingMessage(undefined);

@@ -3,18 +3,18 @@ import type {
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/responses.ts";
-import {type Key, type MouseEvent, type ReactNode, useState} from "react";
+import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
-import {ContextMenu, ScrollArea} from "radix-ui";
+import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsMusicNote, BsPencil, BsTrash} from "react-icons/bs";
-import {messageService} from "../../api/messageService.ts";
+import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import {estimateMessageLayout} from "./utils.ts";
 
 export type MessageItemProps = {
   senderProfile: UserIdentityProfileDto;
+  replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageDto;
   showHeader: boolean;
 }
@@ -31,17 +31,26 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
       height += 24;
     }
 
+    const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
     const message = this.data.message;
 
     if (message.body) {
-      const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
-
       const layout = estimateMessageLayout(message.id, message.body, messageDisplayWidth, 24);
       height += layout.height;
     }
 
     if (message.attachments && message.attachments.length > 0) {
       height += 128;
+    }
+
+    if (message.replyTo && this.data.replyToMessageSenderProfile) {
+      const layout = estimateMessageLayout(
+        `reply_${message.replyTo.messageId}`,
+        buildReplyText(this.data.replyToMessageSenderProfile.displayName, message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
+        messageDisplayWidth,
+        16
+      );
+      height += layout.height;
     }
 
     return height;
@@ -52,6 +61,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
       <MessageView
         key={`message-${this.data.message.id}`}
         senderProfile={this.data.senderProfile}
+        replyToMessageSenderProfile={this.data.replyToMessageSenderProfile}
         message={this.data.message}
         showHeader={this.data.showHeader}
         context={context}
@@ -62,6 +72,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 
 interface MessageViewProps {
   senderProfile: UserIdentityProfileDto;
+  replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageDto;
   showHeader: boolean;
   context: TimelineContext;
@@ -72,6 +83,7 @@ export default function MessageView({
   message,
   showHeader,
   context,
+  replyToMessageSenderProfile
 }: MessageViewProps) {
   const auth = useAuthorization();
 
@@ -81,6 +93,14 @@ export default function MessageView({
         className="w-full flex flex-col"
       >
         <div className="hover-highlight px-2">
+          {message.replyTo && replyToMessageSenderProfile && (
+            <div className="min-w-0">
+              <p className="text-xs ml-13">
+                {buildReplyText(replyToMessageSenderProfile.displayName, message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount)}
+              </p>
+            </div>
+          )}
+
           {showHeader ? (
             <div className="flex flex-row gap-3">
               <UserAvatar
@@ -117,7 +137,10 @@ export default function MessageView({
           <ContextMenu.Item
             className="dropdown-item-default"
             onSelect={() => {
-              // onActionTriggered("reply", selectedMessage);
+              context.actions.onMessageReplyTrigger({
+                ...message,
+                senderUserId: senderProfile.id,
+              })
             }}
           >
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
@@ -169,26 +192,16 @@ export default function MessageView({
   );
 }
 
+function buildReplyText(name: string, content: string | null, ellipsis: boolean, attachmentCount: number) {
+  const attachmentText = attachmentCount > 0 ? `${attachmentCount} attachment${attachmentCount > 1 && 's'}` : '';
+
+  return `@${name} sent${content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;
+}
+
 function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
   return (
     <>
       <div className="text-sm">
-        {message.replyTo && (
-          <div className="min-w-0">
-            <p className="text-xs mb-1">Somebody sent:</p>
-
-            {!!message.replyTo.body ? (
-              <p className="leading-6 whitespace-pre-wrap wrap-break-word overflow-hidden ring ring-gray-500 bg-black/8 rounded-md px-1 py-0.5">
-                <span className="line-clamp-2 whitespace-pre-wrap wrap-break-word">
-                  {message.replyTo.body}
-                </span>
-              </p>
-            ) : (
-              <p>{message.replyTo.attachmentCount} attachment{message.replyTo.attachmentCount > 1 ? 's' : ''}.</p>
-            )}
-          </div>
-        )}
-
         <p className="leading-6 whitespace-pre-wrap wrap-break-word">
           {message.body}
         </p>

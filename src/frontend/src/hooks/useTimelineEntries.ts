@@ -14,6 +14,9 @@ export default function useTimelineEntries(
 
   for (const group of messageGroups) {
     const sender = userProfiles[group.senderUserId];
+    let replyToMessageSenderProfile = group.messages[0].replyTo ?
+      userProfiles[group.messages[0].replyTo.senderUserId] :
+      undefined;
 
     items.push(editingMessageId == group.messages[0].id ?
       new MessageEditorItem({
@@ -24,10 +27,15 @@ export default function useTimelineEntries(
         senderProfile: sender,
         message: group.messages[0],
         showHeader: true,
+        replyToMessageSenderProfile,
       })
     );
 
     for (const message of group.messages.slice(1)) {
+      let replyToMessageSenderProfile = message.replyTo ?
+        userProfiles[message.replyTo.senderUserId] :
+        undefined;
+
       items.push(editingMessageId == message.id ?
         new MessageEditorItem({
           senderProfile: sender,
@@ -37,6 +45,7 @@ export default function useTimelineEntries(
           senderProfile: sender,
           message: message,
           showHeader: false,
+          replyToMessageSenderProfile,
         })
       );
     }

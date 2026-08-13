@@ -179,6 +179,10 @@ internal sealed class MessageService(
         }
 
         await conversationRepository.UpdateLatestMessageTimeAsync(channelMetadata.ConversationId, utcNow);
+
+        ReplyToMessageDto? reply = replyToId.HasValue ? 
+            await messageRepository.GetReplyMessageByIdAsync(replyToId.Value, CancellationToken.None) :
+            null;
         
         MessageDto dto = new(
             message.Id,
@@ -186,7 +190,7 @@ internal sealed class MessageService(
             body,
             message.Attachments,
             message.CreatedAt,
-            message.ReplyToId
+            reply
         );
 
         await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
@@ -256,6 +260,10 @@ internal sealed class MessageService(
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
         
+        ReplyToMessageDto? reply = message.ReplyToId.HasValue ? 
+            await messageRepository.GetReplyMessageByIdAsync(message.ReplyToId.Value, CancellationToken.None) :
+            null;
+        
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {
             return Result<MessageDto>.Success(new(
@@ -264,7 +272,7 @@ internal sealed class MessageService(
                 newBody,
                 message.Attachments,
                 message.CreatedAt,
-                message.ReplyToId
+                reply
             ));
         }
         
@@ -279,7 +287,7 @@ internal sealed class MessageService(
             message.Body,
             message.Attachments,
             message.CreatedAt,
-            message.ReplyToId
+            reply
         );
         
         await mediator.Publish(new MessageEditedNotification(channelMetadata.ChannelId, dto), CancellationToken.None);

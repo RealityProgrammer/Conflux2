@@ -8,6 +8,8 @@ public interface IMessageRepository {
     void Add(Message message);
 
     Task<Message?> GetByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
+    
+    Task<ReplyToMessageDto?> GetReplyMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
 
     Task<Result<PagedTimelineMessageResult>> GetTimelineMessagesAsync(
         Guid conversationId, 

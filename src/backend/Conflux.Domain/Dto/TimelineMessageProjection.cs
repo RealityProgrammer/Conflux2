@@ -11,7 +11,5 @@ public sealed record TimelineMessageProjection(
     Attachment[] Attachments,
     
     DateTimeOffset CreatedAt,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ReplyToMessageProjection? ReplyTo
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ReplyToMessageDto? ReplyTo
 );
-
-public sealed record ReplyToMessageProjection(Guid MessageId, Guid SenderUserId, string? Body, int AttachmentCount);

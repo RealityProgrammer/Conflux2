@@ -154,9 +154,15 @@ export default function ChatInput({disabled}: ChatInputProps) {
           </div>
 
           {/* https://stackoverflow.com/a/79634869 */}
-          <p className="min-w-0 overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
-            <span className="line-clamp-2 break-all">{replyingMessage.body}</span>
-          </p>
+          {replyingMessage.body && (
+            <p className="min-w-0 overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
+              <span className="line-clamp-2 break-all">{replyingMessage.body}</span>
+            </p>
+          )}
+
+          {replyingMessage.attachments && replyingMessage.attachments.length > 0 && (
+            <span className="text-sm">{replyingMessage.attachments.length} attachment{replyingMessage.attachments.length > 1 && 's'}</span>
+          )}
         </section>
       )}
 

@@ -19,9 +19,9 @@ interface ChatContainerContextProviderProps extends ChatContainerContextType {
 }
 
 export default function ChatContainerContextProvider({
-                                                       children,
-                                                       ...props
-                                                     }: ChatContainerContextProviderProps) {
+  children,
+  ...props
+}: ChatContainerContextProviderProps) {
   return (
     <ChatContainerContext.Provider value={props}>
       {children}

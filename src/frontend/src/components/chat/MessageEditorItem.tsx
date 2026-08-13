@@ -3,7 +3,6 @@ import {TimelineItem} from "./TimelineItem.ts";
 import type {MessageDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/responses.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {estimateMessageLayout} from "./utils.ts";
-import {text} from "animejs";
 import MessageAttachments from "./MessageAttachments.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 
