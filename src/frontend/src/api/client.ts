@@ -9,7 +9,7 @@ import {print} from 'graphql';
 axios.defaults.withCredentials = true;
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API_URL,
+  baseURL: '/api/',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,7 +17,7 @@ export const apiClient = axios.create({
 });
 
 export const graphqlClient = apiClient.create({
-  baseURL: `${import.meta.env.VITE_BACKEND_URL}/graphql`,
+  baseURL: `/graphql`,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

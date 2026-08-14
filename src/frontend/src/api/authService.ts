@@ -82,7 +82,7 @@ export const authService = {
 
       // use raw axios to prevent interception
       activeRefreshPromise = axios.post<BackendResponse<RefreshResponse>>(
-        `${import.meta.env.VITE_BACKEND_API_URL}/auth/refresh`,
+        `/auth/refresh`,
         {},
         {headers}
       ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {

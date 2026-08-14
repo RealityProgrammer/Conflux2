@@ -63,7 +63,7 @@ export const userService = {
       queryParams.append("t", new Date().getTime().toString());
     }
 
-    return `${import.meta.env.VITE_BACKEND_API_URL}/user/avatar?${queryParams.toString()}`;
+    return `/api/user/avatar?${queryParams.toString()}`;
   },
 
   deleteAvatar: async (): Promise<ServiceResponse> => {
