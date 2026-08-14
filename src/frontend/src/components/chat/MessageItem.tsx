@@ -193,7 +193,7 @@ export default function MessageView({
 }
 
 function buildReplyText(name: string, content: string | null, ellipsis: boolean, attachmentCount: number) {
-  const attachmentText = attachmentCount > 0 ? `${attachmentCount} attachment${attachmentCount > 1 && 's'}` : '';
+  const attachmentText = attachmentCount > 0 ? `${attachmentCount} attachment${attachmentCount > 1 ? 's' : ''}` : '';
 
   return `@${name} sent${content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;
 }
