@@ -1,3 +1,5 @@
+using Amazon.Extensions.NETCore.Setup;
+using Amazon.Runtime;
 using Conflux.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
@@ -22,9 +24,6 @@ using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
-using HotChocolate.AspNetCore;
-using HotChocolate.AspNetCore.Formatters;
-using HotChocolate.AspNetCore.Parsers;
 using Microsoft.AspNetCore.SignalR;
 using RedLockNet;
 using RedLockNet.SERedis;
@@ -34,7 +33,12 @@ using StackExchange.Redis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+DotNetEnv.Env.TraversePath().Load();
+
 var builder = WebApplication.CreateBuilder(args);
+
+// keys and stuffs
+builder.Configuration.AddKeyPerFile("/run/secrets", true);
 
 // Authenticate & Authorization.
 builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>();
@@ -181,8 +185,15 @@ builder.Services
     
     .AddSingleton<IMailingService, MailingService>();
 
-// Services related to external services.
-builder.Services.AddAWSService<IAmazonS3>(builder.Configuration.GetAWSOptions("MediaAWS"));
+// S3 Service.
+var awsOptions = builder.Configuration.GetAWSOptions("MediaAWS");
+
+var accessKey = builder.Configuration["MediaAWS:AccessKey"] ?? "test";
+var secretKey = builder.Configuration["MediaAWS:SecretKey"] ?? "test";
+
+awsOptions.Credentials = new BasicAWSCredentials(accessKey, secretKey);
+
+builder.Services.AddAWSService<IAmazonS3>(awsOptions);
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
@@ -280,4 +291,19 @@ app.MapControllers();
 app.MapGraphQL();
 app.MapHub<GatewayHub>("/hub");
 
+await ExecuteDatabaseMigration();
+
 app.Run();
+return;
+
+async Task ExecuteDatabaseMigration() {
+    using (var scope = app.Services.CreateScope()) {
+        var services = scope.ServiceProvider;
+
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        if (context.Database.GetPendingMigrations().Any()) {
+            context.Database.Migrate();
+        }
+    }
+}

@@ -19,6 +19,76 @@ services:
     depends_on:
       - redis
 
+  database:
+    container_name: Conflux_Database
+    image: postgres:18.4-alpine3.24
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "conflux"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U", "postgres", "-d", "conflux"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+
+  ministack:
+    container_name: Conflux_Ministack
+    image: ministackorg/ministack
+    ports:
+      - "4567:4566"
+    environment:
+      PERSIST_STATE: 1
+      S3_PERSIST: 1
+      STATE_DIR: "/var/lib/ministack/state"
+      S3_DATA_DIR: "/var/lib/ministack/s3"
+    volumes:
+      - ministack-data:/var/lib/ministack
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: Conflux_Frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://localhost:5127"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: Conflux_Backend
+    ports:
+      - "5127:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__Database: "Host=Conflux_Database;Port=5432;Database=conflux;Username=postgres;Password=password;Include Error Detail=true;Pooling=true;"
+      ConnectionStrings__Redis: "Conflux_Redis:6379,abortConnect=false"      
+      Frontend__Origin: "http://localhost:5173"
+      MediaAWS__ServiceURL: "http://Conflux_Ministack:4566"
+      Services__Auth__AccessTokenDuration: 900
+      Services__Auth__RefreshTokenDuration: 604800
+      Services__User__MaxAvatarSizeBytes: 1048576
+      Services__Messaging__MaxAttachmentSizeBytes: 10485760
+    env_file:
+      - "./src/backend/Conflux.WebApi/.env"
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
 volumes:
   redis-data:
   redis-insight-data:
+  postgres-data:
+  ministack-data:

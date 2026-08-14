@@ -14,7 +14,7 @@ public static class Errors {
         new(nameof(NoUserFoundFromEmail), "No user found from the provided email address.");
     
     public static Error EmailAttachedToAccount() => 
-        new(nameof(NoUserFoundFromEmail), "Email attached to an existing account.");
+        new(nameof(EmailAttachedToAccount), "Email attached to an existing account.");
     
     public static Error NoUserFoundFromId() => 
         new(nameof(NoUserFoundFromId), "No user found from the provided ID.");
