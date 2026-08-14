@@ -31,7 +31,7 @@ export default function SignalRConnectionProvider({children}: { children: ReactN
     let startPromise: Promise<void> | null = null;
 
     const newConnection = new HubConnectionBuilder()
-      .withUrl(`${import.meta.env.VITE_BACKEND_URL}/hub`, {
+      .withUrl(`/hub`, {
         withCredentials: true,
         transport: HttpTransportType.WebSockets,
       })

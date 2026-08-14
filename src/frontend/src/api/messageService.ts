@@ -131,6 +131,6 @@ export const messageService = {
       refreshParam = "";
     }
 
-    return `${import.meta.env.VITE_BACKEND_API_URL}/attachments/${encodeURIComponent(attachmentId)}${refreshParam}`;
+    return `/api/attachments/${encodeURIComponent(attachmentId)}${refreshParam}`;
   },
 }
