@@ -34,7 +34,7 @@ export const messageService = {
       }
 
       const response: AxiosResponse<BackendResponse<MessageDto>> =
-        await apiClient.post(`/channels/${encodeURIComponent(channelId)}/messages`, formData, {
+        await apiClient.post(`channels/${encodeURIComponent(channelId)}/messages`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             "Idempotency-Key": idempotencyKey,
@@ -83,7 +83,7 @@ export const messageService = {
   deleteMessage: async (messageId: string): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse<MessageDto>> =
-        await apiClient.delete(`/messages/${encodeURIComponent(messageId)}`);
+        await apiClient.delete(`messages/${encodeURIComponent(messageId)}`);
 
       return {
         success: true,
