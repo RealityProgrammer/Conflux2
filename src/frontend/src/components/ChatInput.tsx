@@ -161,7 +161,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
           )}
 
           {replyingMessage.attachments && replyingMessage.attachments.length > 0 && (
-            <span className="text-sm">{replyingMessage.attachments.length} attachment{replyingMessage.attachments.length > 1 && 's'}</span>
+            <span className="text-sm">{replyingMessage.attachments.length} attachment{replyingMessage.attachments.length > 1 ? 's' : ''}</span>
           )}
         </section>
       )}
