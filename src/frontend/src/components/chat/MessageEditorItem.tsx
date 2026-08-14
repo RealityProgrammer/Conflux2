@@ -53,7 +53,7 @@ export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
     return height;
   }
 
-  render(measuredHeight: number, context: TimelineContext): ReactNode {
+  render(_measuredHeight: number, context: TimelineContext): ReactNode {
     return (
       <MessageEditorView
         key={`editor-${this.data.message.id}`}
