@@ -5,8 +5,7 @@ namespace Conflux.WebApi.SignalR;
 
 [Authorize]
 public sealed class GatewayHub(
-    ActiveChannelTracker channelTracker,
-    ILogger<GatewayHub> logger
+    ActiveChannelTracker channelTracker
 ) : Hub<IConfluxClient> {
     public async Task JoinChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;

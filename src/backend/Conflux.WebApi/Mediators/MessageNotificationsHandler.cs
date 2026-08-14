@@ -8,10 +8,10 @@ namespace Conflux.WebApi.Mediators;
 
 public sealed class MessageNotificationsHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
-    IHttpContextAccessor httpContextAccessor,
-    ILogger<MessageNotificationsHandler> logger
+    IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<MessageReceivedNotification>,
     INotificationHandler<MessageEditedNotification>,
+    INotificationHandler<MessageDeletedNotification>,
     INotificationHandler<UpdateDmConversationListNotification>
 {
     public async ValueTask Handle(MessageReceivedNotification notification, CancellationToken cancellationToken) {
@@ -34,6 +34,17 @@ public sealed class MessageNotificationsHandler(
             : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
         
         await target.MessageEdited(new(notification.Message), cancellationToken);
+    }
+
+    public async ValueTask Handle(MessageDeletedNotification notification, CancellationToken cancellationToken) {
+        string? connectionId = 
+            httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+        
+        var target = string.IsNullOrEmpty(connectionId)
+            ? hubContext.Clients.Group($"channel:{notification.ChannelId}")
+            : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
+        
+        await target.MessageDeleted(new(notification.MessageId), cancellationToken);
     }
 
     public async ValueTask Handle(UpdateDmConversationListNotification notification, CancellationToken cancellationToken) {
