@@ -57,11 +57,13 @@ public sealed class ChannelController(
             DirectMessageResolutionResponse response = new(result.Value.ChannelId);
             ApiResponse<DirectMessageResolutionResponse> apiResponse = new(response, Error.None);
             
+#pragma warning disable CS8524
             return result.Value.Status switch {
                 ChannelResolutionStatus.Existing => Ok(apiResponse),
                 ChannelResolutionStatus.Created => Created((string?)null, apiResponse),
                 // TODO: make the status a closed enum to make it not complain about exhaustiveness
             };
+#pragma warning restore CS8524
         }
 
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<DirectMessageResolutionResponse>(null, result.Error));

@@ -13,8 +13,7 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/friend")]
 [Authorize]
 public sealed class FriendController(
-    IFriendService friendService,
-    ILogger<FriendController> logger
+    IFriendService friendService
 ) : ControllerBase {
     [HttpPost("requests/{toUserId:guid}")]
     public async Task<ActionResult<ApiResponse<SendFriendRequestResponse>>> SendFriendRequest(Guid toUserId) {

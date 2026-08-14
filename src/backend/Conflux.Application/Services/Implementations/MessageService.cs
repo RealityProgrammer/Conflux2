@@ -28,8 +28,7 @@ internal sealed class MessageService(
     IChannelService channelService,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider,
-    IMediator mediator,
-    ILogger<MessageService> logger
+    IMediator mediator
 ) : IMessageService {
     public async Task<Result<MessageDto>> SendMessageAsync(
         Guid senderUserId,

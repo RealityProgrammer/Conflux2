@@ -68,7 +68,7 @@ services:
       dockerfile: Dockerfile
     container_name: Conflux_Backend
     ports:
-      - "5127:8080"
+      - "5127:5127"
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       ConnectionStrings__Database: "Host=Conflux_Database;Port=5432;Database=conflux;Username=postgres;Password=password;Include Error Detail=true;Pooling=true;"

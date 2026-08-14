@@ -20,9 +20,9 @@ public class Message : IHasCreatedAt {
     
     public Guid? ReplyToId { get; set; }
     public Message? ReplyTo { get; set; }
-    
+
     /// <summary>
     /// Messages that reply to this message instance.
     /// </summary>
-    public virtual ICollection<Message> Replies { get; set; }
+    public virtual ICollection<Message> Replies { get; set; } = [];
 }
