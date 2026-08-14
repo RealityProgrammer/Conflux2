@@ -56,7 +56,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     return height;
   }
 
-  render(measuredHeight: number, context: TimelineContext): ReactNode {
+  render(_measuredHeight: number, context: TimelineContext): ReactNode {
     return (
       <MessageView
         key={`message-${this.data.message.id}`}

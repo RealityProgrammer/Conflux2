@@ -50,18 +50,6 @@ services:
     volumes:
       - ministack-data:/var/lib/ministack
 
-  frontend:
-    build:
-      context: ./src/frontend
-      dockerfile: Dockerfile
-    container_name: Conflux_Frontend
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: "http://localhost:5127"
-    depends_on:
-      - backend
-
   backend:
     build:
       context: ./src/backend
