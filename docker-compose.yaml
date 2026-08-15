@@ -1,23 +1,12 @@
 services:
-  redis:
-    container_name: Conflux_Redis
-    image: redis:8.10.0-alpine
+  valkey:
+    container_name: Conflux_Valkey
+    image: valkey/valkey:9.1.1-alpine
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
-    command: ["redis-server", "--appendonly", "yes"]
-
-  redis-insight:
-    image: redis/redisinsight:latest
-    container_name: redis-insight
-    restart: unless-stopped
-    ports:
-      - "5540:5540"
-    volumes:
-      - redis-insight-data:/data
-    depends_on:
-      - redis
+      - valkey-data:/data
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "password"]
 
   database:
     container_name: Conflux_Database
@@ -40,6 +29,8 @@ services:
   garage:
     image: dxflrs/garage:v2.3.0
     container_name: Conflux_Garage
+    profiles:
+      - garage
     ports:
       - "3900:3900"
       - "3902:3902"
@@ -62,7 +53,7 @@ services:
       ASPNETCORE_URLS: "http://0.0.0.0:5127"
       ASPNETCORE_ENVIRONMENT: "Production"
       ConnectionStrings__Database: "Host=Conflux_Database;Port=5432;Database=conflux;Username=postgres;Password=password;Include Error Detail=true;Pooling=true;"
-      ConnectionStrings__Redis: "Conflux_Redis:6379,abortConnect=false"      
+      ConnectionStrings__Valkey: "Conflux_Valkey:6379,abortConnect=false,password=password"      
       Frontend__Origin: "http://localhost:5173"
       S3__ServiceURL: "http://Conflux_Garage:3900"
       S3__PreSignUrl: "http://localhost:3900"
@@ -76,12 +67,11 @@ services:
     depends_on:
       database:
         condition: service_healthy
-      redis:
+      valkey:
         condition: service_started
 
 volumes:
-  redis-data:
-  redis-insight-data:
+  valkey-data:
   postgres-data:
   garage-data:
   garage-meta:
