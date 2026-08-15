@@ -7,7 +7,7 @@ namespace Conflux.Application.Services;
 public interface IUserService {
     Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream);
     Task<Result> DeleteAvatarAsync(Guid userId);
-    string GetAvatarUrl(Guid userId, bool useHttps);
+    string GetAvatarUrl(Guid userId);
 
     Task<Result> SetupProfileAsync(SetupProfileRequest request);
     Task<Result<UserProfileDto>> GetProfileAsync(Guid userId, UserProfileQueryFlags queryFlags);

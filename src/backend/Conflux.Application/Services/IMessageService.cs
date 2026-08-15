@@ -36,5 +36,5 @@ public interface IMessageService {
         CancellationToken cancellationToken = default
     );
     
-    string GetAttachmentUrl(Guid attachmentId, bool useHttps);
+    string GetAttachmentUrl(Guid attachmentId);
 }
