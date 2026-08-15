@@ -82,7 +82,7 @@ export const authService = {
 
       // use raw axios to prevent interception
       activeRefreshPromise = axios.post<BackendResponse<RefreshResponse>>(
-        `/auth/refresh`,
+        `/api/auth/refresh`,
         {},
         {headers}
       ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {

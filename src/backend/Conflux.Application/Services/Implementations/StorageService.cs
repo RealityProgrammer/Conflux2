@@ -3,16 +3,31 @@ using Amazon.S3.Model;
 using Conflux.Application.Dto.Requests;
 using Conflux.Domain;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Conflux.Application.Services.Implementations;
 
+public class StorageServiceOptions {
+    public string AccessKey { get; set; } = null!;
+    public string SecretKey { get; set; } = null!;
+    public string Region { get; set; } = null!;
+    public string ServiceUrl { get; set; } = null!;
+    public string PreSignUrl { get; set; } = null!;
+    public string BucketName { get; set; } = null!;
+    public bool UseHttps { get; set; }
+}
+
 internal sealed class StorageService(
     IAmazonS3 s3Client,
-    IConfiguration config,
+    [FromKeyedServices("PreSigningClient")] IAmazonS3 preSigningClient,
     TimeProvider timeProvider,
-    ILogger<StorageService> logger
+    ILogger<StorageService> logger,
+    IOptions<StorageServiceOptions> options
 ) : IStorageService {
+    private readonly StorageServiceOptions _options = options.Value;
+    
     public async Task<Result<string>> UploadUserAvatarAsync(
         Guid userId,
         UploadItem avatar,
@@ -34,18 +49,10 @@ internal sealed class StorageService(
         return await DeleteFromS3Storage(uniqueKey, cancellationToken);
     }
 
-    public string GetUserAvatarPreSignedUrl(Guid userId, bool useHttps) {
-        var bucketName = config["MediaAWS:BucketName"];
+    public string GetUserAvatarPreSignedUrl(Guid userId) {
         var uniqueKey = CreateAvatarUniqueKey(userId);
 
-        var request = new GetPreSignedUrlRequest {
-            BucketName = bucketName,
-            Key = uniqueKey,
-            Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
-            Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
-        };
-        
-        return s3Client.GetPreSignedURL(request);
+        return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
     }
 
     public async Task<Result<Guid>> UploadMessageAttachmentAsync(
@@ -75,13 +82,12 @@ internal sealed class StorageService(
         string contentType,
         CancellationToken cancellationToken = default
     ) {
-        var bucketName = config["MediaAWS:BucketName"];
-        
         var uploadRequest = new PutObjectRequest {
             InputStream = stream,
-            BucketName = bucketName,
+            BucketName = _options.BucketName,
             Key = key,
             ContentType = contentType,
+            UseChunkEncoding = false,
         };
 
         try {
@@ -124,10 +130,8 @@ internal sealed class StorageService(
     }
 
     private async Task<Result> DeleteFromS3Storage(string uniqueKey, CancellationToken cancellationToken = default) {
-        var bucketName = config["MediaAWS:BucketName"];
-        
         try {
-            var response = await s3Client.DeleteObjectAsync(bucketName, uniqueKey, cancellationToken);
+            var response = await s3Client.DeleteObjectAsync(_options.BucketName, uniqueKey, cancellationToken);
 
             switch (response.HttpStatusCode) {
                 case HttpStatusCode.OK or HttpStatusCode.NoContent:
@@ -158,18 +162,20 @@ internal sealed class StorageService(
         }
     }
     
-    public string GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool useHttps) {
-        var bucketName = config["MediaAWS:BucketName"];
+    public string GetMessageAttachmentPreSignedUrl(Guid attachmentId) {
         var uniqueKey = CreateAttachmentUniqueKey(attachmentId);
-
+        return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+    }
+    
+    private string GetPreSignedUrl(string key, DateTime? expires = null) {
         var request = new GetPreSignedUrlRequest {
-            BucketName = bucketName,
-            Key = uniqueKey,
-            Expires = timeProvider.GetUtcNow().AddHours(1).DateTime,
-            Protocol = useHttps ? Protocol.HTTPS : Protocol.HTTP,
+            BucketName = _options.BucketName,
+            Key = key,
+            Expires = expires,
+            Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
         };
         
-        return s3Client.GetPreSignedURL(request);
+        return preSigningClient.GetPreSignedURL(request);
     }
 
     private static string CreateAvatarUniqueKey(Guid userId) {

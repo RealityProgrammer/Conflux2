@@ -171,7 +171,7 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = messageService.GetAttachmentUrl(attachmentId, Request.IsHttps);
+        var result = messageService.GetAttachmentUrl(attachmentId);
         return Redirect(result);
     }
 

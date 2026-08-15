@@ -37,18 +37,19 @@ services:
       retries: 5
       start_period: 5s
 
-  ministack:
-    container_name: Conflux_Ministack
-    image: ministackorg/ministack
+  garage:
+    image: dxflrs/garage:v2.3.0
+    container_name: Conflux_Garage
     ports:
-      - "4567:4566"
-    environment:
-      PERSIST_STATE: 1
-      S3_PERSIST: 1
-      STATE_DIR: "/var/lib/ministack/state"
-      S3_DATA_DIR: "/var/lib/ministack/s3"
+      - "3900:3900"
+      - "3902:3902"
+    env_file:
+      - "./garage/.env"
     volumes:
-      - ministack-data:/var/lib/ministack
+      - ./garage/garage.toml:/etc/garage.toml:ro
+      - garage-data:/var/lib/garage/data
+      - garage-meta:/var/lib/garage/meta
+    command: ["/garage", "-c", "/etc/garage.toml", "server"]
 
   backend:
     build:
@@ -63,7 +64,9 @@ services:
       ConnectionStrings__Database: "Host=Conflux_Database;Port=5432;Database=conflux;Username=postgres;Password=password;Include Error Detail=true;Pooling=true;"
       ConnectionStrings__Redis: "Conflux_Redis:6379,abortConnect=false"      
       Frontend__Origin: "http://localhost:5173"
-      MediaAWS__ServiceURL: "http://Conflux_Ministack:4566"
+      S3__ServiceURL: "http://Conflux_Garage:3900"
+      S3__PreSignUrl: "http://localhost:3900"
+      S3__UseHttps: false
       Services__Auth__AccessTokenDuration: 900
       Services__Auth__RefreshTokenDuration: 604800
       Services__User__MaxAvatarSizeBytes: 1048576
@@ -80,4 +83,5 @@ volumes:
   redis-data:
   redis-insight-data:
   postgres-data:
-  ministack-data:
+  garage-data:
+  garage-meta:

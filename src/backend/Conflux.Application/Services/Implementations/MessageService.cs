@@ -443,7 +443,7 @@ internal sealed class MessageService(
         ));
     }
 
-    public string GetAttachmentUrl(Guid attachmentId, bool useHttps) {
-        return storageService.GetMessageAttachmentPreSignedUrl(attachmentId, useHttps);
+    public string GetAttachmentUrl(Guid attachmentId) {
+        return storageService.GetMessageAttachmentPreSignedUrl(attachmentId);
     }
 }

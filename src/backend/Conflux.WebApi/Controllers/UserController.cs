@@ -53,7 +53,7 @@ public sealed class UserController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = userService.GetAvatarUrl(userIdGuid, Request.IsHttps);
+        var result = userService.GetAvatarUrl(userIdGuid);
         return Redirect(result);
     }
 

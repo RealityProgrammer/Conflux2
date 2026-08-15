@@ -49,7 +49,7 @@ public sealed class ErrorConverter : JsonConverter<Error> {
 
             if (!string.IsNullOrEmpty(value.Message)) {
                 writer.WritePropertyName(options.PropertyNamingPolicy?.ConvertName(nameof(Error.Message)) ?? nameof(Error.Message));
-                writer.WriteStringValue(value.Code);
+                writer.WriteStringValue(value.Message);
             }
 
             if (value.Details != null) {

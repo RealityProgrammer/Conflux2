@@ -1,5 +1,6 @@
-using Amazon.Extensions.NETCore.Setup;
-using Amazon.Runtime;
+// ReSharper disable AccessToDisposedClosure
+// ReSharper disable VariableHidesOuterVariable
+
 using Conflux.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpLogging;
@@ -186,14 +187,32 @@ builder.Services
     .AddSingleton<IMailingService, MailingService>();
 
 // S3 Service.
-var awsOptions = builder.Configuration.GetAWSOptions("MediaAWS");
+var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
+                 ?? throw new InvalidOperationException("Missing configuration of S3.");
 
-var accessKey = builder.Configuration["MediaAWS:AccessKey"] ?? "test";
-var secretKey = builder.Configuration["MediaAWS:SecretKey"] ?? "test";
+builder.Services.AddSingleton<IAmazonS3>(_ => {
+    var config = new AmazonS3Config {
+        ServiceURL = s3Settings.ServiceUrl,
+        ForcePathStyle = true,
+        AuthenticationRegion = s3Settings.Region,
+        UseHttp = s3Settings.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+    };
+    
+    return new AmazonS3Client(s3Settings.AccessKey, s3Settings.SecretKey, config);
+});
 
-awsOptions.Credentials = new BasicAWSCredentials(accessKey, secretKey);
+builder.Services.AddKeyedSingleton<IAmazonS3>("PreSigningClient", (_, _) => {
+    var config = new AmazonS3Config {
+        ServiceURL = s3Settings.PreSignUrl,
+        ForcePathStyle = true,
+        AuthenticationRegion = s3Settings.Region,
+        UseHttp = s3Settings.PreSignUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+    };
+    
+    return new AmazonS3Client(s3Settings.AccessKey, s3Settings.SecretKey, config);
+});
 
-builder.Services.AddAWSService<IAmazonS3>(awsOptions);
+builder.Services.Configure<StorageServiceOptions>(builder.Configuration.GetSection("S3"));
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
@@ -297,13 +316,12 @@ app.Run();
 return;
 
 async Task ExecuteDatabaseMigration() {
-    using (var scope = app.Services.CreateScope()) {
-        var services = scope.ServiceProvider;
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
 
-        var context = services.GetRequiredService<ApplicationDbContext>();
+    var context = services.GetRequiredService<ApplicationDbContext>();
 
-        if (context.Database.GetPendingMigrations().Any()) {
-            context.Database.Migrate();
-        }
+    if (context.Database.GetPendingMigrations().Any()) {
+        await context.Database.MigrateAsync();
     }
 }
