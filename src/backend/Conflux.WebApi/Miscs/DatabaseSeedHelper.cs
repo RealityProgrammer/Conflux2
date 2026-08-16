@@ -1,5 +1,4 @@
 using Bogus;
-using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
 using Microsoft.AspNetCore.Identity;

@@ -15,7 +15,6 @@ export const messageService = {
       };
     }
 
-    // TODO: Client-side validate the attachments
     try {
       const formData = new FormData();
 

@@ -1,4 +1,4 @@
-import {BsArrowLeft, BsArrowRepeat, BsArrowRight, BsCheck, BsX} from "react-icons/bs";
+import {BsArrowLeft, BsArrowRepeat, BsArrowRight, BsCheck, BsPerson, BsX} from "react-icons/bs";
 import {useActionState, useEffect, useRef, useState} from "react";
 import {animate, utils} from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
@@ -93,6 +93,7 @@ function AvatarPanel({
             src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl ?? undefined}
             onAvatarChange={onAvatarChanged}
             className={`size-64 rounded-full flex-none ${hasError ? 'ring-4 ring-red-500' : ''}`}
+            fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
           />
 
           <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">

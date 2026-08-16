@@ -33,7 +33,7 @@ internal sealed class StorageService(
         UploadItem avatar,
         CancellationToken cancellationToken = default
     ) {
-        string uniqueKey = CreateAvatarUniqueKey(userId);
+        string uniqueKey = CreateUserAvatarUniqueKey(userId);
 
         var result = await UploadToS3Storage(uniqueKey, avatar.Stream, avatar.ContentType, cancellationToken);
 
@@ -45,12 +45,12 @@ internal sealed class StorageService(
     }
 
     public async Task<Result> DeleteUserAvatarAsync(Guid userId, CancellationToken cancellationToken = default) {
-        var uniqueKey = CreateAvatarUniqueKey(userId);
+        var uniqueKey = CreateUserAvatarUniqueKey(userId);
         return await DeleteFromS3Storage(uniqueKey, cancellationToken);
     }
 
     public string GetUserAvatarPreSignedUrl(Guid userId) {
-        var uniqueKey = CreateAvatarUniqueKey(userId);
+        var uniqueKey = CreateUserAvatarUniqueKey(userId);
 
         return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
     }
@@ -178,8 +178,28 @@ internal sealed class StorageService(
         return preSigningClient.GetPreSignedURL(request);
     }
 
-    private static string CreateAvatarUniqueKey(Guid userId) {
+    public async Task<Result<string>> UploadCommunityServerAvatarAsync(
+        Guid communityServerId, 
+        UploadItem avatar, 
+        CancellationToken cancellationToken = default
+    ) {
+        string uniqueKey = CreateCommunityServerAvatarUniqueKey(communityServerId);
+
+        var result = await UploadToS3Storage(uniqueKey, avatar.Stream, avatar.ContentType, cancellationToken);
+
+        if (result.IsSuccess) {
+            return Result<string>.Success(uniqueKey);
+        }
+
+        return result.Error;
+    }
+
+    private static string CreateUserAvatarUniqueKey(Guid userId) {
         return $"avatars/users/{userId}";
+    }
+    
+    private static string CreateCommunityServerAvatarUniqueKey(Guid userId) {
+        return $"avatars/community-servers/{userId}";
     }
 
     private static string CreateAttachmentUniqueKey(Guid attachmentId) {

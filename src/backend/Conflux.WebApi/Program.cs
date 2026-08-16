@@ -185,6 +185,10 @@ builder.Services
     .AddScoped<IMessageService, MessageService>()
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
     
+    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
+    .AddScoped<ICommunityServerService, CommunityServerService>()
+    .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
+    
     .AddSingleton<IMailingService, MailingService>();
 
 // S3 Service.

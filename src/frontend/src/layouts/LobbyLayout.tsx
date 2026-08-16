@@ -1,7 +1,7 @@
 import {useAuthorization} from "../contexts/AuthContext.tsx";
-import {Separator, Tooltip} from "radix-ui";
+import {Dialog, Label, Separator, Tooltip} from "radix-ui";
 import {NavLink, Outlet, useLocation, useNavigate} from "react-router";
-import {BsMegaphone, BsPeople} from "react-icons/bs";
+import {BsMegaphone, BsPeople, BsPerson, BsPlus} from "react-icons/bs";
 import UserAvatar from "../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
@@ -12,23 +12,26 @@ import {UserNameplate} from "../components/UserNameplate.tsx";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {UpdateDmConversationListEvent} from "../api/events.ts";
 import {useFetchDmChannelSummary} from "../hooks/fetchDmChannelSummary.ts";
+import IconButton from "../components/IconButton.tsx";
+import SelectableAvatar from "../components/SelectableAvatar.tsx";
+import {useEffect, useRef, useState} from "react";
+import {useFormStatus} from "react-dom";
+import {communityServerService} from "../api/communityServerService.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
   const navigate = useNavigate();
   const location = useLocation();
 
-  
-
   return (
-    <nav className="flex-none flex flex-col px-1.5 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
+    <nav className="flex-none flex flex-col p-1.5 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
       <Tooltip.Provider delayDuration={500}>
         <Tooltip.Root>
           <Tooltip.Trigger asChild>
             <UserAvatar
               userId={auth.userAuthorization?.id}
               hasAvatar={auth.userProfile?.hasAvatar ?? false}
-              className="mt-1.5 flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer scale-100 hover:scale-110 transition-transform duration-200 ease-linear"
+              className="flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
               onClick={() => {
                 if (location.pathname !== "/lobby") {
                   navigate("/lobby");
@@ -37,10 +40,10 @@ function Sidebar() {
           </Tooltip.Trigger>
 
           <Tooltip.Portal>
-            <Tooltip.Content side="right" sideOffset={5} className="select-none rounded-lg bg-gray-500">
+            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
               <p className="text-white font-semibold px-3 py-1">To your private space</p>
 
-              <Tooltip.Arrow className="fill-gray-500"/>
+              <Tooltip.Arrow className="fill-gray-600"/>
             </Tooltip.Content>
           </Tooltip.Portal>
         </Tooltip.Root>
@@ -48,9 +51,124 @@ function Sidebar() {
 
       <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1.5"/>
 
-      <div className="flex-1 h-full">
+      <div className="flex-1 bg-red-500">
+
+      </div>
+
+      <div className="flex-none flex flex-col items-center">
+        <CreateCommunityServerButton/>
       </div>
     </nav>
+  );
+}
+
+function CreateCommunityServerSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      className="button-theme-primary px-3 py-2 cursor-pointer rounded-md basis-32"
+      disabled={pending}
+    >
+      Create Server
+    </button>
+  );
+}
+
+function CreateCommunityServerButton() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [serverAvatar, setServerAvatar] = useState<File | null>(null);
+  const [serverName, setServerName] = useState<string>("");
+  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+
+    if (open) {
+      // When opening, reset the form and generate a fresh idempotency key
+      setServerName("");
+      setServerAvatar(null);
+      setIdempotencyKey(crypto.randomUUID());
+    }
+  };
+
+  const onSubmit = async (formData: FormData) => {
+    const response: ServiceResponse =
+      await communityServerService.create(idempotencyKey, serverName, serverAvatar ?? undefined);
+
+    if (response.success) {
+      setIsOpen(false);
+    } else {
+      // TODO: Handle error states.
+    }
+  };
+
+  return (
+    <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
+      <Dialog.Trigger>
+        <Tooltip.Provider delayDuration={500}>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <IconButton isLoading={false} theme="default" className="hover-highlight rounded-full">
+                <BsPlus className="size-10"/>
+              </IconButton>
+            </Tooltip.Trigger>
+
+            <Tooltip.Portal>
+              <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                <p className="text-white font-semibold px-3 py-1">Create your own community</p>
+
+                <Tooltip.Arrow className="fill-gray-600"/>
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </Dialog.Trigger>
+
+      <Dialog.Portal>
+        <Dialog.Overlay className="backdrop-overlay"/>
+
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-55 max-h-[85vh] max-w-[95vw] rounded-md bg-gray-650 p-6 text-white">
+          <Dialog.Title className="text-center font-bold text-2xl mb-1">Creating a new server eh?</Dialog.Title>
+          <Dialog.Description className="text-center mb-5 text-gray-400">Give it a name, a vessel. Give it a life...</Dialog.Description>
+
+          <form className="flex flex-col items-center" action={onSubmit}>
+            <SelectableAvatar
+              className="size-48 rounded-full flex-none"
+              onAvatarChange={(file) => {
+                setServerAvatar(file);
+              }}
+              fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
+            />
+
+            <div className="mt-4 w-full">
+              <input
+                type="text"
+                className="input-field h-11 w-full"
+                placeholder="Enter server name"
+                required aria-required
+                value={serverName}
+                onChange={(e) => {
+                  setServerName(e.target.value);
+                }}
+              />
+            </div>
+
+            <div className="w-full flex flex-row justify-end mt-2 gap-3">
+              <Dialog.Close
+                type="button"
+                className="cursor-pointer basis-20"
+              >
+                Cancel
+              </Dialog.Close>
+
+              <CreateCommunityServerSubmitButton/>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

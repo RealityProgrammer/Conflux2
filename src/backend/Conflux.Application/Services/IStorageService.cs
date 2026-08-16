@@ -22,4 +22,10 @@ public interface IStorageService {
     Task<Result> DeleteMessageAttachmentAsync(Guid attachmentId, CancellationToken cancellationToken = default);
     
     string GetMessageAttachmentPreSignedUrl(Guid attachmentId);
+
+    Task<Result<string>> UploadCommunityServerAvatarAsync(
+        Guid communityServerId,
+        UploadItem avatar,
+        CancellationToken cancellationToken = default
+    );
 }
