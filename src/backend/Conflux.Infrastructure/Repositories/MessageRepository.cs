@@ -164,14 +164,14 @@ internal sealed class MessageRepository(
                 }
                 
                 case null:
-                    return Errors.ValidationErrorsOccured(new() {
+                    return Errors.ValidationErrorsOccurred(new() {
                         [nameof(direction)] = [
                             "Value must be specified when cursor isn't null.",
                         ],
                     });
                 
                 default:
-                    return Errors.ValidationErrorsOccured(new() {
+                    return Errors.ValidationErrorsOccurred(new() {
                         [nameof(direction)] = [
                             "Unexpected enumeration value.",
                         ],

@@ -19,7 +19,7 @@ internal sealed class UserService(
 ) : IUserService {
     public async Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream) {
         if (fileFormatInspector.DetermineFileFormat(avatarStream) is not { } fileFormat) {
-            return Errors.ValidationErrorsOccured(new() {
+            return Errors.ValidationErrorsOccurred(new() {
                 [nameof(avatarStream)] = [
                     "Unknown file format.",
                 ]
@@ -27,7 +27,7 @@ internal sealed class UserService(
         }
 
         if (fileFormat is not Image imageFormat) {
-            return Errors.ValidationErrorsOccured(new() {
+            return Errors.ValidationErrorsOccurred(new() {
                 [nameof(avatarStream)] = [
                     "Image file format required.",
                 ],
@@ -35,7 +35,7 @@ internal sealed class UserService(
         }
 
         if (fileFormat.MediaType is not "image/png" and not "image/jpeg") {
-            return Errors.ValidationErrorsOccured(new() {
+            return Errors.ValidationErrorsOccurred(new() {
                 [nameof(avatarStream)] = [
                     "Only PNG or JPEG image formats are supported.",
                 ],

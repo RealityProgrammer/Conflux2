@@ -1,6 +1,6 @@
 import type {HttpStatusCode} from "axios";
 
-export type Error = {
+export type ServiceError = {
   code: string;
   message: string;
   details?: any | null;
@@ -9,7 +9,7 @@ export type Error = {
 export type ServiceResponse<T = void> = {
   success: boolean;
   statusCode: HttpStatusCode;
-  error?: Error | null;
+  error?: ServiceError | null;
 } & (T extends void ? {} : { data?: T | null });
 
 export type BackendResponse<T = void> = Omit<ServiceResponse<T>, 'success'>;

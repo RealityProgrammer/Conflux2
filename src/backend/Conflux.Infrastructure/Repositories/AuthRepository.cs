@@ -12,7 +12,7 @@ public sealed class AuthRepository(
     private const string ApplicationJwtLoginProvider = "AppJWT";
     
     public async Task<Result<ApplicationUser>> RegisterAsync(string email, string password) {
-        var generatedUserName = $"User-{Guid.NewGuid():N}";
+        var generatedUserName = $"user-{Guid.NewGuid():N}";
         
         ApplicationUser user = new ApplicationUser {
             Email = email,
@@ -22,14 +22,21 @@ public sealed class AuthRepository(
         var result = await userManager.CreateAsync(user, password);
         
         if (!result.Succeeded) {
-            bool hasDuplicateEmail = result.Errors.Any(r => r.Code == nameof(IdentityErrorDescriber.DuplicateEmail));
+            Dictionary<string, string[]> validationErrors = [];
 
-            if (hasDuplicateEmail) {
-                return Errors.EmailAttachedToAccount();
+            var emailErrors = result.Errors.Where(r => r.Code.Contains("Email")).ToList();
+
+            if (emailErrors.Count > 0) {
+                validationErrors.Add("email", [..emailErrors.Select(e => e.Description)]);
+            }
+
+            var passwordErrors = result.Errors.Where(r => r.Code.Contains("Password")).ToList();
+
+            if (passwordErrors.Count > 0) {
+                validationErrors.Add("password", [..passwordErrors.Select(e => e.Description)]);
             }
             
-            var firstError = result.Errors.First();
-            return Result<ApplicationUser>.Failure(firstError.Code, firstError.Description);
+            return Errors.ValidationErrorsOccurred(validationErrors);
         }
         
         return Result<ApplicationUser>.Success(user);

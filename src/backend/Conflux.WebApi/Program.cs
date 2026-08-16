@@ -49,6 +49,7 @@ builder.Services
         options.SignIn.RequireConfirmedAccount = false;
         options.User.RequireUniqueEmail = true;
         options.ClaimsIdentity.RoleClaimType = "role";
+        options.Password.RequiredLength = 8;
     })
     .AddRoles<IdentityRole<Guid>>()
     .AddRoleManager<RoleManager<IdentityRole<Guid>>>()
@@ -230,7 +231,7 @@ builder.Services.AddControllersWithViews(options => {
             );
 
         ApiResponse<Dictionary<string, string[]>> response = 
-            new(null, Errors.ValidationErrorsOccured(validationErrors));
+            new(null, Errors.ValidationErrorsOccurred(validationErrors));
 
         return new BadRequestObjectResult(response);
     };

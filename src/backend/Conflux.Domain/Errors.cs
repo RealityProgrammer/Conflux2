@@ -37,8 +37,8 @@ public static class Errors {
     public static Error AntiforgeryTokenVerificationFailed() =>
         new(nameof(AntiforgeryTokenVerificationFailed), "Anti-forgery token verification failed.");
 
-    public static Error ValidationErrorsOccured(Dictionary<string, string[]> fieldErrors) =>
-        new(nameof(ValidationErrorsOccured), "One or more validation errors occurred.", fieldErrors);
+    public static Error ValidationErrorsOccurred(Dictionary<string, string[]> fieldErrors) =>
+        new(nameof(ValidationErrorsOccurred), "One or more validation errors occurred.", fieldErrors);
     
     public static Error MissingConfiguration(string path) =>
         new(nameof(MissingConfiguration), $"Missing configuration {path}.");
