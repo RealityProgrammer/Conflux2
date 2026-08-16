@@ -15,6 +15,7 @@ public class ApplicationDbContext(
     public DbSet<Message> Messages { get; set; }
     public DbSet<ChannelMember> ChannelMembers { get; set; }
     public DbSet<Channel> Channels { get; set; }
+    public DbSet<CommunityServer> CommunityServers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);
@@ -24,5 +25,6 @@ public class ApplicationDbContext(
         new ChannelMemberConfiguration().Configure(builder.Entity<ChannelMember>());
         new ConversationConfiguration().Configure(builder.Entity<Conversation>());
         new MessageConfiguration().Configure(builder.Entity<Message>());
+        new CommunityServerConfiguration().Configure(builder.Entity<CommunityServer>());
     }
 }

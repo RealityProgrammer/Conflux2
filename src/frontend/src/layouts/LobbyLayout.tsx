@@ -18,6 +18,8 @@ function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  
+
   return (
     <nav className="flex-none flex flex-col px-1.5 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
       <Tooltip.Provider delayDuration={500}>
