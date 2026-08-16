@@ -94,7 +94,7 @@ internal sealed class MessageService(
                         default:
                             await DeleteUploadedAttachments();
 
-                            return Errors.ValidationErrorsOccured(new() {
+                            return Errors.ValidationErrorsOccurred(new() {
                                 [nameof(attachmentStreams)] = [
                                     "One of the attachments doesn't have the supported image format.",
                                 ],
@@ -119,7 +119,7 @@ internal sealed class MessageService(
                 case null:
                     await DeleteUploadedAttachments();
 
-                    return Errors.ValidationErrorsOccured(new() {
+                    return Errors.ValidationErrorsOccurred(new() {
                         [nameof(attachmentStreams)] = [
                             "One of the attachments have an unknown file format.",
                         ],
@@ -128,7 +128,7 @@ internal sealed class MessageService(
                 default:
                     await DeleteUploadedAttachments();
 
-                    return Errors.ValidationErrorsOccured(new() {
+                    return Errors.ValidationErrorsOccurred(new() {
                         [nameof(attachmentStreams)] = [
                             "One of the attachments doesn't have supported file format.",
                         ],

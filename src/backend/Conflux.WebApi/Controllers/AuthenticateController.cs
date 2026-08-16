@@ -230,7 +230,7 @@ public sealed class AuthenticateController : ControllerBase {
     // ReSharper disable NotAccessedPositionalProperty.Global
     public sealed record LoginRequest(
         [Required, EmailAddress] string Email,
-        [Required, DataType(DataType.Password)] string Password
+        [Required, DataType(DataType.Password), MinLength(8)] string Password
     );
     
     public sealed record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);

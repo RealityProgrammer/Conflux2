@@ -74,7 +74,7 @@ public sealed class ConversationController(
             }
         
             return result.Error.Code switch {
-                nameof(Errors.ValidationErrorsOccured) => BadRequest(new ApiResponse<MessageDto>(null, result.Error)),
+                nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse<MessageDto>(null, result.Error)),
                 nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse<MessageDto>(null, result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError())),
             };

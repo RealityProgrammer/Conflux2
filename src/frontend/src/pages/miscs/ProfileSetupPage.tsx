@@ -358,7 +358,7 @@ export default function ProfileSetupPage() {
         };
 
       case HttpStatusCode.BadRequest:
-        return response.error?.code === "ValidationErrorsOccured" ? {
+        return response.error?.code === "ValidationErrorsOccurred" ? {
           success: false,
           message: response.error?.message,
           fieldErrors: response.error?.details as FieldErrors<'userName' | 'displayName' | 'avatarFile'>,

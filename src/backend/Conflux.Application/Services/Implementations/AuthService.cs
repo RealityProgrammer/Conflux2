@@ -26,13 +26,8 @@ internal sealed class AuthService(
     IMailingService mailingService,
     TimeProvider timeProvider,
     IConfiguration config,
-    ILogger<AuthService> logger,
     IOptions<AuthServiceOptions> options
 ) : IAuthService {
-    private const string ApplicationJwtLoginProvider = "AppJWT";
-
-    private readonly ILogger<AuthService> _logger = logger;
-    
     private readonly AuthServiceOptions _options = options.Value;
 
     public async Task<Result> RegisterAsync(string email, string password) {
