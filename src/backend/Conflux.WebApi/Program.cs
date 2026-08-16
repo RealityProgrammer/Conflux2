@@ -108,8 +108,8 @@ builder.Services.AddCors(options => {
 });
 
 // redis related services
-var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? 
-                            throw new InvalidOperationException("Missing Redis connection string.");
+var redisConnectionString = builder.Configuration.GetConnectionString("Valkey") ?? 
+                            throw new InvalidOperationException("Missing Valkey connection string.");
 
 await using ConnectionMultiplexer multiplexer = await ConnectionMultiplexer.ConnectAsync(redisConnectionString);
 
