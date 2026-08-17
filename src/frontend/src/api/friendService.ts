@@ -2,10 +2,8 @@ import type {
   BackendResponse,
   DiscoverFriendElement,
   PaginatedResponse,
-  QueryPendingRequestElement,
   SendFriendRequestResponse,
   ServiceResponse,
-  UserIdentityProfileDto
 } from "./responses.ts";
 import type {AxiosError, AxiosResponse} from "axios";
 import {apiClient} from "./client.ts";

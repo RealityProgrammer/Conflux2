@@ -8,7 +8,6 @@ import {
   type ServiceResponse,
   UserRelationshipStatus
 } from "../../api/responses.ts";
-import {friendService} from "../../api/friendService.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import Spinner from "../../components/Spinner.tsx";

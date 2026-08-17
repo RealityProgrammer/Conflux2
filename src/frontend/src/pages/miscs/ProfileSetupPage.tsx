@@ -10,6 +10,7 @@ import {Label} from "radix-ui";
 import {type AvatarOperation, DeleteAvatar, NoAvatarModification, SetAvatar} from "../../api/requests.ts";
 import type {FieldErrors} from "../../api/responses.ts";
 import {useNavigate} from "react-router";
+import {sessionUserService} from "../../api/sessionUserService.ts";
 
 enum DisplayingPanel {
   Intro = 0,
@@ -342,7 +343,7 @@ export default function ProfileSetupPage() {
     const userName = formData.get("userName") as string;
     const displayName = formData.get("displayName") as string;
 
-    const response = await userService.setupProfile(userName, displayName, avatarOperation);
+    const response = await sessionUserService.setupProfile(userName, displayName, avatarOperation);
 
     switch (response.statusCode) {
       case HttpStatusCode.Ok:

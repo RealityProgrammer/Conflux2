@@ -2,8 +2,6 @@ import type {
   BackendResponse,
   DirectMessageResolutionResponse,
   DmChannelSummary,
-  DmConversationListItemDto,
-  PaginatedResponse,
   ServiceResponse
 } from "./responses.ts";
 import {apiClient} from "./client.ts";

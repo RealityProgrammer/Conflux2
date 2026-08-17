@@ -1,6 +1,5 @@
 import {Dialog} from "radix-ui";
 import type {ReactNode} from "react";
-import {BsPerson} from "react-icons/bs";
 
 export interface DialogFormProps {
   open: boolean;

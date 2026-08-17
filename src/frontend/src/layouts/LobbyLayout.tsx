@@ -7,7 +7,6 @@ import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import type {DmConversationListItemDto, FieldErrors, PaginatedResponse, ServiceResponse} from "../api/responses.ts";
-import {channelService} from "../api/channelService.ts";
 import {UserNameplate} from "../components/UserNameplate.tsx";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {UpdateDmConversationListEvent} from "../api/events.ts";
@@ -71,9 +70,6 @@ function JoinedCommunityServerScrollList() {
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
