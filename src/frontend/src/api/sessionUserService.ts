@@ -18,7 +18,7 @@ export const sessionUserService = {
 
       const response: AxiosResponse<BackendResponse<PaginatedResponse<DmConversationListItemDto>>> =
         await apiClient.get<BackendResponse<PaginatedResponse<DmConversationListItemDto>>>(
-          `/channels/dm?${searchParams.toString()}`
+          `/users/me/dm?${searchParams.toString()}`
         );
 
       return {
@@ -44,7 +44,7 @@ export const sessionUserService = {
       searchParams.append("count", String(count));
 
       const response: AxiosResponse<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>>(`/friend/friends?${searchParams.toString()}`);
+        await apiClient.get<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>>(`users/me/friends?${searchParams.toString()}`);
 
       return {
         success: true,
@@ -69,7 +69,7 @@ export const sessionUserService = {
       searchParams.append("count", String(count));
 
       const response: AxiosResponse<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>> =
-        await apiClient.get<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>>(`/friend/pending-requests?${searchParams.toString()}`);
+        await apiClient.get<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>>(`users/me/pending-requests?${searchParams.toString()}`);
 
       return {
         success: true,
