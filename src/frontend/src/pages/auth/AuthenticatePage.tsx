@@ -9,6 +9,7 @@ import Spinner from "../../components/Spinner.tsx";
 import {BsEye, BsEyeSlash} from "react-icons/bs";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
 import {useDocumentTitle} from "usehooks-ts";
+import ErrorText from "../../components/ErrorText.tsx";
 
 type ActionData = {
   intent: "login" | "register";
@@ -157,7 +158,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
         </Form>
 
         {errorMessage && (
-          <p className="text-sm text-center mt-1 text-red-500">{errorMessage}</p>
+          <ErrorText className="block text-center mt-1">{errorMessage}</ErrorText>
         )}
 
         <p className="text-center text-gray-400 text-sm mt-2">
@@ -227,7 +228,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
             />
 
             {validationErrors?.["email"] && (
-              <p className="text-sm mt-1 text-red-500">{validationErrors["email"][0]}</p>
+              <ErrorText className="mt-1">{validationErrors["email"][0]}</ErrorText>
             )}
           </div>
 
@@ -322,7 +323,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
         </Form>
 
         {errorMessage && !actionData.validationErrorDetails && (
-          <p className="text-sm text-center mt-1 text-red-500">{errorMessage}</p>
+          <ErrorText className="block text-center mt-1">{errorMessage}</ErrorText>
         )}
 
         <p className="text-center text-gray-400 text-sm mt-2">
