@@ -13,7 +13,8 @@ namespace Conflux.WebApi.Controllers;
 [Authorize]
 public sealed class SessionUserController(
     IChannelService channelService,
-    IFriendService friendService
+    IFriendService friendService,
+    ICommunityServerService communityServerService
 ) : ControllerBase {
     [HttpGet("dm")]
     public async Task<ActionResult<ApiResponse<PaginatedResult<DmConversationListItemDto>>>> GetDirectMessageChannels(
@@ -36,8 +37,7 @@ public sealed class SessionUserController(
     }
     
     [HttpGet("friends")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> QueryFriends(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> GetFriends(
         [FromQuery] string? name,
         [FromQuery, Required] int offset,
         [FromQuery, Required] int count
@@ -64,8 +64,7 @@ public sealed class SessionUserController(
     }
 
     [HttpGet("pending-requests")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestDto>>>> QueryPendingRequests(
+    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestDto>>>> GetPendingFriendRequests(
         [FromQuery] string? name,
         [FromQuery, Required] int offset,
         [FromQuery, Required] int count

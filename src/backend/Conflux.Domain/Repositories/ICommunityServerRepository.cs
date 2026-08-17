@@ -1,3 +1,4 @@
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;

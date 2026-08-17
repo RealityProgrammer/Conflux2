@@ -19,7 +19,7 @@ using Conflux.Infrastructure;
 using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
 using Conflux.WebApi.Filters;
-using Conflux.WebApi.GraphQL.Queries;
+using Conflux.WebApi.GraphQL;
 using Conflux.WebApi.GraphQL.Types;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
@@ -131,8 +131,9 @@ builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
 // GraphQL
 builder.Services
     .AddGraphQLServer()
-    .AddQueryType<UserQuery>()
+    .AddQueryType<Query>()
     .AddType<UserType>()
+    .AddType<CommunityServerType>()
     .AddProjections()
     .AddAuthorization();
 
