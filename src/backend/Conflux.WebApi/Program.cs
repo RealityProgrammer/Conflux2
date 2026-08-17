@@ -189,6 +189,8 @@ builder.Services
     .AddScoped<ICommunityServerService, CommunityServerService>()
     .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
     
+    .AddScoped<ICommunityServerMemberRepository, CommunityServerMemberRepository>()
+    
     .AddSingleton<IMailingService, MailingService>();
 
 // S3 Service.
