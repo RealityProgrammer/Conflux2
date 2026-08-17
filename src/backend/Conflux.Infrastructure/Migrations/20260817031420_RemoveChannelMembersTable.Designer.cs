@@ -3,6 +3,7 @@ using System;
 using Conflux.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Conflux.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260817031420_RemoveChannelMembersTable")]
+    partial class RemoveChannelMembersTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,24 +180,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasIndex("OwnerUserId");
 
                     b.ToTable("CommunityServers");
-                });
-
-            modelBuilder.Entity("Conflux.Domain.Entities.CommunityServerMember", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CommunityServerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("UserId", "CommunityServerId");
-
-                    b.HasIndex("CommunityServerId");
-
-                    b.ToTable("CommunityServerMembers");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Conversation", b =>
@@ -457,25 +442,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("OwnerUser");
                 });
 
-            modelBuilder.Entity("Conflux.Domain.Entities.CommunityServerMember", b =>
-                {
-                    b.HasOne("Conflux.Domain.Entities.CommunityServer", "CommunityServer")
-                        .WithMany("Members")
-                        .HasForeignKey("CommunityServerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Conflux.Domain.Entities.ApplicationUser", "User")
-                        .WithMany("JoinedCommunityServers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CommunityServer");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Receiver")
@@ -574,16 +540,9 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("JoinedCommunityServers");
-
                     b.Navigation("ReceivedFriendRequests");
 
                     b.Navigation("SentFriendRequests");
-                });
-
-            modelBuilder.Entity("Conflux.Domain.Entities.CommunityServer", b =>
-                {
-                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Conversation", b =>

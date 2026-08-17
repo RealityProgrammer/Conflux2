@@ -18,7 +18,5 @@ public class CommunityServerConfiguration : IEntityTypeConfiguration<CommunitySe
             .WithMany()
             .HasForeignKey(s => s.OwnerUserId)
             .HasPrincipalKey(s => s.Id);
-        
-        
     }
 }

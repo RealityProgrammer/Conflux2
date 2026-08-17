@@ -104,14 +104,6 @@ internal sealed class ChannelRepository(
             Conversation = conversation,
             CreatedAt = utcNow,
             FriendRequestId = friendRequestSummary.Id,
-            Members = new List<ChannelMember> {
-                new() {
-                    UserId = user1,
-                },
-                new() {
-                    UserId = user2,
-                },
-            },
         };
 
         try {

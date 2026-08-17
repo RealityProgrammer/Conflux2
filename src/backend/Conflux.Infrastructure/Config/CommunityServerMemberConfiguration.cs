@@ -1,0 +1,25 @@
+using Conflux.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Conflux.Infrastructure.Config;
+
+public sealed class CommunityServerMemberConfiguration : IEntityTypeConfiguration<CommunityServerMember> {
+    public void Configure(EntityTypeBuilder<CommunityServerMember> builder) {
+        builder.HasKey(m => new {
+            m.UserId,
+            m.CommunityServerId,
+        });
+
+        builder.HasOne(m => m.User)
+            .WithMany(u => u.JoinedCommunityServers)
+            .HasForeignKey(m => m.UserId)
+            .HasPrincipalKey(u => u.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasOne(m => m.CommunityServer)
+            .WithMany(s => s.Members)
+            .HasForeignKey(m => m.CommunityServerId)
+            .HasPrincipalKey(s => s.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

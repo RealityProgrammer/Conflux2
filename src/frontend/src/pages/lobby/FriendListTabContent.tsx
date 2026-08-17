@@ -15,6 +15,7 @@ import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
+import {sessionUserService} from "../../api/sessionUserService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -44,7 +45,7 @@ export default function FriendListTabContent() {
     queryKey: queryKey,
     queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<UserIdentityProfileDto> | null | undefined> => {
       const response: ServiceResponse<PaginatedResponse<UserIdentityProfileDto>> =
-        await friendService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
+        await sessionUserService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
     },

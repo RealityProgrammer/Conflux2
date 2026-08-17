@@ -20,6 +20,7 @@ import {communityServerService} from "../api/communityServerService.ts";
 import DialogForm from "../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
 import ErrorText from "../components/ErrorText.tsx";
+import {sessionUserService} from "../api/sessionUserService.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -200,7 +201,7 @@ function DirectMessagesList() {
     queryKey: queryKey,
     queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<DmConversationListItemDto> | null | undefined> => {
       const response: ServiceResponse<PaginatedResponse<DmConversationListItemDto>> =
-        await channelService.getDmConversations(pageParam, 30);
+        await sessionUserService.getDmConversations(pageParam, 30);
 
       return response.data;
     },

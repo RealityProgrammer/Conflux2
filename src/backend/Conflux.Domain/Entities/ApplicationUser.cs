@@ -21,4 +21,6 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     
     [NotMapped]
     public IEnumerable<FriendRequest> FriendRequests => SentFriendRequests.Concat(ReceivedFriendRequests);
+    
+    public virtual ICollection<CommunityServerMember> JoinedCommunityServers { get; set; } = [];
 }

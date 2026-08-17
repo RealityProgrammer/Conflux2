@@ -29,10 +29,18 @@ internal sealed class CommunityServerService(
             HasAvatar = false,
             CreatorUserId = creatorId,
             OwnerUserId = creatorId,
+            Members = [],
+        };
+
+        CommunityServerMember ownerMember = new() {
+            UserId = creatorId,
+            CommunityServer = server,
         };
         
+        server.Members.Add(ownerMember);
+        
         communityServerRepository.Add(server);
-
+        
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
         if (avatarStream != null) {

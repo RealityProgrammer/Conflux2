@@ -23,6 +23,7 @@ import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
+import {sessionUserService} from "../../api/sessionUserService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -49,7 +50,7 @@ export default function PendingRequestsTabContent() {
     queryKey: queryKey,
     queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<QueryPendingRequestElement> | null | undefined> => {
       const response: ServiceResponse<PaginatedResponse<QueryPendingRequestElement>> =
-        await friendService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
+        await sessionUserService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
     },

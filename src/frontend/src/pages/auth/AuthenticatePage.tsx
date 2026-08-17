@@ -77,7 +77,7 @@ export async function authAction({request}: { request: Request }): Promise<Respo
 
 function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
   const navigation = useNavigation();
-  const actionData = useActionData() as ActionData;
+  const actionData = useActionData() as ActionData | undefined;
 
   const isLoggingIn = navigation.state === "submitting" && navigation.formData?.get("intent") === "login";
 
@@ -172,7 +172,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
 
 function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
   const navigation = useNavigation();
-  const actionData = useActionData() as ActionData;
+  const actionData = useActionData() as ActionData | undefined;
 
   const isRegistering =
     navigation.state === "submitting" && navigation.formData?.get("intent") === "register";
@@ -322,7 +322,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
           </button>
         </Form>
 
-        {errorMessage && !actionData.validationErrorDetails && (
+        {errorMessage && !(actionData?.validationErrorDetails) && (
           <ErrorText className="block text-center mt-1">{errorMessage}</ErrorText>
         )}
 

@@ -16,4 +16,6 @@ public class CommunityServer : IHasCreatedAt {
     [Required] public ApplicationUser OwnerUser { get; set; } = null!;
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public virtual ICollection<CommunityServerMember> Members { get; set; } = null!;
 }
