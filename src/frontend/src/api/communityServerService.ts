@@ -30,5 +30,15 @@ export const communityServerService = {
       const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
-  }
+  },
+
+  getAvatarUrl: (serverId: string, forceRefresh: boolean): string => {
+    const queryParams: URLSearchParams = new URLSearchParams();
+
+    if (forceRefresh) {
+      queryParams.append("t", new Date().getTime().toString());
+    }
+
+    return `/api/communities/${encodeURIComponent(serverId)}/avatar?${queryParams}`;
+  },
 }

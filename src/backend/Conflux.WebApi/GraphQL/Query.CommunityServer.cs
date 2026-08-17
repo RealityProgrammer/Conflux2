@@ -7,13 +7,12 @@ using System.Security.Claims;
 namespace Conflux.WebApi.GraphQL;
 
 partial class Query {
+    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
     [UseProjection]
     [Authorize]
     public IQueryable<CommunityServer> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
-        [Service] ApplicationDbContext dbContext,
-        int count,
-        Guid? after = null
+        [Service] ApplicationDbContext dbContext
     ) {
         var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -23,13 +22,9 @@ partial class Query {
             });
         }
 
-        IQueryable<CommunityServerMember> query = dbContext.CommunityServerMembers
-            .Where(m => m.UserId == userId);
-
-        if (after != null) {
-            query = query.Where(m => m.CommunityServerId.CompareTo(after.Value) > 0);
-        }
-        
-        return query.Select(m => m.CommunityServer).Take(count);
+        return dbContext.CommunityServerMembers
+            .Where(m => m.UserId == userId)
+            .OrderBy(m => m.CreatedAt)
+            .Select(m => m.CommunityServer);
     }
 }

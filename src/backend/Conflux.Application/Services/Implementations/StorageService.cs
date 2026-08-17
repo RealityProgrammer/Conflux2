@@ -194,6 +194,11 @@ internal sealed class StorageService(
         return result.Error;
     }
 
+    public string GetCommunityServerAvatarPreSignedUrl(Guid serverId) {
+        var uniqueKey = CreateCommunityServerAvatarUniqueKey(serverId);
+        return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+    }
+
     private static string CreateUserAvatarUniqueKey(Guid userId) {
         return $"avatars/users/{userId}";
     }

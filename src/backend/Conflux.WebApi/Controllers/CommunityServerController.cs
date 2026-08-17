@@ -34,6 +34,13 @@ public sealed class CommunityServerController(
         
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
     }
+    
+    [HttpGet("{serverId:guid}/avatar")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
+    public async Task<ActionResult> GetAvatarUrl(Guid serverId) {
+        var result = communityServerService.GetAvatarUrl(serverId);
+        return Redirect(result);
+    }
 
     public sealed record CreateRequest(
         [Required] string Name, 

@@ -68,7 +68,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
       return undefined;
     },
 
-    staleTime: 60 * 30,
+    staleTime: 60 * 30 * 1000,
     refetchOnWindowFocus: false,
   });
 

@@ -2,12 +2,32 @@ import type {
   BackendResponse,
   DmConversationListItemDto,
   PaginatedResponse, QueryPendingRequestElement,
-  ServiceResponse,
+  ServiceResponse, UserFullProfileDto,
   UserIdentityProfileDto
 } from "./responses.ts";
-import type {AxiosError, AxiosResponse} from "axios";
-import {apiClient} from "./client.ts";
+import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
+import {apiClient, executeGraphQL} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
+import {gql} from "../gql";
+import type {GetJoinedCommunityServerQuery} from "../gql/graphql.ts";
+
+const GET_JOINED_COMMUNITY_SERVERS = gql(`
+query GetJoinedCommunityServer($after: String) {
+  joinedServers(after: $after) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+    nodes {
+      id
+      name
+      hasAvatar
+    }
+  }
+}
+`);
 
 export const sessionUserService = {
   getDmConversations: async (offset: number, count: number): Promise<ServiceResponse<PaginatedResponse<DmConversationListItemDto>>> => {
@@ -81,4 +101,19 @@ export const sessionUserService = {
       return handleAxiosError(axiosError);
     }
   },
+
+  getJoinedCommunityServers: async (after: string | null): Promise<ServiceResponse<GetJoinedCommunityServerQuery['joinedServers']>> => {
+    try {
+      const data: GetJoinedCommunityServerQuery = await executeGraphQL(GET_JOINED_COMMUNITY_SERVERS, {after: after, count: 20});
+
+      return {
+        success: true,
+        statusCode: HttpStatusCode.Ok,
+        data: data.joinedServers
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<GetJoinedCommunityServerQuery['joinedServers']>>;
+      return handleAxiosError(axiosError);
+    }
+  }
 }

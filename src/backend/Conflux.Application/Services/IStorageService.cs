@@ -28,4 +28,6 @@ public interface IStorageService {
         UploadItem avatar,
         CancellationToken cancellationToken = default
     );
+
+    string GetCommunityServerAvatarPreSignedUrl(Guid serverId);
 }

@@ -82,4 +82,8 @@ internal sealed class CommunityServerService(
 
         return Result.Success();
     }
+    
+    public string GetAvatarUrl(Guid serverId) {
+        return storageService.GetCommunityServerAvatarPreSignedUrl(serverId);
+    }
 }

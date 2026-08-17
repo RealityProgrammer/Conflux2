@@ -9,6 +9,7 @@ public sealed class CommunityServerType : ObjectType<CommunityServer> {
         descriptor.Field(s => s.Id);
         descriptor.Field(s => s.Name);
         descriptor.Field(s => s.Description);
+        descriptor.Field(s => s.HasAvatar);
         descriptor.Field(s => s.CreatedAt);
         descriptor.Field(s => s.CreatorUserId);
         descriptor.Field(s => s.CreatorUser).Type<UserType>();

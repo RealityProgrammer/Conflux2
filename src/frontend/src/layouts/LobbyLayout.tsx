@@ -21,6 +21,8 @@ import DialogForm from "../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
 import ErrorText from "../components/ErrorText.tsx";
 import {sessionUserService} from "../api/sessionUserService.ts";
+import type {GetJoinedCommunityServerQuery} from "../gql/graphql.ts";
+import ServerAvatar from "../components/ServerAvatar.tsx";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -55,14 +57,80 @@ function Sidebar() {
 
       <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1.5"/>
 
-      <div className="flex-1 bg-red-500">
-
-      </div>
+      <JoinedCommunityServerScrollList/>
 
       <div className="flex-none flex flex-col items-center">
         <CreateCommunityServerButton/>
       </div>
     </nav>
+  );
+}
+
+function JoinedCommunityServerScrollList() {
+  const queryKey = ["joinedCommunityServers"];
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: queryKey,
+    queryFn: async ({pageParam}): Promise<GetJoinedCommunityServerQuery['joinedServers'] | null> => {
+      const response: ServiceResponse<GetJoinedCommunityServerQuery['joinedServers'] | null> =
+        await sessionUserService.getJoinedCommunityServers(pageParam);
+
+      if (!response.data) {
+        throw new Error("Failed to fetch joined community servers.");
+      }
+
+      return response.data;
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage) return null;
+
+      if (!lastPage.pageInfo.hasNextPage) {
+        return null;
+      }
+
+      return lastPage.pageInfo.endCursor;
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const allElements = data?.pages.flatMap((page) => page?.nodes ?? []) ?? []
+
+  return (
+    <div className="flex-1">
+      {!isLoading && (
+        <>
+          {allElements.map((server) => (
+            <Tooltip.Provider delayDuration={500} key={server.id}>
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <ServerAvatar
+                    serverId={server.id}
+                    hasAvatar={server.hasAvatar}
+                    className="flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                    onClick={() => {
+                    }}/>
+                </Tooltip.Trigger>
+
+                <Tooltip.Portal>
+                  <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                    <p className="text-white font-semibold px-3 py-1">To your private space</p>
+
+                    <Tooltip.Arrow className="fill-gray-600"/>
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          ))}
+        </>
+      )}
+    </div>
   );
 }
 
