@@ -5,6 +5,7 @@ using Conflux.WebApi.Attributes;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.Controllers;
@@ -24,7 +25,7 @@ public sealed class CommunityServerController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        await using var stream = request.Avatar == null ? Stream.Null : request.Avatar.OpenReadStream();
+        await using var stream = request.Avatar?.OpenReadStream();
         var result = await communityServerService.Create(userId, request.Name, stream);
 
         if (result.IsSuccess) {
@@ -34,16 +35,21 @@ public sealed class CommunityServerController(
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
     }
 
-    public sealed record CreateRequest([Required, StringLength(48)] string Name, IFormFile? Avatar) : IValidatableObject {
+    public sealed record CreateRequest(
+        [Required] string Name, 
+        IFormFile? Avatar
+    ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext context) {
             var results = new List<ValidationResult>();
 
-            Validator.TryValidateProperty(Name, new(this, null, null) {
-                MemberName = nameof(Name),
-            }, results);
+            if (Name.Length > 48) {
+                results.Add(new(
+                    "Name can only have maximum length of 48 characters.", 
+                    [nameof(Name)]
+                ));
+            }
             
-            var configuration = context.GetService<IConfiguration>()!;
-            var options = configuration.GetSection("Services:User").Get<CommunityServerServiceOptions>()!;
+            var options = context.GetRequiredService<IOptions<CommunityServerServiceOptions>>().Value;
                 
             if (Avatar != null && Avatar.Length > options.MaxAvatarSizeBytes) {
                 results.Add(new(

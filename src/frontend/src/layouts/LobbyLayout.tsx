@@ -1,12 +1,12 @@
 import {useAuthorization} from "../contexts/AuthContext.tsx";
-import {Dialog, Label, Separator, Tooltip} from "radix-ui";
+import {Separator, Tooltip} from "radix-ui";
 import {NavLink, Outlet, useLocation, useNavigate} from "react-router";
-import {BsMegaphone, BsPeople, BsPerson, BsPlus} from "react-icons/bs";
+import {BsMegaphone, BsPeople, BsPlus} from "react-icons/bs";
 import UserAvatar from "../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import type {DmConversationListItemDto, PaginatedResponse, ServiceResponse} from "../api/responses.ts";
+import type {DmConversationListItemDto, FieldErrors, PaginatedResponse, ServiceResponse} from "../api/responses.ts";
 import {channelService} from "../api/channelService.ts";
 import {UserNameplate} from "../components/UserNameplate.tsx";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
@@ -14,9 +14,12 @@ import type {UpdateDmConversationListEvent} from "../api/events.ts";
 import {useFetchDmChannelSummary} from "../hooks/fetchDmChannelSummary.ts";
 import IconButton from "../components/IconButton.tsx";
 import SelectableAvatar from "../components/SelectableAvatar.tsx";
-import {useEffect, useRef, useState} from "react";
+import {useState} from "react";
 import {useFormStatus} from "react-dom";
 import {communityServerService} from "../api/communityServerService.ts";
+import DialogForm from "../components/DialogForm.tsx";
+import {HttpStatusCode} from "axios";
+import ErrorText from "../components/ErrorText.tsx";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -81,6 +84,10 @@ function CreateCommunityServerButton() {
   const [serverAvatar, setServerAvatar] = useState<File | null>(null);
   const [serverName, setServerName] = useState<string>("");
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
+  const [apiError, setApiError] = useState<{
+    error: string | undefined,
+    validationErrors: FieldErrors<"name" | "avatar"> | undefined
+  } | undefined>(undefined);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -90,85 +97,88 @@ function CreateCommunityServerButton() {
       setServerName("");
       setServerAvatar(null);
       setIdempotencyKey(crypto.randomUUID());
+      setApiError(undefined);
     }
   };
 
-  const onSubmit = async (formData: FormData) => {
+  const onSubmit = async () => {
     const response: ServiceResponse =
       await communityServerService.create(idempotencyKey, serverName, serverAvatar ?? undefined);
 
     if (response.success) {
       setIsOpen(false);
     } else {
-      // TODO: Handle error states.
+      if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
+        setApiError({ error: undefined, validationErrors: response.error.details });
+      } else {
+        setApiError({ error: response.error?.message, validationErrors: undefined });
+      }
     }
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
-      <Dialog.Trigger>
-        <Tooltip.Provider delayDuration={500}>
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <IconButton isLoading={false} theme="default" className="hover-highlight rounded-full">
-                <BsPlus className="size-10"/>
-              </IconButton>
-            </Tooltip.Trigger>
+    <>
+      <Tooltip.Provider delayDuration={500}>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild>
+            <IconButton isLoading={false} theme="default" className="hover-highlight rounded-full" onClick={() => handleOpenChange(true)}>
+              <BsPlus className="size-10"/>
+            </IconButton>
+          </Tooltip.Trigger>
 
-            <Tooltip.Portal>
-              <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-                <p className="text-white font-semibold px-3 py-1">Create your own community</p>
+          <Tooltip.Portal>
+            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+              <p className="text-white font-semibold px-3 py-1">Create your own community</p>
 
-                <Tooltip.Arrow className="fill-gray-600"/>
-              </Tooltip.Content>
-            </Tooltip.Portal>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      </Dialog.Trigger>
+              <Tooltip.Arrow className="fill-gray-600"/>
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
 
-      <Dialog.Portal>
-        <Dialog.Overlay className="backdrop-overlay"/>
+      <DialogForm
+        open={isOpen} onOpenChange={handleOpenChange}
+        headerIcon={(<BsPeople className="size-10 fill-white"/>)}
+        title="Create a new Community Server"
+        description="Give it a name, a vessel. Give it a life..."
+        body={() => {
+          const avatarError = apiError?.validationErrors?.["avatar"];
+          const nameError = apiError?.validationErrors?.["name"];
 
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-55 max-h-[85vh] max-w-[95vw] rounded-md bg-gray-650 p-6 text-white">
-          <Dialog.Title className="text-center font-bold text-2xl mb-1">Creating a new server eh?</Dialog.Title>
-          <Dialog.Description className="text-center mb-5 text-gray-400">Give it a name, a vessel. Give it a life...</Dialog.Description>
-
-          <form className="flex flex-col items-center" action={onSubmit}>
-            <SelectableAvatar
-              className="size-48 rounded-full flex-none"
-              onAvatarChange={(file) => {
-                setServerAvatar(file);
-              }}
-              fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
-            />
-
-            <div className="mt-4 w-full">
-              <input
-                type="text"
-                className="input-field h-11 w-full"
-                placeholder="Enter server name"
-                required aria-required
-                value={serverName}
-                onChange={(e) => {
-                  setServerName(e.target.value);
+          return (
+            <>
+              <SelectableAvatar
+                className="size-48 rounded-full flex-none"
+                onAvatarChange={(file) => {
+                  setServerAvatar(file);
                 }}
+                fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
               />
-            </div>
 
-            <div className="w-full flex flex-row justify-end mt-2 gap-3">
-              <Dialog.Close
-                type="button"
-                className="cursor-pointer basis-20"
-              >
-                Cancel
-              </Dialog.Close>
+              { avatarError && (<ErrorText>{avatarError[0]}</ErrorText>) }
 
-              <CreateCommunityServerSubmitButton/>
-            </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              <div className="mt-4 w-full">
+                <input
+                  type="text"
+                  className="input-field h-11 w-full"
+                  placeholder="Enter server name"
+                  required aria-required
+                  value={serverName}
+                  onChange={(e) => {
+                    setServerName(e.target.value);
+                  }}
+                />
+              </div>
+
+              { nameError && (<ErrorText>{nameError[0]}</ErrorText>) }
+            </>
+          );
+        }}
+        submitButton={() => <CreateCommunityServerSubmitButton/>}
+        action={onSubmit}
+        contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
+      />
+    </>
   );
 }
 

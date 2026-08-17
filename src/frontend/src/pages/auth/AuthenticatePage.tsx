@@ -2,9 +2,9 @@ import {useEffect, useRef, useState} from "react";
 import {animate, JSAnimation, random} from "animejs";
 import {Form, redirect, useActionData, useLocation, useNavigate, useNavigation} from "react-router";
 import {authService} from "../../api/authService.ts";
-import type {LoginResponse, ServiceError, ServiceResponse} from "../../api/responses.ts";
+import type {FieldErrors, LoginResponse, ServiceResponse} from "../../api/responses.ts";
 import {HttpStatusCode} from "axios";
-import {Label, Separator, unstable_PasswordToggleField as PasswordToggleField} from "radix-ui";
+import {Label, unstable_PasswordToggleField as PasswordToggleField} from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
 import {BsEye, BsEyeSlash} from "react-icons/bs";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
@@ -13,7 +13,7 @@ import {useDocumentTitle} from "usehooks-ts";
 type ActionData = {
   intent: "login" | "register";
   error: string;
-  validationErrorDetails?: Record<string, string[]>;
+  validationErrorDetails?: FieldErrors<"email" | "password">;
 }
 
 export async function authAction({request}: { request: Request }): Promise<Response | ActionData> {
@@ -40,7 +40,7 @@ export async function authAction({request}: { request: Request }): Promise<Respo
         error: response.error?.message ?? "Unknown error.",
         validationErrorDetails:
           response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred" ?
-            response.error.details as Record<string, string[]> :
+            response.error.details as FieldErrors<"email" | "password"> :
             undefined,
       };
     }
@@ -67,7 +67,7 @@ export async function authAction({request}: { request: Request }): Promise<Respo
         error: response.error?.message ?? "Unknown error.",
         validationErrorDetails:
           response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred" ?
-            response.error.details as Record<string, string[]> :
+            response.error.details as FieldErrors<"email" | "password"> :
             undefined,
       };
     }
@@ -178,7 +178,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
 
   const [password, setPassword] = useState("");
 
-  const [validationErrors, setValidationErrors] = useState(actionData?.intent === "register" ? actionData.validationErrorDetails : undefined);
+  const [validationErrors, setValidationErrors] = useState<FieldErrors<"email" | "password"> | undefined>(actionData?.intent === "register" ? actionData.validationErrorDetails : undefined);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(actionData?.intent === "register" ? actionData?.error : undefined);
 
   useEffect(() => {
@@ -188,11 +188,11 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
     }
   }, [actionData]);
 
-  const handleInputChange = (field?: string) => {
+  const handleInputChange = (field?: "email" | "password") => {
     setErrorMessage(undefined); // Clear global error (e.g. "Passwords do not match")
 
     if (validationErrors && field) {
-      setValidationErrors((prev) => {
+      setValidationErrors((prev: FieldErrors<"email" | "password"> | undefined) => {
         if (!prev) return prev;
 
         const updated = {...prev};
