@@ -81,7 +81,7 @@ export const sessionUserService = {
         formData.append("avatarFile", avatarOperation.file);
       }
 
-      const response = await apiClient.post("/user/setup-profile", formData, {
+      const response = await apiClient.post("/users/me/setup-profile", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         }

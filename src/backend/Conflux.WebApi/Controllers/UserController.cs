@@ -56,6 +56,4 @@ public sealed class UserController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<UserIdentityProfileDto>(null, result.Error)),
         };
     }
-    
-    public sealed record GetAvatarUrlResponse(string? Url);
 }
