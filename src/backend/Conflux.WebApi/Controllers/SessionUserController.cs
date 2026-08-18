@@ -17,8 +17,7 @@ namespace Conflux.WebApi.Controllers;
 public sealed class SessionUserController(
     IUserService userService,
     IChannelService channelService,
-    IFriendService friendService,
-    ICommunityServerService communityServerService
+    IFriendService friendService
 ) : ControllerBase {
     [HttpPost("avatar")]
     public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
@@ -118,7 +117,7 @@ public sealed class SessionUserController(
         PaginatedResult<DmConversationListItemDto> result =
             await channelService.GetUserConversationsAsync(userId, offset, count);
 
-        return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Domain.Error.None));
+        return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
     }
     
     [HttpGet("friends")]

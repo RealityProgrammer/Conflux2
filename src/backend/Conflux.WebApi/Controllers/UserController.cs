@@ -1,12 +1,8 @@
-using Conflux.Application.Dto.Requests;
 using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
@@ -32,15 +28,11 @@ public sealed class UserController(
             return NoContent();
         }
 
-        switch (result.Error.Code) {
-            case nameof(Errors.ResourceNotFound):
-                return NoContent();
-            
-            case nameof(Errors.NoUserFoundFromId):
-                return BadRequest(result.Error);
-        }
-
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NoContent(),
+            nameof(Errors.NoUserFoundFromId) => BadRequest(result.Error),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
+        };
     }
     
     [HttpGet("{id:guid}/profile")]
