@@ -10,7 +10,7 @@ import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 
 export default function DirectMessagePage() {
-  useDocumentTitle("DM - Conflux");
+  useDocumentTitle("Conflux - DM");
 
   const {channelId, channelSummary}: DirectMessagePageLoaderProps = useLoaderData();
 

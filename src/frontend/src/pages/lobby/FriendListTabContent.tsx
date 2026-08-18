@@ -172,7 +172,7 @@ export default function FriendListTabContent() {
         renderItem={(itemIndex: number) =>
           <Row element={allElements[itemIndex]}
                removeUserFromCache={() => handleRemoveUserFromCache(allElements[itemIndex].id)}
-               navigateToDirectMessage={(userId) => navigation(`/lobby/dm/${encodeURIComponent(userId)}`)}/>
+               navigateToDirectMessage={(userId) => navigation(`/lobby/me/dm/${encodeURIComponent(userId)}`)}/>
         }
         renderSkeletonItem={(index) => (
           <UserNameplate.Skeleton key={index}

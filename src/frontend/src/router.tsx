@@ -16,6 +16,8 @@ import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
+import UserLobbyLayout from "./layouts/UserLobbyLayout.tsx";
+import ServerPage from "./pages/server/ServerPage.tsx";
 
 export type DirectMessagePageLoaderProps = {
   channelId: string | null;
@@ -69,7 +71,7 @@ export const router = createBrowserRouter([
               const response = await authService.getAuthorizationInfo();
 
               if (response.statusCode === HttpStatusCode.Ok && response.data) {
-                return redirect('/lobby');
+                return redirect('/lobby/me');
               }
 
               return null;
@@ -137,42 +139,57 @@ export const router = createBrowserRouter([
             element: <LobbyPage/>
           },
           {
-            path: "announcements",
-            element: <SystemAnnouncementPage/>
+            path: "me",
+            element: <UserLobbyLayout/>,
+            children: [
+              {
+                path: "announcements",
+                element: <SystemAnnouncementPage/>
+              },
+              {
+                path: "friends",
+                element: <FriendsPage/>
+              },
+              {
+                path: "dm/:userId?",
+                element: <DirectMessagePage/>,
+                loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
+                  const userId: string | undefined = params.userId;
+
+                  if (!userId) {
+                    return {channelId: null, channelSummary: null};
+                  }
+
+                  const channelIdResponse: ServiceResponse<string> =
+                    await channelService.getDirectMessageChannelId(userId);
+
+                  if (!channelIdResponse.success) {
+                    return {channelId: null, channelSummary: null};
+                  }
+
+                  const channelId: string = channelIdResponse.data!;
+
+                  const dmChannelSummary: ServiceResponse<DmChannelSummary> =
+                    await channelService.getDmChannelSummary(channelId);
+
+                  if (!dmChannelSummary.success) {
+                    return {channelId: channelId, channelSummary: null};
+                  }
+
+                  return {channelId: channelId, channelSummary: dmChannelSummary.data!};
+                }
+              },
+            ]
           },
           {
-            path: "friends",
-            element: <FriendsPage/>
-          },
-          {
-            path: "dm/:userId?",
-            element: <DirectMessagePage/>,
-            loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
-              const userId: string | undefined = params.userId;
+            path: "servers/:serverId?",
+            element: <ServerPage/>,
+            loader: ({params}: LoaderFunctionArgs) => {
+              const serverId: string | undefined = params.serverId;
 
-              if (!userId) {
-                return {channelId: null, channelSummary: null};
-              }
-
-              const channelIdResponse: ServiceResponse<string> =
-                await channelService.getDirectMessageChannelId(userId);
-
-              if (!channelIdResponse.success) {
-                return {channelId: null, channelSummary: null};
-              }
-
-              const channelId: string = channelIdResponse.data!;
-
-              const dmChannelSummary: ServiceResponse<DmChannelSummary> =
-                await channelService.getDmChannelSummary(channelId);
-
-              if (!dmChannelSummary.success) {
-                return {channelId: channelId, channelSummary: null};
-              }
-
-              return {channelId: channelId, channelSummary: dmChannelSummary.data!};
+              return serverId;
             }
-          },
+          }
         ]
       }
     ]

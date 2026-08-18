@@ -37,7 +37,7 @@ export default function ConfirmEmailPage() {
         setVerificationStatus(VerificationStatus.Success);
 
         const timeoutId = setTimeout(() => {
-          navigation("/lobby");
+          navigation("/lobby/me");
         }, 3000);
 
         return () => clearTimeout(timeoutId);

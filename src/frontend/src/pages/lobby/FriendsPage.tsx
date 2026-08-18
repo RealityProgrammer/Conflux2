@@ -7,7 +7,7 @@ import FriendListTabContent from "./FriendListTabContent.tsx";
 import PendingRequestsTabContent from "./PendingRequestsTabContent.tsx";
 
 export default function FriendsPage() {
-  useDocumentTitle("Friends - Conflux");
+  useDocumentTitle("Conflux - Friends");
 
   const [tabValue, setTabValue] = useState("friends");
 

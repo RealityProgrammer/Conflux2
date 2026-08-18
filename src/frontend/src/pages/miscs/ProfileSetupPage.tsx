@@ -353,7 +353,7 @@ export default function ProfileSetupPage() {
           hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
         });
 
-        navigator("/lobby");
+        navigator("/lobby/me");
 
         return {
           success: true,

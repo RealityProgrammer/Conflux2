@@ -1,16 +1,11 @@
 import {useAuthorization} from "../contexts/AuthContext.tsx";
 import {Separator, Tooltip} from "radix-ui";
-import {NavLink, Outlet, useLocation, useNavigate} from "react-router";
-import {BsMegaphone, BsPeople, BsPlus} from "react-icons/bs";
+import {Outlet, useLocation, useNavigate} from "react-router";
+import {BsPeople, BsPlus} from "react-icons/bs";
 import UserAvatar from "../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
-import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import type {DmConversationListItemDto, FieldErrors, PaginatedResponse, ServiceResponse} from "../api/responses.ts";
-import {UserNameplate} from "../components/UserNameplate.tsx";
-import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {UpdateDmConversationListEvent} from "../api/events.ts";
-import {useFetchDmChannelSummary} from "../hooks/fetchDmChannelSummary.ts";
+import type {FieldErrors, ServiceResponse} from "../api/responses.ts";
 import IconButton from "../components/IconButton.tsx";
 import SelectableAvatar from "../components/SelectableAvatar.tsx";
 import {useState} from "react";
@@ -19,9 +14,8 @@ import {communityServerService} from "../api/communityServerService.ts";
 import DialogForm from "../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
 import ErrorText from "../components/ErrorText.tsx";
-import {sessionUserService} from "../api/sessionUserService.ts";
-import type {GetJoinedCommunityServerQuery} from "../gql/graphql.ts";
 import ServerAvatar from "../components/ServerAvatar.tsx";
+import useJoinedServersQuery from "../hooks/useJoinedServersQuery.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -29,30 +23,33 @@ function Sidebar() {
   const location = useLocation();
 
   return (
-    <nav className="flex-none flex flex-col p-1.5 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
-      <Tooltip.Provider delayDuration={500}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <UserAvatar
-              userId={auth.userAuthorization?.id}
-              hasAvatar={auth.userProfile?.hasAvatar ?? false}
-              className="flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-              onClick={() => {
-                if (location.pathname !== "/lobby") {
-                  navigate("/lobby");
-                }
-              }}/>
-          </Tooltip.Trigger>
+    <aside className="flex-none flex flex-col py-1.5 w-14 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
+      <div className="flex justify-center items-center">
+        <Tooltip.Provider delayDuration={500}>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <UserAvatar
+                userId={auth.userAuthorization?.id}
+                hasAvatar={auth.userProfile?.hasAvatar ?? false}
+                className="flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                onClick={() => {
+                  if (location.pathname !== "/lobby/me") {
+                    navigate("/lobby/me");
+                  }
+                }}
+              />
+            </Tooltip.Trigger>
 
-          <Tooltip.Portal>
-            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-              <p className="text-white font-semibold px-3 py-1">To your private space</p>
+            <Tooltip.Portal>
+              <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                <p className="text-white font-semibold px-3 py-1">To your private space</p>
 
-              <Tooltip.Arrow className="fill-gray-600"/>
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
+                <Tooltip.Arrow className="fill-gray-600"/>
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
 
       <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1.5"/>
 
@@ -61,45 +58,22 @@ function Sidebar() {
       <div className="flex-none flex flex-col items-center">
         <CreateCommunityServerButton/>
       </div>
-    </nav>
+    </aside>
   );
 }
 
 function JoinedCommunityServerScrollList() {
-  const queryKey = ["joinedCommunityServers"];
+  const navigate = useNavigate();
 
   const {
-    data,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: queryKey,
-    queryFn: async ({pageParam}): Promise<GetJoinedCommunityServerQuery['joinedServers'] | null> => {
-      const response: ServiceResponse<GetJoinedCommunityServerQuery['joinedServers'] | null> =
-        await sessionUserService.getJoinedCommunityServers(pageParam);
-
-      if (!response.data) {
-        throw new Error("Failed to fetch joined community servers.");
-      }
-
-      return response.data;
+    queryResult: {
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage,
+      isLoading,
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage) return null;
-
-      if (!lastPage.pageInfo.hasNextPage) {
-        return null;
-      }
-
-      return lastPage.pageInfo.endCursor;
-    },
-    staleTime: 30 * 60 * 1000,
-  });
-
-  const allElements = data?.pages.flatMap((page) => page?.nodes ?? []) ?? []
+    allElements,
+  } = useJoinedServersQuery();
 
   return (
     <VirtualizedScrollList
@@ -125,14 +99,21 @@ function JoinedCommunityServerScrollList() {
         const item = allElements[itemIndex];
 
         return (
-          <div className="size-full aspect-square flex justify-center items-center">
-            <Tooltip.Provider delayDuration={500} key={item.id}>
+          <div className="size-full aspect-square flex justify-center items-center" key={virtualItem.key}>
+            <Tooltip.Provider delayDuration={500}>
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                     <ServerAvatar
                       serverId={item.id}
                       hasAvatar={item.hasAvatar}
                       className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
+                      onClick={() => {
+                        const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
+
+                        if (location.pathname !== dest) {
+                          navigate(dest);
+                        }
+                      }}
                     />
                 </Tooltip.Trigger>
 
@@ -269,148 +250,14 @@ function CreateCommunityServerButton() {
   );
 }
 
-function DirectMessagesList() {
-  const navigate = useNavigate();
-
-  const queryKey = ["dmConversations"];
-
-  const getDmChannelSummary = useFetchDmChannelSummary();
-  const queryClient = useQueryClient();
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<DmConversationListItemDto> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<DmConversationListItemDto>> =
-        await sessionUserService.getDmConversations(pageParam, 30);
-
-      return response.data;
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage) return undefined;
-
-      const loadedCount = allPages.reduce(
-        (acc, page) => acc + (page?.elements.length ?? 0),
-        0
-      );
-
-      return loadedCount < lastPage.totalCount ? loadedCount : undefined;
-    },
-  });
-
-  const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
-
-  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent) => {
-    const dmChannelSummary = await getDmChannelSummary(event.channelId);
-
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<DmConversationListItemDto> | undefined | null>>(
-      queryKey,
-      (oldData) => {
-        if (!oldData || oldData.pages.length === 0) {
-          return oldData;
-        }
-
-        const updatedPages = oldData.pages.map((page: PaginatedResponse<DmConversationListItemDto> | null | undefined) => ({
-          ...page!,
-          elements: page!.elements.filter(item => item.channelId !== event.channelId)
-        }));
-
-        const updatedChannel = {
-          channelId: event.channelId,
-          userProfile: dmChannelSummary.data!.otherUser,
-        };
-
-        updatedPages[0] = {
-          ...updatedPages[0],
-          elements: [updatedChannel, ...updatedPages[0].elements],
-        };
-
-        return {
-          ...oldData,
-          pages: updatedPages,
-        };
-      }
-    );
-  });
-
-  return (
-    <VirtualizedScrollList
-      className="flex-1"
-      itemCount={allElements.length}
-      isLoading={isLoading}
-      estimateSize={() => 44}
-      hasNextPage={hasNextPage}
-      isFetchingNextPage={isFetchingNextPage}
-      fetchNextPage={() => {
-        fetchNextPage()
-      }}
-      renderItem={(itemIndex) => {
-        const item = allElements[itemIndex];
-
-        return (
-          <UserNameplate.Root
-            userId={item.userProfile.id}
-            displayName={item.userProfile.displayName}
-            hasAvatar={item.userProfile.hasAvatar}
-            className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
-            onClick={() => {
-              navigate("/lobby/dm/" + item.userProfile.id);
-            }}
-          />
-        );
-      }}
-    />
-  );
-}
-
-function LocationSidebar() {
-  return (
-    <nav
-      className="flex-none basis-64 px-1.5 pt-1.5 h-full bg-gray-725 border-r-2 border-r-gray-600 text-white overflow-y-auto flex flex-col overflow-hidden">
-      <section className="flex-none">
-        <header className="text-xs mb-1.5 font-bold text-gray-400 uppercase">System</header>
-
-        <NavLink to="/lobby/announcements"
-                 className={({isActive}) => `mb-1.5 p-2 rounded-md flex flex-row gap-2 items-center ${isActive ? 'bg-white/8' : 'hover-highlight'}`}>
-          <BsMegaphone className="size-6 fill-white"/>
-
-          <span className="font-semibold">Announcements</span>
-        </NavLink>
-
-        <NavLink to="/lobby/friends"
-                 className={({isActive}) => `p-2 rounded-md flex flex-row gap-2 items-center ${isActive ? 'bg-white/8' : 'hover-highlight'}`}>
-          <BsPeople className="size-6 fill-white"/>
-
-          <span className="font-semibold">Friends</span>
-        </NavLink>
-      </section>
-
-      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-2 flex-none"/>
-
-      <section className="flex-1 flex flex-col min-h-0">
-        <header className="text-xs mb-1.5 font-bold text-gray-400 uppercase flex-none">Direct Messages</header>
-
-        <DirectMessagesList/>
-      </section>
-    </nav>
-  );
-}
-
 export default function LobbyLayout() {
-  useDocumentTitle("Lobby - Conflux");
+  useDocumentTitle("Conflux - Lobby");
 
   return (
     <div className="h-dvh w-dvw overflow-hidden flex flex-row">
       <Sidebar/>
-      <LocationSidebar/>
 
-      <section className="flex-1 overflow-auto">
+      <section className="flex-1 overflow-auto bg-gray-675">
         <Outlet/>
       </section>
     </div>
