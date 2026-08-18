@@ -40,33 +40,36 @@ export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<typ
 
   renderFetchingPrevious?: () => ReactNode;
   renderFetchingNext?: () => ReactNode;
+
+  hideVerticalScrollbar?: boolean;
 }
 
 export default function VirtualizedScrollList({
-                                                virtualizerRef,
-                                                viewportRef,
-                                                className,
-                                                viewportClassName,
-                                                containerClassName,
-                                                itemCount,
-                                                isLoading,
-                                                estimateSize,
-                                                pageSize = 20,
-                                                overscan = 5,
-                                                keyExtractor,
-                                                hasPreviousPage,
-                                                isFetchingPreviousPage,
-                                                fetchPreviousPage,
-                                                hasNextPage,
-                                                isFetchingNextPage,
-                                                fetchNextPage,
-                                                renderEmpty,
-                                                renderItem,
-                                                renderSkeletonItem,
-                                                renderFetchingPrevious,
-                                                renderFetchingNext,
-                                                ...props
-                                              }: VirtualizedScrollListProps) {
+  virtualizerRef,
+  viewportRef,
+  className,
+  viewportClassName,
+  containerClassName,
+  itemCount,
+  isLoading,
+  estimateSize,
+  pageSize = 20,
+  overscan = 5,
+  keyExtractor,
+  hasPreviousPage,
+  isFetchingPreviousPage,
+  fetchPreviousPage,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  renderEmpty,
+  renderItem,
+  renderSkeletonItem,
+  renderFetchingPrevious,
+  renderFetchingNext,
+  hideVerticalScrollbar,
+  ...props
+}: VirtualizedScrollListProps) {
   const scrollViewportRef = useRef<HTMLDivElement>(null!);
 
   const prevOffset = hasPreviousPage ? 1 : 0;
@@ -149,7 +152,11 @@ export default function VirtualizedScrollList({
   }, [virtualItems, itemCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <ScrollArea.Root className={`overflow-hidden ${className ?? ''}`} {...props}>
+    <ScrollArea.Root
+      className={`overflow-hidden ${className ?? ''}`}
+      type={hideVerticalScrollbar ? "scroll" : "hover"}
+      {...props}
+    >
       <ScrollArea.Viewport
         ref={(node) => {
           scrollViewportRef.current = node!;
@@ -205,11 +212,12 @@ export default function VirtualizedScrollList({
       </ScrollArea.Viewport>
 
       <ScrollArea.Scrollbar
-        className="flex w-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
+        className={`flex w-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight ${
+          hideVerticalScrollbar ? "opacity-0 pointer-events-none" : ""
+        }`}
         orientation="vertical"
       >
-        <ScrollArea.Thumb
-          className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
+        <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400" />
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   );

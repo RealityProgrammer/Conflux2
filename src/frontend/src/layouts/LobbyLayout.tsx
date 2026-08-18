@@ -70,6 +70,9 @@ function JoinedCommunityServerScrollList() {
 
   const {
     data,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
@@ -99,34 +102,53 @@ function JoinedCommunityServerScrollList() {
   const allElements = data?.pages.flatMap((page) => page?.nodes ?? []) ?? []
 
   return (
-    <div className="flex-1">
-      {!isLoading && (
-        <>
-          {allElements.map((server) => (
-            <Tooltip.Provider delayDuration={500} key={server.id}>
+    <VirtualizedScrollList
+      overscan={10}
+      className="flex-1"
+      itemCount={allElements.length}
+      isLoading={isLoading}
+      keyExtractor={(itemIndex) => allElements[itemIndex].id}
+      estimateSize={(target) => {
+        if (target === "previousLoader" || target === "nextLoader") {
+          return 0;
+        }
+
+        return 48;
+      }}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      fetchNextPage={() => {
+        fetchNextPage()
+      }}
+      hideVerticalScrollbar={true}
+      renderItem={(itemIndex, virtualItem) => {
+        const item = allElements[itemIndex];
+
+        return (
+          <div className="size-full aspect-square flex justify-center items-center">
+            <Tooltip.Provider delayDuration={500} key={item.id}>
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
-                  <ServerAvatar
-                    serverId={server.id}
-                    hasAvatar={server.hasAvatar}
-                    className="flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-                    onClick={() => {
-                    }}/>
+                    <ServerAvatar
+                      serverId={item.id}
+                      hasAvatar={item.hasAvatar}
+                      className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
+                    />
                 </Tooltip.Trigger>
 
                 <Tooltip.Portal>
                   <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-                    <p className="text-white font-semibold px-3 py-1">To your private space</p>
+                    <p className="text-white font-semibold px-3 py-1">{item.name}</p>
 
                     <Tooltip.Arrow className="fill-gray-600"/>
                   </Tooltip.Content>
                 </Tooltip.Portal>
               </Tooltip.Root>
             </Tooltip.Provider>
-          ))}
-        </>
-      )}
-    </div>
+          </div>
+        );
+      }}
+    />
   );
 }
 
