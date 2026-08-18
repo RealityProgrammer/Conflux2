@@ -37,9 +37,15 @@ public sealed class CommunityServerController(
     
     [HttpGet("{serverId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAvatarUrl(Guid serverId) {
+    public RedirectResult GetAvatarUrl(Guid serverId) {
         var result = communityServerService.GetAvatarUrl(serverId);
         return Redirect(result);
+    }
+
+    [HttpGet("{serverId:guid}/summary")]
+    public async Task<ActionResult<ApiResponse>> GetSummary(Guid serverId) {
+        await Task.Yield();
+        return StatusCode(StatusCodes.Status501NotImplemented);
     }
 
     public sealed record CreateRequest(

@@ -3,6 +3,7 @@ using System;
 using Conflux.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Conflux.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260818084829_AddChannelCategoriesTableAndConstraintChannelNameLength")]
+    partial class AddChannelCategoriesTableAndConstraintChannelNameLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -460,7 +463,7 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasOne("Conflux.Domain.Entities.ChannelCategory", "ChannelCategory")
                         .WithMany("Channels")
                         .HasForeignKey("ChannelCategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Conflux.Domain.Entities.CommunityServer", "CommunityServer")
                         .WithMany("Channels")

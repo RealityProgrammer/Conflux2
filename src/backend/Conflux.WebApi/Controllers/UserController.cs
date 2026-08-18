@@ -15,7 +15,7 @@ public sealed class UserController(
 ) : ControllerBase {
     [HttpGet("{userId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAvatarUrl(Guid userId) {
+    public RedirectResult GetAvatarUrl(Guid userId) {
         var result = userService.GetAvatarUrl(userId);
         return Redirect(result);
     }
