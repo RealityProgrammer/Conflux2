@@ -1,5 +1,5 @@
-using Conflux.Application.Dto.Notifications;
-using Conflux.Application.Dto.Responses;
+using Conflux.Application.Dto;
+using Conflux.Application.Notifications;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;

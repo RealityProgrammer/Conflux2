@@ -1,12 +1,15 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.WebApi.Attributes;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -43,9 +46,17 @@ public sealed class CommunityServerController(
     }
 
     [HttpGet("{serverId:guid}/summary")]
-    public async Task<ActionResult<ApiResponse>> GetSummary(Guid serverId) {
-        await Task.Yield();
-        return StatusCode(StatusCodes.Status501NotImplemented);
+    public async Task<ActionResult<ApiResponse<CommunityServerSummaryDto>>> GetSummary(Guid serverId) {
+        var result = await communityServerService.GetSummary(serverId);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<CommunityServerSummaryDto>(result.Value!, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
 
     public sealed record CreateRequest(

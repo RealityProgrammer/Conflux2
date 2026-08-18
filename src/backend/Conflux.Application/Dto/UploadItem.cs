@@ -1,3 +1,3 @@
-namespace Conflux.Application.Dto.Requests;
+namespace Conflux.Application.Dto;
 
 public readonly record struct UploadItem(Stream Stream, string ContentType);

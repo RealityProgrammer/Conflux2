@@ -1,7 +1,7 @@
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 
-namespace Conflux.Application.Dto.Responses;
+namespace Conflux.Application.Dto;
 
 public sealed record TimelineMessageBlockDto(
     Guid SenderUserId,

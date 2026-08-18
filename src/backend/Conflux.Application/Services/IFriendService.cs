@@ -1,4 +1,4 @@
-using Conflux.Application.Dto.Responses;
+using Conflux.Application.Dto;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 

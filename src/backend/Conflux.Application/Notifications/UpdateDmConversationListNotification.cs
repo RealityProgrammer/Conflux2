@@ -1,7 +1,6 @@
-using Conflux.Domain.Dto;
 using Mediator;
 
-namespace Conflux.Application.Dto.Notifications;
+namespace Conflux.Application.Notifications;
 
 public sealed record UpdateDmConversationListNotification(
     Guid SenderUserId,

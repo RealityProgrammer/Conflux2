@@ -1,4 +1,4 @@
-using Conflux.Application.Dto.Notifications;
+using Conflux.Application.Notifications;
 using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;

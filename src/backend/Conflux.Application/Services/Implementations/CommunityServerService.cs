@@ -1,9 +1,10 @@
-using Conflux.Application.Dto.Requests;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Conflux.Application.Services.Implementations;
 
@@ -15,7 +16,8 @@ internal sealed class CommunityServerService(
     ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
     IStorageService storageService,
-    IFileFormatInspector fileFormatInspector
+    IFileFormatInspector fileFormatInspector,
+    IDistributedCache distributedCache
 ) : ICommunityServerService {
     public async Task<Result> Create(
         Guid creatorId, 
@@ -82,7 +84,35 @@ internal sealed class CommunityServerService(
 
         return Result.Success();
     }
-    
+
+    public async Task<Result<CommunityServerSummaryDto>> GetSummary(
+        Guid serverId, 
+        CancellationToken cancellationToken = default
+    ) {
+        Result<CommunityServerProfileDto> profileResult = 
+            await communityServerRepository.GetProfile(serverId, cancellationToken);
+
+        if (!profileResult.IsSuccess) {
+            return profileResult.Error;
+        }
+
+        var profile = profileResult.Value!;
+        List<ChannelCategorySummaryDto> categories = await GetChannelCategorySummaries(serverId, cancellationToken);
+
+        return Result<CommunityServerSummaryDto>.Success(
+            new(profile.Name, profile.Description, profile.HasAvatar, categories)
+        );
+    }
+
+    private async Task<List<ChannelCategorySummaryDto>> GetChannelCategorySummaries(Guid serverId, CancellationToken cancellationToken = default) {
+        List<ChannelCategorySummaryDto> result = 
+            await communityServerRepository.GetChannelCategorySummaries(serverId, cancellationToken);
+
+        // TODO: Caching.
+        
+        return result;
+    }
+
     public string GetAvatarUrl(Guid serverId) {
         return storageService.GetCommunityServerAvatarPreSignedUrl(serverId);
     }

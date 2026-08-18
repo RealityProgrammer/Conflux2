@@ -1,4 +1,4 @@
-namespace Conflux.Application.Dto.Responses;
+namespace Conflux.Application.Dto;
 
 public sealed record LoginResponse(
     UserAuthorizationInfo AuthorizationInfo, 
