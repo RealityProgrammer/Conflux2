@@ -140,3 +140,21 @@ export type DmConversationListItemDto = {
   channelId: string;
   userProfile: UserIdentityProfileDto;
 }
+
+export type ChannelSummaryDto = {
+  id: string;
+  name: string;
+}
+
+export type ChannelCategorySummaryDto = {
+  id: string | null;
+  name: string | null;
+  channels: ChannelSummaryDto[];
+}
+
+export type CommunityServerSummaryDto = {
+  name: string;
+  description: string | null;
+  hasAvatar: boolean;
+  channelCategories: ChannelCategorySummaryDto[];
+}

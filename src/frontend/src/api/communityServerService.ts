@@ -1,5 +1,5 @@
 import type {AxiosError, AxiosResponse} from "axios";
-import type {BackendResponse, ServiceResponse} from "./responses.ts";
+import type {BackendResponse, CommunityServerSummaryDto, ServiceResponse} from "./responses.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 
@@ -40,5 +40,21 @@ export const communityServerService = {
     }
 
     return `/api/communities/${encodeURIComponent(serverId)}/avatar?${queryParams}`;
+  },
+
+  getSummary: async (serverId: string): Promise<ServiceResponse<CommunityServerSummaryDto>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<CommunityServerSummaryDto>> =
+        await apiClient.get<BackendResponse<CommunityServerSummaryDto>>(`/communities/${encodeURIComponent(serverId)}/summary`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<CommunityServerSummaryDto>>;
+      return handleAxiosError(axiosError);
+    }
   },
 }
