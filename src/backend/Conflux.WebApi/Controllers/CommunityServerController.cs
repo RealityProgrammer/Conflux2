@@ -59,6 +59,12 @@ public sealed class CommunityServerController(
         };
     }
 
+    [HttpPost("{serverId:guid}/channel-categories")]
+    [Idempotent(15)]
+    public async Task<ActionResult<ApiResponse>> CreateChannelCategories(Guid serverId) {
+        var result = await 
+    }
+
     public sealed record CreateRequest(
         [Required] string Name, 
         IFormFile? Avatar

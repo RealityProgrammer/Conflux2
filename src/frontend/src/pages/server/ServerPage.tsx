@@ -7,66 +7,37 @@ import IconButton from "../../components/IconButton.tsx";
 import {BsArrowReturnLeft, BsExclamationTriangle, BsGear, BsGearFill, BsHash} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {FaFolderPlus, FaHashtag, FaVolumeHigh} from "react-icons/fa6";
-
-type SummaryStatus = "loading" | "error" | CommunityServerSummaryDto;
+import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 
 export default function ServerPage() {
-  const channelId: string | undefined = useLoaderData();
-  const [channelSummary, setChannelSummary] = useState<SummaryStatus>("loading");
+  return (
+    <div className="size-full flex flex-row">
+      <Sidebar/>
 
-  useEffect(() => {
-    const loadSummary = async (): Promise<void> => {
-      if (!channelId) {
-        setChannelSummary("error");
-        return;
-      }
+      <div className="flex-1 overflow-auto">
 
-      setChannelSummary("loading");
-      const response = await communityServerService.getSummary(channelId);
-
-      if (response.success) {
-        setChannelSummary(response.data!);
-      } else {
-        setChannelSummary("error");
-      }
-    };
-
-    loadSummary();
-  }, [channelId]);
-
-  switch (channelSummary) {
-    case "loading":
-      return (
-        <div className="size-full flex flex-row justify-center items-center">
-          <Spinner className="size-8 fill-white"/>
-        </div>
-      );
-
-    case "error":
-      return (
-        <div className="size-full flex flex-row justify-center items-center">
-          <span className="text-white">Failed to load server information. Please try again later...</span>
-        </div>
-      );
-
-    default:
-      return (
-        <div className="size-full flex flex-row">
-          <Sidebar name={channelSummary.name} channelCategories={channelSummary.channelCategories}/>
-
-          <div className="flex-1 overflow-auto">
-
-          </div>
-        </div>
-      );
-  }
+      </div>
+    </div>
+  );
 }
 
 type CreateType = "category" | "text" | "voice";
-type CreateState = { targetCategoryId: string | null; type: CreateType; };
-type CreateStatus = CreateState & { id: string; status: "creating" | "error"; name: string; }
 
-function Sidebar({name, channelCategories}: { name: string, channelCategories: ChannelCategorySummaryDto[] }) {
+type CreateState = {
+  targetCategoryId: string | null;
+  type: CreateType;
+  idempotencyKey: string
+};
+
+type CreateStatus = CreateState & {
+  id: string;
+  status: "creating" | "error";
+  name: string;
+}
+
+function Sidebar() {
+  const {serverSummary} = useCommunityServerContext();
+
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const [creatingState, setCreatingState] = useState<CreateState | null>(null);
 
@@ -99,14 +70,24 @@ function Sidebar({name, channelCategories}: { name: string, channelCategories: C
     }
   };
 
-  const handleSubmit = (name: string) => {
+  const handleSubmit = async (name: string) => {
     if (!creatingState) return;
 
-    setCreateStatus(prev => [...prev, { ...creatingState, id: crypto.randomUUID(), status: "error", name }]);
+    const operationId = crypto.randomUUID();
+    setCreateStatus(prev => [...prev, { ...creatingState, id: operationId, status: "error", name }]);
 
     switch (creatingState.type) {
       case "category":
-        communityServerService.createChannelCategory();
+        const response = await communityServerService.createChannelCategory(creatingState.idempotencyKey, name);
+
+        if (response.success) {
+          setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
+        } else {
+          setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
+            ...s,
+            status: "creating",
+          } : s));
+        }
         break;
     }
   };
@@ -120,7 +101,7 @@ function Sidebar({name, channelCategories}: { name: string, channelCategories: C
           <section
             className={`absolute font-bold top-0 inset-x-0 bg-linear-to-b from-black/60 via-black/60 via-60% to-transparent pb-4 pt-1 px-1 ${isOpenDropdown ? '' : '-translate-y-full group-hover:translate-y-0 transition-transform duration-350 ease-in-out'} flex flex-row justify-center items-center`}
           >
-            <span className="flex-1 select-none">{name}</span>
+            <span className="flex-1 select-none">{serverSummary.name}</span>
 
             <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown}>
               <DropdownMenu.Trigger asChild>
@@ -139,7 +120,7 @@ function Sidebar({name, channelCategories}: { name: string, channelCategories: C
                   }}
                 >
                   <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
-                    setCreatingState({ targetCategoryId: null, type: "category" });
+                    setCreatingState({ targetCategoryId: null, type: "category", idempotencyKey: crypto.randomUUID() });
                   }}>
                     Create channel category
 
@@ -147,7 +128,7 @@ function Sidebar({name, channelCategories}: { name: string, channelCategories: C
                   </DropdownMenu.Item>
 
                   <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
-                    setCreatingState({ targetCategoryId: null, type: "text" });
+                    setCreatingState({ targetCategoryId: null, type: "text", idempotencyKey: crypto.randomUUID() });
                   }}>
                     Create text channel
 
@@ -155,7 +136,7 @@ function Sidebar({name, channelCategories}: { name: string, channelCategories: C
                   </DropdownMenu.Item>
 
                   <DropdownMenu.Item className="dropdown-item-default" onSelect={() => {
-                    setCreatingState({ targetCategoryId: null, type: "voice" });
+                    setCreatingState({ targetCategoryId: null, type: "voice", idempotencyKey: crypto.randomUUID() });
                   }}>
                     Create voice channel
 
@@ -174,7 +155,7 @@ function Sidebar({name, channelCategories}: { name: string, channelCategories: C
         </header>
 
         <section className="mt-2 px-2">
-          {channelCategories.filter(c => !c.id).map(c => {
+          {serverSummary.channelCategories.filter(c => !c.id).map(c => {
             return (
               <>
                 {c.channels.map(c => (

@@ -29,4 +29,9 @@ export default function ChatContainerContextProvider({
   )
 }
 
-export const useChatContainerContext = () => useContext(ChatContainerContext);
+export const useChatContainerContext = () => {
+  const context = useContext(ChatContainerContext);
+  if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
+
+  return context;
+}
