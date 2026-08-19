@@ -5,6 +5,8 @@ using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
 using Microsoft.Extensions.Caching.Distributed;
+using Npgsql;
+using System.Data.Common;
 
 namespace Conflux.Application.Services.Implementations;
 
@@ -14,6 +16,7 @@ public class CommunityServerServiceOptions {
 
 internal sealed class CommunityServerService(
     ICommunityServerRepository communityServerRepository,
+    IChannelCategoryRepository channelCategoryRepository,
     IUnitOfWork unitOfWork,
     IStorageService storageService,
     IFileFormatInspector fileFormatInspector,
@@ -111,6 +114,32 @@ internal sealed class CommunityServerService(
         // TODO: Caching.
         
         return result;
+    }
+
+    public async Task<Result> CreateChannelCategory(
+        Guid userId, 
+        Guid serverId, 
+        string name, 
+        CancellationToken cancellationToken = default
+    ) {
+        ChannelCategory category = new() {
+            Name = name,
+            CommunityServerId = serverId,
+        };
+        
+        channelCategoryRepository.Add(category);
+
+        try {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return Result.Success();
+        } catch (DbException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
+            return Errors.ResourceNotFound("Community server");
+        } catch (OperationCanceledException e) {
+            throw;
+        } catch {
+            return Errors.UnexpectedError();
+        }
     }
 
     public string GetAvatarUrl(Guid serverId) {

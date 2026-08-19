@@ -1,4 +1,3 @@
-using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
@@ -61,8 +60,24 @@ public sealed class CommunityServerController(
 
     [HttpPost("{serverId:guid}/channel-categories")]
     [Idempotent(15)]
-    public async Task<ActionResult<ApiResponse>> CreateChannelCategories(Guid serverId) {
-        var result = await 
+    public async Task<ActionResult<ApiResponse>> CreateChannelCategory(
+        Guid serverId, 
+        [FromBody] ChannelCategoryCreateRequest request
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+
+        var result = await communityServerService.CreateChannelCategory(userId, serverId, request.Name);
+
+        if (result.IsSuccess) {
+            return Created();
+        }
+
+        // TODO: Report error codes like lacking permissionsssssss
+        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
     }
 
     public sealed record CreateRequest(
@@ -91,4 +106,8 @@ public sealed class CommunityServerController(
             return results;
         }
     }
+
+    public sealed record ChannelCategoryCreateRequest(
+        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
+    );
 }

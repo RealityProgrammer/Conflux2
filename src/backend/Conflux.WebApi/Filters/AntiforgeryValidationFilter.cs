@@ -1,4 +1,3 @@
-using Conflux.Application;
 using Conflux.Domain;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;

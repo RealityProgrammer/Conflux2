@@ -62,7 +62,7 @@ export const communityServerService = {
     try {
       const response: AxiosResponse<BackendResponse> =
         await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
-          name
+          name: name,
         }, {
           headers: {
             "Idempotency-Key": idempotencyKey,

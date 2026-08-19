@@ -192,6 +192,8 @@ builder.Services
     
     .AddScoped<ICommunityServerMemberRepository, CommunityServerMemberRepository>()
     
+    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
+    
     .AddSingleton<IMailingService, MailingService>();
 
 // S3 Service.
