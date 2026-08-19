@@ -62,7 +62,31 @@ export const communityServerService = {
     try {
       const response: AxiosResponse<BackendResponse> =
         await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
-          name: name,
+          name,
+        }, {
+          headers: {
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
+          }
+        });
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  createChannel: async (idempotencyKey: string, serverId: string, name: string, type: "text" | "voice", categoryId: string | null): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channels`, {
+          name,
+          type,
+          categoryId
         }, {
           headers: {
             "Idempotency-Key": idempotencyKey,

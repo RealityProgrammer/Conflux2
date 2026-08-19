@@ -1,12 +1,12 @@
 import {Outlet, useLoaderData} from "react-router";
-import {type KeyboardEvent, useEffect, useRef, useState} from "react";
-import type {ChannelCategorySummaryDto, CommunityServerSummaryDto} from "../../api/responses.ts";
+import {type KeyboardEvent, type Ref, type RefObject, useEffect, useRef, useState} from "react";
+import type {ChannelCategorySummaryDto} from "../../api/responses.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
 import IconButton from "../../components/IconButton.tsx";
-import {BsArrowReturnLeft, BsExclamationTriangle, BsGear, BsGearFill, BsHash} from "react-icons/bs";
+import {BsExclamationTriangle, BsGearFill, BsHash} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
-import {FaFolderPlus, FaHashtag, FaVolumeHigh} from "react-icons/fa6";
+import {FaFolderPlus, FaGear, FaHashtag, FaSquareMinus, FaSquarePlus, FaVolumeHigh} from "react-icons/fa6";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 
 export default function ServerPage() {
@@ -46,7 +46,7 @@ function Sidebar() {
   const nameTextInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (creatingState?.targetCategoryId === null && nameTextInputRef.current) {
+    if (nameTextInputRef.current) {
       setTimeout(() => {
         nameTextInputRef.current?.focus();
       }, 0);
@@ -77,7 +77,7 @@ function Sidebar() {
     setCreateStatus(prev => [...prev, { ...creatingState, id: operationId, status: "creating", name }]);
 
     switch (creatingState.type) {
-      case "category":
+      case "category": {
         const response = await communityServerService.createChannelCategory(
           creatingState.idempotencyKey,
           serverId,
@@ -93,6 +93,28 @@ function Sidebar() {
           } : s));
         }
         break;
+      }
+
+      case "text":
+      case "voice": {
+        const response = await communityServerService.createChannel(
+          creatingState.idempotencyKey,
+          serverId,
+          name,
+          creatingState.type,
+          creatingState.targetCategoryId
+        );
+
+        if (response.success) {
+          setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
+        } else {
+          setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
+            ...s,
+            status: "error",
+          } : s));
+        }
+        break;
+      }
     }
   };
 
@@ -118,7 +140,7 @@ function Sidebar() {
                 <DropdownMenu.Content
                   side="bottom"
                   sideOffset={8}
-                  className="w-64 rounded-md bg-gray-700 p-1.5 shadow-lg"
+                  className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
                   onCloseAutoFocus={(e) => {
                     e.preventDefault();
                   }}
@@ -158,45 +180,149 @@ function Sidebar() {
           />
         </header>
 
-        <section className="mt-2 px-2">
+        <section className="mt-2 px-1">
           {serverSummary.channelCategories.filter(c => !c.id).map(c => {
             return (
-              <>
-                {c.channels.map(c => (
-                  <button className="px-2 py-1.5 hover-highlight w-full rounded-md cursor-pointer text-left mb-1">
-                    <span className="line-clamp-1">{c.name}</span>
-                  </button>
-                ))}
-              </>
+              <ChannelCategoryView
+                key={c.id}
+                category={c}
+                createState={creatingState}
+                createStatus={createStatus}
+                inputRef={nameTextInputRef}
+                onCreateKeyDown={handleKeyDown}
+                setCreatingState={setCreatingState}
+              />
             );
           })}
 
-          {createStatus.filter(s => s.targetCategoryId === null).map(s => {
+          {serverSummary.channelCategories.filter(c => !!c.id).map(c => {
             return (
-              <ChannelCreatingStatusView status={s}/>
+              <ChannelCategoryView
+                key={c.id}
+                category={c}
+                createState={creatingState}
+                createStatus={createStatus}
+                inputRef={nameTextInputRef}
+                onCreateKeyDown={handleKeyDown}
+                setCreatingState={setCreatingState}
+              />
             );
           })}
-
-          {creatingState?.targetCategoryId === null && (
-            <input
-              ref={nameTextInputRef}
-              type="text"
-              className="input-field h-10 w-full"
-              placeholder={`Enter ${creatingState.type === "category" ? "category" : "channel"} name`}
-              maxLength={32}
-              onKeyDown={handleKeyDown}
-              autoFocus
-            />
-          )}
         </section>
       </div>
     </aside>
   );
 }
 
+interface ChannelCategoryViewProps {
+  category: ChannelCategorySummaryDto;
+  createStatus: CreateStatus[];
+  createState: CreateState | null;
+  onCreateKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+  inputRef: Ref<HTMLInputElement | null>;
+  setCreatingState: (value: CreateState) => void;
+}
+
+function ChannelCategoryView({
+  category,
+  createStatus,
+  createState,
+  inputRef,
+  onCreateKeyDown,
+  setCreatingState
+}: ChannelCategoryViewProps) {
+  const [isCategoryOpen, setIsCategoryOpen] = useState(true);
+  const [isOpenDropdown, setIsOpenDropdown] = useState(false);
+
+  return (
+    <>
+      {category.id && (
+        <div className="flex flex-row items-center gap-2 mb-1 group">
+          <IconButton theme="default" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
+            {isCategoryOpen ? (
+              <FaSquareMinus className="size-4 inline"/>
+            ) : (
+              <FaSquarePlus className="size-4 inline"/>
+            )}
+          </IconButton>
+
+          <span className="text-gray-300 text-sm line-clamp-1 select-none flex-1">{category.name}</span>
+
+          <div className={`h-5 items-center justify-center ${isOpenDropdown ? 'flex' : 'hidden group-hover:flex'}`}>
+            <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown}>
+              <DropdownMenu.Trigger asChild>
+                <IconButton theme="default">
+                  <BsGearFill className="size-4 inline"/>
+                </IconButton>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  side="bottom"
+                  sideOffset={5}
+                  className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
+                  onCloseAutoFocus={(e) => {
+                    e.preventDefault();
+                  }}
+                >
+                  <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
+                    setIsCategoryOpen(true);
+                    setCreatingState({ targetCategoryId: category.id, type: "text", idempotencyKey: crypto.randomUUID() });
+                  }}>
+                    Create text channel
+
+                    <FaHashtag className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+
+                  <DropdownMenu.Item className="dropdown-item-default" onSelect={() => {
+                    setIsCategoryOpen(true);
+                    setCreatingState({ targetCategoryId: category.id, type: "voice", idempotencyKey: crypto.randomUUID() });
+                  }}>
+                    Create voice channel
+
+                    <FaVolumeHigh className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+
+                  <DropdownMenu.Arrow className="fill-gray-700"/>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
+        </div>
+      )}
+
+      {category.channels.map(c => (
+        <button key={c.id} className="px-1 py-1.5 hover-highlight w-full rounded-md cursor-pointer text-left mb-1 flex flex-row items-center">
+          <BsHash className="size-6 fill-gray-500 stroke-gray-500 inline mr-1" strokeWidth={0.75}/>
+
+          <span className="line-clamp-1 inline">{c.name}</span>
+        </button>
+      ))}
+
+      {createStatus.filter(s => s.targetCategoryId === category.id).map(s => {
+        return (
+          <ChannelCreatingStatusView key={s.id} status={s}/>
+        );
+      })}
+
+      {createState?.targetCategoryId === category.id && (
+        <input
+          ref={inputRef}
+          type="text"
+          className="input-field h-10 w-full mb-1"
+          placeholder={`Enter ${createState.type === "category" ? "category" : "channel"} name`}
+          maxLength={32}
+          onKeyDown={onCreateKeyDown}
+          autoFocus
+        />
+      )}
+    </>
+  );
+}
+
 function ChannelCreatingStatusView({status}: {status: CreateStatus}) {
   return (
-    <p className="px-2 py-0.5 w-full mb-1 flex flex-row items-center justify-start" key={status.id}>
+    <p className="px-1 py-0.5 w-full mb-1 flex flex-row items-center justify-start" key={status.id}>
       {status.status === "creating" ? (
         <>
           <Spinner className="size-4 fill-white mr-2"/>
