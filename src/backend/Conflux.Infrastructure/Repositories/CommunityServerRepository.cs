@@ -49,7 +49,7 @@ internal sealed class CommunityServerRepository(
 
         var channels = await dbContext.Channels
             .AsNoTracking()
-            .Where(c => c.Type == ChannelType.CommunityServer && c.CommunityServerId == serverId)
+            .Where(c => c.Type == ChannelType.CommunityServerText && c.CommunityServerId == serverId)
             .Select(c => new { c.Id, c.Name, c.ChannelCategoryId })
             .ToListAsync(cancellationToken);
 
@@ -75,5 +75,14 @@ internal sealed class CommunityServerRepository(
         result.AddRange(mappedCategories);
 
         return result;
+    }
+
+    public async Task<bool> IsCategoryExistsInServer(
+        Guid serverId, 
+        Guid categoryId, 
+        CancellationToken cancellationToken = default
+    ) {
+        return await dbContext.ChannelCategories
+            .AnyAsync(c => c.Id == categoryId && c.CommunityServerId == serverId, cancellationToken);
     }
 }

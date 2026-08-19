@@ -1,6 +1,7 @@
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
@@ -18,9 +19,9 @@ internal sealed class CommunityServerService(
     ICommunityServerRepository communityServerRepository,
     IChannelCategoryRepository channelCategoryRepository,
     IUnitOfWork unitOfWork,
+    IChannelService channelService,
     IStorageService storageService,
-    IFileFormatInspector fileFormatInspector,
-    IDistributedCache distributedCache
+    IFileFormatInspector fileFormatInspector
 ) : ICommunityServerService {
     public async Task<Result> Create(
         Guid creatorId, 
@@ -107,7 +108,10 @@ internal sealed class CommunityServerService(
         );
     }
 
-    private async Task<List<ChannelCategorySummaryDto>> GetChannelCategorySummaries(Guid serverId, CancellationToken cancellationToken = default) {
+    private async Task<List<ChannelCategorySummaryDto>> GetChannelCategorySummaries(
+        Guid serverId, 
+        CancellationToken cancellationToken = default
+    ) {
         List<ChannelCategorySummaryDto> result = 
             await communityServerRepository.GetChannelCategorySummaries(serverId, cancellationToken);
 
@@ -135,11 +139,53 @@ internal sealed class CommunityServerService(
             return Result.Success();
         } catch (DbException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
             return Errors.ResourceNotFound("Community server");
-        } catch (OperationCanceledException e) {
+        } catch (OperationCanceledException) {
             throw;
         } catch {
             return Errors.UnexpectedError();
         }
+    }
+
+    public async Task<Result> CreateChannel(
+        Guid userId, 
+        Guid serverId, 
+        string name, 
+        ChannelType type, 
+        Guid? categoryId, 
+        CancellationToken cancellationToken = default
+    ) {
+        if (categoryId.HasValue) {
+            bool hasCategory = await communityServerRepository.IsCategoryExistsInServer(serverId, categoryId.Value, cancellationToken);
+
+            if (!hasCategory) {
+                return Errors.ValidationErrorsOccurred(new() {
+                    [nameof(categoryId)] = [
+                        "The specified category does not exist in this server.",
+                    ],
+                });
+            }
+        }
+        
+        channelService.GetOrCreateDmChannelAsync()
+        
+        // Channel category = new() {
+        //     Name = name,
+        //     CommunityServerId = serverId,
+        // };
+        //
+        // channelCategoryRepository.Add(category);
+        //
+        // try {
+        //     await unitOfWork.SaveChangesAsync(cancellationToken);
+        //
+        //     return Result.Success();
+        // } catch (DbException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
+        //     return Errors.ResourceNotFound("Community server");
+        // } catch (OperationCanceledException) {
+        //     throw;
+        // } catch {
+        //     return Errors.UnexpectedError();
+        // }
     }
 
     public string GetAvatarUrl(Guid serverId) {

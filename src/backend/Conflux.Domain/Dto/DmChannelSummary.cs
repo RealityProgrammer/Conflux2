@@ -1,5 +1,9 @@
+using Conflux.Domain.Enums;
+
 namespace Conflux.Domain.Dto;
 
 public sealed record DmChannelSummary(
-    UserIdentityProfileDto OtherUser
+    Guid ChannelId,
+    UserIdentityProfileDto OtherUser,
+    FriendRequestStatus FriendRequestStatus
 );

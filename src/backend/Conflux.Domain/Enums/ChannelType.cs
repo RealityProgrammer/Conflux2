@@ -2,5 +2,6 @@ namespace Conflux.Domain.Enums;
 
 public enum ChannelType {
     DirectMessage,
-    CommunityServer,
+    CommunityServerText,
+    CommunityServerVoice,
 }

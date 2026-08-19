@@ -2,6 +2,7 @@ using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
@@ -80,6 +81,36 @@ public sealed class CommunityServerController(
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
     }
 
+    [HttpPost("{serverId:guid}/channels")]
+    [Idempotent(15)]
+    public async Task<ActionResult<ApiResponse>> CreateChannels(
+        Guid serverId,
+        [FromBody] ChannelCreateRequest request
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+
+        ChannelType type = request.Type switch {
+            ChannelCreateType.Text => ChannelType.CommunityServerText,
+            ChannelCreateType.Voice => ChannelType.CommunityServerVoice,
+            _ => throw new UnreachableException(),
+        };
+
+        var result = await communityServerService.CreateChannel(userId, serverId, request.Name, type, request.CategoryId);
+
+        if (result.IsSuccess) {
+            return Created();
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
     public sealed record CreateRequest(
         [Required] string Name, 
         IFormFile? Avatar
@@ -109,5 +140,16 @@ public sealed class CommunityServerController(
 
     public sealed record ChannelCategoryCreateRequest(
         [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
+    );
+
+    public enum ChannelCreateType {
+        Text,
+        Voice,
+    }
+
+    public sealed record ChannelCreateRequest(
+        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name,
+        ChannelCreateType Type,
+        Guid? CategoryId
     );
 }

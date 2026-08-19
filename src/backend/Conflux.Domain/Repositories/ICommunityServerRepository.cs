@@ -17,4 +17,6 @@ public interface ICommunityServerRepository {
         Guid serverId, 
         CancellationToken cancellationToken = default
     );
+
+    Task<bool> IsCategoryExistsInServer(Guid serverId, Guid categoryId, CancellationToken cancellationToken = default);
 }

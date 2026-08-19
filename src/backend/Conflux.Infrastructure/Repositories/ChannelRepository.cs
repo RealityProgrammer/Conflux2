@@ -10,6 +10,10 @@ internal sealed class ChannelRepository(
     ApplicationDbContext dbContext,
     TimeProvider timeProvider
 ) : IChannelRepository {
+    public void Add(Channel channel) {
+        dbContext.Channels.Add(channel);
+    }
+
     public async Task<Result<ChannelMetadata>> GetChannelMetadataFromChannelIdAsync(
         Guid channelId,
         CancellationToken cancellationToken = default
@@ -52,75 +56,31 @@ internal sealed class ChannelRepository(
             )
             .Select(cfru => 
                 new DmChannelSummary(
-                    new(cfru.User.Id, cfru.User.UserName!, cfru.User.DisplayName!, cfru.User.HasAvatar)
+                    cfru.Channel.Id,
+                    new(cfru.User.Id, cfru.User.UserName!, cfru.User.DisplayName!, cfru.User.HasAvatar),
+                    cfru.FriendRequest.Status
                 )
             )
             .FirstOrDefaultAsync();
 
         return summary != null ?
             Result<DmChannelSummary>.Success(summary) :
-            Errors.NoDirectMessageChannelWithId();
+            Errors.ResourceNotFound("Direct message channel");
     }
 
-    public async Task<Result<ChannelResolutionResult>> GetOrCreateDirectMessageChannelAsync(Guid user1, Guid user2) {
-        // we want to keep chat history even if users are unfriended (no friended request due to unfriending) so
-        // have to do this join query
-        var friendRequestSummary = await dbContext.FriendRequests
+    public async Task<FriendDmChannelSummaryDto?> GetFriendDmChannelSummary(Guid userId1, Guid userId2) {
+        return await dbContext.FriendRequests
             .Where(fr =>
-                fr.SenderUserId == user1 && fr.ReceiverUserId == user2 ||
-                fr.SenderUserId == user2 && fr.ReceiverUserId == user1
+                fr.SenderUserId == userId1 && fr.ReceiverUserId == userId2 ||
+                fr.SenderUserId == userId2 && fr.ReceiverUserId == userId1
             )
             .Include(fr => fr.ConversationChannel)
-            .Select(fr => new {
+            .Select(fr => new FriendDmChannelSummaryDto(
                 fr.Id,
                 fr.Status,
-                ConversationChannelId = fr.ConversationChannel == null ? (Guid?)null : fr.ConversationChannel.Id,
-            })
+                fr.ConversationChannel == null ? (Guid?)null : fr.ConversationChannel.Id
+            ))
             .FirstOrDefaultAsync();
-
-        // no friend request, bail out early
-        if (friendRequestSummary == null) {
-            return Errors.NoFriendRequest();
-        }
-
-        // might not having accepted friend request, but there is a existing conversation channel, so return it
-        if (friendRequestSummary.ConversationChannelId is { } existingChannelId) {
-            return Result<ChannelResolutionResult>.Success(new(existingChannelId, ChannelResolutionStatus.Existing));
-        }
-        
-        // no existing conversation channel, so ensure the existing friend request is accepted before creating one
-        if (friendRequestSummary.Status != FriendRequestStatus.Accepted) {
-            return Errors.NoAcceptedFriendRequest();
-        }
-        
-        // create the conversation channel
-
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
-
-        Conversation conversation = new();
-
-        Channel channel = new() {
-            Type = ChannelType.DirectMessage,
-            Conversation = conversation,
-            CreatedAt = utcNow,
-            FriendRequestId = friendRequestSummary.Id,
-        };
-
-        try {
-            dbContext.Channels.Add(channel);
-            await dbContext.SaveChangesAsync();
-
-            return Result<ChannelResolutionResult>.Success(new(channel.Id, ChannelResolutionStatus.Created));
-        } catch (DbUpdateException) {
-            // potential concurrency when 2 creates happen at the same time.
-            // TODO: inspect the exception deeper
-            var raceConditionChannelId = await dbContext.Channels
-                .Where(c => c.Type == ChannelType.DirectMessage && c.FriendRequestId == friendRequestSummary.Id)
-                .Select(c => c.Id)
-                .FirstAsync();
-
-            return Result<ChannelResolutionResult>.Success(new(raceConditionChannelId, ChannelResolutionStatus.Existing));
-        }
     }
 
     public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversationsAsync(
@@ -154,5 +114,12 @@ internal sealed class ChannelRepository(
             .ToListAsync();
 
         return new(paginated, totalCount);
+    }
+    
+    public async Task<Guid> GetChannelIdFromFriendRequestId(Guid friendRequestId, CancellationToken cancellationToken = default) {
+        return await dbContext.Channels
+            .Where(c => c.Type == ChannelType.DirectMessage && c.FriendRequestId == friendRequestId)
+            .Select(c => c.Id)
+            .FirstAsync(cancellationToken);
     }
 }

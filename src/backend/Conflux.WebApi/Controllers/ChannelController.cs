@@ -35,7 +35,7 @@ public sealed class ChannelController(
         var errorResponse = new ApiResponse<DmChannelSummary>(null, result.Error);
         
         return result.Error.Code switch {
-            nameof(Errors.NoDirectMessageChannelWithId) => NotFound(errorResponse),
+            nameof(Errors.ResourceNotFound) => NotFound(errorResponse),
             _ => StatusCode(StatusCodes.Status500InternalServerError, errorResponse),
         };
     }
