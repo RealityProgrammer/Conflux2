@@ -22,7 +22,7 @@ public sealed class UserController(
     
     [HttpDelete("{userId:guid}/avatar")]
     public async Task<ActionResult<ApiResponse>> DeleteAvatar(Guid userId) {
-        var result = await userService.DeleteAvatarAsync(userId);
+        var result = await userService.DeleteAvatar(userId);
         
         if (result.IsSuccess) {
             return NoContent();
@@ -37,7 +37,7 @@ public sealed class UserController(
     
     [HttpGet("{id:guid}/profile")]
     public async Task<ActionResult<ApiResponse<UserIdentityProfileDto>>> GetIdentityProfile(Guid id) {
-        var result = await userService.GetIdentityProfileAsync(id);
+        var result = await userService.GetIdentityProfile(id);
     
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));

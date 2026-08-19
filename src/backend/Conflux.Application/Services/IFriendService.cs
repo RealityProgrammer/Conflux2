@@ -5,27 +5,27 @@ using Conflux.Domain.Dto;
 namespace Conflux.Application.Services;
 
 public interface IFriendService {
-    Task<Result<SendFriendRequestResponse>> SendFriendRequestAsync(Guid fromUserId, Guid toUserId);
-    Task<Result> CancelFriendRequestAsync(Guid senderUserId, Guid toUserId);
-    Task<Result> RejectFriendRequestAsync(Guid receiverUserId, Guid senderUserId);
-    Task<Result> AcceptFriendRequestAsync(Guid receiverUserId, Guid senderUserId);
-    Task<Result> UnfriendAsync(Guid invokerUserId, Guid otherUserId);
+    Task<Result<SendFriendRequestResponse>> SendFriendRequest(Guid fromUserId, Guid toUserId);
+    Task<Result> CancelFriendRequest(Guid senderUserId, Guid toUserId);
+    Task<Result> RejectFriendRequest(Guid receiverUserId, Guid senderUserId);
+    Task<Result> AcceptFriendRequest(Guid receiverUserId, Guid senderUserId);
+    Task<Result> Unfriend(Guid invokerUserId, Guid otherUserId);
     
-    Task<Result<PaginatedResult<DiscoverFriendSummary>>> DiscoverFriendsAsync(
+    Task<Result<PaginatedResult<DiscoverFriendSummary>>> DiscoverFriends(
         Guid searchingUserId,
         string? nameFilter, 
         int offset, 
         int count
     );
 
-    Task<Result<PaginatedResult<UserIdentityProfileDto>>> QueryFriendsAsync(
+    Task<Result<PaginatedResult<UserIdentityProfileDto>>> QueryFriends(
         Guid searchingUserId,
         string? nameFilter,
         int offset,
         int count
     );
     
-    Task<Result<PaginatedResult<PendingFriendRequestDto>>> QueryPendingRequestsAsync(
+    Task<Result<PaginatedResult<PendingFriendRequestDto>>> QueryPendingRequests(
         Guid searchingUserId,
         string? nameFilter,
         int offset,

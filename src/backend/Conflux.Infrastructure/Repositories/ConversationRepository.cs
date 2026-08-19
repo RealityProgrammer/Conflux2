@@ -8,7 +8,7 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class ConversationRepository(
     ApplicationDbContext dbContext
 ) : IConversationRepository {
-    public async Task<Result<ChannelMetadata>> GetChannelMetadataAsync(
+    public async Task<Result<ChannelMetadata>> GetChannelMetadata(
         Guid conversationId,
         CancellationToken cancellationToken = default
     ) {
@@ -28,7 +28,7 @@ internal sealed class ConversationRepository(
         return Result<ChannelMetadata>.Success(context);
     }
     
-    public async Task<Result> UpdateLatestMessageTimeAsync(Guid conversationId, DateTimeOffset time) {
+    public async Task<Result> UpdateLatestMessageTime(Guid conversationId, DateTimeOffset time) {
         int changed = await dbContext.Conversations
             .Where(c => c.Id == conversationId)
             .ExecuteUpdateAsync(setter => {

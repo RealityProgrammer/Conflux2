@@ -79,7 +79,7 @@ internal sealed class CommunityServerService(
             }
 
             Result<string> uploadResult = 
-                await storageService.UploadCommunityServerAvatarAsync(server.Id, new(avatarStream, imageFormat.MediaType), cancellationToken);
+                await storageService.UploadCommunityServerAvatar(server.Id, new(avatarStream, imageFormat.MediaType), cancellationToken);
 
             if (uploadResult.IsSuccess) {
                 await communityServerRepository.UpdateHasAvatar(server.Id, true);
@@ -165,8 +165,6 @@ internal sealed class CommunityServerService(
                 });
             }
         }
-        
-        channelService.GetOrCreateDmChannelAsync()
         
         // Channel category = new() {
         //     Name = name,

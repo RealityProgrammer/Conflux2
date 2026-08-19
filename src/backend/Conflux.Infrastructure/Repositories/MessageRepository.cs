@@ -14,13 +14,13 @@ internal sealed class MessageRepository(
         dbContext.Messages.Add(message);
     }
 
-    public Task<Message?> GetByIdAsync(Guid messageId, CancellationToken cancellationToken = default) {
+    public Task<Message?> GetById(Guid messageId, CancellationToken cancellationToken = default) {
         return dbContext.Messages
             .Where(r => r.Id == messageId)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessagesAsync(
+    public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId, 
@@ -206,7 +206,7 @@ internal sealed class MessageRepository(
         })], hasMoreBefore, hasMoreAfter));
     }
 
-    public async Task<ReplyToMessageDto?> GetReplyMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default) {
+    public async Task<ReplyToMessageDto?> GetReplyMessageById(Guid messageId, CancellationToken cancellationToken = default) {
         var projection = await dbContext.Messages
             .Where(m => m.Id == messageId)
             .Select(m => new ReplyMessageProjection(

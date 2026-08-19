@@ -5,11 +5,10 @@ using Conflux.Domain.Dto;
 namespace Conflux.Application.Services;
 
 public interface IUserService {
-    Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream);
-    Task<Result> DeleteAvatarAsync(Guid userId);
+    Task<Result> UploadAvatar(Guid userId, Stream avatarStream);
+    Task<Result> DeleteAvatar(Guid userId);
     string GetAvatarUrl(Guid userId);
 
-    Task<Result> SetupProfileAsync(SetupProfileRequest request);
-    Task<Result<UserProfileDto>> GetProfileAsync(Guid userId, UserProfileQueryFlags queryFlags);
-    Task<Result<UserIdentityProfileDto>> GetIdentityProfileAsync(Guid userId);
+    Task<Result> SetupProfile(SetupProfileRequest request);
+    Task<Result<UserIdentityProfileDto>> GetIdentityProfile(Guid userId);
 }

@@ -60,7 +60,7 @@ public sealed class ConversationController(
 
         // invokes send and cleanup the opened streams
         try {
-            var result = await messageService.SendMessageAsync(
+            var result = await messageService.SendMessage(
                 userId, 
                 channelId, 
                 request.Body, 
@@ -97,7 +97,7 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
         }
 
-        var result = await messageService.EditMessageAsync(messageId, userId, request.Body, cancellationToken);
+        var result = await messageService.EditMessage(messageId, userId, request.Body, cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
@@ -119,7 +119,7 @@ public sealed class ConversationController(
         }
         
         Result result =
-            await messageService.DeleteMessageAsync(messageId, userId);
+            await messageService.DeleteMessage(messageId, userId);
 
         if (result.IsSuccess) {
             return NoContent();
@@ -149,7 +149,7 @@ public sealed class ConversationController(
         // TODO: Check if user has permission to view messages at this channel at service.
 
         var result =
-            await messageService.GetTimelineMessagesAsync(userId, channelId, direction, cursor, count, cancellationToken);
+            await messageService.GetTimelineMessages(userId, channelId, direction, cursor, count, cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));

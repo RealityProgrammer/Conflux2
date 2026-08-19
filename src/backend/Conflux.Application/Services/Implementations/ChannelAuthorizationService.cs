@@ -6,7 +6,7 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class ChannelAuthorizationService(
     IEnumerable<IChannelAuthorizationStrategy> strategies
 ) : IChannelAuthorizationService {
-    public async Task<Result<MessagingPermissions>> GetMessagingPermissionsAsync(
+    public async Task<Result<MessagingPermissions>> GetMessagingPermissions(
         Guid userId, 
         Guid channelId, 
         ChannelType channelType

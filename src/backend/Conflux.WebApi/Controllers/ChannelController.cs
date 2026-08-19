@@ -26,7 +26,7 @@ public sealed class ChannelController(
         }
         
         var result =
-            await channelService.GetDmChannelSummaryAsync(currentUserId, channelId);
+            await channelService.GetDmChannelSummary(currentUserId, channelId);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<DmChannelSummary>(result.Value, Error.None));
@@ -51,7 +51,7 @@ public sealed class ChannelController(
         }
 
         var result = 
-            await channelService.GetOrCreateDmChannelAsync(currentUserId, toUserId);
+            await channelService.GetOrCreateDmChannel(currentUserId, toUserId);
 
         if (result.IsSuccess) {
             DirectMessageResolutionResponse response = new(result.Value.ChannelId);

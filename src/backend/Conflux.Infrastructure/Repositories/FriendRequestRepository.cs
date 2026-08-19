@@ -9,7 +9,7 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class FriendRequestRepository(
     ApplicationDbContext dbContext
 ) : IFriendRequestRepository {
-    public async Task<FriendRequestSummary?> GetRequestSummaryAsync(Guid user1, Guid user2) {
+    public async Task<FriendRequestSummary?> GetRequestSummary(Guid user1, Guid user2) {
         return await dbContext.FriendRequests
             .Where(r =>
                 r.SenderUserId == user1 && r.ReceiverUserId == user2 ||
@@ -30,7 +30,7 @@ internal sealed class FriendRequestRepository(
         dbContext.FriendRequests.Add(friendRequest);
     }
 
-    public async Task<Guid?> TryAcceptReverseRequestAsync(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default) {
+    public async Task<Guid?> TryAcceptReverseRequest(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default) {
         var updatedId = await dbContext.Database.SqlQuery<Guid>(
             $"""
              UPDATE "FriendRequests"
@@ -42,7 +42,7 @@ internal sealed class FriendRequestRepository(
         return updatedId == Guid.Empty ? null : updatedId;
     }
 
-    public async Task<bool> ReactivateRequestAsPendingAsync(
+    public async Task<bool> ReactivateRequestAsPending(
         Guid requestId,
         Guid senderUserId,
         Guid receiverUserId,
@@ -63,7 +63,7 @@ internal sealed class FriendRequestRepository(
         return numChanged > 0;
     }
 
-    public async Task<bool> TryTransitionStatusAsync(
+    public async Task<bool> TryTransitionStatus(
         Guid requestId,
         FriendRequestStatus expectedStatus,
         FriendRequestStatus newStatus,
@@ -80,7 +80,7 @@ internal sealed class FriendRequestRepository(
         return numChanged > 0;
     }
 
-    public async Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscoveryAsync(
+    public async Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscovery(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -121,7 +121,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<UserIdentityProfileDto>> GetFriendsAsync(
+    public async Task<PaginatedResult<UserIdentityProfileDto>> GetFriends(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -150,7 +150,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequestsAsync(
+    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequests(
         Guid searcherId, 
         string? nameFilter,
         int offset,

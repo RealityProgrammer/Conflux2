@@ -49,7 +49,7 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("login", Name = "Login")]
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest request) {
-        var loginResult = await _authService.LoginAsync(request.Email, request.Password);
+        var loginResult = await _authService.Login(request.Email, request.Password);
     
         if (!loginResult.IsSuccess) {
             return loginResult.Error.Code switch {
@@ -101,7 +101,7 @@ public sealed class AuthenticateController : ControllerBase {
             return BadRequest(new ApiResponse(Errors.MismatchPasswords()));
         }
         
-        var response = await _authService.RegisterAsync(request.Email, request.Password);
+        var response = await _authService.Register(request.Email, request.Password);
     
         if (response.IsSuccess) {
             return Created();
@@ -123,7 +123,7 @@ public sealed class AuthenticateController : ControllerBase {
         string email = decodedPayload[..firstColon];
         string refreshToken = decodedPayload[(firstColon + 1)..];
 
-        var result = await _authService.RefreshAsync(email, refreshToken);
+        var result = await _authService.Refresh(email, refreshToken);
 
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
@@ -168,7 +168,7 @@ public sealed class AuthenticateController : ControllerBase {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
-        var info = await _authService.GetAuthorizationInfoAsync(idClaim);
+        var info = await _authService.GetAuthorizationInfo(idClaim);
 
         if (!info.IsSuccess) {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
@@ -186,7 +186,7 @@ public sealed class AuthenticateController : ControllerBase {
             return Unauthorized(new ApiResponse(Errors.InvalidCredentials()));
         }
 
-        var result = await _authService.SendVerificationEmailAsync(idClaim);
+        var result = await _authService.SendVerificationEmail(idClaim);
 
         if (result.IsSuccess) {
             return Ok();
@@ -208,7 +208,7 @@ public sealed class AuthenticateController : ControllerBase {
     [HttpPost("confirm-email")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
-        var result = await _authService.ConfirmEmailAsync(request.UserId, request.ConfirmationCode);
+        var result = await _authService.ConfirmEmail(request.UserId, request.ConfirmationCode);
         
         if (result.IsSuccess) {
             return Ok();

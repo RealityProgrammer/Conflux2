@@ -11,7 +11,7 @@ public sealed class AuthRepository(
 ) : IAuthRepository {
     private const string ApplicationJwtLoginProvider = "AppJWT";
     
-    public async Task<Result<ApplicationUser>> RegisterAsync(string email, string password) {
+    public async Task<Result<ApplicationUser>> Register(string email, string password) {
         var generatedUserName = $"user-{Guid.NewGuid():N}";
         
         ApplicationUser user = new ApplicationUser {
@@ -42,17 +42,17 @@ public sealed class AuthRepository(
         return Result<ApplicationUser>.Success(user);
     }
 
-    public async Task<ApplicationUser?> GetUserByLoginCredentialAsync(string email, string password) {
+    public async Task<ApplicationUser?> GetUserByLoginCredential(string email, string password) {
         var user = await userManager.FindByEmailAsync(email);
 
         return user != null && await userManager.CheckPasswordAsync(user, password) ? user : null;
     }
 
-    public async Task<string> GenerateEmailConfirmationCodeAsync(ApplicationUser user) {
+    public async Task<string> GenerateEmailConfirmationCode(ApplicationUser user) {
         return await userManager.GenerateEmailConfirmationTokenAsync(user);
     }
 
-    public async Task<Result> ConfirmEmailAsync(ApplicationUser user, string token) {
+    public async Task<Result> ConfirmEmail(ApplicationUser user, string token) {
         IdentityResult result = await userManager.ConfirmEmailAsync(user, token);
         
         if (result.Succeeded) {
@@ -63,7 +63,7 @@ public sealed class AuthRepository(
         return Result.Failure(firstError.Code, firstError.Description);
     }
 
-    public async Task<IList<string>> GetUserRolesAsync(ApplicationUser user) {
+    public async Task<IList<string>> GetUserRoles(ApplicationUser user) {
         return await userManager.GetRolesAsync(user);
     }
 

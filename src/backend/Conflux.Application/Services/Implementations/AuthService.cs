@@ -30,8 +30,8 @@ internal sealed class AuthService(
 ) : IAuthService {
     private readonly AuthServiceOptions _options = options.Value;
 
-    public async Task<Result> RegisterAsync(string email, string password) {
-        var result = await authRepository.RegisterAsync(email, password);
+    public async Task<Result> Register(string email, string password) {
+        var result = await authRepository.Register(email, password);
 
         if (result.IsSuccess) {
             return Result.Success();
@@ -40,11 +40,11 @@ internal sealed class AuthService(
         return result;
     }
 
-    public async Task<Result<LoginResponse>> LoginAsync(string email, string password) {
-        var user = await authRepository.GetUserByLoginCredentialAsync(email, password);
+    public async Task<Result<LoginResponse>> Login(string email, string password) {
+        var user = await authRepository.GetUserByLoginCredential(email, password);
 
         if (user != null) {
-            IList<string> roles = await authRepository.GetUserRolesAsync(user);
+            IList<string> roles = await authRepository.GetUserRoles(user);
                         
             GenerateAccessToken(user, roles, out string accessToken, out _);
             GenerateRefreshToken(out string refreshToken, out DateTimeOffset refreshTokenExpiration);
@@ -113,7 +113,7 @@ internal sealed class AuthService(
         expiration = timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration);
     }
 
-    public async Task<Result<RefreshResponse>> RefreshAsync(string userEmail, string refreshToken) {
+    public async Task<Result<RefreshResponse>> Refresh(string userEmail, string refreshToken) {
         var user = await userManager.FindByEmailAsync(userEmail);
         if (user == null) {
             return Errors.NoUserFoundFromEmail();
@@ -125,7 +125,7 @@ internal sealed class AuthService(
             return result.Error;
         }
         
-        IList<string> roles = await authRepository.GetUserRolesAsync(user);
+        IList<string> roles = await authRepository.GetUserRoles(user);
         GenerateAccessToken(user, roles, out string accessToken, out _);
         
         var permissions = await GetAuthorizationPermissions(user);
@@ -139,14 +139,14 @@ internal sealed class AuthService(
         ), "Bearer", accessToken));
     }
 
-    public async Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfoAsync(string userId) {
+    public async Task<Result<UserAuthorizationInfo?>> GetAuthorizationInfo(string userId) {
         var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
             return Result<UserAuthorizationInfo?>.Failure(Errors.NoUserFoundFromId());
         }
 
-        var userRoles = await authRepository.GetUserRolesAsync(user);
+        var userRoles = await authRepository.GetUserRoles(user);
         var permissions = await GetAuthorizationPermissions(user);
         
         return Result<UserAuthorizationInfo?>.Success(new(
@@ -158,7 +158,7 @@ internal sealed class AuthService(
         ));
     }
 
-    public async Task<Result> SendVerificationEmailAsync(string userId) {
+    public async Task<Result> SendVerificationEmail(string userId) {
         var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
@@ -170,7 +170,7 @@ internal sealed class AuthService(
         }
         
         // TODO: Time-limiting the confirmation token.
-        string confirmCode = await authRepository.GenerateEmailConfirmationCodeAsync(user);
+        string confirmCode = await authRepository.GenerateEmailConfirmationCode(user);
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
 
         NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);
@@ -184,10 +184,10 @@ internal sealed class AuthService(
 
         string redirectUrl = builder.Uri.ToString();
 
-        return await mailingService.SendEmailConfirmationAsync(user.Email!, redirectUrl);
+        return await mailingService.SendEmailConfirmation(user.Email!, redirectUrl);
     }
 
-    public async Task<Result> ConfirmEmailAsync(string userId, string code) {
+    public async Task<Result> ConfirmEmail(string userId, string code) {
         var user = await userManager.FindByIdAsync(userId);
 
         if (user == null) {
@@ -198,7 +198,7 @@ internal sealed class AuthService(
             return Errors.UserAlreadyVerified();
         }
         
-        return await authRepository.ConfirmEmailAsync(user, code);
+        return await authRepository.ConfirmEmail(user, code);
     }
 
     private async Task<List<string>> GetAuthorizationPermissions(ApplicationUser user) {

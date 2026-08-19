@@ -32,7 +32,7 @@ public sealed class SessionUserController(
         await using var fileStream = file.OpenReadStream();
         
         fileStream.Position = 0;
-        var result = await userService.UploadAvatarAsync(userId, fileStream);
+        var result = await userService.UploadAvatar(userId, fileStream);
         
         if (result.IsSuccess) {
             return Ok();
@@ -56,7 +56,7 @@ public sealed class SessionUserController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await userService.DeleteAvatarAsync(userId);
+        var result = await userService.DeleteAvatar(userId);
         
         if (result.IsSuccess) {
             return NoContent();
@@ -83,7 +83,7 @@ public sealed class SessionUserController(
 
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
         
-        Result result = await userService.SetupProfileAsync(new(
+        Result result = await userService.SetupProfile(new(
             userId,
             request.UserName,
             request.DisplayName,
@@ -115,7 +115,7 @@ public sealed class SessionUserController(
         count = int.Max(count, 1);
 
         PaginatedResult<DmConversationListItemDto> result =
-            await channelService.GetUserConversationsAsync(userId, offset, count);
+            await channelService.GetUserConversations(userId, offset, count);
 
         return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
     }
@@ -135,7 +135,7 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.QueryFriendsAsync(userId, name, offset, count);
+        var result = await friendService.QueryFriends(userId, name, offset, count);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result.Value, Error.None));
@@ -226,7 +226,7 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.QueryPendingRequestsAsync(userId, name, offset, count);
+        var result = await friendService.QueryPendingRequests(userId, name, offset, count);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result.Value, Error.None));

@@ -23,7 +23,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await friendService.SendFriendRequestAsync(userId, toUserId);
+        var result = await friendService.SendFriendRequest(userId, toUserId);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<SendFriendRequestResponse>(result.Value, Error.None));
@@ -44,7 +44,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.CancelFriendRequestAsync(userId, toUserId);
+        Result result = await friendService.CancelFriendRequest(userId, toUserId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -66,7 +66,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.RejectFriendRequestAsync(userId, senderUserId);
+        Result result = await friendService.RejectFriendRequest(userId, senderUserId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -88,7 +88,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.AcceptFriendRequestAsync(userId, senderUserId);
+        Result result = await friendService.AcceptFriendRequest(userId, senderUserId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -111,7 +111,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.UnfriendAsync(currentUserId, userId);
+        Result result = await friendService.Unfriend(currentUserId, userId);
 
         if (result.IsSuccess) {
             return Ok();
@@ -140,7 +140,7 @@ public sealed class FriendController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
+        var result = await friendService.DiscoverFriends(userId, name, offset, count);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result.Value, Error.None));

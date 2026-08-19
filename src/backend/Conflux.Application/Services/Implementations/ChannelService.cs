@@ -12,11 +12,11 @@ internal sealed class ChannelService(
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider
 ) : IChannelService {
-    public async Task<Result<DmChannelSummary>> GetDmChannelSummaryAsync(Guid userId, Guid channelId) {
-        return await channelRepository.GetDirectMessageChannelSummaryAsync(userId, channelId);
+    public async Task<Result<DmChannelSummary>> GetDmChannelSummary(Guid userId, Guid channelId) {
+        return await channelRepository.GetDirectMessageChannelSummary(userId, channelId);
     }
 
-    public async Task<Result<ChannelResolutionResult>> GetOrCreateDmChannelAsync(Guid user1, Guid user2) {
+    public async Task<Result<ChannelResolutionResult>> GetOrCreateDmChannel(Guid user1, Guid user2) {
         FriendDmChannelSummaryDto? friendRequestSummary = await channelRepository.GetFriendDmChannelSummary(user1, user2);
 
         // no friend request, bail out early
@@ -57,11 +57,11 @@ internal sealed class ChannelService(
         }
     }
 
-    public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversationsAsync(
+    public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversations(
         Guid userId, 
         int offset, 
         int count
     ) {
-        return await channelRepository.GetUserConversationsAsync(userId, offset, count);
+        return await channelRepository.GetUserConversations(userId, offset, count);
     }
 }

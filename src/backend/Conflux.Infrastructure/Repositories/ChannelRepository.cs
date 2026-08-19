@@ -14,7 +14,7 @@ internal sealed class ChannelRepository(
         dbContext.Channels.Add(channel);
     }
 
-    public async Task<Result<ChannelMetadata>> GetChannelMetadataFromChannelIdAsync(
+    public async Task<Result<ChannelMetadata>> GetChannelMetadataFromChannelId(
         Guid channelId,
         CancellationToken cancellationToken = default
     ) {
@@ -34,7 +34,7 @@ internal sealed class ChannelRepository(
         return Result<ChannelMetadata>.Success(context);
     }
 
-    public async Task<Result<DmChannelSummary>> GetDirectMessageChannelSummaryAsync(Guid userId, Guid channelId) {
+    public async Task<Result<DmChannelSummary>> GetDirectMessageChannelSummary(Guid userId, Guid channelId) {
         var summary = await dbContext.Channels
             .Where(c =>
                 c.Type == ChannelType.DirectMessage &&
@@ -83,7 +83,7 @@ internal sealed class ChannelRepository(
             .FirstOrDefaultAsync();
     }
 
-    public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversationsAsync(
+    public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversations(
         Guid userId, 
         int offset, 
         int count

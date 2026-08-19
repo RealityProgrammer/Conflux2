@@ -30,7 +30,7 @@ internal sealed class MessageService(
     TimeProvider timeProvider,
     IMediator mediator
 ) : IMessageService {
-    public async Task<Result<MessageDto>> SendMessageAsync(
+    public async Task<Result<MessageDto>> SendMessage(
         Guid senderUserId,
         Guid channelId,
         string? body, 
@@ -39,7 +39,7 @@ internal sealed class MessageService(
         CancellationToken cancellationToken = default
     ) {
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromChannelIdAsync(channelId, cancellationToken);
+            await channelRepository.GetChannelMetadataFromChannelId(channelId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -47,7 +47,7 @@ internal sealed class MessageService(
         
         ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
 
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             senderUserId, 
             channelId, 
             channelMetadata.ChannelType
@@ -139,7 +139,7 @@ internal sealed class MessageService(
 
             try {
                 Result<Guid> uploadResult =
-                    await storageService.UploadMessageAttachmentAsync(new(stream, mediaType), cancellationToken);
+                    await storageService.UploadMessageAttachment(new(stream, mediaType), cancellationToken);
 
                 if (uploadResult.IsSuccess) {
                     attachments[i] = new() {
@@ -177,10 +177,10 @@ internal sealed class MessageService(
             return Errors.OperationFailure("send message.");
         }
 
-        await conversationRepository.UpdateLatestMessageTimeAsync(channelMetadata.ConversationId, utcNow);
+        await conversationRepository.UpdateLatestMessageTime(channelMetadata.ConversationId, utcNow);
 
         ReplyToMessageDto? reply = replyToId.HasValue ? 
-            await messageRepository.GetReplyMessageByIdAsync(replyToId.Value, CancellationToken.None) :
+            await messageRepository.GetReplyMessageById(replyToId.Value, CancellationToken.None) :
             null;
         
         MessageDto dto = new(
@@ -197,7 +197,7 @@ internal sealed class MessageService(
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar
         if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
             var dmSummary = 
-                (await channelService.GetDmChannelSummaryAsync(senderUserId, channelId)).Value!;
+                (await channelService.GetDmChannelSummary(senderUserId, channelId)).Value!;
             
             await mediator.Publish(new UpdateDmConversationListNotification(
                 senderUserId,
@@ -212,19 +212,19 @@ internal sealed class MessageService(
         async ValueTask DeleteUploadedAttachments() {
             foreach (var attachment in attachments) {
                 if (attachment != null && attachment.Id != Guid.Empty) {
-                    await storageService.DeleteMessageAttachmentAsync(attachment.Id, CancellationToken.None);
+                    await storageService.DeleteMessageAttachment(attachment.Id, CancellationToken.None);
                 }
             }
         }
     }
 
-    public async Task<Result<MessageDto>> EditMessageAsync(
+    public async Task<Result<MessageDto>> EditMessage(
         Guid messageId, 
         Guid requesterUserId, 
         string? newBody, 
         CancellationToken cancellationToken = default
     ) {
-        var message = await messageRepository.GetByIdAsync(messageId, cancellationToken);
+        var message = await messageRepository.GetById(messageId, cancellationToken);
         
         if (message == null) {
             return Errors.ResourceNotFound("Message");
@@ -235,7 +235,7 @@ internal sealed class MessageService(
         }
        
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await conversationRepository.GetChannelMetadataAsync(message.ConversationId, cancellationToken);
+            await conversationRepository.GetChannelMetadata(message.ConversationId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -243,7 +243,7 @@ internal sealed class MessageService(
         
         ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
         
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             requesterUserId, 
             channelMetadata.ChannelId, 
             channelMetadata.ChannelType
@@ -260,7 +260,7 @@ internal sealed class MessageService(
         }
         
         ReplyToMessageDto? reply = message.ReplyToId.HasValue ? 
-            await messageRepository.GetReplyMessageByIdAsync(message.ReplyToId.Value, CancellationToken.None) :
+            await messageRepository.GetReplyMessageById(message.ReplyToId.Value, CancellationToken.None) :
             null;
         
         // if body is not changed, return success instantly.
@@ -294,8 +294,8 @@ internal sealed class MessageService(
         return Result<MessageDto>.Success(dto);
     }
 
-    public async Task<Result> DeleteMessageAsync(Guid messageId, Guid requesterUserId) {
-        var message = await messageRepository.GetByIdAsync(messageId);
+    public async Task<Result> DeleteMessage(Guid messageId, Guid requesterUserId) {
+        var message = await messageRepository.GetById(messageId);
         
         if (message == null) {
             return Errors.ResourceNotFound("Message");
@@ -306,7 +306,7 @@ internal sealed class MessageService(
         }
        
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await conversationRepository.GetChannelMetadataAsync(message.ConversationId);
+            await conversationRepository.GetChannelMetadata(message.ConversationId);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -314,7 +314,7 @@ internal sealed class MessageService(
         
         ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
         
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             requesterUserId, 
             channelMetadata.ChannelId, 
             channelMetadata.ChannelType
@@ -343,7 +343,7 @@ internal sealed class MessageService(
         return Result.Success();
     }
 
-    public async Task<Result<GetMessagesResponse>> GetTimelineMessagesAsync(
+    public async Task<Result<GetMessagesResponse>> GetTimelineMessages(
         Guid requesterUserId,
         Guid channelId,
         MessageLoadDirection? direction,
@@ -352,7 +352,7 @@ internal sealed class MessageService(
         CancellationToken cancellationToken = default
     ) {
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromChannelIdAsync(channelId, cancellationToken);
+            await channelRepository.GetChannelMetadataFromChannelId(channelId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -360,7 +360,7 @@ internal sealed class MessageService(
         
         ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
         
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissionsAsync(
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             requesterUserId, 
             channelMetadata.ChannelId, 
             channelMetadata.ChannelType
@@ -376,7 +376,7 @@ internal sealed class MessageService(
             return Errors.Forbidden("You do not have permission to view this channel.");
         }
         
-        Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessagesAsync(
+        Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessages(
             channelMetadata.ConversationId, 
             direction, 
             cursorMessageId,
@@ -420,7 +420,7 @@ internal sealed class MessageService(
 
         // must have at least 1 user
         List<UserIdentityProfileDto> userProfiles =
-            await userRepository.GetIdentityProfilesAsync(
+            await userRepository.GetIdentityProfiles(
                 [..groups
                     .Select(g => g.SenderUserId)
                     .Concat(

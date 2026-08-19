@@ -4,7 +4,6 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
-using Microsoft.Extensions.Configuration;
 
 namespace Conflux.Application.Services.Implementations;
 
@@ -17,7 +16,7 @@ internal sealed class UserService(
     IStorageService storageService,
     IFileFormatInspector fileFormatInspector
 ) : IUserService {
-    public async Task<Result> UploadAvatarAsync(Guid userId, Stream avatarStream) {
+    public async Task<Result> UploadAvatar(Guid userId, Stream avatarStream) {
         if (fileFormatInspector.DetermineFileFormat(avatarStream) is not { } fileFormat) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(avatarStream)] = [
@@ -47,13 +46,13 @@ internal sealed class UserService(
         }
         
         // upload file first.
-        Result<string> result = await storageService.UploadUserAvatarAsync(userId, new(avatarStream, imageFormat.MediaType));
+        Result<string> result = await storageService.UploadUserAvatar(userId, new(avatarStream, imageFormat.MediaType));
 
         if (!result.IsSuccess) {
             return result.Error;
         }
 
-        bool updateSuccessful = await userRepository.UpdateAvatarStatusAsync(userId, true);
+        bool updateSuccessful = await userRepository.UpdateAvatarStatus(userId, true);
 
         if (updateSuccessful) {
             return Result.Success();
@@ -68,14 +67,14 @@ internal sealed class UserService(
         return storageService.GetUserAvatarPreSignedUrl(userId);
     }
 
-    public async Task<Result> DeleteAvatarAsync(Guid userId) {
-        var result = await storageService.DeleteUserAvatarAsync(userId);
+    public async Task<Result> DeleteAvatar(Guid userId) {
+        var result = await storageService.DeleteUserAvatar(userId);
 
         if (!result.IsSuccess) {
             return result;
         }
 
-        bool updateSuccessful = await userRepository.UpdateAvatarStatusAsync(userId, false);
+        bool updateSuccessful = await userRepository.UpdateAvatarStatus(userId, false);
 
         if (updateSuccessful) {
             return Result.Success();
@@ -84,8 +83,8 @@ internal sealed class UserService(
         return Errors.OperationFailure("delete user avatar");
     }
 
-    public async Task<Result> SetupProfileAsync(SetupProfileRequest request) {
-        Result<bool> validateResult = await userRepository.IsProfileSetupAsync(request.UserId);
+    public async Task<Result> SetupProfile(SetupProfileRequest request) {
+        Result<bool> validateResult = await userRepository.IsProfileSetup(request.UserId);
 
         if (!validateResult.IsSuccess) {
             return validateResult.Error;
@@ -102,22 +101,19 @@ internal sealed class UserService(
                     return Errors.MissingArgument("Avatar stream");
                 }
 
-                await UploadAvatarAsync(request.UserId, stream);
+                await UploadAvatar(request.UserId, stream);
                 break;
             
             case AvatarOperationType.Delete:
-                await DeleteAvatarAsync(request.UserId);
+                await DeleteAvatar(request.UserId);
                 break;
         }
 
-        return await userRepository.SetupProfileAsync(request.UserId, request.UserName, request.DisplayName);
+        return await userRepository.SetupProfile(request.UserId, request.UserName, request.DisplayName);
     }
 
-    public async Task<Result<UserProfileDto>> GetProfileAsync(Guid userId, UserProfileQueryFlags queryFlags) {
-        return await userRepository.GetProfileAsync(userId, queryFlags);
-    }
 
-    public async Task<Result<UserIdentityProfileDto>> GetIdentityProfileAsync(Guid userId) {
-        return await userRepository.GetIdentityProfileAsync(userId);
+    public async Task<Result<UserIdentityProfileDto>> GetIdentityProfile(Guid userId) {
+        return await userRepository.GetIdentityProfile(userId);
     }
 }

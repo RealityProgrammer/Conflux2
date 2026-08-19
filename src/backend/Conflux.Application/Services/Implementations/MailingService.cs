@@ -9,7 +9,7 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class MailingService(
     IConfiguration config
 ) : IMailingService {
-    public async Task<Result> SendEmailConfirmationAsync(string receiverEmail, string verifyUrl) {
+    public async Task<Result> SendEmailConfirmation(string receiverEmail, string verifyUrl) {
         if (config["Mail:SenderName"] is not { } senderName) {
             return Errors.MissingConfiguration("Mail:SenderName");
         }

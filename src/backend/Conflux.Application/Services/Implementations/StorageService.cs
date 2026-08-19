@@ -28,7 +28,7 @@ internal sealed class StorageService(
 ) : IStorageService {
     private readonly StorageServiceOptions _options = options.Value;
     
-    public async Task<Result<string>> UploadUserAvatarAsync(
+    public async Task<Result<string>> UploadUserAvatar(
         Guid userId,
         UploadItem avatar,
         CancellationToken cancellationToken = default
@@ -44,7 +44,7 @@ internal sealed class StorageService(
         return result.Error;
     }
 
-    public async Task<Result> DeleteUserAvatarAsync(Guid userId, CancellationToken cancellationToken = default) {
+    public async Task<Result> DeleteUserAvatar(Guid userId, CancellationToken cancellationToken = default) {
         var uniqueKey = CreateUserAvatarUniqueKey(userId);
         return await DeleteFromS3Storage(uniqueKey, cancellationToken);
     }
@@ -55,7 +55,7 @@ internal sealed class StorageService(
         return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
     }
 
-    public async Task<Result<Guid>> UploadMessageAttachmentAsync(
+    public async Task<Result<Guid>> UploadMessageAttachment(
         UploadItem attachment, 
         CancellationToken cancellationToken = default
     ) {
@@ -71,7 +71,7 @@ internal sealed class StorageService(
         return result.Error;
     }
 
-    public async Task<Result> DeleteMessageAttachmentAsync(Guid attachmentId, CancellationToken cancellationToken = default) {
+    public async Task<Result> DeleteMessageAttachment(Guid attachmentId, CancellationToken cancellationToken = default) {
         string key = CreateAttachmentUniqueKey(attachmentId);
         return await DeleteFromS3Storage(key, cancellationToken);
     }
@@ -178,7 +178,7 @@ internal sealed class StorageService(
         return preSigningClient.GetPreSignedURL(request);
     }
 
-    public async Task<Result<string>> UploadCommunityServerAvatarAsync(
+    public async Task<Result<string>> UploadCommunityServerAvatar(
         Guid communityServerId, 
         UploadItem avatar, 
         CancellationToken cancellationToken = default
