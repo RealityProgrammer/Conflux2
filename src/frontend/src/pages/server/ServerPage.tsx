@@ -74,7 +74,7 @@ function Sidebar() {
     if (!creatingState) return;
 
     const operationId = crypto.randomUUID();
-    setCreateStatus(prev => [...prev, { ...creatingState, id: operationId, status: "error", name }]);
+    setCreateStatus(prev => [...prev, { ...creatingState, id: operationId, status: "creating", name }]);
 
     switch (creatingState.type) {
       case "category":
@@ -89,7 +89,7 @@ function Sidebar() {
         } else {
           setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
             ...s,
-            status: "creating",
+            status: "error",
           } : s));
         }
         break;
