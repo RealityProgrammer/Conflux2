@@ -57,4 +57,19 @@ export const communityServerService = {
       return handleAxiosError(axiosError);
     }
   },
+
+  createChannelCategory: async (serverId: string, name: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 }
