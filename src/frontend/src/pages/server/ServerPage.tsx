@@ -139,7 +139,7 @@ function Sidebar() {
               <DropdownMenu.Portal>
                 <DropdownMenu.Content
                   side="bottom"
-                  sideOffset={8}
+                  sideOffset={5}
                   className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
                   onCloseAutoFocus={(e) => {
                     e.preventDefault();
@@ -169,7 +169,7 @@ function Sidebar() {
                     <FaVolumeHigh className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
-                  <DropdownMenu.Arrow className="fill-gray-700"/>
+                  <DropdownMenu.Arrow className="fill-gray-650"/>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
@@ -283,7 +283,7 @@ function ChannelCategoryView({
                     <FaVolumeHigh className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
-                  <DropdownMenu.Arrow className="fill-gray-700"/>
+                  <DropdownMenu.Arrow className="fill-gray-650"/>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
