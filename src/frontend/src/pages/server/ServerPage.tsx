@@ -36,7 +36,7 @@ type CreateStatus = CreateState & {
 }
 
 function Sidebar() {
-  const {serverSummary} = useCommunityServerContext();
+  const {serverId, serverSummary} = useCommunityServerContext();
 
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const [creatingState, setCreatingState] = useState<CreateState | null>(null);
@@ -78,7 +78,11 @@ function Sidebar() {
 
     switch (creatingState.type) {
       case "category":
-        const response = await communityServerService.createChannelCategory(creatingState.idempotencyKey, name);
+        const response = await communityServerService.createChannelCategory(
+          creatingState.idempotencyKey,
+          serverId,
+          name
+        );
 
         if (response.success) {
           setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);

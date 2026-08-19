@@ -58,12 +58,17 @@ export const communityServerService = {
     }
   },
 
-  createChannelCategory: async (serverId: string, name: string): Promise<ServiceResponse> => {
+  createChannelCategory: async (idempotencyKey: string, serverId: string, name: string): Promise<ServiceResponse> => {
     try {
-
-
       const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories`);
+        await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
+          name
+        }, {
+          headers: {
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
+          }
+        });
 
       return {
         success: true,
