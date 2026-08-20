@@ -113,6 +113,46 @@ public sealed class CommunityServerController(
         };
     }
 
+    [HttpDelete("{serverId:guid}/channel-categories/{categoryId:guid}")]
+    public async Task<ActionResult> DeleteChannelCategory(Guid serverId, Guid categoryId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await communityServerService.DeleteChannelCategory(userId, serverId, categoryId);
+        
+        if (result.IsSuccess) {
+            return NoContent();
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+    
+    [HttpDelete("{serverId:guid}/channels/{channelId:guid}")]
+    public async Task<ActionResult> DeleteChannel(Guid serverId, Guid channelId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await communityServerService.DeleteChannel(userId, serverId, channelId);
+        
+        if (result.IsSuccess) {
+            return NoContent();
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
     public sealed record CreateRequest(
         [Required] string Name, 
         IFormFile? Avatar

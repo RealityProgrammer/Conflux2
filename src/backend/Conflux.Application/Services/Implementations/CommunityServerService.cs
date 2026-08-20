@@ -17,8 +17,9 @@ public class CommunityServerServiceOptions {
 internal sealed class CommunityServerService(
     ICommunityServerRepository communityServerRepository,
     IChannelCategoryRepository channelCategoryRepository,
-    IUnitOfWork unitOfWork,
     IChannelService channelService,
+    IChannelRepository channelRepository,
+    IUnitOfWork unitOfWork,
     IStorageService storageService,
     IFileFormatInspector fileFormatInspector
 ) : ICommunityServerService {
@@ -179,6 +180,16 @@ internal sealed class CommunityServerService(
                     ],
                 });
         }
+    }
+
+    public async Task<Result> DeleteChannelCategory(Guid userId, Guid serverId, Guid categoryId, CancellationToken cancellationToken = default) {
+        bool deleted = await channelCategoryRepository.Delete(serverId, categoryId, cancellationToken);
+        return deleted ? Result.Success() : Errors.ResourceNotFound("Channel category");
+    }
+
+    public async Task<Result> DeleteChannel(Guid userId, Guid serverId, Guid channelId, CancellationToken cancellationToken = default) {
+        bool deleted = await channelRepository.Delete(serverId, channelId, cancellationToken);
+        return deleted ? Result.Success() : Errors.ResourceNotFound("Channel");
     }
 
     public string GetAvatarUrl(Guid serverId) {

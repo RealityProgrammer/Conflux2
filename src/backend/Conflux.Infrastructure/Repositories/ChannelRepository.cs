@@ -7,8 +7,7 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class ChannelRepository(
-    ApplicationDbContext dbContext,
-    TimeProvider timeProvider
+    ApplicationDbContext dbContext
 ) : IChannelRepository {
     public void Add(Channel channel) {
         dbContext.Channels.Add(channel);
@@ -121,5 +120,12 @@ internal sealed class ChannelRepository(
             .Where(c => c.Type == ChannelType.DirectMessage && c.FriendRequestId == friendRequestId)
             .Select(c => c.Id)
             .FirstAsync(cancellationToken);
+    }
+
+    public async Task<bool> Delete(Guid serverId, Guid channelId, CancellationToken cancellationToken = default) {
+        // TODO: Soft-deletion
+        return await dbContext.Channels
+            .Where(c => c.CommunityServerId == serverId && c.Id == channelId)
+            .ExecuteDeleteAsync(cancellationToken) > 0;
     }
 }

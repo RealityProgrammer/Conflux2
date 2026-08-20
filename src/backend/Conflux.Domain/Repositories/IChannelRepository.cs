@@ -18,4 +18,6 @@ public interface IChannelRepository {
     Task<PaginatedResult<DmConversationListItemDto>> GetUserConversations(Guid userId, int offset, int count);
 
     Task<Guid> GetChannelIdFromFriendRequestId(Guid friendRequestId, CancellationToken cancellationToken = default);
+    
+    Task<bool> Delete(Guid serverId, Guid channelId, CancellationToken cancellationToken = default);
 }

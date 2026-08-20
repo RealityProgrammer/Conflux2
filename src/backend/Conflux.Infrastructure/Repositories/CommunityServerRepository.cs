@@ -76,7 +76,6 @@ internal sealed class CommunityServerRepository(
 
         return result;
     }
-
     public async Task<bool> IsCategoryExistsInServer(
         Guid serverId, 
         Guid categoryId, 
