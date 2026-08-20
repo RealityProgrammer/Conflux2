@@ -111,4 +111,34 @@ export const communityServerService = {
       return handleAxiosError(axiosError);
     }
   },
+
+  deleteChannelCategory: async (serverId: string, categoryId: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.delete<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories/${encodeURIComponent(categoryId)}`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  deleteChannel: async (serverId: string, categoryId: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.delete<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(categoryId)}`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 }
