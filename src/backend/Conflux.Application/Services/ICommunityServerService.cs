@@ -9,8 +9,8 @@ public interface ICommunityServerService {
 
     Task<Result<CommunityServerSummaryDto>> GetSummary(Guid serverId, CancellationToken cancellationToken = default);
     
-    Task<Result> CreateChannelCategory(Guid userId, Guid serverId, string name, CancellationToken cancellationToken = default);
-    Task<Result> CreateChannel(Guid userId, Guid serverId, string name, ChannelType type, Guid? categoryId, CancellationToken cancellationToken = default);
+    Task<Result<Guid>> CreateChannelCategory(Guid userId, Guid serverId, string name, CancellationToken cancellationToken = default);
+    Task<Result<Guid>> CreateChannel(Guid userId, Guid serverId, string name, ChannelType type, Guid? categoryId, CancellationToken cancellationToken = default);
     
     string GetAvatarUrl(Guid serverId);
 }

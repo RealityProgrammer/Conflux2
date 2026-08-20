@@ -4,9 +4,19 @@ import {createContext, type ReactNode, useContext} from "react";
 interface CommunityServerContextType {
   serverId: string;
   serverSummary: CommunityServerSummaryDto;
+
+  appendChannelCategory: (id: string, name: string) => void;
+  appendChannel: (id: string, name: string, type: "text" | "voice", categoryId: string | null) => void;
 }
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
+
+export const useCommunityServerContext = () => {
+  const context = useContext(CommunityServerContext);
+  if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
+
+  return context;
+}
 
 interface CommunityServerContextProviderProps extends CommunityServerContextType {
   children: ReactNode;
@@ -14,18 +24,19 @@ interface CommunityServerContextProviderProps extends CommunityServerContextType
 
 export default function CommunityServerContextProvider({
   children,
-  ...props
+  serverId,
+  serverSummary,
+  appendChannelCategory,
+  appendChannel,
 }: CommunityServerContextProviderProps) {
   return (
-    <CommunityServerContext.Provider value={props}>
+    <CommunityServerContext.Provider value={{
+      serverId,
+      serverSummary,
+      appendChannelCategory,
+      appendChannel,
+    }}>
       {children}
     </CommunityServerContext.Provider>
   )
-}
-
-export const useCommunityServerContext = () => {
-  const context = useContext(CommunityServerContext);
-  if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
-
-  return context;
 }

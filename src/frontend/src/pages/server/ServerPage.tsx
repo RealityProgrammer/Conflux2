@@ -1,12 +1,11 @@
-import {Outlet, useLoaderData} from "react-router";
-import {type KeyboardEvent, type Ref, type RefObject, useEffect, useRef, useState} from "react";
-import type {ChannelCategorySummaryDto} from "../../api/responses.ts";
+import {type KeyboardEvent, type Ref, useEffect, useRef, useState} from "react";
+import type {ChannelCategorySummaryDto, ServiceResponse} from "../../api/responses.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
 import IconButton from "../../components/IconButton.tsx";
-import {BsExclamationTriangle, BsGearFill, BsHash} from "react-icons/bs";
+import {BsExclamationTriangle, BsGearFill, BsHash, BsVolumeUp} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
-import {FaFolderPlus, FaGear, FaHashtag, FaSquareMinus, FaSquarePlus, FaVolumeHigh} from "react-icons/fa6";
+import {FaChevronRight, FaFolderPlus, FaHashtag, FaSquareMinus, FaSquarePlus, FaVolumeHigh} from "react-icons/fa6";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 
 export default function ServerPage() {
@@ -36,7 +35,7 @@ type CreateStatus = CreateState & {
 }
 
 function Sidebar() {
-  const {serverId, serverSummary} = useCommunityServerContext();
+  const {serverId, serverSummary, appendChannel, appendChannelCategory} = useCommunityServerContext();
 
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const [creatingState, setCreatingState] = useState<CreateState | null>(null);
@@ -78,7 +77,7 @@ function Sidebar() {
 
     switch (creatingState.type) {
       case "category": {
-        const response = await communityServerService.createChannelCategory(
+        const response: ServiceResponse<string> = await communityServerService.createChannelCategory(
           creatingState.idempotencyKey,
           serverId,
           name
@@ -86,6 +85,7 @@ function Sidebar() {
 
         if (response.success) {
           setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
+          appendChannelCategory(response.data!, name);
         } else {
           setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
             ...s,
@@ -107,6 +107,7 @@ function Sidebar() {
 
         if (response.success) {
           setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
+          appendChannel(response.data!, name, creatingState.type, creatingState.targetCategoryId);
         } else {
           setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
             ...s,
@@ -120,7 +121,7 @@ function Sidebar() {
 
   return (
     <aside
-      className="flex-none basis-64 h-full bg-gray-725 border-r-2 border-r-gray-600 text-white overflow-y-auto flex flex-col overflow-hidden"
+      className="flex-none basis-64 h-full bg-gray-725 border-r-2 border-r-gray-600 text-white overflow-y-auto flex flex-col overflow-hidden scrollbar-hide"
     >
       <div>
         <header className="w-full aspect-video relative group">
@@ -238,12 +239,8 @@ function ChannelCategoryView({
     <>
       {category.id && (
         <div className="flex flex-row items-center gap-2 mb-1 group">
-          <IconButton theme="default" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
-            {isCategoryOpen ? (
-              <FaSquareMinus className="size-4 inline"/>
-            ) : (
-              <FaSquarePlus className="size-4 inline"/>
-            )}
+          <IconButton theme="default" onClick={() => setIsCategoryOpen(!isCategoryOpen)} className={`transition-transform duration-150 ease-in-out ${isCategoryOpen ? 'rotate-90' : 'rotate-0'}`}>
+            <FaChevronRight className="size-3.5"/>
           </IconButton>
 
           <span className="text-gray-300 text-sm line-clamp-1 select-none flex-1">{category.name}</span>
@@ -291,21 +288,29 @@ function ChannelCategoryView({
         </div>
       )}
 
-      {category.channels.map(c => (
-        <button key={c.id} className="px-1 py-1.5 hover-highlight w-full rounded-md cursor-pointer text-left mb-1 flex flex-row items-center">
-          <BsHash className="size-6 fill-gray-500 stroke-gray-500 inline mr-1" strokeWidth={0.75}/>
+      {isCategoryOpen && (
+        <>
+          {category.channels.map(c => (
+            <button key={c.id} className="px-1 py-1 hover-highlight w-full rounded-md cursor-pointer text-left mb-1 flex flex-row items-center">
+              {c.channelType === "CommunityServerText" ? (
+                <BsHash className="size-6 fill-gray-500 stroke-gray-500 inline mr-1" strokeWidth={0.75}/>
+              ) : (
+                <BsVolumeUp className="size-6 fill-gray-500 stroke-gray-500 inline mr-1"/>
+              )}
 
-          <span className="line-clamp-1 inline">{c.name}</span>
-        </button>
-      ))}
+              <span className="line-clamp-1 inline text-sm">{c.name}</span>
+            </button>
+          ))}
 
-      {createStatus.filter(s => s.targetCategoryId === category.id).map(s => {
-        return (
-          <ChannelCreatingStatusView key={s.id} status={s}/>
-        );
-      })}
+          {createStatus.filter(s => s.targetCategoryId === category.id).map(s => {
+            return (
+              <ChannelCreatingStatusView key={s.id} status={s}/>
+            );
+          })}
+        </>
+      )}
 
-      {createState?.targetCategoryId === category.id && (
+      {createState && createState.targetCategoryId === category.id && (
         <input
           ref={inputRef}
           type="text"

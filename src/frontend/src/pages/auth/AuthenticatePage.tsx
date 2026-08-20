@@ -260,7 +260,6 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
             </PasswordToggleField.Root>
 
             <ValueRequirementsList
-              value={password}
               rules={[
                 {
                   label: "At least 8 characters",

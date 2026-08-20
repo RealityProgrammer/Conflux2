@@ -58,10 +58,10 @@ export const communityServerService = {
     }
   },
 
-  createChannelCategory: async (idempotencyKey: string, serverId: string, name: string): Promise<ServiceResponse> => {
+  createChannelCategory: async (idempotencyKey: string, serverId: string, name: string): Promise<ServiceResponse<string>> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
+      const response: AxiosResponse<BackendResponse<string>> =
+        await apiClient.post<BackendResponse<string>>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
           name,
         }, {
           headers: {
@@ -73,17 +73,24 @@ export const communityServerService = {
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
+      const axiosError = error as AxiosError<BackendResponse<string>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  createChannel: async (idempotencyKey: string, serverId: string, name: string, type: "text" | "voice", categoryId: string | null): Promise<ServiceResponse> => {
+  createChannel: async (
+    idempotencyKey: string,
+    serverId: string,
+    name: string,
+    type: "text" | "voice",
+    categoryId: string | null
+  ): Promise<ServiceResponse<string>> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/channels`, {
+      const response: AxiosResponse<BackendResponse<string>> =
+        await apiClient.post<BackendResponse<string>>(`/communities/${encodeURIComponent(serverId)}/channels`, {
           name,
           type,
           categoryId
@@ -97,9 +104,10 @@ export const communityServerService = {
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
+      const axiosError = error as AxiosError<BackendResponse<string>>;
       return handleAxiosError(axiosError);
     }
   },

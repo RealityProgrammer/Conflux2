@@ -47,8 +47,63 @@ export default function ServerLayout() {
       );
 
     default:
+      const appendChannelCategory = (id: string, name: string) => {
+        setServerSummary((prev) => {
+          if (prev === "loading" || prev === "error") return prev;
+
+          return {
+            ...prev,
+            channelCategories: [
+              ...prev.channelCategories,
+              {
+                id,
+                name,
+                channels: [],
+              },
+            ],
+          };
+        });
+      };
+
+      const appendChannel = (
+        id: string,
+        name: string,
+        type: "text" | "voice",
+        categoryId: string | null
+      ) => {
+        setServerSummary((prev) => {
+          if (prev === "loading" || prev === "error") return prev;
+
+          return {
+            ...prev,
+            channelCategories: prev.channelCategories.map((category) => {
+              if (category.id === categoryId) {
+                return {
+                  ...category,
+                  channels: [
+                    ...category.channels,
+                    {
+                      id,
+                      name,
+                      channelType: type === "text" ? "CommunityServerText" : "CommunityServerVoice",
+                    },
+                  ],
+                };
+              }
+
+              return category;
+            }),
+          };
+        });
+      };
+
       return (
-        <CommunityServerContextProvider serverId={serverId!} serverSummary={serverSummary}>
+        <CommunityServerContextProvider
+          serverId={serverId!}
+          serverSummary={serverSummary}
+          appendChannelCategory={appendChannelCategory}
+          appendChannel={appendChannel}
+        >
           <Outlet/>
         </CommunityServerContextProvider>
       );

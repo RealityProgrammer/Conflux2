@@ -62,7 +62,7 @@ export const userService = {
 
       return {
         success: true,
-        statusCode: !!data.userById ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
+        statusCode: data.userById ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
         data: (data.userById as unknown) as UserIdentityProfileDto,
       }
     } catch (error) {
@@ -77,7 +77,7 @@ export const userService = {
 
       return {
         success: true,
-        statusCode: !!data.userById ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
+        statusCode: data.userById ? HttpStatusCode.Ok : HttpStatusCode.NotFound,
         data: {
           ...data.userById,
           createdAt: new Date(data.userById?.createdAt ?? "")

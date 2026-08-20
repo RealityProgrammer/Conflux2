@@ -1,5 +1,5 @@
 import {Avatar} from "radix-ui";
-import {BsPeople, BsPerson} from "react-icons/bs";
+import {BsPeople} from "react-icons/bs";
 import type {HTMLAttributes} from "react";
 import {communityServerService} from "../api/communityServerService.ts";
 

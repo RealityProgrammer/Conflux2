@@ -5,7 +5,6 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
-using Microsoft.Extensions.Caching.Distributed;
 using Npgsql;
 using System.Data.Common;
 
@@ -120,7 +119,7 @@ internal sealed class CommunityServerService(
         return result;
     }
 
-    public async Task<Result> CreateChannelCategory(
+    public async Task<Result<Guid>> CreateChannelCategory(
         Guid userId, 
         Guid serverId, 
         string name, 
@@ -136,7 +135,7 @@ internal sealed class CommunityServerService(
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success();
+            return Result<Guid>.Success(category.Id);
         } catch (DbException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
             return Errors.ResourceNotFound("Community server");
         } catch (OperationCanceledException) {
@@ -146,7 +145,7 @@ internal sealed class CommunityServerService(
         }
     }
 
-    public async Task<Result> CreateChannel(
+    public async Task<Result<Guid>> CreateChannel(
         Guid userId, 
         Guid serverId, 
         string name, 
@@ -165,25 +164,21 @@ internal sealed class CommunityServerService(
                 });
             }
         }
-        
-        // Channel category = new() {
-        //     Name = name,
-        //     CommunityServerId = serverId,
-        // };
-        //
-        // channelCategoryRepository.Add(category);
-        //
-        // try {
-        //     await unitOfWork.SaveChangesAsync(cancellationToken);
-        //
-        //     return Result.Success();
-        // } catch (DbException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
-        //     return Errors.ResourceNotFound("Community server");
-        // } catch (OperationCanceledException) {
-        //     throw;
-        // } catch {
-        //     return Errors.UnexpectedError();
-        // }
+
+        switch (type) {
+            case ChannelType.CommunityServerText:
+                return await channelService.CreateServerTextChannel(serverId, name, categoryId);
+            
+            case ChannelType.CommunityServerVoice:
+                return await channelService.CreateServerVoiceChannel(serverId, name, categoryId);
+            
+            default:
+                return Errors.ValidationErrorsOccurred(new() {
+                    [nameof(type)] = [
+                        "Channel type is not a community server channel type.",
+                    ],
+                });
+        }
     }
 
     public string GetAvatarUrl(Guid serverId) {

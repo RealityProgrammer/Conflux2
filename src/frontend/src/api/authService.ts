@@ -24,7 +24,7 @@ export const authService = {
         await apiClient.post("/auth/login", request);
 
       localStorage.setItem("hasSession", "true");
-      cachedAuthorization = response.data.data?.authorization!;
+      cachedAuthorization = response.data.data!.authorization;
 
       await csrfService.requestCsrfToken();
 
@@ -87,7 +87,7 @@ export const authService = {
         {headers}
       ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {
         localStorage.setItem("hasSession", "true");
-        cachedAuthorization = response.data.data?.authorization!;
+        cachedAuthorization = response.data.data!.authorization;
 
         await csrfService.requestCsrfToken();
 

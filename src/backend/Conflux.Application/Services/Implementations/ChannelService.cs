@@ -57,6 +57,33 @@ internal sealed class ChannelService(
         }
     }
 
+    public async Task<Result<Guid>> CreateServerTextChannel(Guid serverId, string name, Guid? categoryId) {
+        return await CreateServerChannel(serverId, name, ChannelType.CommunityServerText, categoryId);
+    }
+
+    public async Task<Result<Guid>> CreateServerVoiceChannel(Guid serverId, string name, Guid? categoryId) {
+        return await CreateServerChannel(serverId, name, ChannelType.CommunityServerVoice, categoryId);
+    }
+
+    private async Task<Result<Guid>> CreateServerChannel(Guid serverId, string name, ChannelType type, Guid? categoryId) {
+        DateTimeOffset utcNow = timeProvider.GetUtcNow();
+
+        Channel channel = new() {
+            Type = type,
+            Conversation = new(),
+            CreatedAt = utcNow,
+            CommunityServerId = serverId,
+            ChannelCategoryId = categoryId,
+            Name = name,
+        };
+        
+        channelRepository.Add(channel);
+
+        await unitOfWork.SaveChangesAsync();
+        
+        return Result<Guid>.Success(channel.Id);
+    }
+
     public async Task<PaginatedResult<DmConversationListItemDto>> GetUserConversations(
         Guid userId, 
         int offset, 

@@ -8,11 +8,10 @@ export type PasswordRule = {
 }
 
 export interface PasswordConditionsProps extends HTMLAttributes<HTMLDivElement> {
-  value: string;
   rules: PasswordRule[];
 }
 
-export default function ValueRequirementsList({value, rules, className, ...props}: PasswordConditionsProps) {
+export default function ValueRequirementsList({rules, className, ...props}: PasswordConditionsProps) {
   return (
     <section className={`text-sm ${className || ''}`} {...props}>
       {rules.map((rule) => (

@@ -144,6 +144,7 @@ export type DmConversationListItemDto = {
 export type ChannelSummaryDto = {
   id: string;
   name: string;
+  channelType: "CommunityServerText" | "CommunityServerVoice";
 }
 
 export type ChannelCategorySummaryDto = {

@@ -49,8 +49,8 @@ internal sealed class CommunityServerRepository(
 
         var channels = await dbContext.Channels
             .AsNoTracking()
-            .Where(c => c.Type == ChannelType.CommunityServerText && c.CommunityServerId == serverId)
-            .Select(c => new { c.Id, c.Name, c.ChannelCategoryId })
+            .Where(c => (c.Type == ChannelType.CommunityServerText || c.Type == ChannelType.CommunityServerVoice) && c.CommunityServerId == serverId)
+            .Select(c => new { c.Id, c.Name, c.ChannelCategoryId, c.Type })
             .ToListAsync(cancellationToken);
 
         var channelsByCategoryId = channels.ToLookup(c => c.ChannelCategoryId);
@@ -58,7 +58,7 @@ internal sealed class CommunityServerRepository(
         var result = new List<ChannelCategorySummaryDto>();
         
         var uncategorizedChannels = channelsByCategoryId[null]
-            .Select(c => new ChannelSummaryDto(c.Id, c.Name!))
+            .Select(c => new CommunityServerChannelSummaryDto(c.Id, c.Name!, c.Type))
             .ToList();
 
         if (uncategorizedChannels.Count > 0) {
@@ -69,7 +69,7 @@ internal sealed class CommunityServerRepository(
             .Select(c => new ChannelCategorySummaryDto(
                 c.Id, 
                 c.Name,
-                [..channelsByCategoryId[c.Id].Select(ch => new ChannelSummaryDto(ch.Id, ch.Name!))]
+                [..channelsByCategoryId[c.Id].Select(ch => new CommunityServerChannelSummaryDto(ch.Id, ch.Name!, ch.Type))]
             ));
         
         result.AddRange(mappedCategories);

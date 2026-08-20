@@ -61,7 +61,7 @@ public sealed class CommunityServerController(
 
     [HttpPost("{serverId:guid}/channel-categories")]
     [Idempotent(15)]
-    public async Task<ActionResult<ApiResponse>> CreateChannelCategory(
+    public async Task<ActionResult<ApiResponse<Guid>>> CreateChannelCategory(
         Guid serverId, 
         [FromBody] ChannelCategoryCreateRequest request
     ) {
@@ -74,16 +74,18 @@ public sealed class CommunityServerController(
         var result = await communityServerService.CreateChannelCategory(userId, serverId, request.Name);
 
         if (result.IsSuccess) {
-            return Created();
+            return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
         }
-
-        // TODO: Report error codes like lacking permissionsssssss
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
+        
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
 
     [HttpPost("{serverId:guid}/channels")]
     [Idempotent(15)]
-    public async Task<ActionResult<ApiResponse>> CreateChannels(
+    public async Task<ActionResult<ApiResponse<Guid>>> CreateChannels(
         Guid serverId,
         [FromBody] ChannelCreateRequest request
     ) {
@@ -102,7 +104,7 @@ public sealed class CommunityServerController(
         var result = await communityServerService.CreateChannel(userId, serverId, request.Name, type, request.CategoryId);
 
         if (result.IsSuccess) {
-            return Created();
+            return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
