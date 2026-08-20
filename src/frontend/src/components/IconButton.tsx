@@ -26,15 +26,15 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
 }
 
 export default function IconButton({
-                                     children,
-                                     isLoading,
-                                     setIsLoadingChanged,
-                                     onClick,
-                                     disabled,
-                                     theme = IconButtonTheme.Default,
-                                     className = '',
-                                     ...props
-                                   }: IconButtonProps) {
+  children,
+  isLoading,
+  setIsLoadingChanged,
+  onClick,
+  disabled,
+  theme = IconButtonTheme.Default,
+  className = '',
+  ...props
+}: IconButtonProps) {
   const [isLoadingInternal, setIsLoadingInternal] = useState(false);
   const isCurrentlyLoading = isLoading ?? isLoadingInternal;
 

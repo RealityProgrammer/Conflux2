@@ -1,8 +1,8 @@
 import {Outlet, useLoaderData} from "react-router";
-import {useEffect, useState} from "react";
+import {type Dispatch, type SetStateAction, useEffect, useReducer, useState} from "react";
 import {communityServerService} from "../api/communityServerService.ts";
 import Spinner from "../components/Spinner.tsx";
-import type {CommunityServerSummaryDto} from "../api/responses.ts";
+import type {ChannelCategorySummaryDto, CommunityServerSummaryDto} from "../api/responses.ts";
 import CommunityServerContextProvider from "../contexts/CommunityServerContext.tsx";
 
 type SummaryStatus = "loading" | "error" | CommunityServerSummaryDto;
@@ -47,65 +47,78 @@ export default function ServerLayout() {
       );
 
     default:
-      const appendChannelCategory = (id: string, name: string) => {
-        setServerSummary((prev) => {
-          if (prev === "loading" || prev === "error") return prev;
-
-          return {
-            ...prev,
-            channelCategories: [
-              ...prev.channelCategories,
-              {
-                id,
-                name,
-                channels: [],
-              },
-            ],
-          };
-        });
-      };
-
-      const appendChannel = (
-        id: string,
-        name: string,
-        type: "text" | "voice",
-        categoryId: string | null
-      ) => {
-        setServerSummary((prev) => {
-          if (prev === "loading" || prev === "error") return prev;
-
-          return {
-            ...prev,
-            channelCategories: prev.channelCategories.map((category) => {
-              if (category.id === categoryId) {
-                return {
-                  ...category,
-                  channels: [
-                    ...category.channels,
-                    {
-                      id,
-                      name,
-                      channelType: type === "text" ? "CommunityServerText" : "CommunityServerVoice",
-                    },
-                  ],
-                };
-              }
-
-              return category;
-            }),
-          };
-        });
-      };
-
       return (
-        <CommunityServerContextProvider
+        <SuccessfullyLoadedLayout
           serverId={serverId!}
           serverSummary={serverSummary}
-          appendChannelCategory={appendChannelCategory}
-          appendChannel={appendChannel}
-        >
-          <Outlet/>
-        </CommunityServerContextProvider>
+          setServerSummary={setServerSummary}/>
       );
   }
+}
+
+function SuccessfullyLoadedLayout({
+  serverId,
+  serverSummary,
+  setServerSummary,
+}: {serverId: string, serverSummary: CommunityServerSummaryDto, setServerSummary: Dispatch<SetStateAction<SummaryStatus>>}) {
+  const appendChannelCategory = (id: string, name: string) => {
+    setServerSummary((prev) => {
+      if (prev === "loading" || prev === "error") return prev;
+
+      return {
+        ...prev,
+        channelCategories: [
+          ...prev.channelCategories,
+          {
+            id,
+            name,
+            channels: [],
+          },
+        ],
+      };
+    });
+  };
+
+  const appendChannel = (
+    id: string,
+    name: string,
+    type: "text" | "voice",
+    categoryId: string | null
+  ) => {
+    setServerSummary((prev) => {
+      if (prev === "loading" || prev === "error") return prev;
+
+      return {
+        ...prev,
+        channelCategories: prev.channelCategories.map((category) => {
+          if (category.id === categoryId) {
+            return {
+              ...category,
+              channels: [
+                ...category.channels,
+                {
+                  id,
+                  name,
+                  channelType: type === "text" ? "CommunityServerText" : "CommunityServerVoice",
+                },
+              ],
+            };
+          }
+
+          return category;
+        }),
+      };
+    });
+  };
+
+  return (
+    <CommunityServerContextProvider
+      serverId={serverId}
+      serverSummary={serverSummary}
+      appendChannelCategory={appendChannelCategory}
+      appendChannel={appendChannel}
+    >
+      <Outlet/>
+    </CommunityServerContextProvider>
+  );
 }

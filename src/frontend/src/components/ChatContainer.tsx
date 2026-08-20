@@ -396,7 +396,7 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
             const [body, attachmentCount] = getOperationBodyDisplayInfo(message.operation);
 
             return (
-              <DropdownMenu.Root key={message.operationId}>
+              <DropdownMenu.Root key={message.operationId} modal={false}>
                 <DropdownMenu.Trigger asChild>
                   <div
                     className={`h-full aspect-square ${isError ? 'bg-[#B93A58]' : 'bg-gray-750'} rounded-md flex justify-center items-center cursor-pointer`}>
