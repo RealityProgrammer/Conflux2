@@ -6,7 +6,6 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Exceptions;
 using Conflux.Domain.Repositories;
-using Mediator;
 
 namespace Conflux.Application.Services.Implementations;
 

@@ -1,6 +1,7 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Domain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,16 +9,6 @@ using Microsoft.Extensions.Options;
 using System.Net;
 
 namespace Conflux.Application.Services.Implementations;
-
-public class StorageServiceOptions {
-    public string AccessKey { get; set; } = null!;
-    public string SecretKey { get; set; } = null!;
-    public string Region { get; set; } = null!;
-    public string ServiceUrl { get; set; } = null!;
-    public string PreSignUrl { get; set; } = null!;
-    public string BucketName { get; set; } = null!;
-    public bool UseHttps { get; set; }
-}
 
 internal sealed class StorageService(
     IAmazonS3 s3Client,

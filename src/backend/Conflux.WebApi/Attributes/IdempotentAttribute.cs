@@ -18,11 +18,16 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(cacheTimeInMinutes);
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next) {
+        // ignore idempotency if request is from swagger
+        if (context.HttpContext.Request.Headers.Referer.ToString().Contains("/swagger", StringComparison.OrdinalIgnoreCase)) {
+            await next();
+        }
+        
         if (!context.HttpContext.Request.Headers.TryGetValue("Idempotency-Key", out StringValues idempotenceKeyValue)) {
             context.Result = new BadRequestObjectResult(new ApiResponse(Errors.NoIdempotencyKeyHeader()));
             return;
         }
-
+        
         IDistributedCache cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
         IDistributedLockFactory lockFactory = context.HttpContext.RequestServices.GetRequiredService<IDistributedLockFactory>();
 
@@ -55,7 +60,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
             ReturnCachedResult(context, cached);
             return;
         }
-
+        
         ActionExecutedContext executedContext = await next();
 
         if (executedContext.Result is ObjectResult {

@@ -10,7 +10,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
+using Conflux.Application.Commands;
 using Conflux.Application.FileFormats;
+using Conflux.Application.Notifications;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain.Entities;
@@ -31,6 +34,7 @@ using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using ScottBrady91.AspNetCore.Identity;
 using StackExchange.Redis;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -154,7 +158,12 @@ builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
 ));
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddMediator();
+builder.Services.AddMediator(options => {
+    options.Assemblies = [
+        typeof(CreateCommunityServerCommand),
+    ];
+    options.ServiceLifetime = ServiceLifetime.Scoped;
+});
 
 builder.Services.AddSingleton<ActiveChannelTracker>();
 builder.Services.AddSignalR();
@@ -187,7 +196,6 @@ builder.Services
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
     
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
-    .AddScoped<ICommunityServerService, CommunityServerService>()
     .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
     
     .AddScoped<ICommunityServerMemberRepository, CommunityServerMemberRepository>()

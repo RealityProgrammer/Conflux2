@@ -8,14 +8,8 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
-using Mediator;
-using System.Diagnostics;
 
 namespace Conflux.Application.Services.Implementations;
-
-public class MessagingServiceOptions {
-    public long MaxAttachmentSizeBytes { get; set; } = 10485760;
-}
 
 internal sealed class MessageService(
     IUnitOfWork unitOfWork,

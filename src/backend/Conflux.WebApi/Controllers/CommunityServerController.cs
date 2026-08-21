@@ -1,10 +1,12 @@
+using Conflux.Application.Commands;
+using Conflux.Application.Enums;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -17,7 +19,8 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/communities")]
 [Authorize]
 public sealed class CommunityServerController(
-    ICommunityServerService communityServerService
+    IMediator mediator,
+    IStorageService storageService
 ) : ControllerBase {
     [HttpPost]
     [Idempotent(360)]
@@ -29,7 +32,7 @@ public sealed class CommunityServerController(
         }
 
         await using var stream = request.Avatar?.OpenReadStream();
-        var result = await communityServerService.Create(userId, request.Name, stream);
+        var result = await mediator.Send(new CreateCommunityServerCommand(userId, request.Name, stream));
 
         if (result.IsSuccess) {
             return Created();
@@ -41,13 +44,12 @@ public sealed class CommunityServerController(
     [HttpGet("{serverId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
     public RedirectResult GetAvatarUrl(Guid serverId) {
-        var result = communityServerService.GetAvatarUrl(serverId);
-        return Redirect(result);
+        return Redirect(storageService.GetCommunityServerAvatarPreSignedUrl(serverId));
     }
 
     [HttpGet("{serverId:guid}/summary")]
     public async Task<ActionResult<ApiResponse<CommunityServerSummaryDto>>> GetSummary(Guid serverId) {
-        var result = await communityServerService.GetSummary(serverId);
+        var result = await mediator.Send(new GetCommunityServerSummaryCommand(serverId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<CommunityServerSummaryDto>(result.Value!, Error.None));
@@ -71,7 +73,7 @@ public sealed class CommunityServerController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await communityServerService.CreateChannelCategory(userId, serverId, request.Name);
+        var result = await mediator.Send(new CreateServerChannelCategoryCommand(userId, serverId, request.Name));
 
         if (result.IsSuccess) {
             return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
@@ -95,14 +97,14 @@ public sealed class CommunityServerController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        ChannelType type = request.Type switch {
-            ChannelCreateType.Text => ChannelType.CommunityServerText,
-            ChannelCreateType.Voice => ChannelType.CommunityServerVoice,
-            _ => throw new UnreachableException(),
-        };
-
-        var result = await communityServerService.CreateChannel(userId, serverId, request.Name, type, request.CategoryId);
-
+        var result = await mediator.Send(new CreateServerChannelCommand(
+            userId, 
+            serverId, 
+            request.Name, 
+            request.Type, 
+            request.CategoryId
+        ));
+        
         if (result.IsSuccess) {
             return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
         }
@@ -121,7 +123,7 @@ public sealed class CommunityServerController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await communityServerService.DeleteChannelCategory(userId, serverId, categoryId);
+        var result = await mediator.Send(new DeleteServerChannelCategoryCommand(userId, serverId, categoryId));
         
         if (result.IsSuccess) {
             return NoContent();
@@ -141,7 +143,7 @@ public sealed class CommunityServerController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await communityServerService.DeleteChannel(userId, serverId, channelId);
+        var result = await mediator.Send(new DeleteServerChannelCommand(userId, serverId, channelId));
         
         if (result.IsSuccess) {
             return NoContent();
@@ -184,14 +186,9 @@ public sealed class CommunityServerController(
         [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
     );
 
-    public enum ChannelCreateType {
-        Text,
-        Voice,
-    }
-
     public sealed record ChannelCreateRequest(
         [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name,
-        ChannelCreateType Type,
+        CommunityServerChannelType Type,
         Guid? CategoryId
     );
 }

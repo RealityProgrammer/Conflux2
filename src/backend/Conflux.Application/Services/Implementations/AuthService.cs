@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
@@ -14,11 +15,6 @@ using System.Web;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace Conflux.Application.Services.Implementations;
-
-public class AuthServiceOptions {
-    public int AccessTokenDuration { get; set; } = TimeSpan.FromMinutes(30).Seconds;
-    public int RefreshTokenDuration { get; set; } = TimeSpan.FromDays(7).Seconds;
-}
 
 internal sealed class AuthService(
     UserManager<ApplicationUser> userManager,

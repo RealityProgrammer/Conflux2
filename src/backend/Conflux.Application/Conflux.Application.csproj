@@ -24,6 +24,7 @@
     <ItemGroup>
         <Using Include="System.Text"/>
         <Using Include="Microsoft.Extensions.Logging"/>
+        <Using Include="Mediator"/>
     </ItemGroup>
 
 </Project>

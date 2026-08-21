@@ -7,10 +7,6 @@ using FileSignatures.Formats;
 
 namespace Conflux.Application.Services.Implementations;
 
-public class UserServiceOptions {
-    public long MaxAvatarSizeBytes { get; set; } = 1048576;
-}
-
 internal sealed class UserService(
     IUserRepository userRepository,
     IStorageService storageService,
