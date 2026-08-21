@@ -14,7 +14,6 @@ namespace Conflux.Application.Handlers;
 
 public sealed class SendMessageHandler(
     IChannelRepository channelRepository,
-    IChannelService channelService,
     IMessageRepository messageRepository,
     IChannelAuthorizationService channelAuthorizationService,
     IConversationRepository conversationRepository,
@@ -106,7 +105,7 @@ public sealed class SendMessageHandler(
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar
         if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
             var dmSummary = 
-                (await channelService.GetDmChannelSummary(senderUserId, channelId)).Value!;
+                (await channelRepository.GetDirectMessageChannelSummary(senderUserId, channelId)).Value!;
             
             await mediator.Publish(new UpdateDmConversationListNotification(
                 senderUserId,

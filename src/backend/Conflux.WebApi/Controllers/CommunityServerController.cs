@@ -50,7 +50,7 @@ public sealed class CommunityServerController(
 
     [HttpGet("{serverId:guid}/summary")]
     public async Task<ActionResult<ApiResponse<CommunityServerSummaryDto>>> GetSummary(Guid serverId) {
-        var result = await mediator.Send(new GetCommunityServerSummaryCommand(serverId));
+        var result = await mediator.Send(new CommunityServerSummaryQuery(serverId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<CommunityServerSummaryDto>(result.Value!, Error.None));

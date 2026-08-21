@@ -1,7 +1,10 @@
+using Conflux.Application.Commands;
+using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -13,7 +16,7 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/channels")]
 [Authorize]
 public sealed class ChannelController(
-    IChannelService channelService
+    IMediator mediator
 ) : ControllerBase {
     [HttpGet("dm/{channelId:guid}/summary")]
     public async Task<ActionResult<ApiResponse<DmChannelSummary>>> GetDirectMessageChannelSummary(
@@ -25,8 +28,7 @@ public sealed class ChannelController(
             return BadRequest(new ApiResponse<DmChannelSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        var result =
-            await channelService.GetDmChannelSummary(currentUserId, channelId);
+        var result = await mediator.Send(new DmChannelSummaryQuery(currentUserId, channelId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<DmChannelSummary>(result.Value, Error.None));
@@ -51,7 +53,7 @@ public sealed class ChannelController(
         }
 
         var result = 
-            await channelService.GetOrCreateDmChannel(currentUserId, toUserId);
+            await mediator.Send(new CreateDmChannelCommand(currentUserId, toUserId));
 
         if (result.IsSuccess) {
             DirectMessageResolutionResponse response = new(result.Value.ChannelId);

@@ -6,10 +6,10 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Handlers;
 
-public sealed class GetCommunityServerSummaryHandler(
+public sealed class CommunityServerSummaryQueryHandler(
     ICommunityServerRepository repository
-) : IQueryHandler<GetCommunityServerSummaryCommand, Result<CommunityServerSummaryDto>> {
-    public async ValueTask<Result<CommunityServerSummaryDto>> Handle(GetCommunityServerSummaryCommand request, CancellationToken cancellationToken) {
+) : IQueryHandler<CommunityServerSummaryQuery, Result<CommunityServerSummaryDto>> {
+    public async ValueTask<Result<CommunityServerSummaryDto>> Handle(CommunityServerSummaryQuery request, CancellationToken cancellationToken) {
         Result<CommunityServerProfileDto> profileResult =
             await repository.GetProfile(request.ServerId, cancellationToken);
 

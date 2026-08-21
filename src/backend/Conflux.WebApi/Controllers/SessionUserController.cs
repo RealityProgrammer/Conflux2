@@ -1,6 +1,7 @@
 using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
+using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -17,7 +18,6 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/users/me")]
 [Authorize]
 public sealed class SessionUserController(
-    IChannelService channelService,
     IFriendService friendService,
     IMediator mediator
 ) : ControllerBase {
@@ -116,8 +116,9 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
 
-        PaginatedResult<DmConversationListItemDto> result =
-            await channelService.GetUserConversations(userId, offset, count);
+        PaginatedResult<DmConversationListItemDto> result = await mediator.Send(
+            new UserDmConversationsQuery(userId, offset, count)
+        );
 
         return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
     }

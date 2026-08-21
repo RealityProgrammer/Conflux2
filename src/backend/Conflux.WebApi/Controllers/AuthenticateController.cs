@@ -144,7 +144,7 @@ public sealed class AuthenticateController(
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
-        var info = await mediator.Send(new GetUserAuthorizationInfoQuery(idClaim));
+        var info = await mediator.Send(new UserAuthorizationInfoQuery(idClaim));
 
         if (!info.IsSuccess) {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));

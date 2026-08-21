@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Conflux.Application.Handlers;
 
-public sealed class GetUserAuthorizationInfoHandler(
+public sealed class UserAuthorizationInfoQueryHandler(
     UserManager<ApplicationUser> userManager,
     IAuthRepository authRepository
-) : IQueryHandler<GetUserAuthorizationInfoQuery, Result<UserAuthorizationInfo>> {
-    public async ValueTask<Result<UserAuthorizationInfo>> Handle(GetUserAuthorizationInfoQuery query, CancellationToken cancellationToken) {
+) : IQueryHandler<UserAuthorizationInfoQuery, Result<UserAuthorizationInfo>> {
+    public async ValueTask<Result<UserAuthorizationInfo>> Handle(UserAuthorizationInfoQuery query, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(query.UserId);
 
         if (user == null) {

@@ -12,17 +12,10 @@ using FileSignatures.Formats;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class MessageService(
-    IUnitOfWork unitOfWork,
     IMessageRepository messageRepository,
     IUserRepository userRepository,
     IChannelRepository channelRepository,
-    IBlobStorage blobStorage,
-    IChannelAuthorizationService channelAuthorizationService,
-    IConversationRepository conversationRepository,
-    IChannelService channelService,
-    IFileFormatInspector fileFormatInspector,
-    TimeProvider timeProvider,
-    IMediator mediator
+    IChannelAuthorizationService channelAuthorizationService
 ) : IMessageService {
     public async Task<Result<GetMessagesResponse>> GetTimelineMessages(
         Guid requesterUserId,

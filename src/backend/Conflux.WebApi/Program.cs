@@ -187,7 +187,6 @@ builder.Services
 
     .AddScoped<IChannelRepository, ChannelRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
-    .AddScoped<IChannelService, ChannelService>()
 
     .AddScoped<IMessageRepository, MessageRepository>()
     .AddScoped<IMessageService, MessageService>()
