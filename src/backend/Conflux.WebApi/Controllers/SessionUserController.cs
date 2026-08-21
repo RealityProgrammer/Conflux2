@@ -1,10 +1,11 @@
+using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Humanizer;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -16,9 +17,9 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/users/me")]
 [Authorize]
 public sealed class SessionUserController(
-    IUserService userService,
     IChannelService channelService,
-    IFriendService friendService
+    IFriendService friendService,
+    IMediator mediator
 ) : ControllerBase {
     [HttpPost("avatar")]
     public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
@@ -33,7 +34,7 @@ public sealed class SessionUserController(
         await using var fileStream = file.OpenReadStream();
         
         fileStream.Position = 0;
-        var result = await userService.UploadAvatar(userId, fileStream);
+        var result = await mediator.Send(new UploadUserAvatarCommand(userId, fileStream));
         
         if (result.IsSuccess) {
             return Ok();
@@ -57,7 +58,7 @@ public sealed class SessionUserController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await userService.DeleteAvatar(userId);
+        var result = await mediator.Send(new DeleteUserAvatarCommand(userId));
         
         if (result.IsSuccess) {
             return NoContent();
@@ -84,7 +85,7 @@ public sealed class SessionUserController(
 
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
         
-        Result result = await userService.SetupProfile(new(
+        Result result = await mediator.Send(new SetupUserProfileCommand(
             userId,
             request.UserName,
             request.DisplayName,
