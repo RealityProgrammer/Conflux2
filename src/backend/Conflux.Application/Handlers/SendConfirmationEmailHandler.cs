@@ -1,15 +1,16 @@
+using Conflux.Application.Commands;
 using Conflux.Domain;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Handlers;
 
-internal sealed class MailingService(
+public sealed class SendConfirmationEmailHandler(
     IConfiguration config
-) : IMailingService {
-    public async Task<Result> SendEmailConfirmation(string receiverEmail, string verifyUrl) {
+) : IRequestHandler<SendConfirmationEmailCommand, Result> {
+    public async ValueTask<Result> Handle(SendConfirmationEmailCommand request, CancellationToken cancellationToken) {
         if (config["Mail:SenderName"] is not { } senderName) {
             return Errors.MissingConfiguration("Mail:SenderName");
         }
@@ -38,7 +39,7 @@ internal sealed class MailingService(
         
         var email = new MimeMessage();
         email.From.Add(new MailboxAddress(senderName, senderEmail));
-        email.To.Add(MailboxAddress.Parse(receiverEmail));
+        email.To.Add(MailboxAddress.Parse(request.ReceiverEmail));
         email.Subject = "Account Confirmation code for Conflux";
         email.Body = new TextPart(MimeKit.Text.TextFormat.Html) {
             Text = $"""
@@ -54,7 +55,7 @@ internal sealed class MailingService(
                                     <table cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td align="center" style="border-radius: 5px;" bgcolor="#0d6efd">
-                                                <a href="{verifyUrl}" target="_blank" style="padding: 12px 24px; border: 1px solid #0d6efd; border-radius: 5px; font-family: Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: bold; display: inline-block;">
+                                                <a href="{request.VerifyUrl}" target="_blank" style="padding: 12px 24px; border: 1px solid #0d6efd; border-radius: 5px; font-family: Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: bold; display: inline-block;">
                                                     Confirm Email Address
                                                 </a>
                                             </td>
@@ -75,26 +76,26 @@ internal sealed class MailingService(
 
         try {
             try {
-                await smtp.ConnectAsync(server, parsedPort, SecureSocketOptions.StartTls);
+                await smtp.ConnectAsync(server, parsedPort, SecureSocketOptions.StartTls, cancellationToken);
             } catch {
                 return Errors.ConnectionFailure("mailing server");
             }
 
             try {
-                await smtp.AuthenticateAsync(senderEmail, password);
+                await smtp.AuthenticateAsync(senderEmail, password, cancellationToken);
             } catch {
                 return Errors.InvalidCredentials("mailing service");
             }
 
             try {
-                await smtp.SendAsync(email);
+                await smtp.SendAsync(email, cancellationToken);
             } catch {
                 return Errors.OperationFailure("send confirmation email");
             }
             
             return Result.Success();
         } finally {
-            await smtp.DisconnectAsync(true);
+            await smtp.DisconnectAsync(true, cancellationToken);
         }
     }
 }

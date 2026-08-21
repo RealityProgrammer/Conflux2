@@ -1,3 +1,4 @@
+using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
 using Conflux.Domain;
@@ -19,10 +20,10 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class AuthService(
     UserManager<ApplicationUser> userManager,
     IAuthRepository authRepository,
-    IMailingService mailingService,
     TimeProvider timeProvider,
     IConfiguration config,
-    IOptions<AuthServiceOptions> options
+    IOptions<AuthServiceOptions> options,
+    IMediator mediator
 ) : IAuthService {
     private readonly AuthServiceOptions _options = options.Value;
 
@@ -180,7 +181,7 @@ internal sealed class AuthService(
 
         string redirectUrl = builder.Uri.ToString();
 
-        return await mailingService.SendEmailConfirmation(user.Email!, redirectUrl);
+        return await mediator.Send(new SendConfirmationEmailCommand(user.Email!, redirectUrl));
     }
 
     public async Task<Result> ConfirmEmail(string userId, string code) {

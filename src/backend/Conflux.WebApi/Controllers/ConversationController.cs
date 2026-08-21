@@ -1,12 +1,13 @@
+using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -18,7 +19,9 @@ namespace Conflux.WebApi.Controllers;
 [Route("api")]
 [Authorize]
 public sealed class ConversationController(
-    IMessageService messageService
+    IMessageService messageService,
+    IMediator mediator,
+    IStorageService storageService
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
     [Idempotent(60)]
@@ -59,16 +62,14 @@ public sealed class ConversationController(
             attachmentStreams = [];
         }
 
-        // invokes send and cleanup the opened streams
         try {
-            var result = await messageService.SendMessage(
+            var result = await mediator.Send(new SendMessageCommand(
                 userId, 
                 channelId, 
                 request.Body, 
-                attachmentStreams,
-                request.ReplyToId,
-                cancellationToken
-            );
+                attachmentStreams, 
+                request.ReplyToId
+            ), cancellationToken);
 
             if (result.IsSuccess) {
                 return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
@@ -98,7 +99,7 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
         }
 
-        var result = await messageService.EditMessage(messageId, userId, request.Body, cancellationToken);
+        var result = await mediator.Send(new EditMessageCommand(userId, messageId, request.Body), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
@@ -119,8 +120,7 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result =
-            await messageService.DeleteMessage(messageId, userId);
+        Result result = await mediator.Send(new DeleteMessageCommand(userId, messageId));
 
         if (result.IsSuccess) {
             return NoContent();
@@ -166,14 +166,7 @@ public sealed class ConversationController(
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
     public ActionResult GetAvatarUrl(Guid attachmentId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out _)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = messageService.GetAttachmentUrl(attachmentId);
-        return Redirect(result);
+        return Redirect(storageService.GetMessageAttachmentPreSignedUrl(attachmentId));
     }
 
     public record SendMessageRequest(

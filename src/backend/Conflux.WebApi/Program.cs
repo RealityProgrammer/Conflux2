@@ -172,10 +172,10 @@ builder.Services.AddSignalR();
 builder.Services
     .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
     .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
-        
+
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IStorageService, StorageService>()
-        
+
     .AddScoped<IAuthRepository, AuthRepository>()
     .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
@@ -183,26 +183,24 @@ builder.Services
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IUserService, UserService>()
     .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
-    
+
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IFriendService, FriendService>()
-    
+
     .AddScoped<IChannelRepository, ChannelRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IChannelService, ChannelService>()
-    
+
     .AddScoped<IMessageRepository, MessageRepository>()
     .AddScoped<IMessageService, MessageService>()
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
-    
+
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
-    
+
     .AddScoped<ICommunityServerMemberRepository, CommunityServerMemberRepository>()
-    
-    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
-    
-    .AddSingleton<IMailingService, MailingService>();
+
+    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>();
 
 // S3 Service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
