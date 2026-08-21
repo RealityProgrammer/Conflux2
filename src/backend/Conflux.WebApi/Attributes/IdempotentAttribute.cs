@@ -21,6 +21,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
         // ignore idempotency if request is from swagger
         if (context.HttpContext.Request.Headers.Referer.ToString().Contains("/swagger", StringComparison.OrdinalIgnoreCase)) {
             await next();
+            return;
         }
         
         if (!context.HttpContext.Request.Headers.TryGetValue("Idempotency-Key", out StringValues idempotenceKeyValue)) {
