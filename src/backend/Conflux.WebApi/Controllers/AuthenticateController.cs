@@ -200,7 +200,7 @@ public sealed class AuthenticateController(
                 return Ok();
             
             default:
-                logger.LogWarning("Error while sending verification email: {e}", result.Error);
+                logger.LogWarning("Error while confirming email: {e}", result.Error);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
         }
     }

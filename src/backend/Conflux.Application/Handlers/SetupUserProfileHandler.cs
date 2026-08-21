@@ -1,5 +1,6 @@
 using Conflux.Application.Commands;
 using Conflux.Application.Dto;
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Repositories;
 
@@ -7,6 +8,7 @@ namespace Conflux.Application.Handlers;
 
 public sealed class SetupUserProfileHandler(
     IUserRepository userRepository,
+    IBlobStorage blobStorage,
     IMediator mediator
 ) : IRequestHandler<SetupUserProfileCommand, Result> {
     public async ValueTask<Result> Handle(SetupUserProfileCommand request, CancellationToken cancellationToken) {

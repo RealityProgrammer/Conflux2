@@ -1,6 +1,7 @@
 using Conflux.Application.Commands;
 using Conflux.Application.Enums;
 using Conflux.Application.Options;
+using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
