@@ -1,7 +1,10 @@
+using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -13,20 +16,21 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/friend")]
 [Authorize]
 public sealed class FriendController(
-    IFriendService friendService
+    IFriendService friendService,
+    IMediator mediator
 ) : ControllerBase {
     [HttpPost("requests/{toUserId:guid}")]
-    public async Task<ActionResult<ApiResponse<SendFriendRequestResponse>>> SendFriendRequest(Guid toUserId) {
+    public async Task<ActionResult<ApiResponse<UserRelationshipStatus>>> SendFriendRequest(Guid toUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await friendService.SendFriendRequest(userId, toUserId);
+        var result = await mediator.Send(new SendFriendRequestCommand(userId, toUserId));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<SendFriendRequestResponse>(result.Value, Error.None));
+            return Ok(new ApiResponse<UserRelationshipStatus>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
@@ -44,7 +48,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.CancelFriendRequest(userId, toUserId);
+        Result result = await mediator.Send(new CancelFriendRequestCommand(userId, toUserId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -66,7 +70,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.RejectFriendRequest(userId, senderUserId);
+        Result result = await mediator.Send(new RejectFriendRequestCommand(userId, senderUserId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -88,7 +92,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.AcceptFriendRequest(userId, senderUserId);
+        Result result = await mediator.Send(new AcceptFriendRequestCommand(userId, senderUserId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -103,15 +107,15 @@ public sealed class FriendController(
         };
     }
     
-    [HttpPost("unfriend/{userId:guid}")]
-    public async Task<ActionResult<ApiResponse>> Unfriend([FromRoute] Guid userId) {
+    [HttpPost("unfriend/{friendId:guid}")]
+    public async Task<ActionResult<ApiResponse>> Unfriend([FromRoute] Guid friendId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var currentUserId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.Unfriend(currentUserId, userId);
+        Result result = await mediator.Send(new UnfriendCommand(currentUserId, friendId));
 
         if (result.IsSuccess) {
             return Ok();
