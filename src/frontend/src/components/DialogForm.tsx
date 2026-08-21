@@ -5,7 +5,7 @@ export interface DialogFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description?: string;
+  subtitle?: string;
   action: (formData: FormData) => void;
   body: () => ReactNode;
   submitButton: () => ReactNode;
@@ -18,7 +18,7 @@ export default function DialogForm({
   open,
   onOpenChange,
   title,
-  description,
+  subtitle,
   action,
   body,
   submitButton,
@@ -38,8 +38,8 @@ export default function DialogForm({
             <div className="flex-1">
               <Dialog.Title className="font-bold text-xl text-white">{title}</Dialog.Title>
 
-              {description && (
-                <Dialog.Description className="text-sm text-gray-400">Give it a name, a vessel. Give it a life...</Dialog.Description>
+              {subtitle && (
+                <Dialog.Description className="text-sm text-gray-400">{subtitle}</Dialog.Description>
               )}
             </div>
           </header>

@@ -208,7 +208,7 @@ function CreateCommunityServerButton() {
         open={isOpen} onOpenChange={handleOpenChange}
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
-        description="Give it a name, a vessel. Give it a life..."
+        subtitle="Give it a name, a vessel. Give it a life..."
         body={() => {
           const avatarError = apiError?.validationErrors?.["avatar"];
           const nameError = apiError?.validationErrors?.["name"];

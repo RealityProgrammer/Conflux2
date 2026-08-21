@@ -88,6 +88,26 @@ function SuccessfullyLoadedLayout({
     setServerSummary((prev) => {
       if (prev === "loading" || prev === "error") return prev;
 
+      // if there is no category, create a category with null id
+      if (!prev.channelCategories || prev.channelCategories.length === 0) {
+        return {
+          ...prev,
+          channelCategories: [
+            {
+              id: null,
+              name: null,
+              channels: [
+                {
+                  id,
+                  name,
+                  channelType: type === "text" ? "CommunityServerText" : "CommunityServerVoice",
+                }
+              ]
+            }
+          ]
+        };
+      }
+
       return {
         ...prev,
         channelCategories: prev.channelCategories.map((category) => {

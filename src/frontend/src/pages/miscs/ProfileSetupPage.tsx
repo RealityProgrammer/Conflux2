@@ -151,7 +151,7 @@ function NamesPanel({setDisplayingPanel, fieldErrors, clearError}: NamesPanelPro
 
       <div className="flex-1 flex flex-row gap-2">
         <div className="flex-1">
-          <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="username">Name</Label.Root>
+          <Label.Root className="label mb-1 block" htmlFor="username">Name</Label.Root>
 
           <input id="userName" type="text" placeholder="Enter username" name="userName"
                  className="w-full h-11 px-3 input-field"
@@ -169,7 +169,7 @@ function NamesPanel({setDisplayingPanel, fieldErrors, clearError}: NamesPanelPro
         </div>
 
         <div className="flex-1">
-          <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="displayName">Display Name</Label.Root>
+          <Label.Root className="label mb-1 block" htmlFor="displayName">Display Name</Label.Root>
 
           <input id="displayName" type="text" placeholder="Enter display name" name="displayName"
                  className="w-full h-11 px-3 input-field"

@@ -1,13 +1,29 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {type KeyboardEvent, type Ref, useEffect, useReducer, useRef, useState} from "react";
+import {
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import type {ChannelCategorySummaryDto, ChannelSummaryDto, ServiceResponse} from "../../api/responses.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
-import {DropdownMenu} from "radix-ui";
+import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
-import {BsExclamationTriangle, BsGearFill, BsHash, BsTrash, BsVolumeUp} from "react-icons/bs";
+import {
+  BsChatText,
+  BsCheck,
+  BsChevronDown,
+  BsExclamationTriangle, BsFolder,
+  BsGearFill,
+  BsHash,
+  BsPeople,
+  BsTrash,
+  BsVolumeUp
+} from "react-icons/bs";
 import {FaChevronRight, FaFolderPlus, FaHashtag, FaVolumeHigh} from "react-icons/fa6";
 import Spinner from "../Spinner.tsx";
 import AlertActionDialog from "../AlertActionDialog.tsx";
+import DialogForm from "../DialogForm.tsx";
+import {useFormStatus} from "react-dom";
 
 type CreateState = {
   idempotencyKey: string;
@@ -28,7 +44,7 @@ type CreateStatus = CreateState & {
 
 type ChannelAction =
   { type: "create_category", name: string } |
-  { type: "create_channel", name: string } |
+  { type: "create_channel", name: string, channelType: "text" | "voice" } |
   { type: "delete_channel_category", id: string } |
   { type: "delete_channel", id: string };
 
@@ -144,31 +160,6 @@ export default function ServerSidebar() {
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-
-      const name = nameTextInputRef.current?.value.trim();
-
-      if (name && createState) {
-        switch (createState.type) {
-          case "category":
-            handleChannelAction({type: "create_category", name});
-            break;
-
-          case "text":
-          case "voice":
-            handleChannelAction({type: "create_channel", name});
-        }
-      }
-
-      setCreateState(undefined);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setCreateState(undefined);
-    }
-  };
-
   return (
     <aside
       className="flex-none basis-64 h-full bg-gray-725 border-r-2 border-r-gray-600 text-white overflow-y-auto flex flex-col overflow-hidden scrollbar-hide"
@@ -182,10 +173,7 @@ export default function ServerSidebar() {
               <ChannelCategoryView
                 key={c.id}
                 category={c}
-                createState={createState}
                 createStatus={createStatus}
-                inputRef={nameTextInputRef}
-                onCreateKeyDown={handleKeyDown}
                 setCreatingState={setCreateState}
                 handleChannelAction={handleChannelAction}
               />
@@ -197,11 +185,10 @@ export default function ServerSidebar() {
               <ChannelCategoryView
                 key={c.id}
                 category={c}
-                createState={createState}
                 createStatus={createStatus}
-                inputRef={nameTextInputRef}
-                onCreateKeyDown={handleKeyDown}
-                setCreatingState={setCreateState}
+                setCreatingState={(value) => {
+                  setCreateState(value);
+                }}
                 handleChannelAction={handleChannelAction}
               />
             );
@@ -239,6 +226,136 @@ export default function ServerSidebar() {
           </button>
         )}
       />
+
+      <DialogForm
+        open={!!createState}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreateState(undefined);
+          }
+        }}
+        contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
+        headerIcon={(<BsHash className="size-10 fill-white"/>)}
+        title={"Create new Channel or Category"}
+        subtitle={"New territory acquired!"}
+        body={() => {
+          return (
+            <>
+              <div className="w-full mb-2">
+                <Label.Root className="label block mb-1" htmlFor="name">Label</Label.Root>
+
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  className="input-field h-10 w-full"
+                  placeholder={`Enter name`}
+                  maxLength={32}
+                  autoFocus required aria-required
+                />
+              </div>
+
+              <div className="w-full">
+                <Label.Root className="label block mb-1">Type</Label.Root>
+
+                <Select.Root name="type" required defaultValue={ createState ? { category: "category", text: "text_channel", voice: "voice_channel" }[createState?.type] : undefined }>
+                  <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
+                    <Select.Value placeholder="Select type to create..."/>
+                    <Select.Icon className="fill-white flex-none ml-auto">
+                      <BsChevronDown className="size-4"/>
+                    </Select.Icon>
+                  </Select.Trigger>
+
+                  <Select.Portal>
+                    <Select.Content
+                      className="overflow-hidden bg-gray-700 z-100 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                      position="popper"
+                      side="bottom"
+                      sideOffset={4}
+                    >
+                      <Select.Viewport>
+                        {createState?.targetCategoryId == null && (
+                          <Select.Item
+                            className="dropdown-item-default flex flex-row items-center w-full gap-2"
+                            value="category"
+                          >
+                            <BsFolder className="fill-white size-4 flex-none" />
+
+                            <span className="flex-1 text-left truncate min-w-0">
+                              <Select.ItemText>Channel Category</Select.ItemText>
+                            </span>
+
+                            <Select.ItemIndicator className="flex-none flex items-center">
+                              <BsCheck className="fill-white size-4" />
+                            </Select.ItemIndicator>
+                          </Select.Item>
+                        )}
+
+                        <Select.Item
+                          className="dropdown-item-default flex flex-row items-center w-full gap-2"
+                          value="text_channel"
+                        >
+                          <BsChatText className="fill-white size-4 flex-none" />
+
+                          <span className="flex-1 text-left truncate min-w-0">
+                            <Select.ItemText>Text Channel</Select.ItemText>
+                          </span>
+
+                          <Select.ItemIndicator className="flex-none flex items-center">
+                            <BsCheck className="fill-white size-4" />
+                          </Select.ItemIndicator>
+                        </Select.Item>
+
+                        <Select.Item
+                          className="dropdown-item-default flex flex-row items-center w-full gap-2"
+                          value="voice_channel"
+                        >
+                          <BsVolumeUp className="fill-white size-4 flex-none" />
+
+                          <span className="flex-1 text-left truncate min-w-0">
+                            <Select.ItemText>Voice Channel</Select.ItemText>
+                          </span>
+
+                          <Select.ItemIndicator className="flex-none flex items-center">
+                            <BsCheck className="fill-white size-4" />
+                          </Select.ItemIndicator>
+                        </Select.Item>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select.Portal>
+                </Select.Root>
+              </div>
+            </>
+          )
+        }}
+        action={(formData) => {
+          switch (formData.get("type") as string) {
+            case "category":
+              handleChannelAction({ type: "create_category", name: formData.get("name") as string });
+              break;
+
+            case "text_channel":
+              handleChannelAction({ type: "create_channel", name: formData.get("name") as string, channelType: "text" });
+              break;
+
+            case "voice_channel":
+              handleChannelAction({ type: "create_channel", name: formData.get("name") as string, channelType: "voice" });
+              break;
+          }
+
+          setCreateState(undefined);
+        }}
+        submitButton={() => (
+          <button
+            type="submit"
+            className="button-theme-primary px-3 py-2 cursor-pointer rounded-md basis-32"
+          >
+            Create
+          </button>
+        )}
+      >
+
+      </DialogForm>
     </aside>
   );
 }
@@ -311,9 +428,6 @@ function Header({setCreatingState}: {setCreatingState: (state: CreateState) => v
 interface ChannelCategoryViewProps {
   category: ChannelCategorySummaryDto;
   createStatus: CreateStatus[];
-  createState: CreateState | undefined;
-  onCreateKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
-  inputRef: Ref<HTMLInputElement | null>;
   setCreatingState: (value: CreateState) => void;
   handleChannelAction: (action: ChannelAction) => void | Promise<void>;
 }
@@ -321,9 +435,6 @@ interface ChannelCategoryViewProps {
 function ChannelCategoryView({
   category,
   createStatus,
-  createState,
-  inputRef,
-  onCreateKeyDown,
   setCreatingState,
   handleChannelAction,
 }: ChannelCategoryViewProps) {
@@ -406,18 +517,6 @@ function ChannelCategoryView({
             );
           })}
         </>
-      )}
-
-      {createState && createState.targetCategoryId === category.id && (
-        <input
-          ref={inputRef}
-          type="text"
-          className="input-field h-10 w-full mb-1"
-          placeholder={`Enter ${createState.type === "category" ? "category" : "channel"} name`}
-          maxLength={32}
-          onKeyDown={onCreateKeyDown}
-          autoFocus
-        />
       )}
     </>
   );

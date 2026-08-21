@@ -239,6 +239,10 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+
+    .label {
+        @apply text-sm text-gray-300;
+    }
 }
 
 @utility button-cursor {
@@ -250,7 +254,7 @@
 }
 
 @utility dropdown-item-default {
-    @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight text-sm text-white data-disabled:text-white/35 cursor-pointer data-disabled:pointer-events-none;
+    @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight text-sm text-white data-disabled:text-white/35 cursor-pointer data-disabled:pointer-events-none outline-none;
 }
 
 @utility dropdown-item-danger {

@@ -105,7 +105,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
 
         <Form className="mt-5" name="login" method="post" action="/auth?index#login">
           <div>
-            <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="login_email">Email</Label.Root>
+            <Label.Root className="label mb-1 block" htmlFor="login_email">Email</Label.Root>
 
             <input
               type="email"
@@ -119,7 +119,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
           </div>
 
           <div className="mt-4">
-            <Label.Root className="text-sm text-gray-300 mb-2 block" htmlFor="login_password">Password</Label.Root>
+            <Label.Root className="label mb-1 block" htmlFor="login_password">Password</Label.Root>
 
             <PasswordToggleField.Root>
               <div className="flex flex-nowrap w-full">
@@ -215,7 +215,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
 
         <Form className="mt-5" name="register" method="post" action="/auth?index#register">
           <div>
-            <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_email">Email</Label.Root>
+            <Label.Root className="label block mb-1" htmlFor="register_email">Email</Label.Root>
 
             <input type="text"
                    id="register_email"
@@ -233,7 +233,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
           </div>
 
           <div className="mt-4">
-            <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_password">Password</Label.Root>
+            <Label.Root className="label block mb-1" htmlFor="register_password">Password</Label.Root>
 
             <PasswordToggleField.Root>
               <div className="flex flex-nowrap w-full">
@@ -287,7 +287,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
           </div>
 
           <div className="mt-4">
-            <Label.Root className="text-sm text-gray-300 block mb-2" htmlFor="register_confirm_password">Confirm
+            <Label.Root className="label block mb-1" htmlFor="register_confirm_password">Confirm
               Password</Label.Root>
 
             <PasswordToggleField.Root>

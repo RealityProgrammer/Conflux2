@@ -172,6 +172,7 @@ builder.Services.AddSignalR();
 builder.Services
     .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
     .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
+    .AddScoped<IJwtProvider, JwtProvider>()
 
     .AddScoped<IUnitOfWork, UnitOfWork>()
 
