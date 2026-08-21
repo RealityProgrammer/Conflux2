@@ -1,14 +1,22 @@
 using Conflux.Application.Commands;
 using Conflux.Domain;
+using Conflux.Domain.Entities;
+using Conflux.Domain.Repositories;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MimeKit;
+using System.Collections.Specialized;
+using System.Web;
 
 namespace Conflux.Application.Handlers;
 
 public sealed class SendConfirmationEmailHandler(
-    IConfiguration config
+    IConfiguration config,
+    UserManager<ApplicationUser> userManager,
+    IAuthRepository authRepository
 ) : IRequestHandler<SendConfirmationEmailCommand, Result> {
     public async ValueTask<Result> Handle(SendConfirmationEmailCommand request, CancellationToken cancellationToken) {
         if (config["Mail:SenderName"] is not { } senderName) {
@@ -34,12 +42,36 @@ public sealed class SendConfirmationEmailHandler(
         if (config["Mail:Password"] is not { } password) {
             return Errors.MissingConfiguration("Mail:Password");
         }
+
+        string userId = request.UserId.ToString();
+        var user = await userManager.FindByIdAsync(userId);
+
+        if (user == null) {
+            return Errors.NoUserFoundFromId();
+        }
+
+        if (user.EmailConfirmed) {
+            return Errors.UserAlreadyVerified();
+        }
         
-        // TODO: Move the task to background service.
+        // TODO: Time-limiting the confirmation token.
+        string confirmCode = await authRepository.GenerateEmailConfirmationCode(user);
+        string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
+
+        NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);
+        queryArguments.Add("userId", userId);
+        queryArguments.Add("code", encodedCode);
+
+        UriBuilder builder = new UriBuilder(config["Frontend:Origin"] ?? throw new InvalidOperationException("Missing configuration of frontend origin at Frontend:Origin.")) {
+            Path = "auth/confirm-email",
+            Query = queryArguments.ToString(),
+        };
+
+        string redirectUrl = builder.Uri.ToString();
         
         var email = new MimeMessage();
         email.From.Add(new MailboxAddress(senderName, senderEmail));
-        email.To.Add(MailboxAddress.Parse(request.ReceiverEmail));
+        email.To.Add(MailboxAddress.Parse(user.Email!));
         email.Subject = "Account Confirmation code for Conflux";
         email.Body = new TextPart(MimeKit.Text.TextFormat.Html) {
             Text = $"""
@@ -55,7 +87,7 @@ public sealed class SendConfirmationEmailHandler(
                                     <table cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td align="center" style="border-radius: 5px;" bgcolor="#0d6efd">
-                                                <a href="{request.VerifyUrl}" target="_blank" style="padding: 12px 24px; border: 1px solid #0d6efd; border-radius: 5px; font-family: Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: bold; display: inline-block;">
+                                                <a href="{redirectUrl}" target="_blank" style="padding: 12px 24px; border: 1px solid #0d6efd; border-radius: 5px; font-family: Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: bold; display: inline-block;">
                                                     Confirm Email Address
                                                 </a>
                                             </td>

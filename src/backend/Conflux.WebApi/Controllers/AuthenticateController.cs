@@ -1,10 +1,10 @@
+using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
-using Conflux.Application.Services.Implementations;
 using Conflux.Domain;
 using Conflux.WebApi.Attributes;
-using Microsoft.AspNetCore.Antiforgery;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -15,42 +15,19 @@ namespace Conflux.WebApi.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthenticateController : ControllerBase {
-    private readonly IAuthService _authService;
-    private readonly AuthServiceOptions _options;
-    private readonly TimeProvider _timeProvider;
-    private readonly IAntiforgery _antiforgery;
-    private readonly ILogger<AuthenticateController> _logger;
+public sealed class AuthenticateController(
+    IAuthService authService,
+    IMediator mediator,
+    TimeProvider timeProvider,
+    IOptions<AuthServiceOptions> options,
+    ILogger<AuthenticateController> logger
+) : ControllerBase {
+    private readonly AuthServiceOptions _authOptions = options.Value;
     
-    public AuthenticateController(
-        IAuthService authService, 
-        TimeProvider timeProvider,
-        IAntiforgery antiforgery,
-        IOptions<AuthServiceOptions> options,
-        ILogger<AuthenticateController> logger
-    ) {
-        _authService = authService;
-        _timeProvider = timeProvider;
-        _antiforgery = antiforgery;
-        _options = options.Value;
-        _logger = logger;
-    }
-
-    [HttpGet("healthcheck", Name = "Healthcheck")]
-    public ActionResult Healthcheck() {
-        return Ok();
-    }
-
-    [HttpGet("authorized-healthcheck", Name = "AuthorizedHealthcheck")]
-    [Authorize]
-    public ActionResult AuthorizedHealthcheck() {
-        return Ok();
-    }
-
     [HttpPost("login", Name = "Login")]
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest request) {
-        var loginResult = await _authService.Login(request.Email, request.Password);
+        var loginResult = await mediator.Send(new LoginCommand(request.Email, request.Password));
     
         if (!loginResult.IsSuccess) {
             return loginResult.Error.Code switch {
@@ -75,7 +52,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = _timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration),
+            Expires = timeProvider.GetUtcNow().AddSeconds(_authOptions.AccessTokenDuration),
         };
 
         // Attach the cookie to the response
@@ -89,7 +66,7 @@ public sealed class AuthenticateController : ControllerBase {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = _timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration),
+            Expires = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration),
         };
     
         Response.Cookies.Append("X-Refresh-Token", payload, cookieOptions);
@@ -102,7 +79,7 @@ public sealed class AuthenticateController : ControllerBase {
             return BadRequest(new ApiResponse(Errors.MismatchPasswords()));
         }
         
-        var response = await _authService.Register(request.Email, request.Password);
+        var response = await mediator.Send(new RegisterUserCommand(request.Email, request.Password));
     
         if (response.IsSuccess) {
             return Created();
@@ -124,7 +101,7 @@ public sealed class AuthenticateController : ControllerBase {
         string email = decodedPayload[..firstColon];
         string refreshToken = decodedPayload[(firstColon + 1)..];
 
-        var result = await _authService.Refresh(email, refreshToken);
+        var result = await mediator.Send(new RefreshSessionCommand(email, refreshToken));
 
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
@@ -169,7 +146,7 @@ public sealed class AuthenticateController : ControllerBase {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
-        var info = await _authService.GetAuthorizationInfo(idClaim);
+        var info = await authService.GetAuthorizationInfo(idClaim);
 
         if (!info.IsSuccess) {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
@@ -183,11 +160,11 @@ public sealed class AuthenticateController : ControllerBase {
     public async Task<ActionResult<ApiResponse>> SendVerifyEmail() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
-        if (string.IsNullOrEmpty(idClaim)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
             return Unauthorized(new ApiResponse(Errors.InvalidCredentials()));
         }
 
-        var result = await _authService.SendVerificationEmail(idClaim);
+        var result = await mediator.Send(new SendConfirmationEmailCommand(userId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -201,15 +178,15 @@ public sealed class AuthenticateController : ControllerBase {
                 return Ok();
             
             default:
-                _logger.LogError("Error while sending verification email: {e}", result.Error);
+                logger.LogError("Error while sending verification email: {e}", result.Error);
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(Errors.UnexpectedError()));
         }
     }
 
     [HttpPost("confirm-email")]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
-        var result = await _authService.ConfirmEmail(request.UserId, request.ConfirmationCode);
+    public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailCommand command) {
+        var result = await mediator.Send(command);
         
         if (result.IsSuccess) {
             return Ok();
@@ -223,7 +200,7 @@ public sealed class AuthenticateController : ControllerBase {
                 return Ok();
             
             default:
-                _logger.LogWarning("Error while sending verification email: {e}", result.Error);
+                logger.LogWarning("Error while sending verification email: {e}", result.Error);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
         }
     }
@@ -240,13 +217,6 @@ public sealed class AuthenticateController : ControllerBase {
         [Required, EmailAddress] string Email, 
         [Required, DataType(DataType.Password)] string Password,
         [Required, DataType(DataType.Password)] string ConfirmPassword
-    );
-    
-    public sealed record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
-    
-    public sealed record ConfirmEmailRequest(
-        [Required, StringFormat(StringFormat.Guid)] string UserId, 
-        [Required] string ConfirmationCode
     );
     // ReSharper restore NotAccessedPositionalProperty.Global
 }

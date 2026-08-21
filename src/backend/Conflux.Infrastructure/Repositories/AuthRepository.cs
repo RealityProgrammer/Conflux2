@@ -11,37 +11,6 @@ public sealed class AuthRepository(
 ) : IAuthRepository {
     private const string ApplicationJwtLoginProvider = "AppJWT";
     
-    public async Task<Result<ApplicationUser>> Register(string email, string password) {
-        var generatedUserName = $"user-{Guid.NewGuid():N}";
-        
-        ApplicationUser user = new ApplicationUser {
-            Email = email,
-            UserName = generatedUserName,
-            DisplayName = generatedUserName,
-        };
-        var result = await userManager.CreateAsync(user, password);
-        
-        if (!result.Succeeded) {
-            Dictionary<string, string[]> validationErrors = [];
-
-            var emailErrors = result.Errors.Where(r => r.Code.Contains("Email")).ToList();
-
-            if (emailErrors.Count > 0) {
-                validationErrors.Add("email", [..emailErrors.Select(e => e.Description)]);
-            }
-
-            var passwordErrors = result.Errors.Where(r => r.Code.Contains("Password")).ToList();
-
-            if (passwordErrors.Count > 0) {
-                validationErrors.Add("password", [..passwordErrors.Select(e => e.Description)]);
-            }
-            
-            return Errors.ValidationErrorsOccurred(validationErrors);
-        }
-        
-        return Result<ApplicationUser>.Success(user);
-    }
-
     public async Task<ApplicationUser?> GetUserByLoginCredential(string email, string password) {
         var user = await userManager.FindByEmailAsync(email);
 

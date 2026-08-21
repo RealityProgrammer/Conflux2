@@ -3,7 +3,6 @@ using Conflux.Domain.Entities;
 namespace Conflux.Domain.Repositories;
 
 public interface IAuthRepository {
-    Task<Result<ApplicationUser>> Register(string email, string password);
     Task<ApplicationUser?> GetUserByLoginCredential(string email, string password);
     
     Task<string> GenerateEmailConfirmationCode(ApplicationUser user);
