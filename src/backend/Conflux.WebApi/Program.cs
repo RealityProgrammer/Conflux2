@@ -176,7 +176,6 @@ builder.Services
     .AddScoped<IUnitOfWork, UnitOfWork>()
 
     .AddScoped<IAuthRepository, AuthRepository>()
-    .AddScoped<IAuthService, AuthService>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
     .AddScoped<IUserRepository, UserRepository>()
