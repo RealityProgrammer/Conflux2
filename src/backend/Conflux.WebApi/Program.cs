@@ -180,7 +180,6 @@ builder.Services
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
     .AddScoped<IUserRepository, UserRepository>()
-    .AddScoped<IUserService, UserService>()
     .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
 
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
