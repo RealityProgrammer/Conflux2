@@ -1,9 +1,9 @@
 using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
+using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
-using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +16,6 @@ namespace Conflux.WebApi.Controllers;
 [ApiController]
 [Route("api/auth")]
 public sealed class AuthenticateController(
-    IAuthService authService,
     IMediator mediator,
     TimeProvider timeProvider,
     IOptions<AuthServiceOptions> options,
@@ -146,7 +145,7 @@ public sealed class AuthenticateController(
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
-        var info = await authService.GetAuthorizationInfo(idClaim);
+        var info = await mediator.Send(new GetUserAuthorizationInfoQuery(idClaim));
 
         if (!info.IsSuccess) {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
