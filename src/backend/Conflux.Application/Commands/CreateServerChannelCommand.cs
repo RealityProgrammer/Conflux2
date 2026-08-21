@@ -9,4 +9,4 @@ public sealed record CreateServerChannelCommand(
     string Name,
     CommunityServerChannelType Type,
     Guid? ChannelCategoryId
-) : IRequest<Result<Guid>>;
+) : ICommand<Result<Guid>>;

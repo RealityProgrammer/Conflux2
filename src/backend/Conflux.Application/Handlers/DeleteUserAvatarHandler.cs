@@ -8,7 +8,7 @@ namespace Conflux.Application.Handlers;
 public sealed class DeleteUserAvatarHandler(
     IUserRepository userRepository,
     IBlobStorage blobStorage
-) : IRequestHandler<DeleteUserAvatarCommand, Result> {
+) : ICommandHandler<DeleteUserAvatarCommand, Result> {
     public async ValueTask<Result> Handle(DeleteUserAvatarCommand request, CancellationToken cancellationToken) {
         var result = await blobStorage.DeleteUserAvatar(request.UserId, cancellationToken);
 

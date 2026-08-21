@@ -6,4 +6,4 @@ public sealed record CreateServerChannelCategoryCommand(
     Guid CreatorUserId, 
     Guid ServerId, 
     string Name
-) : IRequest<Result<Guid>>;
+) : ICommand<Result<Guid>>;

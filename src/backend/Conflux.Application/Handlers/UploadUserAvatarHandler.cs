@@ -11,7 +11,7 @@ public sealed class UploadUserAvatarHandler(
     IFileFormatInspector fileFormatInspector,
     IBlobStorage blobStorage,
     IUserRepository userRepository
-) : IRequestHandler<UploadUserAvatarCommand, Result> {
+) : ICommandHandler<UploadUserAvatarCommand, Result> {
     public async ValueTask<Result> Handle(UploadUserAvatarCommand request, CancellationToken cancellationToken) {
         var avatarStream = request.AvatarStream;
         

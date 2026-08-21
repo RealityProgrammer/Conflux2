@@ -6,4 +6,4 @@ public sealed record DeleteServerChannelCategoryCommand(
     Guid DeleterUserId, 
     Guid ServerId,
     Guid CategoryId
-) : IRequest<Result>;
+) : ICommand<Result>;

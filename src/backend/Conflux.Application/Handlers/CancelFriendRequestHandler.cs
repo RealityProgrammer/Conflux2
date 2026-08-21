@@ -10,7 +10,7 @@ public sealed class CancelFriendRequestHandler(
     IFriendRequestRepository friendRequestRepository,
     TimeProvider timeProvider,
     IMediator mediator
-) : IRequestHandler<CancelFriendRequestCommand, Result> {
+) : ICommandHandler<CancelFriendRequestCommand, Result> {
     public async ValueTask<Result> Handle(CancelFriendRequestCommand request, CancellationToken cancellationToken) {
         var senderUserId = request.SenderUserId;
         var toUserId = request.ToUserId;

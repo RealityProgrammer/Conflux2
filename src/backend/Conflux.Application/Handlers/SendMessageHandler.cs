@@ -23,7 +23,7 @@ public sealed class SendMessageHandler(
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider
-) : IRequestHandler<SendMessageCommand, Result<MessageDto>> {
+) : ICommandHandler<SendMessageCommand, Result<MessageDto>> {
     public async ValueTask<Result<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken) {
         Guid channelId = request.ChannelId;
         Guid senderUserId = request.SenderUserId;

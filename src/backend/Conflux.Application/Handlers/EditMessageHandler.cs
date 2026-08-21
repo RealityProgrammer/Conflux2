@@ -15,7 +15,7 @@ public sealed class EditMessageHandler(
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
-) : IRequestHandler<EditMessageCommand, Result<MessageDto>> {
+) : ICommandHandler<EditMessageCommand, Result<MessageDto>> {
     public async ValueTask<Result<MessageDto>> Handle(EditMessageCommand request, CancellationToken cancellationToken) {
         var message = await messageRepository.GetById(request.MessageId, cancellationToken);
         var newBody = request.Body;

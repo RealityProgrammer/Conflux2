@@ -7,7 +7,7 @@ namespace Conflux.Application.Handlers;
 
 public sealed class RegisterUserHandler(
     UserManager<ApplicationUser> userManager
-) : IRequestHandler<RegisterUserCommand, Result<ApplicationUser>> {
+) : ICommandHandler<RegisterUserCommand, Result<ApplicationUser>> {
     public async ValueTask<Result<ApplicationUser>> Handle(RegisterUserCommand request, CancellationToken cancellationToken) {
         var generatedUserName = $"user-{Guid.NewGuid():N}";
         

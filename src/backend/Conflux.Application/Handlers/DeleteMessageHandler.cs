@@ -15,7 +15,7 @@ public sealed class DeleteMessageHandler(
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
-) : IRequestHandler<DeleteMessageCommand, Result> {
+) : ICommandHandler<DeleteMessageCommand, Result> {
     public async ValueTask<Result> Handle(DeleteMessageCommand request, CancellationToken cancellationToken) {
         var message = await messageRepository.GetById(request.MessageId, cancellationToken);
         

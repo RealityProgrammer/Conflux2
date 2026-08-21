@@ -8,7 +8,7 @@ namespace Conflux.Application.Handlers;
 
 public sealed class GetCommunityServerSummaryHandler(
     ICommunityServerRepository repository
-) : IRequestHandler<GetCommunityServerSummaryCommand, Result<CommunityServerSummaryDto>> {
+) : IQueryHandler<GetCommunityServerSummaryCommand, Result<CommunityServerSummaryDto>> {
     public async ValueTask<Result<CommunityServerSummaryDto>> Handle(GetCommunityServerSummaryCommand request, CancellationToken cancellationToken) {
         Result<CommunityServerProfileDto> profileResult =
             await repository.GetProfile(request.ServerId, cancellationToken);

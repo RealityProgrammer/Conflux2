@@ -12,7 +12,7 @@ public sealed class CreateServerChannelHandler(
     ICommunityServerRepository communityServerRepository,
     IChannelRepository channelRepository,
     IUnitOfWork unitOfWork
-) : IRequestHandler<CreateServerChannelCommand, Result<Guid>> {
+) : ICommandHandler<CreateServerChannelCommand, Result<Guid>> {
     public async ValueTask<Result<Guid>> Handle(CreateServerChannelCommand request, CancellationToken cancellationToken) {
         if (request.ChannelCategoryId.HasValue) {
             bool hasCategory = await communityServerRepository.IsCategoryExistsInServer(

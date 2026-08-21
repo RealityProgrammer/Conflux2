@@ -14,7 +14,7 @@ public sealed class SendFriendRequestHandler(
     TimeProvider timeProvider,
     IMediator mediator,
     IUnitOfWork unitOfWork
-) : IRequestHandler<SendFriendRequestCommand, Result<UserRelationshipStatus>> {
+) : ICommandHandler<SendFriendRequestCommand, Result<UserRelationshipStatus>> {
     public async ValueTask<Result<UserRelationshipStatus>> Handle(SendFriendRequestCommand request, CancellationToken cancellationToken) {
         var fromUserId = request.FromUserId;
         var toUserId = request.ToUserId;

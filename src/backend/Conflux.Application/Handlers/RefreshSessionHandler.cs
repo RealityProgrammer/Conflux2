@@ -12,7 +12,7 @@ public sealed class RefreshSessionHandler(
     UserManager<ApplicationUser> userManager,
     IAuthRepository authRepository,
     IJwtProvider jwtProvider
-) : IRequestHandler<RefreshSessionCommand, Result<RefreshResponse>> {
+) : ICommandHandler<RefreshSessionCommand, Result<RefreshResponse>> {
     public async ValueTask<Result<RefreshResponse>> Handle(RefreshSessionCommand request, CancellationToken cancellationToken) {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null) {

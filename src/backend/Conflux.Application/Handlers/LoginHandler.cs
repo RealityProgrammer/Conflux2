@@ -9,7 +9,7 @@ namespace Conflux.Application.Handlers;
 public sealed class LoginHandler(
     IAuthRepository authRepository,
     IJwtProvider jwtProvider
-) : IRequestHandler<LoginCommand, Result<LoginResponse>> {
+) : ICommandHandler<LoginCommand, Result<LoginResponse>> {
     public async ValueTask<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken) {
         var user = await authRepository.GetUserByLoginCredential(request.Email, request.Password);
 

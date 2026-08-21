@@ -13,7 +13,7 @@ public sealed class CreateCommunityServerHandler(
     IUnitOfWork unitOfWork,
     IFileFormatInspector fileFormatInspector,
     IBlobStorage blobStorage
-) : IRequestHandler<CreateCommunityServerCommand, Result<Guid>> {
+) : ICommandHandler<CreateCommunityServerCommand, Result<Guid>> {
     public async ValueTask<Result<Guid>> Handle(CreateCommunityServerCommand request, CancellationToken cancellationToken) {
         CommunityServer server = new() {
             Name = request.Name,

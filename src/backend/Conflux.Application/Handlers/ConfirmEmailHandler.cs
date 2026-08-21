@@ -9,7 +9,7 @@ namespace Conflux.Application.Handlers;
 public sealed class ConfirmEmailHandler(
     UserManager<ApplicationUser> userManager,
     IAuthRepository authRepository
-) : IRequestHandler<ConfirmEmailCommand, Result> {
+) : ICommandHandler<ConfirmEmailCommand, Result> {
     public async ValueTask<Result> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(request.UserId);
 

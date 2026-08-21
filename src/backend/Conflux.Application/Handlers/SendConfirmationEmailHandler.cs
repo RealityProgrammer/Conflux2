@@ -17,7 +17,7 @@ public sealed class SendConfirmationEmailHandler(
     IConfiguration config,
     UserManager<ApplicationUser> userManager,
     IAuthRepository authRepository
-) : IRequestHandler<SendConfirmationEmailCommand, Result> {
+) : ICommandHandler<SendConfirmationEmailCommand, Result> {
     public async ValueTask<Result> Handle(SendConfirmationEmailCommand request, CancellationToken cancellationToken) {
         if (config["Mail:SenderName"] is not { } senderName) {
             return Errors.MissingConfiguration("Mail:SenderName");

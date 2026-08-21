@@ -10,7 +10,7 @@ public sealed class UnfriendHandler(
     IFriendRequestRepository friendRequestRepository,
     IMediator mediator,
     TimeProvider timeProvider
-) : IRequestHandler<UnfriendCommand, Result> {
+) : ICommandHandler<UnfriendCommand, Result> {
     public async ValueTask<Result> Handle(UnfriendCommand request, CancellationToken cancellationToken) {
         var invokerUserId = request.InvokerUserId;
         var friendUserId = request.FriendUserId;

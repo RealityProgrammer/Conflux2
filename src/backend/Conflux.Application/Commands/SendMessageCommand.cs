@@ -9,4 +9,4 @@ public sealed record SendMessageCommand(
     string? Body,
     IReadOnlyList<Stream> AttachmentStreams,
     Guid? ReplyToId
-) : IRequest<Result<MessageDto>>;
+) : ICommand<Result<MessageDto>>;

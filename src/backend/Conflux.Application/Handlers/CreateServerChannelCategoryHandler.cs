@@ -11,7 +11,7 @@ namespace Conflux.Application.Handlers;
 public sealed class CreateServerChannelCategoryHandler(
     IChannelCategoryRepository channelCategoryRepository,
     IUnitOfWork unitOfWork
-) : IRequestHandler<CreateServerChannelCategoryCommand, Result<Guid>> {
+) : ICommandHandler<CreateServerChannelCategoryCommand, Result<Guid>> {
     public async ValueTask<Result<Guid>> Handle(CreateServerChannelCategoryCommand request, CancellationToken cancellationToken) {
         ChannelCategory category = new() {
             Name = request.Name,

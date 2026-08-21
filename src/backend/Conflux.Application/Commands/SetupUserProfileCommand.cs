@@ -8,4 +8,4 @@ public sealed record SetupUserProfileCommand(
     string UserName,
     string DisplayName,
     AvatarOperation AvatarOperation
-) : IRequest<Result>;
+) : ICommand<Result>;

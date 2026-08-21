@@ -10,7 +10,7 @@ public sealed class SetupUserProfileHandler(
     IUserRepository userRepository,
     IBlobStorage blobStorage,
     IMediator mediator
-) : IRequestHandler<SetupUserProfileCommand, Result> {
+) : ICommandHandler<SetupUserProfileCommand, Result> {
     public async ValueTask<Result> Handle(SetupUserProfileCommand request, CancellationToken cancellationToken) {
         Result<bool> validateResult = await userRepository.IsProfileSetup(request.UserId, cancellationToken);
 
