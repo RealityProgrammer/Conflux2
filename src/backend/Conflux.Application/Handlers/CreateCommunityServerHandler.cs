@@ -12,7 +12,7 @@ public sealed class CreateCommunityServerHandler(
     ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
     IFileFormatInspector fileFormatInspector,
-    IStorageService storageService
+    IBlobStorage blobStorage
 ) : IRequestHandler<CreateCommunityServerCommand, Result<Guid>> {
     public async ValueTask<Result<Guid>> Handle(CreateCommunityServerCommand request, CancellationToken cancellationToken) {
         CommunityServer server = new() {
@@ -65,7 +65,7 @@ public sealed class CreateCommunityServerHandler(
             }
 
             Result<string> uploadResult = 
-                await storageService.UploadCommunityServerAvatar(server.Id, new(avatarStream, imageFormat.MediaType), cancellationToken);
+                await blobStorage.UploadCommunityServerAvatar(server.Id, new(avatarStream, imageFormat.MediaType), cancellationToken);
 
             if (uploadResult.IsSuccess) {
                 await communityServerRepository.UpdateHasAvatar(server.Id, true);

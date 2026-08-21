@@ -16,7 +16,7 @@ internal sealed class StorageService(
     TimeProvider timeProvider,
     ILogger<StorageService> logger,
     IOptions<StorageServiceOptions> options
-) : IStorageService {
+) : IBlobStorage, IBlobUrlProvider {
     private readonly StorageServiceOptions _options = options.Value;
     
     public async Task<Result<string>> UploadUserAvatar(

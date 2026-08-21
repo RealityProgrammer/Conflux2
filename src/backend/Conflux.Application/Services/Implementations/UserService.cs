@@ -9,7 +9,7 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class UserService(
     IUserRepository userRepository,
-    IStorageService storageService,
+    IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector
 ) : IUserService {
     public async Task<Result> UploadAvatar(Guid userId, Stream avatarStream) {
@@ -42,7 +42,7 @@ internal sealed class UserService(
         }
         
         // upload file first.
-        Result<string> result = await storageService.UploadUserAvatar(userId, new(avatarStream, imageFormat.MediaType));
+        Result<string> result = await blobStorage.UploadUserAvatar(userId, new(avatarStream, imageFormat.MediaType));
 
         if (!result.IsSuccess) {
             return result.Error;
@@ -59,12 +59,8 @@ internal sealed class UserService(
         return Errors.OperationFailure("upload user avatar");
     }
 
-    public string GetAvatarUrl(Guid userId) {
-        return storageService.GetUserAvatarPreSignedUrl(userId);
-    }
-
     public async Task<Result> DeleteAvatar(Guid userId) {
-        var result = await storageService.DeleteUserAvatar(userId);
+        var result = await blobStorage.DeleteUserAvatar(userId);
 
         if (!result.IsSuccess) {
             return result;

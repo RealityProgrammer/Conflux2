@@ -20,7 +20,7 @@ namespace Conflux.WebApi.Controllers;
 [Authorize]
 public sealed class CommunityServerController(
     IMediator mediator,
-    IStorageService storageService
+    IBlobUrlProvider blobUrlProvider
 ) : ControllerBase {
     [HttpPost]
     [Idempotent(360)]
@@ -44,7 +44,7 @@ public sealed class CommunityServerController(
     [HttpGet("{serverId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
     public RedirectResult GetAvatarUrl(Guid serverId) {
-        return Redirect(storageService.GetCommunityServerAvatarPreSignedUrl(serverId));
+        return Redirect(blobUrlProvider.GetCommunityServerAvatarPreSignedUrl(serverId));
     }
 
     [HttpGet("{serverId:guid}/summary")]

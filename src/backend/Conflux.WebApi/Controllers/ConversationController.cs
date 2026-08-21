@@ -21,7 +21,7 @@ namespace Conflux.WebApi.Controllers;
 public sealed class ConversationController(
     IMessageService messageService,
     IMediator mediator,
-    IStorageService storageService
+    IBlobUrlProvider blobUrlProvider
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
     [Idempotent(60)]
@@ -166,7 +166,7 @@ public sealed class ConversationController(
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
     public ActionResult GetAvatarUrl(Guid attachmentId) {
-        return Redirect(storageService.GetMessageAttachmentPreSignedUrl(attachmentId));
+        return Redirect(blobUrlProvider.GetMessageAttachmentPreSignedUrl(attachmentId));
     }
 
     public record SendMessageRequest(

@@ -174,7 +174,6 @@ builder.Services
     .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
 
     .AddScoped<IUnitOfWork, UnitOfWork>()
-    .AddScoped<IStorageService, StorageService>()
 
     .AddScoped<IAuthRepository, AuthRepository>()
     .AddScoped<IAuthService, AuthService>()
@@ -202,7 +201,7 @@ builder.Services
 
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>();
 
-// S3 Service.
+// blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
                  ?? throw new InvalidOperationException("Missing configuration of S3.");
 
@@ -229,6 +228,10 @@ builder.Services.AddKeyedSingleton<IAmazonS3>("PreSigningClient", (_, _) => {
 });
 
 builder.Services.Configure<StorageServiceOptions>(builder.Configuration.GetSection("S3"));
+
+builder.Services.AddSingleton<StorageService>();
+builder.Services.AddSingleton<IBlobUrlProvider>(services => services.GetRequiredService<StorageService>());
+builder.Services.AddSingleton<IBlobStorage>(services => services.GetRequiredService<StorageService>());
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers

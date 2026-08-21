@@ -11,13 +11,13 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/users")]
 [Authorize]
 public sealed class UserController(
-    IUserService userService
+    IUserService userService,
+    IBlobUrlProvider blobUrlProvider
 ) : ControllerBase {
     [HttpGet("{userId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
     public RedirectResult GetAvatarUrl(Guid userId) {
-        var result = userService.GetAvatarUrl(userId);
-        return Redirect(result);
+        return Redirect(blobUrlProvider.GetUserAvatarPreSignedUrl(userId));
     }
     
     [HttpDelete("{userId:guid}/avatar")]

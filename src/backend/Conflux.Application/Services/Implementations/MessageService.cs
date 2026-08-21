@@ -16,7 +16,7 @@ internal sealed class MessageService(
     IMessageRepository messageRepository,
     IUserRepository userRepository,
     IChannelRepository channelRepository,
-    IStorageService storageService,
+    IBlobStorage blobStorage,
     IChannelAuthorizationService channelAuthorizationService,
     IConversationRepository conversationRepository,
     IChannelService channelService,

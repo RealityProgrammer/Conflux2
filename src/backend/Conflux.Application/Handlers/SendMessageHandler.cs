@@ -20,7 +20,7 @@ public sealed class SendMessageHandler(
     IConversationRepository conversationRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
-    IStorageService storageService,
+    IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider
 ) : IRequestHandler<SendMessageCommand, Result<MessageDto>> {
@@ -196,7 +196,7 @@ public sealed class SendMessageHandler(
 
             try {
                 Result<Guid> uploadResult =
-                    await storageService.UploadMessageAttachment(new(stream, mediaType), cancellationToken);
+                    await blobStorage.UploadMessageAttachment(new(stream, mediaType), cancellationToken);
 
                 if (uploadResult.IsSuccess) {
                     attachments[i] = new() {
@@ -219,7 +219,7 @@ public sealed class SendMessageHandler(
     private async ValueTask DeleteUploadedAttachments(IEnumerable<Attachment?> attachments) {
         foreach (var attachment in attachments) {
             if (attachment != null && attachment.Id != Guid.Empty) {
-                await storageService.DeleteMessageAttachment(attachment.Id, CancellationToken.None);
+                await blobStorage.DeleteMessageAttachment(attachment.Id, CancellationToken.None);
             }
         }
     }
