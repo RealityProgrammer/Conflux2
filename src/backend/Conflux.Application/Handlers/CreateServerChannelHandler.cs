@@ -52,12 +52,9 @@ public sealed class CreateServerChannelHandler(
             CommunityServerId = serverId,
             ChannelCategoryId = categoryId,
             Name = name,
+            Conversation = new(),
         };
 
-        if (type == ChannelType.CommunityServerText) {
-            channel.Conversation = new();
-        }
-        
         channelRepository.Add(channel);
 
         await unitOfWork.SaveChangesAsync();

@@ -18,7 +18,7 @@ internal sealed class ChannelRepository(
         CancellationToken cancellationToken = default
     ) {
         ChannelMetadata? context = await dbContext.Channels
-            .Where(c => c.Id == channelId && c.Type == ChannelType.DirectMessage)
+            .Where(c => c.Id == channelId)
             .Select(c => new ChannelMetadata(
                 channelId,
                 c.ConversationId,
