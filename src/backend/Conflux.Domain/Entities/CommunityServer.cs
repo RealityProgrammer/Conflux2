@@ -20,4 +20,5 @@ public class CommunityServer : IHasCreatedAt {
     public virtual ICollection<ChannelCategory> ChannelCategories { get; set; } = null!;
     public virtual ICollection<Channel> Channels { get; set; } = null!;
     public virtual ICollection<CommunityServerMember> Members { get; set; } = null!;
+    public virtual ICollection<Invitation> Invitations { get; set; } = null!;
 }

@@ -264,7 +264,7 @@ function Row({element, removeCacheElement}: RowProps) {
             className="size-6"
             onClick={handleAccept}/>
 
-          <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+          <DropdownMenu.Separator className="horizontal-separator"/>
         </>
       ) : element.status === UserRelationshipStatus.OutcomingRequest && (
         <>
@@ -273,7 +273,7 @@ function Row({element, removeCacheElement}: RowProps) {
             className="size-6"
             onClick={handleCancel}/>
 
-          <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+          <DropdownMenu.Separator className="horizontal-separator"/>
         </>
       )}
 
@@ -286,7 +286,7 @@ function Row({element, removeCacheElement}: RowProps) {
           Direct Message
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+        <DropdownMenu.Separator className="horizontal-separator"/>
 
         {element.status === UserRelationshipStatus.IncomingRequest ? (
           <>
@@ -305,7 +305,7 @@ function Row({element, removeCacheElement}: RowProps) {
               Accept Request
             </DropdownMenu.Item>
 
-            <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+            <DropdownMenu.Separator className="horizontal-separator"/>
           </>
         ) : element.status === UserRelationshipStatus.OutcomingRequest && (
           <>
@@ -317,7 +317,7 @@ function Row({element, removeCacheElement}: RowProps) {
               Cancel Request
             </DropdownMenu.Item>
 
-            <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+            <DropdownMenu.Separator className="horizontal-separator"/>
           </>
         )}
 

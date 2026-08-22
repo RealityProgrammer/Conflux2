@@ -13,7 +13,7 @@ import {
   BsCheck,
   BsChevronDown,
   BsExclamationTriangle, BsFolder,
-  BsGearFill,
+  BsGearFill, BsPersonPlus,
   BsTrash,
   BsVolumeUp
 } from "react-icons/bs";
@@ -426,6 +426,16 @@ function Header({setCreatingState}: {setCreatingState: (state: CreateState) => v
                 Create voice channel
 
                 <FaVolumeHigh className="fill-white size-4 ml-auto"/>
+              </DropdownMenu.Item>
+
+              <DropdownMenu.Separator className="horizontal-separator"/>
+
+              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => {
+
+              }}>
+                Invitation Link
+
+                <BsPersonPlus className="fill-white size-4 ml-auto"/>
               </DropdownMenu.Item>
 
               <DropdownMenu.Arrow className="fill-gray-650"/>

@@ -17,6 +17,7 @@ public class ApplicationDbContext(
     public DbSet<CommunityServer> CommunityServers { get; set; }
     public DbSet<CommunityServerMember> CommunityServerMembers { get; set; }
     public DbSet<ChannelCategory> ChannelCategories { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);
@@ -27,5 +28,6 @@ public class ApplicationDbContext(
         new MessageConfiguration().Configure(builder.Entity<Message>());
         new CommunityServerConfiguration().Configure(builder.Entity<CommunityServer>());
         new CommunityServerMemberConfiguration().Configure(builder.Entity<CommunityServerMember>());
+        new InvitationConfiguration().Configure(builder.Entity<Invitation>());
     }
 }

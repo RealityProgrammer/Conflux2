@@ -243,6 +243,10 @@
     .label {
         @apply text-sm text-gray-300;
     }
+
+    .horizontal-separator {
+        @apply h-px bg-gray-500 my-1.5;
+    }
 }
 
 @utility button-cursor {
