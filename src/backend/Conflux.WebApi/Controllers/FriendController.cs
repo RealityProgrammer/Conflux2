@@ -1,6 +1,5 @@
 using Conflux.Application.Commands;
-using Conflux.Application.Dto;
-using Conflux.Application.Services;
+using Conflux.Application.Queries;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
@@ -16,7 +15,6 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/friend")]
 [Authorize]
 public sealed class FriendController(
-    IFriendService friendService,
     IMediator mediator
 ) : ControllerBase {
     [HttpPost("requests/{toUserId:guid}")]
@@ -144,15 +142,8 @@ public sealed class FriendController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.DiscoverFriends(userId, name, offset, count);
+        var result = await mediator.Send(new DiscoverFriendsQuery(userId, name, offset, count));
 
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(null, result.Error)
-        );
+        return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result, Error.None));
     }
 }

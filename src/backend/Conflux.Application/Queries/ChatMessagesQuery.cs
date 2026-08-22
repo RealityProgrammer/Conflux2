@@ -4,7 +4,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Queries;
 
-public sealed record GetChatMessagesQuery(
+public sealed record ChatMessagesQuery(
     Guid RequesterUserId,
     Guid ChannelId,
     MessageLoadDirection? Direction,

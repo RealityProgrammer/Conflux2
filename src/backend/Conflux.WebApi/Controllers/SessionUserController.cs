@@ -18,7 +18,6 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/users/me")]
 [Authorize]
 public sealed class SessionUserController(
-    IFriendService friendService,
     IMediator mediator
 ) : ControllerBase {
     [HttpPost("avatar")]

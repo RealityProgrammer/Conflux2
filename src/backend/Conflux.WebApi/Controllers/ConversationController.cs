@@ -149,7 +149,7 @@ public sealed class ConversationController(
 
         // TODO: Check if user has permission to view messages at this channel at service.
 
-        var result = await mediator.Send(new GetChatMessagesQuery(
+        var result = await mediator.Send(new ChatMessagesQuery(
             userId, channelId, direction, cursor, count
         ), cancellationToken);
 

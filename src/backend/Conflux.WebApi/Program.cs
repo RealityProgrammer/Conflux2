@@ -183,7 +183,6 @@ builder.Services
     .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
 
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
-    .AddScoped<IFriendService, FriendService>()
 
     .AddScoped<IChannelRepository, ChannelRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()

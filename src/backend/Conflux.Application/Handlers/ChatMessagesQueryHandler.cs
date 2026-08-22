@@ -8,14 +8,14 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Handlers;
 
-public sealed class GetChatMessagesQueryHandler(
+public sealed class ChatMessagesQueryHandler(
     IChannelRepository channelRepository,
     IChannelAuthorizationService channelAuthorizationService,
     IMessageRepository messageRepository,
     IUserRepository userRepository
-) : IQueryHandler<GetChatMessagesQuery, Result<GetMessagesResponse>> {
+) : IQueryHandler<ChatMessagesQuery, Result<GetMessagesResponse>> {
     public async ValueTask<Result<GetMessagesResponse>> Handle(
-        GetChatMessagesQuery query, 
+        ChatMessagesQuery query, 
         CancellationToken cancellationToken
     ) {
         Result<ChannelMetadata> getChannelMetadataResult = 

@@ -1,11 +1,9 @@
 using Conflux.Application.Commands;
 using Conflux.Application.Services;
 using Conflux.Domain;
-using Conflux.Domain.Dto;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
