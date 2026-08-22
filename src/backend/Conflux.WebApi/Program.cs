@@ -189,7 +189,6 @@ builder.Services
     .AddScoped<IConversationRepository, ConversationRepository>()
 
     .AddScoped<IMessageRepository, MessageRepository>()
-    .AddScoped<IMessageService, MessageService>()
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
 
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()

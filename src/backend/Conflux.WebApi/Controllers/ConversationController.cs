@@ -1,6 +1,7 @@
 using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
+using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -19,7 +20,6 @@ namespace Conflux.WebApi.Controllers;
 [Route("api")]
 [Authorize]
 public sealed class ConversationController(
-    IMessageService messageService,
     IMediator mediator,
     IBlobUrlProvider blobUrlProvider
 ) : ControllerBase {
@@ -149,8 +149,9 @@ public sealed class ConversationController(
 
         // TODO: Check if user has permission to view messages at this channel at service.
 
-        var result =
-            await messageService.GetTimelineMessages(userId, channelId, direction, cursor, count, cancellationToken);
+        var result = await mediator.Send(new GetChatMessagesQuery(
+            userId, channelId, direction, cursor, count
+        ), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));

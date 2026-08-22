@@ -1,32 +1,25 @@
 using Conflux.Application.Dto;
-using Conflux.Application.FileFormats;
-using Conflux.Application.Notifications;
+using Conflux.Application.Queries;
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
-using FileSignatures;
-using FileSignatures.Formats;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Application.Handlers;
 
-internal sealed class MessageService(
-    IMessageRepository messageRepository,
-    IUserRepository userRepository,
+public sealed class GetChatMessagesQueryHandler(
     IChannelRepository channelRepository,
-    IChannelAuthorizationService channelAuthorizationService
-) : IMessageService {
-    public async Task<Result<GetMessagesResponse>> GetTimelineMessages(
-        Guid requesterUserId,
-        Guid channelId,
-        MessageLoadDirection? direction,
-        Guid? cursorMessageId,
-        int count,
-        CancellationToken cancellationToken = default
+    IChannelAuthorizationService channelAuthorizationService,
+    IMessageRepository messageRepository,
+    IUserRepository userRepository
+) : IQueryHandler<GetChatMessagesQuery, Result<GetMessagesResponse>> {
+    public async ValueTask<Result<GetMessagesResponse>> Handle(
+        GetChatMessagesQuery query, 
+        CancellationToken cancellationToken
     ) {
         Result<ChannelMetadata> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromChannelId(channelId, cancellationToken);
+            await channelRepository.GetChannelMetadataFromChannelId(query.ChannelId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
@@ -35,7 +28,7 @@ internal sealed class MessageService(
         ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
         
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            requesterUserId, 
+            query.RequesterUserId, 
             channelMetadata.ChannelId, 
             channelMetadata.ChannelType
         );
@@ -52,9 +45,9 @@ internal sealed class MessageService(
         
         Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessages(
             channelMetadata.ConversationId, 
-            direction, 
-            cursorMessageId,
-            count,
+            query.Direction, 
+            query.CursorMessageId,
+            query.Count,
             cancellationToken
         );
 

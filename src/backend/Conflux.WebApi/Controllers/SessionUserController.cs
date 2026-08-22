@@ -138,16 +138,9 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.QueryFriends(userId, name, offset, count);
+        var result = await mediator.Send(new FriendsQuery(userId, name, offset, count));
 
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(null, result.Error)
-        );
+        return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result, Error.None));
     }
     
     public sealed record SetupProfileRequest(
@@ -229,15 +222,8 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.QueryPendingRequests(userId, name, offset, count);
+        var result = await mediator.Send(new PendingFriendRequestsQuery(userId, name, offset, count));
 
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(null, result.Error)
-        );
+        return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result, Error.None));
     }
 }

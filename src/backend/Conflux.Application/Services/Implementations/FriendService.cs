@@ -22,26 +22,4 @@ internal sealed class FriendService(
         
         return Result<PaginatedResult<DiscoverFriendSummary>>.Success(result);
     }
-
-    public async Task<Result<PaginatedResult<UserIdentityProfileDto>>> QueryFriends(
-        Guid searchingUserId, 
-        string? nameFilter, 
-        int offset, 
-        int count
-    ) {
-        return Result<PaginatedResult<UserIdentityProfileDto>>.Success(
-            await friendRequestRepository.GetFriends(searchingUserId, nameFilter, offset, count)
-        );
-    }
-
-    public async Task<Result<PaginatedResult<PendingFriendRequestDto>>> QueryPendingRequests(
-        Guid searchingUserId, 
-        string? nameFilter, 
-        int offset, 
-        int count
-    ) {
-        return Result<PaginatedResult<PendingFriendRequestDto>>.Success(
-            await friendRequestRepository.GetPendingRequests(searchingUserId, nameFilter, offset, count)
-        );
-    }
 }

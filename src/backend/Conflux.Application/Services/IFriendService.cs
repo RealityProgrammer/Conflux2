@@ -10,18 +10,4 @@ public interface IFriendService {
         int offset, 
         int count
     );
-
-    Task<Result<PaginatedResult<UserIdentityProfileDto>>> QueryFriends(
-        Guid searchingUserId,
-        string? nameFilter,
-        int offset,
-        int count
-    );
-    
-    Task<Result<PaginatedResult<PendingFriendRequestDto>>> QueryPendingRequests(
-        Guid searchingUserId,
-        string? nameFilter,
-        int offset,
-        int count
-    );
 }
