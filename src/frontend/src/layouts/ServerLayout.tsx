@@ -131,12 +131,80 @@ function SuccessfullyLoadedLayout({
     });
   };
 
+  const removeChannelCategory = (id: string) => {
+    setServerSummary((prev) => {
+      if (prev === "loading" || prev === "error") return prev;
+
+      const removingCategory = prev.channelCategories.find(c => c.id === id);
+
+      if (!removingCategory) {
+        return prev;
+      }
+
+      let updatedChannelCategories = prev.channelCategories.filter(c => c.id !== id);
+      const nullCategoryExists = updatedChannelCategories.some((c) => c.id == null);
+
+      // if there is a category with null id, append the channels to it, else create a category with null id
+      if (nullCategoryExists) {
+        updatedChannelCategories = updatedChannelCategories.map((c) => {
+          if (c.id == null) {
+            return {
+              ...c,
+              channels: [...c.channels, ...removingCategory.channels],
+            };
+          }
+          return c;
+        });
+      } else {
+        updatedChannelCategories.push({
+          id: null,
+          name: null,
+          channels: removingCategory.channels,
+        });
+      }
+
+      return {
+        ...prev,
+        channelCategories: updatedChannelCategories,
+      };
+    });
+  };
+
+  const removeChannel = (id: string) => {
+    setServerSummary((prev) => {
+      if (prev === "loading" || prev === "error") return prev;
+
+      return {
+        ...prev,
+        channelCategories: prev.channelCategories.map(category => {
+          const channelIndex = category.channels.findIndex((c) => c.id === id);
+
+          if (channelIndex === -1) {
+            return category;
+          }
+
+          const updatedChannels = [
+            ...category.channels.slice(0, channelIndex),
+            ...category.channels.slice(channelIndex + 1)
+          ];
+
+          return {
+            ...category,
+            channels: updatedChannels,
+          }
+        }),
+      }
+    });
+  }
+
   return (
     <CommunityServerContextProvider
       serverId={serverId}
       serverSummary={serverSummary}
       appendChannelCategory={appendChannelCategory}
       appendChannel={appendChannel}
+      removeChannelCategory={removeChannelCategory}
+      removeChannel={removeChannel}
     >
       <Outlet/>
     </CommunityServerContextProvider>

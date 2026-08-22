@@ -49,7 +49,14 @@ type ChannelAction =
   { type: "delete_channel", id: string };
 
 export default function ServerSidebar() {
-  const {serverId, serverSummary, appendChannel, appendChannelCategory} = useCommunityServerContext();
+  const {
+    serverId,
+    serverSummary,
+    appendChannelCategory,
+    appendChannel,
+    removeChannelCategory,
+    removeChannel,
+  } = useCommunityServerContext();
 
   const [createState, setCreateState] = useState<CreateState>();
   const [createStatus, setCreateStatus] = useState<CreateStatus[]>([]);
@@ -148,7 +155,7 @@ export default function ServerSidebar() {
     const response = await communityServerService.deleteChannelCategory(serverId, id);
 
     if (response.success) {
-      // TODO: Implement
+      removeChannelCategory(id);
     }
   };
 
@@ -156,7 +163,7 @@ export default function ServerSidebar() {
     const response = await communityServerService.deleteChannel(serverId, id);
 
     if (response.success) {
-      // TODO: Implement
+      removeChannel(id);
     }
   };
 
@@ -205,7 +212,17 @@ export default function ServerSidebar() {
           }
         }}
         title={deletionState?.type === "channel" ? "Delete channel" : "Delete channel category"}
-        description={"Are you sure you want to delete it? This action cannot be undone."}
+        description={() => {
+          return deletionState?.type === "category" ? (
+            <>
+              <span className="block">Are you sure you want to delete it? This action cannot be undone.</span>
+
+              <span className="block">The inner channels will be uncategorized.</span>
+            </>
+          ) : (
+            "Are you sure you want to delete it? This action cannot be undone."
+          )
+        }}
         actionButton={(
           <button
             className="button-theme-danger cursor-pointer px-3 py-2 rounded-md"

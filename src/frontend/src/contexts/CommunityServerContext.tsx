@@ -7,6 +7,8 @@ interface CommunityServerContextType {
 
   appendChannelCategory: (id: string, name: string) => void;
   appendChannel: (id: string, name: string, type: "text" | "voice", categoryId: string | null) => void;
+  removeChannelCategory: (id: string) => void;
+  removeChannel: (id: string) => void;
 }
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
@@ -28,6 +30,8 @@ export default function CommunityServerContextProvider({
   serverSummary,
   appendChannelCategory,
   appendChannel,
+  removeChannelCategory,
+  removeChannel,
 }: CommunityServerContextProviderProps) {
   return (
     <CommunityServerContext.Provider value={{
@@ -35,6 +39,8 @@ export default function CommunityServerContextProvider({
       serverSummary,
       appendChannelCategory,
       appendChannel,
+      removeChannelCategory,
+      removeChannel,
     }}>
       {children}
     </CommunityServerContext.Provider>
