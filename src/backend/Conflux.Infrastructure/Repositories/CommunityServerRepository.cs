@@ -36,7 +36,7 @@ internal sealed class CommunityServerRepository(
         return result != null ? Result<CommunityServerProfileDto>.Success(result) : Errors.ResourceNotFound("Server");
     }
 
-    public async Task<List<ChannelCategorySummaryDto>> GetChannelCategorySummaries(
+    public async Task<List<ChannelCategoryIdentityDto>> GetChannelCategorySummaries(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
@@ -55,10 +55,10 @@ internal sealed class CommunityServerRepository(
 
         var channelsByCategoryId = channels.ToLookup(c => c.ChannelCategoryId);
         
-        var result = new List<ChannelCategorySummaryDto>();
+        var result = new List<ChannelCategoryIdentityDto>();
         
         var uncategorizedChannels = channelsByCategoryId[null]
-            .Select(c => new CommunityServerChannelSummaryDto(c.Id, c.Name!, c.Type))
+            .Select(c => new CommunityServerChannelIdentityDto(c.Id, c.Name!, c.Type))
             .ToList();
 
         if (uncategorizedChannels.Count > 0) {
@@ -66,10 +66,10 @@ internal sealed class CommunityServerRepository(
         }
 
         var mappedCategories = categories
-            .Select(c => new ChannelCategorySummaryDto(
+            .Select(c => new ChannelCategoryIdentityDto(
                 c.Id, 
                 c.Name,
-                [..channelsByCategoryId[c.Id].Select(ch => new CommunityServerChannelSummaryDto(ch.Id, ch.Name!, ch.Type))]
+                [..channelsByCategoryId[c.Id].Select(ch => new CommunityServerChannelIdentityDto(ch.Id, ch.Name!, ch.Type))]
             ));
         
         result.AddRange(mappedCategories);

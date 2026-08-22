@@ -4,7 +4,7 @@ import {
   useRef,
   useState
 } from "react";
-import type {ChannelCategorySummaryDto, CommunityServerChannelSummaryDto, ServiceResponse} from "../../api/responses.ts";
+import type {ChannelCategoryIdentityDto, CommunityServerChannelIdentityDto, ServiceResponse} from "../../api/responses.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
@@ -442,7 +442,7 @@ function Header({setCreatingState}: {setCreatingState: (state: CreateState) => v
 }
 
 interface ChannelCategoryViewProps {
-  category: ChannelCategorySummaryDto;
+  category: ChannelCategoryIdentityDto;
   createStatus: CreateStatus[];
   setCreatingState: (value: CreateState) => void;
   handleChannelAction: (action: ChannelAction) => void | Promise<void>;
@@ -541,7 +541,7 @@ function ChannelCategoryView({
 function ChannelButton({
   channel,
   handleChannelAction
-}: {channel: CommunityServerChannelSummaryDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
+}: {channel: CommunityServerChannelIdentityDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
   const { serverId } = useCommunityServerContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

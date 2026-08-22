@@ -141,21 +141,21 @@ export type DmConversationListItemDto = {
   userProfile: UserIdentityProfileDto;
 }
 
-export type CommunityServerChannelSummaryDto = {
+export type CommunityServerChannelIdentityDto = {
   id: string;
   name: string;
   channelType: "CommunityServerText" | "CommunityServerVoice";
 }
 
-export type ChannelCategorySummaryDto = {
+export type ChannelCategoryIdentityDto = {
   id: string | null;
   name: string | null;
-  channels: CommunityServerChannelSummaryDto[];
+  channels: CommunityServerChannelIdentityDto[];
 }
 
 export type CommunityServerSummaryDto = {
   name: string;
   description: string | null;
   hasAvatar: boolean;
-  channelCategories: ChannelCategorySummaryDto[];
+  channelCategories: ChannelCategoryIdentityDto[];
 }

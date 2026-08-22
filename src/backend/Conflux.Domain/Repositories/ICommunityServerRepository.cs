@@ -13,7 +13,7 @@ public interface ICommunityServerRepository {
         CancellationToken cancellationToken = default
     );
     
-    Task<List<ChannelCategorySummaryDto>> GetChannelCategorySummaries(
+    Task<List<ChannelCategoryIdentityDto>> GetChannelCategorySummaries(
         Guid serverId, 
         CancellationToken cancellationToken = default
     );

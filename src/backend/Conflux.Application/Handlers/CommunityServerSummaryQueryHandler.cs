@@ -18,18 +18,18 @@ public sealed class CommunityServerSummaryQueryHandler(
         }
 
         var profile = profileResult.Value!;
-        List<ChannelCategorySummaryDto> categories = await GetChannelCategorySummaries(request.ServerId, cancellationToken);
+        List<ChannelCategoryIdentityDto> categories = await GetChannelCategorySummaries(request.ServerId, cancellationToken);
 
         return Result<CommunityServerSummaryDto>.Success(
             new(profile.Name, profile.Description, profile.HasAvatar, categories)
         );
     }
 
-    private async Task<List<ChannelCategorySummaryDto>> GetChannelCategorySummaries(
+    private async Task<List<ChannelCategoryIdentityDto>> GetChannelCategorySummaries(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
-        List<ChannelCategorySummaryDto> result = 
+        List<ChannelCategoryIdentityDto> result = 
             await repository.GetChannelCategorySummaries(serverId, cancellationToken);
 
         // TODO: Caching.

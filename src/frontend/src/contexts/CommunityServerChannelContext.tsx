@@ -1,9 +1,9 @@
 import {createContext, type ReactNode, useContext} from "react";
-import type {CommunityServerChannelSummaryDto} from "../api/responses.ts";
+import type {CommunityServerChannelIdentityDto} from "../api/responses.ts";
 import {useCommunityServerContext} from "./CommunityServerContext.tsx";
 
 interface CommunityServerChannelContextType {
-  channelSummary: CommunityServerChannelSummaryDto | undefined;
+  channelSummary: CommunityServerChannelIdentityDto | undefined;
 }
 
 const CommunityServerChannelContext = createContext<CommunityServerChannelContextType | null>(null);
@@ -26,7 +26,7 @@ export default function CommunityServerChannelContextProvider({
 }: CommunityServerChannelContextProviderProps) {
   const { serverSummary: { channelCategories } } = useCommunityServerContext();
 
-  let channelSummary: CommunityServerChannelSummaryDto | undefined = undefined;
+  let channelSummary: CommunityServerChannelIdentityDto | undefined = undefined;
 
   if (channelId != null) {
     for (const category of channelCategories) {

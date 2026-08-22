@@ -6,7 +6,11 @@ export default function ChannelPage() {
   return (
     <section className="size-full">
       <header className="h-10 bg-gray-750 border-b-2 border-b-gray-600 flex flex-row items-center px-2 select-none">
-        <span className="text-white"><i>Insert channel name {channelSummary?.id}</i></span>
+        {channelSummary ? (
+          <span className="text-white">{channelSummary.name}</span>
+        ) : (
+          <span className="text-white">But nobody came...</span>
+        )}
       </header>
     </section>
   );
