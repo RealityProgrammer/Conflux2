@@ -15,7 +15,7 @@ const CommunityServerContext = createContext<CommunityServerContextType | null>(
 
 export const useCommunityServerContext = () => {
   const context = useContext(CommunityServerContext);
-  if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
+  if (!context) throw new Error("useChatContainerContext must be used within an CommunityServerContextProvider.");
 
   return context;
 }

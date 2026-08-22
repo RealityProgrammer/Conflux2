@@ -1,14 +1,14 @@
 import {NavLink, Outlet, useNavigate} from "react-router";
 import {BsMegaphone, BsPeople} from "react-icons/bs";
 import {Separator} from "radix-ui";
-import {useFetchDmChannelSummary} from "../hooks/fetchDmChannelSummary.ts";
+import {useFetchDmChannelSummary} from "../../hooks/fetchDmChannelSummary.ts";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import type {DmConversationListItemDto, PaginatedResponse, ServiceResponse} from "../api/responses.ts";
-import {sessionUserService} from "../api/sessionUserService.ts";
-import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {UpdateDmConversationListEvent} from "../api/events.ts";
-import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
-import {UserNameplate} from "../components/UserNameplate.tsx";
+import type {DmConversationListItemDto, PaginatedResponse, ServiceResponse} from "../../api/responses.ts";
+import {sessionUserService} from "../../api/sessionUserService.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import type {UpdateDmConversationListEvent} from "../../api/events.ts";
+import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
+import {UserNameplate} from "../../components/UserNameplate.tsx";
 
 export default function UserLobbyLayout() {
   return (

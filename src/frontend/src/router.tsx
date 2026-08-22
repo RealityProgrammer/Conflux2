@@ -9,16 +9,17 @@ import type {DmChannelSummary, ServiceResponse, UserAuthorizationInfo,} from "./
 import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
 import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
 import {userService} from "./api/userService.ts";
-import LobbyLayout from "./layouts/LobbyLayout.tsx";
+import LobbyLayout from "./pages/lobby/LobbyLayout.tsx";
 import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
-import UserLobbyLayout from "./layouts/UserLobbyLayout.tsx";
-import ServerLayout from "./layouts/ServerLayout.tsx";
+import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
+import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
+import ChannelLayout from "./pages/server/ChannelLayout.tsx";
 
 export type DirectMessagePageLoaderProps = {
   channelId: string | null;
@@ -137,7 +138,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <LobbyPage/>
+            element: <LobbyPage/>,
           },
           {
             path: "me",
@@ -183,22 +184,20 @@ export const router = createBrowserRouter([
             ]
           },
           {
+            id: "server",
             path: "servers/:serverId?",
             element: <ServerLayout/>,
-            loader: ({params}: LoaderFunctionArgs) => {
-              const serverId: string | undefined = params.serverId;
-
-              return serverId;
-            },
             children: [
               {
+                id: "channel",
                 path: "channels/:channelId?",
-                element: <ChannelPage/>,
-                loader: ({params}: LoaderFunctionArgs) => {
-                  const channelId: string | undefined = params.channelId;
-
-                  return channelId;
-                },
+                element: <ChannelLayout/>,
+                children: [
+                  {
+                    index: true,
+                    element: <ChannelPage/>
+                  }
+                ]
               }
             ]
           }

@@ -1,21 +1,21 @@
-import {useAuthorization} from "../contexts/AuthContext.tsx";
+import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {BsPeople, BsPlus} from "react-icons/bs";
-import UserAvatar from "../components/UserAvatar.tsx";
+import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
-import VirtualizedScrollList from "../components/VirtualizedScrollList.tsx";
-import type {FieldErrors, ServiceResponse} from "../api/responses.ts";
-import IconButton from "../components/IconButton.tsx";
-import SelectableAvatar from "../components/SelectableAvatar.tsx";
+import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
+import type {FieldErrors, ServiceResponse} from "../../api/responses.ts";
+import IconButton from "../../components/IconButton.tsx";
+import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import {useState} from "react";
 import {useFormStatus} from "react-dom";
-import {communityServerService} from "../api/communityServerService.ts";
-import DialogForm from "../components/DialogForm.tsx";
+import {communityServerService} from "../../api/communityServerService.ts";
+import DialogForm from "../../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
-import ErrorText from "../components/ErrorText.tsx";
-import ServerAvatar from "../components/ServerAvatar.tsx";
-import useJoinedServersQuery from "../hooks/useJoinedServersQuery.ts";
+import ErrorText from "../../components/ErrorText.tsx";
+import ServerAvatar from "../../components/ServerAvatar.tsx";
+import useJoinedServersQuery from "../../hooks/useJoinedServersQuery.ts";
 
 function Sidebar() {
   const auth = useAuthorization();

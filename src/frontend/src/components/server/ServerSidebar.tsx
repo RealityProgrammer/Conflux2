@@ -4,7 +4,7 @@ import {
   useRef,
   useState
 } from "react";
-import type {ChannelCategorySummaryDto, ChannelSummaryDto, ServiceResponse} from "../../api/responses.ts";
+import type {ChannelCategorySummaryDto, CommunityServerChannelSummaryDto, ServiceResponse} from "../../api/responses.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
@@ -541,7 +541,7 @@ function ChannelCategoryView({
 function ChannelButton({
   channel,
   handleChannelAction
-}: {channel: ChannelSummaryDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
+}: {channel: CommunityServerChannelSummaryDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
   const { serverId } = useCommunityServerContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

@@ -141,7 +141,7 @@ export type DmConversationListItemDto = {
   userProfile: UserIdentityProfileDto;
 }
 
-export type ChannelSummaryDto = {
+export type CommunityServerChannelSummaryDto = {
   id: string;
   name: string;
   channelType: "CommunityServerText" | "CommunityServerVoice";
@@ -150,7 +150,7 @@ export type ChannelSummaryDto = {
 export type ChannelCategorySummaryDto = {
   id: string | null;
   name: string | null;
-  channels: ChannelSummaryDto[];
+  channels: CommunityServerChannelSummaryDto[];
 }
 
 export type CommunityServerSummaryDto = {

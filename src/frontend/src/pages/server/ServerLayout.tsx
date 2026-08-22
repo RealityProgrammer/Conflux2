@@ -1,15 +1,15 @@
-import {Outlet, useLoaderData} from "react-router";
-import {type Dispatch, type SetStateAction, useEffect, useReducer, useState} from "react";
-import {communityServerService} from "../api/communityServerService.ts";
-import Spinner from "../components/Spinner.tsx";
-import type {ChannelCategorySummaryDto, CommunityServerSummaryDto} from "../api/responses.ts";
-import CommunityServerContextProvider from "../contexts/CommunityServerContext.tsx";
-import ServerSidebar from "../components/server/ServerSidebar.tsx";
+import {Outlet, useParams} from "react-router";
+import {type Dispatch, type SetStateAction, useEffect, useState} from "react";
+import {communityServerService} from "../../api/communityServerService.ts";
+import Spinner from "../../components/Spinner.tsx";
+import type {CommunityServerSummaryDto} from "../../api/responses.ts";
+import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
+import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 
 type SummaryStatus = "loading" | "error" | CommunityServerSummaryDto;
 
 export default function ServerLayout() {
-  const serverId: string | undefined = useLoaderData();
+  const { serverId } = useParams();
   const [serverSummary, setServerSummary] = useState<SummaryStatus>("loading");
 
   useEffect(() => {
