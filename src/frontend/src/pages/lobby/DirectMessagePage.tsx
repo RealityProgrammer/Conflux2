@@ -50,12 +50,6 @@ export default function DirectMessagePage() {
               className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
               userId={channelSummary.otherUser.id}
             />
-
-            // <div className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725">
-            //   <UserProfilePanel
-            //     userId={channelSummary.otherUser.id}
-            //   />
-            // </div>
           )}
         </div>
       ) : Math.random() * 100 >= 2 ? (
