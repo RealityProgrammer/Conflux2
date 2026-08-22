@@ -24,6 +24,7 @@ import Spinner from "../Spinner.tsx";
 import AlertActionDialog from "../AlertActionDialog.tsx";
 import DialogForm from "../DialogForm.tsx";
 import {useFormStatus} from "react-dom";
+import {useNavigate} from "react-router";
 
 type CreateState = {
   idempotencyKey: string;
@@ -543,7 +544,10 @@ function ChannelButton({
   channel,
   handleChannelAction
 }: {channel: ChannelSummaryDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
+  const { serverId } = useCommunityServerContext();
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div
@@ -551,6 +555,7 @@ function ChannelButton({
       className="px-1 py-1 hover-highlight w-full rounded-md cursor-pointer text-left mb-1 flex flex-row items-center group"
       onClick={(e) => {
         e.stopPropagation();
+        navigate(`/lobby/servers/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(channel.id)}`);
       }}
     >
       {channel.channelType === "CommunityServerText" ? (

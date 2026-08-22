@@ -194,6 +194,10 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: <ServerPage/>
+              },
+              {
+                path: "channels/:channelId?",
+
               }
             ]
           }
