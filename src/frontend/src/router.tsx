@@ -17,7 +17,6 @@ import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./layouts/UserLobbyLayout.tsx";
-import ServerPage from "./pages/server/ServerPage.tsx";
 import ServerLayout from "./layouts/ServerLayout.tsx";
 
 export type DirectMessagePageLoaderProps = {
@@ -192,12 +191,10 @@ export const router = createBrowserRouter([
             },
             children: [
               {
-                index: true,
-                element: <ServerPage/>
-              },
-              {
                 path: "channels/:channelId?",
-
+                element: (
+                  <p>Render channel here.</p>
+                ),
               }
             ]
           }

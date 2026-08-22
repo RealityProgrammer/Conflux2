@@ -4,6 +4,7 @@ import {communityServerService} from "../api/communityServerService.ts";
 import Spinner from "../components/Spinner.tsx";
 import type {ChannelCategorySummaryDto, CommunityServerSummaryDto} from "../api/responses.ts";
 import CommunityServerContextProvider from "../contexts/CommunityServerContext.tsx";
+import ServerSidebar from "../components/server/ServerSidebar.tsx";
 
 type SummaryStatus = "loading" | "error" | CommunityServerSummaryDto;
 
@@ -206,7 +207,13 @@ function SuccessfullyLoadedLayout({
       removeChannelCategory={removeChannelCategory}
       removeChannel={removeChannel}
     >
-      <Outlet/>
+      <div className="size-full flex flex-row">
+        <ServerSidebar/>
+
+        <div className="flex-1 overflow-auto flex flex-row justify-center items-center">
+          <Outlet/>
+        </div>
+      </div>
     </CommunityServerContextProvider>
   );
 }
