@@ -9,6 +9,6 @@ public sealed class DmChannelSummaryQueryHandler(
     IChannelRepository channelRepository
 ) : IQueryHandler<DmChannelSummaryQuery, Result<DmChannelSummary>> {
     public async ValueTask<Result<DmChannelSummary>> Handle(DmChannelSummaryQuery query, CancellationToken cancellationToken) {
-        return await channelRepository.GetDirectMessageChannelSummary(query.UserId, query.ChannelId);
+        return await channelRepository.GetDmChannelSummary(query.UserId, query.ChannelId);
     }
 }

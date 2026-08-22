@@ -105,7 +105,7 @@ public sealed class SendMessageHandler(
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar
         if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
             var dmSummary = 
-                (await channelRepository.GetDirectMessageChannelSummary(senderUserId, channelId)).Value!;
+                (await channelRepository.GetDmChannelSummary(senderUserId, channelId)).Value!;
             
             await mediator.Publish(new UpdateDmConversationListNotification(
                 senderUserId,

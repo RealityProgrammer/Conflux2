@@ -14,8 +14,6 @@ import {
   BsChevronDown,
   BsExclamationTriangle, BsFolder,
   BsGearFill,
-  BsHash,
-  BsPeople,
   BsTrash,
   BsVolumeUp
 } from "react-icons/bs";
@@ -253,7 +251,7 @@ export default function ServerSidebar() {
           }
         }}
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
-        headerIcon={(<BsHash className="size-10 fill-white"/>)}
+        headerIcon={(<BsChatText className="size-10 fill-white"/>)}
         title={"Create new Channel or Category"}
         subtitle={"New territory acquired!"}
         body={() => {
@@ -559,7 +557,7 @@ function ChannelButton({
       }}
     >
       {channel.channelType === "CommunityServerText" ? (
-        <BsHash className="size-6 fill-gray-500 stroke-gray-500 inline mr-1" strokeWidth={0.75}/>
+        <BsChatText className="size-6 fill-gray-500 stroke-gray-500 inline mr-1"/>
       ) : (
         <BsVolumeUp className="size-6 fill-gray-500 stroke-gray-500 inline mr-1"/>
       )}

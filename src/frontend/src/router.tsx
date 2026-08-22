@@ -18,6 +18,7 @@ import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./layouts/UserLobbyLayout.tsx";
 import ServerLayout from "./layouts/ServerLayout.tsx";
+import ChannelPage from "./pages/server/ChannelPage.tsx";
 
 export type DirectMessagePageLoaderProps = {
   channelId: string | null;
@@ -192,9 +193,12 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "channels/:channelId?",
-                element: (
-                  <p>Render channel here.</p>
-                ),
+                element: <ChannelPage/>,
+                loader: ({params}: LoaderFunctionArgs) => {
+                  const channelId: string | undefined = params.channelId;
+
+                  return channelId;
+                },
               }
             ]
           }

@@ -11,7 +11,7 @@ public interface IChannelRepository {
         CancellationToken cancellationToken = default
     );
     
-    Task<Result<DmChannelSummary>> GetDirectMessageChannelSummary(Guid userId, Guid channelId);
+    Task<Result<DmChannelSummary>> GetDmChannelSummary(Guid userId, Guid channelId);
 
     Task<FriendDmChannelSummaryDto?> GetFriendDmChannelSummary(Guid userId1, Guid userId2);
 

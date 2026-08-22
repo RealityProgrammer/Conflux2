@@ -49,11 +49,14 @@ public sealed class CreateServerChannelHandler(
     private async Task<Result<Guid>> CreateServerChannel(Guid serverId, string name, ChannelType type, Guid? categoryId) {
         Channel channel = new() {
             Type = type,
-            Conversation = new(),
             CommunityServerId = serverId,
             ChannelCategoryId = categoryId,
             Name = name,
         };
+
+        if (type == ChannelType.CommunityServerText) {
+            channel.Conversation = new();
+        }
         
         channelRepository.Add(channel);
 

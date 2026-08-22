@@ -33,7 +33,7 @@ internal sealed class ChannelRepository(
         return Result<ChannelMetadata>.Success(context);
     }
 
-    public async Task<Result<DmChannelSummary>> GetDirectMessageChannelSummary(Guid userId, Guid channelId) {
+    public async Task<Result<DmChannelSummary>> GetDmChannelSummary(Guid userId, Guid channelId) {
         var summary = await dbContext.Channels
             .Where(c =>
                 c.Type == ChannelType.DirectMessage &&
