@@ -56,6 +56,12 @@ public static class Errors {
     
     public static Error ResourceNotFound(string typeOfResource) =>
         new(nameof(ResourceNotFound), $"{typeOfResource} not found.");
+    
+    public static Error ResourceExpired(string typeOfResource) =>
+        new(nameof(ResourceExpired), $"{typeOfResource} expired.");
+    
+    public static Error ResourceMaxUsed(string typeOfResource) =>
+        new(nameof(ResourceMaxUsed), $"{typeOfResource} exceeding the usage limit.");
 
     public static Error MissingArgument(string argumentName) =>
         new(nameof(MissingArgument), $"{argumentName} is missing.");
@@ -101,4 +107,10 @@ public static class Errors {
 
     public static Error NoIdempotencyKeyHeader() =>
         new(nameof(NoIdempotencyKeyHeader), "Missing Idempotency-Key header.");
+
+    public static Error AlreadyJoinedServer() =>
+        new(nameof(AlreadyJoinedServer), "User is already joined server.");
+
+    public static Error ResourceNoLongerValid(string typeOfResource) =>
+        new(nameof(ResourceNoLongerValid), $"{typeOfResource} is no longer valid.");
 }

@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
@@ -22,8 +23,34 @@ public sealed class InvitationController(
         }
 
         return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<string>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<string>(null, result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpPost("{invitationId}/join")]
+    public async Task<ActionResult<ApiResponse>> JoinServerWithInvitation(string invitationId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+
+        var result = await mediator.Send(new JoinServerWithInvitationCommand(userId, invitationId));
+
+        if (result.IsSuccess) {
+            return Ok();
+        }
+
+        var errorResponse = new ApiResponse(result.Error);
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(errorResponse),
+            nameof(Errors.ResourceExpired) => StatusCode(StatusCodes.Status410Gone, errorResponse),
+            nameof(Errors.ResourceMaxUsed) => StatusCode(StatusCodes.Status410Gone, errorResponse),
+            nameof(Errors.ResourceNoLongerValid) => StatusCode(StatusCodes.Status410Gone, errorResponse),
+            nameof(Errors.AlreadyJoinedServer) => Conflict(errorResponse),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, errorResponse),
         };
     }
 }
