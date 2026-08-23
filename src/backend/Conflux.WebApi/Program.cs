@@ -187,6 +187,7 @@ builder.Services
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
 
     .AddScoped<IChannelRepository, ChannelRepository>()
+    
     .AddScoped<IConversationRepository, ConversationRepository>()
 
     .AddScoped<IMessageRepository, MessageRepository>()
@@ -197,7 +198,9 @@ builder.Services
 
     .AddScoped<ICommunityServerMemberRepository, CommunityServerMemberRepository>()
 
-    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>();
+    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
+    
+    .AddScoped<IInvitationRepository, InvitationRepository>();
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()

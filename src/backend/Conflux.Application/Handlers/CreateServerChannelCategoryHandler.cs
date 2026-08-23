@@ -3,6 +3,7 @@ using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Data.Common;
 
@@ -24,7 +25,7 @@ public sealed class CreateServerChannelCategoryHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result<Guid>.Success(category.Id);
-        } catch (DbException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
+        } catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
             return Errors.ResourceNotFound("Community server");
         } catch (OperationCanceledException) {
             throw;
