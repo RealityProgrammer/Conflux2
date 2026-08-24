@@ -17,8 +17,8 @@ public sealed class InvitationController(
 ) : ControllerBase {
     [HttpPost]
     [EnableRateLimiting("CreateServerInvitationPolicy")]
-    public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationCommand command) {
-        var result = await mediator.Send(command);
+    public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationRequest request) {
+        var result = await mediator.Send(new CreateInvitationCommand(request.ServerId, request.MaxUses, request.ValidDuration));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<string>(result.Value, Error.None));
@@ -55,4 +55,10 @@ public sealed class InvitationController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, errorResponse),
         };
     }
+
+    public sealed record CreateInvitationRequest(
+        Guid ServerId,
+        int? MaxUses,
+        TimeSpan? ValidDuration
+    );
 }
