@@ -11,9 +11,9 @@ import IconButton from "../IconButton.tsx";
 import {
   BsChatText,
   BsCheck,
-  BsChevronDown,
+  BsChevronDown, BsCopy,
   BsExclamationTriangle, BsFolder,
-  BsGearFill, BsPersonPlus,
+  BsGearFill, BsPeople, BsPersonPlus,
   BsTrash,
   BsVolumeUp
 } from "react-icons/bs";
@@ -22,7 +22,11 @@ import Spinner from "../Spinner.tsx";
 import AlertActionDialog from "../AlertActionDialog.tsx";
 import DialogForm from "../DialogForm.tsx";
 import {useFormStatus} from "react-dom";
-import {useNavigate} from "react-router";
+import {useLocation, useNavigate} from "react-router";
+import {useInterval} from "usehooks-ts";
+import SelectItem from "../SelectItem.tsx";
+import {invitationService} from "../../api/invitationService.ts";
+import type {InvitationExpireAfter} from "../../api/requests.ts";
 
 type CreateState = {
   idempotencyKey: string;
@@ -254,96 +258,6 @@ export default function ServerSidebar() {
         headerIcon={(<BsChatText className="size-10 fill-white"/>)}
         title={"Create new Channel or Category"}
         subtitle={"New territory acquired!"}
-        body={() => {
-          return (
-            <>
-              <div className="w-full mb-2">
-                <Label.Root className="label block mb-1" htmlFor="name">Label</Label.Root>
-
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="input-field h-10 w-full"
-                  placeholder={`Enter name`}
-                  maxLength={32}
-                  autoFocus required aria-required
-                />
-              </div>
-
-              <div className="w-full">
-                <Label.Root className="label block mb-1">Type</Label.Root>
-
-                <Select.Root name="type" required defaultValue={ createState ? { category: "category", text: "text_channel", voice: "voice_channel" }[createState?.type] : undefined }>
-                  <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
-                    <Select.Value placeholder="Select type to create..."/>
-                    <Select.Icon className="fill-white flex-none ml-auto">
-                      <BsChevronDown className="size-4"/>
-                    </Select.Icon>
-                  </Select.Trigger>
-
-                  <Select.Portal>
-                    <Select.Content
-                      className="overflow-hidden bg-gray-700 z-100 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
-                      position="popper"
-                      side="bottom"
-                      sideOffset={4}
-                    >
-                      <Select.Viewport>
-                        {createState?.targetCategoryId == null && (
-                          <Select.Item
-                            className="dropdown-item-default flex flex-row items-center w-full gap-2"
-                            value="category"
-                          >
-                            <BsFolder className="fill-white size-4 flex-none" />
-
-                            <span className="flex-1 text-left truncate min-w-0">
-                              <Select.ItemText>Channel Category</Select.ItemText>
-                            </span>
-
-                            <Select.ItemIndicator className="flex-none flex items-center">
-                              <BsCheck className="fill-white size-4" />
-                            </Select.ItemIndicator>
-                          </Select.Item>
-                        )}
-
-                        <Select.Item
-                          className="dropdown-item-default flex flex-row items-center w-full gap-2"
-                          value="text_channel"
-                        >
-                          <BsChatText className="fill-white size-4 flex-none" />
-
-                          <span className="flex-1 text-left truncate min-w-0">
-                            <Select.ItemText>Text Channel</Select.ItemText>
-                          </span>
-
-                          <Select.ItemIndicator className="flex-none flex items-center">
-                            <BsCheck className="fill-white size-4" />
-                          </Select.ItemIndicator>
-                        </Select.Item>
-
-                        <Select.Item
-                          className="dropdown-item-default flex flex-row items-center w-full gap-2"
-                          value="voice_channel"
-                        >
-                          <BsVolumeUp className="fill-white size-4 flex-none" />
-
-                          <span className="flex-1 text-left truncate min-w-0">
-                            <Select.ItemText>Voice Channel</Select.ItemText>
-                          </span>
-
-                          <Select.ItemIndicator className="flex-none flex items-center">
-                            <BsCheck className="fill-white size-4" />
-                          </Select.ItemIndicator>
-                        </Select.Item>
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
-              </div>
-            </>
-          )
-        }}
         action={(formData) => {
           switch (formData.get("type") as string) {
             case "category":
@@ -370,16 +284,84 @@ export default function ServerSidebar() {
           </button>
         )}
       >
+        <div className="w-full mb-2">
+          <Label.Root className="label block mb-1" htmlFor="name">Label</Label.Root>
 
+          <input
+            type="text"
+            id="name"
+            name="name"
+            className="input-field h-10 w-full"
+            placeholder={`Enter name`}
+            maxLength={32}
+            autoFocus required aria-required
+          />
+        </div>
+
+        <div className="w-full">
+          <Label.Root className="label block mb-1">Type</Label.Root>
+
+          <Select.Root name="type" required defaultValue={ createState ? { category: "category", text: "text_channel", voice: "voice_channel" }[createState?.type] : undefined }>
+            <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
+              <Select.Value placeholder="Select type to create..."/>
+              <Select.Icon className="fill-white flex-none ml-auto">
+                <BsChevronDown className="size-4"/>
+              </Select.Icon>
+            </Select.Trigger>
+
+            <Select.Portal>
+              <Select.Content
+                className="overflow-hidden bg-gray-700 z-100 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                position="popper"
+                side="bottom"
+                sideOffset={4}
+              >
+                <Select.Viewport>
+                  {createState?.targetCategoryId == null && (
+                    <SelectItem
+                      text="Category"
+                      value="category"
+                      icon={<BsFolder className="fill-white size-4 flex-none" />}
+                    />
+                  )}
+
+                  <SelectItem
+                    text="Text Channel"
+                    value="text_channel"
+                    icon={<BsChatText className="fill-white size-4 flex-none"/>}
+                  />
+
+                  <SelectItem
+                    text="Voice Channel"
+                    value="voice_channel"
+                    icon={<BsVolumeUp className="fill-white size-4 flex-none"/>}
+                  />
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
+        </div>
       </DialogForm>
     </aside>
   );
 }
 
 function Header({setCreatingState}: {setCreatingState: (state: CreateState) => void}) {
+  const { serverId } = useCommunityServerContext();
+
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
+  const [isOpenInvitationDialog, setIsOpenInvitationDialog] = useState(false);
 
   const { serverSummary: { name: serverName } } = useCommunityServerContext();
+
+  const handleGetInvitation = async (formData: FormData) => {
+
+
+    // const invitationId = await invitationService.createInvitation(
+    //   serverId,
+    //   formData.get("expireAfter") as InvitationExpireAfter,
+    //   formData.get("maxUses") as );
+  };
 
   return (
     <header className="w-full aspect-video relative group">
@@ -430,9 +412,7 @@ function Header({setCreatingState}: {setCreatingState: (state: CreateState) => v
 
               <DropdownMenu.Separator className="horizontal-separator"/>
 
-              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => {
-
-              }}>
+              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenInvitationDialog(true)}>
                 Invitation Link
 
                 <BsPersonPlus className="fill-white size-4 ml-auto"/>
@@ -447,7 +427,112 @@ function Header({setCreatingState}: {setCreatingState: (state: CreateState) => v
       <div
         className="size-full bg-purple-600"
       />
+
+      <DialogForm
+        open={isOpenInvitationDialog}
+        onOpenChange={setIsOpenInvitationDialog}
+        contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
+        headerIcon={(<BsPersonPlus className="size-10 fill-white"/>)}
+        title="Grab an invitation"
+        subtitle="Invite people to the fun gang"
+        submitButton={() => (<GetInvitationLinkButton/>)}
+        action={handleGetInvitation}
+      >
+        <div className="w-full">
+          <Label.Root className="label block mb-1">Expire after</Label.Root>
+
+          <Select.Root name="expireAfter" required defaultValue="FiveMinutes">
+            <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
+              <Select.Value placeholder="Select type to create..."/>
+              <Select.Icon className="fill-white flex-none ml-auto">
+                <BsChevronDown className="size-4"/>
+              </Select.Icon>
+            </Select.Trigger>
+
+            <Select.Portal>
+              <Select.Content
+                className="overflow-hidden bg-gray-700 z-100 text-white rounded-md w-(--radix-select-trigger-width) max-h-64"
+                position="popper"
+                side="bottom"
+                sideOffset={4}
+              >
+                <Select.Viewport className="p-1 size-full overflow-y-auto">
+                  { [{ label: "5 minutes", value: "FiveMinutes" }, { label: "15 minutes", value: "FifteenMinutes" },
+                    { label: "30 minutes", value: "ThirtyMinutes" }, { label: "1 hour", value: "OneHour" },
+                    { label: "2 hours", value: "TwoHours" }, { label: "3 hours", value: "ThreeHours" },
+                    { label: "6 hours", value: "SixHours" }, { label: "12 hours", value: "TwelveHours" },
+                    { label: "1 day", value: "OneDay" }, { label: "1 week", value: "OneWeek" },
+                    { label: "2 weeks", value: "TwoWeeks" }, { label: "4 weeks", value: "FourWeeks" },
+                    { label: "Infinite", value: "Infinite" }].map(e => (
+                    <SelectItem
+                      key={e.value}
+                      text={e.label}
+                      value={e.value}
+                    />
+                    ))
+                  }
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
+
+          <Label.Root className="label block mb-1 mt-3" htmlFor="maxUses">Max uses</Label.Root>
+
+          <input
+            id="maxUses"
+            type="number"
+            name="maxUses"
+            className="w-full input-field h-11"
+          />
+        </div>
+      </DialogForm>
     </header>
+  );
+}
+
+function GetInvitationLinkButton() {
+  const CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  const { pending } = useFormStatus();
+
+  const generateRandomInvitationId = (length: number): string => {
+    let result = '';
+
+    for (let i = 0; i < length; i++) {
+      const randomInd = Math.floor(Math.random() * CHARACTERS.length);
+      result += CHARACTERS.charAt(randomInd);
+    }
+
+    return result;
+  };
+
+  const [baseUrl, setBaseUrl] = useState("");
+  useEffect(() => {
+    setBaseUrl(window.location.origin);
+  }, []);
+
+  const [fakeInvitationId, setFakeInvitationId] = useState(generateRandomInvitationId(12));
+  useInterval(() => {
+    if (!pending) { // have to do this so that the next fake id update doesn't override the pending status
+      setFakeInvitationId(generateRandomInvitationId(12));
+    }
+  }, 100);
+
+  return (
+    <div className="flex-1 min-w-0 input-field h-11 px-3 flex items-center gap-2">
+      <span className="truncate flex-1 text-gray-500 select-none">{baseUrl}/invite/{fakeInvitationId}</span>
+
+      <button
+        type="submit"
+        className="flex-none cursor-pointer rounded-md button-theme-primary p-2"
+      >
+        { pending ? (
+          <Spinner className="size-4 fill-white"/>
+        ) : (
+          <BsCopy className="size-4 fill-white"/>
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -535,7 +620,7 @@ function ChannelCategoryView({
 
       {isCategoryOpen && (
         <>
-          {category.channels.map(c => <ChannelButton channel={c} handleChannelAction={handleChannelAction}/>)}
+          {category.channels.map(c => <ChannelButton key={c.id} channel={c} handleChannelAction={handleChannelAction}/>)}
 
           {createStatus.filter(s => s.targetCategoryId === category.id).map(s => {
             return (

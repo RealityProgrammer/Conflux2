@@ -209,43 +209,35 @@ function CreateCommunityServerButton() {
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
         subtitle="Give it a name, a vessel. Give it a life..."
-        body={() => {
-          const avatarError = apiError?.validationErrors?.["avatar"];
-          const nameError = apiError?.validationErrors?.["name"];
-
-          return (
-            <>
-              <SelectableAvatar
-                className="size-48 rounded-full flex-none"
-                onAvatarChange={(file) => {
-                  setServerAvatar(file);
-                }}
-                fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
-              />
-
-              { avatarError && (<ErrorText>{avatarError[0]}</ErrorText>) }
-
-              <div className="mt-4 w-full">
-                <input
-                  type="text"
-                  className="input-field h-11 w-full"
-                  placeholder="Enter server name"
-                  required aria-required
-                  value={serverName}
-                  onChange={(e) => {
-                    setServerName(e.target.value);
-                  }}
-                />
-              </div>
-
-              { nameError && (<ErrorText>{nameError[0]}</ErrorText>) }
-            </>
-          );
-        }}
         submitButton={() => <CreateCommunityServerSubmitButton/>}
         action={onSubmit}
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
-      />
+      >
+        <SelectableAvatar
+          className="size-48 rounded-full flex-none"
+          onAvatarChange={(file) => {
+            setServerAvatar(file);
+          }}
+          fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
+        />
+
+        { apiError?.validationErrors?.["avatar"] && (<ErrorText>{apiError?.validationErrors?.["avatar"][0]}</ErrorText>) }
+
+        <div className="mt-4 w-full">
+          <input
+            type="text"
+            className="input-field h-11 w-full"
+            placeholder="Enter server name"
+            required aria-required
+            value={serverName}
+            onChange={(e) => {
+              setServerName(e.target.value);
+            }}
+          />
+        </div>
+
+        { apiError?.validationErrors?.["name"] && (<ErrorText>{apiError?.validationErrors?.["name"][0]}</ErrorText>) }
+      </DialogForm>
     </>
   );
 }

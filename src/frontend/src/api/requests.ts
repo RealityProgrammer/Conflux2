@@ -39,3 +39,11 @@ export type GetMessagesRequest = {
   cursor?: string;
   count: number;
 };
+
+export type InvitationExpireAfter =
+  "FiveMinutes" | "FifteenMinutes" |
+  "ThirtyMinutes" | "OneHour" |
+  "TwoHours" | "ThreeHours" |
+  "SixHours" | "TwelveHours" |
+  "OneDay" | "OneWeek" |
+  "TwoWeeks" | "FourWeeks" | "Infinite";

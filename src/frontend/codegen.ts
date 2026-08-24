@@ -12,7 +12,7 @@ const config: CodegenConfig = {
                 scalars: {
                     UUID: 'string',
                     DateTime: 'string',
-                }
+                },
             },
             presetConfig: {
                 gqlTagName: 'gql',

@@ -6,8 +6,8 @@ export interface DialogFormProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   subtitle?: string;
-  action: (formData: FormData) => void;
-  body: () => ReactNode;
+  action: (formData: FormData) => (void | Promise<void>);
+  children: ReactNode;
   submitButton: () => ReactNode;
   contentClassName?: string;
   headerIcon?: ReactNode;
@@ -20,7 +20,7 @@ export default function DialogForm({
   title,
   subtitle,
   action,
-  body,
+  children,
   submitButton,
   contentClassName,
   headerIcon,
@@ -45,18 +45,18 @@ export default function DialogForm({
           </header>
 
           <form className="flex flex-col items-center mt-2 p-2" action={action}>
-            {body()}
+            {children}
 
             <footer className="w-full flex flex-row justify-end mt-2 gap-3">
               {onClear && (
-                <button type="button" className="flex-none button-theme-danger cursor-pointer rounded-md px-6 mr-auto" onClick={onClear}>
+                <button type="button" className="flex-none button-theme-danger cursor-pointer rounded-md px-6 mr-auto outline-none" onClick={onClear}>
                   Clear
                 </button>
               )}
 
               <Dialog.Close
                 type="button"
-                className="cursor-pointer basis-20"
+                className="cursor-pointer basis-20 outline-none"
               >
                 Cancel
               </Dialog.Close>

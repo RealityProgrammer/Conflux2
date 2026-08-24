@@ -19,6 +19,18 @@
     --color-gray-875: color-mix(in oklch, var(--color-gray-800) 25%, var(--color-gray-900) 75%);
 }
 
+@layer base {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        appearance: textfield;
+    }
+}
+
 @layer components {
     @keyframes shimmer-ltr-move {
         0% {
