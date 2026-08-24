@@ -24,19 +24,24 @@ using Conflux.WebApi;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.GraphQL;
 using Conflux.WebApi.GraphQL.Types;
+using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.IdentityModel.JsonWebTokens;
 using RedLockNet;
 using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using ScottBrady91.AspNetCore.Identity;
 using StackExchange.Redis;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -112,7 +117,37 @@ builder.Services.AddCors(options => {
     });
 });
 
-// redis related services
+builder.Services.AddRateLimiter(options => {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, cancellationToken) => {
+        context.HttpContext.Response.ContentType = "application/json";
+
+        await context.HttpContext.Response.WriteAsJsonAsync(new ApiResponse(Errors.TooManyRequests()), cancellationToken);
+    };
+
+    options.AddPolicy("CreateServerInvitationPolicy", httpContext => {
+        if (httpContext.User.Identity?.IsAuthenticated != true) {
+            return RateLimitPartition.GetNoLimiter("Unauthorized");
+        }
+
+        string userId =
+            httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+            httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+        
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: userId,
+            factory: _ => new() {
+                // allow for 3 invite creation per 3 hours, nobody need to create that much amount of invitation 
+                PermitLimit = 3,
+                Window = TimeSpan.FromHours(3),
+                QueueLimit = 0,
+            }
+        );
+    });
+});
+
+// cache related services
 var redisConnectionString = builder.Configuration.GetConnectionString("Valkey") ?? 
                             throw new InvalidOperationException("Missing Valkey connection string.");
 
@@ -200,7 +235,8 @@ builder.Services
 
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     
-    .AddScoped<IInvitationRepository, InvitationRepository>();
+    .AddScoped<IInvitationRepository, InvitationRepository>()
+    .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"));
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
@@ -290,6 +326,9 @@ builder.Services.AddDbContext<ApplicationDbContext>((services, options) => {
         .AddInterceptors(createTimestampInterceptor);
 });
 
+// jobs/workers
+builder.Services.AddHostedService<InvitationCleanupWorker>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment()) {
@@ -315,6 +354,8 @@ app.UseAntiforgery();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 // Configure some helper services in development environment.
 if (app.Environment.IsDevelopment()) {

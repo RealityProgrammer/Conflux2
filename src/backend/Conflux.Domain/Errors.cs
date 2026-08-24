@@ -113,4 +113,7 @@ public static class Errors {
 
     public static Error ResourceNoLongerValid(string typeOfResource) =>
         new(nameof(ResourceNoLongerValid), $"{typeOfResource} is no longer valid.");
+    
+    public static Error TooManyRequests() =>
+        new(nameof(TooManyRequests), "Too many requests.");
 }

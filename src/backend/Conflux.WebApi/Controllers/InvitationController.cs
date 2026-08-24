@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
@@ -15,6 +16,7 @@ public sealed class InvitationController(
     IMediator mediator
 ) : ControllerBase {
     [HttpPost]
+    [EnableRateLimiting("CreateServerInvitationPolicy")]
     public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationCommand command) {
         var result = await mediator.Send(command);
 

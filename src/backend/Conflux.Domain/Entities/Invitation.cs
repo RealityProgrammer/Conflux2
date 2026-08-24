@@ -14,6 +14,7 @@ public class Invitation : IHasCreatedAt {
     
     public DateTimeOffset? ExpiresAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastUsedAt { get; set; }
 
     public static string GenerateKey() {
         ReadOnlySpan<char> characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

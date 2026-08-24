@@ -15,6 +15,20 @@ public sealed class CreateInvitationHandler(
     TimeProvider timeProvider
 ) : ICommandHandler<CreateInvitationCommand, Result<string>> {
     public async ValueTask<Result<string>> Handle(CreateInvitationCommand command, CancellationToken cancellationToken) {
+        bool isPermanent = command is { ValidDuration: not null, MaxUses: not null };
+
+        if (isPermanent) {
+            // special treatment so that user can't spam create infinite invitation and clog the database
+            var permanentInvite = 
+                await invitationRepository.GetPermanentInvite(command.CommunityServerId, cancellationToken);
+            
+            if (permanentInvite != null) {
+                return Result<string>.Success(permanentInvite.Id);
+            }
+        }
+        
+        // TODO: Check active cap
+        
         Invitation invitation = new Invitation {
             Id = Invitation.GenerateKey(),
             CommunityServerId = command.CommunityServerId,
