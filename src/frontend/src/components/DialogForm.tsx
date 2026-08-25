@@ -1,31 +1,34 @@
 import {Dialog} from "radix-ui";
 import type {ReactNode} from "react";
+import {type FieldValues, FormProvider, type SubmitHandler, type UseFormReturn} from "react-hook-form";
 
-export interface DialogFormProps {
+export interface DialogFormProps<TFieldValues extends FieldValues> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   subtitle?: string;
-  action: (formData: FormData) => (void | Promise<void>);
+  methods: UseFormReturn<TFieldValues>;
+  onSubmit: SubmitHandler<TFieldValues>;
   children: ReactNode;
-  submitButton: () => ReactNode;
+  submitButton: ReactNode;
   contentClassName?: string;
   headerIcon?: ReactNode;
   onClear?: () => void;
 }
 
-export default function DialogForm({
+export default function DialogForm<TFieldValues extends FieldValues>({
   open,
   onOpenChange,
   title,
   subtitle,
-  action,
+  methods,
+  onSubmit,
   children,
   submitButton,
   contentClassName,
   headerIcon,
   onClear,
-}: DialogFormProps) {
+}: DialogFormProps<TFieldValues>) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -44,26 +47,28 @@ export default function DialogForm({
             </div>
           </header>
 
-          <form className="flex flex-col items-center mt-2 p-2" action={action}>
-            {children}
+          <FormProvider {...methods}>
+            <form className="flex flex-col items-center mt-2 p-2" onSubmit={methods.handleSubmit(onSubmit)}>
+              {children}
 
-            <footer className="w-full flex flex-row justify-end mt-2 gap-3">
-              {onClear && (
-                <button type="button" className="flex-none button-theme-danger cursor-pointer rounded-md px-6 mr-auto outline-none" onClick={onClear}>
-                  Clear
-                </button>
-              )}
+              <footer className="w-full flex flex-row justify-end mt-2 gap-3">
+                {onClear && (
+                  <button type="button" className="flex-none button-theme-danger cursor-pointer rounded-md px-6 mr-auto outline-none" onClick={onClear}>
+                    Clear
+                  </button>
+                )}
 
-              <Dialog.Close
-                type="button"
-                className="cursor-pointer basis-20 outline-none"
-              >
-                Cancel
-              </Dialog.Close>
+                <Dialog.Close
+                  type="button"
+                  className="cursor-pointer basis-20 outline-none"
+                >
+                  Cancel
+                </Dialog.Close>
 
-              {submitButton()}
-            </footer>
-          </form>
+                {submitButton}
+              </footer>
+            </form>
+          </FormProvider>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

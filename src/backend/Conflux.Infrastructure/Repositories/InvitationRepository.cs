@@ -67,7 +67,7 @@ internal sealed class InvitationRepository(
 
     public async Task<Invitation?> GetPermanentInvite(Guid serverId, CancellationToken cancellationToken = default) {
         return await dbContext.Invitations
-            .Where(i => i.MaxUses != null && i.ExpiresAt != null && i.CommunityServerId == serverId)
+            .Where(i => i.MaxUses == null && i.ExpiresAt == null && i.CommunityServerId == serverId)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

@@ -33,7 +33,7 @@ public sealed class InvitationController(
     }.ToFrozenDictionary();
     
     [HttpPost]
-    // [EnableRateLimiting("CreateServerInvitationPolicy")]
+    [EnableRateLimiting("CreateServerInvitationPolicy")]
     public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationRequest request) {
         var validDuration = ExpirationTimespanLookup.GetValueOrDefault(request.ExpireAfter, TimeSpan.FromMinutes(5));
         var result = await mediator.Send(new CreateInvitationCommand(request.ServerId, request.MaxUses, validDuration));
@@ -76,7 +76,7 @@ public sealed class InvitationController(
 
     public sealed record CreateInvitationRequest(
         Guid ServerId,
-        [Range(1, 1000, ErrorMessage = "{0} must be between 1 to 1000, or be infinite.")] int? MaxUses,
+        [Range(1, 500000, ErrorMessage = "{0} must be between {1} to {2}, or be infinite.")] int? MaxUses,
         InvitationExpireAfter ExpireAfter
     );
 

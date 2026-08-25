@@ -40,10 +40,10 @@ export type GetMessagesRequest = {
   count: number;
 };
 
-export type InvitationExpireAfter =
-  "FiveMinutes" | "FifteenMinutes" |
-  "ThirtyMinutes" | "OneHour" |
-  "TwoHours" | "ThreeHours" |
-  "SixHours" | "TwelveHours" |
-  "OneDay" | "OneWeek" |
-  "TwoWeeks" | "FourWeeks" | "Infinite";
+export const INVITATION_EXPIRE_VALUES = [
+  "FiveMinutes", "FifteenMinutes", "ThirtyMinutes", "OneHour", "TwoHours",
+  "ThreeHours", "SixHours", "TwelveHours", "OneDay", "OneWeek",
+  "TwoWeeks", "FourWeeks", "Infinite"
+] as const;
+
+export type InvitationExpireAfter = typeof INVITATION_EXPIRE_VALUES[number];

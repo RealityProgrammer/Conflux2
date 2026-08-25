@@ -16,6 +16,9 @@ import {HttpStatusCode} from "axios";
 import ErrorText from "../../components/ErrorText.tsx";
 import ServerAvatar from "../../components/ServerAvatar.tsx";
 import useJoinedServersQuery from "../../hooks/useJoinedServersQuery.ts";
+import {useForm} from "react-hook-form";
+import {z} from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -147,42 +150,66 @@ function CreateCommunityServerSubmitButton() {
   );
 }
 
+const createServerSchema = z.object({
+  name: z.string()
+    .min(1, "Input name.")
+    .max(48, "Name can only have maximum length of 48 characters."),
+
+  avatar: z.file().optional(),
+});
+
+type CreateServerFormValues = z.infer<typeof createServerSchema>;
+
 function CreateCommunityServerButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [serverAvatar, setServerAvatar] = useState<File | null>(null);
-  const [serverName, setServerName] = useState<string>("");
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
-  const [apiError, setApiError] = useState<{
-    error: string | undefined,
-    validationErrors: FieldErrors<"name" | "avatar"> | undefined
-  } | undefined>(undefined);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
 
     if (open) {
-      // When opening, reset the form and generate a fresh idempotency key
-      setServerName("");
-      setServerAvatar(null);
+      methods.reset();
       setIdempotencyKey(crypto.randomUUID());
-      setApiError(undefined);
     }
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: CreateServerFormValues) => {
     const response: ServiceResponse =
-      await communityServerService.create(idempotencyKey, serverName, serverAvatar ?? undefined);
+      await communityServerService.create(idempotencyKey, data.name, data.avatar ?? undefined);
 
     if (response.success) {
       setIsOpen(false);
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        setApiError({ error: undefined, validationErrors: response.error.details });
+        const details = response.error.details as FieldErrors<"name" | "avatar">;
+
+        if (details.name && details.name.length > 0) {
+          methods.setError("name", {
+            message: details.name[0],
+          });
+        }
+
+        if (details.avatar && details.avatar.length > 0) {
+          methods.setError("avatar", {
+            message: details.avatar[0],
+          })
+        }
       } else {
-        setApiError({ error: response.error?.message, validationErrors: undefined });
+        methods.setError("root", {
+          message: response.error?.message ?? "An unexpected error occurred.",
+        });
       }
     }
   };
+
+  const methods = useForm<CreateServerFormValues>({
+    resolver: zodResolver(createServerSchema),
+    defaultValues: {
+      name: "",
+      avatar: undefined,
+    },
+    mode: "onBlur",
+  });
 
   return (
     <>
@@ -206,37 +233,38 @@ function CreateCommunityServerButton() {
 
       <DialogForm
         open={isOpen} onOpenChange={handleOpenChange}
+        methods={methods}
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
         subtitle="Give it a name, a vessel. Give it a life..."
-        submitButton={() => <CreateCommunityServerSubmitButton/>}
-        action={onSubmit}
+        submitButton={(<CreateCommunityServerSubmitButton/>)}
+        onSubmit={onSubmit}
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
       >
         <SelectableAvatar
           className="size-48 rounded-full flex-none"
           onAvatarChange={(file) => {
-            setServerAvatar(file);
+            methods.setValue("avatar", file, { shouldValidate: true })
           }}
           fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
         />
 
-        { apiError?.validationErrors?.["avatar"] && (<ErrorText>{apiError?.validationErrors?.["avatar"][0]}</ErrorText>) }
+        {methods.formState.errors.avatar && (
+          <ErrorText>{methods.formState.errors.avatar.message}</ErrorText>
+        )}
 
         <div className="mt-4 w-full">
           <input
             type="text"
             className="input-field h-11 w-full"
             placeholder="Enter server name"
-            required aria-required
-            value={serverName}
-            onChange={(e) => {
-              setServerName(e.target.value);
-            }}
+            {...methods.register("name")}
           />
         </div>
 
-        { apiError?.validationErrors?.["name"] && (<ErrorText>{apiError?.validationErrors?.["name"][0]}</ErrorText>) }
+        {methods.formState.errors.name && (
+          <ErrorText>{methods.formState.errors.name.message}</ErrorText>
+        )}
       </DialogForm>
     </>
   );
