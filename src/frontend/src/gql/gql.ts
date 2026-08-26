@@ -14,11 +14,13 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "\n  query GetInvitationSummary($id: String!) {\n    invitationById(id: $id) {\n      communityServer {\n        id\n        name,\n        hasAvatar\n        numMembers\n      },\n      status\n    }\n  }\n": typeof types.GetInvitationSummaryDocument,
     "\nquery GetJoinedCommunityServer($after: String) {\n  joinedServers(after: $after) {\n    totalCount\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      endCursor\n    }\n    nodes {\n      id\n      name\n      hasAvatar\n    }\n  }\n}\n": typeof types.GetJoinedCommunityServerDocument,
     "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": typeof types.GetUserIdentityProfileDocument,
     "\n  query GetUserFullProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar,\n      biography,\n      pronouns,\n      createdAt,\n      numMutualFriends\n    }\n  }\n": typeof types.GetUserFullProfileDocument,
 };
 const documents: Documents = {
+    "\n  query GetInvitationSummary($id: String!) {\n    invitationById(id: $id) {\n      communityServer {\n        id\n        name,\n        hasAvatar\n        numMembers\n      },\n      status\n    }\n  }\n": types.GetInvitationSummaryDocument,
     "\nquery GetJoinedCommunityServer($after: String) {\n  joinedServers(after: $after) {\n    totalCount\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      endCursor\n    }\n    nodes {\n      id\n      name\n      hasAvatar\n    }\n  }\n}\n": types.GetJoinedCommunityServerDocument,
     "\n  query GetUserIdentityProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar\n    }\n  }\n": types.GetUserIdentityProfileDocument,
     "\n  query GetUserFullProfile($id: UUID!) {\n    userById(id: $id) {\n      id,\n      userName,\n      displayName,\n      hasAvatar,\n      biography,\n      pronouns,\n      createdAt,\n      numMutualFriends\n    }\n  }\n": types.GetUserFullProfileDocument,
@@ -38,6 +40,10 @@ const documents: Documents = {
  */
 export function gql(source: string): unknown;
 
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\n  query GetInvitationSummary($id: String!) {\n    invitationById(id: $id) {\n      communityServer {\n        id\n        name,\n        hasAvatar\n        numMembers\n      },\n      status\n    }\n  }\n"): (typeof documents)["\n  query GetInvitationSummary($id: String!) {\n    invitationById(id: $id) {\n      communityServer {\n        id\n        name,\n        hasAvatar\n        numMembers\n      },\n      status\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

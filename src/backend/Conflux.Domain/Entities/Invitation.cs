@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
 
 namespace Conflux.Domain.Entities;
@@ -15,6 +16,10 @@ public class Invitation : IHasCreatedAt {
     public DateTimeOffset? ExpiresAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastUsedAt { get; set; }
+    
+    public bool IsValidAt(DateTimeOffset now) =>
+        (ExpiresAt == null || now < ExpiresAt.Value) &&
+        (MaxUses == null || CurrentUses < MaxUses.Value);
 
     public static string GenerateKey() {
         ReadOnlySpan<char> characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

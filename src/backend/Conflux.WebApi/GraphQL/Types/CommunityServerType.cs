@@ -1,4 +1,5 @@
 using Conflux.Domain.Entities;
+using Conflux.WebApi.GraphQL.DataLoaders;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -15,5 +16,13 @@ public sealed class CommunityServerType : ObjectType<CommunityServer> {
         descriptor.Field(s => s.CreatorUser).Type<UserType>();
         descriptor.Field(s => s.OwnerUserId);
         descriptor.Field(s => s.OwnerUser).Type<UserType>();
+        descriptor.Field("numMembers")
+            .Type<NonNullType<IntType>>()
+            .Resolve(async context => {
+                var server = context.Parent<CommunityServer>();
+                var dataLoader = context.DataLoader<CommunityServerMemberCountDataLoader>();
+                    
+                return await dataLoader.LoadAsync(server.Id, context.RequestAborted);
+            });
     }
 }

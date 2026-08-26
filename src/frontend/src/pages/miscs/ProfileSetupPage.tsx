@@ -236,20 +236,21 @@ function CompletePanel({setDisplayingPanel, isSaving}: CompletePanelProps) {
           Previous
         </button>
 
-        <button type="submit"
-                className="button-success relative inline-flex flex-row justify-center items-center py-2!"
-                disabled={isSaving}
+        <button
+          type="submit"
+          className="button-success relative inline-flex flex-row justify-center items-center py-2!"
+          disabled={isSaving}
         >
-                    <span className={`inline-flex flex-row items-center ${isSaving ? 'invisible' : 'visible'}`}>
-                        Complete
+          <span className={`inline-flex flex-row items-center ${isSaving ? 'invisible' : 'visible'}`}>
+              Complete
 
-                        <BsCheck className="ml-2 size-6 fill-white"/>
-                    </span>
+              <BsCheck className="ml-2 size-6 fill-white"/>
+          </span>
 
           {isSaving && (
             <span className="absolute inset-0 flex justify-center items-center">
-                            <Spinner className="size-6 fill-white"/>
-                        </span>
+                <Spinner className="size-6 fill-white"/>
+            </span>
           )}
         </button>
       </footer>

@@ -20,6 +20,7 @@ import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
 import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
 import ChannelLayout from "./pages/server/ChannelLayout.tsx";
+import InvitePage from "./pages/invite/InvitePage.tsx";
 
 export type DirectMessagePageLoaderProps = {
   channelId: string | null;
@@ -202,6 +203,10 @@ export const router = createBrowserRouter([
             ]
           }
         ]
+      },
+      {
+        path: "invite/:inviteId",
+        element: <InvitePage/>,
       }
     ]
   }

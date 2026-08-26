@@ -12,7 +12,6 @@ using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Commands;
 using Conflux.Application.FileFormats;
-using Conflux.Application.Notifications;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
@@ -29,7 +28,6 @@ using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.JsonWebTokens;
 using RedLockNet;
@@ -37,7 +35,6 @@ using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using ScottBrady91.AspNetCore.Identity;
 using StackExchange.Redis;
-using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -173,6 +170,7 @@ builder.Services
     .AddQueryType<Query>()
     .AddType<UserType>()
     .AddType<CommunityServerType>()
+    .AddType<InvitationType>()
     .AddProjections()
     .AddAuthorization();
 

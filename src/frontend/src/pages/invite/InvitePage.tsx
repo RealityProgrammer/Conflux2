@@ -1,0 +1,154 @@
+import {useNavigate, useParams} from "react-router";
+import ServerAvatar from "../../components/ServerAvatar.tsx";
+import {useEffect, useState} from "react";
+import type {GetInvitationSummaryQuery, InvitationStatus} from "../../gql/graphql.ts";
+import Spinner from "../../components/Spinner.tsx";
+import {invitationService} from "../../api/invitationService.ts";
+import {BsCheck, BsCheckLg, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
+import ErrorText from "../../components/ErrorText.tsx";
+
+export default function InvitePage() {
+  const { inviteId } = useParams();
+
+  // don't @ me on this lmao
+  const [invitationSummary, setInvitationSummary] = useState<
+    Exclude<"loading" | GetInvitationSummaryQuery['invitationById'] | InvitationStatus | "INVALID", "VALID">
+  >("loading");
+
+  useEffect(() => {
+    if (inviteId) {
+      (async () => {
+        setInvitationSummary("loading");
+        const response = await invitationService.getInvitationSummary(inviteId);
+
+        if (response && response.success && response.data) {
+          if (response.data.status === "VALID") {
+            setInvitationSummary(response.data);
+          } else {
+            setInvitationSummary(response.data.status);
+          }
+        } else {
+          setInvitationSummary("INVALID");
+        }
+      })();
+    } else {
+      setInvitationSummary("INVALID");
+    }
+  }, [inviteId]);
+
+  return (
+    <div className="fixed bg-fixed inset-0 bg-gray-800">
+      <div className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-160 -translate-x-1/2 -translate-y-1/2 rounded-xl text-white bg-gray-600 p-4">
+        {invitationSummary === "loading" ? (
+          <Spinner className="w-full size-8 fill-white"/>
+        ) : invitationSummary === "INVALID" || !inviteId ? (
+          <>
+            <p className="text-center">The invitation is invalid</p>
+            <p className="text-gray-500 text-center mt-4 select-none">:(</p>
+          </>
+        ) : invitationSummary === "EXPIRED" ? (
+          <>
+            <p className="text-center">The invitation is expired</p>
+            <p className="text-gray-500 text-center mt-4 select-none">:(</p>
+          </>
+        ) : invitationSummary === "MAX_USES_REACHED" ? (
+          <>
+            <p className="text-center">The invitation reached maximum usage</p>
+            <p className="text-gray-500 text-center mt-4 select-none">:(</p>
+          </>
+        ) : invitationSummary === "ALREADY_JOINED_SERVER" ? (
+          <>
+            <p className="text-center">You've already joined the server.</p>
+            <p className="text-gray-500 text-center mt-4 select-none">:)</p>
+          </>
+        ) : (
+          <Invitation invitationId={inviteId} summary={invitationSummary!}/>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Invitation({summary, invitationId}: {
+  summary: NonNullable<GetInvitationSummaryQuery['invitationById']>,
+  invitationId: string
+}) {
+  const navigation = useNavigate();
+
+  const [joinStatus, setJoinStatus] = useState<"nothing" | "joining" | "joined" | "error">("nothing");
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+
+  const handleJoiningServer = async () => {
+    if (joinStatus !== "nothing") return;
+
+    setJoinStatus("joining");
+
+    const response = await invitationService.joinServer(invitationId);
+
+    if (response.success) {
+      setJoinStatus("joined");
+
+      const timeoutId = setTimeout(() => {
+        navigation(`/lobby/servers/${encodeURIComponent(summary.communityServer!.id)}`);
+      }, 3000);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setJoinStatus("error");
+      setErrorMessage(response.error?.message);
+    }
+  }
+
+  return (
+    <div className="flex flex-row items-center gap-4">
+      <ServerAvatar
+        serverId={summary.status}
+        hasAvatar={summary.communityServer!.hasAvatar}
+        className="flex-none size-48 overflow-hidden rounded-full"
+      />
+
+      <section className="flex-1">
+        <header>
+          <p className="text-center">You're invited to...</p>
+          <p className="text-center font-bold text-2xl">{summary.communityServer!.name}</p>
+        </header>
+
+        <div className="flex flex-row justify-center items-center mt-1">
+          <span className="text-xs px-2 py-0.5 bg-white/15 rounded-full flex flex-row gap-1 justify-center items-center">
+            <BsCircleFill className="fill-green-500 size-3 inline"/>
+
+            Members: {summary.communityServer!.numMembers}
+          </span>
+        </div>
+
+        <footer className="mt-6 flex flex-col justify-center items-center gap-2">
+          <button className="relative button-theme-primary px-4 py-2 cursor-pointer rounded-md" onClick={handleJoiningServer}>
+            <span className={`${joinStatus === "nothing" ? "visible" : "invisible"}`}>Join server</span>
+
+            {joinStatus === "joining" && (
+              <span className="absolute inset-0 flex justify-center items-center">
+                <Spinner className="size-6 fill-white"/>
+              </span>
+            )}
+
+            {joinStatus === "joined" && (
+              <span className="absolute inset-0 flex justify-center items-center">
+                <BsCheckLg className="size-6 fill-white"/>
+              </span>
+            )}
+
+            {joinStatus === "error" && (
+              <span className="absolute inset-0 flex justify-center items-center">
+                <BsExclamationTriangle className="size-6 fill-white"/>
+              </span>
+            )}
+          </button>
+
+          {errorMessage && (
+            <ErrorText className="block text-center">{errorMessage}</ErrorText>
+          )}
+        </footer>
+      </section>
+    </div>
+  );
+}
