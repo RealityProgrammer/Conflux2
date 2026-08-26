@@ -2,7 +2,7 @@ import {useSignalRConnection} from "../contexts/SignalRContext.tsx";
 import {useEffect} from "react";
 import {HubConnectionState} from "@microsoft/signalr";
 
-const joinOperationQueues = new Map<string, Queue<Promise<void>>>;
+const operationsMap = new Map<string, Promise<void>>;
 
 export default function useServerConnection(serverId: string) {
   const signalrContext = useSignalRConnection();
@@ -16,11 +16,11 @@ export default function useServerConnection(serverId: string) {
     let isMounted = true;
     let hasJoined = false;
 
-    if (!joinOperationQueues.has(serverId)) {
-      joinOperationQueues.set(serverId, Promise.resolve());
+    if (!operationsMap.has(serverId)) {
+      operationsMap.set(serverId, Promise.resolve());
     }
 
-    let currentQueue = joinOperationQueues.get(serverId)!;
+    let currentQueue = operationsMap.get(serverId)!;
 
     currentQueue = currentQueue.then(async () => {
       if (!isMounted || connection.state !== HubConnectionState.Connected) return;
@@ -30,12 +30,12 @@ export default function useServerConnection(serverId: string) {
       console.log(`Server joined: ${serverId}`);
     }).catch(console.error);
 
-    joinOperationQueues.set(serverId, currentQueue);
+    operationsMap.set(serverId, currentQueue);
 
     return () => {
       isMounted = false;
 
-      let cleanupQueue = joinOperationQueues.get(serverId)!;
+      let cleanupQueue = operationsMap.get(serverId)!;
 
       cleanupQueue = cleanupQueue.then(async () => {
         if (hasJoined && connection.state === HubConnectionState.Connected) {
@@ -45,7 +45,7 @@ export default function useServerConnection(serverId: string) {
       }).catch(console.error);
 
       // Save the updated queue
-      joinOperationQueues.set(serverId, cleanupQueue);
+      operationsMap.set(serverId, cleanupQueue);
     };
   }, [serverId, signalrContext.isConnected, signalrContext.connection]);
 }
