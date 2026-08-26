@@ -8,6 +8,20 @@ services:
       - valkey-data:/data
     command: ["valkey-server", "--appendonly", "yes", "--requirepass", "password"]
 
+  valkey-admin:
+    container_name: Conflux_Valkey_Admin
+    image: valkey/valkey-admin:latest
+    ports:
+      - "6380:8080"
+    environment:
+      - DEPLOYMENT_MODE=Web
+      - VALKEY_HOST=Conflux_Valkey
+      - VALKEY_PORT=6379
+      - VALKEY_AUTH_TYPE=password
+      - VALKEY_PASSWORD=password
+    depends_on:
+      - valkey
+
   database:
     container_name: Conflux_Database
     image: postgres:18.4-alpine3.24

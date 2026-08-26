@@ -1,5 +1,6 @@
 import type {CommunityServerSummaryDto} from "../api/responses.ts";
-import {createContext, type ReactNode, useContext} from "react";
+import {createContext, type ReactNode, useContext, useEffect} from "react";
+import useServerConnection from "../hooks/useServerConnection.ts";
 
 interface CommunityServerContextType {
   serverId: string;
@@ -33,6 +34,8 @@ export default function CommunityServerContextProvider({
   removeChannelCategory,
   removeChannel,
 }: CommunityServerContextProviderProps) {
+  useServerConnection(serverId);
+
   return (
     <CommunityServerContext.Provider value={{
       serverId,

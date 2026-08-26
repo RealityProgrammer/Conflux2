@@ -5,24 +5,39 @@ namespace Conflux.WebApi.SignalR;
 
 [Authorize]
 public sealed class GatewayHub(
-    ActiveChannelTracker channelTracker
+    JoinTracker joinTracker
 ) : Hub<IConfluxClient> {
-    public async Task JoinChannel(Guid channelId) {
+    public async Task JoinChannel(string channelId) {
         string connectionId = Context.ConnectionId;
         
         await Groups.AddToGroupAsync(connectionId, $"channel:{channelId}");
-        await channelTracker.AddActiveChannel(connectionId, channelId.ToString());
+        await joinTracker.IncrementChannelJoinCount(connectionId, channelId);
     }
 
-    public async Task LeaveChannel(Guid channelId) {
+    public async Task LeaveChannel(string channelId) {
         string connectionId = Context.ConnectionId;
         
         await Groups.RemoveFromGroupAsync(connectionId, $"channel:{channelId}");
-        await channelTracker.RemoveActiveChannel(connectionId, channelId.ToString());
+        await joinTracker.DecrementChannelJoinCount(connectionId, channelId);
+    }
+
+    public async Task JoinServer(string serverId) {
+        string connectionId = Context.ConnectionId;
+        
+        await Groups.AddToGroupAsync(connectionId, $"server:{serverId}");
+        await joinTracker.IncrementServerJoinCount(connectionId, serverId);
+    }
+
+    public async Task LeaveServer(string serverId) {
+        string connectionId = Context.ConnectionId;
+        
+        await Groups.RemoveFromGroupAsync(connectionId, $"server:{serverId}");
+        await joinTracker.DecrementServerJoinCount(connectionId, serverId);
     }
     
     public override async Task OnDisconnectedAsync(Exception? exception) {
-        await channelTracker.DeleteAllActiveChannels(Context.ConnectionId);
+        await joinTracker.DeleteAllJoinCounts(Context.ConnectionId);
+        
         await base.OnDisconnectedAsync(exception);
     }
 }

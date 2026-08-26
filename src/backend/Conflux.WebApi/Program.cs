@@ -198,7 +198,7 @@ builder.Services.AddMediator(options => {
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
 
-builder.Services.AddSingleton<ActiveChannelTracker>();
+builder.Services.AddSingleton<JoinTracker>();
 builder.Services.AddSignalR();
 
 // Conflux services.

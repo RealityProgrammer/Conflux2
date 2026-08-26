@@ -8,13 +8,15 @@ import ChatContainer from "../../components/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
+import useChannelConnection from "../../hooks/useChannelConnection.ts";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
 
   const {channelId, channelSummary}: DirectMessagePageLoaderProps = useLoaderData();
-
   const [showProfile, setShowProfile] = useState(true);
+
+  useChannelConnection(channelId);
 
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
