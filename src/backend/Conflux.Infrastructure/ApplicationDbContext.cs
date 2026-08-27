@@ -18,6 +18,7 @@ public class ApplicationDbContext(
     public DbSet<CommunityServerMember> CommunityServerMembers { get; set; }
     public DbSet<ChannelCategory> ChannelCategories { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
+    public DbSet<CommunityServerRole> CommunityServerRoles { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);
