@@ -1,3 +1,4 @@
+using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 
@@ -8,5 +9,11 @@ internal sealed class CommunityServerRoleRepository(
 ) : ICommunityServerRoleRepository {
     public void Add(CommunityServerRole role) {
         dbContext.CommunityServerRoles.Add(role);
+    }
+
+    public async Task<bool> Delete(Guid roleId, Guid serverId) {
+        return await dbContext.CommunityServerRoles
+            .Where(x => x.Id == roleId && x.CommunityServerId == serverId)
+            .ExecuteDeleteAsync() > 0;
     }
 }

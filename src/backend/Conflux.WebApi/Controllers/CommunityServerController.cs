@@ -157,6 +157,7 @@ public sealed class CommunityServerController(
     }
 
     [HttpPost("{serverId:guid}/roles")]
+    [Idempotent(30)]
     public async Task<ActionResult<Guid>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -168,6 +169,26 @@ public sealed class CommunityServerController(
         
         if (result.IsSuccess) {
             return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpDelete("{serverId:guid}/roles/{roleId:guid}")]
+    public async Task<ActionResult> DeleteRole(Guid serverId, Guid roleId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await mediator.Send(new DeleteServerRoleCommand(userId, serverId, roleId));
+        
+        if (result.IsSuccess) {
+            return NoContent();
         }
         
         return result.Error.Code switch {
