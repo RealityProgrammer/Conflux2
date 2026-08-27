@@ -1,8 +1,8 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {useEffect, useState} from "react";
-import {DropdownMenu, Label, Select} from "radix-ui";
+import {Dialog, DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
-import {BsChevronDown, BsCopy, BsGearFill, BsPersonPlus} from "react-icons/bs";
+import {BsChevronDown, BsCopy, BsGear, BsGearFill, BsPersonPlus, BsPersonPlusFill} from "react-icons/bs";
 import {FaFolderPlus, FaHashtag, FaVolumeHigh} from "react-icons/fa6";
 import DialogForm from "../DialogForm.tsx";
 import SelectItem from "../SelectItem.tsx";
@@ -27,6 +27,7 @@ export default function ServerSidebarHeader({
 }: ServerSidebarHeaderProps) {
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const [isOpenInvitationDialog, setIsOpenInvitationDialog] = useState(false);
+  const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false);
 
   const { serverSummary: { name: serverName } } = useCommunityServerContext();
 
@@ -80,9 +81,17 @@ export default function ServerSidebarHeader({
               <DropdownMenu.Separator className="horizontal-separator"/>
 
               <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenInvitationDialog(true)}>
-                Invitation Link
+                Invitation
 
-                <BsPersonPlus className="fill-white size-4 ml-auto"/>
+                <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
+              </DropdownMenu.Item>
+
+              <DropdownMenu.Separator className="horizontal-separator"/>
+
+              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenSettingDialog(true)}>
+                Server Settings
+
+                <BsGearFill className="fill-white size-4 ml-auto"/>
               </DropdownMenu.Item>
 
               <DropdownMenu.Arrow className="fill-gray-650"/>
@@ -98,6 +107,11 @@ export default function ServerSidebarHeader({
       <InvitationDialogForm
         open={isOpenInvitationDialog}
         onOpenChange={setIsOpenInvitationDialog}
+      />
+
+      <SettingDialog
+        open={isOpenSettingDialog}
+        onOpenChanged={setIsOpenSettingDialog}
       />
     </header>
   );
@@ -139,7 +153,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
       expireAfter: "FiveMinutes",
       maxUses: null,
     },
-    mode: "onBlur",
+    mode: "onSubmit",
   });
 
   const handleGetInvitation = async (value: CreateInvitationFormValues) => {
@@ -295,4 +309,29 @@ function GetInvitationLinkButton() {
       </button>
     </div>
   );
+}
+
+function SettingDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChanged}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="backdrop-overlay"/>
+
+        <Dialog.Content className="bg-gray-650 fixed inset-4 z-55 rounded-xl text-white">
+          <header className="bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
+            {<BsGear className="size-10 fill-white"/>}
+
+            <div className="flex-1">
+              <Dialog.Title className="font-bold text-xl text-white">Server Configuration Panel</Dialog.Title>
+              <Dialog.Description className="text-sm text-gray-400">Click-clack, what is that sound?</Dialog.Description>
+            </div>
+          </header>
+
+          <main className="p-2">
+            Main content here.
+          </main>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
 }

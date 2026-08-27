@@ -20,7 +20,7 @@ const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx")
 import LobbyLayout from "./pages/lobby/LobbyLayout.tsx";
 import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
-const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
+import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";

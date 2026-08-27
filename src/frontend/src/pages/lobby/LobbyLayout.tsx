@@ -233,7 +233,7 @@ function CreateCommunityServerButton() {
       name: "",
       avatar: undefined,
     },
-    mode: "onBlur",
+    mode: "onSubmit",
   });
 
   return (

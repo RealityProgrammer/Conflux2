@@ -69,7 +69,7 @@ export default function ServerSidebar() {
 
   const formMethods = useForm<CreateChannelOrCategoryFormValues>({
     resolver: zodResolver(createChannelOrCategorySchema),
-    mode: "onBlur",
+    mode: "onSubmit",
   });
 
   const handleChannelAction = async (action: ChannelAction) => {
@@ -185,6 +185,7 @@ export default function ServerSidebar() {
               createStatus={createStatus}
               setCreateValues={(idempotencyKey, type) => {
                 formMethods.setValues({ idempotencyKey, type, targetCategoryId: c.id });
+                setIsCreateChannelOrCategoryDialogOpen(true);
               }}
               handleChannelAction={handleChannelAction}
             />
@@ -199,6 +200,7 @@ export default function ServerSidebar() {
               createStatus={createStatus}
               setCreateValues={(idempotencyKey, type) => {
                 formMethods.setValues({ idempotencyKey, type, targetCategoryId: c.id });
+                setIsCreateChannelOrCategoryDialogOpen(true);
               }}
               handleChannelAction={handleChannelAction}
             />
@@ -290,6 +292,9 @@ export default function ServerSidebar() {
               });
               break;
           }
+
+          setIsCreateChannelOrCategoryDialogOpen(false);
+          formMethods.reset();
         }}
         submitButton={(
           <button
