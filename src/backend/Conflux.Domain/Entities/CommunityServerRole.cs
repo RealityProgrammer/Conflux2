@@ -1,3 +1,4 @@
+using Conflux.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain.Entities;
@@ -11,4 +12,6 @@ public class CommunityServerRole : IHasCreatedAt {
     public CommunityServer CommunityServer { get; set; } = null!;
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public ServerPermissions Permissions { get; set; } = ServerPermissions.None;
 }
