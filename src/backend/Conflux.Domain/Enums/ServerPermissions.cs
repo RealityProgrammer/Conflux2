@@ -6,4 +6,7 @@ public enum ServerPermissions {
     
     CreateRole = 1 << 0,
     DeleteRole = 1 << 1,
+    
+    CreateChannel = 1 << 2,
+    DeleteChannel = 1 << 3,
 }

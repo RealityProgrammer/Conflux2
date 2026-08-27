@@ -1,9 +1,12 @@
 using Conflux.Domain;
+using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Commands;
 
 public sealed record DeleteServerRoleCommand(
-    Guid UserId,
+    Guid ExecutorUserId,
     Guid ServerId,
     Guid RoleId
-) : ICommand<Result>;
+) : ICommand<Result>, IServerCommand {
+    public ServerPermissions RequiredPermissions => ServerPermissions.DeleteRole;
+}
