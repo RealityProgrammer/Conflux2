@@ -1,68 +1,50 @@
 import {useNavigate, useParams} from "react-router";
 import ServerAvatar from "../../components/ServerAvatar.tsx";
-import {useEffect, useState} from "react";
-import type {GetInvitationSummaryQuery, InvitationStatus} from "../../gql/graphql.ts";
+import {useState} from "react";
 import Spinner from "../../components/Spinner.tsx";
 import {invitationService} from "../../api/invitationService.ts";
-import {BsCheck, BsCheckLg, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
+import {BsCheckLg, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 import ErrorText from "../../components/ErrorText.tsx";
+import {type GetInvitationSummaryQuery, useGetInvitationSummaryQuery} from "../../graphql/queries.ts";
 
 export default function InvitePage() {
   const { inviteId } = useParams();
-
-  // don't @ me on this lmao
-  const [invitationSummary, setInvitationSummary] = useState<
-    Exclude<"loading" | GetInvitationSummaryQuery['invitationById'] | InvitationStatus | "INVALID", "VALID">
-  >("loading");
-
-  useEffect(() => {
-    if (inviteId) {
-      (async () => {
-        setInvitationSummary("loading");
-        const response = await invitationService.getInvitationSummary(inviteId);
-
-        if (response && response.success && response.data) {
-          if (response.data.status === "VALID") {
-            setInvitationSummary(response.data);
-          } else {
-            setInvitationSummary(response.data.status);
-          }
-        } else {
-          setInvitationSummary("INVALID");
-        }
-      })();
-    } else {
-      setInvitationSummary("INVALID");
-    }
-  }, [inviteId]);
+  const {isLoading, data, isError} = useGetInvitationSummaryQuery({id: inviteId!}, {enabled: !!inviteId});
 
   return (
     <div className="fixed bg-fixed inset-0 bg-gray-800">
       <div className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-160 -translate-x-1/2 -translate-y-1/2 rounded-xl text-white bg-gray-600 p-4">
-        {invitationSummary === "loading" ? (
+        {isLoading ? (
           <Spinner className="w-full size-8 fill-white"/>
-        ) : invitationSummary === "INVALID" || !inviteId ? (
+        ) : !inviteId ? (
+          <p className="text-center">Have you... uh... forgot to paste the invitation ID?</p>
+        ) : isError || !data ? (
+          <>
+            <p className="text-center">An error seems to have occurred</p>
+            <p className="text-gray-500 text-center mt-4 select-none">:(</p>
+          </>
+        ) : !data.invitationById ? (
           <>
             <p className="text-center">The invitation is invalid</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : invitationSummary === "EXPIRED" ? (
+        ) : data.invitationById.status === "EXPIRED" ? (
           <>
             <p className="text-center">The invitation is expired</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : invitationSummary === "MAX_USES_REACHED" ? (
+        ) : data.invitationById.status === "MAX_USES_REACHED" ? (
           <>
             <p className="text-center">The invitation reached maximum usage</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : invitationSummary === "ALREADY_JOINED_SERVER" ? (
+        ) : data.invitationById.status === "ALREADY_JOINED_SERVER" ? (
           <>
             <p className="text-center">You've already joined the server.</p>
             <p className="text-gray-500 text-center mt-4 select-none">:)</p>
           </>
         ) : (
-          <Invitation invitationId={inviteId} summary={invitationSummary!}/>
+          <Invitation invitationId={inviteId!} summary={data.invitationById}/>
         )}
       </div>
     </div>

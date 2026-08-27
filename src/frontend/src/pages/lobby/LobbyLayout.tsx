@@ -15,10 +15,10 @@ import DialogForm from "../../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
 import ErrorText from "../../components/ErrorText.tsx";
 import ServerAvatar from "../../components/ServerAvatar.tsx";
-import useJoinedServersQuery from "../../hooks/useJoinedServersQuery.ts";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {useInfiniteGetJoinedCommunityServerQuery} from "../../graphql/infiniteQueries.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -68,15 +68,40 @@ function Sidebar() {
 function JoinedCommunityServerScrollList() {
   const navigate = useNavigate();
 
+  // const {
+  //   queryResult: {
+  //     hasNextPage,
+  //     isFetchingNextPage,
+  //     fetchNextPage,
+  //     isLoading,
+  //   },
+  //   allElements,
+  // } = useJoinedServersQuery();
+
   const {
-    queryResult: {
-      hasNextPage,
-      isFetchingNextPage,
-      fetchNextPage,
-      isLoading,
-    },
-    allElements,
-  } = useJoinedServersQuery();
+    data,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isLoading,
+  } = useInfiniteGetJoinedCommunityServerQuery(
+    {},
+    {
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage) => {
+        const pageInfo = lastPage?.joinedServers?.pageInfo;
+
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
+        }
+
+        return undefined;
+      },
+      staleTime: 30 * 60 * 1000,
+    }
+  );
+
+  const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
 
   return (
     <VirtualizedScrollList

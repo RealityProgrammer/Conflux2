@@ -2,14 +2,14 @@ import {type HTMLAttributes} from "react";
 import UserProfileContent from "./UserProfileContent.tsx";
 import Spinner from "./Spinner.tsx";
 import {BsExclamationTriangle} from "react-icons/bs";
-import {useUserFullProfile} from "../hooks/fetchUserFullProfile.ts";
+import {useGetUserFullProfileQuery} from "../graphql/queries.ts";
 
 export interface UserProfileCardProps extends HTMLAttributes<HTMLDivElement> {
   userId: string;
 }
 
 export default function UserProfilePanel({ userId, className, ...props }: UserProfileCardProps) {
-  const { data: userProfile, isLoading, isError } = useUserFullProfile(userId);
+  const { data, isLoading, isError } = useGetUserFullProfileQuery({ id: userId });
 
   return (
     <section className={`${className}`} {...props}>
@@ -17,17 +17,17 @@ export default function UserProfilePanel({ userId, className, ...props }: UserPr
         <div className="size-full flex flex-row justify-center items-center">
           <Spinner className="fill-white size-12"/>
         </div>
-      ) : !isError && !!userProfile && userProfile.data ? (
+      ) : !isError && !!data && data.userById ? (
         <UserProfileContent
           userId={userId}
-          username={userProfile.data.userName}
-          displayName={userProfile.data.displayName}
-          hasAvatar={userProfile.data.hasAvatar}
-          joinDate={userProfile.data.createdAt}
+          username={data.userById.userName ?? "???"}
+          displayName={data.userById.displayName ?? "???"}
+          hasAvatar={data.userById.hasAvatar}
+          joinDate={new Date(data.userById.createdAt)}
           friendedDate={new Date()}
-          pronouns={userProfile.data.pronouns ?? undefined}
-          bio={userProfile.data.biography ?? undefined}
-          mutualFriendsCount={userProfile.data.numMutualFriends}
+          pronouns={data.userById.pronouns ?? undefined}
+          bio={data.userById.biography ?? undefined}
+          mutualFriendsCount={data.userById.numMutualFriends}
         />
       ) : (
         <div className="size-full flex flex-col justify-center items-center">

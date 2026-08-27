@@ -21,8 +21,8 @@ import type {
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
+import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -102,19 +102,19 @@ export default function PendingRequestsTabContent() {
     );
   };
 
-  const getUserBasicProfile = useFetchUserBasicProfile();
-
   useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
-    const profileResponse = await getUserBasicProfile(notif.senderUserId);
+    const query = await queryClient.fetchQuery({
+      queryKey: useGetUserIdentityProfileQuery.getKey({ id: notif.senderUserId }),
+      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: notif.senderUserId }),
+    });
 
-    if (!profileResponse.success) return;
-
-    const userProfile = profileResponse.data!;
+    const userProfile = query.userById;
+    if (!userProfile) return;
 
     const newElement: QueryPendingRequestElement = {
       userId: notif.senderUserId,
-      userName: userProfile.userName,
-      displayName: userProfile.displayName,
+      userName: userProfile.userName ?? "???",
+      displayName: userProfile.displayName ?? "???",
       hasAvatar: userProfile.hasAvatar,
       status: UserRelationshipStatus.IncomingRequest,
     }

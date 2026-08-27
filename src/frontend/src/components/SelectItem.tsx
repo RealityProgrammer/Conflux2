@@ -1,4 +1,4 @@
-import {BsChatText, BsCheck} from "react-icons/bs";
+import {BsCheck} from "react-icons/bs";
 import {Select} from "radix-ui";
 import type {ReactNode} from "react";
 

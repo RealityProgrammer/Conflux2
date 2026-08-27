@@ -1,0 +1,152 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+import { graphqlFetcher } from '../api/client';
+import type * as Types from './types';
+
+import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+export type GetInvitationSummaryQueryVariables = Exact<{
+  id: string;
+}>;
+
+
+export type GetInvitationSummaryQuery = { invitationById: { status: Types.InvitationStatus, communityServer: { id: string, name: string, hasAvatar: boolean, numMembers: number } | null } | null };
+
+export type GetUserFullProfileQueryVariables = Exact<{
+  id: string;
+}>;
+
+
+export type GetUserFullProfileQuery = { userById: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number } | null };
+
+export type GetUserIdentityProfileQueryVariables = Exact<{
+  id: string;
+}>;
+
+
+export type GetUserIdentityProfileQuery = { userById: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
+
+
+export class TypedDocumentString<TResult, TVariables>
+  extends String
+  implements DocumentTypeDecoration<TResult, TVariables>
+{
+  __apiType?: NonNullable<DocumentTypeDecoration<TResult, TVariables>['__apiType']>;
+  private value: string;
+  public __meta__?: Record<string, any> | undefined;
+
+  constructor(value: string, __meta__?: Record<string, any> | undefined) {
+    super(value);
+    this.value = value;
+    this.__meta__ = __meta__;
+  }
+
+  override toString(): string & DocumentTypeDecoration<TResult, TVariables> {
+    return this.value;
+  }
+}
+
+export const GetInvitationSummaryDocument = new TypedDocumentString(`
+    query GetInvitationSummary($id: String!) {
+  invitationById(id: $id) {
+    communityServer {
+      id
+      name
+      hasAvatar
+      numMembers
+    }
+    status
+  }
+}
+    `);
+
+export const useGetInvitationSummaryQuery = <
+      TData = GetInvitationSummaryQuery,
+      TError = unknown
+    >(
+      variables: GetInvitationSummaryQueryVariables,
+      options?: Omit<UseQueryOptions<GetInvitationSummaryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetInvitationSummaryQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetInvitationSummaryQuery, TError, TData>(
+      {
+    queryKey: ['GetInvitationSummary', variables],
+    queryFn: graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables),
+    ...options
+  }
+    )};
+
+useGetInvitationSummaryQuery.getKey = (variables: GetInvitationSummaryQueryVariables) => ['GetInvitationSummary', variables];
+
+
+useGetInvitationSummaryQuery.fetcher = (variables: GetInvitationSummaryQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables, options);
+
+export const GetUserFullProfileDocument = new TypedDocumentString(`
+    query GetUserFullProfile($id: UUID!) {
+  userById(id: $id) {
+    id
+    userName
+    displayName
+    hasAvatar
+    biography
+    pronouns
+    createdAt
+    numMutualFriends
+  }
+}
+    `);
+
+export const useGetUserFullProfileQuery = <
+      TData = GetUserFullProfileQuery,
+      TError = unknown
+    >(
+      variables: GetUserFullProfileQueryVariables,
+      options?: Omit<UseQueryOptions<GetUserFullProfileQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserFullProfileQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetUserFullProfileQuery, TError, TData>(
+      {
+    queryKey: ['GetUserFullProfile', variables],
+    queryFn: graphqlFetcher<GetUserFullProfileQuery, GetUserFullProfileQueryVariables>(GetUserFullProfileDocument, variables),
+    ...options
+  }
+    )};
+
+useGetUserFullProfileQuery.getKey = (variables: GetUserFullProfileQueryVariables) => ['GetUserFullProfile', variables];
+
+
+useGetUserFullProfileQuery.fetcher = (variables: GetUserFullProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserFullProfileQuery, GetUserFullProfileQueryVariables>(GetUserFullProfileDocument, variables, options);
+
+export const GetUserIdentityProfileDocument = new TypedDocumentString(`
+    query GetUserIdentityProfile($id: UUID!) {
+  userById(id: $id) {
+    id
+    userName
+    displayName
+    hasAvatar
+  }
+}
+    `);
+
+export const useGetUserIdentityProfileQuery = <
+      TData = GetUserIdentityProfileQuery,
+      TError = unknown
+    >(
+      variables: GetUserIdentityProfileQueryVariables,
+      options?: Omit<UseQueryOptions<GetUserIdentityProfileQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserIdentityProfileQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetUserIdentityProfileQuery, TError, TData>(
+      {
+    queryKey: ['GetUserIdentityProfile', variables],
+    queryFn: graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables),
+    ...options
+  }
+    )};
+
+useGetUserIdentityProfileQuery.getKey = (variables: GetUserIdentityProfileQueryVariables) => ['GetUserIdentityProfile', variables];
+
+
+useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables, options);

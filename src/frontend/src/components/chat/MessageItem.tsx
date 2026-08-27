@@ -46,7 +46,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     if (message.replyTo && this.data.replyToMessageSenderProfile) {
       const layout = estimateMessageLayout(
         `reply_${message.replyTo.messageId}`,
-        buildReplyText(this.data.replyToMessageSenderProfile.displayName, message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
+        buildReplyText(this.data.replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
         messageDisplayWidth,
         16
       );
@@ -96,7 +96,7 @@ export default function MessageView({
           {message.replyTo && replyToMessageSenderProfile && (
             <div className="min-w-0">
               <p className="text-xs ml-13">
-                {buildReplyText(replyToMessageSenderProfile.displayName, message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount)}
+                {buildReplyText(replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount)}
               </p>
             </div>
           )}

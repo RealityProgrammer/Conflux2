@@ -1,5 +1,5 @@
 import type {CommunityServerSummaryDto} from "../api/responses.ts";
-import {createContext, type ReactNode, useContext, useEffect} from "react";
+import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
 
 interface CommunityServerContextType {

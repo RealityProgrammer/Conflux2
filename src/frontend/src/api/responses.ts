@@ -1,4 +1,5 @@
 import type {HttpStatusCode} from "axios";
+import type {GetUserFullProfileQuery, GetUserIdentityProfileQuery} from "../graphql/queries.ts";
 
 export type ServiceError = {
   code: string;
@@ -22,23 +23,8 @@ export interface UserAuthorizationInfo {
   permissions: string[];
 }
 
-export type UserIdentityProfileDto = {
-  id: string;
-  userName: string;
-  displayName: string;
-  hasAvatar: boolean;
-}
-
-export type UserFullProfileDto = {
-  id: string;
-  userName: string;
-  displayName: string;
-  hasAvatar: boolean;
-  biography: string | null;
-  pronouns: string | null;
-  createdAt: Date;
-  numMutualFriends: number;
-}
+export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['userById']>;
+export type UserFullProfileDto = NonNullable<GetUserFullProfileQuery['userById']>
 
 export interface LoginResponse {
   authorization: UserAuthorizationInfo;

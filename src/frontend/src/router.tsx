@@ -1,30 +1,38 @@
+import { Suspense, lazy } from 'react';
 import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect} from "react-router";
+import {authService} from "./api/authService.ts";
+import {channelService} from "./api/channelService.ts";
+import {queryClient} from "./main.tsx";
+import {useGetUserIdentityProfileQuery} from "./graphql/queries.ts";
+import {HttpStatusCode} from "axios";
+import type {
+  DmChannelSummary,
+  ServiceResponse,
+  UserAuthorizationInfo,
+  UserIdentityProfileDto,
+} from "./api/responses.ts";
 import HomePage from "./pages/HomePage"
 import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
-import {authService} from "./api/authService.ts";
-import {HttpStatusCode} from "axios";
-import type {DmChannelSummary, ServiceResponse, UserAuthorizationInfo,} from "./api/responses.ts";
-import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
-import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
-import {userService} from "./api/userService.ts";
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
+const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
+const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
 import LobbyLayout from "./pages/lobby/LobbyLayout.tsx";
 import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
-import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
+const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
-import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
 import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
 import ChannelLayout from "./pages/server/ChannelLayout.tsx";
-import InvitePage from "./pages/invite/InvitePage.tsx";
+import SuspenseFallback from "./pages/SuspenseFallback.tsx";
+const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
-  channelId: string | null;
-  channelSummary: DmChannelSummary | null;
+  channelId: string | undefined;
+  channelSummary: DmChannelSummary | undefined;
 };
 
 export const router = createBrowserRouter([
@@ -37,12 +45,14 @@ export const router = createBrowserRouter([
       ]);
 
       const authInfo = authResponse.data;
-      let profileInfo = null;
+      let profileInfo: UserIdentityProfileDto | null = null;
 
       if (authInfo?.id) {
         try {
-          const profileResponse = await userService.getUserIdentityProfile(authInfo.id);
-          profileInfo = profileResponse.data;
+          profileInfo = (await queryClient.ensureQueryData({
+            queryKey: useGetUserIdentityProfileQuery.getKey({ id: authInfo.id }),
+            queryFn: useGetUserIdentityProfileQuery.fetcher({ id: authInfo.id }),
+          })).userById;
         } catch (error) {
           console.error("Failed to load user profile: ", error);
         }
@@ -82,13 +92,19 @@ export const router = createBrowserRouter([
           },
           {
             path: "verify-email",
-            element: <VerifyEmailPage/>,
             loader: restrictConfirmedUser,
+            element:
+              <Suspense fallback={<SuspenseFallback/>}>
+                <VerifyEmailPage/>
+              </Suspense>
           },
           {
             path: "confirm-email",
-            element: <ConfirmEmailPage/>,
             loader: restrictConfirmedUser,
+            element:
+              <Suspense fallback={<SuspenseFallback/>}>
+                <ConfirmEmailPage/>
+              </Suspense>
           }
         ]
       },
@@ -103,7 +119,10 @@ export const router = createBrowserRouter([
 
           return response.data.isProfileSetup ? redirect('/') : null;
         },
-        element: <ProfileSetupPage/>
+        element:
+          <Suspense fallback={<SuspenseFallback/>}>
+            <ProfileSetupPage/>
+          </Suspense>
       },
       {
         id: "lobby",
@@ -147,7 +166,10 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: "announcements",
-                element: <SystemAnnouncementPage/>
+                element:
+                  <Suspense fallback={<SuspenseFallback/>}>
+                    <SystemAnnouncementPage/>
+                  </Suspense>
               },
               {
                 path: "friends",
@@ -160,14 +182,14 @@ export const router = createBrowserRouter([
                   const userId: string | undefined = params.userId;
 
                   if (!userId) {
-                    return {channelId: null, channelSummary: null};
+                    return {channelId: undefined, channelSummary: undefined};
                   }
 
                   const channelIdResponse: ServiceResponse<string> =
                     await channelService.getDirectMessageChannelId(userId);
 
                   if (!channelIdResponse.success) {
-                    return {channelId: null, channelSummary: null};
+                    return {channelId: undefined, channelSummary: undefined};
                   }
 
                   const channelId: string = channelIdResponse.data!;
@@ -176,7 +198,7 @@ export const router = createBrowserRouter([
                     await channelService.getDmChannelSummary(channelId);
 
                   if (!dmChannelSummary.success) {
-                    return {channelId: channelId, channelSummary: null};
+                    return {channelId: channelId, channelSummary: undefined};
                   }
 
                   return {channelId: channelId, channelSummary: dmChannelSummary.data!};
@@ -206,7 +228,10 @@ export const router = createBrowserRouter([
       },
       {
         path: "invite/:inviteId",
-        element: <InvitePage/>,
+        element:
+          <Suspense fallback={<SuspenseFallback/>}>
+            <InvitePage/>
+          </Suspense>
       }
     ]
   }

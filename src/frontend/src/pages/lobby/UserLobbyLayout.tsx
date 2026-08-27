@@ -142,7 +142,7 @@ function DirectMessagesList() {
         return (
           <UserNameplate.Root
             userId={item.userProfile.id}
-            displayName={item.userProfile.displayName}
+            displayName={item.userProfile.displayName ?? "???"}
             hasAvatar={item.userProfile.hasAvatar}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             onClick={() => {

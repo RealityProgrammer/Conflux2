@@ -13,8 +13,8 @@ import useFriendActions from "../../hooks/useFriendActions.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
+import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -101,14 +101,14 @@ export default function FriendListTabContent() {
     handleRemoveUserFromCache(notif.invokerUserId);
   });
 
-  const getUserBasicProfile = useFetchUserBasicProfile();
-
   useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
-    const profileResponse = await getUserBasicProfile(notif.acceptorUserId);
+    const profileResponse = await queryClient.fetchQuery({
+      queryKey: useGetUserIdentityProfileQuery.getKey({ id: notif.acceptorUserId }),
+      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: notif.acceptorUserId }),
+    })
 
-    if (!profileResponse.success) return;
-
-    const userProfile = profileResponse.data!;
+    const userProfile = profileResponse.userById;
+    if (!userProfile) return;
 
     queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto> | null | undefined>>(
       queryKey,
@@ -206,8 +206,8 @@ function Row({element, removeUserFromCache, navigateToDirectMessage}: RowProps) 
 
   return (
     <UserNameplate.Root userId={element.id}
-                        userName={element.userName}
-                        displayName={element.displayName}
+                        userName={element.userName ?? "???"}
+                        displayName={element.displayName ?? "???"}
                         hasAvatar={element.hasAvatar}
                         className="w-full p-1.5"
                         style={{height: `${ITEM_HEIGHT}px`}}

@@ -13,7 +13,7 @@ export interface UseGetMessagesResult {
   allMessageGroups: TimelineMessageBlockDto[];
   userProfiles: Record<string, UserIdentityProfileDto>;
   queryKey: (string | null | undefined)[];
-  appendMessage: (newMessage: MessageDto, userSummary?: UserIdentityProfileDto) => void;
+  appendMessage: (newMessage: MessageDto, userProfile?: UserIdentityProfileDto) => void;
   editMessage: (messageId: string, newBody: string | null) => void;
   deleteMessage: (messageId: string) => void;
 }
@@ -108,7 +108,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   // modification callbacks
   const queryClient = useQueryClient();
 
-  const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined, unknown>) => InfiniteData<GetMessagesResponse | null | undefined, unknown>) => {
+  const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined>) => InfiniteData<GetMessagesResponse | null | undefined>) => {
     queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
       queryKey,
       (oldData) => {
@@ -121,13 +121,15 @@ export default function useGetMessages(channelId: string | null | undefined, loa
     );
   }
 
-  const appendMessage = (newMessage: MessageDto, userSummary?: UserIdentityProfileDto) => {
+  const appendMessage = (newMessage: MessageDto, userProfile?: UserIdentityProfileDto) => {
     modifyMessageData((oldData) => {
       const lastPage = oldData.pages.at(-1)!;
       const updatedLastPage = {...lastPage};
 
-      if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
-        updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
+      const existingUsers = updatedLastPage.users || [];
+
+      if (userProfile && !existingUsers.some((u) => u.id === userProfile.id)) {
+        updatedLastPage.users = [...existingUsers, userProfile];
       }
 
       const currentGroups = updatedLastPage.messageGroups || [];

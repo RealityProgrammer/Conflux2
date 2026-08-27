@@ -4,7 +4,7 @@ import {HubConnectionState} from "@microsoft/signalr";
 
 const operationsMap = new Map<string, Promise<void>>;
 
-export default function useChannelConnection(channelId: string) {
+export default function useChannelConnection(channelId: string | undefined) {
   const signalrContext = useSignalRConnection();
 
   useEffect(() => {

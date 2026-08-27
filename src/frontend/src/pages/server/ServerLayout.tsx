@@ -5,7 +5,6 @@ import Spinner from "../../components/Spinner.tsx";
 import type {CommunityServerSummaryDto} from "../../api/responses.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
-import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 
 type SummaryStatus = "loading" | "error" | CommunityServerSummaryDto;
 

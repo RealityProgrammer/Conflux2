@@ -14,6 +14,7 @@ export default function useTimelineEntries(
 
   for (const group of messageGroups) {
     const sender = userProfiles[group.senderUserId];
+
     let replyToMessageSenderProfile = group.messages[0].replyTo ?
       userProfiles[group.messages[0].replyTo.senderUserId] :
       undefined;

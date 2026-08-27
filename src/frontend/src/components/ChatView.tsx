@@ -17,9 +17,9 @@ import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
 import AlertActionDialog from "./AlertActionDialog.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
-import {useFetchUserBasicProfile} from "../hooks/fetchUserBasicProfile.ts";
 import useTimelineEntries from "../hooks/useTimelineEntries.ts";
 import type {TimelineContext} from "./chat/TimelineContext.ts";
+import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
 
 type MediaGalleryState = {
   items: { id: string; type: string }[];
@@ -42,8 +42,6 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
 
   const viewportRef = useRef<HTMLDivElement>(null!);
   const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
-
-  const getUserBasicProfile = useFetchUserBasicProfile();
 
   const queryClient = useQueryClient();
 
@@ -164,9 +162,10 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
     // if we don't know this user, fetch from api
     if (!knownUser) {
       try {
-        // Replace with your actual user service fetch call
-        const response = await getUserBasicProfile(senderId);
-        knownUser = response.data ?? undefined;
+        knownUser = await queryClient.fetchQuery({
+          queryKey: useGetUserIdentityProfileQuery.getKey({ id: senderId }),
+          queryFn: useGetUserIdentityProfileQuery.fetcher({ id: senderId }),
+        });
       } catch (error) {
         console.error("Failed to fetch user summary for new message", error);
       }
