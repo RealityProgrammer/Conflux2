@@ -234,7 +234,9 @@ builder.Services
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     
     .AddScoped<IInvitationRepository, InvitationRepository>()
-    .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"));
+    .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"))
+    
+    .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>();
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()

@@ -53,7 +53,7 @@ public sealed class CreateDmChannelHandler(
             return Result<ChannelResolutionResult>.Success(new(channel.Id, ChannelResolutionStatus.Created));
         } catch (DbUpdateException) {
             // potential concurrency when 2 creates happen at the same time.
-            var raceConditionChannelId = await channelRepository.GetChannelIdFromFriendRequestId(friendRequestSummary.FriendRequestId);
+            var raceConditionChannelId = await channelRepository.GetChannelIdFromFriendRequestId(friendRequestSummary.FriendRequestId, CancellationToken.None);
             return Result<ChannelResolutionResult>.Success(new(raceConditionChannelId, ChannelResolutionStatus.Existing));
         }
     }

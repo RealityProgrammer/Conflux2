@@ -5,28 +5,25 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using System.Data.Common;
 
 namespace Conflux.Application.Handlers;
 
-public sealed class CreateServerChannelCategoryHandler(
-    IChannelCategoryRepository channelCategoryRepository,
+public sealed class CreateServerRoleHandler(
+    ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork
-) : ICommandHandler<CreateServerChannelCategoryCommand, Result<Guid>> {
-    public async ValueTask<Result<Guid>> Handle(CreateServerChannelCategoryCommand request, CancellationToken cancellationToken) {
-        ChannelCategory category = new() {
-            Name = request.Name,
-            CommunityServerId = request.ServerId,
+) : ICommandHandler<CreateServerRoleCommand, Result<Guid>> {
+    public async ValueTask<Result<Guid>> Handle(CreateServerRoleCommand command, CancellationToken cancellationToken) {
+        CommunityServerRole role = new() {
+            CommunityServerId = command.ServerId,
+            Name = command.Name,
         };
-        
-        channelCategoryRepository.Add(category);
+
+        repository.Add(role);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return Result<Guid>.Success(category.Id);
         } catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } postgresException) {
-            if (postgresException.ConstraintName == "FK_ChannelCategories_CommunityServers_CommunityServerId") {
+            if (postgresException.ConstraintName == "FK_CommunityServerRoles_CommunityServers_CommunityServerId") {
                 return Errors.ResourceNotFound("Community server");
             }
 
@@ -36,5 +33,7 @@ public sealed class CreateServerChannelCategoryHandler(
         } catch {
             return Errors.UnexpectedError();
         }
+        
+        return Result<Guid>.Success(role.Id);
     }
 }

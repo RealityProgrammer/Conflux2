@@ -327,8 +327,10 @@ function SettingDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (op
             </div>
           </header>
 
-          <main className="p-2">
-            Main content here.
+          <main className="grid grid-cols-12 size-full">
+            <div className="col-span-1 bg-red-500">
+              <p>Something</p>
+            </div>
           </main>
         </Dialog.Content>
       </Dialog.Portal>

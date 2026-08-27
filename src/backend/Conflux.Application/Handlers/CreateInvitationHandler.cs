@@ -41,8 +41,12 @@ public sealed class CreateInvitationHandler(
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result<string>.Success(invitation.Id);
-        } catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation }) {
-            return Errors.ResourceNotFound("Community server");
+        } catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } postgresException) {
+            if (postgresException.ConstraintName == "FK_Invitations_CommunityServers_CommunityServerId") {
+                return Errors.ResourceNotFound("Community server");
+            }
+            
+            return Errors.UnexpectedError();
         } catch (OperationCanceledException) {
             throw;
         } catch {

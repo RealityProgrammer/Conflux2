@@ -25,15 +25,15 @@ public sealed class CommunityServerController(
 ) : ControllerBase {
     [HttpPost]
     [Idempotent(360)]
-    public async Task<ActionResult<ApiResponse>> CreateCommunityServer([FromForm] CreateRequest request) {
+    public async Task<ActionResult<ApiResponse>> CreateCommunityServer([FromForm] CreateServerRequest serverRequest) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        await using var stream = request.Avatar?.OpenReadStream();
-        var result = await mediator.Send(new CreateCommunityServerCommand(userId, request.Name, stream));
+        await using var stream = serverRequest.Avatar?.OpenReadStream();
+        var result = await mediator.Send(new CreateCommunityServerCommand(userId, serverRequest.Name, stream));
 
         if (result.IsSuccess) {
             return Created();
@@ -156,7 +156,27 @@ public sealed class CommunityServerController(
         };
     }
 
-    public sealed record CreateRequest(
+    [HttpPost("{serverId:guid}/roles")]
+    public async Task<ActionResult<Guid>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await mediator.Send(new CreateServerRoleCommand(userId, serverId, request.Name));
+        
+        if (result.IsSuccess) {
+            return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    public sealed record CreateServerRequest(
         [Required] string Name, 
         IFormFile? Avatar
     ) : IValidatableObject {
@@ -191,5 +211,9 @@ public sealed class CommunityServerController(
         [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name,
         CommunityServerChannelType Type,
         Guid? CategoryId
+    );
+
+    public sealed record CreateRoleRequest(
+        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
     );
 }
