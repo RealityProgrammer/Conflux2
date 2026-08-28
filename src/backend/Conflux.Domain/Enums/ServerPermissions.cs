@@ -8,8 +8,8 @@ public enum ServerPermissions {
     UpdateRole = 1 << 1,
     DeleteRole = 1 << 2,
     
-    CreateChannel = 1 << 2,
-    DeleteChannel = 1 << 3,
+    CreateChannel = 1 << 3,
+    DeleteChannel = 1 << 4,
     
     All = unchecked((int)uint.MaxValue),
 }

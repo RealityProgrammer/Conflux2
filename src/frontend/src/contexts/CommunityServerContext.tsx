@@ -1,4 +1,4 @@
-import type {CommunityServerSummaryDto} from "../api/responses.ts";
+import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../api/responses.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
 
@@ -10,6 +10,9 @@ interface CommunityServerContextType {
   appendChannel: (id: string, name: string, type: "text" | "voice", categoryId: string | null) => void;
   removeChannelCategory: (id: string) => void;
   removeChannel: (id: string) => void;
+
+  memberPermissions: ServerMemberPermissionsDto;
+  updateMemberPermissions: (update: Partial<Omit<ServerMemberPermissionsDto, "memberId">>) => void;
 }
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
@@ -33,6 +36,8 @@ export default function CommunityServerContextProvider({
   appendChannel,
   removeChannelCategory,
   removeChannel,
+  memberPermissions,
+  updateMemberPermissions,
 }: CommunityServerContextProviderProps) {
   useServerConnection(serverId);
 
@@ -44,6 +49,8 @@ export default function CommunityServerContextProvider({
       appendChannel,
       removeChannelCategory,
       removeChannel,
+      memberPermissions,
+      updateMemberPermissions,
     }}>
       {children}
     </CommunityServerContext.Provider>

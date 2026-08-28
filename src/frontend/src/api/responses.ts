@@ -145,3 +145,30 @@ export type CommunityServerSummaryDto = {
   hasAvatar: boolean;
   channelCategories: ChannelCategoryIdentityDto[];
 }
+
+export enum ServerPermissions {
+  None = 0,
+
+  CreateRole = 1 << 0,
+  UpdateRole = 1 << 1,
+  DeleteRole = 1 << 2,
+
+  CreateChannel = 1 << 3,
+  DeleteChannel = 1 << 4,
+
+  All = 0xFFFFFFFF,
+}
+
+export type CommunityServerRoleDto = {
+  id: string;
+  name: string;
+  permissions: ServerPermissions;
+  authorizeLevel: number;
+}
+
+export type ServerMemberPermissionsDto = {
+  memberId: string;
+  effectivePermissions: ServerPermissions;
+  authorizeLevel: number;
+  roles: CommunityServerRoleDto[];
+}

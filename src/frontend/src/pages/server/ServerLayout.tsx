@@ -2,81 +2,100 @@ import {Outlet, useParams} from "react-router";
 import {type Dispatch, type SetStateAction, useEffect, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
-import type {CommunityServerSummaryDto} from "../../api/responses.ts";
+import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../../api/responses.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
-
-type SummaryStatus = "loading" | "error" | CommunityServerSummaryDto;
+import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
 
 export default function ServerLayout() {
   const { serverId } = useParams();
-  const [serverSummary, setServerSummary] = useState<SummaryStatus>("loading");
 
-  useEffect(() => {
-    const loadSummary = async (): Promise<void> => {
-      if (!serverId) {
-        setServerSummary("error");
-        return;
-      }
+  const serverSummaryQueryKey: QueryKey = ["getServerSummary", serverId];
+  const userMemberPermissionQueryKey: QueryKey = ["getSessionUserMemberServerPermissions", serverId];
 
-      setServerSummary("loading");
-      const response = await communityServerService.getSummary(serverId);
+  const {
+    data: serverSummary,
+    isLoading: isLoadingServerSummary,
+    isError: isLoadingServerSummaryError,
+  } = useQuery({
+    enabled: !!serverId,
+    queryKey: serverSummaryQueryKey,
+    queryFn: async () => {
+      return (await communityServerService.getSummary(serverId!)).data;
+    },
+  });
 
-      if (response.success) {
-        setServerSummary(response.data!);
-      } else {
-        setServerSummary("error");
-      }
-    };
+  const {
+    data: userPermissions,
+    isLoading: isLoadingUserPermissions,
+    isError: isLoadingUserPermissionsError,
+  } = useQuery({
+    enabled: !!serverId,
+    queryKey: userMemberPermissionQueryKey,
+    queryFn: async () => {
+      return (await communityServerService.getUserPermission(serverId!)).data;
+    },
+  });
 
-    loadSummary();
-  }, [serverId]);
-
-  switch (serverSummary) {
-    case "loading":
-      return (
-        <div className="size-full flex flex-row justify-center items-center">
-          <Spinner className="size-8 fill-white"/>
-        </div>
-      );
-
-    case "error":
-      return (
-        <div className="size-full flex flex-row justify-center items-center">
-          <span className="text-white">Failed to load server information. Please try again later...</span>
-        </div>
-      );
-
-    default:
-      return (
-        <SuccessfullyLoadedLayout
-          serverId={serverId!}
-          serverSummary={serverSummary}
-          setServerSummary={setServerSummary}/>
-      );
+  if (isLoadingServerSummary || isLoadingUserPermissions) {
+    return (
+      <div className="size-full flex flex-row justify-center items-center">
+        <Spinner className="size-8 fill-white"/>
+      </div>
+    );
   }
+
+  if (isLoadingServerSummaryError || isLoadingUserPermissionsError || !serverSummary || !userPermissions) {
+    return (
+      <div className="size-full flex flex-row justify-center items-center">
+        <span className="text-white">Failed to load some information. Please try again later...</span>
+      </div>
+    );
+  }
+
+  return (
+    <SuccessfullyLoadedLayout
+      serverId={serverId!}
+      serverSummary={serverSummary}
+      serverSummaryQueryKey={serverSummaryQueryKey}
+      memberPermissions={userPermissions}
+      userMemberPermissionQueryKey={userMemberPermissionQueryKey}
+    />
+  );
+}
+
+interface SuccessfullyLoadedLayoutProps {
+  serverId: string;
+  serverSummary: CommunityServerSummaryDto;
+  serverSummaryQueryKey: QueryKey
+  memberPermissions: ServerMemberPermissionsDto;
+  userMemberPermissionQueryKey: QueryKey
 }
 
 function SuccessfullyLoadedLayout({
   serverId,
   serverSummary,
-  setServerSummary,
-}: {serverId: string, serverSummary: CommunityServerSummaryDto, setServerSummary: Dispatch<SetStateAction<SummaryStatus>>}) {
+  serverSummaryQueryKey,
+  memberPermissions,
+  userMemberPermissionQueryKey,
+}: SuccessfullyLoadedLayoutProps) {
+  const queryClient = useQueryClient();
+
   const appendChannelCategory = (id: string, name: string) => {
-    setServerSummary((prev) => {
-      if (prev === "loading" || prev === "error") return prev;
+    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+      if (!oldData) return oldData;
 
       return {
-        ...prev,
+        ...oldData,
         channelCategories: [
-          ...prev.channelCategories,
+          ...oldData.channelCategories,
           {
             id,
             name,
             channels: [],
-          },
-        ],
-      };
+          }
+        ]
+      }
     });
   };
 
@@ -86,13 +105,12 @@ function SuccessfullyLoadedLayout({
     type: "text" | "voice",
     categoryId: string | null
   ) => {
-    setServerSummary((prev) => {
-      if (prev === "loading" || prev === "error") return prev;
+    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+      if (!oldData) return oldData;
 
-      // if there is no category, create a category with null id
-      if (!prev.channelCategories || prev.channelCategories.length === 0) {
+      if (!oldData.channelCategories || oldData.channelCategories.length === 0) {
         return {
-          ...prev,
+          ...oldData,
           channelCategories: [
             {
               id: null,
@@ -110,8 +128,8 @@ function SuccessfullyLoadedLayout({
       }
 
       return {
-        ...prev,
-        channelCategories: prev.channelCategories.map((category) => {
+        ...oldData,
+        channelCategories: oldData.channelCategories.map((category) => {
           if (category.id === categoryId) {
             return {
               ...category,
@@ -133,16 +151,16 @@ function SuccessfullyLoadedLayout({
   };
 
   const removeChannelCategory = (id: string) => {
-    setServerSummary((prev) => {
-      if (prev === "loading" || prev === "error") return prev;
+    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+      if (!oldData) return oldData;
 
-      const removingCategory = prev.channelCategories.find(c => c.id === id);
+      const removingCategory = oldData.channelCategories.find(c => c.id === id);
 
       if (!removingCategory) {
-        return prev;
+        return oldData;
       }
 
-      let updatedChannelCategories = prev.channelCategories.filter(c => c.id !== id);
+      let updatedChannelCategories = oldData.channelCategories.filter(c => c.id !== id);
       const nullCategoryExists = updatedChannelCategories.some((c) => c.id == null);
 
       // if there is a category with null id, append the channels to it, else create a category with null id
@@ -165,19 +183,19 @@ function SuccessfullyLoadedLayout({
       }
 
       return {
-        ...prev,
+        ...oldData,
         channelCategories: updatedChannelCategories,
       };
     });
   };
 
   const removeChannel = (id: string) => {
-    setServerSummary((prev) => {
-      if (prev === "loading" || prev === "error") return prev;
+    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+      if (!oldData) return oldData;
 
       return {
-        ...prev,
-        channelCategories: prev.channelCategories.map(category => {
+        ...oldData,
+        channelCategories: oldData.channelCategories.map(category => {
           const channelIndex = category.channels.findIndex((c) => c.id === id);
 
           if (channelIndex === -1) {
@@ -198,6 +216,14 @@ function SuccessfullyLoadedLayout({
     });
   };
 
+  const updateMemberPermissions = (update: Partial<Omit<ServerMemberPermissionsDto, "memberId">>) => {
+    queryClient.setQueryData<ServerMemberPermissionsDto>(userMemberPermissionQueryKey, (oldData) => {
+      if (!oldData) return oldData;
+
+      return {...oldData, ...update};
+    });
+  }
+
   return (
     <CommunityServerContextProvider
       serverId={serverId}
@@ -206,6 +232,8 @@ function SuccessfullyLoadedLayout({
       appendChannel={appendChannel}
       removeChannelCategory={removeChannelCategory}
       removeChannel={removeChannel}
+      memberPermissions={memberPermissions}
+      updateMemberPermissions={updateMemberPermissions}
     >
       <div className="size-full flex flex-row">
         <ServerSidebar/>
