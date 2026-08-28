@@ -295,6 +295,8 @@ builder.Services.AddControllersWithViews(options => {
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
+    options.SchemaFilter<PatchFieldSchemaFilter>();
+    
     options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme {
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",

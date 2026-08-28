@@ -1,6 +1,8 @@
 namespace Conflux.Domain.Entities;
 
 public class CommunityServerMember : IHasCreatedAt {
+    public Guid Id { get; set; }
+    
     public Guid UserId { get; set; }
     public ApplicationUser User { get; set; } = null!;
     
@@ -8,4 +10,6 @@ public class CommunityServerMember : IHasCreatedAt {
     public CommunityServer CommunityServer { get; set; } = null!;
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = null!;
 }

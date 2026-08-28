@@ -22,7 +22,7 @@ public sealed class CancelFriendRequestHandler(
         }
 
         if (requestSummary.Sender.Id != senderUserId) {
-            return Errors.Unauthorized("Only the sender can cancel their own request.");
+            return Errors.Forbidden("Only the sender can cancel their own request.");
         }
 
         switch (requestSummary.Status) {

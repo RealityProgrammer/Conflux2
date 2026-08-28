@@ -22,7 +22,7 @@ public sealed class AcceptFriendRequestHandler(
         }
 
         if (requestSummary.Sender.Id == acceptorUserId) {
-            return Errors.Unauthorized("Only the receiver can accept request.");
+            return Errors.Forbidden("Only the receiver can accept request.");
         }
 
         switch (requestSummary.Status) {

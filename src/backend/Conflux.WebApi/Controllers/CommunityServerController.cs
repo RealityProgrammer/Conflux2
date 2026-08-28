@@ -1,10 +1,12 @@
 using Conflux.Application.Commands;
+using Conflux.Application.Dto;
 using Conflux.Application.Enums;
 using Conflux.Application.Options;
 using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
 using Mediator;
@@ -158,7 +160,7 @@ public sealed class CommunityServerController(
 
     [HttpPost("{serverId:guid}/roles")]
     [Idempotent(30)]
-    public async Task<ActionResult<Guid>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
+    public async Task<ActionResult<ApiResponse<CommunityServerRoleDto>>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
@@ -168,11 +170,39 @@ public sealed class CommunityServerController(
         var result = await mediator.Send(new CreateServerRoleCommand(userId, serverId, request.Name));
         
         if (result.IsSuccess) {
-            return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
+            return Created((Uri?)null, new ApiResponse<CommunityServerRoleDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpPatch("{serverId:guid}/roles/{roleId:guid}")]
+    public async Task<ActionResult<ApiResponse<CommunityServerRoleDto>>> UpdateRoles(Guid serverId, Guid roleId, [FromBody] PatchRoleRequest request) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await mediator.Send(new UpdateServerRoleCommand(
+            userId, 
+            serverId, 
+            roleId,
+            request.Name,
+            request.AuthorizeLevel,
+            request.Permissions
+        ));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<CommunityServerRoleDto>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -237,4 +267,20 @@ public sealed class CommunityServerController(
     public sealed record CreateRoleRequest(
         [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
     );
+
+    public sealed record PatchRoleRequest(
+        PatchField<string> Name,
+        PatchField<int> AuthorizeLevel,
+        PatchField<ServerPermissions> Permissions
+    ) : IValidatableObject {
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+            if (Name.IsSet) {
+                if (Name.Value == null) {
+                    yield return new("Name cannot be null.", [nameof(Name)]);
+                } else if (Name.Value.Length > 32) {
+                    yield return new("Name can only have maximum length of 32 characters.", [nameof(Name)]);
+                }
+            }
+        }
+    }
 }

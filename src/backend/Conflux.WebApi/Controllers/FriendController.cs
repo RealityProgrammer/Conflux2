@@ -54,7 +54,7 @@ public sealed class FriendController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) or nameof(Errors.FriendRequestRejected) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -76,7 +76,7 @@ public sealed class FriendController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) or nameof(Errors.FriendRequestCanceled) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -98,7 +98,7 @@ public sealed class FriendController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.FriendRequestCanceled) or 
             nameof(Errors.FriendRequestRejected) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),

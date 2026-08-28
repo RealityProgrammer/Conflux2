@@ -5,10 +5,7 @@ namespace Conflux.Infrastructure.Config;
 
 public sealed class CommunityServerMemberConfiguration : IEntityTypeConfiguration<CommunityServerMember> {
     public void Configure(EntityTypeBuilder<CommunityServerMember> builder) {
-        builder.HasKey(m => new {
-            m.UserId,
-            m.CommunityServerId,
-        });
+        builder.HasKey(m => m.Id);
 
         builder.HasOne(m => m.User)
             .WithMany(u => u.JoinedCommunityServers)

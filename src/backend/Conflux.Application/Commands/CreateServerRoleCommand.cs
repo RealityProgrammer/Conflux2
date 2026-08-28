@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
 
@@ -7,6 +8,6 @@ public sealed record CreateServerRoleCommand(
     Guid ExecutorUserId,
     Guid ServerId,
     string Name
-) : ICommand<Result<Guid>>, IServerCommand {
+) : ICommand<Result<CommunityServerRoleDto>>, IServerCommand {
     public ServerPermissions RequiredPermissions => ServerPermissions.CreateRole;
 }

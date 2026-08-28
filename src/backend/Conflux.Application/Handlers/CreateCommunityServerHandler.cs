@@ -2,6 +2,7 @@ using Conflux.Application.Commands;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
@@ -22,11 +23,33 @@ public sealed class CreateCommunityServerHandler(
             CreatorUserId = request.CreatorUserId,
             OwnerUserId = request.CreatorUserId,
             Members = [],
+            Roles = [
+                new() {
+                    Name = "Default",
+                    Permissions = ServerPermissions.None,
+                    SpecialRoleType = SpecialRoleType.Default,
+                    AuthorizeLevel = 0,
+                },
+            ],
         };
+
+        CommunityServerRole ownerRole = new() {
+            Name = "Owner",
+            Permissions = ServerPermissions.All,
+            SpecialRoleType = SpecialRoleType.Owner,
+            AuthorizeLevel = int.MaxValue,
+        };
+        
+        server.Roles.Add(ownerRole);
 
         CommunityServerMember ownerMember = new() {
             UserId = request.CreatorUserId,
             CommunityServer = server,
+            MemberRoles = [
+                new() {
+                    Role = ownerRole,
+                },
+            ],
         };
         
         server.Members.Add(ownerMember);

@@ -11,6 +11,13 @@ internal sealed class CommunityServerRoleRepository(
         dbContext.CommunityServerRoles.Add(role);
     }
 
+    public async Task<CommunityServerRole?> FindById(Guid roleId, bool tracking = true, CancellationToken cancellationToken = default) {
+        IQueryable<CommunityServerRole> query = dbContext.CommunityServerRoles;
+        query = tracking ? query.AsTracking() : query.AsNoTracking();
+            
+        return await query.FirstOrDefaultAsync(role => role.Id == roleId, cancellationToken);
+    }
+
     public async Task<bool> Delete(Guid roleId, Guid serverId) {
         return await dbContext.CommunityServerRoles
             .Where(x => x.Id == roleId && x.CommunityServerId == serverId)

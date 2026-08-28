@@ -9,6 +9,6 @@ public sealed class DeleteServerRoleHandler(
 ) : ICommandHandler<DeleteServerRoleCommand, Result> {
     public async ValueTask<Result> Handle(DeleteServerRoleCommand command, CancellationToken cancellationToken) {
         bool deleted = await repository.Delete(command.RoleId, command.ServerId);
-        return deleted ? Result.Success() : Errors.ResourceNotFound("Role");
+        return deleted ? Result.Success() : Errors.ResourceNotFound("Server role");
     }
 }

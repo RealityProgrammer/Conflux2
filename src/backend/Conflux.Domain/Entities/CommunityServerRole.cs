@@ -14,4 +14,9 @@ public class CommunityServerRole : IHasCreatedAt {
     public DateTimeOffset CreatedAt { get; set; }
 
     public ServerPermissions Permissions { get; set; } = ServerPermissions.None;
+    
+    public int AuthorizeLevel { get; set; }
+    public SpecialRoleType SpecialRoleType { get; set; }
+    
+    public virtual ICollection<CommunityServerMemberRole> MembersWithRole { get; set; } = null!;
 }
