@@ -39,7 +39,6 @@ public sealed class GetUserPermissionsForServerQueryHandler(
         int authorizeLevel = roleDtos.Max(r => r.AuthorizeLevel);
 
         return Result<ServerMemberPermissionsDto>.Success(new(
-            member.UserId,
             member.Id,
             effectivePermissions,
             authorizeLevel,
