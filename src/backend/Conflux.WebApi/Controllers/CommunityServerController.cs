@@ -227,6 +227,35 @@ public sealed class CommunityServerController(
         };
     }
 
+    [HttpGet("{serverId:guid}/members/me/permissions")]
+    public async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> GetSessionUserPermissions(Guid serverId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+
+        return await InternalGetUserPermissions(serverId, userId);
+    }
+    
+    [HttpGet("{serverId:guid}/members/{userId:guid}/permissions")]
+    public async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> GetUserPermissions(Guid serverId, Guid userId) {
+        return await InternalGetUserPermissions(serverId, userId);
+    }
+
+    private async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> InternalGetUserPermissions(Guid serverId, Guid userId) {
+        var result = await mediator.Send(new GetUserPermissionsForServer(serverId, userId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<ServerMemberPermissionsDto>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
     public sealed record CreateServerRequest(
         [Required] string Name, 
         IFormFile? Avatar

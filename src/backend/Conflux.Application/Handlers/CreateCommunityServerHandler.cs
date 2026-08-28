@@ -23,14 +23,13 @@ public sealed class CreateCommunityServerHandler(
             CreatorUserId = request.CreatorUserId,
             OwnerUserId = request.CreatorUserId,
             Members = [],
-            Roles = [
-                new() {
-                    Name = "Default",
-                    Permissions = ServerPermissions.None,
-                    SpecialRoleType = SpecialRoleType.Default,
-                    AuthorizeLevel = 0,
-                },
-            ],
+        };
+
+        CommunityServerRole defaultRole = new() {
+            Name = "Default",
+            Permissions = ServerPermissions.None,
+            SpecialRoleType = SpecialRoleType.Default,
+            AuthorizeLevel = 0,
         };
 
         CommunityServerRole ownerRole = new() {
@@ -39,8 +38,8 @@ public sealed class CreateCommunityServerHandler(
             SpecialRoleType = SpecialRoleType.Owner,
             AuthorizeLevel = int.MaxValue,
         };
-        
-        server.Roles.Add(ownerRole);
+
+        server.Roles = [defaultRole, ownerRole];
 
         CommunityServerMember ownerMember = new() {
             UserId = request.CreatorUserId,
@@ -49,6 +48,9 @@ public sealed class CreateCommunityServerHandler(
                 new() {
                     Role = ownerRole,
                 },
+                new() {
+                    Role = defaultRole,
+                }
             ],
         };
         
