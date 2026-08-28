@@ -9,14 +9,14 @@ import SelectItem from "../SelectItem.tsx";
 import {useFormStatus} from "react-dom";
 import {useInterval} from "usehooks-ts";
 import Spinner from "../Spinner.tsx";
-import { z } from "zod";
+import {z} from "zod";
 import {INVITATION_EXPIRE_VALUES} from "../../api/requests.ts";
 import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import ErrorText from "../ErrorText.tsx";
 import {invitationService} from "../../api/invitationService.ts";
 import {HttpStatusCode} from "axios";
-import type {FieldErrors} from "../../api/responses.ts";
+import {type FieldErrors, ServerPermissions} from "../../api/responses.ts";
 
 interface ServerSidebarHeaderProps {
   onRequestCreate: (type: "category" | "text_channel" | "voice_channel", idempotencyKey: string) => void;
@@ -25,6 +25,8 @@ interface ServerSidebarHeaderProps {
 export default function ServerSidebarHeader({
   onRequestCreate
 }: ServerSidebarHeaderProps) {
+  const { memberPermissions } = useCommunityServerContext();
+
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const [isOpenInvitationDialog, setIsOpenInvitationDialog] = useState(false);
   const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false);
@@ -54,31 +56,35 @@ export default function ServerSidebarHeader({
                 e.preventDefault();
               }}
             >
-              <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
-                onRequestCreate("category", crypto.randomUUID());
-              }}>
-                Create channel category
+              {(memberPermissions.effectivePermissions & ServerPermissions.CreateChannel) != 0 && (
+                <>
+                  <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
+                    onRequestCreate("category", crypto.randomUUID());
+                  }}>
+                    Create channel category
 
-                <FaFolderPlus className="fill-white size-4 ml-auto"/>
-              </DropdownMenu.Item>
+                    <FaFolderPlus className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
 
-              <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
-                onRequestCreate("text_channel", crypto.randomUUID());
-              }}>
-                Create text channel
+                  <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
+                    onRequestCreate("text_channel", crypto.randomUUID());
+                  }}>
+                    Create text channel
 
-                <FaHashtag className="fill-white size-4 ml-auto"/>
-              </DropdownMenu.Item>
+                    <FaHashtag className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
 
-              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => {
-                onRequestCreate("voice_channel", crypto.randomUUID());
-              }}>
-                Create voice channel
+                  <DropdownMenu.Item className="dropdown-item-default" onSelect={() => {
+                    onRequestCreate("voice_channel", crypto.randomUUID());
+                  }}>
+                    Create voice channel
 
-                <FaVolumeHigh className="fill-white size-4 ml-auto"/>
-              </DropdownMenu.Item>
+                    <FaVolumeHigh className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
 
-              <DropdownMenu.Separator className="horizontal-separator"/>
+                  <DropdownMenu.Separator className="horizontal-separator"/>
+                </>
+              )}
 
               <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenInvitationDialog(true)}>
                 Invitation
@@ -89,7 +95,7 @@ export default function ServerSidebarHeader({
               <DropdownMenu.Separator className="horizontal-separator"/>
 
               <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenSettingDialog(true)}>
-                Server Settings
+                Manage Server
 
                 <BsGearFill className="fill-white size-4 ml-auto"/>
               </DropdownMenu.Item>

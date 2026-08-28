@@ -1,15 +1,19 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
+import {useState} from "react";
 import {
-  useState
-} from "react";
-import type {ChannelCategoryIdentityDto, CommunityServerChannelIdentityDto, ServiceResponse} from "../../api/responses.ts";
+  type ChannelCategoryIdentityDto,
+  type CommunityServerChannelIdentityDto,
+  ServerPermissions,
+  type ServiceResponse
+} from "../../api/responses.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
 import {
   BsChatText,
   BsChevronDown,
-  BsExclamationTriangle, BsFolder,
+  BsExclamationTriangle,
+  BsFolder,
   BsGearFill,
   BsTrash,
   BsVolumeUp
@@ -20,7 +24,7 @@ import AlertActionDialog from "../AlertActionDialog.tsx";
 import DialogForm from "../DialogForm.tsx";
 import {useNavigate} from "react-router";
 import SelectItem from "../SelectItem.tsx";
-import { z } from "zod";
+import {z} from "zod";
 import ServerSidebarHeader from "./ServerSidebarHeader.tsx";
 import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -387,72 +391,80 @@ function ChannelCategoryView({
   setCreateValues,
   handleChannelAction,
 }: ChannelCategoryViewProps) {
+  const { memberPermissions } = useCommunityServerContext();
+
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
 
   return (
     <>
       {category.id && (
-        <div className="flex flex-row items-center gap-2 mb-1 group">
-          <IconButton theme="default" onClick={() => setIsCategoryOpen(!isCategoryOpen)} className={`transition-transform duration-150 ease-in-out ${isCategoryOpen ? 'rotate-90' : 'rotate-0'}`}>
-            <FaChevronRight className="size-3.5"/>
-          </IconButton>
+        <div className="flex flex-row items-center gap-2 mb-1 group cursor-pointer hover-highlight p-1 rounded-md" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
+          <FaChevronRight className={`size-3.5 transition-transform duration-150 ease-in-out ${isCategoryOpen ? 'rotate-90' : 'rotate-0'}`}/>
 
           <span className="text-gray-300 text-sm line-clamp-1 select-none flex-1">{category.name}</span>
 
-          <div className={`h-5 items-center justify-center ${isOpenDropdown ? 'flex' : 'hidden group-hover:flex'}`}>
-            <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown} modal={false}>
-              <DropdownMenu.Trigger asChild>
-                <IconButton theme="default">
-                  <BsGearFill className="size-4 inline"/>
-                </IconButton>
-              </DropdownMenu.Trigger>
+          {(memberPermissions.effectivePermissions & (ServerPermissions.CreateChannel | ServerPermissions.DeleteChannel)) != 0 && (
+            <div className={`h-5 items-center justify-center ${isOpenDropdown ? 'flex' : 'hidden group-hover:flex'}`}>
+              <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown} modal={false}>
+                <DropdownMenu.Trigger asChild>
+                  <IconButton theme="default" onClick={(e) => e.stopPropagation()}>
+                    <BsGearFill className="size-4 inline"/>
+                  </IconButton>
+                </DropdownMenu.Trigger>
 
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  side="bottom"
-                  sideOffset={5}
-                  className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
-                  onCloseAutoFocus={(e) => {
-                    e.preventDefault();
-                  }}
-                >
-                  <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
-                    setIsCategoryOpen(true);
-                    setCreateValues(crypto.randomUUID(), "text");
-                  }}>
-                    Create text channel
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    side="bottom"
+                    sideOffset={5}
+                    className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
+                    onCloseAutoFocus={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
+                    {(memberPermissions.effectivePermissions & ServerPermissions.CreateChannel) != 0 && (
+                      <>
+                        <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
+                          setIsCategoryOpen(true);
+                          setCreateValues(crypto.randomUUID(), "text");
+                        }}>
+                          Create text channel
 
-                    <FaHashtag className="fill-white size-4 ml-auto"/>
-                  </DropdownMenu.Item>
+                          <FaHashtag className="fill-white size-4 ml-auto"/>
+                        </DropdownMenu.Item>
 
-                  <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
-                    setIsCategoryOpen(true);
-                    setCreateValues(crypto.randomUUID(), "voice");
-                  }}>
-                    Create voice channel
+                        <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
+                          setIsCategoryOpen(true);
+                          setCreateValues(crypto.randomUUID(), "voice");
+                        }}>
+                          Create voice channel
 
-                    <FaVolumeHigh className="fill-white size-4 ml-auto"/>
-                  </DropdownMenu.Item>
+                          <FaVolumeHigh className="fill-white size-4 ml-auto"/>
+                        </DropdownMenu.Item>
+                      </>
+                    )}
 
-                  <DropdownMenu.Item className="dropdown-item-danger" onSelect={() => {
-                    if (category.id) {
-                      handleChannelAction({
-                        type: "delete_channel_category",
-                        id: category.id,
-                      });
-                    }
-                  }}>
-                    Delete category
+                    {(memberPermissions.effectivePermissions & ServerPermissions.DeleteChannel) != 0 && (
+                      <DropdownMenu.Item className="dropdown-item-danger" onSelect={() => {
+                        if (category.id) {
+                          handleChannelAction({
+                            type: "delete_channel_category",
+                            id: category.id,
+                          });
+                        }
+                      }}>
+                        Delete category
 
-                    <BsTrash className="fill-red-500 size-4 ml-auto"/>
-                  </DropdownMenu.Item>
+                        <BsTrash className="fill-red-500 size-4 ml-auto"/>
+                      </DropdownMenu.Item>
+                    )}
 
-                  <DropdownMenu.Arrow className="fill-gray-650"/>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          </div>
+                    <DropdownMenu.Arrow className="fill-gray-650"/>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
+          )}
         </div>
       )}
 
