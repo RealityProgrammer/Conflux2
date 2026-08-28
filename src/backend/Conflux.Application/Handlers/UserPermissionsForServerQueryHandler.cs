@@ -7,7 +7,7 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Handlers;
 
-public sealed class GetUserPermissionsForServerQueryHandler(
+public sealed class UserPermissionsForServerQueryHandler(
     ICommunityServerMemberRepository repository
 ) : IQueryHandler<GetUserPermissionsForServer, Result<ServerMemberPermissionsDto>> {
     public async ValueTask<Result<ServerMemberPermissionsDto>> Handle(

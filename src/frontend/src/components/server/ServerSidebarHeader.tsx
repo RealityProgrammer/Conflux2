@@ -318,14 +318,16 @@ function GetInvitationLinkButton() {
 }
 
 function SettingDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
+
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChanged}>
       <Dialog.Portal>
         <Dialog.Overlay className="backdrop-overlay"/>
 
-        <Dialog.Content className="bg-gray-650 fixed inset-4 z-55 rounded-xl text-white">
-          <header className="bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
-            {<BsGear className="size-10 fill-white"/>}
+        <Dialog.Content className="bg-gray-650 fixed inset-4 z-55 rounded-xl text-white flex flex-col">
+          <header className="flex-none bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
+            {<BsGearFill className="size-10 fill-white"/>}
 
             <div className="flex-1">
               <Dialog.Title className="font-bold text-xl text-white">Server Configuration Panel</Dialog.Title>
@@ -333,8 +335,8 @@ function SettingDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (op
             </div>
           </header>
 
-          <main className="grid grid-cols-12 size-full">
-            <div className="col-span-1 bg-red-500">
+          <main className="flex-1 flex flex-row">
+            <div className="basis-16 bg-red-500">
               <p>Something</p>
             </div>
           </main>

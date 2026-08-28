@@ -292,7 +292,9 @@ builder.Services.AddControllersWithViews(options => {
     };
 });
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => {
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
     options.SchemaFilter<PatchFieldSchemaFilter>();
@@ -364,6 +366,7 @@ if (app.Environment.IsDevelopment()) {
     // swagger
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapOpenApi();
     
     // http logging to print incoming requests and outcoming responses.
     app.UseHttpLogging();
