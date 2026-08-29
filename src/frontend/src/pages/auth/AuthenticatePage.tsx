@@ -1,8 +1,8 @@
 import {useEffect, useRef, useState} from "react";
 import {animate, JSAnimation, random} from "animejs";
-import {Form, redirect, useActionData, useLocation, useNavigate, useNavigation} from "react-router";
+import {useLocation, useNavigate} from "react-router";
 import {authService} from "../../api/authService.ts";
-import type {FieldErrors, LoginResponse, ServiceResponse} from "../../api/types.ts";
+import type {LoginRequest, LoginResponse, RegisterRequest, ServiceResponse} from "../../api/types.ts";
 import {HttpStatusCode} from "axios";
 import {Label, unstable_PasswordToggleField as PasswordToggleField} from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
@@ -10,88 +10,49 @@ import {BsEye, BsEyeSlash} from "react-icons/bs";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import ErrorText from "../../components/ErrorText.tsx";
+import {type SubmitHandler, useForm} from "react-hook-form";
+import {z} from "zod";
 
-type ActionData = {
-  intent: "login" | "register";
-  error: string;
-  validationErrorDetails?: FieldErrors<"email" | "password">;
-}
+const loginSchema = z.object({
+  email: z.email(),
+  password: z.string(),
+});
 
-export async function authAction({request}: { request: Request }): Promise<Response | ActionData> {
-  const formData: FormData = await request.formData();
-
-  const email = formData.get("email");
-  const password = formData.get("password");
-
-  const intent = formData.get("intent") as "login" | "register";
-
-  switch (intent) {
-    case "login": {
-      const response: ServiceResponse<LoginResponse> = await authService.login({
-        email: email as string,
-        password: password as string
-      })
-
-      if (response.statusCode === HttpStatusCode.Ok) {
-        return redirect("/lobby");
-      }
-
-      return {
-        intent: "login",
-        error: response.error?.message ?? "Unknown error.",
-        validationErrorDetails:
-          response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred" ?
-            response.error.details as unknown as FieldErrors<"email" | "password"> :
-            undefined,
-      };
-    }
-
-    case "register": {
-      const confirmPassword = formData.get("confirmPassword") as string;
-
-      if (password !== confirmPassword) {
-        return {error: "Passwords do not match.", intent: "register"}
-      }
-
-      const response: ServiceResponse = await authService.register({
-        email: email as string,
-        password: password as string,
-        confirmPassword: confirmPassword,
-      });
-
-      if (response.statusCode === HttpStatusCode.Created) {
-        return redirect("/auth#login");
-      }
-
-      return {
-        intent: "register",
-        error: response.error?.message ?? "Unknown error.",
-        validationErrorDetails:
-          response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred" ?
-            response.error.details as unknown as FieldErrors<"email" | "password"> :
-            undefined,
-      };
-    }
-  }
-}
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
-  const navigation = useNavigation();
-  const actionData = useActionData() as ActionData | undefined;
+  const navigate = useNavigate();
 
-  const isLoggingIn = navigation.state === "submitting" && navigation.formData?.get("intent") === "login";
+  const {
+    register,
+    handleSubmit,
+    setError,
+    clearErrors,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>();
 
-  const [errorMessage, setErrorMessage] = useState<string | undefined>(actionData?.intent === "login" ? actionData?.error : undefined);
+  const onSubmit: SubmitHandler<LoginFormValues> = async (data: LoginFormValues): Promise<void> => {
+    try {
+      const response: ServiceResponse<LoginResponse> = await authService.login(data as LoginRequest);
 
-  useEffect(() => {
-    if (actionData?.intent === "login") {
-      setErrorMessage(actionData.error);
+      if (response.statusCode === HttpStatusCode.Ok) {
+        navigate("/lobby");
+        return;
+      }
+
+      if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
+        Object.entries(response.error.details as Record<string, string[]>).forEach(([field, messages]) => {
+          setError(field as keyof LoginFormValues, { message: (messages as string[])[0] });
+        });
+        return;
+      }
+
+      setError("root", { message: response.error?.message ?? "Unknown error." });
+    } catch (err) {
+      setError("root", { message: "An unexpected error occurred." });
     }
-  }, [actionData]);
-
-  const handleInputChanged = () => {
-    setErrorMessage(undefined);
-  }
+  };
 
   return (
     <div className="bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative">
@@ -103,19 +64,22 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
         <h1 className="text-center font-bold text-3xl text-white">Welcome Back</h1>
         <p className="text-center text-gray-400 text-sm mt-2">Identify yourself</p>
 
-        <Form className="mt-5" name="login" method="post" action="/auth?index#login">
+        <form className="mt-5" onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
           <div>
             <Label.Root className="label mb-1 block" htmlFor="login_email">Email</Label.Root>
 
             <input
               type="email"
               id="login_email"
-              name="email"
               placeholder="Enter Email"
               className="w-full h-11 px-3 input-field"
-              required aria-required
-              onChange={handleInputChanged}
+              aria-required
+              {...register("email")}
             />
+
+            {errors.email && (
+              <ErrorText className="mt-1">{errors.email.message}</ErrorText>
+            )}
           </div>
 
           <div className="mt-4">
@@ -126,10 +90,9 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
                 <PasswordToggleField.Input
                   id="login_password"
                   placeholder="Enter Password"
-                  name="password"
                   className="flex-1 h-11 px-3 input-field mr-1"
-                  required aria-required
-                  onChange={handleInputChanged}
+                  aria-required
+                  {...register("password")}
                 />
                 <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
                   <PasswordToggleField.Icon visible={<BsEye className="size-6"/>}
@@ -137,7 +100,15 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
                 </PasswordToggleField.Toggle>
               </div>
             </PasswordToggleField.Root>
+
+            {errors.password && (
+              <ErrorText className="mt-1">{errors.password.message}</ErrorText>
+            )}
           </div>
+
+          {errors.root && (
+            <ErrorText className="block text-center mt-1">{errors.root.message}</ErrorText>
+          )}
 
           <a
             href="#"
@@ -150,56 +121,83 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
             type="submit"
             name="intent"
             value="login"
-            disabled={isLoggingIn}
+            disabled={isSubmitting}
             className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer flex flex-row justify-center items-center"
           >
-            {isLoggingIn ? <Spinner className="size-6 fill-white"/> : <p>Log In</p>}
+            {isSubmitting ? <Spinner className="size-6 fill-white"/> : <p>Log In</p>}
           </button>
-        </Form>
-
-        {errorMessage && (
-          <ErrorText className="block text-center mt-1">{errorMessage}</ErrorText>
-        )}
+        </form>
 
         <p className="text-center text-gray-400 text-sm mt-2">
-          No account? Click <button className="underline cursor-pointer bg-none border-none"
-                                    onClick={navigateToRegister}>here</button> to create one.
+          No account? Click{" "}
+          <button className="underline cursor-pointer bg-none border-none" onClick={() => {
+            navigateToRegister();
+            reset();
+          }}>
+            here
+          </button>{" "}
+          to create one.
         </p>
       </section>
     </div>
   );
 }
 
+const registerSchema = z.object({
+  email: z.email(),
+  password: z.string(),
+  confirmPassword: z.string(),
+}).superRefine(({ password, confirmPassword }, ctx) => {
+  if (confirmPassword !== password) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Passwords are mismatch.",
+      path: ['confirmPassword']
+    });
+  }
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
 function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
-  const navigation = useNavigation();
-  const actionData = useActionData() as ActionData | undefined;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    clearErrors,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>();
 
-  const isRegistering =
-    navigation.state === "submitting" && navigation.formData?.get("intent") === "register";
+  const passwordValue = watch("password", "");
 
-  const [password, setPassword] = useState("");
+  const onSubmit: SubmitHandler<RegisterFormValues> = async (data: RegisterFormValues): Promise<void> => {
+    try {
+      const response = await authService.register(data as RegisterRequest);
 
-  const [validationErrors, setValidationErrors] = useState<FieldErrors<"email" | "password"> | undefined>(actionData?.intent === "register" ? actionData.validationErrorDetails : undefined);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>(actionData?.intent === "register" ? actionData?.error : undefined);
+      if (response.statusCode === HttpStatusCode.Created) {
+        navigateToLogin();
+        reset();
 
-  useEffect(() => {
-    if (actionData?.intent === "register") {
-      setValidationErrors(actionData.validationErrorDetails);
-      setErrorMessage(actionData.error);
-    }
-  }, [actionData]);
+        return;
+      }
 
-  const handleInputChange = (field?: "email" | "password") => {
-    setErrorMessage(undefined); // Clear global error (e.g. "Passwords do not match")
+      if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
+        Object.entries(response.error.details as Record<string, string[]>).forEach(([field, messages]) => {
+          if (field === "password") {
+            setError(field as keyof RegisterFormValues, { message: messages.join('\n') });
+          } else {
+            setError(field as keyof RegisterFormValues, { message: messages[0] });
+          }
+        });
 
-    if (validationErrors && field) {
-      setValidationErrors((prev: FieldErrors<"email" | "password"> | undefined) => {
-        if (!prev) return prev;
+        return;
+      }
 
-        const updated = {...prev};
-        delete updated[field];
-        return updated;
-      });
+      setError("root", { message: response.error?.message ?? "Unknown error." });
+    } catch (err) {
+      setError("root", { message: "An unexpected error occurred." });
     }
   };
 
@@ -213,22 +211,20 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
         <h1 className="text-center font-bold text-3xl text-white">Welcome</h1>
         <p className="text-center text-gray-400 text-sm mt-2">Hope you got drink</p>
 
-        <Form className="mt-5" name="register" method="post" action="/auth?index#register">
+        <form className="mt-5" onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
           <div>
             <Label.Root className="label block mb-1" htmlFor="register_email">Email</Label.Root>
 
             <input type="text"
                    id="register_email"
                    placeholder="Enter Email"
-                   name="email"
                    className="w-full h-11 px-3 input-field"
-                   required
                    aria-required
-                   onChange={() => handleInputChange("email")}
+                   {...register("email")}
             />
 
-            {validationErrors?.["email"] && (
-              <ErrorText className="mt-1">{validationErrors["email"][0]}</ErrorText>
+            {errors.email && (
+              <ErrorText className="mt-1">{errors.email.message}</ErrorText>
             )}
           </div>
 
@@ -240,14 +236,9 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
                 <PasswordToggleField.Input
                   id="register_password"
                   placeholder="Enter Password"
-                  name="password"
                   className="flex-1 h-11 px-3 input-field mr-1"
-                  required aria-required
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    handleInputChange("password");
-                  }}
+                  aria-required
+                  {...register("password")}
                 />
 
                 <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
@@ -263,23 +254,23 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
               rules={[
                 {
                   label: "At least 8 characters",
-                  fulfilled: password.length >= 8,
-                  error: validationErrors?.["password"]?.some((errorMessage) => errorMessage.includes("must be at least")),
+                  fulfilled: passwordValue.length >= 8,
+                  error: errors.password?.message?.includes("must be at least") || errors.password?.message?.includes("is required"),
                 },
                 {
                   label: "Contain uppercase",
-                  fulfilled: /\p{Lu}/u.test(password),
-                  error: validationErrors?.["password"]?.some((errorMessage) => errorMessage.includes("one uppercase")),
+                  fulfilled: /\p{Lu}/u.test(passwordValue),
+                  error: errors.password?.message?.includes("one uppercase") || errors.password?.message?.includes("is required"),
                 },
                 {
                   label: "Contain numerical",
-                  fulfilled: /\p{N}/u.test(password),
-                  error: validationErrors?.["password"]?.some((errorMessage) => errorMessage.includes("one digit")),
+                  fulfilled: /\p{N}/u.test(passwordValue),
+                  error: errors.password?.message?.includes("one digit") || errors.password?.message?.includes("is required"),
                 },
                 {
                   label: "Contain special",
-                  fulfilled: /[^\p{L}\p{N}]/u.test(password),
-                  error: validationErrors?.["password"]?.some((errorMessage) => errorMessage.includes("one non alphanumeric")),
+                  fulfilled: /[^\p{L}\p{N}]/u.test(passwordValue),
+                  error: errors.password?.message?.includes("one non alphanumeric") || errors.password?.message?.includes("is required"),
                 },
               ]}
               className="grid grid-cols-2 gap-y-1 mt-2"
@@ -295,10 +286,9 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
                 <PasswordToggleField.Input
                   id="register_confirm_password"
                   placeholder="Enter Password (Again)"
-                  name="confirmPassword"
                   className="flex-1 h-11 px-3 input-field mr-1"
-                  required aria-required
-                  onChange={() => handleInputChange()}
+                  aria-required
+                  {...register("confirmPassword")}
                 />
                 <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
                   <PasswordToggleField.Icon
@@ -308,26 +298,36 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
                 </PasswordToggleField.Toggle>
               </div>
             </PasswordToggleField.Root>
+
+            {errors.confirmPassword && (
+              <ErrorText className="mt-1">{errors.confirmPassword.message}</ErrorText>
+            )}
           </div>
 
           <button
             type="submit"
             name="intent"
             value="register"
-            disabled={isRegistering}
+            disabled={isSubmitting}
             className="w-full h-11 button-color-1 rounded-lg text-white font-semibold shadow-md transition-colors duration-300 mt-4 cursor-pointer flex flex-row justify-center items-center"
           >
-            {isRegistering ? <Spinner className="size-6 fill-white"/> : <p>Register</p>}
+            {isSubmitting ? <Spinner className="size-6 fill-white"/> : <p>Register</p>}
           </button>
-        </Form>
+        </form>
 
-        {errorMessage && !(actionData?.validationErrorDetails) && (
-          <ErrorText className="block text-center mt-1">{errorMessage}</ErrorText>
+        {errors.root && (
+          <ErrorText className="mt-1">{errors.root.message}</ErrorText>
         )}
 
         <p className="text-center text-gray-400 text-sm mt-2">
-          Already got an account? Click <button className="underline cursor-pointer bg-none border-none"
-                                                onClick={navigateToLogin}>here</button> to login.
+          Already got an account? Click{" "}
+          <button className="underline cursor-pointer bg-none border-none" onClick={() => {
+            navigateToLogin();
+            reset();
+          }}>
+            here
+          </button>{" "}
+          to login.
         </p>
       </section>
     </div>

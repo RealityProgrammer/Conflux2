@@ -1,9 +1,6 @@
 namespace Conflux.Domain;
 
 public static class Errors {
-    public static Error MismatchPasswords() =>
-        new(nameof(MismatchPasswords), "Passwords are mismatch.");
-    
     public static Error InvalidCredentials() => 
         new(nameof(InvalidCredentials), "Invalid credentials.");
     

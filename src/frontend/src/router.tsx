@@ -12,7 +12,7 @@ import type {
   UserIdentityProfileDto,
 } from "./api/types.ts";
 import HomePage from "./pages/HomePage"
-import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
+import AuthenticatePage from "./pages/auth/AuthenticatePage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
 const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
@@ -79,7 +79,7 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <AuthenticatePage/>,
-            action: authAction,
+            // action: authAction,
             loader: async () => {
               const response = await authService.getAuthorizationInfo();
 

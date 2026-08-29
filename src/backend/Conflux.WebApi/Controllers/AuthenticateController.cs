@@ -74,7 +74,9 @@ public sealed class AuthenticateController(
     [IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse>> Register([FromBody] RegisterRequest request) {
         if (request.Password != request.ConfirmPassword) {
-            return BadRequest(new ApiResponse(Errors.MismatchPasswords()));
+            return BadRequest(new ApiResponse(Errors.ValidationErrorsOccurred(new() {
+                ["confirmPassword"] = ["Passwords are mismatch."],
+            })));
         }
         
         var response = await mediator.Send(new RegisterUserCommand(request.Email, request.Password));
