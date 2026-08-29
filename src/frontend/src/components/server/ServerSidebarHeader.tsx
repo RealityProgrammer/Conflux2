@@ -1,6 +1,6 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {useEffect, useState} from "react";
-import {Dialog, DropdownMenu, Label, Select} from "radix-ui";
+import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
 import {BsChevronDown, BsCopy, BsGearFill, BsPersonPlus, BsPersonPlusFill} from "react-icons/bs";
 import {FaFolderPlus, FaHashtag, FaVolumeHigh} from "react-icons/fa6";
@@ -17,6 +17,7 @@ import {invitationService} from "../../api/invitationService.ts";
 import {HttpStatusCode} from "axios";
 import {InvitationExpireAfter} from "../../api/schema.ts";
 import type {FieldErrors} from "../../api/types.ts";
+import {ServerSettingsDialog} from "./ServerSettingsDialog.tsx";
 
 interface ServerSidebarHeaderProps {
   onRequestCreate: (type: "category" | "text_channel" | "voice_channel", idempotencyKey: string) => void;
@@ -115,7 +116,7 @@ export default function ServerSidebarHeader({
         onOpenChange={setIsOpenInvitationDialog}
       />
 
-      <SettingDialog
+      <ServerSettingsDialog
         open={isOpenSettingDialog}
         onOpenChanged={setIsOpenSettingDialog}
       />
@@ -315,33 +316,4 @@ function GetInvitationLinkButton() {
       </button>
     </div>
   );
-}
-
-function SettingDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
-
-
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChanged}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="backdrop-overlay"/>
-
-        <Dialog.Content className="bg-gray-650 fixed inset-4 z-55 rounded-xl text-white flex flex-col">
-          <header className="flex-none bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
-            {<BsGearFill className="size-10 fill-white"/>}
-
-            <div className="flex-1">
-              <Dialog.Title className="font-bold text-xl text-white">Server Configuration Panel</Dialog.Title>
-              <Dialog.Description className="text-sm text-gray-400">Click-clack, what is that sound?</Dialog.Description>
-            </div>
-          </header>
-
-          <main className="flex-1 flex flex-row">
-            <div className="basis-16 bg-red-500">
-              <p>Something</p>
-            </div>
-          </main>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  )
 }
