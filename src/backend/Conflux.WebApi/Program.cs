@@ -312,6 +312,29 @@ builder.Services.AddOpenApi(options => {
             return Task.CompletedTask;
         }
         
+        // intercept dictionary with enum key
+        if (targetType.IsGenericType) {
+            var typeDef = targetType.GetGenericTypeDefinition();
+            
+            if (typeDef == typeof(Dictionary<,>) || typeDef == typeof(IDictionary<,>) || typeDef == typeof(IReadOnlyDictionary<,>)) {
+            
+                var keyType = targetType.GetGenericArguments()[0];
+            
+                if (keyType.IsEnum) {
+                    schema.Type = JsonSchemaType.Object;
+                    schema.Properties ??= new Dictionary<string, IOpenApiSchema>();
+
+                    var valueSchema = schema.AdditionalProperties ?? new OpenApiSchema();
+
+                    foreach (var name in Enum.GetNames(keyType)) {
+                        schema.Properties[name] = valueSchema;
+                    }
+
+                    schema.AdditionalProperties = null;
+                }
+            }
+        }
+        
         if (targetType == typeof(Error)) {
             schema.Type = JsonSchemaType.Object;
 

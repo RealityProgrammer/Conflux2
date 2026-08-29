@@ -1843,8 +1843,12 @@ export interface components {
         PatchRoleRequest: {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];
-            permissionStates: null | {
-                [key: string]: components["schemas"]["PermissionState"];
+            permissionStates: {
+                CreateRole?: components["schemas"]["PermissionState"];
+                UpdateRole?: components["schemas"]["PermissionState"];
+                DeleteRole?: components["schemas"]["PermissionState"];
+                CreateChannel?: components["schemas"]["PermissionState"];
+                DeleteChannel?: components["schemas"]["PermissionState"];
             };
         };
         PendingFriendRequestDto: {
@@ -1855,8 +1859,7 @@ export interface components {
             hasAvatar: boolean;
             status: components["schemas"]["UserRelationshipStatus"];
         };
-        /** @enum {string} */
-        PermissionState: PermissionState;
+        PermissionState: number;
         RefreshResponse: {
             authorizationInfo: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
@@ -1883,7 +1886,11 @@ export interface components {
             /** Format: int32 */
             authorizeLevel: number;
             effectivePermissions: {
-                [key: string]: boolean;
+                CreateRole?: boolean;
+                UpdateRole?: boolean;
+                DeleteRole?: boolean;
+                CreateChannel?: boolean;
+                DeleteChannel?: boolean;
             };
             roles: components["schemas"]["MemberRoleDto"][];
         };
@@ -1894,7 +1901,11 @@ export interface components {
             id: string;
             name: string;
             states: {
-                [key: string]: components["schemas"]["PermissionState"];
+                CreateRole?: components["schemas"]["PermissionState"];
+                UpdateRole?: components["schemas"]["PermissionState"];
+                DeleteRole?: components["schemas"]["PermissionState"];
+                CreateChannel?: components["schemas"]["PermissionState"];
+                DeleteChannel?: components["schemas"]["PermissionState"];
             };
             /** Format: int32 */
             authorizeLevel: number;
@@ -2036,11 +2047,6 @@ export enum MessageLoadDirection {
     Before = "Before",
     After = "After",
     Around = "Around"
-}
-export enum PermissionState {
-    Inherit = "Inherit",
-    Enable = "Enable",
-    Disable = "Disable"
 }
 export enum ServerPermission {
     CreateRole = "CreateRole",
