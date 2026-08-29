@@ -176,6 +176,8 @@ builder.Services
     .AddType<UserType>()
     .AddType<CommunityServerType>()
     .AddType<InvitationType>()
+    .AddType<CommunityServerRoleType>()
+    .AddType<RolePermissionType>()
     .AddProjections()
     .AddAuthorization();
 

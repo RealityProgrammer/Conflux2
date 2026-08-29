@@ -6,6 +6,6 @@ public class RolePermission {
     public Guid RoleId { get; set; }
     public ServerPermission Permission { get; set; }
     public PermissionState State { get; set; }
-    
-    public CommunityServerRole Role { get; set; }
+
+    public CommunityServerRole Role { get; set; } = null!;
 }

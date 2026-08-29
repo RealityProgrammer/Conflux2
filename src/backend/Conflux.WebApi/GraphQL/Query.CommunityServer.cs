@@ -7,9 +7,7 @@ using System.Security.Claims;
 namespace Conflux.WebApi.GraphQL;
 
 partial class Query {
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
-    [UseProjection]
-    [Authorize]
+    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, Authorize]
     public IQueryable<CommunityServer> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
         [Service] ApplicationDbContext dbContext
