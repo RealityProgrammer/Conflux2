@@ -17,5 +17,12 @@ public sealed class CommunityServerRoleConfiguration : IEntityTypeConfiguration<
             .HasForeignKey(p => p.RoleId)
             .HasPrincipalKey(r => r.Id)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasMany(r => r.Members)
+            .WithMany(m => m.Roles)
+            .UsingEntity<CommunityServerMemberRole>(
+                j => j.HasOne(mr => mr.Member).WithMany(m => m.MemberRoles).HasForeignKey(mr => mr.MemberId),
+                j => j.HasOne(mr => mr.Role).WithMany(r => r.MembersWithRole).HasForeignKey(mr => mr.RoleId)
+            );
     }
 }

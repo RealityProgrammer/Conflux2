@@ -17,9 +17,9 @@ public class CommunityServer : IHasCreatedAt {
 
     public DateTimeOffset CreatedAt { get; set; }
 
-    public virtual ICollection<ChannelCategory> ChannelCategories { get; set; } = null!;
-    public virtual ICollection<Channel> Channels { get; set; } = null!;
-    public virtual ICollection<CommunityServerMember> Members { get; set; } = null!;
-    public virtual ICollection<Invitation> Invitations { get; set; } = null!;
-    public virtual ICollection<CommunityServerRole> Roles { get; set; } = null!;
+    public virtual ICollection<ChannelCategory> ChannelCategories { get; set; } = [];
+    public virtual ICollection<Channel> Channels { get; set; } = [];
+    public virtual ICollection<CommunityServerMember> Members { get; set; } = [];
+    public virtual ICollection<Invitation> Invitations { get; set; } = [];
+    public virtual ICollection<CommunityServerRole> Roles { get; set; } = [];
 }

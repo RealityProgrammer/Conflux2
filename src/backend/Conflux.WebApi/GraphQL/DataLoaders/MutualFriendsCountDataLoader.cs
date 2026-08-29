@@ -7,16 +7,16 @@ using System.Security.Claims;
 namespace Conflux.WebApi.GraphQL.DataLoaders;
 
 public sealed class MutualFriendsCountDataLoader : BatchDataLoader<Guid, int> {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IDbContextFactory<ApplicationDbContext> _dbContextFactory;
     private readonly Guid _currentUserId;
 
     public MutualFriendsCountDataLoader(
-        ApplicationDbContext dbContext,
+        IDbContextFactory<ApplicationDbContext> dbContextFactory,
         IHttpContextAccessor httpContextAccessor,
         IBatchScheduler batchScheduler,
         DataLoaderOptions options
     ) : base(batchScheduler, options) {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
 
         var user = httpContextAccessor.HttpContext?.User;
         var currentUserIdStr = user?.FindFirstValue(JwtRegisteredClaimNames.Sub);
@@ -27,15 +27,17 @@ public sealed class MutualFriendsCountDataLoader : BatchDataLoader<Guid, int> {
     }
 
     protected override async Task<IReadOnlyDictionary<Guid, int>> LoadBatchAsync(
-        IReadOnlyList<Guid> queryTargetUserIds, 
+        IReadOnlyList<Guid> userIds, 
         CancellationToken cancellationToken
     ) {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
         if (_currentUserId == Guid.Empty) {
-            return queryTargetUserIds.ToDictionary(id => id, _ => 0);
+            return userIds.ToDictionary(id => id, _ => 0);
         }
         
         // get user friend ids
-        var friendIds = await _dbContext.FriendRequests
+        var friendIds = await dbContext.FriendRequests
             // only get the requests that involves the current user, on the accepted state.
             .Where(f => f.Status == FriendRequestStatus.Accepted)
             .Where(f => f.SenderUserId == _currentUserId || f.ReceiverUserId == _currentUserId)
@@ -43,19 +45,19 @@ public sealed class MutualFriendsCountDataLoader : BatchDataLoader<Guid, int> {
             .ToListAsync(cancellationToken);
 
         if (friendIds.Count == 0) {
-            return queryTargetUserIds.ToDictionary(id => id, _ => 0);
+            return userIds.ToDictionary(id => id, _ => 0);
         }
 
-        var targetAsSender = _dbContext.FriendRequests
+        var targetAsSender = dbContext.FriendRequests
             .Where(f => f.Status == FriendRequestStatus.Accepted
-                        && queryTargetUserIds.Contains(f.SenderUserId)
+                        && userIds.Contains(f.SenderUserId)
                         && friendIds.Contains(f.ReceiverUserId)
                         && f.SenderUserId != _currentUserId)
             .Select(f => new { TargetUserId = f.SenderUserId, MutualFriendId = f.ReceiverUserId });
         
-        var targetAsReceiver = _dbContext.FriendRequests
+        var targetAsReceiver = dbContext.FriendRequests
             .Where(f => f.Status == FriendRequestStatus.Accepted
-                        && queryTargetUserIds.Contains(f.ReceiverUserId)
+                        && userIds.Contains(f.ReceiverUserId)
                         && friendIds.Contains(f.SenderUserId)
                         && f.ReceiverUserId != _currentUserId)
             .Select(f => new { TargetUserId = f.ReceiverUserId, MutualFriendId = f.SenderUserId });

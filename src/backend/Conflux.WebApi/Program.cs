@@ -25,6 +25,7 @@ using Conflux.WebApi;
 using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.GraphQL;
+using Conflux.WebApi.GraphQL.DataLoaders;
 using Conflux.WebApi.GraphQL.Types;
 using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
@@ -178,6 +179,10 @@ builder.Services
     .AddType<InvitationType>()
     .AddType<CommunityServerRoleType>()
     .AddType<RolePermissionType>()
+    .AddType<CommunityServerMemberType>()
+    .AddDataLoader<CommunityServerMemberCountDataLoader>()
+    .AddDataLoader<MutualFriendsCountDataLoader>()
+    .AddDataLoader<RoleMemberCountDataLoader>()
     .AddProjections()
     .AddAuthorization();
 
@@ -416,7 +421,7 @@ if (builder.Environment.IsDevelopment()) {
 // Database related services.
 builder.Services.AddSingleton<CreateTimestampInterceptor>();
 
-builder.Services.AddDbContext<ApplicationDbContext>((services, options) => {
+builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) => {
     var createTimestampInterceptor = services.GetRequiredService<CreateTimestampInterceptor>();
     
     options

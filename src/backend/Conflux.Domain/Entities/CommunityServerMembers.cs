@@ -11,5 +11,6 @@ public class CommunityServerMember : IHasCreatedAt {
 
     public DateTimeOffset CreatedAt { get; set; }
 
-    public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = null!;
+    public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = [];
+    public virtual ICollection<CommunityServerRole> Roles { get; set; } = [];
 }

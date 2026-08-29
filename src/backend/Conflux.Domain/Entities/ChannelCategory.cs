@@ -12,5 +12,5 @@ public class ChannelCategory : IHasCreatedAt {
     
     public DateTimeOffset CreatedAt { get; set; }
 
-    public virtual ICollection<Channel> Channels { get; set; } = null!;
+    public virtual ICollection<Channel> Channels { get; set; } = [];
 }
