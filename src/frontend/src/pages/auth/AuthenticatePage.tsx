@@ -12,6 +12,7 @@ import {useDocumentTitle} from "usehooks-ts";
 import ErrorText from "../../components/ErrorText.tsx";
 import {type SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod";
+import {zodResolver} from "@hookform/resolvers/zod";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -30,7 +31,10 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
     clearErrors,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>();
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    mode: "onSubmit",
+  });
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data: LoginFormValues): Promise<void> => {
     try {
@@ -168,7 +172,10 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
     clearErrors,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterFormValues>();
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    mode: "onSubmit",
+  });
 
   const passwordValue = watch("password", "");
 
