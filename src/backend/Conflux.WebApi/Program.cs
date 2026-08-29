@@ -11,15 +11,18 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Commands;
+using Conflux.Application.Enums;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using Conflux.Infrastructure.Repositories;
 using Conflux.WebApi;
+using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.GraphQL;
 using Conflux.WebApi.GraphQL.Types;
@@ -37,8 +40,10 @@ using ScottBrady91.AspNetCore.Identity;
 using StackExchange.Redis;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Error = Conflux.Domain.Error;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -293,7 +298,73 @@ builder.Services.AddControllersWithViews(options => {
 });
 
 builder.Services.AddOpenApi(options => {
-    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+    
+    options.AddSchemaTransformer((schema, context, _) => {
+        // aspnetcore accept string for number field, so make openapi strip that
+        if (schema.Type.HasValue && schema.Type.Value.HasFlag(JsonSchemaType.Integer)) {
+            schema.Type &= ~JsonSchemaType.String;
+        }
+        
+        var targetType = context.JsonTypeInfo?.Type ?? context.ParameterDescription?.Type;
+        
+        if (targetType == null) {
+            return Task.CompletedTask;
+        }
+        
+        if (targetType == typeof(Error)) {
+            schema.Type = JsonSchemaType.Object;
+
+            schema.Properties = new Dictionary<string, IOpenApiSchema> {
+                ["code"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
+                ["message"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
+                ["details"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Object | JsonSchemaType.Null },
+            };
+            
+            return Task.CompletedTask;
+        }
+
+        var enumType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        
+        if (enumType.IsEnum) {
+            schema.Type = JsonSchemaType.String;
+            schema.Format = null;
+
+            List<JsonNode> enumNodes = [];
+
+            foreach (var name in Enum.GetNames(enumType)) {
+                enumNodes.Add(JsonValue.Create(name));
+            }
+
+            schema.Enum = enumNodes;
+        }
+        
+        return Task.CompletedTask;
+    });
+
+    options.AddDocumentTransformer((document, _, _) => {
+        document.Components ??= new();
+
+        var extraEnums = new[] {
+            typeof(ServerPermission),
+            typeof(MessageLoadDirection),
+            typeof(InvitationController.InvitationExpireAfter),
+            typeof(CommunityServerChannelType),
+        };
+
+        foreach (var enumType in extraEnums) {
+            if (document.Components.Schemas is { } schemas && !schemas.ContainsKey(enumType.Name)) {
+                var enumSchema = new OpenApiSchema {
+                    Type = JsonSchemaType.String,
+                    Enum = [..Enum.GetNames(enumType).Select(n => JsonValue.Create(n))]
+                };
+
+                schemas.Add(enumType.Name, enumSchema);
+            }
+        }
+
+        return Task.CompletedTask;
+    });
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {

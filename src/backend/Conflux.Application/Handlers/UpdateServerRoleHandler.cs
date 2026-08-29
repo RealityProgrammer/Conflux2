@@ -11,8 +11,8 @@ namespace Conflux.Application.Handlers;
 public sealed class UpdateServerRoleHandler(
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork
-) : ICommandHandler<UpdateServerRoleCommand, Result<CommunityServerRoleDto>> {
-    public async ValueTask<Result<CommunityServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
+    public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
         CommunityServerRole? role = await repository.FindById(command.RoleId, true, cancellationToken);
 
         if (role == null || role.CommunityServerId != command.ServerId) {
@@ -27,21 +27,44 @@ public sealed class UpdateServerRoleHandler(
             role.Name = command.Name.Value!;
         }
 
-        if (command.Permissions.IsSet) {
-            role.Permissions = command.Permissions.Value;
-        }
-
         if (command.AuthorizeLevel.IsSet) {
             role.AuthorizeLevel = command.AuthorizeLevel.Value;
         }
-
+        
+        // TODO: Update permissions
+        if (command.PermissionStates is { Count: > 0} permissionStates) {
+            foreach ((var targetPermission, var newState) in permissionStates) {
+                var existingRecord = role.Permissions.FirstOrDefault(p => p.Permission == targetPermission);
+                
+                if (newState == PermissionState.Inherit) {
+                    // if it is "inherit" then we don't need a record in the database at all
+                    if (existingRecord != null) {
+                        role.Permissions.Remove(existingRecord);
+                    }
+                } 
+                else {
+                    // overwrite or add new record depend on the existing record exist
+                    if (existingRecord != null) {
+                        existingRecord.State = newState;
+                    } 
+                    else {
+                        role.Permissions.Add(new() {
+                            RoleId = role.Id,
+                            Permission = targetPermission,
+                            State = newState
+                        });
+                    }
+                }
+            }
+        }
+        
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
-            return Result<CommunityServerRoleDto>.Success(new(
+            return Result<ServerRoleDto>.Success(new(
                 role.Id,
                 role.Name,
-                role.Permissions,
+                role.Permissions.ToDictionary(p => p.Permission, p => p.State),
                 role.AuthorizeLevel
             ));
         } catch (OperationCanceledException) {

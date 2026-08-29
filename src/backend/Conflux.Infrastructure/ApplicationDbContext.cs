@@ -20,6 +20,7 @@ public class ApplicationDbContext(
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<CommunityServerRole> CommunityServerRoles { get; set; }
     public DbSet<CommunityServerMemberRole> CommunityServerMemberRoles { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);
@@ -33,5 +34,6 @@ public class ApplicationDbContext(
         new InvitationConfiguration().Configure(builder.Entity<Invitation>());
         new CommunityServerRoleConfiguration().Configure(builder.Entity<CommunityServerRole>());
         new CommunityServerMemberRoleConfiguration().Configure(builder.Entity<CommunityServerMemberRole>());
+        new RolePermissionConfiguration().Configure(builder.Entity<RolePermission>());
     }
 }

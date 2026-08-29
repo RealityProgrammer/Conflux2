@@ -1,5 +1,4 @@
 using Conflux.Application.Commands;
-using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -12,8 +11,8 @@ namespace Conflux.Application.Handlers;
 public sealed class CreateServerRoleHandler(
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork
-) : ICommandHandler<CreateServerRoleCommand, Result<CommunityServerRoleDto>> {
-    public async ValueTask<Result<CommunityServerRoleDto>> Handle(CreateServerRoleCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<CreateServerRoleCommand, Result<Guid>> {
+    public async ValueTask<Result<Guid>> Handle(CreateServerRoleCommand command, CancellationToken cancellationToken) {
         CommunityServerRole role = new() {
             CommunityServerId = command.ServerId,
             Name = command.Name,
@@ -35,11 +34,6 @@ public sealed class CreateServerRoleHandler(
             return Errors.UnexpectedError();
         }
         
-        return Result<CommunityServerRoleDto>.Success(new(
-            role.Id,
-            role.Name,
-            role.Permissions,
-            role.AuthorizeLevel
-        ));
+        return Result<Guid>.Success(role.Id);
     }
 }

@@ -160,7 +160,7 @@ public sealed class CommunityServerController(
 
     [HttpPost("{serverId:guid}/roles")]
     [Idempotent(30)]
-    public async Task<ActionResult<ApiResponse<CommunityServerRoleDto>>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
+    public async Task<ActionResult<ApiResponse<Guid>>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
@@ -170,7 +170,7 @@ public sealed class CommunityServerController(
         var result = await mediator.Send(new CreateServerRoleCommand(userId, serverId, request.Name));
         
         if (result.IsSuccess) {
-            return Created((Uri?)null, new ApiResponse<CommunityServerRoleDto>(result.Value, Error.None));
+            return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
@@ -180,7 +180,11 @@ public sealed class CommunityServerController(
     }
 
     [HttpPatch("{serverId:guid}/roles/{roleId:guid}")]
-    public async Task<ActionResult<ApiResponse<CommunityServerRoleDto>>> UpdateRoles(Guid serverId, Guid roleId, [FromBody] PatchRoleRequest request) {
+    public async Task<ActionResult<ApiResponse<ServerRoleDto>>> UpdateRoles(
+        Guid serverId, 
+        Guid roleId, 
+        [FromBody] PatchRoleRequest request
+    ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
@@ -193,11 +197,11 @@ public sealed class CommunityServerController(
             roleId,
             request.Name,
             request.AuthorizeLevel,
-            request.Permissions
+            request.PermissionStates
         ));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<CommunityServerRoleDto>(result.Value, Error.None));
+            return Ok(new ApiResponse<ServerRoleDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
@@ -300,7 +304,7 @@ public sealed class CommunityServerController(
     public sealed record PatchRoleRequest(
         PatchField<string> Name,
         PatchField<int> AuthorizeLevel,
-        PatchField<ServerPermissions> Permissions
+        Dictionary<ServerPermission, PermissionState>? PermissionStates
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             if (Name.IsSet) {

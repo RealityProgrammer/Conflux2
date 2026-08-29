@@ -183,8 +183,8 @@ public sealed class AuthenticateController(
 
     [HttpPost("confirm-email")]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailCommand command) {
-        var result = await mediator.Send(command);
+    public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
+        var result = await mediator.Send(new ConfirmEmailCommand(request.UserId, request.ConfirmationCode));
         
         if (result.IsSuccess) {
             return Ok();
@@ -217,4 +217,6 @@ public sealed class AuthenticateController(
         [Required, DataType(DataType.Password)] string ConfirmPassword
     );
     // ReSharper restore NotAccessedPositionalProperty.Global
+
+    public sealed record ConfirmEmailRequest(string UserId, string ConfirmationCode);
 }

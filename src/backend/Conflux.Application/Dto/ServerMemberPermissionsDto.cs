@@ -1,11 +1,15 @@
 using Conflux.Domain.Enums;
-using System.Text.Json.Serialization;
 
 namespace Conflux.Application.Dto;
 
 public sealed record ServerMemberPermissionsDto(
     Guid MemberId,
-    [property: JsonConverter(typeof(JsonNumberEnumConverter<ServerPermissions>))] ServerPermissions EffectivePermissions,
     int AuthorizeLevel,
-    CommunityServerRoleDto[] Roles
+    Dictionary<ServerPermission, bool> EffectivePermissions,
+    MemberRoleDto[] Roles
+);
+
+public sealed record MemberRoleDto(
+    Guid Id,
+    string Name
 );

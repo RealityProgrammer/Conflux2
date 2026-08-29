@@ -10,11 +10,13 @@ namespace Conflux.Application.Handlers;
 public sealed class UserPermissionsForServerQueryHandler(
     ICommunityServerMemberRepository repository
 ) : IQueryHandler<GetUserPermissionsForServer, Result<ServerMemberPermissionsDto>> {
+    private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
+    
     public async ValueTask<Result<ServerMemberPermissionsDto>> Handle(
         GetUserPermissionsForServer query, 
         CancellationToken cancellationToken
     ) {
-        // TODO: Caching.
+        // TODO: caching.
         
         CommunityServerMember? member = 
             await repository.GetMemberWithRoles(query.CommunityServerId, query.UserId, false, cancellationToken);
@@ -22,26 +24,51 @@ public sealed class UserPermissionsForServerQueryHandler(
         if (member == null) {
             return Errors.ResourceNotFound("Community server member");
         }
+        
+        var roles = member.MemberRoles
+            .Select(mr => mr.Role)
+            .OrderByDescending(r => r.AuthorizeLevel)
+            .ToList();
+        
+        // could just do roles[0] instead of Any but just to be safe
+        bool isOwner = roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner);
+        
+        Dictionary<ServerPermission, bool> effectivePermissions = new();
 
-        CommunityServerRoleDto[] roleDtos = [
-            ..member.MemberRoles.Select(mr => new CommunityServerRoleDto(
-                mr.Role.Id,
-                mr.Role.Name,
-                mr.Role.Permissions,
-                mr.Role.AuthorizeLevel
-            ))
+        foreach (var permission in AllPermissions) {
+            if (isOwner) {
+                effectivePermissions[permission] = true;
+            } else {
+                bool enabled = false;
+                bool shouldBreak = false;
+
+                foreach (var role in roles) {
+                    foreach (var rolePermission in role.Permissions) {
+                        if (rolePermission.Permission != permission) continue;
+                        if (rolePermission.State == PermissionState.Inherit) continue;
+
+                        enabled = rolePermission.State == PermissionState.Enable;
+                        shouldBreak = true;
+                        break;
+                    }
+
+                    if (shouldBreak) break;
+                }
+
+                effectivePermissions[permission] = enabled;
+            }
+        }
+
+        MemberRoleDto[] roleDtos = [
+            ..member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))
         ];
         
-        ServerPermissions effectivePermissions = roleDtos.Aggregate(
-            ServerPermissions.None,
-            (current, roleDto) => current | roleDto.Permissions
-        );
-        int authorizeLevel = roleDtos.Max(r => r.AuthorizeLevel);
+        int authorizeLevel = member.MemberRoles.Max(r => r.Role.AuthorizeLevel);
 
         return Result<ServerMemberPermissionsDto>.Success(new(
             member.Id,
-            effectivePermissions,
             authorizeLevel,
+            effectivePermissions,
             roleDtos
         ));
     }

@@ -27,16 +27,15 @@ public sealed class CreateCommunityServerHandler(
 
         CommunityServerRole defaultRole = new() {
             Name = "Default",
-            Permissions = ServerPermissions.None,
             SpecialRoleType = SpecialRoleType.Default,
             AuthorizeLevel = 0,
         };
 
         CommunityServerRole ownerRole = new() {
             Name = "Owner",
-            Permissions = ServerPermissions.All,
             SpecialRoleType = SpecialRoleType.Owner,
             AuthorizeLevel = int.MaxValue,
+            Permissions = [],   // owner is the special role, so every operation short-circuit 
         };
 
         server.Roles = [defaultRole, ownerRole];
@@ -53,11 +52,11 @@ public sealed class CreateCommunityServerHandler(
                 }
             ],
         };
-        
+
         server.Members.Add(ownerMember);
-        
+
         communityServerRepository.Add(server);
-        
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
         if (request.AvatarStream is { } avatarStream) {

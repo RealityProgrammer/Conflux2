@@ -7,6 +7,4 @@ public sealed record CreateServerChannelCategoryCommand(
     Guid ExecutorUserId,
     Guid ServerId,
     string Name
-) : ICommand<Result<Guid>>, IServerCommand {
-    public ServerPermissions RequiredPermissions => ServerPermissions.CreateChannel;
-}
+) : ICommand<Result<Guid>>, IServerCommand;

@@ -15,7 +15,9 @@ internal sealed class CommunityServerRoleRepository(
         IQueryable<CommunityServerRole> query = dbContext.CommunityServerRoles;
         query = tracking ? query.AsTracking() : query.AsNoTracking();
             
-        return await query.FirstOrDefaultAsync(role => role.Id == roleId, cancellationToken);
+        return await query
+            .Include(role => role.Permissions)
+            .FirstOrDefaultAsync(role => role.Id == roleId, cancellationToken);
     }
 
     public async Task<bool> Delete(Guid roleId, Guid serverId) {

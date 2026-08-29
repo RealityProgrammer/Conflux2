@@ -1,15 +1,10 @@
 namespace Conflux.Domain.Enums;
 
-[Flags]
-public enum ServerPermissions {
-    None = 0,
+public enum ServerPermission {
+    CreateRole,
+    UpdateRole,
+    DeleteRole,
     
-    CreateRole = 1 << 0,
-    UpdateRole = 1 << 1,
-    DeleteRole = 1 << 2,
-    
-    CreateChannel = 1 << 3,
-    DeleteChannel = 1 << 4,
-    
-    All = unchecked((int)uint.MaxValue),
+    CreateChannel,
+    DeleteChannel,
 }

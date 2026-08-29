@@ -10,7 +10,5 @@ public sealed record UpdateServerRoleCommand(
     Guid RoleId,
     PatchField<string> Name,
     PatchField<int> AuthorizeLevel,
-    PatchField<ServerPermissions> Permissions
-) : ICommand<Result<CommunityServerRoleDto>>, IServerCommand {
-    public ServerPermissions RequiredPermissions => ServerPermissions.UpdateRole;
-}
+    Dictionary<ServerPermission, PermissionState>? PermissionStates
+) : ICommand<Result<ServerRoleDto>>, IServerCommand;
