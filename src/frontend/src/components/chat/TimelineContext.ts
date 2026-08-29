@@ -1,4 +1,4 @@
-import type {Attachment, MessageDto} from "../../api/responses.ts";
+import type {Attachment, MessageDto} from "../../api/types.ts";
 
 export interface TimelineContext {
   actions: {

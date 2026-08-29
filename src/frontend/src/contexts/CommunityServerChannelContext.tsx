@@ -1,5 +1,5 @@
 import {createContext, type ReactNode, useContext} from "react";
-import type {CommunityServerChannelIdentityDto} from "../api/responses.ts";
+import type {CommunityServerChannelIdentityDto} from "../api/types.ts";
 import {useCommunityServerContext} from "./CommunityServerContext.tsx";
 import useChannelConnection from "../hooks/useChannelConnection.ts";
 

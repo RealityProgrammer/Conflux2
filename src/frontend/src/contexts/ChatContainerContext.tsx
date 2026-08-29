@@ -1,6 +1,6 @@
 import {createContext, type ReactNode, useContext} from "react";
 import type {MessageInput} from "../components/ChatInput.tsx";
-import type {MessageDto} from "../api/responses.ts";
+import type {MessageDto} from "../api/types.ts";
 
 interface ChatContainerContextType {
   channelId: string;

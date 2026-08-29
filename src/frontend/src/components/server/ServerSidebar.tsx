@@ -3,9 +3,8 @@ import {useState} from "react";
 import {
   type ChannelCategoryIdentityDto,
   type CommunityServerChannelIdentityDto,
-  ServerPermissions,
   type ServiceResponse
-} from "../../api/responses.ts";
+} from "../../api/types.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
@@ -404,7 +403,7 @@ function ChannelCategoryView({
 
           <span className="text-gray-300 text-sm line-clamp-1 select-none flex-1">{category.name}</span>
 
-          {(memberPermissions.effectivePermissions & (ServerPermissions.CreateChannel | ServerPermissions.DeleteChannel)) != 0 && (
+          {(memberPermissions.effectivePermissions.CreateChannel || memberPermissions.effectivePermissions.DeleteChannel) && (
             <div className={`h-5 items-center justify-center ${isOpenDropdown ? 'flex' : 'hidden group-hover:flex'}`}>
               <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown} modal={false}>
                 <DropdownMenu.Trigger asChild>
@@ -422,7 +421,7 @@ function ChannelCategoryView({
                       e.preventDefault();
                     }}
                   >
-                    {(memberPermissions.effectivePermissions & ServerPermissions.CreateChannel) != 0 && (
+                    {memberPermissions.effectivePermissions.CreateChannel && (
                       <>
                         <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
                           setIsCategoryOpen(true);
@@ -444,7 +443,7 @@ function ChannelCategoryView({
                       </>
                     )}
 
-                    {(memberPermissions.effectivePermissions & ServerPermissions.DeleteChannel) != 0 && (
+                    {memberPermissions.effectivePermissions.DeleteChannel && (
                       <DropdownMenu.Item className="dropdown-item-danger" onSelect={() => {
                         if (category.id) {
                           handleChannelAction({

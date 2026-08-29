@@ -4,9 +4,9 @@ import type {
   MessageDto,
   TimelineMessageBlockDto,
   UserIdentityProfileDto
-} from "../api/responses.ts";
+} from "../api/types.ts";
 import {messageService} from "../api/messageService.ts";
-import type {MessageLoadDirection} from "../api/requests.ts";
+import {MessageLoadDirection} from "../api/schema.ts";
 
 export interface UseGetMessagesResult {
   useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
@@ -30,18 +30,18 @@ export default function useGetMessages(channelId: string | null | undefined, loa
     enabled: !!channelId,
     queryKey,
     queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
-      const response = await messageService.getMessages({
-        channelId: channelId!,
-        direction: pageParam.direction,
-        cursor: pageParam.cursorId,
-        count: loadCount,
-      });
+      const response = await messageService.getMessages(
+        channelId!,
+        pageParam.direction,
+        pageParam.cursorId,
+        loadCount,
+      );
 
       return response.data;
     },
     initialPageParam: {
       cursorId: undefined,
-      direction: "Before",
+      direction: MessageLoadDirection.Before,
     },
 
     getPreviousPageParam: (firstPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
@@ -50,7 +50,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
 
         return {
           cursorId: oldestMessage.messages[0].id,
-          direction: 'Before'
+          direction: MessageLoadDirection.Before,
         };
       }
 
@@ -61,7 +61,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
       if (lastPage?.hasMoreAfter && lastPage.messageGroups.length > 0) {
         return {
           cursorId: lastPage.messageGroups.at(-1)?.messages.at(-1)?.id,
-          direction: 'After'
+          direction: MessageLoadDirection.After,
         };
       }
 
@@ -111,7 +111,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined>) => InfiniteData<GetMessagesResponse | null | undefined>) => {
     queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
       queryKey,
-      (oldData) => {
+      (oldData: NoInfer<InfiniteData<GetMessagesResponse | null | undefined>> | undefined): NoInfer<InfiniteData<GetMessagesResponse | null | undefined>> | undefined => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) {
           return oldData;
         }
@@ -122,13 +122,14 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   }
 
   const appendMessage = (newMessage: MessageDto, userProfile?: UserIdentityProfileDto) => {
-    modifyMessageData((oldData) => {
-      const lastPage = oldData.pages.at(-1)!;
-      const updatedLastPage = {...lastPage};
+    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
+      const lastPage: GetMessagesResponse = oldData.pages.at(-1)!;
+      const updatedLastPage: GetMessagesResponse = {...lastPage};
 
-      const existingUsers = updatedLastPage.users || [];
+      const existingUsers: UserIdentityProfileDto[] = updatedLastPage.users || [];
 
-      if (userProfile && !existingUsers.some((u) => u.id === userProfile.id)) {
+      if (userProfile && !existingUsers.some((u: UserIdentityProfileDto) => u.id === userProfile.id)) {
+        // @ts-ignore
         updatedLastPage.users = [...existingUsers, userProfile];
       }
 
@@ -177,7 +178,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   };
 
   const editMessage = (messageId: string, newBody: string | null) => {
-    modifyMessageData((oldData) => {
+    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
       let isMessageFound = false;
 
       const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
@@ -224,7 +225,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   };
 
   const deleteMessage = (messageId: string) => {
-    modifyMessageData((oldData) => {
+    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
       let isMessageFound = false;
 
       const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {

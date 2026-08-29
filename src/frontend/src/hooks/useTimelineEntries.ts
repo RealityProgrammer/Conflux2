@@ -1,4 +1,4 @@
-import type {TimelineMessageBlockDto, UserIdentityProfileDto} from "../api/responses.ts";
+import type {TimelineMessageBlockDto, UserIdentityProfileDto} from "../api/types.ts";
 import {MessageItem} from "../components/chat/MessageItem.tsx";
 import type {TimelineItem} from "../components/chat/TimelineItem.ts";
 import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";

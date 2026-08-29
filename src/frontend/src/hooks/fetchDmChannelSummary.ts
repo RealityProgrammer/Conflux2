@@ -1,4 +1,4 @@
-import type {DmChannelSummary, ServiceResponse} from "../api/responses.ts";
+import type {DmChannelSummary, ServiceResponse} from "../api/types.ts";
 import {useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
 import {channelService} from "../api/channelService.ts";
 

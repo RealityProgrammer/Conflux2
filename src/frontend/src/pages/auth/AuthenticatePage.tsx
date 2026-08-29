@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from "react";
 import {animate, JSAnimation, random} from "animejs";
 import {Form, redirect, useActionData, useLocation, useNavigate, useNavigation} from "react-router";
 import {authService} from "../../api/authService.ts";
-import type {FieldErrors, LoginResponse, ServiceResponse} from "../../api/responses.ts";
+import type {FieldErrors, LoginResponse, ServiceResponse} from "../../api/types.ts";
 import {HttpStatusCode} from "axios";
 import {Label, unstable_PasswordToggleField as PasswordToggleField} from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
@@ -41,7 +41,7 @@ export async function authAction({request}: { request: Request }): Promise<Respo
         error: response.error?.message ?? "Unknown error.",
         validationErrorDetails:
           response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred" ?
-            response.error.details as FieldErrors<"email" | "password"> :
+            response.error.details as unknown as FieldErrors<"email" | "password"> :
             undefined,
       };
     }
@@ -68,7 +68,7 @@ export async function authAction({request}: { request: Request }): Promise<Respo
         error: response.error?.message ?? "Unknown error.",
         validationErrorDetails:
           response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred" ?
-            response.error.details as FieldErrors<"email" | "password"> :
+            response.error.details as unknown as FieldErrors<"email" | "password"> :
             undefined,
       };
     }

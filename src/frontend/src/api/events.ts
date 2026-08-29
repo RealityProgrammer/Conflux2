@@ -1,4 +1,4 @@
-import type {MessageDto} from "./responses.ts";
+import type {MessageDto} from "./types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;

@@ -1,12 +1,10 @@
 import {useDebounceValue} from "usehooks-ts";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
-  type DiscoverFriendElement,
-  type PaginatedResponse,
-  type SendFriendRequestResponse,
+  type DiscoverFriendSummary,
+  type PaginatedResult,
   type ServiceResponse,
-  UserRelationshipStatus
-} from "../../api/responses.ts";
+} from "../../api/types.ts";
 import {friendService} from "../../api/friendService.ts";
 import type {
   FriendRequestAcceptedEvent,
@@ -23,9 +21,10 @@ import Spinner from "../../components/Spinner.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {UserRelationshipStatus} from "../../api/schema.ts";
 
 interface RowProps {
-  user: DiscoverFriendElement;
+  user: DiscoverFriendSummary;
   updateCacheStatus: (userId: string, newStatus: UserRelationshipStatus) => void;
 }
 
@@ -44,8 +43,8 @@ export default function AddFriendTabContent() {
   } = useInfiniteQuery({
     enabled: !!userNameSearch,
     queryKey: ["discoverUsers", userNameSearch],
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<DiscoverFriendElement> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<DiscoverFriendElement>> =
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<DiscoverFriendSummary> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<DiscoverFriendSummary>> =
         await friendService.discover(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
@@ -68,7 +67,7 @@ export default function AddFriendTabContent() {
   const queryClient = useQueryClient();
 
   const updateCacheStatus = (userId: string, newStatus: UserRelationshipStatus) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<DiscoverFriendElement>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<DiscoverFriendSummary>>>(
       ["discoverUsers", userNameSearch],
       (oldData) => {
         if (!oldData) return oldData;
@@ -168,9 +167,9 @@ function Row({user, updateCacheStatus}: RowProps) {
   const {mutation, activeAction} = useFriendActions(user.userId);
 
   const handleSendFriendRequest = () => mutation.mutate('send', {
-    onSuccess: (response: ServiceResponse<SendFriendRequestResponse>) => {
+    onSuccess: (response: ServiceResponse<UserRelationshipStatus>) => {
       if (response && response.success && response.data) {
-        updateCacheStatus(user.userId, response.data.status);
+        updateCacheStatus(user.userId, response.data);
       }
     },
   });

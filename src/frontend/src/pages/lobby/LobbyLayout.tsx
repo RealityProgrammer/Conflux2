@@ -5,7 +5,7 @@ import {BsPeople, BsPlus} from "react-icons/bs";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
-import type {FieldErrors, ServiceResponse} from "../../api/responses.ts";
+import type {FieldErrors, ServiceResponse} from "../../api/types.ts";
 import IconButton from "../../components/IconButton.tsx";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import {useState} from "react";
@@ -206,7 +206,7 @@ function CreateCommunityServerButton() {
       setIsOpen(false);
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as FieldErrors<"name" | "avatar">;
+        const details = response.error.details as unknown as FieldErrors<"name" | "avatar">;
 
         if (details.name && details.name.length > 0) {
           methods.setError("name", {

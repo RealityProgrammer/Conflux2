@@ -1,6 +1,6 @@
 import {type ChangeEvent, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
 import {TimelineItem} from "./TimelineItem.ts";
-import type {MessageDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/responses.ts";
+import type {MessageDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {estimateMessageLayout} from "./utils.ts";
 import MessageAttachments from "./MessageAttachments.tsx";

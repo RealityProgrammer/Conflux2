@@ -77,7 +77,7 @@ function Invitation({summary, invitationId}: {
       return () => clearTimeout(timeoutId);
     } else {
       setJoinStatus("error");
-      setErrorMessage(response.error?.message);
+      setErrorMessage(response.error?.message ?? undefined);
     }
   }
 

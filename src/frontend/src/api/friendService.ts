@@ -1,16 +1,16 @@
 import type {
   BackendResponse,
-  DiscoverFriendElement,
-  PaginatedResponse,
-  SendFriendRequestResponse,
+  DiscoverFriendSummary,
+  PaginatedResult,
   ServiceResponse,
-} from "./responses.ts";
+} from "./types.ts";
 import type {AxiosError, AxiosResponse} from "axios";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
+import type {UserRelationshipStatus} from "./schema.ts";
 
 export const friendService = {
-  discover: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResponse<DiscoverFriendElement>>> => {
+  discover: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<DiscoverFriendSummary>>> => {
     try {
       const searchParams = new URLSearchParams();
 
@@ -21,8 +21,8 @@ export const friendService = {
       searchParams.append("offset", String(offset));
       searchParams.append("count", String(count));
 
-      const response: AxiosResponse<BackendResponse<PaginatedResponse<DiscoverFriendElement>>> =
-        await apiClient.get<BackendResponse<PaginatedResponse<DiscoverFriendElement>>>(`/friend/discover?${searchParams.toString()}`);
+      const response: AxiosResponse<BackendResponse<PaginatedResult<DiscoverFriendSummary>>> =
+        await apiClient.get<BackendResponse<PaginatedResult<DiscoverFriendSummary>>>(`/friend/discover?${searchParams.toString()}`);
 
       return {
         success: true,
@@ -35,10 +35,10 @@ export const friendService = {
     }
   },
 
-  sendFriendRequest: async (receiverUserId: string): Promise<ServiceResponse<SendFriendRequestResponse>> => {
+  sendFriendRequest: async (receiverUserId: string): Promise<ServiceResponse<UserRelationshipStatus>> => {
     try {
-      const response: AxiosResponse<BackendResponse<SendFriendRequestResponse>> =
-        await apiClient.post<BackendResponse<SendFriendRequestResponse>>(`/friend/requests/${encodeURIComponent(receiverUserId)}`);
+      const response: AxiosResponse<BackendResponse<UserRelationshipStatus>> =
+        await apiClient.post<BackendResponse<UserRelationshipStatus>>(`/friend/requests/${encodeURIComponent(receiverUserId)}`);
 
       return {
         success: true,
@@ -46,7 +46,7 @@ export const friendService = {
         data: response.data!.data,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<SendFriendRequestResponse>>;
+      const axiosError = error as AxiosError<BackendResponse<UserRelationshipStatus>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -61,7 +61,7 @@ export const friendService = {
         statusCode: response.status,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ServiceResponse>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
@@ -76,7 +76,7 @@ export const friendService = {
         statusCode: response.status,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ServiceResponse>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
@@ -91,7 +91,7 @@ export const friendService = {
         statusCode: response.status,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ServiceResponse>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
@@ -106,7 +106,7 @@ export const friendService = {
         statusCode: response.status,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ServiceResponse>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },

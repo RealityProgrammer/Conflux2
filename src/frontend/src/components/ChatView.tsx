@@ -3,7 +3,7 @@ import type {
   GetMessagesResponse,
   MessageDto,
   UserIdentityProfileDto
-} from "../api/responses.ts";
+} from "../api/types.ts";
 import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
 import {useResizeObserver} from "usehooks-ts";

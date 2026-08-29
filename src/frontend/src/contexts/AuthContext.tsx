@@ -1,7 +1,7 @@
 import {createContext, type ReactNode, useContext, useState} from "react";
 import {useNavigate, useRevalidator, useRouteLoaderData} from "react-router";
 import {authService} from "../api/authService.ts";
-import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/responses.ts";
+import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/types.ts";
 
 interface AuthorizationContextType {
   userAuthorization: UserAuthorizationInfo | null;

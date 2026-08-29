@@ -2,7 +2,7 @@ import {useCommunityServerContext} from "../../contexts/CommunityServerContext.t
 import {useEffect, useState} from "react";
 import {Dialog, DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
-import {BsChevronDown, BsCopy, BsGear, BsGearFill, BsPersonPlus, BsPersonPlusFill} from "react-icons/bs";
+import {BsChevronDown, BsCopy, BsGearFill, BsPersonPlus, BsPersonPlusFill} from "react-icons/bs";
 import {FaFolderPlus, FaHashtag, FaVolumeHigh} from "react-icons/fa6";
 import DialogForm from "../DialogForm.tsx";
 import SelectItem from "../SelectItem.tsx";
@@ -10,13 +10,13 @@ import {useFormStatus} from "react-dom";
 import {useInterval} from "usehooks-ts";
 import Spinner from "../Spinner.tsx";
 import {z} from "zod";
-import {INVITATION_EXPIRE_VALUES} from "../../api/requests.ts";
 import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import ErrorText from "../ErrorText.tsx";
 import {invitationService} from "../../api/invitationService.ts";
 import {HttpStatusCode} from "axios";
-import {type FieldErrors, ServerPermissions} from "../../api/responses.ts";
+import {InvitationExpireAfter} from "../../api/schema.ts";
+import type {FieldErrors} from "../../api/types.ts";
 
 interface ServerSidebarHeaderProps {
   onRequestCreate: (type: "category" | "text_channel" | "voice_channel", idempotencyKey: string) => void;
@@ -56,7 +56,7 @@ export default function ServerSidebarHeader({
                 e.preventDefault();
               }}
             >
-              {(memberPermissions.effectivePermissions & ServerPermissions.CreateChannel) != 0 && (
+              {memberPermissions.effectivePermissions.CreateChannel && (
                 <>
                   <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
                     onRequestCreate("category", crypto.randomUUID());
@@ -124,7 +124,7 @@ export default function ServerSidebarHeader({
 }
 
 const createInvitationSchema = z.object({
-  expireAfter: z.enum(INVITATION_EXPIRE_VALUES),
+  expireAfter: z.enum(InvitationExpireAfter),
   maxUses: z.number().int({ error: "A valid positive integer is required." })
     .min(1, { error: "Max uses must be at least 1." })
     .max(500000, { error: "Max uses must be less than or equal to 500000." })
@@ -156,7 +156,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
   const formMethods = useForm<CreateInvitationFormValues>({
     resolver: zodResolver(createInvitationSchema),
     defaultValues: {
-      expireAfter: "FiveMinutes",
+      expireAfter: InvitationExpireAfter.FiveMinutes,
       maxUses: null,
     },
     mode: "onSubmit",
@@ -171,7 +171,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
       onOpenChange(false);
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as FieldErrors<"expireAfter" | "maxUses">;
+        const details = response.error.details as unknown as FieldErrors<"expireAfter" | "maxUses">;
 
         if (details.expireAfter && details.expireAfter.length > 0) {
           formMethods.setError("expireAfter", {

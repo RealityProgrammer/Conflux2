@@ -1,11 +1,11 @@
 import {Outlet, useParams} from "react-router";
-import {type Dispatch, type SetStateAction, useEffect, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
-import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../../api/responses.ts";
+import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../../api/types.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
+import {ChannelType} from "../../api/schema.ts";
 
 export default function ServerLayout() {
   const { serverId } = useParams();
@@ -105,7 +105,7 @@ function SuccessfullyLoadedLayout({
     type: "text" | "voice",
     categoryId: string | null
   ) => {
-    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData: NoInfer<CommunityServerSummaryDto> | undefined): CommunityServerSummaryDto | undefined => {
       if (!oldData) return oldData;
 
       if (!oldData.channelCategories || oldData.channelCategories.length === 0) {
@@ -119,7 +119,7 @@ function SuccessfullyLoadedLayout({
                 {
                   id,
                   name,
-                  channelType: type === "text" ? "CommunityServerText" : "CommunityServerVoice",
+                  channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
                 }
               ]
             }
@@ -138,7 +138,7 @@ function SuccessfullyLoadedLayout({
                 {
                   id,
                   name,
-                  channelType: type === "text" ? "CommunityServerText" : "CommunityServerVoice",
+                  channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
                 },
               ],
             };

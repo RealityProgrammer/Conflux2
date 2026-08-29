@@ -3,7 +3,7 @@ import {BsMegaphone, BsPeople} from "react-icons/bs";
 import {Separator} from "radix-ui";
 import {useFetchDmChannelSummary} from "../../hooks/fetchDmChannelSummary.ts";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import type {DmConversationListItemDto, PaginatedResponse, ServiceResponse} from "../../api/responses.ts";
+import type {DmConversationListItemDto, PaginatedResult, ServiceResponse} from "../../api/types.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {UpdateDmConversationListEvent} from "../../api/events.ts";
@@ -71,14 +71,14 @@ function DirectMessagesList() {
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<DmConversationListItemDto> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<DmConversationListItemDto>> =
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<DmConversationListItemDto> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<DmConversationListItemDto>> =
         await sessionUserService.getDmConversations(pageParam, 30);
 
       return response.data;
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage: PaginatedResult<DmConversationListItemDto> | null | undefined, allPages) => {
       if (!lastPage) return undefined;
 
       const loadedCount = allPages.reduce(
@@ -92,17 +92,17 @@ function DirectMessagesList() {
 
   const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
-  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent) => {
+  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
     const dmChannelSummary = await getDmChannelSummary(event.channelId);
 
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<DmConversationListItemDto> | undefined | null>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<DmConversationListItemDto> | undefined | null>>(
       queryKey,
-      (oldData) => {
+      (oldData: NoInfer<InfiniteData<PaginatedResult<DmConversationListItemDto> | null | undefined>> | undefined): NoInfer<InfiniteData<PaginatedResult<DmConversationListItemDto> | null | undefined>> | undefined => {
         if (!oldData || oldData.pages.length === 0) {
           return oldData;
         }
 
-        const updatedPages = oldData.pages.map((page: PaginatedResponse<DmConversationListItemDto> | null | undefined) => ({
+        const updatedPages = oldData.pages.map((page: PaginatedResult<DmConversationListItemDto> | null | undefined) => ({
           ...page!,
           elements: page!.elements.filter(item => item.channelId !== event.channelId)
         }));

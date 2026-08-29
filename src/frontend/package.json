@@ -8,8 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "codegen": "graphql-codegen --config codegen.ts",
-    "codegen:watch": "graphql-codegen --config codegen.ts --watch"
+    "codegen:graphql": "graphql-codegen --config codegen.ts",
+    "codegen:graphql:watch": "graphql-codegen --config codegen.ts --watch",
+    "codegen:openapi": "npx openapi-typescript http://localhost:5127/openapi/v1.json --enum -o ./src/api/schema.ts"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
@@ -46,8 +47,10 @@
     "@vitejs/plugin-react": "^6.0.3",
     "animejs": "^4.5.0",
     "babel-plugin-react-compiler": "^1.0.0",
+    "openapi-typescript": "^7.13.0",
     "oxlint": "^1.71.0",
-    "typescript": "^7.0.2",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
     "vite": "^8.1.1"
   }
 }

@@ -1,11 +1,12 @@
 import {useMutation, type UseMutationResult, useMutationState} from "@tanstack/react-query";
 import {friendService} from "../api/friendService.ts";
-import type {SendFriendRequestResponse, ServiceResponse} from "../api/responses.ts";
+import type {ServiceResponse} from "../api/types.ts";
+import type {UserRelationshipStatus} from "../api/schema.ts";
 
 export type FriendActionType = 'send' | 'accept' | 'reject' | 'cancel' | 'unfriend';
 
 export type UseFriendActionsResult = {
-  mutation: UseMutationResult<ServiceResponse | ServiceResponse<SendFriendRequestResponse>, Error, FriendActionType>;
+  mutation: UseMutationResult<ServiceResponse | ServiceResponse<UserRelationshipStatus>, Error, FriendActionType>;
   activeAction: FriendActionType | null;
 }
 
@@ -13,7 +14,7 @@ export default function useFriendActions(friendUserId: string): UseFriendActions
   const mutationKey = ["friendActions", friendUserId];
 
   const mutation =
-    useMutation<ServiceResponse | ServiceResponse<SendFriendRequestResponse>, Error, FriendActionType>({
+    useMutation<ServiceResponse | ServiceResponse<UserRelationshipStatus>, Error, FriendActionType>({
       mutationKey: mutationKey,
       mutationFn: async (actionType: FriendActionType): Promise<any> => {
         switch (actionType) {

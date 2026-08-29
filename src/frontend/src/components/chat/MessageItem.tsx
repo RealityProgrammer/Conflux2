@@ -2,7 +2,7 @@ import {TimelineItem} from "./TimelineItem.ts";
 import type {
   TimelineMessageDto,
   UserIdentityProfileDto
-} from "../../api/responses.ts";
+} from "../../api/types.ts";
 import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";

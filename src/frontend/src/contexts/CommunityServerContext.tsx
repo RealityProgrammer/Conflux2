@@ -1,4 +1,4 @@
-import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../api/responses.ts";
+import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
 

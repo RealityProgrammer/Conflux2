@@ -4,7 +4,7 @@ import Spinner from "./Spinner.tsx";
 import UserAvatar from "./UserAvatar.tsx";
 import {ChatView, type QueryModification} from "./ChatView.tsx";
 import ChatInput, {type MessageInput} from "./ChatInput.tsx";
-import type {MessageDto, ServiceResponse} from "../api/responses.ts";
+import type {MessageDto, ServiceResponse} from "../api/types.ts";
 import {useRef, useState} from "react";
 import {useMutation} from "@tanstack/react-query";
 import {messageService} from "../api/messageService.ts";

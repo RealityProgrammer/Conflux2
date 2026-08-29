@@ -1,0 +1,74 @@
+import {type components} from "./schema.ts";
+import type {GetUserFullProfileQuery, GetUserIdentityProfileQuery} from "../graphql/queries.ts";
+import type {HttpStatusCode} from "axios";
+
+// requests
+export type LoginRequest = components["schemas"]["LoginRequest"];
+export type RegisterRequest = components["schemas"]["RegisterRequest"];
+export type EmailConfirmationRequest = components["schemas"]["ConfirmEmailRequest"];
+
+export class SetAvatar {
+  readonly type = "set";
+
+  constructor(public file: File, public previewUrl: string) {
+  }
+}
+
+export class DeleteAvatar {
+  readonly type = "delete";
+}
+
+export class NoAvatarModification {
+  readonly type = "noMod";
+}
+
+export type AvatarOperation = SetAvatar | DeleteAvatar | NoAvatarModification;
+
+export const INVITATION_EXPIRE_VALUES = [
+  "FiveMinutes", "FifteenMinutes", "ThirtyMinutes", "OneHour", "TwoHours",
+  "ThreeHours", "SixHours", "TwelveHours", "OneDay", "OneWeek",
+  "TwoWeeks", "FourWeeks", "Infinite"
+] as const;
+
+export type InvitationExpireAfter = components["schemas"]["InvitationExpireAfter"];
+
+// responses
+export type FieldErrors<F extends keyof any> = Record<F, string[]>;
+export type ServiceError = components["schemas"]["Error"];
+
+export type BackendResponse<T = void> =
+  Omit<components["schemas"]["ApiResponseOfLoginResponse"], "data"> & (T extends void ? {} : { data?: T | null });
+
+export type ServiceResponse<T = void> = {
+  success: boolean;
+  statusCode: HttpStatusCode;
+  error?: ServiceError | null;
+} & (T extends void ? {} : { data?: T | null });
+
+export type PaginatedResult<T> =
+  Omit<components["schemas"]["PaginatedResultOfDiscoverFriendSummary"], "elements"> & { elements: T[] };
+
+export type UserAuthorizationInfo = components["schemas"]["UserAuthorizationInfo"];
+
+export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['userById']>;
+export type UserFullProfileDto = NonNullable<GetUserFullProfileQuery['userById']>
+
+export type LoginResponse = components["schemas"]["LoginResponse"];
+export type RefreshResponse = components["schemas"]["RefreshResponse"];
+
+export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
+export type PendingFriendRequestDto = components["schemas"]["PendingFriendRequestDto"];
+export type DirectMessageResolutionResponse = components["schemas"]["DirectMessageResolutionResponse"];
+export type DmChannelSummary = components["schemas"]["DmChannelSummary"];
+export type Attachment = components["schemas"]["Attachment"];
+export type TimelineMessageBlockDto = components["schemas"]["TimelineMessageBlockDto"];
+export type ReplyToMessageDto = components["schemas"]["ReplyToMessageDto"];
+export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
+export type MessageDto = components["schemas"]["MessageDto"];
+export type GetMessagesResponse = components["schemas"]["GetMessagesResponse"];
+export type DmConversationListItemDto = components["schemas"]["DmConversationListItemDto"];
+export type CommunityServerChannelIdentityDto = components["schemas"]["CommunityServerChannelIdentityDto"];
+export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryIdentityDto"];
+export type CommunityServerSummaryDto = components["schemas"]["CommunityServerSummaryDto"];
+export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
+export type ServerMemberPermissionsDto = components["schemas"]["ServerMemberPermissionsDto"];

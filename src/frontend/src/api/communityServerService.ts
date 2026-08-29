@@ -4,7 +4,7 @@ import type {
   CommunityServerSummaryDto,
   ServerMemberPermissionsDto,
   ServiceResponse
-} from "./responses.ts";
+} from "./types.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 

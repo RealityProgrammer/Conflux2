@@ -10,7 +10,7 @@ import type {
   ServiceResponse,
   UserAuthorizationInfo,
   UserIdentityProfileDto,
-} from "./api/responses.ts";
+} from "./api/types.ts";
 import HomePage from "./pages/HomePage"
 import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";

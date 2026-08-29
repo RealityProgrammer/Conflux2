@@ -2,7 +2,7 @@ import {useDebounceValue} from "usehooks-ts";
 import {BsChatSquareText, BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import {type PaginatedResponse, type ServiceResponse, type UserIdentityProfileDto} from "../../api/responses.ts";
+import {type PaginatedResult, type ServiceResponse, type UserIdentityProfileDto} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
@@ -42,8 +42,8 @@ export default function FriendListTabContent() {
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<UserIdentityProfileDto> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<UserIdentityProfileDto>> =
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<UserIdentityProfileDto> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<UserIdentityProfileDto>> =
         await sessionUserService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
@@ -64,7 +64,7 @@ export default function FriendListTabContent() {
   const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const handleRemoveUserFromCache = (userId: string) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<UserIdentityProfileDto>>>(
       queryKey,
       (oldData) => {
         if (!oldData) return oldData;
@@ -110,7 +110,7 @@ export default function FriendListTabContent() {
     const userProfile = profileResponse.userById;
     if (!userProfile) return;
 
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto> | null | undefined>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<UserIdentityProfileDto> | null | undefined>>(
       queryKey,
       (oldData) => {
         if (!oldData || oldData.pages.length === 0) return oldData;

@@ -1,12 +1,12 @@
 import {apiClient} from "./client.ts";
-import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./requests.ts";
+import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./types.ts";
 import type {
   BackendResponse,
   LoginResponse,
   RefreshResponse,
   ServiceResponse,
   UserAuthorizationInfo
-} from "./responses.ts";
+} from "./types.ts";
 import axios, {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import Cookies from "js-cookie";
 import {handleAxiosError} from "./errorHandling.ts";
@@ -87,7 +87,7 @@ export const authService = {
         {headers}
       ).then(async (response: AxiosResponse<BackendResponse<RefreshResponse>>): Promise<ServiceResponse<RefreshResponse>> => {
         localStorage.setItem("hasSession", "true");
-        cachedAuthorization = response.data.data!.authorization;
+        cachedAuthorization = response.data.data!.authorizationInfo;
 
         await csrfService.requestCsrfToken();
 

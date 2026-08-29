@@ -2,12 +2,7 @@ import {useDebounceValue} from "usehooks-ts";
 import {BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import {
-  type PaginatedResponse,
-  type QueryPendingRequestElement,
-  type ServiceResponse,
-  UserRelationshipStatus
-} from "../../api/responses.ts";
+import {type PaginatedResult, type PendingFriendRequestDto, type ServiceResponse} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import Spinner from "../../components/Spinner.tsx";
@@ -23,11 +18,12 @@ import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
+import {UserRelationshipStatus} from "../../api/schema.ts";
 
 const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
-  element: QueryPendingRequestElement;
+  element: PendingFriendRequestDto;
   removeCacheElement: (userId: string) => void;
 }
 
@@ -47,8 +43,8 @@ export default function PendingRequestsTabContent() {
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<QueryPendingRequestElement> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<QueryPendingRequestElement>> =
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<PendingFriendRequestDto> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<PendingFriendRequestDto>> =
         await sessionUserService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
@@ -69,7 +65,7 @@ export default function PendingRequestsTabContent() {
   const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const removeCacheElement = (userId: string) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<PendingFriendRequestDto>>>(
       queryKey,
       (oldData) => {
         if (!oldData) return oldData;
@@ -111,7 +107,7 @@ export default function PendingRequestsTabContent() {
     const userProfile = query.userById;
     if (!userProfile) return;
 
-    const newElement: QueryPendingRequestElement = {
+    const newElement: PendingFriendRequestDto = {
       userId: notif.senderUserId,
       userName: userProfile.userName ?? "???",
       displayName: userProfile.displayName ?? "???",
@@ -119,7 +115,7 @@ export default function PendingRequestsTabContent() {
       status: UserRelationshipStatus.IncomingRequest,
     }
 
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<PendingFriendRequestDto>>>(
       queryKey,
       (oldData) => {
         if (!oldData || oldData.pages.length === 0) return oldData;

@@ -7,8 +7,8 @@ import {userService} from "../../api/userService.ts";
 import {HttpStatusCode} from "axios";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {Label} from "radix-ui";
-import {type AvatarOperation, DeleteAvatar, NoAvatarModification, SetAvatar} from "../../api/requests.ts";
-import type {FieldErrors} from "../../api/responses.ts";
+import {type AvatarOperation, DeleteAvatar, NoAvatarModification, SetAvatar} from "../../api/types.ts";
+import type {FieldErrors} from "../../api/types.ts";
 import {useNavigate} from "react-router";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 
@@ -364,7 +364,7 @@ export default function ProfileSetupPage() {
         return response.error?.code === "ValidationErrorsOccurred" ? {
           success: false,
           message: response.error?.message,
-          fieldErrors: response.error?.details as FieldErrors<'userName' | 'displayName' | 'avatarFile'>,
+          fieldErrors: response.error?.details as unknown as FieldErrors<'userName' | 'displayName' | 'avatarFile'>,
         } : {
           success: false,
           message: response.error?.message,

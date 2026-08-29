@@ -2,7 +2,7 @@ import IconButton from "./IconButton.tsx";
 import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
 import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from "react";
 import {ScrollArea} from "radix-ui";
-import type {MessageDto} from "../api/responses.ts";
+import type {MessageDto} from "../api/types.ts";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 

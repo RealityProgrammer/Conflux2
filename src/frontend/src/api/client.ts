@@ -2,7 +2,7 @@ import type {AxiosError, AxiosResponse, InternalAxiosRequestConfig} from "axios"
 import axios, {HttpStatusCode} from "axios";
 import Cookies from "js-cookie";
 import {csrfService} from "./csrfService.ts";
-import type {BackendResponse} from "./responses.ts";
+import type {BackendResponse} from "./types.ts";
 
 axios.defaults.withCredentials = true;
 

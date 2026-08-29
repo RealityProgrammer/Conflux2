@@ -1,14 +1,14 @@
 import type {
   BackendResponse,
   DmConversationListItemDto,
-  PaginatedResponse, QueryPendingRequestElement,
+  PaginatedResult, PendingFriendRequestDto,
   ServiceResponse,
   UserIdentityProfileDto
-} from "./responses.ts";
+} from "./types.ts";
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
-import type {AvatarOperation} from "./requests.ts";
+import type {AvatarOperation} from "./types.ts";
 import {authService} from "./authService.ts";
 
 export const sessionUserService = {
@@ -82,14 +82,14 @@ export const sessionUserService = {
     }
   },
 
-  getDmConversations: async (offset: number, count: number): Promise<ServiceResponse<PaginatedResponse<DmConversationListItemDto>>> => {
+  getDmConversations: async (offset: number, count: number): Promise<ServiceResponse<PaginatedResult<DmConversationListItemDto>>> => {
     try {
       const searchParams = new URLSearchParams();
       searchParams.set("offset", String(offset));
       searchParams.set("count", String(count));
 
-      const response: AxiosResponse<BackendResponse<PaginatedResponse<DmConversationListItemDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResponse<DmConversationListItemDto>>>(
+      const response: AxiosResponse<BackendResponse<PaginatedResult<DmConversationListItemDto>>> =
+        await apiClient.get<BackendResponse<PaginatedResult<DmConversationListItemDto>>>(
           `/users/me/dm?${searchParams.toString()}`
         );
 
@@ -99,12 +99,12 @@ export const sessionUserService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<PaginatedResponse<DmConversationListItemDto>>>;
+      const axiosError = error as AxiosError<BackendResponse<PaginatedResult<DmConversationListItemDto>>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  queryFriends: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResponse<UserIdentityProfileDto>>> => {
+  queryFriends: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<UserIdentityProfileDto>>> => {
     try {
       const searchParams = new URLSearchParams();
 
@@ -115,8 +115,8 @@ export const sessionUserService = {
       searchParams.append("offset", String(offset));
       searchParams.append("count", String(count));
 
-      const response: AxiosResponse<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResponse<UserIdentityProfileDto>>>(`users/me/friends?${searchParams.toString()}`);
+      const response: AxiosResponse<BackendResponse<PaginatedResult<UserIdentityProfileDto>>> =
+        await apiClient.get<BackendResponse<PaginatedResult<UserIdentityProfileDto>>>(`users/me/friends?${searchParams.toString()}`);
 
       return {
         success: true,
@@ -124,12 +124,12 @@ export const sessionUserService = {
         data: response.data.data,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ServiceResponse>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
 
-  queryPendingRequests: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResponse<QueryPendingRequestElement>>> => {
+  queryPendingRequests: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<PendingFriendRequestDto>>> => {
     try {
       const searchParams = new URLSearchParams();
 
@@ -140,8 +140,8 @@ export const sessionUserService = {
       searchParams.append("offset", String(offset));
       searchParams.append("count", String(count));
 
-      const response: AxiosResponse<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>> =
-        await apiClient.get<BackendResponse<PaginatedResponse<QueryPendingRequestElement>>>(`users/me/pending-requests?${searchParams.toString()}`);
+      const response: AxiosResponse<BackendResponse<PaginatedResult<PendingFriendRequestDto>>> =
+        await apiClient.get<BackendResponse<PaginatedResult<PendingFriendRequestDto>>>(`users/me/pending-requests?${searchParams.toString()}`);
 
       return {
         success: true,
@@ -149,7 +149,7 @@ export const sessionUserService = {
         data: response.data.data,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<ServiceResponse>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
