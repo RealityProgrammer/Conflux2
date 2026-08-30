@@ -16,6 +16,9 @@ public class CommunityServerRole : IHasCreatedAt {
     public int AuthorizeLevel { get; set; }
     public SpecialRoleType SpecialRoleType { get; set; }
 
+    public ApplicationUser? CreatorUser { get; set; }
+    public Guid? CreatorUserId { get; set; }
+    
     public virtual ICollection<RolePermission> Permissions { get; set; } = [];
     public virtual ICollection<CommunityServerMemberRole> MembersWithRole { get; set; } = [];
     public virtual ICollection<CommunityServerMember> Members { get; set; } = [];

@@ -18,6 +18,8 @@ partial class Query {
         Guid serverId,
         [Service] ApplicationDbContext dbContext
     ) {
-        return dbContext.CommunityServerRoles.Where(r => r.CommunityServerId == serverId);
+        return dbContext.CommunityServerRoles
+            .Where(r => r.CommunityServerId == serverId)
+            .OrderByDescending(r => r.AuthorizeLevel);
     }
 }

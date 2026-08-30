@@ -3,6 +3,8 @@ type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 import { graphqlFetcher } from '../api/client';
+import type * as Types from './types';
+
 import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
 import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions, type InfiniteData } from '@tanstack/react-query';
 export type GetJoinedCommunityServerQueryVariables = Exact<{
@@ -11,6 +13,14 @@ export type GetJoinedCommunityServerQueryVariables = Exact<{
 
 
 export type GetJoinedCommunityServerQuery = { joinedServers: { totalCount: number, pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } | null };
+
+export type GetServerRolesByServerIdQueryVariables = Exact<{
+  serverId: string;
+  after?: string | null | undefined;
+}>;
+
+
+export type GetServerRolesByServerIdQuery = { communityServerRolesByServerId: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } | null };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -91,3 +101,73 @@ useInfiniteGetJoinedCommunityServerQuery.getKey = (variables?: GetJoinedCommunit
 
 
 useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServerQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetJoinedCommunityServerQuery, GetJoinedCommunityServerQueryVariables>(GetJoinedCommunityServerDocument, variables, options);
+
+export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
+    query GetServerRolesByServerId($serverId: UUID!, $after: String) {
+  communityServerRolesByServerId(serverId: $serverId, after: $after) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    nodes {
+      id
+      name
+      specialRoleType
+      authorizeLevel
+      createdAt
+      numMembers
+      creatorUser {
+        id
+        displayName
+        hasAvatar
+      }
+      permissions {
+        permission
+        state
+      }
+    }
+  }
+}
+    `);
+
+export const useGetServerRolesByServerIdQuery = <
+      TData = GetServerRolesByServerIdQuery,
+      TError = unknown
+    >(
+      variables: GetServerRolesByServerIdQueryVariables,
+      options?: Omit<UseQueryOptions<GetServerRolesByServerIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetServerRolesByServerIdQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetServerRolesByServerIdQuery, TError, TData>(
+      {
+    queryKey: ['GetServerRolesByServerId', variables],
+    queryFn: graphqlFetcher<GetServerRolesByServerIdQuery, GetServerRolesByServerIdQueryVariables>(GetServerRolesByServerIdDocument, variables),
+    ...options
+  }
+    )};
+
+useGetServerRolesByServerIdQuery.getKey = (variables: GetServerRolesByServerIdQueryVariables) => ['GetServerRolesByServerId', variables];
+
+export const useInfiniteGetServerRolesByServerIdQuery = <
+      TData = InfiniteData<GetServerRolesByServerIdQuery>,
+      TError = unknown
+    >(
+      variables: GetServerRolesByServerIdQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetServerRolesByServerIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetServerRolesByServerIdQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetServerRolesByServerIdQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['GetServerRolesByServerId.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetServerRolesByServerIdQuery, GetServerRolesByServerIdQueryVariables>(GetServerRolesByServerIdDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetServerRolesByServerIdQuery.getKey = (variables: GetServerRolesByServerIdQueryVariables) => ['GetServerRolesByServerId.infinite', variables];
+
+
+useGetServerRolesByServerIdQuery.fetcher = (variables: GetServerRolesByServerIdQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerRolesByServerIdQuery, GetServerRolesByServerIdQueryVariables>(GetServerRolesByServerIdDocument, variables, options);

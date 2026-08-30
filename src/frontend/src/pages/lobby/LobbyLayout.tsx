@@ -68,16 +68,6 @@ function Sidebar() {
 function JoinedCommunityServerScrollList() {
   const navigate = useNavigate();
 
-  // const {
-  //   queryResult: {
-  //     hasNextPage,
-  //     isFetchingNextPage,
-  //     fetchNextPage,
-  //     isLoading,
-  //   },
-  //   allElements,
-  // } = useJoinedServersQuery();
-
   const {
     data,
     hasNextPage,

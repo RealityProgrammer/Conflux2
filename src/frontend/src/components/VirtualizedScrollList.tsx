@@ -179,7 +179,7 @@ export default function VirtualizedScrollList({
           )
         ) : (
           /* Virtualized List Container */
-          <div className={`relative w-full ${containerClassName ?? ""}`} style={{height: `${totalHeight}px`}}>
+          <ul className={`relative w-full ${containerClassName ?? ""}`} style={{height: `${totalHeight}px`}}>
             {virtualItems.map((virtualItem) => {
               const shouldRenderFetchingPrevious = hasPreviousPage && virtualItem.index === 0;
               const shouldRenderFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
@@ -187,7 +187,7 @@ export default function VirtualizedScrollList({
               const itemIndex = virtualItem.index - prevOffset;
 
               return (
-                <div
+                <li
                   key={virtualItem.key}
                   // according to https://tanstack.com/virtual/latest/docs/api/virtualizer#measureelement-2
                   data-index={virtualItem.index}
@@ -204,10 +204,10 @@ export default function VirtualizedScrollList({
                       renderFetchingNext && renderFetchingNext() :
                       renderItem(itemIndex, virtualItem)
                   }
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </ScrollArea.Viewport>
 

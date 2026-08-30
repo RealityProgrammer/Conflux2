@@ -174,7 +174,7 @@ export default function MessageView({
             </>
           )}
 
-          <ContextMenu.Separator className="horizontal-separator"/>
+          <ContextMenu.Separator className="horizontal-separator my-1.5"/>
 
           {message?.body && (
             <ContextMenu.Item

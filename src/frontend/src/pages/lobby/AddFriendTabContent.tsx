@@ -243,7 +243,7 @@ function Row({user, updateCacheStatus}: RowProps) {
           Visit Profile
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="horizontal-separator"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         {user.status == UserRelationshipStatus.Stranger ? (
           <DropdownMenu.Item
@@ -288,7 +288,7 @@ function Row({user, updateCacheStatus}: RowProps) {
           </DropdownMenu.Item>
         )}
 
-        <DropdownMenu.Separator className="horizontal-separator"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         <DropdownMenu.Item
           className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"

@@ -24,7 +24,7 @@ export default function AlertActionDialog({
         <AlertDialog.Overlay className="backdrop-overlay"/>
 
         <AlertDialog.Content
-          className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-55 max-h-[85vh] max-w-[90vw] rounded-md bg-gray-650 p-6 text-white ${panelClassName ?? ''}`}>
+          className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[85vh] max-w-[90vw] rounded-md bg-gray-650 p-6 text-white ${panelClassName ?? ''}`}>
           <AlertDialog.Title className="font-semibold text-lg mb-1">{title}</AlertDialog.Title>
 
           {description && (

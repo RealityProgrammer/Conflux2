@@ -74,7 +74,7 @@ function AuthenticatedNavigationDrawer({userName, logout}: { userName: string, l
 
             <Dialog.Content
               ref={contentRef}
-              className="fixed top-0 right-0 h-full z-50 bg-[#071318] border-l-2 border-l-[#353535] w-2/3 sm:w-1/2 md:w-1/3 p-5 overflow-hidden"
+              className="fixed top-0 right-0 h-full bg-[#071318] border-l-2 border-l-[#353535] w-2/3 sm:w-1/2 md:w-1/3 p-5 overflow-hidden"
               style={{transform: 'translateX(100%)'}}
               onEscapeKeyDown={(e) => {
                 e.preventDefault();

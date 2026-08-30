@@ -97,7 +97,7 @@ export default function MediaPreviewGallery({
         )}
 
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 gap-4 shadow-lg duration-200 outline-none w-auto h-[95dvh] aspect-auto overflow-auto flex flex-row items-center">
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 gap-4 shadow-lg duration-200 outline-none w-auto h-[95dvh] aspect-auto overflow-auto flex flex-row items-center">
           {currentItem.type.startsWith("image") ? (
             <img
               src={currentItem.source}

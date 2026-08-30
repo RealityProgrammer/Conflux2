@@ -32,6 +32,7 @@ using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
+using HotChocolate.Types.Descriptors;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.JsonWebTokens;
 using RedLockNet;
@@ -173,6 +174,7 @@ builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
 // GraphQL
 builder.Services
     .AddGraphQLServer()
+    .AddConvention<INamingConventions, CSharpEnumNamingConventions>()
     .AddQueryType<Query>()
     .AddType<UserType>()
     .AddType<CommunityServerType>()
@@ -380,6 +382,7 @@ builder.Services.AddOpenApi(options => {
             typeof(MessageLoadDirection),
             typeof(InvitationController.InvitationExpireAfter),
             typeof(CommunityServerChannelType),
+            typeof(PermissionState),
         };
 
         foreach (var enumType in extraEnums) {

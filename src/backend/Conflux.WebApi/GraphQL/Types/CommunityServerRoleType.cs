@@ -15,6 +15,8 @@ public sealed class CommunityServerRoleType : ObjectType<CommunityServerRole> {
         descriptor.Field(r => r.AuthorizeLevel);
         descriptor.Field(r => r.SpecialRoleType);
         descriptor.Field(r => r.Permissions).Type<NonNullType<ListType<NonNullType<RolePermissionType>>>>();
+        descriptor.Field(r => r.CreatorUserId);
+        descriptor.Field(r => r.CreatorUser).Type<UserType>();
         descriptor.Field("numMembers")
             .Type<NonNullType<IntType>>()
             .Resolve(async context => {

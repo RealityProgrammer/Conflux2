@@ -19,7 +19,10 @@ const config: CodegenConfig = {
       documents: ['src/graphql/*.graphql'],
       plugins: ['typescript'],
       config: {
-        enumsAsTypes: true,
+        namingConvention: {
+          enumValues: 'change-case-all#pascalCase',
+          transformUnderscore: true
+        }
       },
     },
 

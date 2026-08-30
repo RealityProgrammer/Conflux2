@@ -16,6 +16,7 @@ public sealed class CreateServerRoleHandler(
         CommunityServerRole role = new() {
             CommunityServerId = command.ServerId,
             Name = command.Name,
+            CreatorUserId = command.ExecutorUserId,
         };
 
         repository.Add(role);

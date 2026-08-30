@@ -83,7 +83,7 @@ export default function ServerSidebarHeader({
                     <FaVolumeHigh className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
-                  <DropdownMenu.Separator className="horizontal-separator"/>
+                  <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
                 </>
               )}
 
@@ -93,7 +93,7 @@ export default function ServerSidebarHeader({
                 <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
               </DropdownMenu.Item>
 
-              <DropdownMenu.Separator className="horizontal-separator"/>
+              <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
               <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenSettingDialog(true)}>
                 Manage Server
@@ -198,7 +198,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
       open={open}
       onOpenChange={onOpenChange}
       methods={formMethods}
-      contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
+      contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 rounded-md text-white"
       headerIcon={(<BsPersonPlus className="size-10 fill-white"/>)}
       title="Grab an invitation"
       subtitle="Invite people to the fun gang"
@@ -223,7 +223,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
 
                 <Select.Portal>
                   <Select.Content
-                    className="overflow-hidden bg-gray-700 z-100 text-white rounded-md w-(--radix-select-trigger-width) max-h-64"
+                    className="overflow-hidden bg-gray-700 text-white rounded-md w-(--radix-select-trigger-width) max-h-64"
                     position="popper"
                     side="bottom"
                     sideOffset={4}

@@ -29,6 +29,7 @@ public sealed class CreateCommunityServerHandler(
             Name = "Default",
             SpecialRoleType = SpecialRoleType.Default,
             AuthorizeLevel = 0,
+            CreatorUserId = request.CreatorUserId,
         };
 
         CommunityServerRole ownerRole = new() {
@@ -36,6 +37,7 @@ public sealed class CreateCommunityServerHandler(
             SpecialRoleType = SpecialRoleType.Owner,
             AuthorizeLevel = int.MaxValue,
             Permissions = [],   // owner is the special role, so every operation short-circuit 
+            CreatorUserId = request.CreatorUserId,
         };
 
         server.Roles = [defaultRole, ownerRole];

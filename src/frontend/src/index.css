@@ -6,6 +6,10 @@
     --color-red-475: color-mix(in oklch, var(--color-red-400) 25%, var(--color-red-500) 75%);
 
     /* "50 shades of gray" - @GameCreator, 2025 */
+    --color-gray-525: color-mix(in oklch, var(--color-gray-500) 75%, var(--color-gray-600) 25%);
+    --color-gray-550: color-mix(in oklch, var(--color-gray-500) 50%, var(--color-gray-600) 50%);
+    --color-gray-575: color-mix(in oklch, var(--color-gray-500) 25%, var(--color-gray-600) 75%);
+
     --color-gray-625: color-mix(in oklch, var(--color-gray-600) 75%, var(--color-gray-700) 25%);
     --color-gray-650: color-mix(in oklch, var(--color-gray-600) 50%, var(--color-gray-700) 50%);
     --color-gray-675: color-mix(in oklch, var(--color-gray-600) 25%, var(--color-gray-700) 75%);
@@ -257,7 +261,7 @@
     }
 
     .horizontal-separator {
-        @apply h-px bg-gray-500 my-1.5;
+        @apply h-px bg-gray-500;
     }
 }
 
@@ -290,7 +294,7 @@
 }
 
 @utility backdrop-overlay {
-    @apply fixed inset-0 bg-black/80 z-50
+    @apply fixed inset-0 bg-black/80
 }
 
 @font-face {

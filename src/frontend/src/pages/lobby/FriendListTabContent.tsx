@@ -227,13 +227,13 @@ function Row({element, removeUserFromCache, navigateToDirectMessage}: RowProps) 
           Direct Message
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="horizontal-separator"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         <DropdownMenu.Item className="dropdown-item-danger" disabled={!!activeAction} onSelect={handleUnfriend}>
           Unfriend
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="horizontal-separator"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         <DropdownMenu.Item className="dropdown-item-danger">
           Block

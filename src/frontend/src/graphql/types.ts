@@ -25,13 +25,14 @@ export type ApplicationUser = {
 };
 
 /** Defines when a policy shall be executed. */
-export type ApplyPolicy =
+export enum ApplyPolicy {
   /** After the resolver was executed. */
-  | 'AFTER_RESOLVER'
+  AfterResolver = 'AFTER_RESOLVER',
   /** Before the resolver was executed. */
-  | 'BEFORE_RESOLVER'
+  BeforeResolver = 'BEFORE_RESOLVER',
   /** The policy is applied in the validation step before the execution. */
-  | 'VALIDATION';
+  Validation = 'VALIDATION'
+}
 
 export type CommunityServer = {
   __typename?: 'CommunityServer';
@@ -47,6 +48,54 @@ export type CommunityServer = {
   ownerUserId: Scalars['UUID']['output'];
 };
 
+export type CommunityServerMember = {
+  __typename?: 'CommunityServerMember';
+  communityServer: CommunityServer;
+  communityServerId: Scalars['UUID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  roles: Array<CommunityServerRole>;
+  user: ApplicationUser;
+  userId: Scalars['UUID']['output'];
+};
+
+export type CommunityServerRole = {
+  __typename?: 'CommunityServerRole';
+  authorizeLevel: Scalars['Int']['output'];
+  communityServer: CommunityServer;
+  communityServerId: Scalars['UUID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  creatorUser?: Maybe<ApplicationUser>;
+  creatorUserId?: Maybe<Scalars['UUID']['output']>;
+  id: Scalars['UUID']['output'];
+  name: Scalars['String']['output'];
+  numMembers: Scalars['Int']['output'];
+  permissions: Array<RolePermission>;
+  specialRoleType: SpecialRoleType;
+};
+
+/** A connection to a list of items. */
+export type CommunityServerRolesByServerIdConnection = {
+  __typename?: 'CommunityServerRolesByServerIdConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<CommunityServerRolesByServerIdEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<CommunityServerRole>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type CommunityServerRolesByServerIdEdge = {
+  __typename?: 'CommunityServerRolesByServerIdEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServerRole;
+};
+
 export type Invitation = {
   __typename?: 'Invitation';
   communityServer?: Maybe<CommunityServer>;
@@ -59,11 +108,12 @@ export type Invitation = {
   status: InvitationStatus;
 };
 
-export type InvitationStatus =
-  | 'ALREADY_JOINED_SERVER'
-  | 'EXPIRED'
-  | 'MAX_USES_REACHED'
-  | 'VALID';
+export enum InvitationStatus {
+  AlreadyJoinedServer = 'AlreadyJoinedServer',
+  Expired = 'Expired',
+  MaxUsesReached = 'MaxUsesReached',
+  Valid = 'Valid'
+}
 
 /** A connection to a list of items. */
 export type JoinedServersConnection = {
@@ -100,12 +150,34 @@ export type PageInfo = {
   startCursor?: Maybe<Scalars['String']['output']>;
 };
 
+export enum PermissionState {
+  Disable = 'Disable',
+  Enable = 'Enable',
+  Inherit = 'Inherit'
+}
+
 export type Query = {
   __typename?: 'Query';
+  communityServerRoleById: Array<CommunityServerRole>;
+  communityServerRolesByServerId?: Maybe<CommunityServerRolesByServerIdConnection>;
   invitationById?: Maybe<Invitation>;
   joinedServers?: Maybe<JoinedServersConnection>;
   userById?: Maybe<ApplicationUser>;
   users: Array<ApplicationUser>;
+};
+
+
+export type QueryCommunityServerRoleByIdArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
+export type QueryCommunityServerRolesByServerIdArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  serverId: Scalars['UUID']['input'];
 };
 
 
@@ -125,3 +197,25 @@ export type QueryJoinedServersArgs = {
 export type QueryUserByIdArgs = {
   id: Scalars['UUID']['input'];
 };
+
+export type RolePermission = {
+  __typename?: 'RolePermission';
+  permission: ServerPermission;
+  role: CommunityServerRole;
+  roleId: Scalars['UUID']['output'];
+  state: PermissionState;
+};
+
+export enum ServerPermission {
+  CreateChannel = 'CreateChannel',
+  CreateRole = 'CreateRole',
+  DeleteChannel = 'DeleteChannel',
+  DeleteRole = 'DeleteRole',
+  UpdateRole = 'UpdateRole'
+}
+
+export enum SpecialRoleType {
+  Default = 'Default',
+  None = 'None',
+  Owner = 'Owner'
+}

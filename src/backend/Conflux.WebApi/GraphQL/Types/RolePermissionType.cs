@@ -13,7 +13,7 @@ public sealed class RolePermissionType : ObjectType<RolePermission> {
         
         descriptor.Field(r => r.RoleId);
         descriptor.Field(r => r.Role).Type<NonNullType<CommunityServerRoleType>>();
-        descriptor.Field(r => r.Permission).Type<EnumType<ServerPermission>>();
-        descriptor.Field(r => r.State).Type<EnumType<PermissionState>>();
+        descriptor.Field(r => r.Permission).Type<NonNullType<EnumType<ServerPermission>>>();
+        descriptor.Field(r => r.State).Type<NonNullType<EnumType<PermissionState>>>();
     }
 }

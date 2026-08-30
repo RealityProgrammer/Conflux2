@@ -261,7 +261,7 @@ export default function ServerSidebar() {
           }
         }}
         methods={formMethods}
-        contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
+        contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 rounded-md text-white"
         headerIcon={(<BsChatText className="size-10 fill-white"/>)}
         title={"Create new Channel or Category"}
         subtitle={"New territory acquired!"}
@@ -340,7 +340,7 @@ export default function ServerSidebar() {
 
                 <Select.Portal>
                   <Select.Content
-                    className="overflow-hidden bg-gray-700 z-100 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                    className="overflow-hidden bg-gray-700 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
                     position="popper"
                     side="bottom"
                     sideOffset={4}
