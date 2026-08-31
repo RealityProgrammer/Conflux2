@@ -2,50 +2,46 @@ import {useSignalRConnection} from "../contexts/SignalRContext.tsx";
 import {useEffect} from "react";
 import {HubConnectionState} from "@microsoft/signalr";
 
-const operationsMap = new Map<string, Promise<void>>;
-
 export default function useChannelConnection(channelId: string | undefined) {
-  const signalrContext = useSignalRConnection();
+  const { connection, isConnected } = useSignalRConnection();
 
   useEffect(() => {
-    // blame strict mode for this fucked up code
-    const connection = signalrContext.connection;
-
-    if (!channelId || !signalrContext.isConnected || !connection) return;
+    if (!channelId || !isConnected || !connection) {
+      return;
+    }
 
     let isMounted = true;
     let hasJoined = false;
 
-    if (!operationsMap.has(channelId)) {
-      operationsMap.set(channelId, Promise.resolve());
-    }
+    (async () => {
+      if (connection.state !== HubConnectionState.Connected) return;
 
-    let currentQueue = operationsMap.get(channelId)!;
+      try {
+        await connection.invoke("JoinChannel", channelId);
 
-    currentQueue = currentQueue.then(async () => {
-      if (!isMounted || connection.state !== HubConnectionState.Connected) return;
+        // race-condition preventing
+        if (!isMounted) {
+          if (connection.state === HubConnectionState.Connected) {
+            await connection.invoke("LeaveChannel", channelId);
+          }
+          return;
+        }
 
-      await connection.invoke("JoinChannel", channelId);
-      hasJoined = true;
-      console.log(`Channel joined: ${channelId}`);
-    }).catch(console.error);
-
-    operationsMap.set(channelId, currentQueue);
+        hasJoined = true;
+        console.log("Joined channel", channelId);
+      } catch (err) {
+        console.error(`Failed to join channel ${channelId}:`, err);
+      }
+    })();
 
     return () => {
       isMounted = false;
 
-      let cleanupQueue = operationsMap.get(channelId)!;
-
-      cleanupQueue = cleanupQueue.then(async () => {
-        if (hasJoined && connection.state === HubConnectionState.Connected) {
-          await connection.invoke("LeaveChannel", channelId);
-          console.log(`Channel leaved: ${channelId}`);
-        }
-      }).catch(console.error);
-
-      // Save the updated queue
-      operationsMap.set(channelId, cleanupQueue);
+      if (hasJoined && connection.state === HubConnectionState.Connected) {
+        connection.invoke("LeaveChannel", channelId)
+          .then(() => console.log(`Left channel: ${channelId}`))
+          .catch(err => console.error(`Failed to leave channel ${channelId}:`, err));
+      }
     };
-  }, [channelId, signalrContext.isConnected, signalrContext.connection]);
+  }, [channelId, isConnected, connection]);
 }

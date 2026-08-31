@@ -2,50 +2,46 @@ import {useSignalRConnection} from "../contexts/SignalRContext.tsx";
 import {useEffect} from "react";
 import {HubConnectionState} from "@microsoft/signalr";
 
-const operationsMap = new Map<string, Promise<void>>;
-
 export default function useServerConnection(serverId: string | undefined) {
-  const signalrContext = useSignalRConnection();
+  const { connection, isConnected } = useSignalRConnection();
 
   useEffect(() => {
-    // blame strict mode for this fucked up code
-    const connection = signalrContext.connection;
-
-    if (!serverId || !signalrContext.isConnected || !connection) return;
+    if (!serverId || !isConnected || !connection) {
+      return;
+    }
 
     let isMounted = true;
     let hasJoined = false;
 
-    if (!operationsMap.has(serverId)) {
-      operationsMap.set(serverId, Promise.resolve());
-    }
+    (async () => {
+      if (connection.state !== HubConnectionState.Connected) return;
 
-    let currentQueue = operationsMap.get(serverId)!;
+      try {
+        await connection.invoke("JoinServer", serverId);
 
-    currentQueue = currentQueue.then(async () => {
-      if (!isMounted || connection.state !== HubConnectionState.Connected) return;
+        // race-condition preventing
+        if (!isMounted) {
+          if (connection.state === HubConnectionState.Connected) {
+            await connection.invoke("LeaveServer", serverId);
+          }
+          return;
+        }
 
-      await connection.invoke("JoinServer", serverId);
-      hasJoined = true;
-      console.log(`Server joined: ${serverId}`);
-    }).catch(console.error);
-
-    operationsMap.set(serverId, currentQueue);
+        hasJoined = true;
+        console.log("Joined server", serverId);
+      } catch (err) {
+        console.error(`Failed to join server ${serverId}:`, err);
+      }
+    })();
 
     return () => {
       isMounted = false;
 
-      let cleanupQueue = operationsMap.get(serverId)!;
-
-      cleanupQueue = cleanupQueue.then(async () => {
-        if (hasJoined && connection.state === HubConnectionState.Connected) {
-          await connection.invoke("LeaveServer", serverId);
-          console.log(`Server leaved: ${serverId}`);
-        }
-      }).catch(console.error);
-
-      // Save the updated queue
-      operationsMap.set(serverId, cleanupQueue);
-    };
-  }, [serverId, signalrContext.isConnected, signalrContext.connection]);
+      if (hasJoined && connection.state === HubConnectionState.Connected) {
+        connection.invoke("LeaveServer", serverId)
+          .then(() => console.log(`Left server: ${serverId}`))
+          .catch(err => console.error(`Failed to leave server ${serverId}:`, err));
+      }
+    }
+  }, [serverId, isConnected, connection]);
 }
