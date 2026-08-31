@@ -5,7 +5,11 @@ namespace Conflux.Domain.Repositories;
 public interface ICommunityServerMemberRepository {
     void Add(CommunityServerMember value);
     Task<bool> IsUserJoined(Guid userId, Guid serverId, CancellationToken cancellationToken = default);
+    
+    Task<CommunityServerRole?> GetFromId(Guid id, bool tracking = true, CancellationToken cancellationToken = default);
 
+    Task<CommunityServerRole?> GetDefaultRole(Guid serverId, bool tracking = true, CancellationToken cancellationToken = default);
+    
     Task<CommunityServerMember?> GetMemberWithRoles(
         Guid serverId,
         Guid userId,

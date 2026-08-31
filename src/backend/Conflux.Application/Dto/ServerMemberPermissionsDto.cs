@@ -5,7 +5,7 @@ namespace Conflux.Application.Dto;
 public sealed record ServerMemberPermissionsDto(
     Guid MemberId,
     int AuthorizeLevel,
-    Dictionary<ServerPermission, bool> EffectivePermissions,
+    IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions,
     MemberRoleDto[] Roles
 );
 

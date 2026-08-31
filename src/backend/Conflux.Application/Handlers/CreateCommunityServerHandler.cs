@@ -40,7 +40,7 @@ public sealed class CreateCommunityServerHandler(
             CreatorUserId = request.CreatorUserId,
         };
 
-        server.Roles = [defaultRole, ownerRole];
+        server.Roles = [ownerRole]; // all members have implicit default role, so no need to waste memory storing it in the database
 
         CommunityServerMember ownerMember = new() {
             UserId = request.CreatorUserId,
