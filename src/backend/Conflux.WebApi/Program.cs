@@ -13,6 +13,7 @@ using Amazon.S3;
 using Conflux.Application.Commands;
 using Conflux.Application.Enums;
 using Conflux.Application.FileFormats;
+using Conflux.Application.Notifications;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
@@ -28,6 +29,7 @@ using Conflux.WebApi.GraphQL;
 using Conflux.WebApi.GraphQL.DataLoaders;
 using Conflux.WebApi.GraphQL.Types;
 using Conflux.WebApi.Jobs;
+using Conflux.WebApi.Mediators;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
@@ -207,7 +209,7 @@ builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator(options => {
     options.Assemblies = [
-        typeof(CreateCommunityServerCommand),
+        typeof(CreateCommunityServerCommand), typeof(MessageNotificationsHandler),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
