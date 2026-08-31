@@ -14,33 +14,23 @@ import IconButton from "../IconButton.tsx";
 import {z} from "zod";
 import {Controller, type SubmitHandler, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {PermissionState, ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
+import {ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
 import {FaSave} from "react-icons/fa";
 import {FaPencil, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../ErrorPopover.tsx";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../Spinner.tsx";
 import {toast} from "react-toastify";
+import type {ServerRoleDto} from "../../api/types.ts";
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import {PermissionState} from "../../api/schema.ts";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
-
-const REPRESENTATION_COLORS = [
-  "#2f88ff",
-  "#8457a5",
-  "#668534",
-  "#80ef17",
-  "#fd5e42",
-  "#d20404",
-  "#0f097a",
-  "#f172b9",
-  "#d6e4e2",
-  "#0a5eef",
-  "#f81ac1",
-];
 
 export default function RoleManagement() {
   const { serverId } = useCommunityServerContext();
 
+  const queryClient = useQueryClient();
   const [isEditingRole, setIsEditingRole] = useState(false);
 
   const {
@@ -66,14 +56,50 @@ export default function RoleManagement() {
     staleTime: 15 * 60 * 1000,
   });
 
+  const invalidateRoleQuery = () => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
+    });
+  };
+
+  const updateRoleData = (role: ServerRoleDto) => {
+    queryClient.setQueryData<InfiniteData<GetServerRolesByServerIdQuery>>(
+      useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
+      (oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map(page => ({
+            ...page,
+            communityServerRolesByServerId: !page.communityServerRolesByServerId ? null : {
+              ...page.communityServerRolesByServerId!,
+              nodes: page.communityServerRolesByServerId?.nodes!.map(node => {
+                if (node.id !== role.id) {
+                  return node;
+                }
+
+                return {
+                  ...node,
+                  name: role.name,
+                  authorizeLevel: role.authorizeLevel,
+                  permissions: Object.keys(role.permissions).map((key: string) => {
+                    return {
+                      permission: key as ServerPermission,
+                      state: role.permissions[key as ServerPermission] ?? PermissionState.Inherit,
+                    }
+                  }),
+                };
+              }),
+            },
+          })),
+        };
+      }
+    );
+  };
+
   const allRoles: RoleDisplayElement[] =
     data?.pages.flatMap((page: GetServerRolesByServerIdQuery): RoleDisplayElement[] => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
-
-  // fake representation color
-  const generateRepresentationColor = (): string => {
-    const rand = Math.floor(Math.random() * REPRESENTATION_COLORS.length);
-    return REPRESENTATION_COLORS[rand];
-  };
 
   const [selectedRole, setSelectedRole] = useState<RoleDisplayElement | undefined>();
 
@@ -82,16 +108,15 @@ export default function RoleManagement() {
 
   const handleSelectRole = (role: RoleDisplayElement) => {
     if (isFormDirty) {
-      console.log("shaky shaky");
-
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400);
+      toast.warn((<p className="text-sm">You have unsaved role changes.</p>));
 
       return;
     }
 
     setSelectedRole(role);
-    setIsEditingRole(false); // Reset editing state when switching roles
+    setIsEditingRole(false);
   };
 
   return (
@@ -105,51 +130,16 @@ export default function RoleManagement() {
 
       <div className="flex-1 flex gap-2 min-h-0">
         <section className="w-64 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
-          <div className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
-            <input
-              type="text"
-              // value={newRoleName}
-              // onChange={(e) => setNewRoleName(e.target.value)}
-              // onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
-              placeholder="New role name"
-              className="flex-1 input-field h-8 text-sm min-w-0"
-            />
-
-            <button
-              // onClick={handleCreateRole}
-              className="flex-none p-1.5 button-theme-primary rounded cursor-pointer"
-              title="Create role"
-            >
-              <BsPlusLg className="w-4 h-4" />
-            </button>
-          </div>
-
-          <VirtualizedScrollList
-            itemCount={allRoles.length}
+          <RoleList
+            roles={allRoles}
             isLoading={isLoading}
-            estimateSize={() => 36}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
             fetchNextPage={() => {
-              fetchNextPage();
+              fetchNextPage()
             }}
-            renderItem={(itemIndex) => {
-              const role: RoleDisplayElement = allRoles[itemIndex];
-              const representationColor = generateRepresentationColor();
-
-              return (
-                <button
-                  className="w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer"
-                  onClick={() => handleSelectRole(role)}
-                >
-                  <BsCircleFill className="flex-none size-3" style={{fill: representationColor}}/>
-
-                  <span className="flex-1 truncate">{role.name}</span>
-                  <span className="flex-none truncate text-gray-500 text-xs">{role.numMembers}</span>
-                </button>
-              )
-            }}
-            hideVerticalScrollbar={true}
+            invalidateRoleQuery={invalidateRoleQuery}
+            onSelectRole={handleSelectRole}
           />
         </section>
 
@@ -161,6 +151,7 @@ export default function RoleManagement() {
               isEditingRole={isEditingRole}
               setIsEditingRole={setIsEditingRole}
               setIsFormDirty={setIsFormDirty}
+              updateRoleData={updateRoleData}
             />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 select-none">
@@ -169,6 +160,76 @@ export default function RoleManagement() {
           )}
         </section>
       </div>
+    </>
+  );
+}
+
+type RoleListProps = {
+  roles: RoleDisplayElement[];
+  isLoading: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
+  invalidateRoleQuery: () => void;
+  onSelectRole: (role: RoleDisplayElement) => void;
+};
+
+function RoleList({
+  roles,
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  invalidateRoleQuery,
+  onSelectRole,
+}: RoleListProps) {
+  return (
+    <>
+      <div className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
+        <input
+          type="text"
+          // value={newRoleName}
+          // onChange={(e) => setNewRoleName(e.target.value)}
+          // onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
+          placeholder="New role name"
+          className="flex-1 input-field h-8 text-sm min-w-0"
+        />
+
+        <button
+          // onClick={handleCreateRole}
+          className="flex-none p-1.5 button-theme-primary rounded cursor-pointer"
+          title="Create role"
+        >
+          <BsPlusLg className="w-4 h-4" onClick={invalidateRoleQuery}/>
+        </button>
+      </div>
+
+      <VirtualizedScrollList
+        itemCount={roles.length}
+        isLoading={isLoading}
+        estimateSize={() => 36}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={() => {
+          fetchNextPage();
+        }}
+        renderItem={(itemIndex) => {
+          const role: RoleDisplayElement = roles[itemIndex];
+
+          return (
+            <button
+              className="w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer"
+              onClick={() => onSelectRole(role)}
+            >
+              <BsCircleFill className="flex-none size-3 fill-blue-500"/>
+
+              <span className="flex-1 truncate">{role.name}</span>
+              <span className="flex-none truncate text-gray-500 text-xs">{role.numMembers}</span>
+            </button>
+          )
+        }}
+        hideVerticalScrollbar={true}
+      />
     </>
   );
 }
@@ -190,12 +251,21 @@ const updateRoleSchema = z.object({
 
 type UpdateRoleFormValues = z.infer<typeof updateRoleSchema>;
 
+type RoleDetailsProps = {
+  role: RoleDisplayElement;
+  isEditingRole: boolean;
+  setIsEditingRole: (value: boolean) => void;
+  setIsFormDirty: (value: boolean) => void;
+  updateRoleData: (value: ServerRoleDto) => void;
+}
+
 function RoleDetails({
   role,
   isEditingRole,
   setIsEditingRole,
   setIsFormDirty,
-}: {role: RoleDisplayElement, isEditingRole: boolean, setIsEditingRole: (value: boolean) => void, setIsFormDirty: (value: boolean) => void}) {
+  updateRoleData,
+}: RoleDetailsProps) {
   const { serverId, memberPermissions } = useCommunityServerContext();
 
   const isEditable = memberPermissions.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
@@ -223,7 +293,6 @@ function RoleDetails({
   });
 
   useEffect(() => {
-    console.log("form is now dirty");
     setIsFormDirty(isDirty);
 
     return () => setIsFormDirty(false);
@@ -246,12 +315,9 @@ function RoleDetails({
 
     setIsEditingRole(false);
 
-    if (response.success) {
-      reset({
-        name: data.name,
-        authorizeLevel: data.authorizeLevel,
-        permissions: data.permissions,
-      });
+    if (response.success && response.data) {
+      updateRoleData(response.data);
+      setIsFormDirty(false);
     } else {
       setError("root", {message: response.error?.message ?? "Unknown error."});
     }
@@ -279,7 +345,7 @@ function RoleDetails({
         {memberPermissions.effectivePermissions.UpdateRole && isEditable && (
           <>
             {isEditingRole ? (
-              <div className="space-x-2">
+              <div className="flex flex-row gap-2">
                 <IconButton type="button" theme="danger" onClick={() => {
                   setIsEditingRole(false);
                   reset();
@@ -288,7 +354,7 @@ function RoleDetails({
                 </IconButton>
 
                 {isSubmitting ? (
-                  <Spinner className="size-5"/>
+                  <Spinner className="size-5 fill-white"/>
                 ) : (
                   <IconButton type="submit" theme="info">
                     <FaSave className="size-5"/>
@@ -503,14 +569,6 @@ function RoleDetails({
         <>
           <button className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
             Delete Role
-          </button>
-
-          <button className="button-theme-primary p-2 rounded-md cursor-pointer float-right mt-2" onClick={() => {
-            toast.success("Test", {
-
-            });
-          }}>
-            Toast
           </button>
         </>
       )}

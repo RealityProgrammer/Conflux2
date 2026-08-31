@@ -1859,7 +1859,8 @@ export interface components {
             hasAvatar: boolean;
             status: components["schemas"]["UserRelationshipStatus"];
         };
-        PermissionState: number;
+        /** @enum {string} */
+        PermissionState: PermissionState;
         RefreshResponse: {
             authorizationInfo: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
@@ -1900,7 +1901,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
-            states: {
+            permissions: {
                 CreateRole?: components["schemas"]["PermissionState"];
                 UpdateRole?: components["schemas"]["PermissionState"];
                 DeleteRole?: components["schemas"]["PermissionState"];
@@ -2047,6 +2048,11 @@ export enum MessageLoadDirection {
     Before = "Before",
     After = "After",
     Around = "Around"
+}
+export enum PermissionState {
+    Inherit = "Inherit",
+    Enable = "Enable",
+    Disable = "Disable"
 }
 export enum ServerPermission {
     CreateRole = "CreateRole",

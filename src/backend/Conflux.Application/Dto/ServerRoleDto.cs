@@ -5,6 +5,6 @@ namespace Conflux.Application.Dto;
 public sealed record ServerRoleDto(
     Guid Id,
     string Name,
-    Dictionary<ServerPermission, PermissionState> States,
+    Dictionary<ServerPermission, PermissionState> Permissions,
     int AuthorizeLevel
 );

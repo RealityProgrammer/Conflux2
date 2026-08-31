@@ -308,8 +308,8 @@ public sealed class CommunityServerController(
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             if (Name.IsSet) {
-                if (Name.Value == null) {
-                    yield return new("Name cannot be null.", [nameof(Name)]);
+                if (string.IsNullOrEmpty(Name.Value)) {
+                    yield return new("Name cannot be empty.", [nameof(Name)]);
                 } else if (Name.Value.Length > 32) {
                     yield return new("Name can only have maximum length of 32 characters.", [nameof(Name)]);
                 }

@@ -23,6 +23,7 @@ export default function ServerLayout() {
     queryFn: async () => {
       return (await communityServerService.getSummary(serverId!)).data;
     },
+    staleTime: 15 * 60 * 1000,
   });
 
   const {
@@ -35,6 +36,7 @@ export default function ServerLayout() {
     queryFn: async () => {
       return (await communityServerService.getUserPermission(serverId!)).data;
     },
+    staleTime: 30 * 60 * 1000,
   });
 
   if (isLoadingServerSummary || isLoadingUserPermissions) {

@@ -321,19 +321,33 @@ builder.Services.AddOpenApi(options => {
             return Task.CompletedTask;
         }
         
-        // intercept dictionary with enum key
+        var underlyingEnumType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        
+        if (underlyingEnumType.IsEnum) {
+            ConfigureEnumSchema(schema, underlyingEnumType);
+            return Task.CompletedTask;
+        }
+        
+        // intercept collection types
         if (targetType.IsGenericType) {
             var typeDef = targetType.GetGenericTypeDefinition();
             
+            // if type is dictionary, grab the key type, check if it is an enum and generate the schema of it.
             if (typeDef == typeof(Dictionary<,>) || typeDef == typeof(IDictionary<,>) || typeDef == typeof(IReadOnlyDictionary<,>)) {
+                var genericArgs = targetType.GetGenericArguments();
+                
+                var keyType = genericArgs[0];
+                var valueType = genericArgs[1];
             
-                var keyType = targetType.GetGenericArguments()[0];
-            
+                var valueSchema = schema.AdditionalProperties ?? new OpenApiSchema();
+                
+                if (valueType.IsEnum && valueSchema is OpenApiSchema concreteValueSchema) {
+                    ConfigureEnumSchema(concreteValueSchema, valueType);
+                }
+                
                 if (keyType.IsEnum) {
                     schema.Type = JsonSchemaType.Object;
                     schema.Properties ??= new Dictionary<string, IOpenApiSchema>();
-
-                    var valueSchema = schema.AdditionalProperties ?? new OpenApiSchema();
 
                     foreach (var name in Enum.GetNames(keyType)) {
                         schema.Properties[name] = valueSchema;
@@ -341,6 +355,19 @@ builder.Services.AddOpenApi(options => {
 
                     schema.AdditionalProperties = null;
                 }
+                
+                return Task.CompletedTask;
+            }
+
+            // same to List element type
+            if (typeDef == typeof(List<>) || typeDef == typeof(IList<>) || typeDef == typeof(IReadOnlyList<>)) {
+                var elementType = targetType.GetGenericArguments()[0];
+
+                if (elementType.IsEnum && schema.Items is OpenApiSchema itemSchema) {
+                    ConfigureEnumSchema(itemSchema, elementType);
+                }
+
+                return Task.CompletedTask;
             }
         }
         
@@ -355,23 +382,14 @@ builder.Services.AddOpenApi(options => {
             
             return Task.CompletedTask;
         }
-
-        var enumType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-        
-        if (enumType.IsEnum) {
-            schema.Type = JsonSchemaType.String;
-            schema.Format = null;
-
-            List<JsonNode> enumNodes = [];
-
-            foreach (var name in Enum.GetNames(enumType)) {
-                enumNodes.Add(JsonValue.Create(name));
-            }
-
-            schema.Enum = enumNodes;
-        }
         
         return Task.CompletedTask;
+        
+        static void ConfigureEnumSchema(OpenApiSchema schema, Type enumType) {
+            schema.Type = JsonSchemaType.String;
+            schema.Format = null;
+            schema.Enum = [..Enum.GetNames(enumType).Select(n => JsonValue.Create(n))];
+        }
     });
 
     options.AddDocumentTransformer((document, _, _) => {
