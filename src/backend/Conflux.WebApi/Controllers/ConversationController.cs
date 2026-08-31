@@ -24,7 +24,7 @@ public sealed class ConversationController(
     IBlobUrlProvider blobUrlProvider
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
-    [Idempotent(60)]
+    [Idempotent(20)]
     public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
         Guid channelId,
         [FromForm] SendMessageRequest request,
