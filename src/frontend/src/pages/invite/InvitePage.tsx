@@ -6,6 +6,7 @@ import {invitationService} from "../../api/invitationService.ts";
 import {BsCheckLg, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 import ErrorText from "../../components/ErrorText.tsx";
 import {type GetInvitationSummaryQuery, useGetInvitationSummaryQuery} from "../../graphql/queries.ts";
+import {InvitationStatus} from "../../graphql/types.ts";
 
 export default function InvitePage() {
   const { inviteId } = useParams();
@@ -28,17 +29,17 @@ export default function InvitePage() {
             <p className="text-center">The invitation is invalid</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : data.invitationById.status === "EXPIRED" ? (
+        ) : data.invitationById.status === InvitationStatus.Expired ? (
           <>
             <p className="text-center">The invitation is expired</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : data.invitationById.status === "MAX_USES_REACHED" ? (
+        ) : data.invitationById.status === InvitationStatus.MaxUsesReached ? (
           <>
             <p className="text-center">The invitation reached maximum usage</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : data.invitationById.status === "ALREADY_JOINED_SERVER" ? (
+        ) : data.invitationById.status === InvitationStatus.AlreadyJoinedServer ? (
           <>
             <p className="text-center">You've already joined the server.</p>
             <p className="text-gray-500 text-center mt-4 select-none">:)</p>
