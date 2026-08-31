@@ -3,14 +3,23 @@ import {
   type GetServerRolesByServerIdQuery,
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
-import {type ReactNode, useState} from "react";
+import {useEffect, useState} from "react";
 import {BsCircleFill, BsPlusLg} from "react-icons/bs";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
-import {ServerPermission} from "../../api/schema.ts";
 import PermissionStatesPill from "./PermissionStatesPill.tsx";
-import {Separator} from "radix-ui";
+import {Accordion, Separator} from "radix-ui";
+import IconButton from "../IconButton.tsx";
+import {z} from "zod";
+import {Controller, type SubmitHandler, useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {PermissionState, ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
+import {FaSave} from "react-icons/fa";
+import {FaPencil, FaXmark} from "react-icons/fa6";
+import ErrorPopover from "../ErrorPopover.tsx";
+import {communityServerService} from "../../api/communityServerService.ts";
+import Spinner from "../Spinner.tsx";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
 
@@ -30,6 +39,8 @@ const REPRESENTATION_COLORS = [
 
 export default function RoleManagement() {
   const { serverId } = useCommunityServerContext();
+
+  const [isEditingRole, setIsEditingRole] = useState(false);
 
   const {
     data,
@@ -65,9 +76,26 @@ export default function RoleManagement() {
 
   const [selectedRole, setSelectedRole] = useState<RoleDisplayElement | undefined>();
 
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+
+  const handleSelectRole = (role: RoleDisplayElement) => {
+    if (isFormDirty) {
+      console.log("shaky shaky");
+
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 400);
+
+      return;
+    }
+
+    setSelectedRole(role);
+    setIsEditingRole(false); // Reset editing state when switching roles
+  };
+
   return (
     <>
-      <header className="flex-none mb-3">
+      <header className="flex-none mb-0">
         <h3 className="text-xl font-bold text-white">Role Management</h3>
         <p className="text-sm text-gray-400">
           Where power trips are just a click away. Handle with care (or don't, we're not your mom).
@@ -111,9 +139,7 @@ export default function RoleManagement() {
               return (
                 <button
                   className="w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer"
-                  onClick={() => {
-                    setSelectedRole(role);
-                  }}
+                  onClick={() => handleSelectRole(role)}
                 >
                   <BsCircleFill className="flex-none size-3" style={{fill: representationColor}}/>
 
@@ -126,123 +152,15 @@ export default function RoleManagement() {
           />
         </section>
 
-        <section className="flex-1 bg-gray-700 rounded-lg p-3 overflow-y-auto border-gray-600 border-2 space-y-2">
+        <section className={`flex-1 bg-gray-700 rounded-lg p-3 overflow-y-auto border-gray-600 border-2 space-y-2 transition-colors ${isShaking ? "animate-horizontalShake" : ""}`}>
           {selectedRole ? (
-            <>
-              <header className="flex items-center space-x-2">
-                <h4 className="text-xl font-semibold text-white">{selectedRole.name}</h4>
-
-                <span className="text-xs bg-gray-600 px-2 py-0.5 rounded">
-                  {selectedRole.numMembers} members
-                </span>
-              </header>
-
-              <section>
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
-                  General Information
-                </h4>
-
-                <div className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-zinc-300">Created by</span>
-
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-550">
-                      <UserAvatar
-                        userId={selectedRole.creatorUser?.id}
-                        hasAvatar={selectedRole.creatorUser?.hasAvatar ?? false}
-                        className="size-5 rounded-full overflow-hidden"
-                      />
-
-                      <span className="text-sm font-medium text-zinc-200">
-                        {selectedRole.creatorUser?.displayName ?? "Deleted User"}
-                      </span>
-
-                      <span className="text-xs text-zinc-500 ml-1 border-l border-zinc-700 pl-2">
-                        <DateTimeText value={new Date(selectedRole.createdAt)} />
-                      </span>
-                    </div>
-                  </div>
-
-                  <Separator.Root className="horizontal-separator my-3" />
-
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-zinc-300">Authorize Level</span>
-
-                    <span className="text-sm font-mono text-zinc-300 px-2.5 py-1 rounded border border-zinc-700/50">
-                      {selectedRole.authorizeLevel}
-                    </span>
-                  </div>
-
-                  <Separator.Root className="horizontal-separator my-3" />
-
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-zinc-300">Special Role</span>
-
-                    <span className="text-sm font-medium text-zinc-300 px-2.5 py-1 rounded border border-zinc-700/50">
-                      {selectedRole.specialRoleType}
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-1">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
-                  Permissions
-                </h4>
-
-                <PermissionGroup
-                  text="Role"
-                >
-                  <li className="flex flex-row items-center gap-2 text-sm">
-                    <span className="flex-1">Create Role</span>
-
-                    <PermissionStatesPill
-                      value={selectedRole.permissions.find(p => p.permission == ServerPermission.CreateRole)?.state}
-                    />
-                  </li>
-
-                  <li className="flex flex-row items-center gap-2 text-sm">
-                    <span className="flex-1">Update Role</span>
-
-                    <PermissionStatesPill
-                      value={selectedRole.permissions.find(p => p.permission == ServerPermission.UpdateRole)?.state}
-                    />
-                  </li>
-
-                  <li className="flex flex-row items-center gap-2 text-sm">
-                    <span className="flex-1">Delete Role</span>
-
-                    <PermissionStatesPill
-                      value={selectedRole.permissions.find(p => p.permission == ServerPermission.DeleteRole)?.state}
-                    />
-                  </li>
-                </PermissionGroup>
-
-                <PermissionGroup
-                  text="Channel"
-                >
-                  <li className="flex flex-row items-center gap-2 text-sm">
-                    <span className="flex-1">Create Channel</span>
-
-                    <PermissionStatesPill
-                      value={selectedRole.permissions.find(p => p.permission == ServerPermission.CreateChannel)?.state}
-                    />
-                  </li>
-
-                  <li className="flex flex-row items-center gap-2 text-sm">
-                    <span className="flex-1">Delete Channel</span>
-
-                    <PermissionStatesPill
-                      value={selectedRole.permissions.find(p => p.permission == ServerPermission.DeleteChannel)?.state}
-                    />
-                  </li>
-                </PermissionGroup>
-              </section>
-
-              <button className="button-theme-danger p-2 rounded-md cursor-pointer float-right">
-                Delete Role
-              </button>
-            </>
+            <RoleDetails
+              key={selectedRole.id}
+              role={selectedRole}
+              isEditingRole={isEditingRole}
+              setIsEditingRole={setIsEditingRole}
+              setIsFormDirty={setIsFormDirty}
+            />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 select-none">
               Select a role to view details
@@ -254,23 +172,337 @@ export default function RoleManagement() {
   );
 }
 
-function PermissionGroup({
-  text,
-  children
-}: {text: string; children: ReactNode}) {
-  const [open, setOpen] = useState(false);
+const updateRoleSchema = z.object({
+  name: z.string().min(1, {error: "Name cannot be empty."}).max(32, {error: "Name can only have maximum length of 32 characters."}),
+  authorizeLevel: z.number({error: "A valid integer number is required."})
+    .int({error: "A valid integer number is required."})
+    .min(0, "A non-negative integer number is required."),
+
+  permissions: z.object({
+    [ServerPermission.CreateRole]: z.enum(PermissionState),
+    [ServerPermission.UpdateRole]: z.enum(PermissionState),
+    [ServerPermission.DeleteRole]: z.enum(PermissionState),
+    [ServerPermission.CreateChannel]: z.enum(PermissionState),
+    [ServerPermission.DeleteChannel]: z.enum(PermissionState),
+  }),
+});
+
+type UpdateRoleFormValues = z.infer<typeof updateRoleSchema>;
+
+function RoleDetails({
+  role,
+  isEditingRole,
+  setIsEditingRole,
+  setIsFormDirty,
+}: {role: RoleDisplayElement, isEditingRole: boolean, setIsEditingRole: (value: boolean) => void, setIsFormDirty: (value: boolean) => void}) {
+  const { serverId, memberPermissions } = useCommunityServerContext();
+
+  const isEditable = memberPermissions.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
+
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    setError,
+    reset,
+    control,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<UpdateRoleFormValues>({
+    resolver: zodResolver(updateRoleSchema),
+    mode: "onSubmit",
+    defaultValues: {
+      name: role.name,
+      authorizeLevel: role.authorizeLevel,
+      permissions: role.specialRoleType === SpecialRoleType.Owner ? Object.values(ServerPermission).reduce((acc, curr) => {
+        return {...acc, [curr]: PermissionState.Enable };
+      }, {}) : Object.values(ServerPermission).reduce((acc, curr) => {
+        return {...acc, [curr]: role.permissions.find(p => p.permission === curr)?.state ?? PermissionState.Inherit}
+      }, {}),
+    },
+  });
+
+  useEffect(() => {
+    console.log("form is now dirty");
+    setIsFormDirty(isDirty);
+
+    return () => setIsFormDirty(false);
+  }, [isDirty, setIsFormDirty]);
+
+  const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
+    if (!isEditable) return;
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const response = await communityServerService.updateRole(
+      serverId,
+      role.id,
+      {
+        name: data.name,
+        authorizeLevel: data.authorizeLevel,
+        permissions: data.permissions,
+      }
+    );
+
+    setIsEditingRole(false);
+
+    if (response.success) {
+      reset({
+        name: data.name,
+        authorizeLevel: data.authorizeLevel,
+        permissions: data.permissions,
+      });
+    } else {
+      setError("root", {message: response.error?.message ?? "Unknown error."});
+    }
+  };
 
   return (
-    <ul className="border-2 border-gray-600 rounded-md">
-      <button className={`text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2 ${open ? "border-b-2 border-b-gray-600" : ""}`} onClick={() => setOpen(!open)}>
-        {text}
-      </button>
+    <form onSubmit={handleSubmit(handleUpdateRole)}>
+      <header className="flex flex-row items-center justify-between mb-2">
+        <div className="flex flex-row gap-2 items-center">
+          {isEditingRole ? (
+            <input
+              className="h-7 input-field w-48"
+              defaultValue={getValues("name")}
+              {...register("name")}
+            />
+          ) : (
+            <h4 className="text-xl font-semibold text-white">{role.name}</h4>
+          )}
 
-      {open && (
-        <div className="grid grid-cols-4 gap-2 p-2">
-          {children}
+          <span className="text-xs bg-gray-600 px-2 py-0.5 rounded ml-1">
+            {role.numMembers} members
+          </span>
         </div>
+
+        {memberPermissions.effectivePermissions.UpdateRole && isEditable && (
+          <>
+            {isEditingRole ? (
+              <div className="space-x-2">
+                <IconButton type="button" theme="danger" onClick={() => {
+                  setIsEditingRole(false);
+                  reset();
+                }} disabled={isSubmitting}>
+                  <FaXmark className="size-5"/>
+                </IconButton>
+
+                {isSubmitting ? (
+                  <Spinner className="size-5"/>
+                ) : (
+                  <IconButton type="submit" theme="info">
+                    <FaSave className="size-5"/>
+                  </IconButton>
+                )}
+              </div>
+              ) : (
+              <IconButton theme="info" onClick={() => setIsEditingRole(!isEditingRole)}>
+                <FaPencil className="size-5"/>
+              </IconButton>
+            )}
+          </>
+        )}
+      </header>
+
+      <section>
+        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+          General Information
+        </h4>
+
+        <div className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-300">Created by</span>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-550">
+              <UserAvatar
+                userId={role.creatorUser?.id}
+                hasAvatar={role.creatorUser?.hasAvatar ?? false}
+                className="size-5 rounded-full overflow-hidden"
+              />
+
+              <span className="text-sm font-medium text-zinc-200">
+                {role.creatorUser?.displayName ?? "Deleted User"}
+              </span>
+
+              <span className="text-xs text-zinc-500 ml-1 border-l border-zinc-700 pl-2">
+                <DateTimeText value={new Date(role.createdAt)} />
+              </span>
+            </div>
+          </div>
+
+          <Separator.Root className="horizontal-separator my-3" />
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-300">Special Role</span>
+
+            <span className="text-sm font-medium text-zinc-300 px-2.5 py-1 rounded border border-zinc-700/50">
+              {role.specialRoleType}
+            </span>
+          </div>
+
+          <Separator.Root className="horizontal-separator my-3" />
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-300">Authorize Level</span>
+
+            {isEditingRole ? (
+              <ErrorPopover
+                open={!!errors.authorizeLevel}
+                content={errors.authorizeLevel?.message}
+              >
+                <input
+                  type="text"
+                  className="input-field h-[29.6px] text-sm w-64"
+                  placeholder="Enter Authorize Level"
+                  {...register("authorizeLevel", {
+                    setValueAs: (value) => (value === "" || value == null ? null : Number(value))
+                  })}
+                />
+              </ErrorPopover>
+            ) : (
+              <span className="text-sm font-mono text-zinc-300 px-2.5 py-1 rounded border border-zinc-700/50">
+                {role.authorizeLevel}
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-1 mt-2">
+        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+          Permissions
+        </h4>
+
+        <Accordion.Root
+          type="multiple"
+        >
+          <Accordion.Item value="role" className="border-2 border-gray-600 rounded-md mb-1">
+            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
+              Role
+            </Accordion.Trigger>
+
+            <Accordion.Content className="grid grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Create Role</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.CreateRole"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.CreateRole}
+                      content={errors.permissions?.CreateRole?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Update Role</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.UpdateRole"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.UpdateRole}
+                      content={errors.permissions?.UpdateRole?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Delete Role</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.DeleteRole"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.DeleteRole}
+                      content={errors.permissions?.DeleteRole?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </Accordion.Content>
+          </Accordion.Item>
+
+          <Accordion.Item value="channel" className="border-2 border-gray-600 rounded-md">
+            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
+              Channel
+            </Accordion.Trigger>
+
+            <Accordion.Content className="grid grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Create Channel</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.CreateChannel"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.CreateChannel}
+                      content={errors.permissions?.CreateChannel?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Delete Channel</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.DeleteChannel"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.DeleteChannel}
+                      content={errors.permissions?.DeleteChannel?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </Accordion.Content>
+          </Accordion.Item>
+        </Accordion.Root>
+      </section>
+
+      {memberPermissions.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
+        <button className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
+          Delete Role
+        </button>
       )}
-    </ul>
+    </form>
   );
 }

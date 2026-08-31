@@ -75,6 +75,12 @@
         }
     }
 
+    @keyframes animate-horizontalShake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
+    }
+
     .shimmer {
         @apply relative inline-block overflow-hidden
     }
@@ -295,6 +301,10 @@
 
 @utility backdrop-overlay {
     @apply fixed inset-0 bg-black/80
+}
+
+@utility animate-horizontalShake {
+    animation: animate-horizontalShake 0.1s ease-in-out 0s 2;
 }
 
 @font-face {

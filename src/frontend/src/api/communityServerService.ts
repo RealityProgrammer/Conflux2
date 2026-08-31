@@ -2,11 +2,13 @@ import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse,
   CommunityServerSummaryDto,
-  ServerMemberPermissionsDto,
+  ServerMemberPermissionsDto, ServerRoleDto,
   ServiceResponse
 } from "./types.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
+import type {PermissionState} from "../graphql/types.ts";
+import type {ServerPermission} from "./schema.ts";
 
 export const communityServerService = {
   create: async (idempotencyKey: string, name: string, avatar?: File): Promise<ServiceResponse> => {
@@ -147,7 +149,7 @@ export const communityServerService = {
     }
   },
 
-  getUserPermission: async (serverId: string) : Promise<ServiceResponse<ServerMemberPermissionsDto>> => {
+  getUserPermission: async (serverId: string): Promise<ServiceResponse<ServerMemberPermissionsDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<ServerMemberPermissionsDto>> =
         await apiClient.get<BackendResponse<ServerMemberPermissionsDto>>(`/communities/${encodeURIComponent(serverId)}/members/me/permissions`)
@@ -159,6 +161,26 @@ export const communityServerService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse<ServerMemberPermissionsDto>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  updateRole: async (serverId: string, roleId: string, data: {
+    name?: string,
+    authorizeLevel: number,
+    permissions?: Map<ServerPermission, PermissionState> | Record<ServerPermission, PermissionState>,
+  }): Promise<ServiceResponse<ServerRoleDto>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<ServerRoleDto>> =
+        await apiClient.patch<BackendResponse<ServerRoleDto>>(`/communities/${encodeURIComponent(serverId)}/roles/${encodeURIComponent(roleId)}`, data);
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<ServerRoleDto>>;
       return handleAxiosError(axiosError);
     }
   }
