@@ -20,6 +20,7 @@ import {FaPencil, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../ErrorPopover.tsx";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../Spinner.tsx";
+import {toast} from "react-toastify";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
 
@@ -499,9 +500,19 @@ function RoleDetails({
       </section>
 
       {memberPermissions.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
-        <button className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
-          Delete Role
-        </button>
+        <>
+          <button className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
+            Delete Role
+          </button>
+
+          <button className="button-theme-primary p-2 rounded-md cursor-pointer float-right mt-2" onClick={() => {
+            toast.success("Test", {
+
+            });
+          }}>
+            Toast
+          </button>
+        </>
       )}
     </form>
   );

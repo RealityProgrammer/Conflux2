@@ -23,6 +23,22 @@
     --color-gray-875: color-mix(in oklch, var(--color-gray-800) 25%, var(--color-gray-900) 75%);
 }
 
+:root {
+    --toastify-color-dark: var(--color-gray-575) !important;
+    --toastify-text-color-dark: #f3f4f6 !important;
+    --toastify-color-transparent: rgba(255, 255, 255, 0.1) !important;
+    --toastify-toast-min-height: 44px !important;
+}
+
+.Toastify__toast-container {
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+.Toastify__toast {
+    margin-bottom: 8px !important;
+}
+
 @layer base {
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
