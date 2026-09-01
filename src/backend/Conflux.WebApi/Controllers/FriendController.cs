@@ -1,5 +1,11 @@
-using Conflux.Application.Commands;
-using Conflux.Application.Queries;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.AcceptFriendRequest;
+using Conflux.Application.Features.Commands.CancelFriendRequest;
+using Conflux.Application.Features.Commands.RejectFriendRequest;
+using Conflux.Application.Features.Commands.SendFriendRequest;
+using Conflux.Application.Features.Commands.Unfriend;
+using Conflux.Application.Features.Queries;
+using Conflux.Application.Features.Queries.DiscoverFriends;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;

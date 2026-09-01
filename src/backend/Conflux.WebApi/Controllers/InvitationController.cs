@@ -1,4 +1,6 @@
-using Conflux.Application.Commands;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.CreateServerInvitation;
+using Conflux.Application.Features.Commands.JoinServer;
 using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -36,7 +38,7 @@ public sealed class InvitationController(
     [EnableRateLimiting("CreateServerInvitationPolicy")]
     public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationRequest request) {
         var validDuration = ExpirationTimespanLookup.GetValueOrDefault(request.ExpireAfter, TimeSpan.FromMinutes(5));
-        var result = await mediator.Send(new CreateInvitationCommand(request.ServerId, request.MaxUses, validDuration));
+        var result = await mediator.Send(new CreateServerInvitationCommand(request.ServerId, request.MaxUses, validDuration));
         
         if (result.IsSuccess) {
             return Ok(new ApiResponse<string>(result.Value, Error.None));
@@ -56,7 +58,7 @@ public sealed class InvitationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await mediator.Send(new JoinServerWithInvitationCommand(userId, invitationId));
+        var result = await mediator.Send(new JoinServerCommand(userId, invitationId));
 
         if (result.IsSuccess) {
             return Ok();

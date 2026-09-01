@@ -1,8 +1,18 @@
-using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Enums;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.CreateServer;
+using Conflux.Application.Features.Commands.CreateServerChannel;
+using Conflux.Application.Features.Commands.CreateServerChannelCategory;
+using Conflux.Application.Features.Commands.CreateServerRole;
+using Conflux.Application.Features.Commands.DeleteServerChannel;
+using Conflux.Application.Features.Commands.DeleteServerChannelCategory;
+using Conflux.Application.Features.Commands.DeleteServerRole;
+using Conflux.Application.Features.Commands.UpdateServerRole;
+using Conflux.Application.Features.Queries;
+using Conflux.Application.Features.Queries.GetServerSummary;
+using Conflux.Application.Features.Queries.GetUserServerPermissions;
 using Conflux.Application.Options;
-using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -35,7 +45,7 @@ public sealed class CommunityServerController(
         }
 
         await using var stream = serverRequest.Avatar?.OpenReadStream();
-        var result = await mediator.Send(new CreateCommunityServerCommand(userId, serverRequest.Name, stream));
+        var result = await mediator.Send(new CreateServerCommand(userId, serverRequest.Name, stream));
 
         if (result.IsSuccess) {
             return Created();
@@ -52,7 +62,7 @@ public sealed class CommunityServerController(
 
     [HttpGet("{serverId:guid}/summary")]
     public async Task<ActionResult<ApiResponse<CommunityServerSummaryDto>>> GetSummary(Guid serverId) {
-        var result = await mediator.Send(new CommunityServerSummaryQuery(serverId));
+        var result = await mediator.Send(new GetServerSummaryQuery(serverId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<CommunityServerSummaryDto>(result.Value!, Error.None));
@@ -255,7 +265,7 @@ public sealed class CommunityServerController(
     }
 
     private async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> InternalGetUserPermissions(Guid serverId, Guid userId) {
-        var result = await mediator.Send(new GetUserPermissionsForServer(serverId, userId));
+        var result = await mediator.Send(new GetUserServerPermissionsQuery(serverId, userId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<ServerMemberPermissionsDto>(result.Value, Error.None));

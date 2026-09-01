@@ -10,9 +10,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
-using Conflux.Application.Commands;
 using Conflux.Application.Dto;
 using Conflux.Application.Enums;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.CreateServer;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Notifications;
 using Conflux.Application.Options;
@@ -212,7 +213,7 @@ builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator(options => {
     options.Assemblies = [
-        typeof(CreateCommunityServerCommand), typeof(MessageNotificationsHandler),
+        typeof(CreateServerCommand), typeof(MessageNotificationsHandler),
     ];
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),

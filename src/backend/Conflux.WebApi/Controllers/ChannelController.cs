@@ -1,5 +1,7 @@
-using Conflux.Application.Commands;
-using Conflux.Application.Queries;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.CreateDmChannel;
+using Conflux.Application.Features.Queries;
+using Conflux.Application.Features.Queries.GetDmChannelSummary;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
@@ -27,7 +29,7 @@ public sealed class ChannelController(
             return BadRequest(new ApiResponse<DmChannelSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        var result = await mediator.Send(new DmChannelSummaryQuery(currentUserId, channelId));
+        var result = await mediator.Send(new GetDmChannelSummaryQuery(currentUserId, channelId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<DmChannelSummary>(result.Value, Error.None));

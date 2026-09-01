@@ -1,7 +1,11 @@
-using Conflux.Application.Commands;
 using Conflux.Application.Dto;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.DeleteMessage;
+using Conflux.Application.Features.Commands.EditMessage;
+using Conflux.Application.Features.Commands.SendMessage;
+using Conflux.Application.Features.Queries;
+using Conflux.Application.Features.Queries.GetChatMessages;
 using Conflux.Application.Options;
-using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -149,7 +153,7 @@ public sealed class ConversationController(
 
         // TODO: Check if user has permission to view messages at this channel at service.
 
-        var result = await mediator.Send(new ChatMessagesQuery(
+        var result = await mediator.Send(new GetChatMessagesQuery(
             userId, channelId, direction, cursor, count
         ), cancellationToken);
 

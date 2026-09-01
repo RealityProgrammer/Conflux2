@@ -1,4 +1,5 @@
-using Conflux.Application.Commands;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.DeleteUserAvatar;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Mediator;

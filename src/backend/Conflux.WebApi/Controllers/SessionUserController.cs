@@ -1,7 +1,13 @@
-using Conflux.Application.Commands;
 using Conflux.Application.Dto;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.DeleteUserAvatar;
+using Conflux.Application.Features.Commands.SetupUserProfile;
+using Conflux.Application.Features.Commands.UploadUserAvatar;
+using Conflux.Application.Features.Queries;
+using Conflux.Application.Features.Queries.GetFriends;
+using Conflux.Application.Features.Queries.GetPendingFriendRequests;
+using Conflux.Application.Features.Queries.GetUserDmConversations;
 using Conflux.Application.Options;
-using Conflux.Application.Queries;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -116,7 +122,7 @@ public sealed class SessionUserController(
         count = int.Max(count, 1);
 
         PaginatedResult<DmConversationListItemDto> result = await mediator.Send(
-            new UserDmConversationsQuery(userId, offset, count)
+            new GetUserDmConversationsQuery(userId, offset, count)
         );
 
         return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
@@ -137,7 +143,7 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await mediator.Send(new FriendsQuery(userId, name, offset, count));
+        var result = await mediator.Send(new GetFriendsQuery(userId, name, offset, count));
 
         return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result, Error.None));
     }
@@ -221,7 +227,7 @@ public sealed class SessionUserController(
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await mediator.Send(new PendingFriendRequestsQuery(userId, name, offset, count));
+        var result = await mediator.Send(new GetPendingFriendRequestsQuery(userId, name, offset, count));
 
         return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result, Error.None));
     }

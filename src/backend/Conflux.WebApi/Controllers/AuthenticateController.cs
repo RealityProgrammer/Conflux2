@@ -1,7 +1,13 @@
-using Conflux.Application.Commands;
 using Conflux.Application.Dto;
+using Conflux.Application.Features.Commands;
+using Conflux.Application.Features.Commands.ConfirmEmail;
+using Conflux.Application.Features.Commands.Login;
+using Conflux.Application.Features.Commands.RefreshSession;
+using Conflux.Application.Features.Commands.Register;
+using Conflux.Application.Features.Commands.SendConfirmationEmail;
+using Conflux.Application.Features.Queries;
+using Conflux.Application.Features.Queries.GetUserAuthorizationInfo;
 using Conflux.Application.Options;
-using Conflux.Application.Queries;
 using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -79,7 +85,7 @@ public sealed class AuthenticateController(
             })));
         }
         
-        var response = await mediator.Send(new RegisterUserCommand(request.Email, request.Password));
+        var response = await mediator.Send(new RegisterCommand(request.Email, request.Password));
     
         if (response.IsSuccess) {
             return Created();
@@ -146,7 +152,7 @@ public sealed class AuthenticateController(
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
         }
         
-        var info = await mediator.Send(new UserAuthorizationInfoQuery(idClaim));
+        var info = await mediator.Send(new GetUserAuthorizationInfoQuery(idClaim));
 
         if (!info.IsSuccess) {
             return Unauthorized(new ApiResponse<UserAuthorizationInfo>(null, Errors.InvalidCredentials()));
