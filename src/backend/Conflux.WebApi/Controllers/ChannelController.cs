@@ -1,7 +1,4 @@
-using Conflux.Application.Features.Commands;
-using Conflux.Application.Features.Commands.CreateDmChannel;
-using Conflux.Application.Features.Queries;
-using Conflux.Application.Features.Queries.GetDmChannelSummary;
+using Conflux.Application.Features.Channels;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;

@@ -1,10 +1,5 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Commands;
-using Conflux.Application.Features.Commands.DeleteMessage;
-using Conflux.Application.Features.Commands.EditMessage;
-using Conflux.Application.Features.Commands.SendMessage;
-using Conflux.Application.Features.Queries;
-using Conflux.Application.Features.Queries.GetChatMessages;
+using Conflux.Application.Features.Messages;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;

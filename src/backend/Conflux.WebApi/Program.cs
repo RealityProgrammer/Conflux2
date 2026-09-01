@@ -12,8 +12,7 @@ using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Dto;
 using Conflux.Application.Enums;
-using Conflux.Application.Features.Commands;
-using Conflux.Application.Features.Commands.CreateServer;
+using Conflux.Application.Features.Servers;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Options;
 using Conflux.Application.Pipelines;
@@ -31,8 +30,8 @@ using Conflux.WebApi.GraphQL;
 using Conflux.WebApi.GraphQL.DataLoaders;
 using Conflux.WebApi.GraphQL.Types;
 using Conflux.WebApi.Jobs;
-using Conflux.WebApi.Mediators;
 using Conflux.WebApi.Miscs;
+using Conflux.WebApi.NotificationHandlers;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
@@ -212,7 +211,7 @@ builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator(options => {
     options.Assemblies = [
-        typeof(CreateServerCommand), typeof(MessageNotificationsHandler),
+        typeof(CreateServerCommand), typeof(UpdateDmConversationListNotificationHandler),
     ];
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),

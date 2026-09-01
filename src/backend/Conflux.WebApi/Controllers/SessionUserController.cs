@@ -1,14 +1,8 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Commands;
-using Conflux.Application.Features.Commands.DeleteUserAvatar;
-using Conflux.Application.Features.Commands.SetupUserProfile;
-using Conflux.Application.Features.Commands.UploadUserAvatar;
-using Conflux.Application.Features.Queries;
-using Conflux.Application.Features.Queries.GetFriends;
-using Conflux.Application.Features.Queries.GetPendingFriendRequests;
-using Conflux.Application.Features.Queries.GetUserDmConversations;
+using Conflux.Application.Features.Channels;
+using Conflux.Application.Features.Friends;
+using Conflux.Application.Features.Users;
 using Conflux.Application.Options;
-using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Humanizer;

@@ -1,0 +1,17 @@
+using Conflux.Application.Features.Friends;
+using Conflux.WebApi.SignalR;
+using Mediator;
+using Microsoft.AspNetCore.SignalR;
+
+namespace Conflux.WebApi.NotificationHandlers;
+
+public class FriendRequestCanceledNotificationHandler(
+    IHubContext<GatewayHub, IConfluxClient> hubContext
+) : INotificationHandler<FriendRequestCanceledNotification> {
+    public async ValueTask Handle(FriendRequestCanceledNotification notification, CancellationToken cancellationToken) {
+        await hubContext.Clients.User(notification.ReceiverUserId.ToString()).FriendRequestCanceled(
+            new(notification.SenderUserId),
+            cancellationToken: cancellationToken
+        );
+    }
+}

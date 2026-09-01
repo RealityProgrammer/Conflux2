@@ -1,12 +1,6 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Commands;
-using Conflux.Application.Features.Commands.ConfirmEmail;
-using Conflux.Application.Features.Commands.Login;
-using Conflux.Application.Features.Commands.RefreshSession;
-using Conflux.Application.Features.Commands.Register;
-using Conflux.Application.Features.Commands.SendConfirmationEmail;
-using Conflux.Application.Features.Queries;
-using Conflux.Application.Features.Queries.GetUserAuthorizationInfo;
+using Conflux.Application.Features.Identity;
+using Conflux.Application.Features.Users;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Mediator;
@@ -107,7 +101,7 @@ public sealed class AuthenticateController(
         string email = decodedPayload[..firstColon];
         string refreshToken = decodedPayload[(firstColon + 1)..];
 
-        var result = await mediator.Send(new RefreshSessionCommand(email, refreshToken));
+        var result = await mediator.Send(new RefreshCommand(email, refreshToken));
 
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.

@@ -1,6 +1,4 @@
-using Conflux.Application.Features.Commands;
-using Conflux.Application.Features.Commands.CreateServerInvitation;
-using Conflux.Application.Features.Commands.JoinServer;
+using Conflux.Application.Features.Servers;
 using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
