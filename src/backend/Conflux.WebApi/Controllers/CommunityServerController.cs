@@ -322,6 +322,10 @@ public sealed class CommunityServerController(
                     yield return new("Name can only have maximum length of 32 characters.", [nameof(Name)]);
                 }
             }
+
+            if (AuthorizeLevel is { IsSet: true, Value: <= 0 or > 500000 }) {
+                yield return new("Authorize Level must be between 1 and 500000.", [nameof(AuthorizeLevel)]);
+            }
         }
     }
 }

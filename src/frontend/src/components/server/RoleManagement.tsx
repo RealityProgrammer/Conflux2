@@ -238,7 +238,8 @@ const updateRoleSchema = z.object({
   name: z.string().min(1, {error: "Name cannot be empty."}).max(32, {error: "Name can only have maximum length of 32 characters."}),
   authorizeLevel: z.number({error: "A valid integer number is required."})
     .int({error: "A valid integer number is required."})
-    .min(0, "A non-negative integer number is required."),
+    .min(1, "A positive integer number is required.")
+    .max(500000, "Value must be less than or equal to 500000."),
 
   permissions: z.object({
     [ServerPermission.CreateRole]: z.enum(PermissionState),
