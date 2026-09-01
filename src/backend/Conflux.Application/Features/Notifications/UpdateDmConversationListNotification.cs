@@ -1,4 +1,4 @@
-namespace Conflux.Application.Notifications;
+namespace Conflux.Application.Features.Notifications;
 
 public sealed record UpdateDmConversationListNotification(
     Guid SenderUserId,

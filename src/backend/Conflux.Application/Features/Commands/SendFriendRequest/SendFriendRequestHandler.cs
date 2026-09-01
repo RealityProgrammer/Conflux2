@@ -1,4 +1,4 @@
-using Conflux.Application.Notifications;
+using Conflux.Application.Features.Notifications;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;

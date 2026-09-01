@@ -15,7 +15,6 @@ using Conflux.Application.Enums;
 using Conflux.Application.Features.Commands;
 using Conflux.Application.Features.Commands.CreateServer;
 using Conflux.Application.FileFormats;
-using Conflux.Application.Notifications;
 using Conflux.Application.Options;
 using Conflux.Application.Pipelines;
 using Conflux.Application.Services;

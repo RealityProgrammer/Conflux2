@@ -1,5 +1,5 @@
+using Conflux.Application.Features.Notifications;
 using Conflux.Application.FileFormats;
-using Conflux.Application.Notifications;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
