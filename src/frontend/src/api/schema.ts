@@ -1838,8 +1838,8 @@ export interface components {
             /** Format: int32 */
             totalCount: number;
         };
-        PatchFieldOfint: unknown;
-        PatchFieldOfstring: unknown;
+        PatchFieldOfint: number;
+        PatchFieldOfstring: string;
         PatchRoleRequest: {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];

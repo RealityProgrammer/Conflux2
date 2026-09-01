@@ -93,13 +93,17 @@ export default function ServerSidebarHeader({
                 <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
               </DropdownMenu.Item>
 
-              <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
+              {(memberPermissions.effectivePermissions.CreateRole || memberPermissions.effectivePermissions.UpdateRole || memberPermissions.effectivePermissions.DeleteRole) && (
+                <>
+                  <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
-              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenSettingDialog(true)}>
-                Manage Server
+                  <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenSettingDialog(true)}>
+                    Manage Server
 
-                <BsGearFill className="fill-white size-4 ml-auto"/>
-              </DropdownMenu.Item>
+                    <BsGearFill className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+                </>
+              )}
 
               <DropdownMenu.Arrow className="fill-gray-650"/>
             </DropdownMenu.Content>

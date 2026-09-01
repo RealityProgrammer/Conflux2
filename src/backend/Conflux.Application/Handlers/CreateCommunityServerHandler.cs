@@ -28,8 +28,12 @@ public sealed class CreateCommunityServerHandler(
         CommunityServerRole defaultRole = new() {
             Name = "Default",
             SpecialRoleType = SpecialRoleType.Default,
-            AuthorizeLevel = 0,
+            AuthorizeLevel = -1,
             CreatorUserId = request.CreatorUserId,
+            Permissions = [..Enum.GetValues<ServerPermission>().Select(p => new RolePermission {
+                Permission = p,
+                State = PermissionState.Disable,
+            })],
         };
 
         CommunityServerRole ownerRole = new() {

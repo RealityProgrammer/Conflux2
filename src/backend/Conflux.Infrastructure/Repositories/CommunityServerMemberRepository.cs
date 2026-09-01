@@ -44,6 +44,7 @@ internal sealed class CommunityServerMemberRepository(
             .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
             .Include(m => m.MemberRoles)
             .ThenInclude(m => m.Role)
+            .ThenInclude(r => r.Permissions)
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

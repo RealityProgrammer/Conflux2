@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Domain;
 
-public readonly record struct Result {
+public readonly record struct Result : IResult<Result> {
     public bool IsSuccess { get; }
     public Error Error { get; }
     
@@ -22,7 +22,7 @@ public readonly record struct Result {
     public static implicit operator Result(Error error) => Failure(error);
 }
 
-public readonly record struct Result<T> {
+public readonly record struct Result<T> : IResult<Result<T>> {
     public bool IsSuccess { get; }
     public Error Error { get; }
 

@@ -168,7 +168,7 @@ export const communityServerService = {
   updateRole: async (serverId: string, roleId: string, data: {
     name?: string,
     authorizeLevel: number,
-    permissions?: Map<ServerPermission, PermissionState> | Record<ServerPermission, PermissionState>,
+    permissionStates?: Map<ServerPermission, PermissionState> | Record<ServerPermission, PermissionState>,
   }): Promise<ServiceResponse<ServerRoleDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<ServerRoleDto>> =

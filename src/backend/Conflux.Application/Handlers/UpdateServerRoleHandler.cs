@@ -10,7 +10,8 @@ namespace Conflux.Application.Handlers;
 
 public sealed class UpdateServerRoleHandler(
     ICommunityServerRoleRepository repository,
-    IUnitOfWork unitOfWork
+    IUnitOfWork unitOfWork,
+    IServerPermissionsCacheService serverPermissionsCacheService
 ) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
         CommunityServerRole? role = await repository.FindById(command.RoleId, true, cancellationToken);
@@ -23,6 +24,10 @@ public sealed class UpdateServerRoleHandler(
             return Errors.Forbidden("Updating Owner role is not allowed.");
         }
 
+        if (role.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.IsSet) {
+            
+        }
+        
         if (command.Name.IsSet) {
             role.Name = command.Name.Value!;
         }
@@ -31,7 +36,6 @@ public sealed class UpdateServerRoleHandler(
             role.AuthorizeLevel = command.AuthorizeLevel.Value;
         }
         
-        // TODO: Update permissions
         if (command.PermissionStates is { Count: > 0} permissionStates) {
             foreach ((var targetPermission, var newState) in permissionStates) {
                 var existingRecord = role.Permissions.FirstOrDefault(p => p.Permission == targetPermission);
@@ -60,6 +64,8 @@ public sealed class UpdateServerRoleHandler(
         
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await serverPermissionsCacheService.IncrementServerPermissionVersion(command.ServerId, CancellationToken.None);
             
             return Result<ServerRoleDto>.Success(new(
                 role.Id,

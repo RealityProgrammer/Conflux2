@@ -301,15 +301,13 @@ function RoleDetails({
   const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
     if (!isEditable) return;
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     const response = await communityServerService.updateRole(
       serverId,
       role.id,
       {
         name: data.name,
         authorizeLevel: data.authorizeLevel,
-        permissions: data.permissions,
+        permissionStates: data.permissions,
       }
     );
 

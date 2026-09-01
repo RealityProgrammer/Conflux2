@@ -47,10 +47,10 @@ public sealed class JoinTracker(
     }
     
     private static string GetChannelKey(string connectionId) {
-        return $"signalr:joins:channels:{connectionId}";
+        return $"SignalR:join:channels:{connectionId}";
     }
 
     private static string GetServerKey(string connectionId) {
-        return $"signalr:join:servers:{connectionId}";
+        return $"SignalR:join:servers:{connectionId}";
     }
 }

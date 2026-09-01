@@ -7,4 +7,6 @@ public sealed record DeleteServerChannelCategoryCommand(
     Guid ExecutorUserId,
     Guid ServerId,
     Guid CategoryId
-) : ICommand<Result>, IServerCommand;
+) : ICommand<Result>, IServerCommand {
+    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.DeleteChannel];
+}

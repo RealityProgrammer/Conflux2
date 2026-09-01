@@ -11,10 +11,12 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Commands;
+using Conflux.Application.Dto;
 using Conflux.Application.Enums;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Notifications;
 using Conflux.Application.Options;
+using Conflux.Application.Pipelines;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
 using Conflux.Domain.Entities;
@@ -35,6 +37,7 @@ using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
 using HotChocolate.Types.Descriptors;
+using Mediator;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.JsonWebTokens;
 using RedLockNet;
@@ -211,6 +214,9 @@ builder.Services.AddMediator(options => {
     options.Assemblies = [
         typeof(CreateCommunityServerCommand), typeof(MessageNotificationsHandler),
     ];
+    options.PipelineBehaviors = [
+        typeof(ServerAuthorizationPipelineBehaviour<,>),
+    ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
 
@@ -224,7 +230,8 @@ builder.Services
     .AddScoped<IChannelAuthorizationStrategy, ServerVoiceChannelAuthorizationStrategy>()
     .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
     .AddScoped<IJwtProvider, JwtProvider>()
-
+    .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
+    
     .AddScoped<IUnitOfWork, UnitOfWork>()
 
     .AddScoped<IAuthRepository, AuthRepository>()
@@ -253,6 +260,8 @@ builder.Services
     .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"))
     
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>();
+
+builder.Services.AddSingleton<IServerPermissionsCacheService, ServerPermissionsCacheService>();
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
@@ -371,6 +380,19 @@ builder.Services.AddOpenApi(options => {
 
                 return Task.CompletedTask;
             }
+            
+            if (typeDef == typeof(PatchField<>)) {
+                var elementType = targetType.GetGenericArguments()[0];
+                
+                schema.Properties?.Clear();
+                schema.AdditionalProperties = null;
+                schema.Type = null;
+                schema.Items = null;
+
+                MapTypeToSchema(schema, elementType);
+                
+                return Task.CompletedTask;
+            }
         }
         
         if (targetType == typeof(Error)) {
@@ -391,6 +413,57 @@ builder.Services.AddOpenApi(options => {
             schema.Type = JsonSchemaType.String;
             schema.Format = null;
             schema.Enum = [..Enum.GetNames(enumType).Select(n => JsonValue.Create(n))];
+        }
+        
+        static void MapTypeToSchema(OpenApiSchema schema, Type type) {
+            var isNullable = Nullable.GetUnderlyingType(type) != null;
+            var underlyingType = isNullable ? Nullable.GetUnderlyingType(type)! : type;
+
+            if (underlyingType.IsEnum) {
+                ConfigureEnumSchema(schema, underlyingType);
+                if (isNullable && schema.Type.HasValue) schema.Type |= JsonSchemaType.Null;
+                return;
+            }
+
+            // Primitives
+            if (underlyingType == typeof(string)) {
+                schema.Type = JsonSchemaType.String;
+            } else if (underlyingType == typeof(bool)) {
+                schema.Type = JsonSchemaType.Boolean;
+            } else if (underlyingType == typeof(int) || underlyingType == typeof(long) || underlyingType == typeof(short) || underlyingType == typeof(byte)) {
+                schema.Type = JsonSchemaType.Integer;
+            } else if (underlyingType == typeof(float) || underlyingType == typeof(double) || underlyingType == typeof(decimal)) {
+                schema.Type = JsonSchemaType.Number;
+            } else if (underlyingType == typeof(Guid)) {
+                schema.Type = JsonSchemaType.String;
+                schema.Format = "uuid";
+            } else if (underlyingType == typeof(DateTime) || underlyingType == typeof(DateTimeOffset)) {
+                schema.Type = JsonSchemaType.String;
+                schema.Format = "date-time";
+            } 
+            // Arrays & Lists
+            else if (underlyingType.IsArray) {
+                schema.Type = JsonSchemaType.Array;
+                schema.Items = new OpenApiSchema();
+                
+                MapTypeToSchema((OpenApiSchema)schema.Items, underlyingType.GetElementType()!);
+            } else if (underlyingType.IsGenericType && (
+                           underlyingType.GetGenericTypeDefinition() == typeof(List<>) || 
+                           underlyingType.GetGenericTypeDefinition() == typeof(IList<>) || 
+                           underlyingType.GetGenericTypeDefinition() == typeof(IEnumerable<>) || 
+                           underlyingType.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))) {
+                schema.Type = JsonSchemaType.Array;
+                schema.Items = new OpenApiSchema();
+                
+                MapTypeToSchema((OpenApiSchema)schema.Items, underlyingType.GetGenericArguments()[0]);
+            } else {
+                schema.Metadata ??= new Dictionary<string, object>();
+                schema.Metadata["x-schema-id"] = underlyingType.Name;
+            }
+            
+            if (isNullable && schema.Type.HasValue) {
+                schema.Type |= JsonSchemaType.Null;
+            }
         }
     });
 

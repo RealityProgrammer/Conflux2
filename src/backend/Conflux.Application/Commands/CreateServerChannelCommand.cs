@@ -10,4 +10,6 @@ public sealed record CreateServerChannelCommand(
     string Name,
     CommunityServerChannelType Type,
     Guid? ChannelCategoryId
-) : ICommand<Result<Guid>>, IServerCommand;
+) : ICommand<Result<Guid>>, IServerCommand {
+    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateChannel];
+}

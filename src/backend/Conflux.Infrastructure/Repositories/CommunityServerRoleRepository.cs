@@ -1,5 +1,6 @@
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Infrastructure.Repositories;
@@ -23,6 +24,7 @@ internal sealed class CommunityServerRoleRepository(
     public async Task<bool> Delete(Guid roleId, Guid serverId) {
         return await dbContext.CommunityServerRoles
             .Where(x => x.Id == roleId && x.CommunityServerId == serverId)
+            .Where(x => x.SpecialRoleType == SpecialRoleType.None)  // prevent remove special role.
             .ExecuteDeleteAsync() > 0;
     }
 
