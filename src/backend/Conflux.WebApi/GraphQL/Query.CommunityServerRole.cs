@@ -13,7 +13,7 @@ partial class Query {
         return dbContext.CommunityServerRoles.Where(r => r.Id == id);
     }
 
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, Authorize]
+    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, UseFiltering, Authorize]
     public IQueryable<CommunityServerRole> GetCommunityServerRolesByServerId(
         Guid serverId,
         [Service] ApplicationDbContext dbContext

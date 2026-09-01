@@ -24,6 +24,37 @@ export type ApplicationUser = {
   userName?: Maybe<Scalars['String']['output']>;
 };
 
+export type ApplicationUserFilterInput = {
+  accessFailedCount?: InputMaybe<IntOperationFilterInput>;
+  and?: InputMaybe<Array<ApplicationUserFilterInput>>;
+  avatarUpdatedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  biography?: InputMaybe<StringOperationFilterInput>;
+  concurrencyStamp?: InputMaybe<StringOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  displayName?: InputMaybe<StringOperationFilterInput>;
+  email?: InputMaybe<StringOperationFilterInput>;
+  emailConfirmed?: InputMaybe<BooleanOperationFilterInput>;
+  friendRequests?: InputMaybe<ListFilterInputTypeOfFriendRequestFilterInput>;
+  hasAvatar?: InputMaybe<BooleanOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  isProfileSetup?: InputMaybe<BooleanOperationFilterInput>;
+  joinedCommunityServers?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
+  lockoutEnabled?: InputMaybe<BooleanOperationFilterInput>;
+  lockoutEnd?: InputMaybe<DateTimeOperationFilterInput>;
+  normalizedEmail?: InputMaybe<StringOperationFilterInput>;
+  normalizedUserName?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ApplicationUserFilterInput>>;
+  passwordHash?: InputMaybe<StringOperationFilterInput>;
+  phoneNumber?: InputMaybe<StringOperationFilterInput>;
+  phoneNumberConfirmed?: InputMaybe<BooleanOperationFilterInput>;
+  pronouns?: InputMaybe<StringOperationFilterInput>;
+  receivedFriendRequests?: InputMaybe<ListFilterInputTypeOfFriendRequestFilterInput>;
+  securityStamp?: InputMaybe<StringOperationFilterInput>;
+  sentFriendRequests?: InputMaybe<ListFilterInputTypeOfFriendRequestFilterInput>;
+  twoFactorEnabled?: InputMaybe<BooleanOperationFilterInput>;
+  userName?: InputMaybe<StringOperationFilterInput>;
+};
+
 /** Defines when a policy shall be executed. */
 export enum ApplyPolicy {
   /** After the resolver was executed. */
@@ -33,6 +64,59 @@ export enum ApplyPolicy {
   /** The policy is applied in the validation step before the execution. */
   Validation = 'VALIDATION'
 }
+
+export type AttachmentFilterInput = {
+  and?: InputMaybe<Array<AttachmentFilterInput>>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<AttachmentFilterInput>>;
+  type?: InputMaybe<StringOperationFilterInput>;
+};
+
+export type BooleanOperationFilterInput = {
+  eq?: InputMaybe<Scalars['Boolean']['input']>;
+  neq?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type ChannelCategoryFilterInput = {
+  and?: InputMaybe<Array<ChannelCategoryFilterInput>>;
+  channels?: InputMaybe<ListFilterInputTypeOfChannelFilterInput>;
+  communityServer?: InputMaybe<CommunityServerFilterInput>;
+  communityServerId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ChannelCategoryFilterInput>>;
+};
+
+export type ChannelFilterInput = {
+  and?: InputMaybe<Array<ChannelFilterInput>>;
+  channelCategory?: InputMaybe<ChannelCategoryFilterInput>;
+  channelCategoryId?: InputMaybe<UuidOperationFilterInput>;
+  communityServer?: InputMaybe<CommunityServerFilterInput>;
+  communityServerId?: InputMaybe<UuidOperationFilterInput>;
+  conversation?: InputMaybe<ConversationFilterInput>;
+  conversationId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  friendRequest?: InputMaybe<FriendRequestFilterInput>;
+  friendRequestId?: InputMaybe<UuidOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ChannelFilterInput>>;
+  type?: InputMaybe<ChannelTypeOperationFilterInput>;
+};
+
+export enum ChannelType {
+  CommunityServerText = 'CommunityServerText',
+  CommunityServerVoice = 'CommunityServerVoice',
+  DirectMessage = 'DirectMessage'
+}
+
+export type ChannelTypeOperationFilterInput = {
+  eq?: InputMaybe<ChannelType>;
+  in?: InputMaybe<Array<ChannelType>>;
+  neq?: InputMaybe<ChannelType>;
+  nin?: InputMaybe<Array<ChannelType>>;
+};
 
 export type CommunityServer = {
   __typename?: 'CommunityServer';
@@ -48,6 +132,25 @@ export type CommunityServer = {
   ownerUserId: Scalars['UUID']['output'];
 };
 
+export type CommunityServerFilterInput = {
+  and?: InputMaybe<Array<CommunityServerFilterInput>>;
+  channelCategories?: InputMaybe<ListFilterInputTypeOfChannelCategoryFilterInput>;
+  channels?: InputMaybe<ListFilterInputTypeOfChannelFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  creatorUser?: InputMaybe<ApplicationUserFilterInput>;
+  creatorUserId?: InputMaybe<UuidOperationFilterInput>;
+  description?: InputMaybe<StringOperationFilterInput>;
+  hasAvatar?: InputMaybe<BooleanOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  invitations?: InputMaybe<ListFilterInputTypeOfInvitationFilterInput>;
+  members?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<CommunityServerFilterInput>>;
+  ownerUser?: InputMaybe<ApplicationUserFilterInput>;
+  ownerUserId?: InputMaybe<UuidOperationFilterInput>;
+  roles?: InputMaybe<ListFilterInputTypeOfCommunityServerRoleFilterInput>;
+};
+
 export type CommunityServerMember = {
   __typename?: 'CommunityServerMember';
   communityServer: CommunityServer;
@@ -57,6 +160,28 @@ export type CommunityServerMember = {
   roles: Array<CommunityServerRole>;
   user: ApplicationUser;
   userId: Scalars['UUID']['output'];
+};
+
+export type CommunityServerMemberFilterInput = {
+  and?: InputMaybe<Array<CommunityServerMemberFilterInput>>;
+  communityServer?: InputMaybe<CommunityServerFilterInput>;
+  communityServerId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  memberRoles?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
+  or?: InputMaybe<Array<CommunityServerMemberFilterInput>>;
+  roles?: InputMaybe<ListFilterInputTypeOfCommunityServerRoleFilterInput>;
+  user?: InputMaybe<ApplicationUserFilterInput>;
+  userId?: InputMaybe<UuidOperationFilterInput>;
+};
+
+export type CommunityServerMemberRoleFilterInput = {
+  and?: InputMaybe<Array<CommunityServerMemberRoleFilterInput>>;
+  member?: InputMaybe<CommunityServerMemberFilterInput>;
+  memberId?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<CommunityServerMemberRoleFilterInput>>;
+  role?: InputMaybe<CommunityServerRoleFilterInput>;
+  roleId?: InputMaybe<UuidOperationFilterInput>;
 };
 
 export type CommunityServerRole = {
@@ -72,6 +197,23 @@ export type CommunityServerRole = {
   numMembers: Scalars['Int']['output'];
   permissions: Array<RolePermission>;
   specialRoleType: SpecialRoleType;
+};
+
+export type CommunityServerRoleFilterInput = {
+  and?: InputMaybe<Array<CommunityServerRoleFilterInput>>;
+  authorizeLevel?: InputMaybe<IntOperationFilterInput>;
+  communityServer?: InputMaybe<CommunityServerFilterInput>;
+  communityServerId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  creatorUser?: InputMaybe<ApplicationUserFilterInput>;
+  creatorUserId?: InputMaybe<UuidOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  members?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
+  membersWithRole?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<CommunityServerRoleFilterInput>>;
+  permissions?: InputMaybe<ListFilterInputTypeOfRolePermissionFilterInput>;
+  specialRoleType?: InputMaybe<SpecialRoleTypeOperationFilterInput>;
 };
 
 /** A connection to a list of items. */
@@ -96,6 +238,74 @@ export type CommunityServerRolesByServerIdEdge = {
   node: CommunityServerRole;
 };
 
+export type ConversationFilterInput = {
+  and?: InputMaybe<Array<ConversationFilterInput>>;
+  channel?: InputMaybe<ChannelFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  latestMessageAt?: InputMaybe<DateTimeOperationFilterInput>;
+  messages?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
+  or?: InputMaybe<Array<ConversationFilterInput>>;
+};
+
+export type DateTimeOperationFilterInput = {
+  eq?: InputMaybe<Scalars['DateTime']['input']>;
+  gt?: InputMaybe<Scalars['DateTime']['input']>;
+  gte?: InputMaybe<Scalars['DateTime']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
+  lt?: InputMaybe<Scalars['DateTime']['input']>;
+  lte?: InputMaybe<Scalars['DateTime']['input']>;
+  neq?: InputMaybe<Scalars['DateTime']['input']>;
+  ngt?: InputMaybe<Scalars['DateTime']['input']>;
+  ngte?: InputMaybe<Scalars['DateTime']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
+  nlt?: InputMaybe<Scalars['DateTime']['input']>;
+  nlte?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type FriendRequestFilterInput = {
+  and?: InputMaybe<Array<FriendRequestFilterInput>>;
+  conversationChannel?: InputMaybe<ChannelFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<FriendRequestFilterInput>>;
+  receiver?: InputMaybe<ApplicationUserFilterInput>;
+  receiverUserId?: InputMaybe<UuidOperationFilterInput>;
+  sender?: InputMaybe<ApplicationUserFilterInput>;
+  senderUserId?: InputMaybe<UuidOperationFilterInput>;
+  status?: InputMaybe<FriendRequestStatusOperationFilterInput>;
+  updatedAt?: InputMaybe<DateTimeOperationFilterInput>;
+};
+
+export enum FriendRequestStatus {
+  Accepted = 'Accepted',
+  Canceled = 'Canceled',
+  None = 'None',
+  Pending = 'Pending',
+  Rejected = 'Rejected'
+}
+
+export type FriendRequestStatusOperationFilterInput = {
+  eq?: InputMaybe<FriendRequestStatus>;
+  in?: InputMaybe<Array<FriendRequestStatus>>;
+  neq?: InputMaybe<FriendRequestStatus>;
+  nin?: InputMaybe<Array<FriendRequestStatus>>;
+};
+
+export type IntOperationFilterInput = {
+  eq?: InputMaybe<Scalars['Int']['input']>;
+  gt?: InputMaybe<Scalars['Int']['input']>;
+  gte?: InputMaybe<Scalars['Int']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['Int']['input']>>>;
+  lt?: InputMaybe<Scalars['Int']['input']>;
+  lte?: InputMaybe<Scalars['Int']['input']>;
+  neq?: InputMaybe<Scalars['Int']['input']>;
+  ngt?: InputMaybe<Scalars['Int']['input']>;
+  ngte?: InputMaybe<Scalars['Int']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['Int']['input']>>>;
+  nlt?: InputMaybe<Scalars['Int']['input']>;
+  nlte?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type Invitation = {
   __typename?: 'Invitation';
   communityServer?: Maybe<CommunityServer>;
@@ -106,6 +316,19 @@ export type Invitation = {
   id: Scalars['String']['output'];
   maxUses?: Maybe<Scalars['Int']['output']>;
   status: InvitationStatus;
+};
+
+export type InvitationFilterInput = {
+  and?: InputMaybe<Array<InvitationFilterInput>>;
+  communityServer?: InputMaybe<CommunityServerFilterInput>;
+  communityServerId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  currentUses?: InputMaybe<IntOperationFilterInput>;
+  expiresAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  lastUsedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  maxUses?: InputMaybe<IntOperationFilterInput>;
+  or?: InputMaybe<Array<InvitationFilterInput>>;
 };
 
 export enum InvitationStatus {
@@ -137,6 +360,94 @@ export type JoinedServersEdge = {
   node: CommunityServer;
 };
 
+export type ListFilterInputTypeOfAttachmentFilterInput = {
+  all?: InputMaybe<AttachmentFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<AttachmentFilterInput>;
+  some?: InputMaybe<AttachmentFilterInput>;
+};
+
+export type ListFilterInputTypeOfChannelCategoryFilterInput = {
+  all?: InputMaybe<ChannelCategoryFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ChannelCategoryFilterInput>;
+  some?: InputMaybe<ChannelCategoryFilterInput>;
+};
+
+export type ListFilterInputTypeOfChannelFilterInput = {
+  all?: InputMaybe<ChannelFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ChannelFilterInput>;
+  some?: InputMaybe<ChannelFilterInput>;
+};
+
+export type ListFilterInputTypeOfCommunityServerMemberFilterInput = {
+  all?: InputMaybe<CommunityServerMemberFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<CommunityServerMemberFilterInput>;
+  some?: InputMaybe<CommunityServerMemberFilterInput>;
+};
+
+export type ListFilterInputTypeOfCommunityServerMemberRoleFilterInput = {
+  all?: InputMaybe<CommunityServerMemberRoleFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<CommunityServerMemberRoleFilterInput>;
+  some?: InputMaybe<CommunityServerMemberRoleFilterInput>;
+};
+
+export type ListFilterInputTypeOfCommunityServerRoleFilterInput = {
+  all?: InputMaybe<CommunityServerRoleFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<CommunityServerRoleFilterInput>;
+  some?: InputMaybe<CommunityServerRoleFilterInput>;
+};
+
+export type ListFilterInputTypeOfFriendRequestFilterInput = {
+  all?: InputMaybe<FriendRequestFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<FriendRequestFilterInput>;
+  some?: InputMaybe<FriendRequestFilterInput>;
+};
+
+export type ListFilterInputTypeOfInvitationFilterInput = {
+  all?: InputMaybe<InvitationFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<InvitationFilterInput>;
+  some?: InputMaybe<InvitationFilterInput>;
+};
+
+export type ListFilterInputTypeOfMessageFilterInput = {
+  all?: InputMaybe<MessageFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<MessageFilterInput>;
+  some?: InputMaybe<MessageFilterInput>;
+};
+
+export type ListFilterInputTypeOfRolePermissionFilterInput = {
+  all?: InputMaybe<RolePermissionFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<RolePermissionFilterInput>;
+  some?: InputMaybe<RolePermissionFilterInput>;
+};
+
+export type MessageFilterInput = {
+  and?: InputMaybe<Array<MessageFilterInput>>;
+  attachments?: InputMaybe<ListFilterInputTypeOfAttachmentFilterInput>;
+  body?: InputMaybe<StringOperationFilterInput>;
+  conversation?: InputMaybe<ConversationFilterInput>;
+  conversationId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  deletedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<MessageFilterInput>>;
+  replies?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
+  replyTo?: InputMaybe<MessageFilterInput>;
+  replyToId?: InputMaybe<UuidOperationFilterInput>;
+  sender?: InputMaybe<ApplicationUserFilterInput>;
+  senderUserId?: InputMaybe<UuidOperationFilterInput>;
+  updatedAt?: InputMaybe<DateTimeOperationFilterInput>;
+};
+
 /** Information about pagination in a connection. */
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -155,6 +466,13 @@ export enum PermissionState {
   Enable = 'Enable',
   Inherit = 'Inherit'
 }
+
+export type PermissionStateOperationFilterInput = {
+  eq?: InputMaybe<PermissionState>;
+  in?: InputMaybe<Array<PermissionState>>;
+  neq?: InputMaybe<PermissionState>;
+  nin?: InputMaybe<Array<PermissionState>>;
+};
 
 export type Query = {
   __typename?: 'Query';
@@ -178,6 +496,7 @@ export type QueryCommunityServerRolesByServerIdArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
   serverId: Scalars['UUID']['input'];
+  where?: InputMaybe<CommunityServerRoleFilterInput>;
 };
 
 
@@ -206,6 +525,15 @@ export type RolePermission = {
   state: PermissionState;
 };
 
+export type RolePermissionFilterInput = {
+  and?: InputMaybe<Array<RolePermissionFilterInput>>;
+  or?: InputMaybe<Array<RolePermissionFilterInput>>;
+  permission?: InputMaybe<ServerPermissionOperationFilterInput>;
+  role?: InputMaybe<CommunityServerRoleFilterInput>;
+  roleId?: InputMaybe<UuidOperationFilterInput>;
+  state?: InputMaybe<PermissionStateOperationFilterInput>;
+};
+
 export enum ServerPermission {
   CreateChannel = 'CreateChannel',
   CreateRole = 'CreateRole',
@@ -214,8 +542,53 @@ export enum ServerPermission {
   UpdateRole = 'UpdateRole'
 }
 
+export type ServerPermissionOperationFilterInput = {
+  eq?: InputMaybe<ServerPermission>;
+  in?: InputMaybe<Array<ServerPermission>>;
+  neq?: InputMaybe<ServerPermission>;
+  nin?: InputMaybe<Array<ServerPermission>>;
+};
+
 export enum SpecialRoleType {
   Default = 'Default',
   None = 'None',
   Owner = 'Owner'
 }
+
+export type SpecialRoleTypeOperationFilterInput = {
+  eq?: InputMaybe<SpecialRoleType>;
+  in?: InputMaybe<Array<SpecialRoleType>>;
+  neq?: InputMaybe<SpecialRoleType>;
+  nin?: InputMaybe<Array<SpecialRoleType>>;
+};
+
+export type StringOperationFilterInput = {
+  and?: InputMaybe<Array<StringOperationFilterInput>>;
+  contains?: InputMaybe<Scalars['String']['input']>;
+  endsWith?: InputMaybe<Scalars['String']['input']>;
+  eq?: InputMaybe<Scalars['String']['input']>;
+  ilike?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  ncontains?: InputMaybe<Scalars['String']['input']>;
+  nendsWith?: InputMaybe<Scalars['String']['input']>;
+  neq?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  nstartsWith?: InputMaybe<Scalars['String']['input']>;
+  or?: InputMaybe<Array<StringOperationFilterInput>>;
+  startsWith?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UuidOperationFilterInput = {
+  eq?: InputMaybe<Scalars['UUID']['input']>;
+  gt?: InputMaybe<Scalars['UUID']['input']>;
+  gte?: InputMaybe<Scalars['UUID']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
+  lt?: InputMaybe<Scalars['UUID']['input']>;
+  lte?: InputMaybe<Scalars['UUID']['input']>;
+  neq?: InputMaybe<Scalars['UUID']['input']>;
+  ngt?: InputMaybe<Scalars['UUID']['input']>;
+  ngte?: InputMaybe<Scalars['UUID']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
+  nlt?: InputMaybe<Scalars['UUID']['input']>;
+  nlte?: InputMaybe<Scalars['UUID']['input']>;
+};

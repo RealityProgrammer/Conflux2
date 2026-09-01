@@ -16,6 +16,7 @@ export type GetJoinedCommunityServerQuery = { joinedServers: { totalCount: numbe
 
 export type GetServerRolesByServerIdQueryVariables = Exact<{
   serverId: string;
+  nameFilter?: string | null | undefined;
   after?: string | null | undefined;
 }>;
 
@@ -103,8 +104,12 @@ useInfiniteGetJoinedCommunityServerQuery.getKey = (variables?: GetJoinedCommunit
 useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServerQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetJoinedCommunityServerQuery, GetJoinedCommunityServerQueryVariables>(GetJoinedCommunityServerDocument, variables, options);
 
 export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
-    query GetServerRolesByServerId($serverId: UUID!, $after: String) {
-  communityServerRolesByServerId(serverId: $serverId, after: $after) {
+    query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
+  communityServerRolesByServerId(
+    serverId: $serverId
+    after: $after
+    where: {name: {ilike: $nameFilter}}
+  ) {
     pageInfo {
       endCursor
       hasNextPage

@@ -24,6 +24,7 @@ import {toast} from "react-toastify";
 import type {ServerRoleDto} from "../../api/types.ts";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import {PermissionState} from "../../api/schema.ts";
+import {useDebounceValue} from "usehooks-ts";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
 
@@ -31,7 +32,9 @@ export default function RoleManagement() {
   const { serverId } = useCommunityServerContext();
 
   const queryClient = useQueryClient();
-  const [isEditingRole, setIsEditingRole] = useState(false);
+  const [isEditingRole, setisEditingRole] = useState(false);
+
+  const [roleName, setRoleName] = useDebounceValue("", 500);
 
   const {
     data,
@@ -41,6 +44,7 @@ export default function RoleManagement() {
     isLoading,
   } = useInfiniteGetServerRolesByServerIdQuery({
     serverId,
+    nameFilter: roleName,
     after: null,
   }, {
     initialPageParam: { after: null },
@@ -116,7 +120,7 @@ export default function RoleManagement() {
     }
 
     setSelectedRole(role);
-    setIsEditingRole(false);
+    setisEditingRole(false);
   };
 
   return (
@@ -139,6 +143,7 @@ export default function RoleManagement() {
               fetchNextPage()
             }}
             invalidateRoleQuery={invalidateRoleQuery}
+            setNameFilter={setRoleName}
             onSelectRole={handleSelectRole}
           />
         </section>
@@ -149,7 +154,7 @@ export default function RoleManagement() {
               key={selectedRole.id}
               role={selectedRole}
               isEditingRole={isEditingRole}
-              setIsEditingRole={setIsEditingRole}
+              setIsEditingRole={setisEditingRole}
               setIsFormDirty={setIsFormDirty}
               updateRoleData={updateRoleData}
             />
@@ -171,6 +176,7 @@ type RoleListProps = {
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
   invalidateRoleQuery: () => void;
+  setNameFilter: (value: string) => void;
   onSelectRole: (role: RoleDisplayElement) => void;
 };
 
@@ -181,6 +187,7 @@ function RoleList({
   isFetchingNextPage,
   fetchNextPage,
   invalidateRoleQuery,
+  setNameFilter,
   onSelectRole,
 }: RoleListProps) {
   return (
@@ -189,8 +196,7 @@ function RoleList({
         <input
           type="text"
           // value={newRoleName}
-          // onChange={(e) => setNewRoleName(e.target.value)}
-          // onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
+          onChange={(e) => setNameFilter(e.target.value)}
           placeholder="New role name"
           className="flex-1 input-field h-8 text-sm min-w-0"
         />

@@ -35,6 +35,8 @@ using Conflux.WebApi.NotificationHandlers;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
+using HotChocolate.Data.Filters;
+using HotChocolate.Data.Filters.Expressions;
 using HotChocolate.Types.Descriptors;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
@@ -190,7 +192,8 @@ builder.Services
     .AddDataLoader<MutualFriendsCountDataLoader>()
     .AddDataLoader<RoleMemberCountDataLoader>()
     .AddProjections()
-    .AddAuthorization();
+    .AddAuthorization()
+    .AddFiltering<CustomFilterConvention>();
 
 // general services needed
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
