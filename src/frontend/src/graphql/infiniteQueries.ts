@@ -108,7 +108,7 @@ export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
   communityServerRolesByServerId(
     serverId: $serverId
     after: $after
-    where: {name: {ilike: $nameFilter}}
+    where: { name: { ilike: $nameFilter } }
   ) {
     pageInfo {
       endCursor
