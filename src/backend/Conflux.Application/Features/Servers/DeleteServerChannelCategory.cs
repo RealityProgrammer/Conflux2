@@ -12,11 +12,20 @@ public sealed record DeleteServerChannelCategoryCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.DeleteChannel];
 }
 
+public sealed record ServerChannelCategoryDeletedNotification(Guid ServerId, Guid CategoryId) : INotification;
+
 public sealed class DeleteServerChannelCategoryHandler(
-    IChannelCategoryRepository channelCategoryRepository
+    IChannelCategoryRepository channelCategoryRepository,
+    IMediator mediator
 ) : ICommandHandler<DeleteServerChannelCategoryCommand, Result> {
     public async ValueTask<Result> Handle(DeleteServerChannelCategoryCommand request, CancellationToken cancellationToken) {
         bool deleted = await channelCategoryRepository.Delete(request.ServerId, request.CategoryId, cancellationToken);
-        return deleted ? Result.Success() : Errors.ResourceNotFound("Channel category");
+
+        if (deleted) {
+            await mediator.Publish(new ServerChannelCategoryDeletedNotification(request.ServerId, request.CategoryId), CancellationToken.None);
+            return Result.Success();
+        }
+        
+        return Errors.ResourceNotFound("Channel category");
     }
 }

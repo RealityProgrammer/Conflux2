@@ -4,12 +4,12 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record GetServerSummaryQuery(Guid ServerId) : IQuery<Result<CommunityServerSummaryDto>>;
+public sealed record GetServerSummaryQuery(Guid ServerId) : IQuery<Result<ServerDetailDto>>;
 
 public sealed class GetServerSummaryHandler(
     ICommunityServerRepository repository
-) : IQueryHandler<GetServerSummaryQuery, Result<CommunityServerSummaryDto>> {
-    public async ValueTask<Result<CommunityServerSummaryDto>> Handle(
+) : IQueryHandler<GetServerSummaryQuery, Result<ServerDetailDto>> {
+    public async ValueTask<Result<ServerDetailDto>> Handle(
         GetServerSummaryQuery query, 
         CancellationToken cancellationToken
     ) {
@@ -21,18 +21,18 @@ public sealed class GetServerSummaryHandler(
         }
 
         var profile = profileResult.Value!;
-        List<ChannelCategoryIdentityDto> categories = await GetChannelCategorySummaries(query.ServerId, cancellationToken);
+        List<ChannelCategoryDetailDto> categories = await GetChannelCategorySummaries(query.ServerId, cancellationToken);
 
-        return Result<CommunityServerSummaryDto>.Success(
+        return Result<ServerDetailDto>.Success(
             new(profile.Name, profile.Description, profile.HasAvatar, categories)
         );
     }
 
-    private async Task<List<ChannelCategoryIdentityDto>> GetChannelCategorySummaries(
+    private async Task<List<ChannelCategoryDetailDto>> GetChannelCategorySummaries(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
-        List<ChannelCategoryIdentityDto> result = 
+        List<ChannelCategoryDetailDto> result = 
             await repository.GetChannelCategorySummaries(serverId, cancellationToken);
 
         // TODO: Caching.

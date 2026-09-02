@@ -147,7 +147,8 @@ export default function RoleManagement() {
               fetchNextPage()
             }}
             invalidateRoleQuery={invalidateRoleQuery}
-            setNameFilter={setRoleName}
+            roleName={roleName}
+            setRoleName={setRoleName}
             selectedRoleId={selectedRoleId}
             onSelectRole={handleSelectRole}
           />
@@ -181,7 +182,8 @@ type RoleListProps = {
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
   invalidateRoleQuery: () => void;
-  setNameFilter: (value: string) => void;
+  roleName: string;
+  setRoleName: (value: string) => void;
   selectedRoleId?: string;
   onSelectRole: (role: RoleDisplayElement) => void;
 };
@@ -193,11 +195,12 @@ function RoleList({
   isFetchingNextPage,
   fetchNextPage,
   invalidateRoleQuery,
-  setNameFilter,
+  roleName,
+  setRoleName,
   selectedRoleId,
   onSelectRole,
 }: RoleListProps) {
-  const { serverId } = useCommunityServerContext();
+  const { serverId, memberPermissions } = useCommunityServerContext();
 
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
@@ -210,19 +213,21 @@ function RoleList({
       <div className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
         <input
           type="text"
-          // value={newRoleName}
-          onChange={(e) => setNameFilter(e.target.value)}
+          value={roleName}
+          onChange={(e) => setRoleName(e.target.value)}
           placeholder="New role name"
           className="flex-1 input-field h-8 text-sm min-w-0"
         />
 
-        <button
-          // onClick={handleCreateRole}
-          className="flex-none p-1.5 button-theme-primary rounded cursor-pointer"
-          title="Create role"
-        >
-          <BsPlusLg className="w-4 h-4" onClick={invalidateRoleQuery}/>
-        </button>
+        {memberPermissions.effectivePermissions.CreateRole && (
+          <button
+            // onClick={handleCreateRole}
+            className="flex-none p-1.5 button-theme-primary rounded cursor-pointer"
+            title="Create role"
+          >
+            <BsPlusLg className="w-4 h-4" onClick={invalidateRoleQuery}/>
+          </button>
+        )}
       </div>
 
       <VirtualizedScrollList

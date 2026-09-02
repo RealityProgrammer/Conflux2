@@ -1,5 +1,6 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -12,15 +13,21 @@ public sealed record CreateServerChannelCategoryCommand(
     Guid ExecutorUserId,
     Guid ServerId,
     string Name
-) : ICommand<Result<Guid>>, IServerCommand {
+) : ICommand<Result<ChannelCategoryIdentityDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateChannel];
 }
 
+public sealed record ServerChannelCategoryCreatedNotification(
+    Guid ServerId,
+    ChannelCategoryIdentityDto CategoryIdentity
+) : INotification;
+
 public sealed class CreateServerChannelCategoryHandler(
     IChannelCategoryRepository channelCategoryRepository,
-    IUnitOfWork unitOfWork
-) : ICommandHandler<CreateServerChannelCategoryCommand, Result<Guid>> {
-    public async ValueTask<Result<Guid>> Handle(CreateServerChannelCategoryCommand request, CancellationToken cancellationToken) {
+    IUnitOfWork unitOfWork,
+    IMediator mediator
+) : ICommandHandler<CreateServerChannelCategoryCommand, Result<ChannelCategoryIdentityDto>> {
+    public async ValueTask<Result<ChannelCategoryIdentityDto>> Handle(CreateServerChannelCategoryCommand request, CancellationToken cancellationToken) {
         ChannelCategory category = new() {
             Name = request.Name,
             CommunityServerId = request.ServerId,
@@ -30,8 +37,6 @@ public sealed class CreateServerChannelCategoryHandler(
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return Result<Guid>.Success(category.Id);
         } catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } postgresException) {
             if (postgresException.ConstraintName == "FK_ChannelCategories_CommunityServers_CommunityServerId") {
                 return Errors.ResourceNotFound("Community server");
@@ -43,5 +48,10 @@ public sealed class CreateServerChannelCategoryHandler(
         } catch {
             return Errors.UnexpectedError();
         }
+        
+        ChannelCategoryIdentityDto dto = new(category.Id, category.Name);
+
+        await mediator.Publish(new ServerChannelCategoryCreatedNotification(category.CommunityServerId, dto), CancellationToken.None);
+        return Result<ChannelCategoryIdentityDto>.Success(dto);
     }
 }

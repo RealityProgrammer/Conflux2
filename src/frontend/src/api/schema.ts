@@ -408,9 +408,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfCommunityServerSummaryDto"];
-                        "application/json": components["schemas"]["ApiResponseOfCommunityServerSummaryDto"];
-                        "text/json": components["schemas"]["ApiResponseOfCommunityServerSummaryDto"];
+                        "text/plain": components["schemas"]["ApiResponseOfServerDetailDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerDetailDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerDetailDto"];
                     };
                 };
             };
@@ -455,9 +455,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfGuid"];
-                        "application/json": components["schemas"]["ApiResponseOfGuid"];
-                        "text/json": components["schemas"]["ApiResponseOfGuid"];
+                        "text/plain": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+                        "application/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+                        "text/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
                     };
                 };
             };
@@ -500,9 +500,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfGuid"];
-                        "application/json": components["schemas"]["ApiResponseOfGuid"];
-                        "text/json": components["schemas"]["ApiResponseOfGuid"];
+                        "text/plain": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
                     };
                 };
             };
@@ -617,9 +617,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfGuid"];
-                        "application/json": components["schemas"]["ApiResponseOfGuid"];
-                        "text/json": components["schemas"]["ApiResponseOfGuid"];
+                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
                     };
                 };
             };
@@ -1630,8 +1630,8 @@ export interface components {
         ApiResponse: {
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfCommunityServerSummaryDto: {
-            data: null | components["schemas"]["CommunityServerSummaryDto"];
+        ApiResponseOfChannelCategoryIdentityDto: {
+            data: null | components["schemas"]["ChannelCategoryIdentityDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfDirectMessageResolutionResponse: {
@@ -1644,11 +1644,6 @@ export interface components {
         };
         ApiResponseOfGetMessagesResponse: {
             data: null | components["schemas"]["GetMessagesResponse"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfGuid: {
-            /** Format: uuid */
-            data: string;
             error: components["schemas"]["Error"];
         };
         ApiResponseOfLoginResponse: {
@@ -1677,6 +1672,14 @@ export interface components {
         };
         ApiResponseOfRefreshResponse: {
             data: null | components["schemas"]["RefreshResponse"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfServerChannelIdentityDto: {
+            data: null | components["schemas"]["ServerChannelIdentityDto"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfServerDetailDto: {
+            data: null | components["schemas"]["ServerDetailDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfServerMemberPermissionsDto: {
@@ -1709,11 +1712,16 @@ export interface components {
         ChannelCategoryCreateRequest: {
             name: string;
         };
-        ChannelCategoryIdentityDto: {
+        ChannelCategoryDetailDto: {
             /** Format: uuid */
             id: null | string;
             name: null | string;
-            channels: components["schemas"]["CommunityServerChannelIdentityDto"][];
+            channels: components["schemas"]["ServerChannelIdentityDto"][];
+        };
+        ChannelCategoryIdentityDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         ChannelCreateRequest: {
             name: string;
@@ -1723,20 +1731,8 @@ export interface components {
         };
         /** @enum {string} */
         ChannelType: ChannelType;
-        CommunityServerChannelIdentityDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            channelType: components["schemas"]["ChannelType"];
-        };
         /** @enum {string} */
         CommunityServerChannelType: CommunityServerChannelType;
-        CommunityServerSummaryDto: {
-            name: string;
-            description: null | string;
-            hasAvatar: boolean;
-            channelCategories: components["schemas"]["ChannelCategoryIdentityDto"][];
-        };
         ConfirmEmailRequest: {
             userId: string;
             confirmationCode: string;
@@ -1880,6 +1876,20 @@ export interface components {
             hasMoreBody: boolean;
             /** Format: int32 */
             attachmentCount: number;
+        };
+        ServerChannelIdentityDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            channelType: components["schemas"]["ChannelType"];
+            /** Format: uuid */
+            categoryId: null | string;
+        };
+        ServerDetailDto: {
+            name: string;
+            description: null | string;
+            hasAvatar: boolean;
+            channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
         };
         ServerMemberPermissionsDto: {
             /** Format: uuid */

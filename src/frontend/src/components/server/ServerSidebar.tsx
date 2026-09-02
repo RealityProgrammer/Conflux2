@@ -1,8 +1,9 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {useEffect, useState} from "react";
 import {
+  type ChannelCategoryDetailDto,
   type ChannelCategoryIdentityDto,
-  type CommunityServerChannelIdentityDto,
+  type ServerChannelIdentityDto,
   type ServiceResponse
 } from "../../api/types.ts";
 import {communityServerService} from "../../api/communityServerService.ts";
@@ -28,6 +29,13 @@ import ServerSidebarHeader from "./ServerSidebarHeader.tsx";
 import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import ErrorText from "../ErrorText.tsx";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import type {
+  ServerChannelCategoryCreatedEvent,
+  ServerChannelCategoryDeletedEvent,
+  ServerChannelCreatedEvent, ServerChannelDeletedEvent
+} from "../../api/events.ts";
+import {ChannelType} from "../../api/schema.ts";
 
 const createChannelOrCategorySchema = z.object({
   idempotencyKey: z.string(),
@@ -95,7 +103,7 @@ export default function ServerSidebar() {
           targetCategoryId: null,
         }]);
 
-        const response: ServiceResponse<string> = await communityServerService.createChannelCategory(
+        const response: ServiceResponse<ChannelCategoryIdentityDto> = await communityServerService.createChannelCategory(
           action.idempotencyKey,
           serverId,
           action.name
@@ -103,7 +111,7 @@ export default function ServerSidebar() {
 
         if (response.success) {
           setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
-          appendChannelCategory(response.data!, action.name);
+          appendChannelCategory(response.data!.id, response.data!.name);
         } else {
           setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
             ...s,
@@ -124,7 +132,7 @@ export default function ServerSidebar() {
           targetCategoryId: action.targetCategoryId,
         }]);
 
-        const response = await communityServerService.createChannel(
+        const response: ServiceResponse<ServerChannelIdentityDto> = await communityServerService.createChannel(
           action.idempotencyKey,
           serverId,
           action.name,
@@ -132,9 +140,11 @@ export default function ServerSidebar() {
           action.targetCategoryId
         );
 
-        if (response.success) {
+        if (response.success && response.data) {
+          const channelDto: ServerChannelIdentityDto = response.data;
+
           setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
-          appendChannel(response.data!, action.name, action.channelType, action.targetCategoryId);
+          appendChannel(channelDto.id, channelDto.name, channelDto.channelType === ChannelType.CommunityServerText ? "text" : "voice", action.targetCategoryId);
         } else {
           setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
             ...s,
@@ -171,6 +181,38 @@ export default function ServerSidebar() {
       removeChannel(id);
     }
   };
+
+  useSignalREvent("ServerChannelCategoryCreated", (event: ServerChannelCategoryCreatedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
+
+    appendChannelCategory(event.categoryIdentity.id, event.categoryIdentity.name);
+  });
+
+  useSignalREvent("ServerChannelCategoryDeleted", (event: ServerChannelCategoryDeletedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
+
+    removeChannelCategory(event.categoryId);
+  });
+
+  useSignalREvent("ServerChannelCreated", (event: ServerChannelCreatedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
+
+    appendChannel(event.channel.id, event.channel.name, event.channel.channelType === ChannelType.CommunityServerText ? "text" : "voice", event.channel.categoryId);
+  });
+
+  useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
+
+    removeChannel(event.channelId);
+  });
 
   return (
     <aside
@@ -385,7 +427,7 @@ export default function ServerSidebar() {
 }
 
 interface ChannelCategoryViewProps {
-  category: ChannelCategoryIdentityDto;
+  category: ChannelCategoryDetailDto;
   createStatus: CreateStatus[];
   setCreateValues: (idempotencyKey: string, type: "text" | "voice") => void;
   handleChannelAction: (action: ChannelAction) => void | Promise<void>;
@@ -492,7 +534,7 @@ function ChannelCategoryView({
 function ChannelButton({
   channel,
   handleChannelAction
-}: {channel: CommunityServerChannelIdentityDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
+}: {channel: ServerChannelIdentityDto, handleChannelAction: (action: ChannelAction) => void | Promise<void>}) {
   const { serverId } = useCommunityServerContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

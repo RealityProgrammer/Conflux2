@@ -15,4 +15,10 @@ public interface IConfluxClient {
 
     Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
+    
+    Task ServerChannelCategoryCreated(ServerChannelCategoryCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerChannelCategoryDeleted(ServerChannelCategoryDeletedEvent data, CancellationToken cancellationToken = default);
+    
+    Task ServerChannelCreated(ServerChannelCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerChannelDeleted(ServerChannelDeletedEvent data, CancellationToken cancellationToken = default);
 }

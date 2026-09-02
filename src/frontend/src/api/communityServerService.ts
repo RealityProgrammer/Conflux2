@@ -1,7 +1,7 @@
 import type {AxiosError, AxiosResponse} from "axios";
 import type {
-  BackendResponse,
-  CommunityServerSummaryDto,
+  BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
+  ServerDetailDto,
   ServerMemberPermissionsDto, ServerRoleDto,
   ServiceResponse
 } from "./types.ts";
@@ -49,10 +49,10 @@ export const communityServerService = {
     return `/api/communities/${encodeURIComponent(serverId)}/avatar?${queryParams}`;
   },
 
-  getSummary: async (serverId: string): Promise<ServiceResponse<CommunityServerSummaryDto>> => {
+  getSummary: async (serverId: string): Promise<ServiceResponse<ServerDetailDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<CommunityServerSummaryDto>> =
-        await apiClient.get<BackendResponse<CommunityServerSummaryDto>>(`/communities/${encodeURIComponent(serverId)}/summary`);
+      const response: AxiosResponse<BackendResponse<ServerDetailDto>> =
+        await apiClient.get<BackendResponse<ServerDetailDto>>(`/communities/${encodeURIComponent(serverId)}/summary`);
 
       return {
         success: true,
@@ -60,15 +60,15 @@ export const communityServerService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<CommunityServerSummaryDto>>;
+      const axiosError = error as AxiosError<BackendResponse<ServerDetailDto>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  createChannelCategory: async (idempotencyKey: string, serverId: string, name: string): Promise<ServiceResponse<string>> => {
+  createChannelCategory: async (idempotencyKey: string, serverId: string, name: string): Promise<ServiceResponse<ChannelCategoryIdentityDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<string>> =
-        await apiClient.post<BackendResponse<string>>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
+      const response: AxiosResponse<BackendResponse<ChannelCategoryIdentityDto>> =
+        await apiClient.post<BackendResponse<ChannelCategoryIdentityDto>>(`/communities/${encodeURIComponent(serverId)}/channel-categories`, {
           name,
         }, {
           headers: {
@@ -83,7 +83,7 @@ export const communityServerService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<string>>;
+      const axiosError = error as AxiosError<BackendResponse<ChannelCategoryIdentityDto>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -94,10 +94,10 @@ export const communityServerService = {
     name: string,
     type: "text" | "voice",
     categoryId: string | null
-  ): Promise<ServiceResponse<string>> => {
+  ): Promise<ServiceResponse<ServerChannelIdentityDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<string>> =
-        await apiClient.post<BackendResponse<string>>(`/communities/${encodeURIComponent(serverId)}/channels`, {
+      const response: AxiosResponse<BackendResponse<ServerChannelIdentityDto>> =
+        await apiClient.post<BackendResponse<ServerChannelIdentityDto>>(`/communities/${encodeURIComponent(serverId)}/channels`, {
           name,
           type,
           categoryId
@@ -114,7 +114,7 @@ export const communityServerService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<string>>;
+      const axiosError = error as AxiosError<BackendResponse<ServerChannelIdentityDto>>;
       return handleAxiosError(axiosError);
     }
   },

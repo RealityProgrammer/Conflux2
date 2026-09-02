@@ -1,10 +1,10 @@
-import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../api/types.ts";
+import type {ServerDetailDto, ServerMemberPermissionsDto} from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
 
 interface CommunityServerContextType {
   serverId: string;
-  serverSummary: CommunityServerSummaryDto;
+  serverSummary: ServerDetailDto;
 
   appendChannelCategory: (id: string, name: string) => void;
   appendChannel: (id: string, name: string, type: "text" | "voice", categoryId: string | null) => void;

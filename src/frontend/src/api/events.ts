@@ -1,4 +1,4 @@
-import type {MessageDto, ServerRoleDto} from "./types.ts";
+import type {ChannelCategoryIdentityDto, MessageDto, ServerChannelIdentityDto, ServerRoleDto} from "./types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -40,4 +40,24 @@ export type ServerRoleCreatedEvent = {
 
 export type ServerRoleUpdatedEvent = {
   serverId: string;
+}
+
+export type ServerChannelCategoryCreatedEvent = {
+  serverId: string;
+  categoryIdentity: ChannelCategoryIdentityDto;
+}
+
+export type ServerChannelCategoryDeletedEvent = {
+  serverId: string;
+  categoryId: string;
+}
+
+export type ServerChannelCreatedEvent = {
+  serverId: string;
+  channel: ServerChannelIdentityDto;
+}
+
+export type ServerChannelDeletedEvent = {
+  serverId: string;
+  channelId: string;
 }

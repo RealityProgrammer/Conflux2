@@ -1,7 +1,7 @@
 import {Outlet, useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
-import type {CommunityServerSummaryDto, ServerMemberPermissionsDto} from "../../api/types.ts";
+import type {ServerDetailDto, ServerMemberPermissionsDto} from "../../api/types.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
@@ -80,7 +80,7 @@ export default function ServerLayout() {
 
 interface SuccessfullyLoadedLayoutProps {
   serverId: string;
-  serverSummary: CommunityServerSummaryDto;
+  serverSummary: ServerDetailDto;
   serverSummaryQueryKey: QueryKey
   memberPermissions: ServerMemberPermissionsDto;
   userMemberPermissionQueryKey: QueryKey
@@ -96,7 +96,7 @@ function SuccessfullyLoadedLayout({
   const queryClient = useQueryClient();
 
   const appendChannelCategory = (id: string, name: string) => {
-    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       return {
@@ -119,7 +119,7 @@ function SuccessfullyLoadedLayout({
     type: "text" | "voice",
     categoryId: string | null
   ) => {
-    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData: NoInfer<CommunityServerSummaryDto> | undefined): CommunityServerSummaryDto | undefined => {
+    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData: NoInfer<ServerDetailDto> | undefined): ServerDetailDto | undefined => {
       if (!oldData) return oldData;
 
       if (!oldData.channelCategories || oldData.channelCategories.length === 0) {
@@ -134,6 +134,7 @@ function SuccessfullyLoadedLayout({
                   id,
                   name,
                   channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
+                  categoryId,
                 }
               ]
             }
@@ -153,6 +154,7 @@ function SuccessfullyLoadedLayout({
                   id,
                   name,
                   channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
+                  categoryId,
                 },
               ],
             };
@@ -165,7 +167,7 @@ function SuccessfullyLoadedLayout({
   };
 
   const removeChannelCategory = (id: string) => {
-    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       const removingCategory = oldData.channelCategories.find(c => c.id === id);
@@ -204,7 +206,7 @@ function SuccessfullyLoadedLayout({
   };
 
   const removeChannel = (id: string) => {
-    queryClient.setQueryData<CommunityServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       return {
