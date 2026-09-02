@@ -25,6 +25,8 @@ import type {ServerRoleDto} from "../../api/types.ts";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import {PermissionState} from "../../api/schema.ts";
 import {useDebounceValue} from "usehooks-ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import type {ServerRoleCreatedEvent} from "../../api/events.ts";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
 
@@ -32,7 +34,7 @@ export default function RoleManagement() {
   const { serverId } = useCommunityServerContext();
 
   const queryClient = useQueryClient();
-  const [isEditingRole, setisEditingRole] = useState(false);
+  const [isEditingRole, setIsEditingRole] = useState(false);
 
   const [roleName, setRoleName] = useDebounceValue("", 500);
 
@@ -62,13 +64,13 @@ export default function RoleManagement() {
 
   const invalidateRoleQuery = () => {
     queryClient.invalidateQueries({
-      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
+      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, nameFilter: roleName, after: null }),
     });
   };
 
   const updateRoleData = (role: ServerRoleDto) => {
     queryClient.setQueryData<InfiniteData<GetServerRolesByServerIdQuery>>(
-      useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
+      useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, nameFilter: roleName, after: null }),
       (oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
         if (!oldData) return oldData;
 
@@ -105,7 +107,9 @@ export default function RoleManagement() {
   const allRoles: RoleDisplayElement[] =
     data?.pages.flatMap((page: GetServerRolesByServerIdQuery): RoleDisplayElement[] => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
 
-  const [selectedRole, setSelectedRole] = useState<RoleDisplayElement | undefined>();
+  const [selectedRoleId, setSelectedRoleId] = useState<string | undefined>();
+
+  const selectedRole = allRoles.find(role => role.id === selectedRoleId);
 
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
@@ -119,8 +123,8 @@ export default function RoleManagement() {
       return;
     }
 
-    setSelectedRole(role);
-    setisEditingRole(false);
+    setSelectedRoleId(role.id);
+    setIsEditingRole(false);
   };
 
   return (
@@ -144,17 +148,18 @@ export default function RoleManagement() {
             }}
             invalidateRoleQuery={invalidateRoleQuery}
             setNameFilter={setRoleName}
+            selectedRoleId={selectedRoleId}
             onSelectRole={handleSelectRole}
           />
         </section>
 
         <section className={`flex-1 bg-gray-700 rounded-lg p-3 overflow-y-auto border-gray-600 border-2 space-y-2 transition-colors ${isShaking ? "animate-horizontalShake" : ""}`}>
-          {selectedRole ? (
+          {selectedRoleId && selectedRole ? (
             <RoleDetails
-              key={selectedRole.id}
+              key={selectedRoleId}
               role={selectedRole}
               isEditingRole={isEditingRole}
-              setIsEditingRole={setisEditingRole}
+              setIsEditingRole={setIsEditingRole}
               setIsFormDirty={setIsFormDirty}
               updateRoleData={updateRoleData}
             />
@@ -177,6 +182,7 @@ type RoleListProps = {
   fetchNextPage: () => void;
   invalidateRoleQuery: () => void;
   setNameFilter: (value: string) => void;
+  selectedRoleId?: string;
   onSelectRole: (role: RoleDisplayElement) => void;
 };
 
@@ -188,8 +194,17 @@ function RoleList({
   fetchNextPage,
   invalidateRoleQuery,
   setNameFilter,
+  selectedRoleId,
   onSelectRole,
 }: RoleListProps) {
+  const { serverId } = useCommunityServerContext();
+
+  useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
+    if (serverId !== event.serverId) return;
+
+    invalidateRoleQuery();
+  });
+
   return (
     <>
       <div className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
@@ -224,7 +239,7 @@ function RoleList({
 
           return (
             <button
-              className="w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer"
+              className={`w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer ${selectedRoleId === role.id ? "bg-white/8" : ""}`}
               onClick={() => onSelectRole(role)}
             >
               <BsCircleFill className="flex-none size-3 fill-blue-500"/>
@@ -572,7 +587,7 @@ function RoleDetails({
 
       {memberPermissions.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
         <>
-          <button className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
+          <button type="button" className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
             Delete Role
           </button>
         </>

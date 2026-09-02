@@ -164,7 +164,7 @@ public sealed class CommunityServerController(
 
     [HttpPost("{serverId:guid}/roles")]
     [Idempotent(30)]
-    public async Task<ActionResult<ApiResponse<Guid>>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
+    public async Task<ActionResult<ApiResponse<ServerRoleDto>>> CreateRole(Guid serverId, [FromBody] CreateRoleRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
@@ -174,7 +174,7 @@ public sealed class CommunityServerController(
         var result = await mediator.Send(new CreateServerRoleCommand(userId, serverId, request.Name));
         
         if (result.IsSuccess) {
-            return Created((Uri?)null, new ApiResponse<Guid>(result.Value, Error.None));
+            return Created((Uri?)null, new ApiResponse<ServerRoleDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {

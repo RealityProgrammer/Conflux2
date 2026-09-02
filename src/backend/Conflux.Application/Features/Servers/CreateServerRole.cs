@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -12,19 +13,26 @@ public sealed record CreateServerRoleCommand(
     Guid ExecutorUserId,
     Guid ServerId,
     string Name
-) : ICommand<Result<Guid>>, IServerCommand {
+) : ICommand<Result<ServerRoleDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateRole];
 }
 
+public sealed record ServerRoleCreatedNotification(
+    Guid ServerId,
+    ServerRoleDto Role
+) : INotification;
+
 public sealed class CreateServerRoleHandler(
     ICommunityServerRoleRepository repository,
-    IUnitOfWork unitOfWork
-) : ICommandHandler<CreateServerRoleCommand, Result<Guid>> {
-    public async ValueTask<Result<Guid>> Handle(CreateServerRoleCommand command, CancellationToken cancellationToken) {
+    IUnitOfWork unitOfWork,
+    IMediator mediator
+) : ICommandHandler<CreateServerRoleCommand, Result<ServerRoleDto>> {
+    public async ValueTask<Result<ServerRoleDto>> Handle(CreateServerRoleCommand command, CancellationToken cancellationToken) {
         CommunityServerRole role = new() {
             CommunityServerId = command.ServerId,
             Name = command.Name,
             CreatorUserId = command.ExecutorUserId,
+            AuthorizeLevel = 1,
         };
 
         repository.Add(role);
@@ -42,7 +50,16 @@ public sealed class CreateServerRoleHandler(
         } catch {
             return Errors.UnexpectedError();
         }
+
+        ServerRoleDto dto = new(
+            role.Id,
+            role.Name,
+            role.Permissions.ToDictionary(p => p.Permission, p => p.State),
+            role.AuthorizeLevel
+        );
+
+        await mediator.Publish(new ServerRoleCreatedNotification(command.ServerId, dto), CancellationToken.None);
         
-        return Result<Guid>.Success(role.Id);
+        return Result<ServerRoleDto>.Success(dto);
     }
 }

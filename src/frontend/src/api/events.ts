@@ -1,4 +1,4 @@
-import type {MessageDto} from "./types.ts";
+import type {MessageDto, ServerRoleDto} from "./types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -31,4 +31,9 @@ export type MessageEditedEvent = {
 export type UpdateDmConversationListEvent = {
   channelId: string;
   unreadCount: number;
+}
+
+export type ServerRoleCreatedEvent = {
+  serverId: string;
+  role: ServerRoleDto;
 }
