@@ -6,9 +6,13 @@ import CommunityServerContextProvider from "../../contexts/CommunityServerContex
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ChannelType} from "../../api/schema.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import type {ServerRoleUpdatedEvent} from "../../api/events.ts";
 
 export default function ServerLayout() {
   const { serverId } = useParams();
+
+  const queryClient = useQueryClient();
 
   const serverSummaryQueryKey: QueryKey = ["getServerSummary", serverId];
   const userMemberPermissionQueryKey: QueryKey = ["getSessionUserMemberServerPermissions", serverId];
@@ -27,7 +31,7 @@ export default function ServerLayout() {
   });
 
   const {
-    data: userPermissions,
+    data: memberPermissions,
     isLoading: isLoadingUserPermissions,
     isError: isLoadingUserPermissionsError,
   } = useQuery({
@@ -39,6 +43,14 @@ export default function ServerLayout() {
     staleTime: 30 * 60 * 1000,
   });
 
+  useSignalREvent("ServerRoleUpdated", (data: ServerRoleUpdatedEvent) => {
+    if (serverId !== data.serverId) return;
+
+    queryClient.invalidateQueries({
+      queryKey: userMemberPermissionQueryKey,
+    });
+  });
+
   if (isLoadingServerSummary || isLoadingUserPermissions) {
     return (
       <div className="size-full flex flex-row justify-center items-center">
@@ -47,7 +59,7 @@ export default function ServerLayout() {
     );
   }
 
-  if (isLoadingServerSummaryError || isLoadingUserPermissionsError || !serverSummary || !userPermissions) {
+  if (isLoadingServerSummaryError || isLoadingUserPermissionsError || !serverSummary || !memberPermissions) {
     return (
       <div className="size-full flex flex-row justify-center items-center">
         <span className="text-white">Failed to load some information. Please try again later...</span>
@@ -60,7 +72,7 @@ export default function ServerLayout() {
       serverId={serverId!}
       serverSummary={serverSummary}
       serverSummaryQueryKey={serverSummaryQueryKey}
-      memberPermissions={userPermissions}
+      memberPermissions={memberPermissions}
       userMemberPermissionQueryKey={userMemberPermissionQueryKey}
     />
   );

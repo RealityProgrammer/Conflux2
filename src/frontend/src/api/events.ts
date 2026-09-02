@@ -37,3 +37,7 @@ export type ServerRoleCreatedEvent = {
   serverId: string;
   role: ServerRoleDto;
 }
+
+export type ServerRoleUpdatedEvent = {
+  serverId: string;
+}

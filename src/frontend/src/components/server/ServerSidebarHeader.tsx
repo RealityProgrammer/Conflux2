@@ -34,6 +34,16 @@ export default function ServerSidebarHeader({
 
   const { serverSummary: { name: serverName } } = useCommunityServerContext();
 
+  const allowAccessToServerManagement = (memberPermissions.effectivePermissions.CreateRole ||
+    memberPermissions.effectivePermissions.UpdateRole ||
+    memberPermissions.effectivePermissions.DeleteRole) ?? false;
+
+  useEffect(() => {
+    if (!allowAccessToServerManagement) {
+      setIsOpenSettingDialog(false);
+    }
+  }, [memberPermissions]);
+
   return (
     <header className="w-full aspect-video relative group">
       <section
@@ -93,7 +103,7 @@ export default function ServerSidebarHeader({
                 <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
               </DropdownMenu.Item>
 
-              {(memberPermissions.effectivePermissions.CreateRole || memberPermissions.effectivePermissions.UpdateRole || memberPermissions.effectivePermissions.DeleteRole) && (
+              {allowAccessToServerManagement && (
                 <>
                   <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
@@ -120,10 +130,12 @@ export default function ServerSidebarHeader({
         onOpenChange={setIsOpenInvitationDialog}
       />
 
-      <ServerSettingsDialog
-        open={isOpenSettingDialog}
-        onOpenChanged={setIsOpenSettingDialog}
-      />
+      {allowAccessToServerManagement && (
+        <ServerSettingsDialog
+          open={isOpenSettingDialog}
+          onOpenChanged={setIsOpenSettingDialog}
+        />
+      )}
     </header>
   );
 }

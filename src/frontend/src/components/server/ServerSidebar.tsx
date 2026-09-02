@@ -1,5 +1,5 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {
   type ChannelCategoryIdentityDto,
   type CommunityServerChannelIdentityDto,
@@ -61,6 +61,7 @@ export default function ServerSidebar() {
   const {
     serverId,
     serverSummary,
+    memberPermissions,
     appendChannelCategory,
     appendChannel,
     removeChannelCategory,
@@ -69,6 +70,12 @@ export default function ServerSidebar() {
   const [createStatus, setCreateStatus] = useState<CreateStatus[]>([]);
   const [isCreateChannelOrCategoryDialogOpen, setIsCreateChannelOrCategoryDialogOpen] = useState(false);
   const [deletionState, setDeletionState] = useState<DeletionState | undefined>();
+
+  useEffect(() => {
+    if (isCreateChannelOrCategoryDialogOpen && !memberPermissions.effectivePermissions.CreateChannel) {
+      setIsCreateChannelOrCategoryDialogOpen(false);
+    }
+  }, [memberPermissions]);
 
   const formMethods = useForm<CreateChannelOrCategoryFormValues>({
     resolver: zodResolver(createChannelOrCategorySchema),

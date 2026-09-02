@@ -18,10 +18,13 @@ public sealed record UpdateServerRoleCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateRole];
 }
 
+public sealed record ServerRoleUpdatedNotification(Guid ServerId) : INotification;
+
 public sealed class UpdateServerRoleHandler(
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork,
-    IServerPermissionsCacheService serverPermissionsCacheService
+    IServerPermissionsCacheService serverPermissionsCacheService,
+    IMediator mediator
 ) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
         CommunityServerRole? role = await repository.FindById(command.RoleId, true, cancellationToken);
@@ -35,7 +38,7 @@ public sealed class UpdateServerRoleHandler(
         }
 
         if (role.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.IsSet) {
-            
+            return Errors.Forbidden("Updating authorize level of Default role is not allowed.");
         }
         
         if (command.Name.IsSet) {
@@ -76,6 +79,8 @@ public sealed class UpdateServerRoleHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             await serverPermissionsCacheService.IncrementServerPermissionVersion(command.ServerId, CancellationToken.None);
+
+            await mediator.Publish(new ServerRoleUpdatedNotification(command.ServerId), CancellationToken.None);
             
             return Result<ServerRoleDto>.Success(new(
                 role.Id,
