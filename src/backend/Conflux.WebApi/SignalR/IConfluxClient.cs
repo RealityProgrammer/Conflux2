@@ -12,4 +12,6 @@ public interface IConfluxClient {
     Task MessageDeleted(MessageDeletedEvent data, CancellationToken cancellationToken = default);
     
     Task UpdateDmConversationList(UpdateDmConversationListEvent data, CancellationToken cancellationToken = default);
+
+    Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
 }

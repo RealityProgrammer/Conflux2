@@ -7,37 +7,39 @@ public sealed class JoinTracker(
 ) {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
-    public async Task IncrementChannelJoinCount(string connectionId, string channelId) {
+    public async Task IncrementChannelJoinCount(string connectionId, Guid channelId) {
         var key = GetChannelKey(connectionId);
         
-        await _database.HashIncrementAsync(key, channelId);
+        await _database.HashIncrementAsync(key, channelId.ToString());
         await _database.KeyExpireAsync(key, TimeSpan.FromHours(24));
     }
 
-    public async Task DecrementChannelJoinCount(string connectionId, string channelId) {
+    public async Task DecrementChannelJoinCount(string connectionId, Guid channelId) {
         var key = GetChannelKey(connectionId);
+        string channelIdString = channelId.ToString();
         
-        long count = await _database.HashDecrementAsync(key, channelId);
+        long count = await _database.HashDecrementAsync(key, channelIdString);
 
         if (count <= 0) {
-            await _database.HashDeleteAsync(key, channelId);
+            await _database.HashDeleteAsync(key, channelIdString);
         }
     }
 
-    public async Task IncrementServerJoinCount(string connectionId, string serverId) {
+    public async Task IncrementServerJoinCount(string connectionId, Guid serverId) {
         var key = GetServerKey(connectionId);
 
-        await _database.HashIncrementAsync(key, serverId);
+        await _database.HashIncrementAsync(key, serverId.ToString());
         await _database.KeyExpireAsync(key, TimeSpan.FromHours(24));
     }
     
-    public async Task DecrementServerJoinCount(string connectionId, string serverId) {
+    public async Task DecrementServerJoinCount(string connectionId, Guid serverId) {
         var key = GetServerKey(connectionId);
+        string serverIdString = serverId.ToString();
         
-        long count = await _database.HashDecrementAsync(key, serverId);
+        long count = await _database.HashDecrementAsync(key, serverIdString);
 
         if (count <= 0) {
-            await _database.HashDeleteAsync(key, serverId);
+            await _database.HashDeleteAsync(key, serverIdString);
         }
     }
     

@@ -7,28 +7,28 @@ namespace Conflux.WebApi.SignalR;
 public sealed class GatewayHub(
     JoinTracker joinTracker
 ) : Hub<IConfluxClient> {
-    public async Task JoinChannel(string channelId) {
+    public async Task JoinChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;
         
         await Groups.AddToGroupAsync(connectionId, $"channel:{channelId}");
         await joinTracker.IncrementChannelJoinCount(connectionId, channelId);
     }
 
-    public async Task LeaveChannel(string channelId) {
+    public async Task LeaveChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;
         
         await Groups.RemoveFromGroupAsync(connectionId, $"channel:{channelId}");
         await joinTracker.DecrementChannelJoinCount(connectionId, channelId);
     }
 
-    public async Task JoinServer(string serverId) {
+    public async Task JoinServer(Guid serverId) {
         string connectionId = Context.ConnectionId;
         
         await Groups.AddToGroupAsync(connectionId, $"server:{serverId}");
         await joinTracker.IncrementServerJoinCount(connectionId, serverId);
     }
 
-    public async Task LeaveServer(string serverId) {
+    public async Task LeaveServer(Guid serverId) {
         string connectionId = Context.ConnectionId;
         
         await Groups.RemoveFromGroupAsync(connectionId, $"server:{serverId}");

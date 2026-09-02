@@ -7,7 +7,10 @@ export default function useSignalREvent(methodName: string, callback: (...args: 
   callbackRef.current = callback;
 
   useEffect(() => {
-    if (!connection || !isConnected) return;
+    if (!connection || !isConnected) {
+      console.log("useSignalREvent: no connection.");
+      return;
+    }
 
     const handler = (...args: any[]) => callbackRef.current(...args);
 
