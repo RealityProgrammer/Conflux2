@@ -223,7 +223,12 @@ builder.Services.AddMediator(options => {
 });
 
 builder.Services.AddSingleton<JoinTracker>();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options => {
+        options.PayloadSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
 
 // Conflux services.
 builder.Services

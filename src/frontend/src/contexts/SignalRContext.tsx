@@ -37,7 +37,7 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
         withCredentials: true,
         transport: HttpTransportType.WebSockets,
       })
-      .configureLogging(LogLevel.Debug)
+      .configureLogging(LogLevel.Trace)
       .withAutomaticReconnect()
       .build();
 

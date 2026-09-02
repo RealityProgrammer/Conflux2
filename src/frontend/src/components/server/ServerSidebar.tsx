@@ -183,6 +183,8 @@ export default function ServerSidebar() {
   };
 
   useSignalREvent("ServerChannelCategoryCreated", (event: ServerChannelCategoryCreatedEvent) => {
+    console.log("created channel category", JSON.stringify(event));
+
     if (event.serverId !== serverId) {
       return;
     }
