@@ -25,4 +25,13 @@ partial class Query {
             .OrderBy(m => m.CreatedAt)
             .Select(m => m.CommunityServer);
     }
+
+    [UseProjection, Authorize, UseSingleOrDefault]
+    public IQueryable<CommunityServer> GetCommunityServerById(
+        Guid id,
+        [Service] ApplicationDbContext dbContext
+    ) {
+        return dbContext.CommunityServers
+            .Where(m => m.Id == id);
+    }
 }

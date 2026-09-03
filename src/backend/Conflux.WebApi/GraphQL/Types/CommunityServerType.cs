@@ -1,4 +1,5 @@
 using Conflux.Domain.Entities;
+using Conflux.Infrastructure;
 using Conflux.WebApi.GraphQL.DataLoaders;
 
 namespace Conflux.WebApi.GraphQL.Types;

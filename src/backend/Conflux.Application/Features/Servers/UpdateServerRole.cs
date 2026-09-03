@@ -24,6 +24,7 @@ public sealed class UpdateServerRoleHandler(
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork,
     IServerPermissionsCacheService serverPermissionsCacheService,
+    IServerPermissionsProvider permissionsProvider,
     IMediator mediator
 ) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
@@ -39,6 +40,17 @@ public sealed class UpdateServerRoleHandler(
 
         if (role.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.IsSet) {
             return Errors.Forbidden("Updating authorize level of Default role is not allowed.");
+        }
+        
+        // restrict member from updating role with higher authorize level
+        var result = await permissionsProvider.GetUserPermissions(command.ServerId, command.ExecutorUserId, cancellationToken);
+
+        if (!result.IsSuccess) {
+            return result.Error;
+        }
+
+        if (role.AuthorizeLevel >= result.Value!.AuthorizeLevel) {
+            return Errors.Forbidden("Updating role with authorize level higher or equals to yours is not allowed.");
         }
         
         if (command.Name.IsSet) {

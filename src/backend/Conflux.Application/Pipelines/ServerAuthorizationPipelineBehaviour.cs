@@ -20,17 +20,17 @@ public sealed class ServerAuthorizationPipelineBehaviour<TMessage, TResponse>(
         }
 
         IEnumerable<ServerPermission> requiredPermissions = message.RequiredPermissions;
-        var effectivePermissions = result.Value!.EffectivePermissions;
+        var userEffectivePermissions = result.Value!.EffectivePermissions;
         
         switch (requiredPermissions) {
             // quick skip if the effective permissions map has less element than required permission (somehow)
-            case ICollection<ServerPermission> collection when effectivePermissions.Count < collection.Count:
-            case IReadOnlyCollection<ServerPermission> readOnlyColl when effectivePermissions.Count < readOnlyColl.Count:
+            case ICollection<ServerPermission> collection when userEffectivePermissions.Count < collection.Count:
+            case IReadOnlyCollection<ServerPermission> readOnlyColl when userEffectivePermissions.Count < readOnlyColl.Count:
                 return TResponse.Failure(Errors.Forbidden("Insufficient permissions."));
 
             default:
                 foreach (var permission in requiredPermissions) {
-                    if (!effectivePermissions.TryGetValue(permission, out bool isGranted) || !isGranted) {
+                    if (!userEffectivePermissions.TryGetValue(permission, out bool isGranted) || !isGranted) {
                         return TResponse.Failure(Errors.Forbidden("Insufficient permissions."));
                     }
                 }
