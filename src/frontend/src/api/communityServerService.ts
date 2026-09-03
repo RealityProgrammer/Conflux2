@@ -183,5 +183,20 @@ export const communityServerService = {
       const axiosError = error as AxiosError<BackendResponse<ServerRoleDto>>;
       return handleAxiosError(axiosError);
     }
+  },
+
+  deleteRole: async (serverId: string, roleId: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.delete<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/roles/${encodeURIComponent(roleId)}`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
   }
 }

@@ -42,6 +42,11 @@ export type ServerRoleUpdatedEvent = {
   serverId: string;
 }
 
+export type ServerRoleDeletedEvent = {
+  serverId: string;
+  roleId: string;
+}
+
 export type ServerChannelCategoryCreatedEvent = {
   serverId: string;
   categoryIdentity: ChannelCategoryIdentityDto;

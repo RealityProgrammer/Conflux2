@@ -328,6 +328,10 @@
     animation: animate-horizontalShake 0.1s ease-in-out 0s 2;
 }
 
+@utility centered-dialog {
+    @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[calc(100dvw-2rem)] max-h-[calc(100dvh-2rem)]
+}
+
 @font-face {
     font-family: 'DeterminationMono';
     src: url('/public/fonts/DeterminationMono.ttf') format('truetype');

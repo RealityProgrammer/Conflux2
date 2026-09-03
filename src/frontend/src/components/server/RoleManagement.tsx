@@ -26,7 +26,7 @@ import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import {PermissionState} from "../../api/schema.ts";
 import {useDebounceValue} from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {ServerRoleCreatedEvent} from "../../api/events.ts";
+import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
 
@@ -104,6 +104,26 @@ export default function RoleManagement() {
     );
   };
 
+  const deleteRoleData = (roleId: string) => {
+    queryClient.setQueryData<InfiniteData<GetServerRolesByServerIdQuery>>(
+      useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, nameFilter: roleName, after: null }),
+      (oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map(page => ({
+            ...page,
+            communityServerRolesByServerId: !page.communityServerRolesByServerId ? null : {
+              ...page.communityServerRolesByServerId!,
+              nodes: page.communityServerRolesByServerId?.nodes!.filter(node => node.id !== roleId),
+            },
+          })),
+        };
+      }
+    );
+  };
+
   const allRoles: RoleDisplayElement[] =
     data?.pages.flatMap((page: GetServerRolesByServerIdQuery): RoleDisplayElement[] => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
 
@@ -127,6 +147,16 @@ export default function RoleManagement() {
     setIsEditingRole(false);
   };
 
+  useSignalREvent("ServerRoleDeleted", (event: ServerRoleDeletedEvent) => {
+    if (serverId !== event.serverId) return;
+
+    deleteRoleData(event.roleId);
+
+    if (selectedRoleId === event.roleId) {
+      setSelectedRoleId(undefined);
+    }
+  });
+
   return (
     <>
       <header className="flex-none mb-0">
@@ -137,7 +167,7 @@ export default function RoleManagement() {
       </header>
 
       <div className="flex-1 flex gap-2 min-h-0">
-        <section className="w-64 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
+        <section className="w-48 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
           <RoleList
             roles={allRoles}
             isLoading={isLoading}
@@ -150,7 +180,8 @@ export default function RoleManagement() {
             roleName={roleName}
             setRoleName={setRoleName}
             selectedRoleId={selectedRoleId}
-            onSelectRole={handleSelectRole}
+            setSelectedRole={handleSelectRole}
+            deleteRoleData={deleteRoleData}
           />
         </section>
 
@@ -163,6 +194,7 @@ export default function RoleManagement() {
               setIsEditingRole={setIsEditingRole}
               setIsFormDirty={setIsFormDirty}
               updateRoleData={updateRoleData}
+              deleteRoleData={deleteRoleData}
             />
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 select-none">
@@ -185,7 +217,8 @@ type RoleListProps = {
   roleName: string;
   setRoleName: (value: string) => void;
   selectedRoleId?: string;
-  onSelectRole: (role: RoleDisplayElement) => void;
+  setSelectedRole: (role: RoleDisplayElement) => void;
+  deleteRoleData: (roleId: string) => void;
 };
 
 function RoleList({
@@ -198,7 +231,8 @@ function RoleList({
   roleName,
   setRoleName,
   selectedRoleId,
-  onSelectRole,
+  setSelectedRole,
+  deleteRoleData,
 }: RoleListProps) {
   const { serverId, memberPermissions } = useCommunityServerContext();
 
@@ -245,11 +279,11 @@ function RoleList({
           return (
             <button
               className={`w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer ${selectedRoleId === role.id ? "bg-white/8" : ""}`}
-              onClick={() => onSelectRole(role)}
+              onClick={() => setSelectedRole(role)}
             >
-              <BsCircleFill className="flex-none size-3 fill-blue-500"/>
+              <BsCircleFill className="flex-none size-2.5 fill-blue-500"/>
 
-              <span className="flex-1 truncate">{role.name}</span>
+              <span className="flex-1 truncate text-sm">{role.name}</span>
               <span className="flex-none truncate text-gray-500 text-xs">{role.numMembers}</span>
             </button>
           )
@@ -284,6 +318,7 @@ type RoleDetailsProps = {
   setIsEditingRole: (value: boolean) => void;
   setIsFormDirty: (value: boolean) => void;
   updateRoleData: (value: ServerRoleDto) => void;
+  deleteRoleData: (roleId: string) => void;
 }
 
 function RoleDetails({
@@ -292,6 +327,7 @@ function RoleDetails({
   setIsEditingRole,
   setIsFormDirty,
   updateRoleData,
+  deleteRoleData,
 }: RoleDetailsProps) {
   const { serverId, memberPermissions } = useCommunityServerContext();
 
@@ -345,6 +381,16 @@ function RoleDetails({
       setIsFormDirty(false);
     } else {
       setError("root", {message: response.error?.message ?? "Unknown error."});
+    }
+  };
+
+  const handleDeleteRole = async () => {
+    const response = await communityServerService.deleteRole(serverId, role.id);
+
+    if (response.success) {
+      deleteRoleData(role.id);
+    } else {
+      toast.error("Failed to delete role.");
     }
   };
 
@@ -472,69 +518,71 @@ function RoleDetails({
               Role
             </Accordion.Trigger>
 
-            <Accordion.Content className="grid grid-cols-4 gap-2 p-2">
-              <li className="flex flex-row items-center gap-2 text-sm">
-                <span className="flex-1">Create Role</span>
+            <Accordion.Content className="border-t-2 border-t-gray-600">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Create Role</span>
 
-                <Controller
-                  control={control}
-                  name="permissions.CreateRole"
-                  render={({field}) => (
-                    <ErrorPopover
-                      open={!!errors.permissions?.CreateRole}
-                      content={errors.permissions?.CreateRole?.message}
-                    >
-                      <PermissionStatesPill
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditingRole}
-                      />
-                    </ErrorPopover>
-                  )}
-                />
-              </li>
+                  <Controller
+                    control={control}
+                    name="permissions.CreateRole"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.CreateRole}
+                        content={errors.permissions?.CreateRole?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
 
-              <li className="flex flex-row items-center gap-2 text-sm">
-                <span className="flex-1">Update Role</span>
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Update Role</span>
 
-                <Controller
-                  control={control}
-                  name="permissions.UpdateRole"
-                  render={({field}) => (
-                    <ErrorPopover
-                      open={!!errors.permissions?.UpdateRole}
-                      content={errors.permissions?.UpdateRole?.message}
-                    >
-                      <PermissionStatesPill
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditingRole}
-                      />
-                    </ErrorPopover>
-                  )}
-                />
-              </li>
+                  <Controller
+                    control={control}
+                    name="permissions.UpdateRole"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.UpdateRole}
+                        content={errors.permissions?.UpdateRole?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
 
-              <li className="flex flex-row items-center gap-2 text-sm">
-                <span className="flex-1">Delete Role</span>
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Delete Role</span>
 
-                <Controller
-                  control={control}
-                  name="permissions.DeleteRole"
-                  render={({field}) => (
-                    <ErrorPopover
-                      open={!!errors.permissions?.DeleteRole}
-                      content={errors.permissions?.DeleteRole?.message}
-                    >
-                      <PermissionStatesPill
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditingRole}
-                      />
-                    </ErrorPopover>
-                  )}
-                />
-              </li>
+                  <Controller
+                    control={control}
+                    name="permissions.DeleteRole"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.DeleteRole}
+                        content={errors.permissions?.DeleteRole?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+              </ul>
             </Accordion.Content>
           </Accordion.Item>
 
@@ -543,29 +591,30 @@ function RoleDetails({
               Channel
             </Accordion.Trigger>
 
-            <Accordion.Content className="grid grid-cols-4 gap-2 p-2">
-              <li className="flex flex-row items-center gap-2 text-sm">
-                <span className="flex-1">Create Channel</span>
+            <Accordion.Content className="border-t-2 border-t-gray-600">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Create Channel</span>
 
-                <Controller
-                  control={control}
-                  name="permissions.CreateChannel"
-                  render={({field}) => (
-                    <ErrorPopover
-                      open={!!errors.permissions?.CreateChannel}
-                      content={errors.permissions?.CreateChannel?.message}
-                    >
-                      <PermissionStatesPill
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditingRole}
-                      />
-                    </ErrorPopover>
-                  )}
-                />
-              </li>
+                  <Controller
+                    control={control}
+                    name="permissions.CreateChannel"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.CreateChannel}
+                        content={errors.permissions?.CreateChannel?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
 
-              <li className="flex flex-row items-center gap-2 text-sm">
+                <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Delete Channel</span>
 
                 <Controller
@@ -585,17 +634,22 @@ function RoleDetails({
                   )}
                 />
               </li>
+              </ul>
             </Accordion.Content>
           </Accordion.Item>
         </Accordion.Root>
       </section>
 
       {memberPermissions.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
-        <>
-          <button type="button" className="button-theme-danger p-2 rounded-md cursor-pointer float-right mt-2">
+        <div className="flex flex-row justify-end">
+          <button
+            type="button"
+            className="button-theme-danger p-2 rounded-md cursor-pointer ml-auto mt-2"
+            onClick={handleDeleteRole}
+          >
             Delete Role
           </button>
-        </>
+        </div>
       )}
     </form>
   );

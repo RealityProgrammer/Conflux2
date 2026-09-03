@@ -15,6 +15,7 @@ public interface IConfluxClient {
 
     Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerRoleDeleted(ServerRoleDeletedEvent data, CancellationToken cancellationToken = default);
     
     Task ServerChannelCategoryCreated(ServerChannelCategoryCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerChannelCategoryDeleted(ServerChannelCategoryDeletedEvent data, CancellationToken cancellationToken = default);
