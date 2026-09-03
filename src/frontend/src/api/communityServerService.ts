@@ -1,7 +1,7 @@
 import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
-  ServerDetailDto,
+  ServerDetailDto, ServerIdentityDto,
   ServerMemberPermissionsDto, ServerRoleDto,
   ServiceResponse
 } from "./types.ts";
@@ -11,7 +11,7 @@ import type {PermissionState} from "../graphql/types.ts";
 import type {ServerPermission} from "./schema.ts";
 
 export const communityServerService = {
-  create: async (idempotencyKey: string, name: string, avatar?: File): Promise<ServiceResponse> => {
+  createServer: async (idempotencyKey: string, name: string, avatar?: File): Promise<ServiceResponse<ServerIdentityDto>> => {
     try {
       const formData = new FormData();
 
@@ -21,7 +21,7 @@ export const communityServerService = {
         formData.append("avatar", avatar);
       }
 
-      const response: AxiosResponse<BackendResponse> =
+      const response: AxiosResponse<BackendResponse<ServerIdentityDto>> =
         await apiClient.post(`/communities`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -32,9 +32,10 @@ export const communityServerService = {
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
+      const axiosError = error as AxiosError<BackendResponse<ServerIdentityDto>>;
       return handleAxiosError(axiosError);
     }
   },

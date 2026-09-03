@@ -317,7 +317,7 @@ export default function ServerSidebar() {
             setIsCreateChannelOrCategoryDialogOpen(false);
           }
         }}
-        methods={formMethods}
+        formMethods={formMethods}
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 rounded-md text-white"
         headerIcon={(<BsChatText className="size-10 fill-white"/>)}
         title={"Create new Channel or Category"}

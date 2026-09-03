@@ -26,7 +26,7 @@ public sealed class CommunityServerController(
 ) : ControllerBase {
     [HttpPost]
     [Idempotent(360)]
-    public async Task<ActionResult<ApiResponse>> CreateCommunityServer([FromForm] CreateServerRequest serverRequest) {
+    public async Task<ActionResult<ApiResponse<ServerIdentityDto>>> CreateCommunityServer([FromForm] CreateServerRequest serverRequest) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
@@ -35,9 +35,9 @@ public sealed class CommunityServerController(
 
         await using var stream = serverRequest.Avatar?.OpenReadStream();
         var result = await mediator.Send(new CreateServerCommand(userId, serverRequest.Name, stream));
-
+        
         if (result.IsSuccess) {
-            return Created();
+            return Created((Uri?)null, new ApiResponse<ServerIdentityDto>(result.Value, Error.None));
         }
         
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));

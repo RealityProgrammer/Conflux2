@@ -336,9 +336,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfServerIdentityDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
                     };
                 };
             };
@@ -1682,6 +1682,10 @@ export interface components {
             data: null | components["schemas"]["ServerDetailDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfServerIdentityDto: {
+            data: null | components["schemas"]["ServerIdentityDto"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfServerMemberPermissionsDto: {
             data: null | components["schemas"]["ServerMemberPermissionsDto"];
             error: components["schemas"]["Error"];
@@ -1890,6 +1894,12 @@ export interface components {
             description: null | string;
             hasAvatar: boolean;
             channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
+        };
+        ServerIdentityDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            hasAvatar: boolean;
         };
         ServerMemberPermissionsDto: {
             /** Format: uuid */

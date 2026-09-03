@@ -1,11 +1,17 @@
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import {Separator, Tooltip} from "radix-ui";
+import {Label, Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {BsPeople, BsPlus} from "react-icons/bs";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
-import type {FieldErrors, ServiceResponse} from "../../api/types.ts";
+import type {
+  FieldErrors,
+  PaginatedResult,
+  PendingFriendRequestDto,
+  ServerIdentityDto,
+  ServiceResponse
+} from "../../api/types.ts";
 import IconButton from "../../components/IconButton.tsx";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import {useState} from "react";
@@ -18,7 +24,12 @@ import ServerAvatar from "../../components/ServerAvatar.tsx";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {useInfiniteGetJoinedCommunityServerQuery} from "../../graphql/infiniteQueries.ts";
+import {
+  type GetJoinedCommunityServerQuery,
+  useInfiniteGetJoinedCommunityServerQuery
+} from "../../graphql/infiniteQueries.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -66,6 +77,7 @@ function Sidebar() {
 }
 
 function JoinedCommunityServerScrollList() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const {
@@ -176,6 +188,7 @@ const createServerSchema = z.object({
 type CreateServerFormValues = z.infer<typeof createServerSchema>;
 
 function CreateCommunityServerButton() {
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
 
@@ -189,11 +202,15 @@ function CreateCommunityServerButton() {
   };
 
   const onSubmit = async (data: CreateServerFormValues) => {
-    const response: ServiceResponse =
-      await communityServerService.create(idempotencyKey, data.name, data.avatar ?? undefined);
+    const response: ServiceResponse<ServerIdentityDto> =
+      await communityServerService.createServer(idempotencyKey, data.name, data.avatar ?? undefined);
 
     if (response.success) {
       setIsOpen(false);
+
+      queryClient.invalidateQueries({
+        queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
+      });
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
         const details = response.error.details as unknown as FieldErrors<"name" | "avatar">;
@@ -248,7 +265,7 @@ function CreateCommunityServerButton() {
 
       <DialogForm
         open={isOpen} onOpenChange={handleOpenChange}
-        methods={methods}
+        formMethods={methods}
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
         subtitle="Give it a name, a vessel. Give it a life..."
@@ -269,6 +286,8 @@ function CreateCommunityServerButton() {
         )}
 
         <div className="mt-4 w-full">
+          <Label.Root className="label block mb-1">Server name</Label.Root>
+
           <input
             type="text"
             className="input-field h-11 w-full"

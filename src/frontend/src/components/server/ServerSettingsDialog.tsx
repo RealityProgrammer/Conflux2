@@ -10,7 +10,7 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
   return (
     <Dialog
       open={open}
-      onOpenChanged={onOpenChanged}
+      onOpenChange={onOpenChanged}
       headerIcon={(
         <AnimatedGearIcon/>
       )}
