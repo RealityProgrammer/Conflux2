@@ -11,6 +11,7 @@ import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import {estimateMessageLayout} from "./utils.ts";
+import {toast} from "react-toastify";
 
 export type MessageItemProps = {
   senderProfile: UserIdentityProfileDto;
@@ -179,8 +180,12 @@ export default function MessageView({
           {message?.body && (
             <ContextMenu.Item
               className="dropdown-item-default"
-              onSelect={() => {
-                navigator.clipboard.writeText(message.body!);
+              onSelect={async () => {
+                try {
+                  await navigator.clipboard.writeText(message.body!);
+                } catch {
+                  toast.error("Failed to copy message body to clipboard, possible API error?")
+                }
               }}
             >
               Copy text <BsCopy className="fill-white size-4 ml-auto"/>

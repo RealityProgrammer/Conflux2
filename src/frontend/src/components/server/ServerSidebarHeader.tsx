@@ -18,6 +18,7 @@ import {HttpStatusCode} from "axios";
 import {InvitationExpireAfter} from "../../api/schema.ts";
 import type {FieldErrors} from "../../api/types.ts";
 import {ServerSettingsDialog} from "./ServerSettingsDialog.tsx";
+import {toast} from "react-toastify";
 
 interface ServerSidebarHeaderProps {
   onRequestCreate: (type: "category" | "text_channel" | "voice_channel", idempotencyKey: string) => void;
@@ -183,9 +184,14 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
     const response = await invitationService.createInvitation(serverId, value.expireAfter, value.maxUses ?? null);
 
     if (response.success) {
-      await navigator.clipboard.writeText(`${window.location.origin}/invite/${response.data}`);
-      formMethods.reset();
-      onOpenChange(false);
+      try {
+        await navigator.clipboard.writeText(`${window.location.origin}/invite/${response.data}`);
+        formMethods.reset();
+        onOpenChange(false);
+        toast.success("Invitation link has been copied to clipboard.");
+      } catch {
+        toast.error("Failed to copy invitation link to clipboard, possible API error?");
+      }
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
         const details = response.error.details as unknown as FieldErrors<"expireAfter" | "maxUses">;
