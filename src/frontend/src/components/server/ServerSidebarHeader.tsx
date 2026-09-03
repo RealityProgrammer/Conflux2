@@ -41,7 +41,10 @@ export default function ServerSidebarHeader({
 
   useEffect(() => {
     if (!allowAccessToServerManagement) {
-      setIsOpenSettingDialog(false);
+      if (isOpenSettingDialog) {
+        setIsOpenSettingDialog(false);
+        toast.info("Your access to the server management has been revoked.");
+      }
     }
   }, [memberPermissions]);
 

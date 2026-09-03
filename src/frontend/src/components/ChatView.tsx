@@ -164,10 +164,12 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
     // if we don't know this user, fetch from api
     if (!knownUser) {
       try {
-        knownUser = await queryClient.fetchQuery({
+        const userQuery = await queryClient.query({
           queryKey: useGetUserIdentityProfileQuery.getKey({ id: senderId }),
           queryFn: useGetUserIdentityProfileQuery.fetcher({ id: senderId }),
         });
+
+        knownUser = userQuery.userById ?? undefined;
       } catch (error) {
         console.error("Failed to fetch user summary for new message", error);
       }

@@ -24,7 +24,7 @@ export const useFetchDmChannelSummary = () => {
     const cached = queryClient.getQueryData<ServiceResponse<DmChannelSummary>>(queryKey);
     if (cached) return cached;
 
-    return queryClient.fetchQuery({
+    return queryClient.query({
       queryKey,
       queryFn: () => channelService.getDmChannelSummary(channelId),
       staleTime: 15 * 60 * 1000,

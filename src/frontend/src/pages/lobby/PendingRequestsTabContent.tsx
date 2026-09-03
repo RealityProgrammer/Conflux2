@@ -99,7 +99,7 @@ export default function PendingRequestsTabContent() {
   };
 
   useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
-    const query = await queryClient.fetchQuery({
+    const query = await queryClient.query({
       queryKey: useGetUserIdentityProfileQuery.getKey({ id: notif.senderUserId }),
       queryFn: useGetUserIdentityProfileQuery.fetcher({ id: notif.senderUserId }),
     });

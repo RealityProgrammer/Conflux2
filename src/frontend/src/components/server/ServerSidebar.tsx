@@ -36,6 +36,7 @@ import type {
   ServerChannelCreatedEvent, ServerChannelDeletedEvent
 } from "../../api/events.ts";
 import {ChannelType} from "../../api/schema.ts";
+import {toast} from "react-toastify";
 
 const createChannelOrCategorySchema = z.object({
   idempotencyKey: z.string(),
@@ -183,8 +184,6 @@ export default function ServerSidebar() {
   };
 
   useSignalREvent("ServerChannelCategoryCreated", (event: ServerChannelCategoryCreatedEvent) => {
-    console.log("created channel category", JSON.stringify(event));
-
     if (event.serverId !== serverId) {
       return;
     }
@@ -198,6 +197,13 @@ export default function ServerSidebar() {
     }
 
     removeChannelCategory(event.categoryId);
+
+    if (formMethods.getValues("targetCategoryId") === event.categoryId) {
+      formMethods.reset();
+      setIsCreateChannelOrCategoryDialogOpen(false);
+
+      toast.info("The channel category has been deleted.");
+    }
   });
 
   useSignalREvent("ServerChannelCreated", (event: ServerChannelCreatedEvent) => {

@@ -14,7 +14,7 @@ import {estimateMessageLayout} from "./utils.ts";
 import {toast} from "react-toastify";
 
 export type MessageItemProps = {
-  senderProfile: UserIdentityProfileDto;
+  senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageDto;
   showHeader: boolean;
@@ -72,7 +72,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 }
 
 interface MessageViewProps {
-  senderProfile: UserIdentityProfileDto;
+  senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageDto;
   showHeader: boolean;
@@ -140,14 +140,14 @@ export default function MessageView({
             onSelect={() => {
               context.actions.onMessageReplyTrigger({
                 ...message,
-                senderUserId: senderProfile.id,
+                senderUserId: senderProfile?.id!,
               })
             }}
           >
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
 
-          {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile.id && (
+          {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
             <>
               <ContextMenu.Item
                 className="dropdown-item-default"

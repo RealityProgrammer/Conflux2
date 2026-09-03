@@ -102,7 +102,7 @@ export default function FriendListTabContent() {
   });
 
   useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
-    const profileResponse = await queryClient.fetchQuery({
+    const profileResponse = await queryClient.query({
       queryKey: useGetUserIdentityProfileQuery.getKey({ id: notif.acceptorUserId }),
       queryFn: useGetUserIdentityProfileQuery.fetcher({ id: notif.acceptorUserId }),
     })
