@@ -1,13 +1,12 @@
 using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL;
 
 partial class Query {
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, Authorize]
+    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
     public IQueryable<CommunityServer> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
         [Service] ApplicationDbContext dbContext
@@ -26,7 +25,7 @@ partial class Query {
             .Select(m => m.CommunityServer);
     }
 
-    [UseProjection, Authorize, UseSingleOrDefault]
+    [UseSingleOrDefault, UseProjection]
     public IQueryable<CommunityServer> GetCommunityServerById(
         Guid id,
         [Service] ApplicationDbContext dbContext

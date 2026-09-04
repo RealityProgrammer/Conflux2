@@ -1,12 +1,11 @@
 using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.WebApi.GraphQL;
 
 partial class Query {
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, Authorize]
+    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
     public IQueryable<CommunityServerMember> GetCommunityServerMembersFromServerId(
         Guid serverId,
         string? search,
@@ -28,7 +27,7 @@ partial class Query {
         return query.OrderBy(m => m.User.DisplayName);
     }
 
-    [UseProjection, Authorize, UseSingleOrDefault]
+    [UseSingleOrDefault, UseProjection]
     public IQueryable<CommunityServerMember> GetCommunityServerMemberById(
         Guid id,
         [Service] ApplicationDbContext dbContext
