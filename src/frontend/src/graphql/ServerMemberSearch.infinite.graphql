@@ -1,0 +1,22 @@
+query ServerMemberSearch($serverId: UUID!, $after: String, $search: String) {
+    communityServerMembersFromServerId(
+        serverId: $serverId,
+        after: $after,
+        search: $search
+    ) {
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+
+        nodes {
+            id
+            user {
+                id
+                userName
+                displayName
+                hasAvatar
+            }
+        }
+    }
+}

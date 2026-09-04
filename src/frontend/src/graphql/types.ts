@@ -184,6 +184,28 @@ export type CommunityServerMemberRoleFilterInput = {
   roleId?: InputMaybe<UuidOperationFilterInput>;
 };
 
+/** A connection to a list of items. */
+export type CommunityServerMembersFromServerIdConnection = {
+  __typename?: 'CommunityServerMembersFromServerIdConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<CommunityServerMembersFromServerIdEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<CommunityServerMember>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type CommunityServerMembersFromServerIdEdge = {
+  __typename?: 'CommunityServerMembersFromServerIdEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServerMember;
+};
+
 export type CommunityServerRole = {
   __typename?: 'CommunityServerRole';
   authorizeLevel: Scalars['Int']['output'];
@@ -476,12 +498,35 @@ export type PermissionStateOperationFilterInput = {
 
 export type Query = {
   __typename?: 'Query';
+  communityServerById?: Maybe<CommunityServer>;
+  communityServerMemberById?: Maybe<CommunityServerMember>;
+  communityServerMembersFromServerId?: Maybe<CommunityServerMembersFromServerIdConnection>;
   communityServerRoleById: Array<CommunityServerRole>;
   communityServerRolesByServerId?: Maybe<CommunityServerRolesByServerIdConnection>;
   invitationById?: Maybe<Invitation>;
   joinedServers?: Maybe<JoinedServersConnection>;
   userById?: Maybe<ApplicationUser>;
   users: Array<ApplicationUser>;
+};
+
+
+export type QueryCommunityServerByIdArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
+export type QueryCommunityServerMemberByIdArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
+export type QueryCommunityServerMembersFromServerIdArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  serverId: Scalars['UUID']['input'];
 };
 
 

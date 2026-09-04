@@ -3,7 +3,7 @@ import {
   type GetServerRolesByServerIdQuery,
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {BsCircleFill, BsPlusLg} from "react-icons/bs";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import UserAvatar from "../UserAvatar.tsx";
@@ -64,7 +64,7 @@ export default function RoleManagement() {
 
   const invalidateRoleQuery = () => {
     queryClient.invalidateQueries({
-      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, nameFilter: roleName, after: null }),
+      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
     });
   };
 
@@ -177,11 +177,9 @@ export default function RoleManagement() {
               fetchNextPage()
             }}
             invalidateRoleQuery={invalidateRoleQuery}
-            roleName={roleName}
             setRoleName={setRoleName}
             selectedRoleId={selectedRoleId}
             setSelectedRole={handleSelectRole}
-            deleteRoleData={deleteRoleData}
           />
         </section>
 
@@ -214,12 +212,18 @@ type RoleListProps = {
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
   invalidateRoleQuery: () => void;
-  roleName: string;
   setRoleName: (value: string) => void;
   selectedRoleId?: string;
   setSelectedRole: (role: RoleDisplayElement) => void;
-  deleteRoleData: (roleId: string) => void;
 };
+
+const createRoleSchema = z.object({
+  name: z.string()
+    .min(1, { message: "Name cannot be empty." })
+    .max(32, { message: "Name can only have maximum length of 32 characters." }),
+});
+
+type CreateRoleFormValues = z.infer<typeof createRoleSchema>;
 
 function RoleList({
   roles,
@@ -228,13 +232,55 @@ function RoleList({
   isFetchingNextPage,
   fetchNextPage,
   invalidateRoleQuery,
-  roleName,
   setRoleName,
   selectedRoleId,
   setSelectedRole,
-  deleteRoleData,
 }: RoleListProps) {
   const { serverId, memberPermissions } = useCommunityServerContext();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateRoleFormValues>({
+    resolver: zodResolver(createRoleSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+    defaultValues: { name: "" },
+  });
+
+  const watchedName = watch("name");
+  useEffect(() => {
+    setRoleName(watchedName);
+  }, [watchedName, setRoleName]);
+
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  // generate idempotency key everytime the name changed, it make sense to do so lmao
+  useEffect(() => {
+    if (watchedName.trim() !== "") {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    } else {
+      idempotencyKeyRef.current = null;
+    }
+  }, [watchedName]);
+
+  const onCreate: SubmitHandler<CreateRoleFormValues> = async (data: CreateRoleFormValues) => {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
+
+    const response = await communityServerService.createRole(serverId, data.name, idempotencyKeyRef.current);
+
+    if (response.success) {
+      invalidateRoleQuery();
+      idempotencyKeyRef.current = null;
+    } else {
+      toast.error("Failed to create role.");
+    }
+  }
 
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
@@ -244,25 +290,40 @@ function RoleList({
 
   return (
     <>
-      <div className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
-        <input
-          type="text"
-          value={roleName}
-          onChange={(e) => setRoleName(e.target.value)}
-          placeholder="New role name"
-          className="flex-1 input-field h-8 text-sm min-w-0"
-        />
+      <form onSubmit={handleSubmit(onCreate)} className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
+        <ErrorPopover
+          open={!!errors.name}
+          content={errors.name?.message}
+        >
+          <input
+            type="text"
+            placeholder="New role name"
+            className="flex-1 input-field h-8 text-sm min-w-0"
+            {...register("name")}
+            onBlur={(e) => {
+              register("name").onBlur(e);
+
+              if (errors.name) {
+                clearErrors("name");
+              }
+            }}
+          />
+        </ErrorPopover>
 
         {memberPermissions.effectivePermissions.CreateRole && (
           <button
-            // onClick={handleCreateRole}
+            type="submit"
+            disabled={isSubmitting}
             className="flex-none p-1.5 button-theme-primary rounded cursor-pointer"
-            title="Create role"
           >
-            <BsPlusLg className="w-4 h-4" onClick={invalidateRoleQuery}/>
+            {isSubmitting ? (
+              <Spinner className="size-4 fill-white"/>
+            ) : (
+              <BsPlusLg className="size-4"/>
+            )}
           </button>
         )}
-      </div>
+      </form>
 
       <VirtualizedScrollList
         itemCount={roles.length}

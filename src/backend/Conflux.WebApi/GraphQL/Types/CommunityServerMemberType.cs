@@ -8,7 +8,7 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
 
         descriptor.Field(m => m.Id);
         descriptor.Field(m => m.UserId);
-        descriptor.Field(m => m.User).Type<UserType>();
+        descriptor.Field(m => m.User).Type<NonNullType<UserType>>();
         descriptor.Field(m => m.CommunityServerId);
         descriptor.Field(m => m.CommunityServer).Type<NonNullType<CommunityServerType>>();
         descriptor.Field(m => m.CreatedAt);

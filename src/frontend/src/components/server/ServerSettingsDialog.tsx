@@ -5,6 +5,7 @@ import {useEffect, useRef} from "react";
 import {createTimeline} from "animejs";
 import {FaUserShield} from "react-icons/fa6";
 import RoleManagement from "./RoleManagement.tsx";
+import MemberManagement from "./MemberManagement.tsx";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   return (
@@ -33,8 +34,8 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
           <RoleManagement/>
         </Tabs.Content>
 
-        <Tabs.Content value="members" className="p-2 flex-1 overflow-hidden relative">
-          <p>Members</p>
+        <Tabs.Content value="members" className="p-2 flex-1 overflow-hidden relative flex flex-col gap-2">
+          <MemberManagement/>
         </Tabs.Content>
       </Tabs.Root>
     </Dialog>

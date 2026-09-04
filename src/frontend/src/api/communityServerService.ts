@@ -166,6 +166,29 @@ export const communityServerService = {
     }
   },
 
+  createRole: async (serverId: string, name: string, idempotencyKey: string): Promise<ServiceResponse<ServerRoleDto>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<ServerRoleDto>> =
+        await apiClient.post<BackendResponse<ServerRoleDto>>(`/communities/${encodeURIComponent(serverId)}/roles`, {
+          name,
+        }, {
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+        });
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<ServerRoleDto>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
   updateRole: async (serverId: string, roleId: string, data: {
     name?: string,
     authorizeLevel: number,
