@@ -36,7 +36,7 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // response interceptors
-function registerAuthenticateExpirationInterception() {
+function registerApiUnauthorizedInterception() {
   const interceptor = apiClient.interceptors.response.use(
     (response) => response,
     async (error: AxiosError<BackendResponse>) => {
@@ -79,13 +79,51 @@ function registerAuthenticateExpirationInterception() {
       } catch (error) {
         return Promise.reject(error);
       } finally {
-        registerAuthenticateExpirationInterception();
+        registerApiUnauthorizedInterception();
       }
     }
   );
 }
 
-registerAuthenticateExpirationInterception();
+registerApiUnauthorizedInterception();
+
+function registerGraphqlUnauthorizedInterception() {
+  const interceptor = graphqlClient.interceptors.response.use(
+    async (response) => {
+      const data: any = response.data;
+
+      const isGqlAuthError = response.status === HttpStatusCode.Ok && Array.isArray(data?.errors) &&
+        (data?.errors as any[]).some(e => e.extensions?.code === 'AUTH_NOT_AUTHENTICATED');
+
+      if (!isGqlAuthError) {
+        return Promise.resolve(response);
+      }
+
+      const originalRequestConfig = response.config as InternalAxiosRequestConfig & { __retry: boolean };
+      if (originalRequestConfig.__retry) {
+        return Promise.reject(response);
+      }
+
+      originalRequestConfig.__retry = true;
+
+      graphqlClient.interceptors.response.eject(interceptor);
+
+      try {
+        await apiClient.post("/auth/refresh");
+        await csrfService.requestCsrfToken();
+
+        return graphqlClient(originalRequestConfig);
+      } catch (error) {
+        return Promise.reject(error);
+      } finally {
+        registerApiUnauthorizedInterception();
+      }
+    },
+    (error) => error
+  );
+}
+
+registerGraphqlUnauthorizedInterception();
 
 export const graphqlFetcher = <TData, TVariables>(
   query: string | { toString: () => string }, // blame the codegen
