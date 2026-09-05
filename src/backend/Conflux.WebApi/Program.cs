@@ -181,16 +181,7 @@ builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
 builder.Services
     .AddGraphQLServer()
     .AddConvention<INamingConventions, CSharpEnumNamingConventions>()
-    .AddQueryType<Query>()
-    .AddType<UserType>()
-    .AddType<CommunityServerType>()
-    .AddType<InvitationType>()
-    .AddType<CommunityServerRoleType>()
-    .AddType<RolePermissionType>()
-    .AddType<CommunityServerMemberType>()
-    .AddDataLoader<CommunityServerMemberCountDataLoader>()
-    .AddDataLoader<MutualFriendsCountDataLoader>()
-    .AddDataLoader<RoleMemberCountDataLoader>()
+    .AddWebApiTypes()
     .AddProjections()
     .AddAuthorization()
     .AddFiltering<CustomFilterConvention>();

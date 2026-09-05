@@ -1,5 +1,5 @@
 using Conflux.Application.Dto;
-using Microsoft.Extensions.Caching.Distributed;
+using Conflux.Domain.Enums;
 using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -26,31 +26,84 @@ internal sealed class ServerPermissionsCacheService(
     
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
-    public async Task<ServerMemberPermissionsDto?> GetServerMemberPermissions(
+    public async Task<ServerMemberAuthorizationInfoDto?> GetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId,
         CancellationToken cancellationToken = default
     ) {
         int version = await GetServerPermissionVersion(serverId);
-        string cacheKey = GetCacheKeyForServerMemberPermissions(serverId, userId, version);
+        string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
 
         byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
-        return cached != null ? JsonSerializer.Deserialize<ServerMemberPermissionsDto>(cached) : null;
+
+        if (cached == null) {
+            return null;
+        }
+
+        var deserialized = JsonSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
+
+        // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
+        if (deserialized == null) {
+            return null;    
+        }
+
+        return new(deserialized.MemberId, deserialized.AuthorizeLevel, deserialized.EffectivePermissions, deserialized.Roles);
     }
 
-    public async Task SetServerMemberPermissions(
+    public async Task SetUserAuthorizeInfo(
         Guid serverId, 
-        Guid userId, 
-        ServerMemberPermissionsDto value,
+        Guid userId,
+        ServerMemberAuthorizationInfoDto value,
         CancellationToken cancellationToken = default
     ) {
         int version = await GetServerPermissionVersion(serverId);
-        string cacheKey = GetCacheKeyForServerMemberPermissions(serverId, userId, version);
+        string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
         
-        await _database.StringSetAsync(cacheKey, JsonSerializer.SerializeToUtf8Bytes(value), TimeSpan.FromHours(1));
+        await _database.StringSetAsync(
+            cacheKey, 
+            JsonSerializer.SerializeToUtf8Bytes(
+                new MemberAuthorizeInfoCacheDto(
+                    value.MemberId, 
+                    value.AuthorizeLevel, 
+                    value.EffectivePermissions, 
+                    value.Roles
+                )
+            ), 
+            TimeSpan.FromHours(1)
+        );
     }
-    
-    private static string GetCacheKeyForServerMemberPermissions(Guid serverId, Guid userId, int version) =>
+
+    public async Task<Dictionary<Guid, ServerMemberAuthorizationInfoDto>> GetUsersAuthorizeInfo(
+        Guid serverId, 
+        IReadOnlyCollection<Guid> userIds, 
+        CancellationToken cancellationToken = default
+    ) {
+        Dictionary<Guid, ServerMemberAuthorizationInfoDto> results = new(userIds.Count);
+
+        foreach (var userId in userIds) {
+            ServerMemberAuthorizationInfoDto? info = await GetUserAuthorizeInfo(serverId, userId, cancellationToken);
+
+            if (info == null) {
+                continue;
+            }
+            
+            results.Add(userId, info);
+        }
+
+        return results;
+    }
+
+    public async Task SetUsersAuthorizeInfo(
+        Guid serverId, 
+        IReadOnlyDictionary<Guid, ServerMemberAuthorizationInfoDto> values, 
+        CancellationToken cancellationToken = default
+    ) {
+        foreach ((var userId, ServerMemberAuthorizationInfoDto authorizeInfo) in values) {
+            await SetUserAuthorizeInfo(serverId, userId, authorizeInfo, cancellationToken);
+        }
+    }
+
+    private static string GetCacheKeyForUserServerPermissions(Guid serverId, Guid userId, int version) =>
         $"ServerPermissions:{serverId}:user:{userId}:v{version}";
 
     public async Task<RoleAuthorizationInfo?> GetServerDefaultRoleAuthorizationInfo(
@@ -103,4 +156,11 @@ internal sealed class ServerPermissionsCacheService(
         memoryCache.Set(memoryCacheKey, oldVersion + 1, TimeSpan.FromSeconds(30));
         await _database.HashSetAsync("ServerPermissions:versions", serverId.ToString(), oldVersion + 1);
     }
+
+    private sealed record MemberAuthorizeInfoCacheDto(
+        Guid MemberId,
+        int AuthorizeLevel,
+        IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions,
+        MemberRoleDto[] Roles
+    );
 }

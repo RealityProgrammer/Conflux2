@@ -2,7 +2,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Dto;
 
-public sealed record ServerMemberPermissionsDto(
+public sealed record ServerMemberAuthorizationInfoDto(
     Guid MemberId,
     int AuthorizeLevel,
     IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions,

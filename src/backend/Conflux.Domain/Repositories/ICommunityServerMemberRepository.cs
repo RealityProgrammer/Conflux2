@@ -10,9 +10,16 @@ public interface ICommunityServerMemberRepository {
 
     Task<CommunityServerRole?> GetDefaultRole(Guid serverId, bool tracking = true, CancellationToken cancellationToken = default);
     
-    Task<CommunityServerMember?> GetMemberWithRoles(
+    Task<CommunityServerMember?> GetUserMemberWithRoles(
         Guid serverId,
         Guid userId,
+        bool tracking = true,
+        CancellationToken cancellationToken = default
+    );
+    
+    Task<List<CommunityServerMember>> GetUserMembersWithRoles(
+        Guid serverId,
+        IReadOnlyCollection<Guid> userIds,
         bool tracking = true,
         CancellationToken cancellationToken = default
     );

@@ -1,4 +1,6 @@
+using Conflux.Application.Dto;
 using Conflux.Domain.Entities;
+using Conflux.WebApi.GraphQL.Dto;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -13,5 +15,17 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
         descriptor.Field(m => m.CommunityServer).Type<NonNullType<CommunityServerType>>();
         descriptor.Field(m => m.CreatedAt);
         descriptor.Field(m => m.Roles);
+        descriptor.Field("authorizeInfo")
+            .Type<NonNullType<MemberAuthorizeInfoType>>()
+            .Resolve(async (context, cancellationToken) => {
+                var member = context.Parent<CommunityServerMember>();
+                var dataLoader = context.DataLoader<IMemberAuthorizationInfoDataLoader>();
+                
+                MemberAuthorizeKey key = new(member.Id, member.CommunityServerId, member.UserId);
+                
+                Domain.Result<MemberAuthorizeInfoDto> result = await dataLoader.LoadAsync(key, cancellationToken);
+                
+                return !result.IsSuccess ? throw new GraphQLException(ErrorBuilder.New().SetMessage(result.Error.Message).Build()) : result.Value;
+            });
     }
 }

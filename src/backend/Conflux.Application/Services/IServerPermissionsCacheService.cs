@@ -3,16 +3,28 @@ using Conflux.Application.Dto;
 namespace Conflux.Application.Services;
 
 public interface IServerPermissionsCacheService {
-    Task<ServerMemberPermissionsDto?> GetServerMemberPermissions(
+    Task<ServerMemberAuthorizationInfoDto?> GetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId, 
         CancellationToken cancellationToken = default
     );
     
-    Task SetServerMemberPermissions(
+    Task SetUserAuthorizeInfo(
+        Guid serverId,
+        Guid userId,
+        ServerMemberAuthorizationInfoDto value, 
+        CancellationToken cancellationToken = default
+    );
+    
+    Task<Dictionary<Guid, ServerMemberAuthorizationInfoDto>> GetUsersAuthorizeInfo(
         Guid serverId, 
-        Guid userId, 
-        ServerMemberPermissionsDto value, 
+        IReadOnlyCollection<Guid> userIds, 
+        CancellationToken cancellationToken = default
+    );
+
+    Task SetUsersAuthorizeInfo(
+        Guid serverId,
+        IReadOnlyDictionary<Guid, ServerMemberAuthorizationInfoDto> values,
         CancellationToken cancellationToken = default
     );
     

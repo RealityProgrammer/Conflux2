@@ -238,7 +238,7 @@ public sealed class CommunityServerController(
     }
 
     [HttpGet("{serverId:guid}/members/me/permissions")]
-    public async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> GetSessionUserPermissions(Guid serverId) {
+    public async Task<ActionResult<ApiResponse<ServerMemberAuthorizationInfoDto>>> GetSessionUserPermissions(Guid serverId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
@@ -249,15 +249,15 @@ public sealed class CommunityServerController(
     }
     
     [HttpGet("{serverId:guid}/members/{userId:guid}/permissions")]
-    public async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> GetUserPermissions(Guid serverId, Guid userId) {
+    public async Task<ActionResult<ApiResponse<ServerMemberAuthorizationInfoDto>>> GetUserPermissions(Guid serverId, Guid userId) {
         return await InternalGetUserPermissions(serverId, userId);
     }
 
-    private async Task<ActionResult<ApiResponse<ServerMemberPermissionsDto>>> InternalGetUserPermissions(Guid serverId, Guid userId) {
-        var result = await mediator.Send(new GetUserServerPermissionsQuery(serverId, userId));
+    private async Task<ActionResult<ApiResponse<ServerMemberAuthorizationInfoDto>>> InternalGetUserPermissions(Guid serverId, Guid userId) {
+        var result = await mediator.Send(new GetUserServerAuthorizationInfoQuery(serverId, userId));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<ServerMemberPermissionsDto>(result.Value, Error.None));
+            return Ok(new ApiResponse<ServerMemberAuthorizationInfoDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
