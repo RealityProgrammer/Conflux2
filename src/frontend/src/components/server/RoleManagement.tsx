@@ -503,15 +503,15 @@ function RoleDetails({
       </header>
 
       <section>
-        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+        <h4 className="group-label">
           General Information
         </h4>
 
-        <div className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-300">Created by</span>
+        <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
+          <li className="flex items-center justify-between gap-2 px-2.5">
+            <span>Created By</span>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-550">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
               <UserAvatar
                 userId={role.creatorUser?.id}
                 hasAvatar={role.creatorUser?.hasAvatar ?? false}
@@ -526,22 +526,22 @@ function RoleDetails({
                 <DateTimeText value={new Date(role.createdAt)} />
               </span>
             </div>
-          </div>
+          </li>
 
           <Separator.Root className="horizontal-separator my-3" />
 
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-300">Special Role</span>
+          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+            <span>Special Role</span>
 
-            <span className="text-sm font-medium text-zinc-300 px-2.5 py-1 rounded border border-zinc-700/50">
+            <span className="text-sm font-medium text-zinc-300">
               {role.specialRoleType}
             </span>
-          </div>
+          </li>
 
           <Separator.Root className="horizontal-separator my-3" />
 
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-300">Authorize Level</span>
+          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+            <span>Authorize Level</span>
 
             {isEditingRole ? (
               <ErrorPopover
@@ -558,16 +558,16 @@ function RoleDetails({
                 />
               </ErrorPopover>
             ) : (
-              <span className="text-sm font-mono text-zinc-300 px-2.5 py-1 rounded border border-zinc-700/50">
+              <span className="font-mono">
                 {role.authorizeLevel}
               </span>
             )}
-          </div>
-        </div>
+          </li>
+        </ul>
       </section>
 
       <section className="space-y-1 mt-2">
-        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+        <h4 className="group-label">
           Permissions
         </h4>
 

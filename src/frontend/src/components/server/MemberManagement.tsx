@@ -1,6 +1,6 @@
 import {useDebounceValue} from "usehooks-ts";
 import {useRef, useState} from "react";
-import {Popover} from "radix-ui";
+import {Popover, Separator} from "radix-ui";
 import {
   type GetServerRolesByServerIdQuery, type ServerMemberSearchQuery,
   useInfiniteServerMemberSearchQuery,
@@ -9,6 +9,12 @@ import {
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
+import UserAvatar from "../UserAvatar.tsx";
+import DateTimeText from "../DateTimeText.tsx";
+import ErrorPopover from "../ErrorPopover.tsx";
+import {useInspectMemberQuery} from "../../graphql/queries.ts";
+import Spinner from "../Spinner.tsx";
+import {BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -130,10 +136,9 @@ export default function MemberManagement() {
           </Popover.Portal>
         </Popover.Root>
 
-        <div className="flex-1 min-h-0 border-2 border-gray-600 rounded-lg">
+        <div className="flex-1 min-h-0 border-2 border-gray-600 rounded-lg p-2">
           {inspectingMemberId ? (
-            <>
-            </>
+            <MemberInformation memberId={inspectingMemberId}/>
           ) : (
             <div className="size-full flex flex-row justify-center items-center">
               <p className="select-none text-gray-500">Gotta search for the member first, boss...</p>
@@ -143,4 +148,104 @@ export default function MemberManagement() {
       </main>
     </>
   );
+}
+
+function MemberInformation({memberId}: {memberId: string}) {
+  const { data, isLoading, isError } = useInspectMemberQuery({ id: memberId });
+
+  if (isLoading) {
+    return (
+      <div className="size-full flex flex-row justify-center items-center">
+        <Spinner className="size-8 fill-white"/>
+      </div>
+    );
+  }
+
+  if (isError || !data?.communityServerMemberById) {
+    return (
+      <div className="size-full flex flex-col justify-center items-center gap-y-2">
+        <BsExclamationTriangle className="size-8 fill-white"/>
+        <span>Failed to load member information...</span>
+      </div>
+    );
+  }
+
+  const memberInfo = data.communityServerMemberById!;
+
+  return (
+    <>
+      <div className="space-y-2">
+        <h4 className="group-label">
+          User Information
+        </h4>
+
+        <div className="flex flex-row items-center gap-2">
+          <UserAvatar
+            hasAvatar={memberInfo.user.hasAvatar}
+            className="flex-none size-10 rounded-full overflow-hidden"
+            userId={memberInfo.user.id}
+          />
+
+          <span className="font-semibold">{memberInfo.user.displayName}</span>
+          <span className="text-sm text-gray-400">@{memberInfo.user.userName}</span>
+        </div>
+      </div>
+
+      <div className="space-y-2 mt-2">
+        <h4 className="group-label">
+          Member Information
+        </h4>
+
+        <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
+          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+            <span>Join Date</span>
+
+            <DateTimeText value={new Date(memberInfo.createdAt)}/>
+          </li>
+
+          <Separator.Root className="horizontal-separator my-3" />
+
+          <li className="flex items-center justify-between gap-2 px-2.5 py-0.5">
+            <span className="flex-1">Roles</span>
+
+            <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+              {memberInfo.roles.map((value) => {
+                return (
+                  <span className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                    <BsCircleFill className="size-2 fill-blue-500"/>
+
+                    {value.name}
+                  </span>
+                )
+              })}
+            </span>
+          </li>
+
+          <Separator.Root className="horizontal-separator my-3" />
+
+          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+            <span>Authorize Level</span>
+
+            <span className="font-mono">{memberInfo.authorizeInfo.authorizeLevel}</span>
+          </li>
+
+          <Separator.Root className="horizontal-separator my-3" />
+
+          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+            <span>Permissions</span>
+
+            <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+              {memberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((value) => {
+                return (
+                  <span className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                    {value.permission}
+                  </span>
+                )
+              })}
+            </span>
+          </li>
+        </ul>
+      </div>
+    </>
+  )
 }

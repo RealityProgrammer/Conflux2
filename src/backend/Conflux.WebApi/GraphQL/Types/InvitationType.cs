@@ -11,16 +11,22 @@ public sealed class InvitationType : ObjectType<Invitation> {
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(i => i.Id);
-        descriptor.Field(i => i.CommunityServerId).IsProjected();
+        descriptor.Field(i => i.CommunityServerId);
         descriptor.Field(i => i.CommunityServer).Type<CommunityServerType>();
-        descriptor.Field(i => i.MaxUses).IsProjected();
-        descriptor.Field(i => i.CurrentUses).IsProjected();
-        descriptor.Field(i => i.CreatedAt).IsProjected();
+        descriptor.Field(i => i.MaxUses);
+        descriptor.Field(i => i.CurrentUses);
+        descriptor.Field(i => i.CreatedAt);
         descriptor.Field(i => i.ExpiresAt);
         
         // TODO: switch to DataLoader
         descriptor.Field("status")
             .Type<NonNullType<EnumType<InvitationStatus>>>()
+            .ParentRequires<Invitation>(i => new {
+                i.CommunityServerId,
+                i.ExpiresAt,
+                i.MaxUses,
+                i.CurrentUses,
+            })
             .Resolve(async ctx => {
                 var invite = ctx.Parent<Invitation>();
                 var timeProvider = ctx.Service<TimeProvider>();

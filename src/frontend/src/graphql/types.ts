@@ -153,6 +153,7 @@ export type CommunityServerFilterInput = {
 
 export type CommunityServerMember = {
   __typename?: 'CommunityServerMember';
+  authorizeInfo: MemberAuthorizeInfo;
   communityServer: CommunityServer;
   communityServerId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
@@ -452,6 +453,12 @@ export type ListFilterInputTypeOfRolePermissionFilterInput = {
   some?: InputMaybe<RolePermissionFilterInput>;
 };
 
+export type MemberAuthorizeInfo = {
+  __typename?: 'MemberAuthorizeInfo';
+  authorizeLevel: Scalars['Int']['output'];
+  permissions: Array<PermissionEntry>;
+};
+
 export type MessageFilterInput = {
   and?: InputMaybe<Array<MessageFilterInput>>;
   attachments?: InputMaybe<ListFilterInputTypeOfAttachmentFilterInput>;
@@ -483,6 +490,12 @@ export type PageInfo = {
   startCursor?: Maybe<Scalars['String']['output']>;
 };
 
+export type PermissionEntry = {
+  __typename?: 'PermissionEntry';
+  isGranted: Scalars['Boolean']['output'];
+  permission: ServerPermission;
+};
+
 export enum PermissionState {
   Disable = 'Disable',
   Enable = 'Enable',
@@ -501,7 +514,7 @@ export type Query = {
   communityServerById?: Maybe<CommunityServer>;
   communityServerMemberById?: Maybe<CommunityServerMember>;
   communityServerMembersFromServerId?: Maybe<CommunityServerMembersFromServerIdConnection>;
-  communityServerRoleById: Array<CommunityServerRole>;
+  communityServerRoleById?: Maybe<CommunityServerRole>;
   communityServerRolesByServerId?: Maybe<CommunityServerRolesByServerIdConnection>;
   invitationById?: Maybe<Invitation>;
   joinedServers?: Maybe<JoinedServersConnection>;

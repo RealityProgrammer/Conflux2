@@ -1,0 +1,22 @@
+query InspectMember($id: UUID!) {
+    communityServerMemberById(id: $id) {
+        id
+        createdAt
+        user {
+            id
+            userName
+            displayName
+            hasAvatar
+        }
+        roles {
+            name
+        }
+        authorizeInfo {
+            authorizeLevel
+            permissions {
+                permission
+                isGranted
+            }
+        }
+    }
+}

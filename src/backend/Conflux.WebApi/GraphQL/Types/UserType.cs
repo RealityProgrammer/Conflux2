@@ -1,5 +1,4 @@
 using Conflux.Domain.Entities;
-using Conflux.WebApi.GraphQL.DataLoaders;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -20,7 +19,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
             .Type<NonNullType<IntType>>()
             .Resolve(async context => {
                 var targetUser = context.Parent<ApplicationUser>();
-                var dataLoader = context.DataLoader<MutualFriendsCountDataLoader>();
+                var dataLoader = context.DataLoader<IMutualFriendsCountDataLoader>();
                 
                 return await dataLoader.LoadAsync(targetUser.Id, context.RequestAborted);
             });

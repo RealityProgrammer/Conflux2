@@ -332,6 +332,10 @@
     @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[calc(100dvw-2rem)] max-h-[calc(100dvh-2rem)]
 }
 
+@utility group-label {
+    @apply text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2;
+}
+
 @font-face {
     font-family: 'DeterminationMono';
     src: url('/public/fonts/DeterminationMono.ttf') format('truetype');

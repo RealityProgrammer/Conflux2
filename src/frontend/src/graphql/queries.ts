@@ -28,6 +28,13 @@ export type GetUserIdentityProfileQueryVariables = Exact<{
 
 export type GetUserIdentityProfileQuery = { userById: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
 
+export type InspectMemberQueryVariables = Exact<{
+  id: string;
+}>;
+
+
+export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ name: string }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
@@ -150,3 +157,49 @@ useGetUserIdentityProfileQuery.getKey = (variables: GetUserIdentityProfileQueryV
 
 
 useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables, options);
+
+export const InspectMemberDocument = new TypedDocumentString(`
+    query InspectMember($id: UUID!) {
+  communityServerMemberById(id: $id) {
+    id
+    createdAt
+    user {
+      id
+      userName
+      displayName
+      hasAvatar
+    }
+    roles {
+      name
+    }
+    authorizeInfo {
+      authorizeLevel
+      permissions {
+        permission
+        isGranted
+      }
+    }
+  }
+}
+    `);
+
+export const useInspectMemberQuery = <
+      TData = InspectMemberQuery,
+      TError = unknown
+    >(
+      variables: InspectMemberQueryVariables,
+      options?: Omit<UseQueryOptions<InspectMemberQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<InspectMemberQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<InspectMemberQuery, TError, TData>(
+      {
+    queryKey: ['InspectMember', variables],
+    queryFn: graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables),
+    ...options
+  }
+    )};
+
+useInspectMemberQuery.getKey = (variables: InspectMemberQueryVariables) => ['InspectMember', variables];
+
+
+useInspectMemberQuery.fetcher = (variables: InspectMemberQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables, options);

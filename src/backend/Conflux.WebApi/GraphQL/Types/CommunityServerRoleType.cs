@@ -1,5 +1,4 @@
 using Conflux.Domain.Entities;
-using Conflux.WebApi.GraphQL.DataLoaders;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -21,7 +20,7 @@ public sealed class CommunityServerRoleType : ObjectType<CommunityServerRole> {
             .Type<NonNullType<IntType>>()
             .Resolve(async context => {
                 var role = context.Parent<CommunityServerRole>();
-                var dataLoader = context.DataLoader<RoleMemberCountDataLoader>();
+                var dataLoader = context.DataLoader<IRolesMemberCountDataLoader>();
                 
                 return await dataLoader.LoadAsync(role.Id, context.RequestAborted);
             });

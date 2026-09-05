@@ -7,16 +7,21 @@ namespace Conflux.WebApi.GraphQL.Types;
 public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember> {
     protected override void Configure(IObjectTypeDescriptor<CommunityServerMember> descriptor) {
         descriptor.BindFieldsExplicitly();
-
-        descriptor.Field(m => m.Id);
-        descriptor.Field(m => m.UserId);
+        
+        descriptor.Field(m => m.Id).IsProjected();
+        descriptor.Field(m => m.UserId).IsProjected();
         descriptor.Field(m => m.User).Type<NonNullType<UserType>>();
-        descriptor.Field(m => m.CommunityServerId);
+        descriptor.Field(m => m.CommunityServerId).IsProjected();
         descriptor.Field(m => m.CommunityServer).Type<NonNullType<CommunityServerType>>();
         descriptor.Field(m => m.CreatedAt);
         descriptor.Field(m => m.Roles);
         descriptor.Field("authorizeInfo")
             .Type<NonNullType<MemberAuthorizeInfoType>>()
+            .ParentRequires<CommunityServerMember>(m => new {
+                m.Id, 
+                m.CommunityServerId, 
+                m.UserId,
+            })
             .Resolve(async (context, cancellationToken) => {
                 var member = context.Parent<CommunityServerMember>();
                 var dataLoader = context.DataLoader<IMemberAuthorizationInfoDataLoader>();
