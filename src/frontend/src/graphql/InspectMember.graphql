@@ -9,7 +9,9 @@ query InspectMember($id: UUID!) {
             hasAvatar
         }
         roles {
+            id
             name
+            authorizeLevel
         }
         authorizeInfo {
             authorizeLevel

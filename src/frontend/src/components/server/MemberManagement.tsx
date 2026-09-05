@@ -2,19 +2,19 @@ import {useDebounceValue} from "usehooks-ts";
 import {useRef, useState} from "react";
 import {Popover, Separator} from "radix-ui";
 import {
-  type GetServerRolesByServerIdQuery, type ServerMemberSearchQuery,
+  type ServerMemberSearchQuery, useInfiniteGetAssignableServerRolesByServerIdQuery,
   useInfiniteServerMemberSearchQuery,
-  useServerMemberSearchQuery
 } from "../../graphql/infiniteQueries.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
-import ErrorPopover from "../ErrorPopover.tsx";
 import {useInspectMemberQuery} from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
-import {BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
+import {BsCheck, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
+import IconButton from "../IconButton.tsx";
+import {FaPlus} from "react-icons/fa6";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -209,15 +209,17 @@ function MemberInformation({memberId}: {memberId: string}) {
             <span className="flex-1">Roles</span>
 
             <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-              {memberInfo.roles.map((value) => {
+              {memberInfo.roles.sort(r => r.authorizeLevel).map((r) => {
                 return (
-                  <span className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                  <span key={r.id} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm shadow-sm">
                     <BsCircleFill className="size-2 fill-blue-500"/>
 
-                    {value.name}
+                    {r.name}
                   </span>
                 )
               })}
+
+              <RoleModificationButton/>
             </span>
           </li>
 
@@ -235,10 +237,10 @@ function MemberInformation({memberId}: {memberId: string}) {
             <span>Permissions</span>
 
             <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-              {memberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((value) => {
+              {memberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((p) => {
                 return (
-                  <span className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
-                    {value.permission}
+                  <span key={p.permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                    {p.permission}
                   </span>
                 )
               })}
@@ -247,5 +249,99 @@ function MemberInformation({memberId}: {memberId: string}) {
         </ul>
       </div>
     </>
+  )
+}
+
+function RoleModificationButton() {
+  const { serverId } = useCommunityServerContext();
+  const [searchValue, setSearchValue] = useDebounceValue("", 500);
+
+  const {
+    data,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteGetAssignableServerRolesByServerIdQuery(
+    { serverId, nameFilter: searchValue, after: null },
+    {
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage) => {
+        const pageInfo = lastPage?.communityServerRolesByServerId?.pageInfo;
+
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
+        }
+
+        return undefined;
+      },
+      staleTime: 30 * 60 * 1000,
+    }
+  );
+
+  const allElements = data?.pages.flatMap((page) => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
+
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <IconButton theme="default" className="size-6 bg-black/12 rounded-sm shadow-sm">
+          <FaPlus className="size-4"/>
+        </IconButton>
+      </Popover.Trigger>
+
+      <Popover.Portal>
+        <Popover.Content
+          side="top"
+          sideOffset={5}
+          align="center"
+          className="rounded-lg bg-gray-650 text-sm font-medium text-white shadow-lg animate-in fade-in zoom-in duration-200 h-64 overflow-hidden flex flex-col gap-1"
+          onWheel={(e) => e.stopPropagation()}
+          onOpenAutoFocus={(e) => e.stopPropagation()}
+        >
+          <div className="px-1 pt-1">
+            <input
+              type="text"
+              placeholder="Enter name"
+              className="flex-none text-sm input-field py-2 px-2"
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+
+          <VirtualizedScrollList
+            viewportClassName="overflow-y-auto w-full"
+            itemCount={allElements.length}
+            isLoading={isLoading}
+            estimateSize={() => 32}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={() => {
+              fetchNextPage();
+            }}
+            renderSkeletonItem={(itemIndex) => (
+              <li className="h-8 flex flex-row items-center gap-2 px-1">
+                <BsCircleFill className="size-2.5 fill-white/10 animate-pulse"/>
+                <span className="h-4 w-32 bg-white/10 animate-pulse rounded"></span>
+              </li>
+            )}
+            renderItem={(itemIndex) => {
+              const role = allElements[itemIndex];
+
+              return (
+                <span className="dropdown-item-default flex flex-row items-center w-full gap-2">
+                  <BsCircleFill className="size-2.5 fill-blue-500"/>
+
+                  <span className="flex-1 text-left truncate min-w-0">
+                    {role.name}
+                  </span>
+                </span>
+              );
+            }}
+            hideVerticalScrollbar
+          />
+
+          <Popover.Arrow className="fill-gray-650" />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }

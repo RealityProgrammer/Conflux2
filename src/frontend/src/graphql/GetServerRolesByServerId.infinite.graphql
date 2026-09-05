@@ -1,5 +1,11 @@
 query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
-    communityServerRolesByServerId(serverId: $serverId, after: $after, where: { name: { ilike: $nameFilter } }) {
+    communityServerRolesByServerId(
+        serverId: $serverId,
+        after: $after,
+        where: {
+            name: { ilike: $nameFilter }
+        }
+    ) {
         pageInfo {
             endCursor
             hasNextPage

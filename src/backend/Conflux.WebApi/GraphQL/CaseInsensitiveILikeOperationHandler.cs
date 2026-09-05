@@ -8,14 +8,6 @@ using System.Reflection;
 namespace Conflux.WebApi.GraphQL;
 
 internal sealed class CaseInsensitiveILikeOperationHandler(InputParser inputParser) : QueryableStringOperationHandler(inputParser) {
-    private static readonly MethodInfo ToLowerMethod = typeof(string).GetMethod(
-        nameof(string.ToLower), 
-        BindingFlags.Instance | BindingFlags.Public, 
-        Type.DefaultBinder, 
-        Type.EmptyTypes, 
-        null
-    )!;
-
     protected override int Operation => GraphQLOperations.ILike;
 
     public override Expression HandleOperation(
