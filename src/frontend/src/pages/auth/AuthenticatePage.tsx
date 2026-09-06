@@ -34,6 +34,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data: LoginFormValues): Promise<void> => {
@@ -175,6 +176,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
   const passwordValue = watch("password", "");

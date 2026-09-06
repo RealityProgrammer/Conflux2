@@ -1,10 +1,16 @@
-query GetAssignableServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
+query GetAssignableServerRolesByServerId(
+    $serverId: UUID!,
+    $nameFilter: String,
+    $after: String,
+    $authorizeLevel: Int,
+) {
     communityServerRolesByServerId(
         serverId: $serverId,
         after: $after,
         where: {
             name: { ilike: $nameFilter }
-            specialRoleType: { eq: None }
+            specialRoleType: { eq: None },
+            authorizeLevel:  { lte: $authorizeLevel }
         }
     ) {
         pageInfo {

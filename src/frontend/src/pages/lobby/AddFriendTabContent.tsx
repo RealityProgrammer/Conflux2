@@ -131,6 +131,7 @@ export default function AddFriendTabContent() {
         viewportClassName="rounded-md border-2 border-gray-600"
         itemCount={allElements.length}
         isLoading={isLoading}
+        keyExtractor={(index) => allElements[index].userId}
         estimateSize={() => ITEM_HEIGHT}
         fetchNextPage={() => {
           fetchNextPage()

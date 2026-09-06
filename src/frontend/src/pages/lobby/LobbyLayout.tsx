@@ -7,8 +7,6 @@ import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {
   FieldErrors,
-  PaginatedResult,
-  PendingFriendRequestDto,
   ServerIdentityDto,
   ServiceResponse
 } from "../../api/types.ts";
@@ -25,11 +23,9 @@ import {useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  type GetJoinedCommunityServerQuery,
   useInfiniteGetJoinedCommunityServerQuery
 } from "../../graphql/infiniteQueries.ts";
-import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import {useQueryClient} from "@tanstack/react-query";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -77,7 +73,6 @@ function Sidebar() {
 }
 
 function JoinedCommunityServerScrollList() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const {
@@ -241,6 +236,7 @@ function CreateCommunityServerButton() {
       avatar: undefined,
     },
     mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
   return (

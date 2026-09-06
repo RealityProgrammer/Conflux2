@@ -2,7 +2,8 @@ import {useDebounceValue} from "usehooks-ts";
 import {useRef, useState} from "react";
 import {Popover, Separator} from "radix-ui";
 import {
-  type ServerMemberSearchQuery, useInfiniteGetAssignableServerRolesByServerIdQuery,
+  type ServerMemberSearchQuery,
+  useInfiniteGetAssignableServerRolesByServerIdQuery,
   useInfiniteServerMemberSearchQuery,
 } from "../../graphql/infiniteQueries.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
@@ -10,11 +11,18 @@ import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
-import {useInspectMemberQuery} from "../../graphql/queries.ts";
+import {type InspectMemberQuery, useInspectMemberQuery} from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
 import {BsCheck, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
-import {FaPlus} from "react-icons/fa6";
+import {FaPlus, FaXmark} from "react-icons/fa6";
+import {FaSave} from "react-icons/fa";
+import {Controller, type SubmitHandler, useForm} from "react-hook-form";
+import {z} from "zod";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {SpecialRoleType} from "../../graphql/types.ts";
+import {communityServerService} from "../../api/communityServerService.ts";
+import type {ServiceResponse} from "../../api/types.ts";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -95,6 +103,7 @@ export default function MemberManagement() {
                 itemCount={isDebouncing ? 0 : allMembers.length}
                 isLoading={isLoading || isDebouncing}
                 estimateSize={() => 48}
+                keyExtractor={(index) => allMembers[index].id}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
                 viewportClassName="overflow-y-auto max-h-64 w-full"
@@ -170,90 +179,152 @@ function MemberInformation({memberId}: {memberId: string}) {
     );
   }
 
-  const memberInfo = data.communityServerMemberById!;
-
-  return (
-    <>
-      <div className="space-y-2">
-        <h4 className="group-label">
-          User Information
-        </h4>
-
-        <div className="flex flex-row items-center gap-2">
-          <UserAvatar
-            hasAvatar={memberInfo.user.hasAvatar}
-            className="flex-none size-10 rounded-full overflow-hidden"
-            userId={memberInfo.user.id}
-          />
-
-          <span className="font-semibold">{memberInfo.user.displayName}</span>
-          <span className="text-sm text-gray-400">@{memberInfo.user.userName}</span>
-        </div>
-      </div>
-
-      <div className="space-y-2 mt-2">
-        <h4 className="group-label">
-          Member Information
-        </h4>
-
-        <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
-          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
-            <span>Join Date</span>
-
-            <DateTimeText value={new Date(memberInfo.createdAt)}/>
-          </li>
-
-          <Separator.Root className="horizontal-separator my-3" />
-
-          <li className="flex items-center justify-between gap-2 px-2.5 py-0.5">
-            <span className="flex-1">Roles</span>
-
-            <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-              {memberInfo.roles.sort(r => r.authorizeLevel).map((r) => {
-                return (
-                  <span key={r.id} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm shadow-sm">
-                    <BsCircleFill className="size-2 fill-blue-500"/>
-
-                    {r.name}
-                  </span>
-                )
-              })}
-
-              <RoleModificationButton/>
-            </span>
-          </li>
-
-          <Separator.Root className="horizontal-separator my-3" />
-
-          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
-            <span>Authorize Level</span>
-
-            <span className="font-mono">{memberInfo.authorizeInfo.authorizeLevel}</span>
-          </li>
-
-          <Separator.Root className="horizontal-separator my-3" />
-
-          <li className="flex items-center justify-between gap-2 px-2.5 py-1">
-            <span>Permissions</span>
-
-            <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-              {memberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((p) => {
-                return (
-                  <span key={p.permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
-                    {p.permission}
-                  </span>
-                )
-              })}
-            </span>
-          </li>
-        </ul>
-      </div>
-    </>
-  )
+  return <MemberInformationContent memberInfo={data.communityServerMemberById}/>
 }
 
-function RoleModificationButton() {
+const updateMemberInformationSchema = z.object({
+  roleIds: z.string().array(),
+});
+
+type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationSchema>;
+
+function MemberInformationContent({
+  memberInfo
+}: {memberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
   const { serverId } = useCommunityServerContext();
+
+  const {
+    handleSubmit,
+    control,
+    formState
+  } = useForm<UpdateMemberInformationFormValues>({
+    resolver: zodResolver(updateMemberInformationSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+    defaultValues: {
+      roleIds: memberInfo.roles.filter(r => r.specialRoleType === SpecialRoleType.None).map(r => r.id),
+    }
+  });
+
+  const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (value: UpdateMemberInformationFormValues) => {
+    const response: ServiceResponse = await communityServerService.updateMember(serverId, memberInfo.id);
+
+    // TODO: Synchronize the UI
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmitModification)} className="relative overflow-y-hidden">
+      <section className={`absolute ${formState.isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
+        <IconButton theme="danger">
+          <FaXmark className="size-6"/>
+        </IconButton>
+
+        <IconButton theme="default">
+          <FaSave className="size-6"/>
+        </IconButton>
+      </section>
+
+      <div>
+        <div className="space-y-2">
+          <h4 className="group-label">
+            User Information
+          </h4>
+
+          <div className="flex flex-row items-center gap-2">
+            <UserAvatar
+              hasAvatar={memberInfo.user.hasAvatar}
+              className="flex-none size-10 rounded-full overflow-hidden"
+              userId={memberInfo.user.id}
+            />
+
+            <span className="font-semibold">{memberInfo.user.displayName}</span>
+            <span className="text-sm text-gray-400">@{memberInfo.user.userName}</span>
+          </div>
+        </div>
+
+        <div className="space-y-2 mt-2">
+          <h4 className="group-label">
+            Member Information
+          </h4>
+
+          <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
+            <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+              <span>Join Date</span>
+
+              <DateTimeText value={new Date(memberInfo.createdAt)}/>
+            </li>
+
+            <Separator.Root className="horizontal-separator my-3" />
+
+            <li className="flex items-center justify-between gap-2 px-2.5 py-0.5">
+              <span className="flex-1">Roles</span>
+
+              <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+                {memberInfo.roles.sort(r => r.authorizeLevel).map((r) => {
+                  return (
+                    <span key={r.id} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm shadow-sm">
+                      <BsCircleFill className="size-2 fill-blue-500"/>
+
+                      {r.name}
+                    </span>
+                  )
+                })}
+
+                <Controller
+                  control={control}
+                  name="roleIds"
+                  render={({field}) => {
+                    return (
+                      <RoleModificationButton
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )
+                  }}
+                />
+              </span>
+            </li>
+
+            <Separator.Root className="horizontal-separator my-3" />
+
+            <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+              <span>Authorize Level</span>
+
+              <span className="font-mono">{memberInfo.authorizeInfo.authorizeLevel}</span>
+            </li>
+
+            <Separator.Root className="horizontal-separator my-3" />
+
+            <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+              <span>Permissions</span>
+
+              <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+                {memberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((p) => {
+                  return (
+                    <span key={p.permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                      {p.permission}
+                    </span>
+                  )
+                })}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+interface RoleModificationButtonProps {
+  value: string[];
+  onChange: (value: string[]) => void;
+}
+
+function RoleModificationButton({
+  value,
+  onChange,
+}: RoleModificationButtonProps) {
+  const { serverId, memberPermissions } = useCommunityServerContext();
   const [searchValue, setSearchValue] = useDebounceValue("", 500);
 
   const {
@@ -263,7 +334,7 @@ function RoleModificationButton() {
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteGetAssignableServerRolesByServerIdQuery(
-    { serverId, nameFilter: searchValue, after: null },
+    { serverId, nameFilter: searchValue, after: null, authorizeLevel: memberPermissions.authorizeLevel },
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
@@ -310,6 +381,7 @@ function RoleModificationButton() {
           <VirtualizedScrollList
             viewportClassName="overflow-y-auto w-full"
             itemCount={allElements.length}
+            keyExtractor={(index) => allElements[index].id}
             isLoading={isLoading}
             estimateSize={() => 32}
             hasNextPage={hasNextPage}
@@ -317,7 +389,7 @@ function RoleModificationButton() {
             fetchNextPage={() => {
               fetchNextPage();
             }}
-            renderSkeletonItem={(itemIndex) => (
+            renderSkeletonItem={() => (
               <li className="h-8 flex flex-row items-center gap-2 px-1">
                 <BsCircleFill className="size-2.5 fill-white/10 animate-pulse"/>
                 <span className="h-4 w-32 bg-white/10 animate-pulse rounded"></span>
@@ -325,15 +397,28 @@ function RoleModificationButton() {
             )}
             renderItem={(itemIndex) => {
               const role = allElements[itemIndex];
+              const isSelected = value.includes(role.id);
 
               return (
-                <span className="dropdown-item-default flex flex-row items-center w-full gap-2">
+                <button
+                  type="button"
+                  className="dropdown-item-default flex flex-row items-center w-full gap-2"
+                  onClick={() => {
+                    if (isSelected) {
+                      onChange(value.filter((id) => id !== role.id));
+                    } else {
+                      onChange([...value, role.id]);
+                    }
+                  }}
+                >
                   <BsCircleFill className="size-2.5 fill-blue-500"/>
 
                   <span className="flex-1 text-left truncate min-w-0">
                     {role.name}
                   </span>
-                </span>
+
+                  {isSelected && <BsCheck className="size-5 fill-white flex-none" />}
+                </button>
               );
             }}
             hideVerticalScrollbar

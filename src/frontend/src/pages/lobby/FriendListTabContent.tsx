@@ -157,6 +157,7 @@ export default function FriendListTabContent() {
         className="flex-1"
         viewportClassName="rounded-md border-2 border-gray-600"
         itemCount={allElements.length}
+        keyExtractor={(index) => allElements[index].id}
         isLoading={isLoading}
         estimateSize={() => ITEM_HEIGHT}
         fetchNextPage={() => {

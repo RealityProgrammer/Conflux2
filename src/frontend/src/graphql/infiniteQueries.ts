@@ -11,6 +11,7 @@ export type GetAssignableServerRolesByServerIdQueryVariables = Exact<{
   serverId: string;
   nameFilter?: string | null | undefined;
   after?: string | null | undefined;
+  authorizeLevel?: number | null | undefined;
 }>;
 
 
@@ -62,11 +63,15 @@ export class TypedDocumentString<TResult, TVariables>
 }
 
 export const GetAssignableServerRolesByServerIdDocument = new TypedDocumentString(`
-    query GetAssignableServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
+    query GetAssignableServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String, $authorizeLevel: Int) {
   communityServerRolesByServerId(
     serverId: $serverId
     after: $after
-    where: { name: { ilike: $nameFilter }, specialRoleType: { eq: None } }
+    where: {
+      name: { ilike: $nameFilter }
+      specialRoleType: { eq: None }
+      authorizeLevel: { lte: $authorizeLevel }
+    }
   ) {
     pageInfo {
       endCursor

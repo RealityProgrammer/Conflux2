@@ -33,7 +33,7 @@ export type InspectMemberQueryVariables = Exact<{
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -173,6 +173,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
       id
       name
       authorizeLevel
+      specialRoleType
     }
     authorizeInfo {
       authorizeLevel

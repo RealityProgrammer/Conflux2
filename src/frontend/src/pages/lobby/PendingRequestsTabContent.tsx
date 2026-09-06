@@ -173,8 +173,9 @@ export default function PendingRequestsTabContent() {
       <VirtualizedScrollList
         className="flex-1"
         viewportClassName="rounded-md border-2 border-gray-600"
-        itemCount={allElements.length}
         isLoading={isLoading}
+        itemCount={allElements.length}
+        keyExtractor={(index) => allElements[index].userId}
         estimateSize={() => ITEM_HEIGHT}
         fetchNextPage={() => {
           fetchNextPage()

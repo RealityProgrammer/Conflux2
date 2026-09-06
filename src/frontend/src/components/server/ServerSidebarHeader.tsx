@@ -181,6 +181,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
       maxUses: null,
     },
     mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
   const handleGetInvitation = async (value: CreateInvitationFormValues) => {

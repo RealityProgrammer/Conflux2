@@ -12,6 +12,7 @@ query InspectMember($id: UUID!) {
             id
             name
             authorizeLevel
+            specialRoleType
         }
         authorizeInfo {
             authorizeLevel

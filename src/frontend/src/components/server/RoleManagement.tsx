@@ -329,6 +329,7 @@ function RoleList({
         itemCount={roles.length}
         isLoading={isLoading}
         estimateSize={() => 36}
+        keyExtractor={(index) => roles[index].id}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         fetchNextPage={() => {
@@ -405,6 +406,7 @@ function RoleDetails({
   } = useForm<UpdateRoleFormValues>({
     resolver: zodResolver(updateRoleSchema),
     mode: "onSubmit",
+    reValidateMode: "onSubmit",
     defaultValues: {
       name: role.name,
       authorizeLevel: role.authorizeLevel,

@@ -222,5 +222,22 @@ export const communityServerService = {
       const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
-  }
+  },
+
+  updateMember: async (serverId: string, memberId: string, roleIds?: string[]): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.patch<BackendResponse>(`/communities/${encodeURIComponent(serverId)}/members/${encodeURIComponent(memberId)}`, {
+          roleIds,
+        });
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 }

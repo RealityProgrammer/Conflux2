@@ -128,6 +128,7 @@ function DirectMessagesList() {
   return (
     <VirtualizedScrollList
       className="flex-1"
+      keyExtractor={(index) => allElements[index].channelId}
       itemCount={allElements.length}
       isLoading={isLoading}
       estimateSize={() => 44}

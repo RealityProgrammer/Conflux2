@@ -89,6 +89,7 @@ export default function ServerSidebar() {
   const formMethods = useForm<CreateChannelOrCategoryFormValues>({
     resolver: zodResolver(createChannelOrCategorySchema),
     mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
 
   const handleChannelAction = async (action: ChannelAction) => {

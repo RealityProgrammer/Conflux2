@@ -24,7 +24,7 @@ export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<typ
   estimateSize: (target: EstimateHeightTarget) => number;
   pageSize?: number;
   overscan?: number;
-  keyExtractor?: (index: number) => Key;
+  keyExtractor: (index: number) => Key;
 
   hasPreviousPage?: boolean;
   isFetchingPreviousPage?: boolean;
@@ -92,10 +92,7 @@ export default function VirtualizedScrollList({
 
       const itemIndex = index - prevOffset;
 
-      if (keyExtractor) {
-        return keyExtractor(itemIndex);
-      }
-      return index;
+      return keyExtractor(itemIndex);
     }
   });
 
