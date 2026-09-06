@@ -180,7 +180,8 @@ builder.Services
     .AddWebApiTypes()
     .AddProjections()
     .AddAuthorization()
-    .AddFiltering<CustomFilterConvention>();
+    .AddFiltering<CustomFilterConvention>()
+    .AddMutationConventions(applyToAllMutations: true);
 
 // general services needed
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(

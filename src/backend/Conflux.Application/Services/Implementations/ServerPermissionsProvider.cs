@@ -8,7 +8,8 @@ using System.Collections.Frozen;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerPermissionsProvider(
-    ICommunityServerMemberRepository repository,
+    ICommunityServerMemberRepository memberRepository,
+    ICommunityServerRoleRepository roleRepository,
     IServerPermissionsCacheService cacheService
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
@@ -26,7 +27,7 @@ internal sealed class ServerPermissionsProvider(
         }
 
         CommunityServerMember? member = 
-            await repository.GetUserMemberWithRoles(serverId, userId, false, cancellationToken);
+            await memberRepository.GetUserMemberWithRoles(serverId, userId, false, cancellationToken);
 
         if (member == null) {
             return Errors.ResourceNotFound("Community server member");
@@ -83,7 +84,7 @@ internal sealed class ServerPermissionsProvider(
         Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> results = new(userIds.Count);
         Dictionary<Guid, ServerMemberAuthorizationInfoDto> dtosToCache = new(userIds.Count);
 
-        var members = await repository.GetUserMembersWithRoles(serverId, userIds, false, cancellationToken);
+        var members = await memberRepository.GetUserMembersWithRoles(serverId, userIds, false, cancellationToken);
         var membersByUserId = members.ToDictionary(m => m.UserId);
 
         Result<RoleAuthorizationInfo>? defaultRoleGetResult = null;
@@ -155,7 +156,7 @@ internal sealed class ServerPermissionsProvider(
 
         if (defaultRoleAuthorizationInfo == null) {
             CommunityServerRole? defaultRole = 
-                await repository.GetDefaultRole(serverId, false, cancellationToken);
+                await roleRepository.GetDefaultRole(serverId, false, cancellationToken);
 
             if (defaultRole == null) {
                 return Errors.ResourceNotFound("Default role");

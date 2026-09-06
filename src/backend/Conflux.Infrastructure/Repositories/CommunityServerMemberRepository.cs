@@ -11,28 +11,15 @@ internal sealed class CommunityServerMemberRepository(
         dbContext.CommunityServerMembers.Add(value);
     }
 
-    public async Task<CommunityServerRole?> GetFromId(
+    public async Task<CommunityServerMember?> GetFromId(
         Guid id, 
         bool tracking = true, 
         CancellationToken cancellationToken = default
     ) {
-        IQueryable<CommunityServerRole> query = dbContext.CommunityServerRoles;
+        IQueryable<CommunityServerMember> query = dbContext.CommunityServerMembers;
         query = tracking ? query.AsTracking() : query.AsNoTracking();
 
         return await query.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
-    }
-
-    public async Task<CommunityServerRole?> GetDefaultRole(
-        Guid serverId, 
-        bool tracking = true, 
-        CancellationToken cancellationToken = default
-    ) {
-        IQueryable<CommunityServerRole> query = dbContext.CommunityServerRoles;
-        query = tracking ? query.AsTracking() : query.AsNoTracking();
-
-        return await query
-            .Where(r => r.CommunityServerId == serverId && r.SpecialRoleType == SpecialRoleType.Default)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> IsUserJoined(

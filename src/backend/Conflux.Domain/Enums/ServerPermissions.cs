@@ -7,4 +7,6 @@ public enum ServerPermission {
     
     CreateChannel,
     DeleteChannel,
+    
+    UpdateMemberRoles,
 }

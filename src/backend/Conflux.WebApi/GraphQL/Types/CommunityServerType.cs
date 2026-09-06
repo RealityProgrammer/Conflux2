@@ -15,6 +15,10 @@ public sealed class CommunityServerType : ObjectType<CommunityServer> {
         descriptor.Field(s => s.CreatorUser).Type<UserType>();
         descriptor.Field(s => s.OwnerUserId);
         descriptor.Field(s => s.OwnerUser).Type<UserType>();
+        descriptor.Field(s => s.ChannelCategories)
+            .Type<ListType<ChannelCategoryType>>();
+        descriptor.Field(s => s.Channels)
+            .Type<ListType<ChannelType>>();
         descriptor.Field("numMembers")
             .Type<NonNullType<IntType>>()
             .Resolve(async context => {

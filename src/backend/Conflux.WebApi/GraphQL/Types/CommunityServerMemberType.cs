@@ -30,7 +30,7 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
                 
                 Domain.Result<MemberAuthorizeInfoDto> result = await dataLoader.LoadAsync(key, cancellationToken);
                 
-                return !result.IsSuccess ? throw new GraphQLException(ErrorBuilder.New().SetMessage(result.Error.Message).Build()) : result.Value;
+                return !result.IsSuccess ? throw new GraphQLException(ErrorBuilder.New().SetCode(result.Error.Code).SetMessage(result.Error.Message).Build()) : result.Value;
             });
     }
 }
