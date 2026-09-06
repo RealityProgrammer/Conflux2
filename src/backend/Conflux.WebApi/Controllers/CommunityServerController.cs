@@ -217,7 +217,7 @@ public sealed class CommunityServerController(
     }
 
     [HttpDelete("{serverId:guid}/roles/{roleId:guid}")]
-    public async Task<ActionResult> DeleteRole(Guid serverId, Guid roleId) {
+    public async Task<ActionResult<ApiResponse>> DeleteRole(Guid serverId, Guid roleId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
