@@ -3,9 +3,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IChannelRepository : IRepository<Channel> {
-    void Add(Channel channel);
-    
+public interface IChannelRepository : IWriteRepository<Channel> {
     Task<Result<ChannelMetadataDto>> GetChannelMetadataFromChannelId(
         Guid channelId, 
         CancellationToken cancellationToken = default

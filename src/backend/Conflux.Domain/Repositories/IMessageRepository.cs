@@ -4,9 +4,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IMessageRepository : IRepository<Message> {
-    void Add(Message message);
-
+public interface IMessageRepository : IWriteRepository<Message> {
     Task<Message?> GetById(Guid messageId, bool tracking = true, CancellationToken cancellationToken = default);
     
     Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(

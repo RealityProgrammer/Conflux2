@@ -3,9 +3,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface ICommunityServerRepository : IRepository<CommunityServer> {
-    void Add(CommunityServer communityServer);
-    
+public interface ICommunityServerRepository : IWriteRepository<CommunityServer> {
     Task<Result<CommunityServerProfileDto>> GetProfile(
         Guid serverId,
         CancellationToken cancellationToken = default

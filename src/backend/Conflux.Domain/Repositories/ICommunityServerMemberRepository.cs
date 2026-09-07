@@ -2,8 +2,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface ICommunityServerMemberRepository : IRepository<CommunityServerMember> {
-    void Add(CommunityServerMember value);
+public interface ICommunityServerMemberRepository : IWriteRepository<CommunityServerMember> {
     Task<bool> IsUserJoined(Guid userId, Guid serverId, CancellationToken cancellationToken = default);
     
     Task<CommunityServerMember?> GetFromId(Guid id, bool tracking = true, CancellationToken cancellationToken = default);
