@@ -1,4 +1,4 @@
-namespace Conflux.Application.Helpers;
+namespace Conflux.Domain.Helpers;
 
 public static class StringHelpers {
     public static (string? Snippet, bool HasMore) CutSnippet(string? body, int maxChars = 128, int maxWords = 16) {

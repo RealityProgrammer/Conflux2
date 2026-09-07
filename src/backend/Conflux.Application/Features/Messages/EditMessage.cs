@@ -23,7 +23,7 @@ public sealed class EditMessageHandler(
     IMediator mediator
 ) : ICommandHandler<EditMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(EditMessageCommand request, CancellationToken cancellationToken) {
-        var message = await messageRepository.GetById(request.MessageId, cancellationToken);
+        var message = await messageRepository.GetById(request.MessageId, true, cancellationToken);
         var newBody = request.Body;
         
         if (message == null) {
@@ -59,20 +59,9 @@ public sealed class EditMessageHandler(
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
         
-        ReplyToMessageDto? reply = message.ReplyToId.HasValue ? 
-            await messageRepository.GetReplyMessageById(message.ReplyToId.Value, CancellationToken.None) :
-            null;
-        
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {
-            return Result<TimelineMessageDto>.Success(new(
-                message.Id, 
-                message.SenderUserId,
-                newBody,
-                message.Attachments,
-                message.CreatedAt,
-                reply
-            ));
+            return Result<TimelineMessageDto>.Success(new(message));
         }
         
         message.Body = newBody;
@@ -80,14 +69,7 @@ public sealed class EditMessageHandler(
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        TimelineMessageDto dto = new(
-            message.Id,
-            message.SenderUserId,
-            message.Body,
-            message.Attachments,
-            message.CreatedAt,
-            reply
-        );
+        TimelineMessageDto dto = new(message);  // GetById should include the ReplyTo, so no need to load it into memory automatically
         
         await mediator.Publish(new MessageEditedNotification(channelMetadata.ChannelId, dto), CancellationToken.None);
         

@@ -78,8 +78,8 @@ public sealed class SendMessageHandler(
                 return attachmentResults.Error;
             }
         }
-        
-        Domain.Entities.Message message = new() {
+
+        Message message = new() {
             Body = request.Body,
             Attachments = attachments,
             SenderUserId = senderUserId,
@@ -87,34 +87,30 @@ public sealed class SendMessageHandler(
             ReplyToId = request.ReplyToId,
             CreatedAt = utcNow,
         };
-
-        messageRepository.Add(message);
+        
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try {
+            messageRepository.Add(message);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            await conversationRepository.UpdateLatestMessageTime(channelMetadata.ConversationId, utcNow);
+            
+            // load the reply message into memory so that dto the message got the reply to convert to dto
+            if (request.ReplyToId.HasValue) {
+                await messageRepository.GetById(request.ReplyToId.Value, true, cancellationToken);
+            }
         } catch (OperationCanceledException) {
+            await unitOfWork.RollbackAsync(CancellationToken.None);
             await DeleteUploadedAttachments(attachments);
             throw;
         } catch {
+            await unitOfWork.RollbackAsync(cancellationToken);
             await DeleteUploadedAttachments(attachments);
             return Errors.OperationFailure("send message.");
         }
-
-        await conversationRepository.UpdateLatestMessageTime(channelMetadata.ConversationId, utcNow);
-
-        ReplyToMessageDto? reply = request.ReplyToId.HasValue ? 
-            await messageRepository.GetReplyMessageById(request.ReplyToId.Value, CancellationToken.None) :
-            null;
         
-        TimelineMessageDto dto = new(
-            message.Id,
-            senderUserId,
-            message.Body,
-            message.Attachments,
-            message.CreatedAt,
-            reply
-        );
-
+        TimelineMessageDto dto = new(message);
         await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
         
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar

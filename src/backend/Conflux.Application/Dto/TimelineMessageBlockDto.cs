@@ -13,5 +13,5 @@ public sealed record TimelineMessageClusterItemDto(
     string? Body,
     Attachment[] Attachments,
     DateTimeOffset CreatedAt,
-    ReplyToMessageDto? ReplyTo
+    TimelineMessageReplyDto? ReplyTo
 );

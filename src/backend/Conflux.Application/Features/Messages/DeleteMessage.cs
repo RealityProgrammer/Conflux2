@@ -19,7 +19,7 @@ public sealed class DeleteMessageHandler(
     IMediator mediator
 ) : ICommandHandler<DeleteMessageCommand, Result> {
     public async ValueTask<Result> Handle(DeleteMessageCommand request, CancellationToken cancellationToken) {
-        var message = await messageRepository.GetById(request.MessageId, cancellationToken);
+        var message = await messageRepository.GetById(request.MessageId, false, cancellationToken);
         
         if (message == null) {
             return Errors.ResourceNotFound("Message");
