@@ -12,6 +12,10 @@ internal sealed class UserRepository(
     ApplicationDbContext dbContext,
     TimeProvider timeProvider
 ) : IUserRepository {
+    public IQueryable<ApplicationUser> AsQueryable() {
+        return userManager.Users;
+    }
+
     public async Task<bool> UpdateAvatarStatus(
         Guid userId, 
         bool hasAvatar, 

@@ -8,6 +8,10 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class CommunityServerRoleRepository(
     ApplicationDbContext dbContext
 ) : ICommunityServerRoleRepository {
+    public IQueryable<CommunityServerRole> AsQueryable() {
+        return dbContext.CommunityServerRoles;
+    }
+    
     public void Add(CommunityServerRole role) {
         dbContext.CommunityServerRoles.Add(role);
     }

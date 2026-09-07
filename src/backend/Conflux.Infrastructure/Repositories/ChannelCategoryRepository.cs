@@ -6,6 +6,10 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class ChannelCategoryRepository(
     ApplicationDbContext dbContext
 ) : IChannelCategoryRepository {
+    public IQueryable<ChannelCategory> AsQueryable() {
+        return dbContext.ChannelCategories;
+    }
+
     public void Add(ChannelCategory category) {
         dbContext.ChannelCategories.Add(category);
     }

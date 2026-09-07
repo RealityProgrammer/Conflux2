@@ -3,7 +3,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IChannelRepository {
+public interface IChannelRepository : IRepository<Channel> {
     void Add(Channel channel);
     
     Task<Result<ChannelMetadataDto>> GetChannelMetadataFromChannelId(

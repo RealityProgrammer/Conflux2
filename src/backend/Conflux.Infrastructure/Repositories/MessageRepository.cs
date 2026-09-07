@@ -2,7 +2,6 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
-using Conflux.Domain.Helpers;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
 
@@ -11,6 +10,10 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class MessageRepository(
     ApplicationDbContext dbContext
 ) : IMessageRepository {
+    public IQueryable<Message> AsQueryable() {
+        return dbContext.Messages;
+    }
+
     public void Add(Message message) {
         dbContext.Messages.Add(message);
     }
@@ -121,40 +124,4 @@ internal sealed class MessageRepository(
 
         return Result<PagedTimelineMessageResult>.Success(new(messageProjections, hasMoreBefore, hasMoreAfter));
     }
-
-    public async Task<TimelineMessageReplyDto?> GetReplyMessageById(Guid messageId, CancellationToken cancellationToken = default) {
-        var projection = await dbContext.Messages
-            .Where(m => m.Id == messageId)
-            .SelectFacet<TimelineMessageReplyDto>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return projection;
-        
-        // (var snippet, var truncated) = StringHelpers.CutSnippet(projection.TruncatedBody);
-        //
-        // return new(
-        //     projection.Id,
-        //     projection.SenderId,
-        //     BodySnippet: snippet,
-        //     HasMoreBody: truncated || projection.IsBodyTruncated,
-        //     projection.AttachmentCount
-        // );
-    }
-
-    // private sealed record MessageProjection(
-    //     Guid Id,
-    //     Guid SenderId,
-    //     string? Body,
-    //     Attachment[] Attachments,
-    //     DateTimeOffset CreatedAt,
-    //     ReplyMessageProjection? ReplyProjection
-    // );
-    //
-    // private sealed record ReplyMessageProjection(
-    //     Guid Id, 
-    //     Guid SenderId, 
-    //     string? TruncatedBody, 
-    //     bool IsBodyTruncated, 
-    //     int AttachmentCount
-    // );
 }

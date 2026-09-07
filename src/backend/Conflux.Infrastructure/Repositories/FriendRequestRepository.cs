@@ -10,6 +10,10 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class FriendRequestRepository(
     ApplicationDbContext dbContext
 ) : IFriendRequestRepository {
+    public IQueryable<FriendRequest> AsQueryable() {
+        return dbContext.FriendRequests;
+    }
+    
     public async Task<FriendRequestSummary?> GetRequestSummary(Guid user1, Guid user2) {
         return await dbContext.FriendRequests
             .Where(r =>

@@ -2,7 +2,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IInvitationRepository {
+public interface IInvitationRepository : IRepository<Invitation> {
     void Add(Invitation invitation);
     Task<Invitation?> GetFromId(string invitationId, CancellationToken cancellationToken = default);
     

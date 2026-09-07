@@ -12,7 +12,11 @@ internal sealed class InvitationRepository(
     IOptions<InvitationOptions> invitationOptions
 ) : IInvitationRepository {
     private readonly InvitationOptions _options = invitationOptions.Value;
-    
+
+    public IQueryable<Invitation> AsQueryable() {
+        return dbContext.Invitations;
+    }
+
     public void Add(Invitation invitation) {
         dbContext.Invitations.Add(invitation);
     }

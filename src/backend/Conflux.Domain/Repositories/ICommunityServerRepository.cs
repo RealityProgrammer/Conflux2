@@ -3,7 +3,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface ICommunityServerRepository {
+public interface ICommunityServerRepository : IRepository<CommunityServer> {
     void Add(CommunityServer communityServer);
     
     Task<Result<CommunityServerProfileDto>> GetProfile(

@@ -4,7 +4,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IFriendRequestRepository {
+public interface IFriendRequestRepository : IRepository<FriendRequest> {
     void Add(FriendRequest friendRequest);
     
     Task<FriendRequestSummary?> GetRequestSummary(Guid user1, Guid user2);
