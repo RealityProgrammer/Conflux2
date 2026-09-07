@@ -3,6 +3,7 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -19,11 +20,7 @@ internal sealed class ChannelRepository(
     ) {
         ChannelMetadata? context = await dbContext.Channels
             .Where(c => c.Id == channelId)
-            .Select(c => new ChannelMetadata(
-                channelId,
-                c.ConversationId,
-                c.Type
-            ))
+            .SelectFacet<ChannelMetadata>()
             .FirstOrDefaultAsync(cancellationToken);
 
         if (context == null) {

@@ -2,6 +2,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -14,11 +15,7 @@ internal sealed class ConversationRepository(
     ) {
         ChannelMetadata? context = await dbContext.Channels
             .Where(c => c.ConversationId == conversationId && c.Type == ChannelType.DirectMessage)
-            .Select(c => new ChannelMetadata(
-                c.Id,
-                conversationId,
-                c.Type
-            ))
+            .SelectFacet<ChannelMetadata>()
             .FirstOrDefaultAsync(cancellationToken);
 
         if (context == null) {
