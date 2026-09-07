@@ -1,5 +1,6 @@
 using Conflux.Domain.Entities;
 using Facet;
+using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain.Dto;
 
@@ -12,5 +13,12 @@ namespace Conflux.Domain.Dto;
     nameof(Message.ReplyTo),
 ], NestedFacets = [
     typeof(TimelineMessageReplyDto),
-])]
-public sealed partial record TimelineMessageDto;
+], PreserveRequiredProperties = true)]
+public sealed partial record TimelineMessageDto {
+    [Required] public Guid Id { get; set; } = Id;
+    [Required] public Guid SenderUserId { get; set; } = SenderUserId;
+    [Required] public string? Body { get; set; } = Body;
+    [Required] public Attachment[] Attachments { get; set; } = Attachments;
+    [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
+    [Required] public TimelineMessageReplyDto? ReplyTo { get; set; } = ReplyTo;
+}

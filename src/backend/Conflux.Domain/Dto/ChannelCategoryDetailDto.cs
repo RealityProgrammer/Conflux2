@@ -1,14 +1,14 @@
 using Conflux.Domain.Entities;
 using Facet;
+using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain.Dto;
 
-[Facet(typeof(ChannelCategory), Include = [
-    nameof(ChannelCategory.Channels),
-], NestedFacets = [
+[Facet(typeof(ChannelCategory), Include = [], NestedFacets = [
     typeof(ServerChannelIdentityDto),
-])]
+], NullableProperties = true, GenerateParameterlessConstructor = false)]
 public sealed partial record ChannelCategoryDetailDto {
-    [MapFrom(nameof(ChannelCategory.Id))] public Guid? Id { get; set; }
-    [MapFrom(nameof(ChannelCategory.Name))] public string? Name { get; set; }
+    [Required] public Guid? Id { get; set; }
+    [Required] public string? Name { get; set; }
+    [Required] public ICollection<ServerChannelIdentityDto> Channels { get; set; }
 }

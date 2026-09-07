@@ -74,14 +74,8 @@ public sealed class GetChatMessagesHandler(
         TimelineMessageClusterDto? currentGroup = null;
 
         foreach (TimelineMessageDto message in getMessagesResult.Value!.Messages) {
-            TimelineMessageClusterItemDto clusterItem = new(
-                message.Id, 
-                message.Body, 
-                message.Attachments, 
-                message.CreatedAt,
-                message.ReplyTo
-            );
-
+            TimelineMessageClusterItemDto clusterItem = new(message);
+            
             // if same sender as the last message, append to the current group
             if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {
                 currentGroup.Messages.Add(clusterItem);

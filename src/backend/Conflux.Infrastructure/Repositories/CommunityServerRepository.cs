@@ -62,15 +62,19 @@ internal sealed class CommunityServerRepository(
             .ToList();
 
         if (uncategorizedChannels.Count > 0) {
-            result.Add(new(null, null, uncategorizedChannels));
+            result.Add(new() {
+                Id = null,
+                Name = null,
+                Channels = uncategorizedChannels,
+            });
         }
 
         var mappedCategories = categories
-            .Select(c => new ChannelCategoryDetailDto(
-                c.Id, 
-                c.Name,
-                [..channelsByCategoryId[c.Id]]
-            ));
+            .Select(c => new ChannelCategoryDetailDto {
+                Id = c.Id, 
+                Name = c.Name,
+                Channels = [..channelsByCategoryId[c.Id]]
+            });
         
         result.AddRange(mappedCategories);
 

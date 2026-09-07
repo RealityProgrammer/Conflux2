@@ -33,11 +33,11 @@ public sealed class ConversationController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
         if (request.Body.AsSpan().Trim().IsEmpty && request.Attachments is not { Length: > 0 }) {
-            return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.EmptyMessageContent()));
+            return BadRequest(new ApiResponse(Errors.EmptyMessageContent()));
         }
 
         Stream[] attachmentStreams;

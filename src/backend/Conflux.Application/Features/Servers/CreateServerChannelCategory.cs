@@ -49,7 +49,7 @@ public sealed class CreateServerChannelCategoryHandler(
             return Errors.UnexpectedError();
         }
         
-        ChannelCategoryIdentityDto dto = new(category.Id, category.Name);
+        ChannelCategoryIdentityDto dto = new(category);
 
         await mediator.Publish(new ServerChannelCategoryCreatedNotification(category.CommunityServerId, dto), CancellationToken.None);
         return Result<ChannelCategoryIdentityDto>.Success(dto);
