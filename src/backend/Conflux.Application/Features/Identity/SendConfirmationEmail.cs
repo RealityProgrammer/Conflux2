@@ -16,8 +16,7 @@ public sealed record SendConfirmationEmailCommand(Guid UserId) : ICommand<Result
 
 public sealed class SendConfirmationEmailHandler(
     IConfiguration config,
-    UserManager<ApplicationUser> userManager,
-    IAuthRepository authRepository
+    UserManager<ApplicationUser> userManager
 ) : ICommandHandler<SendConfirmationEmailCommand, Result> {
     public async ValueTask<Result> Handle(SendConfirmationEmailCommand request, CancellationToken cancellationToken) {
         if (config["Mail:SenderName"] is not { } senderName) {
@@ -56,7 +55,7 @@ public sealed class SendConfirmationEmailHandler(
         }
         
         // TODO: Time-limiting the confirmation token.
-        string confirmCode = await authRepository.GenerateEmailConfirmationCode(user);
+        string confirmCode = await userManager.GenerateEmailConfirmationTokenAsync(user);;
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
 
         NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);

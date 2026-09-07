@@ -225,11 +225,11 @@ builder.Services
     .AddScoped<IChannelAuthorizationStrategy, ServerVoiceChannelAuthorizationStrategy>()
     .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
     .AddScoped<IJwtProvider, JwtProvider>()
+    .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     
     .AddScoped<IUnitOfWork, UnitOfWork>()
 
-    .AddScoped<IAuthRepository, AuthRepository>()
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
 
     .AddScoped<IUserRepository, UserRepository>()

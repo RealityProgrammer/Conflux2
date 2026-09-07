@@ -11,7 +11,7 @@ public sealed record RefreshCommand(string Email, string RefreshToken) : IComman
 
 public sealed class RefreshHandler(
     UserManager<ApplicationUser> userManager,
-    IAuthRepository authRepository,
+    IJwtStorage jwtStorage,
     IJwtProvider jwtProvider
 ) : ICommandHandler<RefreshCommand, Result<RefreshResponse>> {
     public async ValueTask<Result<RefreshResponse>> Handle(RefreshCommand request, CancellationToken cancellationToken) {
@@ -20,13 +20,13 @@ public sealed class RefreshHandler(
             return Errors.NoUserFoundFromEmail();
         }
 
-        var result = await authRepository.CheckAuthenticationToken(user, request.RefreshToken);
+        var result = await jwtStorage.CheckAuthenticationToken(user, request.RefreshToken);
 
         if (!result.IsSuccess) {
             return result.Error;
         }
-        
-        IList<string> roles = await authRepository.GetUserRoles(user);
+
+        IList<string> roles = await userManager.GetRolesAsync(user);
         jwtProvider.GenerateAccessToken(user, roles, out string accessToken, out _);
         
         return Result<RefreshResponse>.Success(new(new(

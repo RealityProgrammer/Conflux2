@@ -3,38 +3,13 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
-namespace Conflux.Infrastructure.Repositories;
+namespace Conflux.Application.Services.Implementations;
 
-public sealed class AuthRepository(
+public sealed class JwtStorage(
     UserManager<ApplicationUser> userManager,
     TimeProvider timeProvider
-) : IAuthRepository {
+) : IJwtStorage {
     private const string ApplicationJwtLoginProvider = "AppJWT";
-    
-    public async Task<ApplicationUser?> GetUserByLoginCredential(string email, string password) {
-        var user = await userManager.FindByEmailAsync(email);
-
-        return user != null && await userManager.CheckPasswordAsync(user, password) ? user : null;
-    }
-
-    public async Task<string> GenerateEmailConfirmationCode(ApplicationUser user) {
-        return await userManager.GenerateEmailConfirmationTokenAsync(user);
-    }
-
-    public async Task<Result> ConfirmEmail(ApplicationUser user, string token) {
-        IdentityResult result = await userManager.ConfirmEmailAsync(user, token);
-        
-        if (result.Succeeded) {
-            return Result.Success();
-        }
-
-        var firstError = result.Errors.First();
-        return Result.Failure(firstError.Code, firstError.Description);
-    }
-
-    public async Task<IList<string>> GetUserRoles(ApplicationUser user) {
-        return await userManager.GetRolesAsync(user);
-    }
 
     public async Task<Result> StoresAuthenticationToken(ApplicationUser user, string token, DateTimeOffset expiration) {
         IdentityResult identityResult = await userManager.SetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken", $"{token}:{expiration.Ticks}");

@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
@@ -9,8 +10,7 @@ namespace Conflux.Application.Features.Users;
 public sealed record GetUserAuthorizationInfoQuery(string UserId) : IQuery<Result<UserAuthorizationInfo>>;
 
 public sealed class GetUserAuthorizationInfoHandler(
-    UserManager<ApplicationUser> userManager,
-    IAuthRepository authRepository
+    UserManager<ApplicationUser> userManager
 ) : IQueryHandler<GetUserAuthorizationInfoQuery, Result<UserAuthorizationInfo>> {
     public async ValueTask<Result<UserAuthorizationInfo>> Handle(GetUserAuthorizationInfoQuery query, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(query.UserId);
@@ -19,7 +19,7 @@ public sealed class GetUserAuthorizationInfoHandler(
             return Result<UserAuthorizationInfo>.Failure(Errors.NoUserFoundFromId());
         }
 
-        var userRoles = await authRepository.GetUserRoles(user);
+        var userRoles = await userManager.GetRolesAsync(user);
         
         return Result<UserAuthorizationInfo>.Success(new(
             user.Id,

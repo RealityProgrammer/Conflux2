@@ -8,8 +8,7 @@ namespace Conflux.Application.Features.Identity;
 public sealed record ConfirmEmailCommand(string UserId, string ConfirmationCode) : ICommand<Result>;
 
 public sealed class ConfirmEmailHandler(
-    UserManager<ApplicationUser> userManager,
-    IAuthRepository authRepository
+    UserManager<ApplicationUser> userManager
 ) : ICommandHandler<ConfirmEmailCommand, Result> {
     public async ValueTask<Result> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(request.UserId);
@@ -22,6 +21,13 @@ public sealed class ConfirmEmailHandler(
             return Errors.UserAlreadyVerified();
         }
         
-        return await authRepository.ConfirmEmail(user, request.ConfirmationCode);
+        IdentityResult result = await userManager.ConfirmEmailAsync(user, request.ConfirmationCode);
+        
+        if (result.Succeeded) {
+            return Result.Success();
+        }
+
+        var firstError = result.Errors.First();
+        return Result.Failure(firstError.Code, firstError.Description);
     }
 }
