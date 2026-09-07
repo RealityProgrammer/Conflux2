@@ -1,5 +1,6 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {
+  TimelineMessageClusterItemDto,
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/types.ts";
@@ -16,7 +17,7 @@ import {toast} from "react-toastify";
 export type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
-  message: TimelineMessageDto;
+  message: TimelineMessageClusterItemDto;
   showHeader: boolean;
 }
 
@@ -74,7 +75,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 interface MessageViewProps {
   senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
-  message: TimelineMessageDto;
+  message: TimelineMessageClusterItemDto;
   showHeader: boolean;
   context: TimelineContext;
 }
@@ -114,7 +115,7 @@ export default function MessageView({
                 <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
 
                 <MessageContentView
-                  message={message}
+                  message={{...message, senderUserId: senderProfile!.id}}
                   onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
                 />
               </div>
@@ -122,7 +123,7 @@ export default function MessageView({
           ) : (
             <div className="ml-13">
               <MessageContentView
-                message={message}
+                message={{...message, senderUserId: senderProfile!.id}}
                 onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
               />
             </div>

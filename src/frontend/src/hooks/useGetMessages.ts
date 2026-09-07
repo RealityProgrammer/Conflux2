@@ -1,8 +1,8 @@
 import {type InfiniteData, useInfiniteQuery, type UseInfiniteQueryResult, useQueryClient} from "@tanstack/react-query";
 import type {
   GetMessagesResponse,
-  MessageDto,
-  TimelineMessageBlockDto,
+  TimelineMessageDto,
+  TimelineMessageClusterDto,
   UserIdentityProfileDto
 } from "../api/types.ts";
 import {messageService} from "../api/messageService.ts";
@@ -10,10 +10,10 @@ import {MessageLoadDirection} from "../api/schema.ts";
 
 export interface UseGetMessagesResult {
   useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
-  allMessageGroups: TimelineMessageBlockDto[];
+  allMessageGroups: TimelineMessageClusterDto[];
   userProfiles: Record<string, UserIdentityProfileDto>;
   queryKey: (string | null | undefined)[];
-  appendMessage: (newMessage: MessageDto, userProfile?: UserIdentityProfileDto) => void;
+  appendMessage: (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
   editMessage: (messageId: string, newBody: string | null) => void;
   deleteMessage: (messageId: string) => void;
 }
@@ -72,11 +72,11 @@ export default function useGetMessages(channelId: string | null | undefined, loa
     refetchOnWindowFocus: false,
   });
 
-  const allMessageGroups: TimelineMessageBlockDto[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
+  const allMessageGroups: TimelineMessageClusterDto[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
 
   // allMessageGroups is basically a flatten groups, if page N end and page N+1 have same sender id, it still considered
   // as separate group
-  const mergedGroups: TimelineMessageBlockDto[] = allMessageGroups.reduce<TimelineMessageBlockDto[]>((acc, currentGroup) => {
+  const mergedGroups: TimelineMessageClusterDto[] = allMessageGroups.reduce<TimelineMessageClusterDto[]>((acc, currentGroup) => {
     const lastGroup = acc.at(-1);
 
     if (lastGroup && lastGroup.senderUserId === currentGroup.senderUserId) {
@@ -121,7 +121,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
     );
   }
 
-  const appendMessage = (newMessage: MessageDto, userProfile?: UserIdentityProfileDto) => {
+  const appendMessage = (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => {
     modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
       const lastPage: GetMessagesResponse = oldData.pages.at(-1)!;
       const updatedLastPage: GetMessagesResponse = {...lastPage};
@@ -143,7 +143,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
           lastMessageGroup.senderUserId == newMessage.senderUserId;
 
         if (isSameUser) {
-          const updatedGroup: TimelineMessageBlockDto = {
+          const updatedGroup: TimelineMessageClusterDto = {
             ...lastMessageGroup,
             messages: [...lastMessageGroup.messages, newMessage],
           };
@@ -184,7 +184,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
       const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
         if (!page) return page;
 
-        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageBlockDto): TimelineMessageBlockDto => {
+        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageClusterDto): TimelineMessageClusterDto => {
           const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
           if (messageIndex !== -1) {
@@ -231,7 +231,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
       const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
         if (!page) return page;
 
-        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageBlockDto): TimelineMessageBlockDto | null => {
+        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageClusterDto): TimelineMessageClusterDto | null => {
           const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
           if (messageIndex === -1) {

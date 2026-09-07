@@ -4,7 +4,7 @@ import Spinner from "./Spinner.tsx";
 import UserAvatar from "./UserAvatar.tsx";
 import {ChatView, type QueryModification} from "./ChatView.tsx";
 import ChatInput, {type MessageInput} from "./ChatInput.tsx";
-import type {MessageDto, ServiceResponse} from "../api/types.ts";
+import type {TimelineMessageDto, ServiceResponse} from "../api/types.ts";
 import {useRef, useState} from "react";
 import {useMutation} from "@tanstack/react-query";
 import {messageService} from "../api/messageService.ts";
@@ -20,13 +20,13 @@ type SendingMessageOperation = {
 
 type EditMessageOperation = {
   type: "edit";
-  originalMessage: MessageDto;
+  originalMessage: TimelineMessageDto;
   newBody: string | null;
 };
 
 type DeleteMessageOperation = {
   type: "delete";
-  message: MessageDto;
+  message: TimelineMessageDto;
 };
 
 type RetryOperation = SendingMessageOperation | EditMessageOperation | DeleteMessageOperation;
@@ -76,11 +76,11 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
 
   // message mutation
   type SendMessagePayload = { operationId: string, data: MessageInput, idempotencyKey: string };
-  type EditMessagePayload = { operationId: string, originalMessage: MessageDto, newBody: string | null };
-  type DeleteMessagePayload = { operationId: string, message: MessageDto };
+  type EditMessagePayload = { operationId: string, originalMessage: TimelineMessageDto, newBody: string | null };
+  type DeleteMessagePayload = { operationId: string, message: TimelineMessageDto };
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<MessageDto>> => {
+    mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
       return await messageService.sendMessage(
         channelId!,
         payload.idempotencyKey,
@@ -116,7 +116,7 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
         )));
       }
     },
-    onSuccess: async (data: ServiceResponse<MessageDto>, payload: SendMessagePayload) => {
+    onSuccess: async (data: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
       if (!data.success) {
         let reason: string;
 
@@ -149,7 +149,7 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
   });
 
   const editMessageMutation = useMutation({
-    mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<MessageDto>> => {
+    mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
       return await messageService.editMessage(payload.originalMessage.id, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
@@ -178,7 +178,7 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
         )));
       }
     },
-    onSuccess: async (data: ServiceResponse<MessageDto>, payload: EditMessagePayload) => {
+    onSuccess: async (data: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
       if (!data.success) {
         let reason: string;
 
@@ -282,14 +282,14 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
     setReplyingMessage(undefined);
   };
 
-  const handleMessageEdited = async (originalMessage: MessageDto, newBody: string | null) => {
+  const handleMessageEdited = async (originalMessage: TimelineMessageDto, newBody: string | null) => {
     if (!channelId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
     editMessageMutation.mutate({operationId, originalMessage, newBody});
   };
 
-  const handleMessageDelete = async (message: MessageDto) => {
+  const handleMessageDelete = async (message: TimelineMessageDto) => {
     if (!channelId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
@@ -335,7 +335,7 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
     setProcessingOperations((prev) => prev.filter(m => m.operationId != operationId));
   };
 
-  const [replyingMessage, setReplyingMessage] = useState<MessageDto | undefined>(undefined);
+  const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | undefined>(undefined);
 
   return (
     <>

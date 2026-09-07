@@ -77,6 +77,23 @@ export type BooleanOperationFilterInput = {
   neq?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+export type Channel = {
+  __typename?: 'Channel';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+export type ChannelCategory = {
+  __typename?: 'ChannelCategory';
+  channels?: Maybe<Array<Maybe<Channel>>>;
+  communityServer: CommunityServer;
+  communityServerId: Scalars['UUID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  name: Scalars['String']['output'];
+};
+
 export type ChannelCategoryFilterInput = {
   and?: InputMaybe<Array<ChannelCategoryFilterInput>>;
   channels?: InputMaybe<ListFilterInputTypeOfChannelFilterInput>;
@@ -120,6 +137,8 @@ export type ChannelTypeOperationFilterInput = {
 
 export type CommunityServer = {
   __typename?: 'CommunityServer';
+  channelCategories?: Maybe<Array<Maybe<ChannelCategory>>>;
+  channels?: Maybe<Array<Maybe<Channel>>>;
   createdAt: Scalars['DateTime']['output'];
   creatorUser?: Maybe<ApplicationUser>;
   creatorUserId: Scalars['UUID']['output'];
@@ -477,6 +496,16 @@ export type MessageFilterInput = {
   updatedAt?: InputMaybe<DateTimeOperationFilterInput>;
 };
 
+export type Mutation = {
+  __typename?: 'Mutation';
+  updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
+};
+
+
+export type MutationUpdateCommunityServerMemberRolesArgs = {
+  input: UpdateCommunityServerMemberRolesInput;
+};
+
 /** Information about pagination in a connection. */
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -597,6 +626,7 @@ export enum ServerPermission {
   CreateRole = 'CreateRole',
   DeleteChannel = 'DeleteChannel',
   DeleteRole = 'DeleteRole',
+  UpdateMemberRoles = 'UpdateMemberRoles',
   UpdateRole = 'UpdateRole'
 }
 
@@ -634,6 +664,18 @@ export type StringOperationFilterInput = {
   nstartsWith?: InputMaybe<Scalars['String']['input']>;
   or?: InputMaybe<Array<StringOperationFilterInput>>;
   startsWith?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateCommunityServerMemberRolesInput = {
+  memberId: Scalars['UUID']['input'];
+  roleIds: Array<Scalars['UUID']['input']>;
+  serverId: Scalars['UUID']['input'];
+};
+
+export type UpdateCommunityServerMemberRolesPayload = {
+  __typename?: 'UpdateCommunityServerMemberRolesPayload';
+  member: CommunityServerMember;
+  memberId: Scalars['UUID']['output'];
 };
 
 export type UuidOperationFilterInput = {

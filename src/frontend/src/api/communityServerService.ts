@@ -2,7 +2,7 @@ import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
   ServerDetailDto, ServerIdentityDto,
-  ServerMemberPermissionsDto, ServerRoleDto,
+  ServerMemberAuthorizationInfoDto, ServerRoleDto,
   ServiceResponse
 } from "./types.ts";
 import {apiClient} from "./client.ts";
@@ -150,10 +150,10 @@ export const communityServerService = {
     }
   },
 
-  getUserPermission: async (serverId: string): Promise<ServiceResponse<ServerMemberPermissionsDto>> => {
+  getUserPermission: async (serverId: string): Promise<ServiceResponse<ServerMemberAuthorizationInfoDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<ServerMemberPermissionsDto>> =
-        await apiClient.get<BackendResponse<ServerMemberPermissionsDto>>(`/communities/${encodeURIComponent(serverId)}/members/me/permissions`)
+      const response: AxiosResponse<BackendResponse<ServerMemberAuthorizationInfoDto>> =
+        await apiClient.get<BackendResponse<ServerMemberAuthorizationInfoDto>>(`/communities/${encodeURIComponent(serverId)}/members/me/permissions`)
 
       return {
         success: true,
@@ -161,7 +161,7 @@ export const communityServerService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ServerMemberPermissionsDto>>;
+      const axiosError = error as AxiosError<BackendResponse<ServerMemberAuthorizationInfoDto>>;
       return handleAxiosError(axiosError);
     }
   },

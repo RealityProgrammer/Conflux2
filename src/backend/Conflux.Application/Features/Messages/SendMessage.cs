@@ -100,6 +100,8 @@ public sealed class SendMessageHandler(
             if (request.ReplyToId.HasValue) {
                 await messageRepository.GetById(request.ReplyToId.Value, true, cancellationToken);
             }
+
+            await unitOfWork.CommitAsync(cancellationToken);
         } catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(CancellationToken.None);
             await DeleteUploadedAttachments(attachments);

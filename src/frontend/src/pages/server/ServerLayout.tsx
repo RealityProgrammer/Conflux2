@@ -1,7 +1,7 @@
 import {Outlet, useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
-import type {ServerDetailDto, ServerMemberPermissionsDto} from "../../api/types.ts";
+import type {ServerDetailDto, ServerMemberAuthorizationInfoDto} from "../../api/types.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
@@ -82,7 +82,7 @@ interface SuccessfullyLoadedLayoutProps {
   serverId: string;
   serverSummary: ServerDetailDto;
   serverSummaryQueryKey: QueryKey
-  memberPermissions: ServerMemberPermissionsDto;
+  memberPermissions: ServerMemberAuthorizationInfoDto;
   userMemberPermissionQueryKey: QueryKey
 }
 
@@ -232,8 +232,8 @@ function SuccessfullyLoadedLayout({
     });
   };
 
-  const updateMemberPermissions = (update: Partial<Omit<ServerMemberPermissionsDto, "memberId">>) => {
-    queryClient.setQueryData<ServerMemberPermissionsDto>(userMemberPermissionQueryKey, (oldData) => {
+  const updateMemberPermissions = (update: Partial<Omit<ServerMemberAuthorizationInfoDto, "memberId">>) => {
+    queryClient.setQueryData<ServerMemberAuthorizationInfoDto>(userMemberPermissionQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       return {...oldData, ...update};

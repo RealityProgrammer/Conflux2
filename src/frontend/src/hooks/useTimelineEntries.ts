@@ -1,10 +1,10 @@
-import type {TimelineMessageBlockDto, UserIdentityProfileDto} from "../api/types.ts";
+import type {TimelineMessageClusterDto, UserIdentityProfileDto} from "../api/types.ts";
 import {MessageItem} from "../components/chat/MessageItem.tsx";
 import type {TimelineItem} from "../components/chat/TimelineItem.ts";
 import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";
 
 export default function useTimelineEntries(
-  messageGroups: TimelineMessageBlockDto[],
+  messageGroups: TimelineMessageClusterDto[],
   userProfiles: Record<string, UserIdentityProfileDto>,
   editingMessageId?: string,
 ): TimelineItem[] {

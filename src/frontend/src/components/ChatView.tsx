@@ -1,7 +1,7 @@
 import type {
   Attachment,
   GetMessagesResponse,
-  MessageDto,
+  TimelineMessageDto,
   UserIdentityProfileDto
 } from "../api/types.ts";
 import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState} from "react";
@@ -27,7 +27,7 @@ type MediaGalleryState = {
 };
 
 export interface QueryModification {
-  appendMessage: (message: MessageDto, userProfile?: UserIdentityProfileDto) => void;
+  appendMessage: (message: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
   editMessage: (messageId: string, newBody: string | null) => void;
   deleteMessage: (messageId: string) => void;
 }
@@ -123,7 +123,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
   };
 
   // message editing
-  const [editingMessage, setEditingMessage] = useState<MessageDto | undefined>(undefined);
+  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
 
   const handleSaveEdit = async (newBody: string | null) => {
@@ -135,7 +135,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
     onMessageEdit(editingMessage, newBody?.trim() ?? null);
   };
 
-  const [deletingMessage, setDeletingMessage] = useState<MessageDto | undefined>(undefined);
+  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
 
   // signalr events
   // change the cache pages when message received

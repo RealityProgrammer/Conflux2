@@ -1,11 +1,11 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type {BackendResponse, GetMessagesResponse, MessageDto, ServiceResponse} from "./types.ts";
+import type {BackendResponse, GetMessagesResponse, TimelineMessageDto, ServiceResponse} from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
 import type {MessageLoadDirection} from "./schema.ts";
 
 export const messageService = {
-  sendMessage: async (channelId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<MessageDto>> => {
+  sendMessage: async (channelId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = body?.trim();
 
     if (!trimmedBody && !attachments) {
@@ -32,7 +32,7 @@ export const messageService = {
         formData.append("replyToId", replyToId);
       }
 
-      const response: AxiosResponse<BackendResponse<MessageDto>> =
+      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.post(`channels/${encodeURIComponent(channelId)}/messages`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -51,7 +51,7 @@ export const messageService = {
     }
   },
 
-  editMessage: async (messageId: string, newBody: string | null): Promise<ServiceResponse<MessageDto>> => {
+  editMessage: async (messageId: string, newBody: string | null): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = newBody?.trim();
 
     try {
@@ -61,7 +61,7 @@ export const messageService = {
         formData.append("body", trimmedBody);
       }
 
-      const response: AxiosResponse<BackendResponse<MessageDto>> =
+      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch(`/messages/${encodeURIComponent(messageId)}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -81,7 +81,7 @@ export const messageService = {
 
   deleteMessage: async (messageId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse<MessageDto>> =
+      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.delete(`messages/${encodeURIComponent(messageId)}`);
 
       return {

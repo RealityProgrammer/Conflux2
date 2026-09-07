@@ -1,4 +1,4 @@
-import type {ChannelCategoryIdentityDto, MessageDto, ServerChannelIdentityDto, ServerRoleDto} from "./types.ts";
+import type {ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto} from "./types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -21,11 +21,11 @@ export type UnfriendedEvent = {
 }
 
 export type MessageReceivedEvent = {
-  message: MessageDto;
+  message: TimelineMessageDto;
 }
 
 export type MessageEditedEvent = {
-  message: MessageDto;
+  message: TimelineMessageDto;
 }
 
 export type UpdateDmConversationListEvent = {

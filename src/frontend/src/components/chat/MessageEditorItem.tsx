@@ -1,6 +1,6 @@
 import {type ChangeEvent, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
 import {TimelineItem} from "./TimelineItem.ts";
-import type {MessageDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
+import type {TimelineMessageClusterItemDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {estimateMessageLayout} from "./utils.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
@@ -8,7 +8,7 @@ import UserAvatar from "../UserAvatar.tsx";
 
 export type MessageEditorItemProps = {
   senderProfile: UserIdentityProfileDto;
-  message: TimelineMessageDto;
+  message: TimelineMessageClusterItemDto;
   showHeader: boolean;
 }
 
@@ -67,7 +67,7 @@ export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
 }
 
 export interface MessageEditorProps {
-  message: MessageDto;
+  message: TimelineMessageDto;
   senderProfile: UserIdentityProfileDto;
   showHeader: boolean;
   context: TimelineContext;
@@ -165,7 +165,7 @@ function MessageEditorView({
 
 interface EditorContentProps {
   textareaRef: Ref<HTMLTextAreaElement>;
-  message: MessageDto;
+  message: TimelineMessageDto;
   handleInputChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   handleKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
   handleCancelEdit: () => void;

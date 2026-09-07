@@ -363,13 +363,15 @@ const updateRoleSchema = z.object({
     .min(1, "A positive integer number is required.")
     .max(500000, "Value must be less than or equal to 500000."),
 
-  permissions: z.object({
-    [ServerPermission.CreateRole]: z.enum(PermissionState),
-    [ServerPermission.UpdateRole]: z.enum(PermissionState),
-    [ServerPermission.DeleteRole]: z.enum(PermissionState),
-    [ServerPermission.CreateChannel]: z.enum(PermissionState),
-    [ServerPermission.DeleteChannel]: z.enum(PermissionState),
-  }),
+  permissions: z.record(z.enum(ServerPermission), z.enum(PermissionState)),
+
+  // permissions: z.object({
+  //   // [ServerPermission.CreateRole]: z.enum(PermissionState),
+  //   // [ServerPermission.UpdateRole]: z.enum(PermissionState),
+  //   // [ServerPermission.DeleteRole]: z.enum(PermissionState),
+  //   // [ServerPermission.CreateChannel]: z.enum(PermissionState),
+  //   // [ServerPermission.DeleteChannel]: z.enum(PermissionState),
+  // }),
 });
 
 type UpdateRoleFormValues = z.infer<typeof updateRoleSchema>;

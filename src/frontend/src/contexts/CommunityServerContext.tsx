@@ -1,4 +1,4 @@
-import type {ServerDetailDto, ServerMemberPermissionsDto} from "../api/types.ts";
+import type {ServerDetailDto, ServerMemberAuthorizationInfoDto} from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
 
@@ -11,8 +11,8 @@ interface CommunityServerContextType {
   removeChannelCategory: (id: string) => void;
   removeChannel: (id: string) => void;
 
-  memberPermissions: ServerMemberPermissionsDto;
-  updateMemberPermissions: (update: Partial<Omit<ServerMemberPermissionsDto, "memberId">>) => void;
+  memberPermissions: ServerMemberAuthorizationInfoDto;
+  updateMemberPermissions: (update: Partial<Omit<ServerMemberAuthorizationInfoDto, "memberId">>) => void;
 }
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
