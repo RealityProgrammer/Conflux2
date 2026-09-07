@@ -3,6 +3,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Extensions;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -15,14 +16,7 @@ internal sealed class FriendRequestRepository(
                 r.SenderUserId == user1 && r.ReceiverUserId == user2 ||
                 r.SenderUserId == user2 && r.ReceiverUserId == user1
             )
-            .Include(r => r.Sender)
-            .Include(r => r.Receiver)
-            .Select(r => new FriendRequestSummary(
-                r.Id, 
-                r.Status, 
-                new(r.Sender.Id, r.Sender.UserName!, r.Sender.DisplayName!, r.Sender.HasAvatar),
-                new(r.Receiver.Id, r.Receiver.UserName!, r.Receiver.DisplayName!, r.Receiver.HasAvatar)
-            ))
+            .SelectFacet<FriendRequestSummary>()
             .FirstOrDefaultAsync();
     }
 
@@ -139,12 +133,7 @@ internal sealed class FriendRequestRepository(
             .OrderBy(u => u.UserName)
             .Skip(offset)
             .Take(count)
-            .Select(u => new UserIdentityProfileDto(
-                u.Id,
-                u.UserName!,
-                u.DisplayName!,
-                u.HasAvatar
-            ))
+            .SelectFacet<UserIdentityProfileDto>()
             .ToListAsync(cancellationToken);
         
         return new(paginatedItems, totalCount);

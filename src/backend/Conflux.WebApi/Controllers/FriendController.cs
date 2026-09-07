@@ -135,7 +135,7 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserProfileDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);

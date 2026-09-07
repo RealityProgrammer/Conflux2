@@ -1,8 +1,12 @@
+using Conflux.Domain.Entities;
+using Facet;
+
 namespace Conflux.Domain.Dto;
 
-public sealed record CommunityServerProfileDto(
-    Guid Id,
-    string Name,
-    string? Description,
-    bool HasAvatar
-);
+[Facet(typeof(CommunityServer), Include = [
+    nameof(CommunityServer.Id),
+    nameof(CommunityServer.Name),
+    nameof(CommunityServer.Description),
+    nameof(CommunityServer.HasAvatar),
+])]
+public sealed partial record CommunityServerProfileDto;

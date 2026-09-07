@@ -53,7 +53,7 @@ internal sealed class ChannelRepository(
             .Select(cfru => 
                 new DmChannelSummary(
                     cfru.Channel.Id,
-                    new(cfru.User.Id, cfru.User.UserName!, cfru.User.DisplayName!, cfru.User.HasAvatar),
+                    new(cfru.User),
                     cfru.FriendRequest.Status
                 )
             )
@@ -74,7 +74,7 @@ internal sealed class ChannelRepository(
             .Select(fr => new FriendDmChannelSummaryDto(
                 fr.Id,
                 fr.Status,
-                fr.ConversationChannel == null ? (Guid?)null : fr.ConversationChannel.Id
+                fr.ConversationChannel == null ? null : fr.ConversationChannel.Id
             ))
             .FirstOrDefaultAsync();
     }
@@ -102,7 +102,7 @@ internal sealed class ChannelRepository(
             .Select(cu =>
                 new DmConversationListItemDto(
                     cu.Channel.Id,
-                    new(cu.OtherUser.Id, cu.OtherUser.UserName!, cu.OtherUser.DisplayName!, cu.OtherUser.HasAvatar)
+                    new(cu.OtherUser)
                 )
             )
             .Skip(offset)

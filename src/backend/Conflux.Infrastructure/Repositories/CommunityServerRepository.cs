@@ -3,6 +3,7 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -30,7 +31,7 @@ internal sealed class CommunityServerRepository(
         CommunityServerProfileDto? result = await dbContext.CommunityServers
             .AsNoTracking()
             .Where(c => c.Id == serverId)
-            .Select(c => new CommunityServerProfileDto(c.Id, c.Name, c.Description, c.HasAvatar))
+            .SelectFacet<CommunityServerProfileDto>()
             .FirstOrDefaultAsync(cancellationToken);
 
         return result != null ? Result<CommunityServerProfileDto>.Success(result) : Errors.ResourceNotFound("Server");

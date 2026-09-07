@@ -79,7 +79,7 @@ public sealed class SessionUserController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserProfileDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
         await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;

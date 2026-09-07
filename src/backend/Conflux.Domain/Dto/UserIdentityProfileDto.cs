@@ -1,3 +1,12 @@
+using Conflux.Domain.Entities;
+using Facet;
+
 namespace Conflux.Domain.Dto;
 
-public sealed record UserIdentityProfileDto(Guid Id, string UserName, string DisplayName, bool HasAvatar);
+[Facet(typeof(ApplicationUser), Include = [
+    nameof(ApplicationUser.Id),
+    nameof(ApplicationUser.UserName),
+    nameof(ApplicationUser.DisplayName),
+    nameof(ApplicationUser.HasAvatar),
+])]
+public sealed partial record UserIdentityProfileDto;

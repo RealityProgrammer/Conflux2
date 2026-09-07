@@ -2,6 +2,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using Microsoft.AspNetCore.Identity;
 
 namespace Conflux.Infrastructure.Repositories;
@@ -65,12 +66,7 @@ internal sealed class UserRepository(
     public async Task<Result<UserIdentityProfileDto>> GetIdentityProfile(Guid userId, CancellationToken cancellationToken = default) {
         UserIdentityProfileDto? result = await dbContext.Users
             .Where(u => u.Id == userId)
-            .Select(u => new UserIdentityProfileDto(
-                u.Id, 
-                u.UserName!, 
-                u.DisplayName!, 
-                u.HasAvatar
-            ))
+            .SelectFacet<UserIdentityProfileDto>()
             .FirstOrDefaultAsync(cancellationToken);
 
         return result == null ? 
@@ -84,12 +80,7 @@ internal sealed class UserRepository(
     ) {
         List<UserIdentityProfileDto> results = await dbContext.Users
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new UserIdentityProfileDto(
-                u.Id, 
-                u.UserName!, 
-                u.DisplayName!, 
-                u.HasAvatar
-            ))
+            .SelectFacet<UserIdentityProfileDto>()
             .ToListAsync(cancellationToken);
 
         return results;
