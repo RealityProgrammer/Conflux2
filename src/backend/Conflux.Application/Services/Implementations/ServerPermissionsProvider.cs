@@ -68,7 +68,7 @@ internal sealed class ServerPermissionsProvider(
             member.Id,
             roleAuthInfo[0].AuthorizeLevel,
             effectivePermissions,
-            [..member.MemberRoles.Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))]
+            [..member.MemberRoles.OrderByDescending(mr => mr.Role.AuthorizeLevel).Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))]
         );
         
         await cacheService.SetUserAuthorizeInfo(serverId, userId, dto, CancellationToken.None);
@@ -133,7 +133,7 @@ internal sealed class ServerPermissionsProvider(
                 member.Id,
                 roleAuthInfo[0].AuthorizeLevel,
                 effectivePermissions,
-                [.. member.MemberRoles.Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))]
+                [.. member.MemberRoles.OrderByDescending(mr => mr.Role.AuthorizeLevel).Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))]
             );
 
             dtosToCache[userId] = dto;

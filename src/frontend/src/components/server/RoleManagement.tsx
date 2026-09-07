@@ -1,6 +1,6 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {
-  type GetServerRolesByServerIdQuery,
+  type GetServerRolesByServerIdQuery, useInfiniteGetAssignableServerRolesByServerIdQuery,
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
 import {useEffect, useRef, useState} from "react";
@@ -65,6 +65,10 @@ export default function RoleManagement() {
   const invalidateRoleQuery = () => {
     queryClient.invalidateQueries({
       queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({ serverId }),
     });
   };
 

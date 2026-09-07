@@ -375,17 +375,18 @@ function RoleModificationButton({
           onWheel={(e) => e.stopPropagation()}
           onOpenAutoFocus={(e) => e.stopPropagation()}
         >
-          <div className="px-1 pt-1">
+          <div className="px-1 pt-1 flex-none">
             <input
               type="text"
               placeholder="Enter name"
-              className="flex-none text-sm input-field py-2 px-2"
+              className="text-sm input-field py-2 px-2"
               onChange={(e) => setSearchValue(e.target.value)}
             />
           </div>
 
           <VirtualizedScrollList
-            viewportClassName="overflow-y-auto w-full"
+            className="flex-1"
+            viewportClassName="overflow-y-auto w-full flex items-center justify-center"
             itemCount={allElements.length}
             keyExtractor={(index) => allElements[index].id}
             isLoading={isLoading}
@@ -400,6 +401,11 @@ function RoleModificationButton({
                 <BsCircleFill className="size-2.5 fill-white/10 animate-pulse"/>
                 <span className="h-4 w-32 bg-white/10 animate-pulse rounded"></span>
               </li>
+            )}
+            renderEmpty={() => (
+              <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+                No assignable role...
+              </div>
             )}
             renderItem={(itemIndex) => {
               const role = allElements[itemIndex];
