@@ -16,9 +16,9 @@ public sealed record SendMessageCommand(
     string? Body,
     IReadOnlyList<Stream> AttachmentStreams,
     Guid? ReplyToId
-) : ICommand<Result<MessageDto>>;
+) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageReceivedNotification(Guid ChannelId, MessageDto Message) : INotification;
+public sealed record MessageReceivedNotification(Guid ChannelId, TimelineMessageDto TimelineMessage) : INotification;
 
 public sealed record UpdateDmConversationListNotification(
     Guid SenderUserId,
@@ -37,8 +37,8 @@ public sealed class SendMessageHandler(
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector,
     TimeProvider timeProvider
-) : ICommandHandler<SendMessageCommand, Result<MessageDto>> {
-    public async ValueTask<Result<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken) {
+) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
+    public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken) {
         Guid channelId = request.ChannelId;
         Guid senderUserId = request.SenderUserId;
 
@@ -106,7 +106,7 @@ public sealed class SendMessageHandler(
             await messageRepository.GetReplyMessageById(request.ReplyToId.Value, CancellationToken.None) :
             null;
         
-        MessageDto dto = new(
+        TimelineMessageDto dto = new(
             message.Id,
             senderUserId,
             message.Body,
@@ -130,7 +130,7 @@ public sealed class SendMessageHandler(
             ), CancellationToken.None);
         }
 
-        return Result<MessageDto>.Success(dto);
+        return Result<TimelineMessageDto>.Success(dto);
     }
 
     private async Task<Result<Attachment[]>> UploadAttachments(

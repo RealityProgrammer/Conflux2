@@ -70,11 +70,11 @@ public sealed class GetChatMessagesHandler(
         }
         
         // group the messages
-        var groups = new List<TimelineMessageBlockDto>();
-        TimelineMessageBlockDto? currentGroup = null;
+        var groups = new List<TimelineMessageClusterDto>();
+        TimelineMessageClusterDto? currentGroup = null;
 
-        foreach (TimelineMessageProjection message in getMessagesResult.Value!.Messages) {
-            var element = new TimelineMessageDto(
+        foreach (TimelineMessageDto message in getMessagesResult.Value!.Messages) {
+            TimelineMessageClusterItemDto clusterItem = new(
                 message.Id, 
                 message.Body, 
                 message.Attachments, 
@@ -84,10 +84,10 @@ public sealed class GetChatMessagesHandler(
 
             // if same sender as the last message, append to the current group
             if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {
-                currentGroup.Messages.Add(element);
+                currentGroup.Messages.Add(clusterItem);
             } else {
                 // else, create a new group and add it to the list
-                currentGroup = new(message.SenderUserId, [element]);
+                currentGroup = new(message.SenderUserId, [clusterItem]);
                 groups.Add(currentGroup);
             }
         }

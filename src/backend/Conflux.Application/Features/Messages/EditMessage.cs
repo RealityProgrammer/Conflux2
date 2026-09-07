@@ -10,9 +10,9 @@ public sealed record EditMessageCommand(
     Guid SenderUserId, 
     Guid MessageId, 
     string? Body
-) : ICommand<Result<MessageDto>>;
+) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageEditedNotification(Guid ChannelId, MessageDto Message) : INotification;
+public sealed record MessageEditedNotification(Guid ChannelId, TimelineMessageDto TimelineMessage) : INotification;
 
 public sealed class EditMessageHandler(
     IMessageRepository messageRepository,
@@ -21,8 +21,8 @@ public sealed class EditMessageHandler(
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
-) : ICommandHandler<EditMessageCommand, Result<MessageDto>> {
-    public async ValueTask<Result<MessageDto>> Handle(EditMessageCommand request, CancellationToken cancellationToken) {
+) : ICommandHandler<EditMessageCommand, Result<TimelineMessageDto>> {
+    public async ValueTask<Result<TimelineMessageDto>> Handle(EditMessageCommand request, CancellationToken cancellationToken) {
         var message = await messageRepository.GetById(request.MessageId, cancellationToken);
         var newBody = request.Body;
         
@@ -65,7 +65,7 @@ public sealed class EditMessageHandler(
         
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {
-            return Result<MessageDto>.Success(new(
+            return Result<TimelineMessageDto>.Success(new(
                 message.Id, 
                 message.SenderUserId,
                 newBody,
@@ -80,7 +80,7 @@ public sealed class EditMessageHandler(
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        MessageDto dto = new(
+        TimelineMessageDto dto = new(
             message.Id,
             message.SenderUserId,
             message.Body,
@@ -91,6 +91,6 @@ public sealed class EditMessageHandler(
         
         await mediator.Publish(new MessageEditedNotification(channelMetadata.ChannelId, dto), CancellationToken.None);
         
-        return Result<MessageDto>.Success(dto);
+        return Result<TimelineMessageDto>.Success(dto);
     }
 }

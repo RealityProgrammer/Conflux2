@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
+using TimelineMessageDto = Conflux.Domain.Dto.TimelineMessageDto;
 
 namespace Conflux.WebApi.Controllers;
 
@@ -24,7 +25,7 @@ public sealed class ConversationController(
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
     [Idempotent(20)]
-    public async Task<ActionResult<ApiResponse<MessageDto>>> SendMessage(
+    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> SendMessage(
         Guid channelId,
         [FromForm] SendMessageRequest request,
         CancellationToken cancellationToken
@@ -32,11 +33,11 @@ public sealed class ConversationController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.InvalidIdentifier()));
         }
 
         if (request.Body.AsSpan().Trim().IsEmpty && request.Attachments is not { Length: > 0 }) {
-            return BadRequest(new ApiResponse<MessageDto>(null, Errors.EmptyMessageContent()));
+            return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.EmptyMessageContent()));
         }
 
         Stream[] attachmentStreams;
@@ -54,7 +55,7 @@ public sealed class ConversationController(
                         }
                     }
 
-                    return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.OperationFailure("open attachment stream")));
+                    return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, Errors.OperationFailure("open attachment stream")));
                 }
             }
         } else {
@@ -71,13 +72,13 @@ public sealed class ConversationController(
             ), cancellationToken);
 
             if (result.IsSuccess) {
-                return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
+                return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
             }
         
             return result.Error.Code switch {
-                nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse<MessageDto>(null, result.Error)),
-                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse<MessageDto>(null, result.Error)),
-                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, Errors.UnexpectedError())),
+                nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse<TimelineMessageDto>(null, result.Error)),
+                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse<TimelineMessageDto>(null, result.Error)),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, Errors.UnexpectedError())),
             };
         } finally {
             foreach (var stream in attachmentStreams) {
@@ -87,7 +88,7 @@ public sealed class ConversationController(
     }
 
     [HttpPatch("messages/{messageId:guid}")]
-    public async Task<ActionResult<ApiResponse<MessageDto>>> EditMessage(
+    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> EditMessage(
         Guid messageId,
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
@@ -95,19 +96,19 @@ public sealed class ConversationController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<MessageDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.InvalidIdentifier()));
         }
 
         var result = await mediator.Send(new EditMessageCommand(userId, messageId, request.Body), cancellationToken);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<MessageDto>(result.Value, Error.None));
+            return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
-            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<MessageDto>(null, result.Error)),
-            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<MessageDto>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<MessageDto>(null, result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<TimelineMessageDto>(null, result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<TimelineMessageDto>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, result.Error)),
         };
     }
 

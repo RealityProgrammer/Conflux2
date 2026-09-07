@@ -136,6 +136,6 @@ public sealed class CreateServerHandler(
             }
         }
 
-        return Result<ServerIdentityDto>.Success(new(server.Id, server.Name, server.HasAvatar));
+        return Result<ServerIdentityDto>.Success(new(server));
     }
 }

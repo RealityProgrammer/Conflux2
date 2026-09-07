@@ -195,7 +195,7 @@ internal sealed class MessageRepository(
                 );
             }
             
-            return new TimelineMessageProjection(
+            return new TimelineMessageDto(
                 p.Id,
                 p.SenderId,
                 p.Body,

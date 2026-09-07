@@ -3,12 +3,12 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Application.Dto;
 
-public sealed record TimelineMessageBlockDto(
+public sealed record TimelineMessageClusterDto(
     Guid SenderUserId,
-    List<TimelineMessageDto> Messages
+    List<TimelineMessageClusterItemDto> Messages
 );
 
-public sealed record TimelineMessageDto(
+public sealed record TimelineMessageClusterItemDto(
     Guid Id,
     string? Body,
     Attachment[] Attachments,
