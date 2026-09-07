@@ -29,14 +29,14 @@ public sealed class DeleteMessageHandler(
             return Errors.Forbidden("You do not have permission to delete this message.");
         }
        
-        Result<ChannelMetadata> getChannelMetadataResult = 
+        Result<ChannelMetadataDto> getChannelMetadataResult = 
             await conversationRepository.GetChannelMetadata(message.ConversationId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
         }
         
-        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             request.RequesterUserId, 

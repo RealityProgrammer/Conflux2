@@ -14,20 +14,20 @@ internal sealed class ChannelRepository(
         dbContext.Channels.Add(channel);
     }
 
-    public async Task<Result<ChannelMetadata>> GetChannelMetadataFromChannelId(
+    public async Task<Result<ChannelMetadataDto>> GetChannelMetadataFromChannelId(
         Guid channelId,
         CancellationToken cancellationToken = default
     ) {
-        ChannelMetadata? context = await dbContext.Channels
+        ChannelMetadataDto? context = await dbContext.Channels
             .Where(c => c.Id == channelId)
-            .SelectFacet<ChannelMetadata>()
+            .SelectFacet<ChannelMetadataDto>()
             .FirstOrDefaultAsync(cancellationToken);
 
         if (context == null) {
             return Errors.ResourceNotFound("Channel");
         }
 
-        return Result<ChannelMetadata>.Success(context);
+        return Result<ChannelMetadataDto>.Success(context);
     }
 
     public async Task<Result<DmChannelSummary>> GetDmChannelSummary(Guid userId, Guid channelId) {

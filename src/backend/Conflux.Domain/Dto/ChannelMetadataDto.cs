@@ -7,7 +7,7 @@ namespace Conflux.Domain.Dto;
 [Facet(typeof(Channel), Include = [
     nameof(Channel.ConversationId),
 ])]
-public sealed partial class ChannelMetadata {
+public sealed partial class ChannelMetadataDto {
     [MapFrom(nameof(Channel.Id))]
     public Guid ChannelId { get; set; }
     

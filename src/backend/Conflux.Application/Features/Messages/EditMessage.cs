@@ -34,14 +34,14 @@ public sealed class EditMessageHandler(
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
        
-        Result<ChannelMetadata> getChannelMetadataResult = 
+        Result<ChannelMetadataDto> getChannelMetadataResult = 
             await conversationRepository.GetChannelMetadata(message.ConversationId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
         }
         
-        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             request.SenderUserId, 

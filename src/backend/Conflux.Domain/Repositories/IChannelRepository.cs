@@ -6,7 +6,7 @@ namespace Conflux.Domain.Repositories;
 public interface IChannelRepository {
     void Add(Channel channel);
     
-    Task<Result<ChannelMetadata>> GetChannelMetadataFromChannelId(
+    Task<Result<ChannelMetadataDto>> GetChannelMetadataFromChannelId(
         Guid channelId, 
         CancellationToken cancellationToken = default
     );

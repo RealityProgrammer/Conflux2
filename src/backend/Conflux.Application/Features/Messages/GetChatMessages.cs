@@ -25,14 +25,14 @@ public sealed class GetChatMessagesHandler(
         GetChatMessagesQuery query, 
         CancellationToken cancellationToken
     ) {
-        Result<ChannelMetadata> getChannelMetadataResult = 
+        Result<ChannelMetadataDto> getChannelMetadataResult = 
             await channelRepository.GetChannelMetadataFromChannelId(query.ChannelId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
         }
         
-        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             query.RequesterUserId, 

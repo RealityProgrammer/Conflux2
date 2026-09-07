@@ -42,14 +42,14 @@ public sealed class SendMessageHandler(
         Guid channelId = request.ChannelId;
         Guid senderUserId = request.SenderUserId;
 
-        Result<ChannelMetadata> getChannelMetadataResult = 
+        Result<ChannelMetadataDto> getChannelMetadataResult = 
             await channelRepository.GetChannelMetadataFromChannelId(channelId, cancellationToken);
         
         if (!getChannelMetadataResult.IsSuccess) {
             return getChannelMetadataResult.Error;
         }
         
-        ChannelMetadata channelMetadata = getChannelMetadataResult.Value!;
+        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
 
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
             senderUserId, 

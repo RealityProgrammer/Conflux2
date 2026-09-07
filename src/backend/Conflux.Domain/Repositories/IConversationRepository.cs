@@ -3,7 +3,7 @@ using Conflux.Domain.Dto;
 namespace Conflux.Domain.Repositories;
 
 public interface IConversationRepository {
-    Task<Result<ChannelMetadata>> GetChannelMetadata(
+    Task<Result<ChannelMetadataDto>> GetChannelMetadata(
         Guid conversationId, 
         CancellationToken cancellationToken = default
     );
