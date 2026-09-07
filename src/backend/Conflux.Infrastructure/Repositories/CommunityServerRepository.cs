@@ -51,15 +51,14 @@ internal sealed class CommunityServerRepository(
         var channels = await dbContext.Channels
             .AsNoTracking()
             .Where(c => (c.Type == ChannelType.CommunityServerText || c.Type == ChannelType.CommunityServerVoice) && c.CommunityServerId == serverId)
-            .Select(c => new { c.Id, c.Name, c.ChannelCategoryId, c.Type })
+            .SelectFacet<ServerChannelIdentityDto>()
             .ToListAsync(cancellationToken);
 
-        var channelsByCategoryId = channels.ToLookup(c => c.ChannelCategoryId);
+        var channelsByCategoryId = channels.ToLookup(c => c.CategoryId);
         
         var result = new List<ChannelCategoryDetailDto>();
         
         var uncategorizedChannels = channelsByCategoryId[null]
-            .Select(c => new ServerChannelIdentityDto(c.Id, c.Name!, c.Type, c.ChannelCategoryId))
             .ToList();
 
         if (uncategorizedChannels.Count > 0) {
@@ -70,7 +69,7 @@ internal sealed class CommunityServerRepository(
             .Select(c => new ChannelCategoryDetailDto(
                 c.Id, 
                 c.Name,
-                [..channelsByCategoryId[c.Id].Select(ch => new ServerChannelIdentityDto(ch.Id, ch.Name!, ch.Type, ch.ChannelCategoryId))]
+                [..channelsByCategoryId[c.Id]]
             ));
         
         result.AddRange(mappedCategories);

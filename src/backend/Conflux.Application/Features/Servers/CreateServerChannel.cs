@@ -114,7 +114,7 @@ public sealed class CreateServerChannelHandler(
             return Errors.UnexpectedError();
         }
 
-        ServerChannelIdentityDto dto = new(channel.Id, channel.Name, channel.Type, channel.ChannelCategoryId);
+        ServerChannelIdentityDto dto = new(channel);
 
         await mediator.Publish(new ServerChannelCreatedNotification(serverId, dto), CancellationToken.None);
         return Result<ServerChannelIdentityDto>.Success(dto);
