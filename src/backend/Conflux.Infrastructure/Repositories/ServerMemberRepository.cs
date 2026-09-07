@@ -4,26 +4,15 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Infrastructure.Repositories;
 
-internal sealed class CommunityServerMemberRepository(
+internal sealed class ServerMemberRepository(
     ApplicationDbContext dbContext
-) : ICommunityServerMemberRepository {
+) : IServerMemberReadRepository, IServerMemberWriteRepository {
     public IQueryable<CommunityServerMember> AsQueryable() {
         return dbContext.CommunityServerMembers;
     }
     
     public void Add(CommunityServerMember value) {
         dbContext.CommunityServerMembers.Add(value);
-    }
-
-    public async Task<CommunityServerMember?> GetFromId(
-        Guid id, 
-        bool tracking = true, 
-        CancellationToken cancellationToken = default
-    ) {
-        IQueryable<CommunityServerMember> query = dbContext.CommunityServerMembers;
-        query = tracking ? query.AsTracking() : query.AsNoTracking();
-
-        return await query.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
     public async Task<bool> IsUserJoined(

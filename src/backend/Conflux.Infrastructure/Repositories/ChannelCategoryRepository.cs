@@ -7,7 +7,7 @@ internal sealed class ChannelCategoryRepository(
     ApplicationDbContext dbContext
 ) : IChannelCategoryRepository {
     public IQueryable<ChannelCategory> AsQueryable() {
-        return dbContext.ChannelCategories;
+        return dbContext.ChannelCategories.AsTracking();
     }
 
     public void Add(ChannelCategory category) {

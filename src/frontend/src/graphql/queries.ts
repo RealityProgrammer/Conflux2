@@ -6,7 +6,7 @@ import { graphqlFetcher } from '../api/client';
 import type * as Types from './types';
 
 import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query';
 export type GetInvitationSummaryQueryVariables = Exact<{
   id: string;
 }>;
@@ -34,6 +34,15 @@ export type InspectMemberQueryVariables = Exact<{
 
 
 export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+
+export type UpdateMemberRolesMutationVariables = Exact<{
+  serverId: string;
+  memberId: string;
+  roleIds: Array<string> | string;
+}>;
+
+
+export type UpdateMemberRolesMutation = { updateCommunityServerMemberRoles: { memberId: string } };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -206,3 +215,29 @@ useInspectMemberQuery.getKey = (variables: InspectMemberQueryVariables) => ['Ins
 
 
 useInspectMemberQuery.fetcher = (variables: InspectMemberQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables, options);
+
+export const UpdateMemberRolesDocument = new TypedDocumentString(`
+    mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {
+  updateCommunityServerMemberRoles(
+    input: { serverId: $serverId, memberId: $memberId, roleIds: $roleIds }
+  ) {
+    memberId
+  }
+}
+    `);
+
+export const useUpdateMemberRolesMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<UpdateMemberRolesMutation, TError, UpdateMemberRolesMutationVariables, TContext>) => {
+    
+    return useMutation<UpdateMemberRolesMutation, TError, UpdateMemberRolesMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateMemberRoles'],
+    mutationFn: (variables?: UpdateMemberRolesMutationVariables) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useUpdateMemberRolesMutation.fetcher = (variables: UpdateMemberRolesMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables, options);

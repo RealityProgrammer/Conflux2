@@ -3,6 +3,7 @@ import axios, {HttpStatusCode} from "axios";
 import Cookies from "js-cookie";
 import {csrfService} from "./csrfService.ts";
 import type {BackendResponse} from "./types.ts";
+import type {GraphQLResponse} from "./hotChocolate.ts";
 
 axios.defaults.withCredentials = true;
 
@@ -126,20 +127,24 @@ function registerGraphqlUnauthorizedInterception() {
 registerGraphqlUnauthorizedInterception();
 
 export const graphqlFetcher = <TData, TVariables>(
-  query: string | { toString: () => string }, // blame the codegen
+  query: string | { toString: () => string },
   variables?: TVariables,
   options?: any
-) => {
+): (() => Promise<TData>) => {
   return async (): Promise<TData> => {
-    const response: AxiosResponse = await graphqlClient.post('', {
-      query: query.toString(),
-      variables,
-    }, options);
+    const response: AxiosResponse<GraphQLResponse<TData>> = await graphqlClient.post(
+      '',
+      {
+        query: query.toString(),
+        variables,
+      },
+      options
+    );
 
-    if (response.data.errors?.length > 0) {
-      throw new Error(`GraphQL Error:\n${response.data.errors.map((e: any) => e.message).join('\n')}`);
+    if (response.data.errors && response.data.errors.length > 0) {
+      throw response.data.errors;
     }
 
-    return response.data.data;
+    return response.data.data!;
   };
 };

@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Mediator;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.GraphQL;
@@ -14,8 +15,13 @@ public sealed record UpdateCommunityServerMemberRolesPayload {
         MemberId = memberId;
     }
 
-    public async Task<CommunityServerMember> GetMemberAsync([Service] ICommunityServerMemberRepository repository) {
-        return (await repository.GetFromId(MemberId, false))!;
+    public async Task<CommunityServerMember> GetMemberAsync([Service] IServerMemberReadRepository repository) {
+        return (await repository
+            .AsQueryable()
+            .AsNoTracking()
+            .Where(m => m.Id == MemberId)
+            .FirstOrDefaultAsync()
+        )!;
     }
 }
 

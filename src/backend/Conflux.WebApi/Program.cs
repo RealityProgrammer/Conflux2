@@ -247,7 +247,10 @@ builder.Services
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
 
-    .AddScoped<ICommunityServerMemberRepository, CommunityServerMemberRepository>()
+    .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
+    .AddScoped<IServerMemberWriteRepository>(services => 
+        (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
+    )
 
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     

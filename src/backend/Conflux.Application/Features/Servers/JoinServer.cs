@@ -9,7 +9,8 @@ public sealed record JoinServerCommand(Guid UserId, string InvitationId) : IComm
 
 public sealed class JoinServerHandler(
     IInvitationRepository invitationRepository,
-    ICommunityServerMemberRepository communityServerMemberRepository,
+    IServerMemberWriteRepository serverMemberWriteRepository,
+    IServerMemberReadRepository serverMemberReadRepository,
     IUnitOfWork unitOfWork
 ) : ICommandHandler<JoinServerCommand, Result> {
     public async ValueTask<Result> Handle(JoinServerCommand command, CancellationToken cancellationToken) {
@@ -27,7 +28,7 @@ public sealed class JoinServerHandler(
             return Errors.ResourceMaxUsed("Invitation");
         }
 
-        if (await communityServerMemberRepository.IsUserJoined(command.UserId, invite.CommunityServerId, cancellationToken)) {
+        if (await serverMemberReadRepository.IsUserJoined(command.UserId, invite.CommunityServerId, cancellationToken)) {
             return Errors.AlreadyJoinedServer();
         }
 
@@ -45,7 +46,7 @@ public sealed class JoinServerHandler(
                 CommunityServerId = invite.CommunityServerId,
             };
             
-            communityServerMemberRepository.Add(member);
+            serverMemberWriteRepository.Add(member);
             
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);

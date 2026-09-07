@@ -9,6 +9,8 @@ const config: CodegenConfig = {
     scalars: {
       UUID: 'string',
       DateTime: 'string',
+      JSON: "Record<string, unknown>",
+      Any: 'unknown',
     },
     fetcher: 'graphqlFetcher',
     exposeQueryKeys: true,
@@ -38,7 +40,7 @@ const config: CodegenConfig = {
         'typescript-react-query',
       ],
       config: {
-        importSchemaTypesFrom: './src/graphql/types.ts'
+        importSchemaTypesFrom: './src/graphql/types.ts',
       }
     },
 

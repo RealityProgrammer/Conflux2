@@ -154,7 +154,11 @@ internal sealed class ServerPermissionsCacheService(
         }
         
         memoryCache.Set(memoryCacheKey, oldVersion + 1, TimeSpan.FromSeconds(30));
-        await _database.HashSetAsync("ServerPermissions:versions", serverId.ToString(), oldVersion + 1);
+
+        var hashField = serverId.ToString();
+        
+        await _database.HashSetAsync("ServerPermissions:versions", hashField, oldVersion + 1);
+        await _database.HashFieldExpireAsync("ServerPermissions:versions", [hashField], TimeSpan.FromHours(24));
     }
 
     private sealed record MemberAuthorizeInfoCacheDto(

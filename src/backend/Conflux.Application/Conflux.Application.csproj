@@ -18,6 +18,7 @@
       <PackageReference Include="MailKit" Version="4.17.0" />
       <PackageReference Include="Mediator.Abstractions" Version="3.0.2" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+      <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="13.0.1" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
       <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.11" />
     </ItemGroup>

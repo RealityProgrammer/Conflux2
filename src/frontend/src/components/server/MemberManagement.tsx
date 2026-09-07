@@ -11,7 +11,7 @@ import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
-import {type InspectMemberQuery, useInspectMemberQuery} from "../../graphql/queries.ts";
+import {type InspectMemberQuery, useInspectMemberQuery, useUpdateMemberRolesMutation} from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
 import {BsCheck, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
@@ -21,8 +21,6 @@ import {Controller, type SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {SpecialRoleType} from "../../graphql/types.ts";
-import {communityServerService} from "../../api/communityServerService.ts";
-import type {ServiceResponse} from "../../api/types.ts";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -206,10 +204,18 @@ function MemberInformationContent({
     }
   });
 
-  const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (value: UpdateMemberInformationFormValues) => {
-    const response: ServiceResponse = await communityServerService.updateMember(serverId, memberInfo.id);
+  const updateMemberRolesMutation = useUpdateMemberRolesMutation({
+    onError: (_error, _variables) => {
+      // TODO: Error handling.
+    }
+  });
 
-    // TODO: Synchronize the UI
+  const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (value: UpdateMemberInformationFormValues) => {
+    await updateMemberRolesMutation.mutateAsync({
+      serverId,
+      memberId: memberInfo.id,
+      roleIds: value.roleIds,
+    });
   };
 
   return (

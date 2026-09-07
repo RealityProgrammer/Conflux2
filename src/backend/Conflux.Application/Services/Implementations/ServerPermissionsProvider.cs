@@ -8,7 +8,7 @@ using System.Collections.Frozen;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerPermissionsProvider(
-    ICommunityServerMemberRepository memberRepository,
+    IServerMemberReadRepository memberReadRepository,
     ICommunityServerRoleRepository roleRepository,
     IServerPermissionsCacheService cacheService
 ) : IServerPermissionsProvider {
@@ -27,7 +27,7 @@ internal sealed class ServerPermissionsProvider(
         }
 
         CommunityServerMember? member = 
-            await memberRepository.GetUserMemberWithRoles(serverId, userId, false, cancellationToken);
+            await memberReadRepository.GetUserMemberWithRoles(serverId, userId, false, cancellationToken);
 
         if (member == null) {
             return Errors.ResourceNotFound("Community server member");
@@ -84,7 +84,7 @@ internal sealed class ServerPermissionsProvider(
         Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> results = new(userIds.Count);
         Dictionary<Guid, ServerMemberAuthorizationInfoDto> dtosToCache = new(userIds.Count);
 
-        var members = await memberRepository.GetUserMembersWithRoles(serverId, userIds, false, cancellationToken);
+        var members = await memberReadRepository.GetUserMembersWithRoles(serverId, userIds, false, cancellationToken);
         var membersByUserId = members.ToDictionary(m => m.UserId);
 
         Result<RoleAuthorizationInfo>? defaultRoleGetResult = null;
