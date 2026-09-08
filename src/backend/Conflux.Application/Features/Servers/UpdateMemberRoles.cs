@@ -1,6 +1,6 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
-using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +16,18 @@ public sealed record UpdateMemberRolesCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateMemberRoles];
 }
 
+public sealed record MemberRolesUpdatedNotification(
+    Guid ServerId,
+    Guid MemberUserId
+) : INotification;
+
 public sealed class UpdateMemberRolesHandler(
     IServerMemberReadRepository memberReadRepository,
     ICommunityServerRoleRepository roleRepository,
     IServerPermissionsProvider serverPermissionsProvider,
+    IServerPermissionsCacheService serverPermissionsCacheService,
     IUnitOfWork unitOfWork,
+    IMediator mediator,
     ILogger<UpdateMemberRolesHandler> logger
 ) : ICommandHandler<UpdateMemberRolesCommand, Result> {
     public async ValueTask<Result> Handle(UpdateMemberRolesCommand command, CancellationToken cancellationToken) {
@@ -69,8 +76,9 @@ public sealed class UpdateMemberRolesHandler(
 
         if (roleInfos.Count != command.RoleIds.Count) {
             // imagine that it would be very fucked if somehow roleInfos.length > command.roleIds lmao
+            var missingRoleIds = command.RoleIds.Except(roleInfos.Select(r => r.Id));
             return Errors.ResourceNotFound(
-                $"Community server role (Ids = [{string.Join(", ", roleInfos.ExceptBy(command.RoleIds, r => r.Id))}])"
+                $"Community server role (Ids = [{string.Join(", ", missingRoleIds)}])"
             );
         }
 
@@ -113,8 +121,6 @@ public sealed class UpdateMemberRolesHandler(
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
-            
-            return Result.Success();
         } catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(cancellationToken);
             throw;
@@ -124,5 +130,10 @@ public sealed class UpdateMemberRolesHandler(
             await unitOfWork.RollbackAsync(cancellationToken);
             return Errors.UnexpectedError();
         }
+        
+        await serverPermissionsCacheService.DeleteMemberAuthorizeInfo(command.MemberId, CancellationToken.None);
+        await mediator.Publish(new MemberRolesUpdatedNotification(member.CommunityServerId, member.UserId), CancellationToken.None);
+            
+        return Result.Success();
     }
 }

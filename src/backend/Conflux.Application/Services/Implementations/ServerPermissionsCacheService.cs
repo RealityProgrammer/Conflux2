@@ -1,5 +1,7 @@
 using Conflux.Application.Dto;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -8,7 +10,8 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerPermissionsCacheService(
     IMemoryCache memoryCache,
-    IConnectionMultiplexer connectionMultiplexer
+    IConnectionMultiplexer connectionMultiplexer,
+    IServerMemberReadRepository memberReadRepository
 ) : IServerPermissionsCacheService {
     // permission cache strategy:
     // store the server's permission version in the memory cache, and then redis cache, or else return 0.
@@ -73,6 +76,29 @@ internal sealed class ServerPermissionsCacheService(
         );
     }
 
+    public async Task DeleteUserAuthorizeInfo(Guid serverId, Guid userId, CancellationToken cancellationToken = default) {
+        int version = await GetServerPermissionVersion(serverId);
+        string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
+        await _database.StringDeleteAsync(cacheKey, ValueCondition.Exists);
+    }
+
+    public async Task DeleteMemberAuthorizeInfo(Guid memberId, CancellationToken cancellationToken = default) {
+        var ids = await memberReadRepository.AsQueryable()
+            .AsNoTracking()
+            .Where(m => m.Id == memberId)
+            .Select(m => new {
+                m.CommunityServerId,
+                m.UserId,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (ids == null) {
+            return;
+        }
+
+        await DeleteUserAuthorizeInfo(ids.CommunityServerId, ids.UserId, cancellationToken);
+    }
+
     public async Task<Dictionary<Guid, ServerMemberAuthorizationInfoDto>> GetUsersAuthorizeInfo(
         Guid serverId, 
         IReadOnlyCollection<Guid> userIds, 
@@ -104,7 +130,7 @@ internal sealed class ServerPermissionsCacheService(
     }
 
     private static string GetCacheKeyForUserServerPermissions(Guid serverId, Guid userId, int version) =>
-        $"ServerPermissions:{serverId}:user:{userId}:v{version}";
+        $"ServerPermissions:{serverId}:user:{userId}:version:{version}";
 
     public async Task<RoleAuthorizationInfo?> GetServerDefaultRoleAuthorizationInfo(
         Guid serverId, 

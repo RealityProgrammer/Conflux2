@@ -227,6 +227,7 @@ builder.Services
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
+    .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
     
     .AddScoped<IUnitOfWork, UnitOfWork>()
 
@@ -258,8 +259,6 @@ builder.Services
     .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"))
     
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>();
-
-builder.Services.AddSingleton<IServerPermissionsCacheService, ServerPermissionsCacheService>();
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()

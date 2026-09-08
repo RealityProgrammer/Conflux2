@@ -192,7 +192,7 @@ function MemberInformationContent({
   memberInfo
 }: {memberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
   const queryClient = useQueryClient();
-  const { serverId } = useCommunityServerContext();
+  const { serverId, memberPermissions } = useCommunityServerContext();
 
   const {
     handleSubmit,
@@ -292,18 +292,20 @@ function MemberInformationContent({
                   )
                 })}
 
-                <Controller
-                  control={control}
-                  name="roleIds"
-                  render={({field}) => {
-                    return (
-                      <RoleModificationButton
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    )
-                  }}
-                />
+                {memberPermissions.effectivePermissions.UpdateMemberRoles && (
+                  <Controller
+                    control={control}
+                    name="roleIds"
+                    render={({field}) => {
+                      return (
+                        <RoleModificationButton
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )
+                    }}
+                  />
+                )}
               </span>
             </li>
 

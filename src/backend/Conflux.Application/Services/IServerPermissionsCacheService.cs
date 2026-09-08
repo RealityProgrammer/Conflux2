@@ -16,6 +16,17 @@ public interface IServerPermissionsCacheService {
         CancellationToken cancellationToken = default
     );
     
+    Task DeleteUserAuthorizeInfo(
+        Guid serverId, 
+        Guid userId, 
+        CancellationToken cancellationToken = default
+    );
+
+    Task DeleteMemberAuthorizeInfo(
+        Guid memberId,
+        CancellationToken cancellationToken = default
+    );
+    
     Task<Dictionary<Guid, ServerMemberAuthorizationInfoDto>> GetUsersAuthorizeInfo(
         Guid serverId, 
         IReadOnlyCollection<Guid> userIds, 

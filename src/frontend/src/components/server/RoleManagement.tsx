@@ -582,7 +582,7 @@ function RoleDetails({
         <Accordion.Root
           type="multiple"
         >
-          <Accordion.Item value="role" className="border-2 border-gray-600 rounded-md mb-1">
+          <Accordion.Item value="role" className="border-2 border-gray-600 rounded-md">
             <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
               Role
             </Accordion.Trigger>
@@ -655,7 +655,7 @@ function RoleDetails({
             </Accordion.Content>
           </Accordion.Item>
 
-          <Accordion.Item value="channel" className="border-2 border-gray-600 rounded-md">
+          <Accordion.Item value="channel" className="border-2 border-gray-600 rounded-md mt-1">
             <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
               Channel
             </Accordion.Trigger>
@@ -706,14 +706,45 @@ function RoleDetails({
               </ul>
             </Accordion.Content>
           </Accordion.Item>
+
+          <Accordion.Item value="member" className="border-2 border-gray-600 rounded-md mt-1">
+            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
+              Member
+            </Accordion.Trigger>
+
+            <Accordion.Content className="border-t-2 border-t-gray-600">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Update Roles</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.UpdateMemberRoles"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.UpdateMemberRoles}
+                        content={errors.permissions?.UpdateMemberRoles?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+              </ul>
+            </Accordion.Content>
+          </Accordion.Item>
         </Accordion.Root>
       </section>
 
       {memberPermissions.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
-        <div className="flex flex-row justify-end">
+        <div className="flex flex-row justify-end mt-2">
           <button
             type="button"
-            className="button-theme-danger p-2 rounded-md cursor-pointer ml-auto mt-2"
+            className="button-theme-danger p-2 rounded-md cursor-pointer ml-auto"
             onClick={handleDeleteRole}
           >
             Delete Role
