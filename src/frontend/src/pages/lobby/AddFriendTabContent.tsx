@@ -86,24 +86,24 @@ export default function AddFriendTabContent() {
   };
 
   // handle realtime modification
-  useSignalREvent("FriendRequestReceived", (notif: FriendRequestReceivedEvent) => {
-    updateCacheStatus(notif.senderUserId, UserRelationshipStatus.IncomingRequest);
+  useSignalREvent("FriendRequestReceived", (event: FriendRequestReceivedEvent) => {
+    updateCacheStatus(event.senderUserId, UserRelationshipStatus.IncomingRequest);
   });
 
-  useSignalREvent("FriendRequestCanceled", (notif: FriendRequestCanceledEvent) => {
-    updateCacheStatus(notif.senderUserId, UserRelationshipStatus.Stranger);
+  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
+    updateCacheStatus(event.senderUserId, UserRelationshipStatus.Stranger);
   });
 
-  useSignalREvent("FriendRequestAccepted", (notif: FriendRequestAcceptedEvent) => {
-    updateCacheStatus(notif.acceptorUserId, UserRelationshipStatus.Friended);
+  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
+    updateCacheStatus(event.acceptorUserId, UserRelationshipStatus.Friended);
   });
 
-  useSignalREvent("FriendRequestRejected", (notif: FriendRequestRejectedEvent) => {
-    updateCacheStatus(notif.rejecterUserId, UserRelationshipStatus.Stranger);
+  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
+    updateCacheStatus(event.rejecterUserId, UserRelationshipStatus.Stranger);
   });
 
-  useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
-    updateCacheStatus(notif.invokerUserId, UserRelationshipStatus.Stranger);
+  useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
+    updateCacheStatus(event.invokerUserId, UserRelationshipStatus.Stranger);
   });
 
   return (

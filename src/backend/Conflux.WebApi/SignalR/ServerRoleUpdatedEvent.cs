@@ -1,5 +1,3 @@
-using Conflux.Application.Dto;
-
 namespace Conflux.WebApi.SignalR;
 
-public sealed record ServerRoleUpdatedEvent(Guid ServerId);
+public sealed record ServerRoleUpdatedEvent(Guid ServerId, Guid RoleId);

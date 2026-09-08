@@ -11,6 +11,6 @@ public sealed class ServerRoleUpdatedNotificationHandler(
     public async ValueTask Handle(ServerRoleUpdatedNotification notification, CancellationToken cancellationToken) {
         var target = hubContext.Clients.Group($"server:{notification.ServerId}");
 
-        await target.ServerRoleUpdated(new(notification.ServerId), cancellationToken);
+        await target.ServerRoleUpdated(new(notification.ServerId, notification.RoleId), cancellationToken);
     }
 }

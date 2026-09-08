@@ -98,17 +98,17 @@ export default function PendingRequestsTabContent() {
     );
   };
 
-  useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
+  useSignalREvent("FriendRequestReceived", async (event: FriendRequestReceivedEvent) => {
     const query = await queryClient.query({
-      queryKey: useGetUserIdentityProfileQuery.getKey({ id: notif.senderUserId }),
-      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: notif.senderUserId }),
+      queryKey: useGetUserIdentityProfileQuery.getKey({ id: event.senderUserId }),
+      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.senderUserId }),
     });
 
     const userProfile = query.userById;
     if (!userProfile) return;
 
     const newElement: PendingFriendRequestDto = {
-      userId: notif.senderUserId,
+      userId: event.senderUserId,
       userName: userProfile.userName ?? "???",
       displayName: userProfile.displayName ?? "???",
       hasAvatar: userProfile.hasAvatar,
@@ -121,7 +121,7 @@ export default function PendingRequestsTabContent() {
         if (!oldData || oldData.pages.length === 0) return oldData;
 
         const alreadyExists = oldData.pages.some(page =>
-          page?.elements.some(el => el.userId === notif.senderUserId)
+          page?.elements.some(el => el.userId === event.senderUserId)
         );
 
         if (alreadyExists) return oldData;
@@ -146,16 +146,16 @@ export default function PendingRequestsTabContent() {
     );
   });
 
-  useSignalREvent("FriendRequestRejected", (notif: FriendRequestRejectedEvent) => {
-    removeCacheElement(notif.rejecterUserId);
+  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
+    removeCacheElement(event.rejecterUserId);
   });
 
-  useSignalREvent("FriendRequestAccepted", (notif: FriendRequestAcceptedEvent) => {
-    removeCacheElement(notif.acceptorUserId);
+  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
+    removeCacheElement(event.acceptorUserId);
   });
 
-  useSignalREvent("FriendRequestCanceled", (notif: FriendRequestCanceledEvent) => {
-    removeCacheElement(notif.senderUserId);
+  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
+    removeCacheElement(event.senderUserId);
   });
 
   return (

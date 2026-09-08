@@ -7,7 +7,7 @@ import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ChannelType} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {MemberRolesUpdatedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
+import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 
 export default function ServerLayout() {
@@ -40,17 +40,24 @@ export default function ServerLayout() {
     enabled: !!serverId,
     queryKey: userMemberPermissionQueryKey,
     queryFn: async (): Promise<ServerMemberAuthorizationInfoDto | null | undefined> => {
-      return (await communityServerService.getUserPermission(serverId!)).data;
+      const response = await communityServerService.getUserPermission(serverId!);
+
+      return response.data;
     },
     staleTime: 30 * 60 * 1000,
   });
 
-  useSignalREvent("ServerRoleUpdated", (data: ServerRoleUpdatedEvent) => {
-    if (serverId !== data.serverId) return;
+  useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
+    if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({
-      queryKey: userMemberPermissionQueryKey,
-    });
+    queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
+  });
+
+  useSignalREvent("ServerRoleDeleted", (event: ServerRoleDeletedEvent) => {
+    if (serverId !== event.serverId) return;
+    if (!memberPermissions?.roles.map(r => r.id).includes(event.roleId)) return;
+
+    queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {

@@ -97,14 +97,14 @@ export default function FriendListTabContent() {
     );
   };
 
-  useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
-    handleRemoveUserFromCache(notif.invokerUserId);
+  useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
+    handleRemoveUserFromCache(event.invokerUserId);
   });
 
-  useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
+  useSignalREvent("FriendRequestAccepted", async (event: FriendRequestAcceptedEvent) => {
     const profileResponse = await queryClient.query({
-      queryKey: useGetUserIdentityProfileQuery.getKey({ id: notif.acceptorUserId }),
-      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: notif.acceptorUserId }),
+      queryKey: useGetUserIdentityProfileQuery.getKey({ id: event.acceptorUserId }),
+      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.acceptorUserId }),
     })
 
     const userProfile = profileResponse.userById;
@@ -116,7 +116,7 @@ export default function FriendListTabContent() {
         if (!oldData || oldData.pages.length === 0) return oldData;
 
         const alreadyExists = oldData.pages.some(page =>
-          page?.elements.some(el => el.id === notif.acceptorUserId)
+          page?.elements.some(el => el.id === event.acceptorUserId)
         );
 
         if (alreadyExists) return oldData;

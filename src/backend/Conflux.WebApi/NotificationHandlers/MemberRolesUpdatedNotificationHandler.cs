@@ -17,6 +17,6 @@ public sealed class MemberRolesUpdatedNotificationHandler(
             ? hubContext.Clients.Group($"server:{notification.ServerId}")
             : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
         
-        await target.MemberRolesUpdated(new(notification.ServerId, notification.MemberUserId), cancellationToken);
+        await target.MemberRolesUpdated(new(notification.ServerId, notification.MemberUserId, notification.MemberId), cancellationToken);
     }
 }

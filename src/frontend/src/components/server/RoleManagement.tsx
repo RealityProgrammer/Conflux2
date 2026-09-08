@@ -1,6 +1,7 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {
-  type GetServerRolesByServerIdQuery, useInfiniteGetAssignableServerRolesByServerIdQuery,
+  type GetServerRolesByServerIdQuery,
+  useInfiniteGetAssignableServerRolesByServerIdQuery,
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
 import {useEffect, useRef, useState} from "react";
@@ -364,18 +365,11 @@ const updateRoleSchema = z.object({
   name: z.string().min(1, {error: "Name cannot be empty."}).max(32, {error: "Name can only have maximum length of 32 characters."}),
   authorizeLevel: z.number({error: "A valid integer number is required."})
     .int({error: "A valid integer number is required."})
-    .min(1, "A positive integer number is required.")
-    .max(500000, "Value must be less than or equal to 500000."),
+    .refine((val) => val === -1 || (val >= 1 && val <= 500000), {
+      message: "Value must be a positive integer between 1 and 500000.",
+    }),
 
   permissions: z.record(z.enum(ServerPermission), z.enum(PermissionState)),
-
-  // permissions: z.object({
-  //   // [ServerPermission.CreateRole]: z.enum(PermissionState),
-  //   // [ServerPermission.UpdateRole]: z.enum(PermissionState),
-  //   // [ServerPermission.DeleteRole]: z.enum(PermissionState),
-  //   // [ServerPermission.CreateChannel]: z.enum(PermissionState),
-  //   // [ServerPermission.DeleteChannel]: z.enum(PermissionState),
-  // }),
 });
 
 type UpdateRoleFormValues = z.infer<typeof updateRoleSchema>;
@@ -467,7 +461,7 @@ function RoleDetails({
     <form onSubmit={handleSubmit(handleUpdateRole)}>
       <header className="flex flex-row items-center justify-between mb-2">
         <div className="flex flex-row gap-2 items-center">
-          {isEditingRole ? (
+          {isEditingRole && role.specialRoleType === SpecialRoleType.None ? (
             <input
               className="h-7 input-field w-48"
               defaultValue={getValues("name")}
@@ -551,7 +545,7 @@ function RoleDetails({
           <li className="flex items-center justify-between gap-2 px-2.5 py-1">
             <span>Authorize Level</span>
 
-            {isEditingRole ? (
+            {isEditingRole && role.specialRoleType === SpecialRoleType.None ? (
               <ErrorPopover
                 open={!!errors.authorizeLevel}
                 content={errors.authorizeLevel?.message}

@@ -18,7 +18,8 @@ public sealed record UpdateMemberRolesCommand(
 
 public sealed record MemberRolesUpdatedNotification(
     Guid ServerId,
-    Guid MemberUserId
+    Guid MemberUserId,
+    Guid MemberId
 ) : INotification;
 
 public sealed class UpdateMemberRolesHandler(
@@ -132,7 +133,7 @@ public sealed class UpdateMemberRolesHandler(
         }
         
         await serverPermissionsCacheService.DeleteMemberAuthorizeInfo(command.MemberId, CancellationToken.None);
-        await mediator.Publish(new MemberRolesUpdatedNotification(member.CommunityServerId, member.UserId), CancellationToken.None);
+        await mediator.Publish(new MemberRolesUpdatedNotification(member.CommunityServerId, member.UserId, member.Id), CancellationToken.None);
             
         return Result.Success();
     }

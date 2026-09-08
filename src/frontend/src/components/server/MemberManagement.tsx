@@ -23,6 +23,8 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {SpecialRoleType} from "../../graphql/types.ts";
 import {useQueryClient} from "@tanstack/react-query";
 import {toast} from "react-toastify";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import type {MemberRolesUpdatedEvent, ServerRoleCreatedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -197,7 +199,7 @@ function MemberInformationContent({
   const {
     handleSubmit,
     control,
-    formState,
+    formState: { isDirty, isSubmitting },
     reset,
   } = useForm<UpdateMemberInformationFormValues>({
     resolver: zodResolver(updateMemberInformationSchema),
@@ -232,18 +234,36 @@ function MemberInformationContent({
     });
   };
 
+  useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
+    if (event.serverId !== serverId) return;
+    if (!memberInfo.roles.map(r => r.id).includes(event.roleId)) return;
+
+    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: memberInfo.id})});
+  });
+
+  useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
+    if (event.serverId !== serverId) return;
+    if (event.memberId !== memberInfo.id) return;
+
+    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: memberInfo.id})});
+  });
+
   return (
     <form onSubmit={handleSubmit(onSubmitModification)} className="relative overflow-y-hidden">
-      <section className={`absolute ${formState.isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
+      <section className={`absolute ${isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
         <IconButton type="button" theme="danger" onClick={() => {
           reset();
         }}>
           <FaXmark className="size-6"/>
         </IconButton>
 
-        <IconButton type="submit" theme="default">
-          <FaSave className="size-6"/>
-        </IconButton>
+        {isSubmitting ? (
+          <Spinner className="size-6 fill-white"/>
+        ) : (
+          <IconButton type="submit" theme="default">
+            <FaSave className="size-6"/>
+          </IconButton>
+        )}
       </section>
 
       <div>
@@ -348,6 +368,7 @@ function RoleModificationButton({
   value,
   onChange,
 }: RoleModificationButtonProps) {
+  const queryClient = useQueryClient();
   const { serverId, memberPermissions } = useCommunityServerContext();
   const [searchValue, setSearchValue] = useDebounceValue("", 500);
 
@@ -375,6 +396,24 @@ function RoleModificationButton({
   );
 
   const allElements = data?.pages.flatMap((page) => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
+
+  useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
+    if (serverId !== event.serverId) return;
+
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+  });
+
+  useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
+    if (serverId !== event.serverId) return;
+
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+  });
+
+  useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
+    if (event.serverId !== serverId) return;
+
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+  });
 
   return (
     <Popover.Root>
@@ -414,8 +453,8 @@ function RoleModificationButton({
             fetchNextPage={() => {
               fetchNextPage();
             }}
-            renderSkeletonItem={() => (
-              <li className="h-8 flex flex-row items-center gap-2 px-1">
+            renderSkeletonItem={(index) => (
+              <li className="h-8 flex flex-row items-center gap-2 px-1" key={index}>
                 <BsCircleFill className="size-2.5 fill-white/10 animate-pulse"/>
                 <span className="h-4 w-32 bg-white/10 animate-pulse rounded"></span>
               </li>

@@ -43,6 +43,7 @@ export type ServerRoleCreatedEvent = {
 
 export type ServerRoleUpdatedEvent = {
   serverId: string;
+  roleId: string;
 }
 
 export type ServerRoleDeletedEvent = {
@@ -73,5 +74,5 @@ export type ServerChannelDeletedEvent = {
 export type MemberRolesUpdatedEvent = {
   serverId: string;
   memberUserId: string;
-  updatedAuthorizeInfo: ServerMemberAuthorizationInfoDto;
+  memberId: string;
 }
