@@ -21,6 +21,8 @@ import {Controller, type SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {SpecialRoleType} from "../../graphql/types.ts";
+import {useQueryClient} from "@tanstack/react-query";
+import {toast} from "react-toastify";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -189,12 +191,14 @@ type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationS
 function MemberInformationContent({
   memberInfo
 }: {memberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
+  const queryClient = useQueryClient();
   const { serverId } = useCommunityServerContext();
 
   const {
     handleSubmit,
     control,
-    formState
+    formState,
+    reset,
   } = useForm<UpdateMemberInformationFormValues>({
     resolver: zodResolver(updateMemberInformationSchema),
     mode: "onSubmit",
@@ -205,8 +209,18 @@ function MemberInformationContent({
   });
 
   const updateMemberRolesMutation = useUpdateMemberRolesMutation({
+    onSuccess: (_data, variables) => {
+      reset({
+        roleIds: Array.isArray(variables.roleIds) ? variables.roleIds : [variables.roleIds],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: useInspectMemberQuery.getKey({id: memberInfo.id})
+      });
+    },
+
     onError: (_error, _variables) => {
-      // TODO: Error handling.
+      toast.error("Failed to update member roles.");
     }
   });
 
@@ -221,11 +235,13 @@ function MemberInformationContent({
   return (
     <form onSubmit={handleSubmit(onSubmitModification)} className="relative overflow-y-hidden">
       <section className={`absolute ${formState.isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
-        <IconButton theme="danger">
+        <IconButton type="button" theme="danger" onClick={() => {
+          reset();
+        }}>
           <FaXmark className="size-6"/>
         </IconButton>
 
-        <IconButton theme="default">
+        <IconButton type="submit" theme="default">
           <FaSave className="size-6"/>
         </IconButton>
       </section>

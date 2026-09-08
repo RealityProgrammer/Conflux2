@@ -7,9 +7,11 @@ import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ChannelType} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {ServerRoleUpdatedEvent} from "../../api/events.ts";
+import type {MemberRolesUpdatedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
+import {useAuthorization} from "../../contexts/AuthContext.tsx";
 
 export default function ServerLayout() {
+  const { userAuthorization } = useAuthorization();
   const { serverId } = useParams();
 
   const queryClient = useQueryClient();
@@ -34,10 +36,10 @@ export default function ServerLayout() {
     data: memberPermissions,
     isLoading: isLoadingUserPermissions,
     isError: isLoadingUserPermissionsError,
-  } = useQuery({
+  } = useQuery<ServerMemberAuthorizationInfoDto | null | undefined>({
     enabled: !!serverId,
     queryKey: userMemberPermissionQueryKey,
-    queryFn: async () => {
+    queryFn: async (): Promise<ServerMemberAuthorizationInfoDto | null | undefined> => {
       return (await communityServerService.getUserPermission(serverId!)).data;
     },
     staleTime: 30 * 60 * 1000,
@@ -49,6 +51,13 @@ export default function ServerLayout() {
     queryClient.invalidateQueries({
       queryKey: userMemberPermissionQueryKey,
     });
+  });
+
+  useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
+    if (event.serverId !== serverId) return;
+    if (event.memberUserId !== userAuthorization?.id) return;
+
+    queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
   });
 
   if (isLoadingServerSummary || isLoadingUserPermissions) {
