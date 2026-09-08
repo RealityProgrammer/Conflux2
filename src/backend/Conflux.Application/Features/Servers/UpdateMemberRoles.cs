@@ -25,17 +25,33 @@ public sealed class UpdateMemberRolesHandler(
 ) : ICommandHandler<UpdateMemberRolesCommand, Result> {
     public async ValueTask<Result> Handle(UpdateMemberRolesCommand command, CancellationToken cancellationToken) {
         // get the executor user authorize info to compare role authorize level later.
-        var userAuthorizeResult = await serverPermissionsProvider.GetUserPermissions(
+        var executorAuthorizeInfoResult = await serverPermissionsProvider.GetUserPermissions(
             command.ServerId, 
             command.ExecutorUserId,
             cancellationToken
         );
 
-        if (!userAuthorizeResult.IsSuccess) {
-            return userAuthorizeResult.Error;
+        if (!executorAuthorizeInfoResult.IsSuccess) {
+            return executorAuthorizeInfoResult.Error;
+        }
+        
+        // get the executed member authorize info
+        var memberAuthorizeInfoResult = await serverPermissionsProvider.GetMemberPermissions(
+            command.ServerId,
+            command.MemberId,
+            cancellationToken
+        );
+
+        if (!memberAuthorizeInfoResult.IsSuccess) {
+            return memberAuthorizeInfoResult.Error;
         }
 
-        var userAuthorize = userAuthorizeResult.Value!;
+        var executorAuthorizeInfo = executorAuthorizeInfoResult.Value!;
+        var memberAuthorizeInfo = memberAuthorizeInfoResult.Value!;
+
+        if (executorAuthorizeInfo.AuthorizeLevel < memberAuthorizeInfo.AuthorizeLevel) {
+            return Errors.Forbidden("Your authorize level must be greater or equals to member authorize level to update their roles.");
+        }
         
         // prevent duplicate role ids
         var deduplicatedRoleIds = command.RoleIds.Distinct().ToHashSet();
@@ -46,7 +62,7 @@ public sealed class UpdateMemberRolesHandler(
                 r.CommunityServerId == command.ServerId &&
                 command.RoleIds.Contains(r.Id) &&
                 r.SpecialRoleType == SpecialRoleType.None &&
-                r.AuthorizeLevel <= userAuthorize.AuthorizeLevel
+                r.AuthorizeLevel <= executorAuthorizeInfo.AuthorizeLevel
             )
             .Select(r => new { r.Id, r.AuthorizeLevel })
             .ToListAsync(cancellationToken);
@@ -58,7 +74,7 @@ public sealed class UpdateMemberRolesHandler(
             );
         }
 
-        if (roleInfos.FirstOrDefault(r => r.AuthorizeLevel > userAuthorize.AuthorizeLevel) is { } surpassedRole) {
+        if (roleInfos.FirstOrDefault(r => r.AuthorizeLevel > executorAuthorizeInfo.AuthorizeLevel) is { } surpassedRole) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(command.RoleIds)] = [
                     $"Role {surpassedRole.Id} have authorize level surpassed user's authorize level.",
@@ -75,9 +91,6 @@ public sealed class UpdateMemberRolesHandler(
         if (member == null) {
             return Errors.ResourceNotFound($"Community server member (Id = {command.MemberId})");
         }
-        
-        
-        // TODO: Validate that user can assign the roles with less than or equals to their authorize level.
         
         await unitOfWork.BeginTransactionAsync(cancellationToken);
 

@@ -10,6 +10,12 @@ public interface IServerPermissionsProvider {
         CancellationToken cancellationToken = default
     );
 
+    Task<Result<ServerMemberAuthorizationInfoDto>> GetMemberPermissions(
+        Guid serverId,
+        Guid memberId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> GetUsersPermissions(
         Guid serverId,
         IReadOnlyCollection<Guid> userIds,

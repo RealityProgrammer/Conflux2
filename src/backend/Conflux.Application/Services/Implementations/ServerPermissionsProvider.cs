@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Frozen;
 
 namespace Conflux.Application.Services.Implementations;
@@ -25,12 +26,17 @@ internal sealed class ServerPermissionsProvider(
         if (await cacheService.GetUserAuthorizeInfo(serverId, userId, cancellationToken) is { } cached) {
             return Result<ServerMemberAuthorizationInfoDto>.Success(cached);
         }
-
-        CommunityServerMember? member = 
-            await memberReadRepository.GetUserMemberWithRoles(serverId, userId, false, cancellationToken);
+        
+        CommunityServerMember? member = await memberReadRepository.AsQueryable()
+            .AsNoTracking()
+            .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
+            .Include(m => m.MemberRoles)
+            .ThenInclude(m => m.Role)
+            .ThenInclude(r => r.Permissions)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (member == null) {
-            return Errors.ResourceNotFound("Community server member");
+            return Errors.ResourceNotFound($"Community server member (UserId = {userId})");
         }
 
         if (member.MemberRoles.Any(mr => mr.Role.SpecialRoleType == SpecialRoleType.Owner)) {
@@ -51,29 +57,31 @@ internal sealed class ServerPermissionsProvider(
             return defaultRoleGetResult.Error;
         }
 
-        RoleAuthorizationInfo defaultRoleAuthorizationInfo = defaultRoleGetResult.Value!;
-        
-        List<RoleAuthorizationInfo> roleAuthInfo = member.MemberRoles
-            .Select(mr => new RoleAuthorizationInfo(
-                mr.Role.AuthorizeLevel, 
-                mr.Role.Permissions.ToDictionary(p => p.Permission, p => p.State))
-            )
-            .Append(defaultRoleAuthorizationInfo)
-            .OrderByDescending(r => r.AuthorizeLevel)
-            .ToList();
-
-        Dictionary<ServerPermission, bool> effectivePermissions = CalculateEffectivePermissions(roleAuthInfo);
-
-        ServerMemberAuthorizationInfoDto dto = new(
-            member.Id,
-            roleAuthInfo[0].AuthorizeLevel,
-            effectivePermissions,
-            [..member.MemberRoles.OrderByDescending(mr => mr.Role.AuthorizeLevel).Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))]
-        );
-        
+        ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value!);
         await cacheService.SetUserAuthorizeInfo(serverId, userId, dto, CancellationToken.None);
-
+        
         return Result<ServerMemberAuthorizationInfoDto>.Success(dto);
+    }
+
+    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetMemberPermissions(
+        Guid serverId,
+        Guid memberId, 
+        CancellationToken cancellationToken = default
+    ) {
+        // fetch server and user id from member and call GetUserPermissions, should be fast enough
+        var ids = await memberReadRepository.AsQueryable().AsNoTracking()
+            .Where(r => r.CommunityServerId == serverId && r.Id == memberId)
+            .Select(r => new {
+                r.CommunityServerId,
+                r.UserId,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (ids == null) {
+            return Errors.ResourceNotFound($"Community server member (Id = {memberId})");
+        }
+
+        return await GetUserPermissions(ids.CommunityServerId, ids.UserId, cancellationToken);
     }
 
     public async Task<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> GetUsersPermissions(
@@ -84,14 +92,28 @@ internal sealed class ServerPermissionsProvider(
         Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> results = new(userIds.Count);
         Dictionary<Guid, ServerMemberAuthorizationInfoDto> dtosToCache = new(userIds.Count);
 
-        var members = await memberReadRepository.GetUserMembersWithRoles(serverId, userIds, false, cancellationToken);
+        List<CommunityServerMember> members = await memberReadRepository.AsQueryable()
+            .AsNoTracking()
+            .Where(m => m.CommunityServerId == serverId && userIds.Contains(m.UserId))
+            .Include(m => m.MemberRoles)
+            .ThenInclude(m => m.Role)
+            .ThenInclude(r => r.Permissions)
+            .ToListAsync(cancellationToken);
+        
         var membersByUserId = members.ToDictionary(m => m.UserId);
 
         Result<RoleAuthorizationInfo>? defaultRoleGetResult = null;
-
+        
         foreach (var userId in userIds) {
+            if (await cacheService.GetUserAuthorizeInfo(serverId, userId, cancellationToken) is { } cached) {
+                dtosToCache[userId] = cached;
+                results[userId] = Result<ServerMemberAuthorizationInfoDto>.Success(cached);
+
+                continue;
+            }
+            
             if (!membersByUserId.TryGetValue(userId, out var member)) {
-                results[userId] = Errors.ResourceNotFound($"Community server member (UserId: {userId})");
+                results[userId] = Errors.ResourceNotFound($"Community server member (UserId = {userId})");
                 continue;
             }
 
@@ -116,25 +138,7 @@ internal sealed class ServerPermissionsProvider(
                 continue;
             }
 
-            RoleAuthorizationInfo defaultRoleAuthorizationInfo = defaultRoleGetResult.Value.Value!;
-
-            var roleAuthInfo = member.MemberRoles
-                .Select(mr => new RoleAuthorizationInfo(
-                    mr.Role.AuthorizeLevel,
-                    mr.Role.Permissions.ToDictionary(p => p.Permission, p => p.State))
-                )
-                .Append(defaultRoleAuthorizationInfo)
-                .OrderByDescending(r => r.AuthorizeLevel)
-                .ToList();
-
-            Dictionary<ServerPermission, bool> effectivePermissions = CalculateEffectivePermissions(roleAuthInfo);
-
-            ServerMemberAuthorizationInfoDto dto = new(
-                member.Id,
-                roleAuthInfo[0].AuthorizeLevel,
-                effectivePermissions,
-                [.. member.MemberRoles.OrderByDescending(mr => mr.Role.AuthorizeLevel).Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))]
-            );
+            ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value.Value!);
 
             dtosToCache[userId] = dto;
             results[userId] = Result<ServerMemberAuthorizationInfoDto>.Success(dto);
@@ -173,6 +177,17 @@ internal sealed class ServerPermissionsProvider(
         return Result<RoleAuthorizationInfo>.Success(defaultRoleAuthorizationInfo);
     }
 
+    private static List<RoleAuthorizationInfo> ExtractRolesAuthorizationInfo(CommunityServerMember member, RoleAuthorizationInfo defaultRole) {
+        return [..member.MemberRoles
+            .Select(mr => new RoleAuthorizationInfo(
+                mr.Role.AuthorizeLevel,
+                mr.Role.Permissions.ToDictionary(p => p.Permission, p => p.State))
+            )
+            .Append(defaultRole)
+            .OrderByDescending(r => r.AuthorizeLevel),
+        ];
+    }
+
     private static Dictionary<ServerPermission, bool> CalculateEffectivePermissions(
         List<RoleAuthorizationInfo> rolesAuthorizationInfo
     ) {
@@ -194,5 +209,24 @@ internal sealed class ServerPermissionsProvider(
         }
 
         return effectivePermissions;
+    }
+
+    private static ServerMemberAuthorizationInfoDto CreateMemberAuthorizationInfoDto(CommunityServerMember member, RoleAuthorizationInfo defaultRole) {
+        List<RoleAuthorizationInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
+
+        Dictionary<ServerPermission, bool> effectivePermissions = CalculateEffectivePermissions(roleAuthInfo);
+
+        ServerMemberAuthorizationInfoDto dto = new(
+            member.Id,
+            roleAuthInfo[0].AuthorizeLevel,
+            effectivePermissions,
+            [..member.MemberRoles
+                .Where(mr => mr.Role.SpecialRoleType != SpecialRoleType.Default)
+                .OrderByDescending(mr => mr.Role.AuthorizeLevel)
+                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
+            ]
+        );
+
+        return dto;
     }
 }
