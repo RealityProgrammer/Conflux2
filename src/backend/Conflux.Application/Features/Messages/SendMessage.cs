@@ -18,7 +18,7 @@ public sealed record SendMessageCommand(
     Guid? ReplyToId
 ) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageReceivedNotification(Guid ChannelId, TimelineMessageDto TimelineMessage) : INotification;
+public sealed record MessageReceivedNotification(Guid ChannelId, TimelineMessageDto Message) : INotification;
 
 public sealed record UpdateDmConversationListNotification(
     Guid SenderUserId,

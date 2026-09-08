@@ -12,7 +12,7 @@ public sealed record EditMessageCommand(
     string? Body
 ) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageEditedNotification(Guid ChannelId, TimelineMessageDto TimelineMessage) : INotification;
+public sealed record MessageEditedNotification(Guid ChannelId, TimelineMessageDto Message) : INotification;
 
 public sealed class EditMessageHandler(
     IMessageRepository messageRepository,

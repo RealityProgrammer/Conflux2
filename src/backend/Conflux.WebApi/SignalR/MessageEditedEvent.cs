@@ -2,4 +2,4 @@ using Conflux.Domain.Dto;
 
 namespace Conflux.WebApi.SignalR;
 
-public sealed record MessageEditedEvent(TimelineMessageDto TimelineMessage);
+public sealed record MessageEditedEvent(TimelineMessageDto Message);

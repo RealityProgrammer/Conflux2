@@ -21,6 +21,6 @@ public sealed class MessageReceivedNotificationHandler(
             target = hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
         }
         
-        await target.MessageReceived(new(notification.TimelineMessage), cancellationToken);
+        await target.MessageReceived(new(notification.Message), cancellationToken);
     }
 }

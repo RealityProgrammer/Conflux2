@@ -17,6 +17,6 @@ public sealed class MessageEditedNotificationHandler(
             ? hubContext.Clients.Group($"channel:{notification.ChannelId}")
             : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
         
-        await target.MessageEdited(new(notification.TimelineMessage), cancellationToken);
+        await target.MessageEdited(new(notification.Message), cancellationToken);
     }
 }
