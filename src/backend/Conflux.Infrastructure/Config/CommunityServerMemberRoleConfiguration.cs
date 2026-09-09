@@ -13,7 +13,7 @@ public sealed class CommunityServerMemberRoleConfiguration : IEntityTypeConfigur
             .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasOne(r => r.Role)
-            .WithMany(r => r.MembersWithRole)
+            .WithMany(r => r.MemberRoles)
             .HasForeignKey(r => r.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
     }

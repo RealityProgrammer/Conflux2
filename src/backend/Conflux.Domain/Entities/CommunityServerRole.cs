@@ -20,6 +20,6 @@ public class CommunityServerRole : IHasCreatedAt {
     public Guid? CreatorUserId { get; set; }
     
     public virtual ICollection<RolePermission> Permissions { get; set; } = [];
-    public virtual ICollection<CommunityServerMemberRole> MembersWithRole { get; set; } = [];
+    public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = [];
     public virtual ICollection<CommunityServerMember> Members { get; set; } = [];
 }

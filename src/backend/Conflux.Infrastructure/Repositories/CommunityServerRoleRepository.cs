@@ -43,8 +43,8 @@ internal sealed class CommunityServerRoleRepository(
 
         return await query
             .Where(role => role.CommunityServerId == serverId)
-            .Where(role => role.MembersWithRole.Any(memberRole => memberRole.Member.UserId == userId))
-            .Include(role => role.MembersWithRole.Where(member => member.Member.UserId == userId))
+            .Where(role => role.MemberRoles.Any(memberRole => memberRole.Member.UserId == userId))
+            .Include(role => role.MemberRoles.Where(member => member.Member.UserId == userId))
             .ToListAsync(cancellationToken);
     }
     

@@ -27,7 +27,7 @@ public sealed class CommunityServerRoleConfiguration : IEntityTypeConfiguration<
             .WithMany(m => m.Roles)
             .UsingEntity<CommunityServerMemberRole>(
                 j => j.HasOne(mr => mr.Member).WithMany(m => m.MemberRoles).HasForeignKey(mr => mr.MemberId),
-                j => j.HasOne(mr => mr.Role).WithMany(r => r.MembersWithRole).HasForeignKey(mr => mr.RoleId)
+                j => j.HasOne(mr => mr.Role).WithMany(r => r.MemberRoles).HasForeignKey(mr => mr.RoleId)
             );
     }
 }
