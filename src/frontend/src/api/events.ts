@@ -1,6 +1,5 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto,
-  ServerMemberAuthorizationInfoDto
 } from "./types.ts";
 
 export type FriendRequestReceivedEvent = {
@@ -75,4 +74,10 @@ export type MemberRolesUpdatedEvent = {
   serverId: string;
   memberUserId: string;
   memberId: string;
-}
+};
+
+export type ServerMemberKickedEvent = {
+  serverId: string;
+  kickedMemberUserId: string;
+  kickedMemberId: string;
+};

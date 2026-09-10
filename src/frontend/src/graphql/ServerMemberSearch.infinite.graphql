@@ -1,5 +1,5 @@
 query ServerMemberSearch($serverId: UUID!, $after: String, $search: String, $status: [MembershipStatus!]!) {
-    communityServerMembersFromServerId(
+    communityServerMembers(
         serverId: $serverId
         after: $after
         search: $search

@@ -1,11 +1,13 @@
 using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
+using HotChocolate.Authorization;
 
 namespace Conflux.WebApi.GraphQL;
 
-partial class Query {
+[QueryType, Authorize]
+internal static partial class CommunityServerRoleQuery {
     [UseSingleOrDefault, UseProjection]
-    public IQueryable<CommunityServerRole> GetCommunityServerRoleById(
+    public static IQueryable<CommunityServerRole> GetCommunityServerRole(
         Guid id,
         [Service] ApplicationDbContext dbContext
     ) {
@@ -13,7 +15,7 @@ partial class Query {
     }
 
     [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, UseFiltering]
-    public IQueryable<CommunityServerRole> GetCommunityServerRolesByServerId(
+    public static IQueryable<CommunityServerRole> GetCommunityServerRoles(
         Guid serverId,
         [Service] ApplicationDbContext dbContext
     ) {

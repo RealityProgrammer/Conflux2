@@ -17,17 +17,17 @@ export default function UserProfilePanel({ userId, className, ...props }: UserPr
         <div className="size-full flex flex-row justify-center items-center">
           <Spinner className="fill-white size-12"/>
         </div>
-      ) : !isError && !!data && data.userById ? (
+      ) : !isError && !!data && data.user ? (
         <UserProfileContent
           userId={userId}
-          username={data.userById.userName ?? "???"}
-          displayName={data.userById.displayName ?? "???"}
-          hasAvatar={data.userById.hasAvatar}
-          joinDate={new Date(data.userById.createdAt)}
+          username={data.user.userName ?? "???"}
+          displayName={data.user.displayName ?? "???"}
+          hasAvatar={data.user.hasAvatar}
+          joinDate={new Date(data.user.createdAt)}
           friendedDate={new Date()}
-          pronouns={data.userById.pronouns ?? undefined}
-          bio={data.userById.biography ?? undefined}
-          mutualFriendsCount={data.userById.numMutualFriends}
+          pronouns={data.user.pronouns ?? undefined}
+          bio={data.user.biography ?? undefined}
+          mutualFriendsCount={data.user.numMutualFriends}
         />
       ) : (
         <div className="size-full flex flex-col justify-center items-center">

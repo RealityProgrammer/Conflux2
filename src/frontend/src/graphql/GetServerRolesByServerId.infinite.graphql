@@ -1,5 +1,5 @@
 query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
-    communityServerRolesByServerId(
+    communityServerRoles(
         serverId: $serverId,
         after: $after,
         where: {

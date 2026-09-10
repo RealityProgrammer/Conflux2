@@ -24,28 +24,28 @@ export default function InvitePage() {
             <p className="text-center">An error seems to have occurred</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : !data.invitationById ? (
+        ) : !data.invitation ? (
           <>
             <p className="text-center">The invitation is invalid</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : data.invitationById.status === InvitationStatus.Expired ? (
+        ) : data.invitation.status === InvitationStatus.Expired ? (
           <>
             <p className="text-center">The invitation is expired</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : data.invitationById.status === InvitationStatus.MaxUsesReached ? (
+        ) : data.invitation.status === InvitationStatus.MaxUsesReached ? (
           <>
             <p className="text-center">The invitation reached maximum usage</p>
             <p className="text-gray-500 text-center mt-4 select-none">:(</p>
           </>
-        ) : data.invitationById.status === InvitationStatus.AlreadyJoinedServer ? (
+        ) : data.invitation.status === InvitationStatus.AlreadyJoinedServer ? (
           <>
             <p className="text-center">You've already joined the server.</p>
             <p className="text-gray-500 text-center mt-4 select-none">:)</p>
           </>
         ) : (
-          <Invitation invitationId={inviteId!} summary={data.invitationById}/>
+          <Invitation invitationId={inviteId!} summary={data.invitation}/>
         )}
       </div>
     </div>
@@ -53,7 +53,7 @@ export default function InvitePage() {
 }
 
 function Invitation({summary, invitationId}: {
-  summary: NonNullable<GetInvitationSummaryQuery['invitationById']>,
+  summary: NonNullable<GetInvitationSummaryQuery['invitation']>,
   invitationId: string
 }) {
   const navigation = useNavigate();

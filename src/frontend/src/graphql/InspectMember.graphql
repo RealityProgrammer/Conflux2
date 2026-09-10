@@ -1,5 +1,5 @@
 query InspectMember($id: UUID!) {
-    communityServerMemberById(id: $id) {
+    communityServerMember(id: $id) {
         id
         createdAt
         user {

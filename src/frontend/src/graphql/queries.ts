@@ -12,28 +12,28 @@ export type GetInvitationSummaryQueryVariables = Exact<{
 }>;
 
 
-export type GetInvitationSummaryQuery = { invitationById: { status: Types.InvitationStatus, communityServer: { id: string, name: string, hasAvatar: boolean, numMembers: number } | null } | null };
+export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, hasAvatar: boolean, numMembers: number } | null } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserFullProfileQuery = { userById: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number } | null };
+export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number } | null };
 
 export type GetUserIdentityProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserIdentityProfileQuery = { userById: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
+export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+export type InspectMemberQuery = { communityServerMember: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -74,7 +74,7 @@ export class TypedDocumentString<TResult, TVariables>
 
 export const GetInvitationSummaryDocument = new TypedDocumentString(`
     query GetInvitationSummary($id: String!) {
-  invitationById(id: $id) {
+  invitation(id: $id) {
     communityServer {
       id
       name
@@ -109,7 +109,7 @@ useGetInvitationSummaryQuery.fetcher = (variables: GetInvitationSummaryQueryVari
 
 export const GetUserFullProfileDocument = new TypedDocumentString(`
     query GetUserFullProfile($id: UUID!) {
-  userById(id: $id) {
+  user(id: $id) {
     id
     userName
     displayName
@@ -145,7 +145,7 @@ useGetUserFullProfileQuery.fetcher = (variables: GetUserFullProfileQueryVariable
 
 export const GetUserIdentityProfileDocument = new TypedDocumentString(`
     query GetUserIdentityProfile($id: UUID!) {
-  userById(id: $id) {
+  user(id: $id) {
     id
     userName
     displayName
@@ -177,7 +177,7 @@ useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQuery
 
 export const InspectMemberDocument = new TypedDocumentString(`
     query InspectMember($id: UUID!) {
-  communityServerMemberById(id: $id) {
+  communityServerMember(id: $id) {
     id
     createdAt
     user {

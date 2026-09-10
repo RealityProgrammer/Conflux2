@@ -4,6 +4,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Conflux.WebApi.GraphQL.Attributes;
+using HotChocolate.Authorization;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -25,7 +26,8 @@ public sealed record LeaveCommunityServerPayload(Guid ServerId);
 
 public sealed record KickCommunityServerMemberPayload(Guid MemberId);
 
-partial class Mutation {
+[MutationType, Authorize]
+internal static class CommunityServerMemberMutation {
     public static async Task<UpdateCommunityServerMemberRolesPayload> UpdateCommunityServerMemberRoles(
         Guid serverId,
         Guid memberId,

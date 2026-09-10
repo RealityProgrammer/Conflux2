@@ -50,10 +50,11 @@ export const router = createBrowserRouter([
 
       if (authInfo?.id) {
         try {
-          profileInfo = (await queryClient.ensureQueryData({
+          profileInfo = (await queryClient.query({
             queryKey: useGetUserIdentityProfileQuery.getKey({ id: authInfo.id }),
             queryFn: useGetUserIdentityProfileQuery.fetcher({ id: authInfo.id }),
-          })).userById;
+            staleTime: "static",
+          })).user;
         } catch (error) {
           console.error("Failed to load user profile: ", error);
         }

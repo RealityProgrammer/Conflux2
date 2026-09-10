@@ -23,10 +23,9 @@ import {useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  type GetJoinedCommunityServerQuery,
   useInfiniteGetJoinedCommunityServerQuery
 } from "../../graphql/infiniteQueries.ts";
-import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 
 function Sidebar() {

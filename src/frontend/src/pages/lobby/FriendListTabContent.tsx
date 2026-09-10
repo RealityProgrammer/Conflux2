@@ -107,7 +107,7 @@ export default function FriendListTabContent() {
       queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.acceptorUserId }),
     })
 
-    const userProfile = profileResponse.userById;
+    const userProfile = profileResponse.user;
     if (!userProfile) return;
 
     queryClient.setQueryData<InfiniteData<PaginatedResult<UserIdentityProfileDto> | null | undefined>>(

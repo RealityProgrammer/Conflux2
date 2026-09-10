@@ -1,10 +1,10 @@
-query GetAssignableServerRolesByServerId(
+query GetAssignableServerRoles(
     $serverId: UUID!,
     $nameFilter: String,
     $after: String,
     $authorizeLevel: Int,
 ) {
-    communityServerRolesByServerId(
+    communityServerRoles(
         serverId: $serverId,
         after: $after,
         where: {

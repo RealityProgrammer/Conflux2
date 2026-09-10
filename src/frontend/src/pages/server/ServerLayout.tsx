@@ -74,7 +74,11 @@ export default function ServerLayout() {
     queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
   });
 
-  useSignalREvent("KickedFromServer", (serverId: string) => {
+  useSignalREvent("KickedFromServer", (kickedServerId: string) => {
+    if (serverId !== kickedServerId) {
+      return;
+    }
+
     setShowKickedDialog(true);
   });
 

@@ -7,7 +7,7 @@ import type * as Types from './types';
 
 import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
 import { useQuery, useInfiniteQuery, type UseQueryOptions, type UseInfiniteQueryOptions, type InfiniteData } from '@tanstack/react-query';
-export type GetAssignableServerRolesByServerIdQueryVariables = Exact<{
+export type GetAssignableServerRolesQueryVariables = Exact<{
   serverId: string;
   nameFilter?: string | null | undefined;
   after?: string | null | undefined;
@@ -15,7 +15,7 @@ export type GetAssignableServerRolesByServerIdQueryVariables = Exact<{
 }>;
 
 
-export type GetAssignableServerRolesByServerIdQuery = { communityServerRolesByServerId: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } | null };
+export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } | null };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
@@ -31,7 +31,7 @@ export type GetServerRolesByServerIdQueryVariables = Exact<{
 }>;
 
 
-export type GetServerRolesByServerIdQuery = { communityServerRolesByServerId: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } | null };
+export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } | null };
 
 export type ServerMemberSearchQueryVariables = Exact<{
   serverId: string;
@@ -41,7 +41,7 @@ export type ServerMemberSearchQueryVariables = Exact<{
 }>;
 
 
-export type ServerMemberSearchQuery = { communityServerMembersFromServerId: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } | null };
+export type ServerMemberSearchQuery = { communityServerMembers: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } | null };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -63,9 +63,9 @@ export class TypedDocumentString<TResult, TVariables>
   }
 }
 
-export const GetAssignableServerRolesByServerIdDocument = new TypedDocumentString(`
-    query GetAssignableServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String, $authorizeLevel: Int) {
-  communityServerRolesByServerId(
+export const GetAssignableServerRolesDocument = new TypedDocumentString(`
+    query GetAssignableServerRoles($serverId: UUID!, $nameFilter: String, $after: String, $authorizeLevel: Int) {
+  communityServerRoles(
     serverId: $serverId
     after: $after
     where: {
@@ -86,47 +86,47 @@ export const GetAssignableServerRolesByServerIdDocument = new TypedDocumentStrin
 }
     `);
 
-export const useGetAssignableServerRolesByServerIdQuery = <
-      TData = GetAssignableServerRolesByServerIdQuery,
+export const useGetAssignableServerRolesQuery = <
+      TData = GetAssignableServerRolesQuery,
       TError = unknown
     >(
-      variables: GetAssignableServerRolesByServerIdQueryVariables,
-      options?: Omit<UseQueryOptions<GetAssignableServerRolesByServerIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetAssignableServerRolesByServerIdQuery, TError, TData>['queryKey'] }
+      variables: GetAssignableServerRolesQueryVariables,
+      options?: Omit<UseQueryOptions<GetAssignableServerRolesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetAssignableServerRolesQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useQuery<GetAssignableServerRolesByServerIdQuery, TError, TData>(
+    return useQuery<GetAssignableServerRolesQuery, TError, TData>(
       {
-    queryKey: ['GetAssignableServerRolesByServerId', variables],
-    queryFn: graphqlFetcher<GetAssignableServerRolesByServerIdQuery, GetAssignableServerRolesByServerIdQueryVariables>(GetAssignableServerRolesByServerIdDocument, variables),
+    queryKey: ['GetAssignableServerRoles', variables],
+    queryFn: graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, variables),
     ...options
   }
     )};
 
-useGetAssignableServerRolesByServerIdQuery.getKey = (variables: GetAssignableServerRolesByServerIdQueryVariables) => ['GetAssignableServerRolesByServerId', variables];
+useGetAssignableServerRolesQuery.getKey = (variables: GetAssignableServerRolesQueryVariables) => ['GetAssignableServerRoles', variables];
 
-export const useInfiniteGetAssignableServerRolesByServerIdQuery = <
-      TData = InfiniteData<GetAssignableServerRolesByServerIdQuery>,
+export const useInfiniteGetAssignableServerRolesQuery = <
+      TData = InfiniteData<GetAssignableServerRolesQuery>,
       TError = unknown
     >(
-      variables: GetAssignableServerRolesByServerIdQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<GetAssignableServerRolesByServerIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetAssignableServerRolesByServerIdQuery, TError, TData>['queryKey'] }
+      variables: GetAssignableServerRolesQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetAssignableServerRolesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetAssignableServerRolesQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useInfiniteQuery<GetAssignableServerRolesByServerIdQuery, TError, TData>(
+    return useInfiniteQuery<GetAssignableServerRolesQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? ['GetAssignableServerRolesByServerId.infinite', variables],
-      queryFn: (metaData) => graphqlFetcher<GetAssignableServerRolesByServerIdQuery, GetAssignableServerRolesByServerIdQueryVariables>(GetAssignableServerRolesByServerIdDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      queryKey: optionsQueryKey ?? ['GetAssignableServerRoles.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, {...variables, ...(metaData.pageParam ?? {})})(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteGetAssignableServerRolesByServerIdQuery.getKey = (variables: GetAssignableServerRolesByServerIdQueryVariables) => ['GetAssignableServerRolesByServerId.infinite', variables];
+useInfiniteGetAssignableServerRolesQuery.getKey = (variables: GetAssignableServerRolesQueryVariables) => ['GetAssignableServerRoles.infinite', variables];
 
 
-useGetAssignableServerRolesByServerIdQuery.fetcher = (variables: GetAssignableServerRolesByServerIdQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetAssignableServerRolesByServerIdQuery, GetAssignableServerRolesByServerIdQueryVariables>(GetAssignableServerRolesByServerIdDocument, variables, options);
+useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, variables, options);
 
 export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     query GetJoinedCommunityServer($after: String) {
@@ -190,7 +190,7 @@ useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServer
 
 export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
     query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
-  communityServerRolesByServerId(
+  communityServerRoles(
     serverId: $serverId
     after: $after
     where: { name: { ilike: $nameFilter } }
@@ -264,7 +264,7 @@ useGetServerRolesByServerIdQuery.fetcher = (variables: GetServerRolesByServerIdQ
 
 export const ServerMemberSearchDocument = new TypedDocumentString(`
     query ServerMemberSearch($serverId: UUID!, $after: String, $search: String, $status: [MembershipStatus!]!) {
-  communityServerMembersFromServerId(
+  communityServerMembers(
     serverId: $serverId
     after: $after
     search: $search

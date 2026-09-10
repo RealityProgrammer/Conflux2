@@ -1,5 +1,5 @@
 query GetUserFullProfile($id: UUID!) {
-    userById(id: $id) {
+    user(id: $id) {
         id,
         userName,
         displayName,

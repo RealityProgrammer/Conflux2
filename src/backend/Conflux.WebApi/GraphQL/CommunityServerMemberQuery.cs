@@ -1,12 +1,14 @@
 using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
+using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.WebApi.GraphQL;
 
-partial class Query {
+[QueryType, Authorize]
+internal static partial class CommunityServerMemberQuery {
     [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, UseFiltering]
-    public IQueryable<CommunityServerMember> GetCommunityServerMembersFromServerId(
+    public static IQueryable<CommunityServerMember> GetCommunityServerMembers(
         Guid serverId,
         string? search,
         [Service] ApplicationDbContext dbContext
@@ -26,9 +28,19 @@ partial class Query {
 
         return query.OrderBy(m => m.User.DisplayName);
     }
+    
+    [UseSingleOrDefault, UseProjection]
+    public static IQueryable<CommunityServerMember> GetCommunityServerMemberByServerAndUserId(
+        Guid serverId,
+        Guid userId,
+        [Service] ApplicationDbContext dbContext
+    ) {
+        return dbContext.CommunityServerMembers
+            .Where(m => m.CommunityServerId == serverId && m.UserId == userId);
+    }
 
     [UseSingleOrDefault, UseProjection]
-    public IQueryable<CommunityServerMember> GetCommunityServerMemberById(
+    public static IQueryable<CommunityServerMember> GetCommunityServerMember(
         Guid id,
         [Service] ApplicationDbContext dbContext
     ) {

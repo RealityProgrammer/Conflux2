@@ -1,7 +1,7 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {
   type GetServerRolesByServerIdQuery,
-  useInfiniteGetAssignableServerRolesByServerIdQuery,
+  useInfiniteGetAssignableServerRolesQuery,
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
 import {useEffect, useRef, useState} from "react";
@@ -29,7 +29,7 @@ import {useDebounceValue} from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
 
-type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRolesByServerId"]>["nodes"]>[number];
+type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
 export default function RoleManagement() {
   const { serverId } = useCommunityServerContext();
@@ -52,7 +52,7 @@ export default function RoleManagement() {
   }, {
     initialPageParam: { after: null },
     getNextPageParam: (lastPage: GetServerRolesByServerIdQuery): { after: string } | undefined => {
-      const pageInfo = lastPage?.communityServerRolesByServerId?.pageInfo;
+      const pageInfo = lastPage?.communityServerRoles?.pageInfo;
 
       if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
         return { after: pageInfo.endCursor };
@@ -69,7 +69,7 @@ export default function RoleManagement() {
     });
 
     queryClient.invalidateQueries({
-      queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({ serverId }),
+      queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({ serverId }),
     });
   };
 
@@ -83,9 +83,9 @@ export default function RoleManagement() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            communityServerRolesByServerId: !page.communityServerRolesByServerId ? null : {
-              ...page.communityServerRolesByServerId!,
-              nodes: page.communityServerRolesByServerId?.nodes!.map(node => {
+            communityServerRoles: !page.communityServerRoles ? null : {
+              ...page.communityServerRoles!,
+              nodes: page.communityServerRoles?.nodes!.map(node => {
                 if (node.id !== role.id) {
                   return node;
                 }
@@ -119,9 +119,9 @@ export default function RoleManagement() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            communityServerRolesByServerId: !page.communityServerRolesByServerId ? null : {
-              ...page.communityServerRolesByServerId!,
-              nodes: page.communityServerRolesByServerId?.nodes!.filter(node => node.id !== roleId),
+            communityServerRoles: !page.communityServerRoles ? null : {
+              ...page.communityServerRoles!,
+              nodes: page.communityServerRoles?.nodes!.filter(node => node.id !== roleId),
             },
           })),
         };
@@ -130,7 +130,7 @@ export default function RoleManagement() {
   };
 
   const allRoles: RoleDisplayElement[] =
-    data?.pages.flatMap((page: GetServerRolesByServerIdQuery): RoleDisplayElement[] => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
+    data?.pages.flatMap((page: GetServerRolesByServerIdQuery): RoleDisplayElement[] => page?.communityServerRoles?.nodes ?? []) ?? [];
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | undefined>();
 

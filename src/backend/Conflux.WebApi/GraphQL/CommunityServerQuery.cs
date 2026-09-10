@@ -1,14 +1,16 @@
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Infrastructure;
+using HotChocolate.Authorization;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL;
 
-partial class Query {
+[QueryType, Authorize]
+internal static partial class CommunityServerQuery {
     [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
-    public IQueryable<CommunityServer> GetJoinedServers(
+    public static IQueryable<CommunityServer> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
         [Service] ApplicationDbContext dbContext
     ) {
@@ -27,7 +29,7 @@ partial class Query {
     }
 
     [UseSingleOrDefault, UseProjection]
-    public IQueryable<CommunityServer> GetCommunityServerById(
+    public static IQueryable<CommunityServer> GetCommunityServer(
         Guid id,
         [Service] ApplicationDbContext dbContext
     ) {

@@ -50,8 +50,8 @@ export type PaginatedResult<T> =
 
 export type UserAuthorizationInfo = components["schemas"]["UserAuthorizationInfo"];
 
-export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['userById']>;
-export type UserFullProfileDto = NonNullable<GetUserFullProfileQuery['userById']>
+export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['user']>;
+export type UserFullProfileDto = NonNullable<GetUserFullProfileQuery['user']>
 
 export type LoginResponse = components["schemas"]["LoginResponse"];
 export type RefreshResponse = components["schemas"]["RefreshResponse"];

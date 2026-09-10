@@ -1,5 +1,5 @@
 query GetInvitationSummary($id: String!) {
-    invitationById(id: $id) {
+    invitation(id: $id) {
         communityServer {
             id
             name,

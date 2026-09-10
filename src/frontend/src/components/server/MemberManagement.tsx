@@ -3,7 +3,7 @@ import {useRef, useState} from "react";
 import {Popover, Separator} from "radix-ui";
 import {
   type ServerMemberSearchQuery,
-  useInfiniteGetAssignableServerRolesByServerIdQuery,
+  useInfiniteGetAssignableServerRolesQuery,
   useInfiniteServerMemberSearchQuery,
 } from "../../graphql/infiniteQueries.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
@@ -29,7 +29,12 @@ import {MembershipStatus, SpecialRoleType} from "../../graphql/types.ts";
 import {useQueryClient} from "@tanstack/react-query";
 import {toast} from "react-toastify";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {MemberRolesUpdatedEvent, ServerRoleCreatedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
+import type {
+  MemberRolesUpdatedEvent,
+  ServerMemberKickedEvent,
+  ServerRoleCreatedEvent,
+  ServerRoleUpdatedEvent
+} from "../../api/events.ts";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -52,7 +57,7 @@ export default function MemberManagement() {
     enabled: !!searchValue,
     initialPageParam: { after: null },
     getNextPageParam: (lastPage: ServerMemberSearchQuery): { after: string } | undefined => {
-      const pageInfo = lastPage?.communityServerMembersFromServerId?.pageInfo;
+      const pageInfo = lastPage?.communityServerMembers?.pageInfo;
 
       if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
         return { after: pageInfo.endCursor };
@@ -63,7 +68,7 @@ export default function MemberManagement() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const allMembers = data?.pages.flatMap((page) => page?.communityServerMembersFromServerId?.nodes ?? []) ?? [];
+  const allMembers = data?.pages.flatMap((page) => page?.communityServerMembers?.nodes ?? []) ?? [];
 
   const [inspectingMemberId, setInspectingMemberId] = useState<string | undefined>(undefined);
 
@@ -184,7 +189,7 @@ function MemberInformation({memberId}: {memberId: string}) {
     );
   }
 
-  if (isError || !data?.communityServerMemberById) {
+  if (isError || !data?.communityServerMember) {
     return (
       <div className="size-full flex flex-col justify-center items-center gap-y-2">
         <BsExclamationTriangle className="size-8 fill-white"/>
@@ -193,7 +198,7 @@ function MemberInformation({memberId}: {memberId: string}) {
     );
   }
 
-  return <MemberInformationContent inspectingMemberInfo={data.communityServerMemberById}/>
+  return <MemberInformationContent inspectingMemberInfo={data.communityServerMember}/>
 }
 
 const updateMemberInformationSchema = z.object({
@@ -204,7 +209,7 @@ type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationS
 
 function MemberInformationContent({
   inspectingMemberInfo
-}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
+}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
   const queryClient = useQueryClient();
   const { serverId, memberPermissions } = useCommunityServerContext();
 
@@ -397,32 +402,41 @@ function MemberInformationContent({
 
 function MemberActions({
   inspectingMemberInfo
-}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
+}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
   const queryClient = useQueryClient();
   const { serverId, memberPermissions } = useCommunityServerContext();
+
+  const setActiveStatusToKicked = () => {
+    queryClient.setQueryData<InspectMemberQuery>(
+      useInspectMemberQuery.getKey({id: inspectingMemberInfo.id}),
+      (oldData) => {
+        if (!oldData || !oldData.communityServerMember) return oldData;
+
+        return {
+          ...oldData,
+          communityServerMember: {
+            ...oldData.communityServerMember,
+            status: MembershipStatus.Kicked,
+          }
+        };
+      }
+    );
+  };
 
   const kickMember = useKickServerMemberMutation({
     onSuccess: async () => {
       toast.success("Member has been kicked from the server.");
-
-      queryClient.setQueryData<InspectMemberQuery>(
-        useInspectMemberQuery.getKey({id: inspectingMemberInfo.id}),
-        (oldData) => {
-          if (!oldData || !oldData.communityServerMemberById) return oldData;
-
-          return {
-            ...oldData,
-            communityServerMemberById: {
-              ...oldData.communityServerMemberById,
-              status: MembershipStatus.Kicked,
-            }
-          };
-        }
-      );
+      setActiveStatusToKicked();
     },
     onError: (_err) => {
       toast.error("Failed to kick member.");
     },
+  });
+
+  useSignalREvent("ServerMemberKicked", (event: ServerMemberKickedEvent) => {
+    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
+
+    setActiveStatusToKicked();
   });
 
   return (
@@ -481,12 +495,12 @@ function RoleModificationButton({
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteGetAssignableServerRolesByServerIdQuery(
+  } = useInfiniteGetAssignableServerRolesQuery(
     { serverId, nameFilter: searchValue, after: null, authorizeLevel: memberPermissions.authorizeLevel },
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
-        const pageInfo = lastPage?.communityServerRolesByServerId?.pageInfo;
+        const pageInfo = lastPage?.communityServerRoles?.pageInfo;
 
         if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
           return { after: pageInfo.endCursor };
@@ -498,24 +512,24 @@ function RoleModificationButton({
     }
   );
 
-  const allElements = data?.pages.flatMap((page) => page?.communityServerRolesByServerId?.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.communityServerRoles?.nodes ?? []) ?? [];
 
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
   });
 
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesByServerIdQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
   });
 
   return (

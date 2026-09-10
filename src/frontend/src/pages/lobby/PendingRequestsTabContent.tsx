@@ -104,7 +104,7 @@ export default function PendingRequestsTabContent() {
       queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.senderUserId }),
     });
 
-    const userProfile = query.userById;
+    const userProfile = query.user;
     if (!userProfile) return;
 
     const newElement: PendingFriendRequestDto = {

@@ -169,7 +169,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
           queryFn: useGetUserIdentityProfileQuery.fetcher({ id: senderId }),
         });
 
-        knownUser = userQuery.userById ?? undefined;
+        knownUser = userQuery.user ?? undefined;
       } catch (error) {
         console.error("Failed to fetch user summary for new message", error);
       }
