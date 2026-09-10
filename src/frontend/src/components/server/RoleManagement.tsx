@@ -709,6 +709,27 @@ function RoleDetails({
             <Accordion.Content className="border-t-2 border-t-gray-600">
               <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
                 <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Manage Members</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.ManageMembers"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.ManageMembers}
+                        content={errors.permissions?.ManageMembers?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+
+                <li className="flex flex-row items-center gap-2 text-sm">
                   <span className="flex-1">Update Roles</span>
 
                   <Controller
@@ -718,6 +739,48 @@ function RoleDetails({
                       <ErrorPopover
                         open={!!errors.permissions?.UpdateMemberRoles}
                         content={errors.permissions?.UpdateMemberRoles?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Kick Members</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.KickMembers"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.KickMembers}
+                        content={errors.permissions?.KickMembers?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Ban Members</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.BanMembers"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.BanMembers}
+                        content={errors.permissions?.BanMembers?.message}
                       >
                         <PermissionStatesPill
                           value={field.value}

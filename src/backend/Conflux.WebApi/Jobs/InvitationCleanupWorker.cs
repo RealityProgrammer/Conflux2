@@ -44,7 +44,7 @@ internal sealed partial class InvitationCleanupWorker : BackgroundService {
             }
         } catch (Exception ex) {
             // Log the error but DO NOT throw, otherwise the entire BackgroundService will crash and stop running
-            _logger.LogError(ex, "An error occurred while cleaning up invitations.");
+            _logger.LogError(ex, "Error occurred while cleaning up invitations.");
         }
     }
     

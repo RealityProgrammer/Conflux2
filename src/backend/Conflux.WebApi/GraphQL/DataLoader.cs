@@ -53,7 +53,7 @@ internal static class DataLoaders {
         
         var counts = await dbContext.CommunityServerMembers
             .AsNoTracking()
-            .Where(m => serverIds.Contains(m.CommunityServerId))
+            .Where(m => serverIds.Contains(m.CommunityServerId) && m.Status == MembershipStatus.Active)
             .GroupBy(m => m.CommunityServerId)
             .Select(g => new {
                 ServerId = g.Key,

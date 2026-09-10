@@ -33,7 +33,15 @@ export type InspectMemberQueryVariables = Exact<{
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+export type InspectMemberQuery = { communityServerMemberById: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+
+export type KickServerMemberMutationVariables = Exact<{
+  serverId: string;
+  memberId: string;
+}>;
+
+
+export type KickServerMemberMutation = { kickCommunityServerMember: { memberId: string } };
 
 export type UpdateMemberRolesMutationVariables = Exact<{
   serverId: string;
@@ -191,6 +199,8 @@ export const InspectMemberDocument = new TypedDocumentString(`
         isGranted
       }
     }
+    status
+    banExpireAt
   }
 }
     `);
@@ -215,6 +225,30 @@ useInspectMemberQuery.getKey = (variables: InspectMemberQueryVariables) => ['Ins
 
 
 useInspectMemberQuery.fetcher = (variables: InspectMemberQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables, options);
+
+export const KickServerMemberDocument = new TypedDocumentString(`
+    mutation KickServerMember($serverId: UUID!, $memberId: UUID!) {
+  kickCommunityServerMember(input: { serverId: $serverId, memberId: $memberId }) {
+    memberId
+  }
+}
+    `);
+
+export const useKickServerMemberMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<KickServerMemberMutation, TError, KickServerMemberMutationVariables, TContext>) => {
+    
+    return useMutation<KickServerMemberMutation, TError, KickServerMemberMutationVariables, TContext>(
+      {
+    mutationKey: ['KickServerMember'],
+    mutationFn: (variables?: KickServerMemberMutationVariables) => graphqlFetcher<KickServerMemberMutation, KickServerMemberMutationVariables>(KickServerMemberDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useKickServerMemberMutation.fetcher = (variables: KickServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<KickServerMemberMutation, KickServerMemberMutationVariables>(KickServerMemberDocument, variables, options);
 
 export const UpdateMemberRolesDocument = new TypedDocumentString(`
     mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {

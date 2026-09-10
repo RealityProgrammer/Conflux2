@@ -1,6 +1,8 @@
 using Conflux.Application.Dto;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.GraphQL.Dto;
+using Conflux.WebApi.GraphQL.Middlewares;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -15,6 +17,7 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
         descriptor.Field(m => m.CommunityServer).Type<NonNullType<CommunityServerType>>();
         descriptor.Field(m => m.CreatedAt);
         descriptor.Field(m => m.Roles);
+        descriptor.Field(m => m.BanExpireAt);
         descriptor.Field("authorizeInfo")
             .Type<NonNullType<MemberAuthorizeInfoType>>()
             .ParentRequires<CommunityServerMember>(m => new {
@@ -32,5 +35,8 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
                 
                 return !result.IsSuccess ? throw new GraphQLException(ErrorBuilder.New().SetCode(result.Error.Code).SetMessage(result.Error.Message).Build()) : result.Value;
             });
+
+        descriptor.Field(m => m.Status)
+            .Use((_, next) => new RequireServerPermissionsMiddleware(next, [ServerPermission.ManageMembers]));
     }
 }

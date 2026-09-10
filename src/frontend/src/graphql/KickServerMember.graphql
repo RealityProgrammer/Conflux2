@@ -1,0 +1,8 @@
+mutation KickServerMember($serverId: UUID!, $memberId: UUID!) {
+    kickCommunityServerMember(input: {
+        serverId: $serverId
+        memberId: $memberId
+    }) {
+        memberId
+    }
+}

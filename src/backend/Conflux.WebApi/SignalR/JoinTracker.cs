@@ -2,9 +2,7 @@ using StackExchange.Redis;
 
 namespace Conflux.WebApi.SignalR;
 
-public sealed class JoinTracker(
-    IConnectionMultiplexer connectionMultiplexer
-) {
+public sealed class JoinTracker(IConnectionMultiplexer connectionMultiplexer) {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
     public async Task IncrementChannelJoinCount(string connectionId, Guid channelId) {

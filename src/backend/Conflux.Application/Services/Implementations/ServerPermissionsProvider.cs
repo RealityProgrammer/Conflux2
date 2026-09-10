@@ -30,6 +30,7 @@ internal sealed class ServerPermissionsProvider(
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
+            .Where(m => m.Status == MembershipStatus.Active)
             .Include(m => m.MemberRoles)
             .ThenInclude(m => m.Role)
             .ThenInclude(r => r.Permissions)

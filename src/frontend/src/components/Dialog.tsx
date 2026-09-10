@@ -13,6 +13,8 @@ export interface DialogProps {
   subtitle?: string;
   children: ReactNode;
   footerContent?: ReactNode;
+  disableCloseOnOutsideClick?: boolean;
+  disableCloseOnEscapeKeyDown?: boolean;
 }
 
 export default function Dialog({
@@ -25,6 +27,8 @@ export default function Dialog({
   subtitle,
   children,
   footerContent,
+  disableCloseOnOutsideClick = false,
+  disableCloseOnEscapeKeyDown = false,
 }: DialogProps) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -37,7 +41,19 @@ export default function Dialog({
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="backdrop-overlay"/>
 
-        <RadixDialog.Content className={`flex flex-col ${contentClassName ?? ""}`}>
+        <RadixDialog.Content
+          className={`flex flex-col ${contentClassName ?? ""}`}
+          onPointerDownOutside={(e) => {
+            if (disableCloseOnOutsideClick) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (disableCloseOnEscapeKeyDown) {
+              e.preventDefault();
+            }
+          }}
+        >
           <header className="flex-none bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
             {headerIcon}
 

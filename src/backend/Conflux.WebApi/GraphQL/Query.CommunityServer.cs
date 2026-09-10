@@ -1,4 +1,5 @@
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Infrastructure;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
@@ -20,7 +21,7 @@ partial class Query {
         }
 
         return dbContext.CommunityServerMembers
-            .Where(m => m.UserId == userId)
+            .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active)
             .OrderBy(m => m.CreatedAt)
             .Select(m => m.CommunityServer);
     }

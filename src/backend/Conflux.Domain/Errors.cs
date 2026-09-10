@@ -113,4 +113,7 @@ public static class Errors {
     
     public static Error TooManyRequests() =>
         new(nameof(TooManyRequests), "Too many requests.");
+    
+    public static Error ServerMemberNotActive() =>
+        new(nameof(ServerMemberNotActive), "Community server member is not active.");
 }

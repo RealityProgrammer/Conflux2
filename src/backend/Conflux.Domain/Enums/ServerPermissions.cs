@@ -9,4 +9,7 @@ public enum ServerPermission {
     DeleteChannel,
     
     UpdateMemberRoles,
+    ManageMembers,
+    KickMembers,
+    BanMembers,
 }

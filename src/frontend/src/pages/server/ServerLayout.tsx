@@ -1,4 +1,4 @@
-import {Outlet, useParams} from "react-router";
+import {Outlet, useNavigate, useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
 import type {ServerDetailDto, ServerMemberAuthorizationInfoDto} from "../../api/types.ts";
@@ -9,8 +9,13 @@ import {ChannelType} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import Dialog from "../../components/Dialog.tsx";
+import {useState} from "react";
+import {BsHammer} from "react-icons/bs";
 
 export default function ServerLayout() {
+  const navigate = useNavigate();
+
   const { userAuthorization } = useAuthorization();
   const { serverId } = useParams();
 
@@ -47,6 +52,8 @@ export default function ServerLayout() {
     staleTime: 30 * 60 * 1000,
   });
 
+  const [showKickedDialog, setShowKickedDialog] = useState(false);
+
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (serverId !== event.serverId) return;
 
@@ -67,6 +74,10 @@ export default function ServerLayout() {
     queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
   });
 
+  useSignalREvent("KickedFromServer", (serverId: string) => {
+    setShowKickedDialog(true);
+  });
+
   if (isLoadingServerSummary || isLoadingUserPermissions) {
     return (
       <div className="size-full flex flex-row justify-center items-center">
@@ -84,13 +95,43 @@ export default function ServerLayout() {
   }
 
   return (
-    <SuccessfullyLoadedLayout
-      serverId={serverId!}
-      serverSummary={serverSummary}
-      serverSummaryQueryKey={serverSummaryQueryKey}
-      memberPermissions={memberPermissions}
-      userMemberPermissionQueryKey={userMemberPermissionQueryKey}
-    />
+    <>
+      <SuccessfullyLoadedLayout
+        serverId={serverId!}
+        serverSummary={serverSummary}
+        serverSummaryQueryKey={serverSummaryQueryKey}
+        memberPermissions={memberPermissions}
+        userMemberPermissionQueryKey={userMemberPermissionQueryKey}
+      />
+
+      <Dialog
+        open={showKickedDialog}
+        onOpenChange={(open) => {
+          if (open) {
+            setShowKickedDialog(true);
+          } else {
+            setShowKickedDialog(false);
+            navigate("/lobby/me", {
+              replace: true,
+            });
+          }
+        }}
+        headerIcon={(
+          <BsHammer className="size-10 fill-white"/>
+        )}
+        title="Kicked from server"
+        subtitle="You have been banished by the council"
+        contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-lg"
+        disableCloseOnOutsideClick
+        disableCloseOnEscapeKeyDown
+      >
+        <div className="px-4 py-3">
+          You've been kicked from the server.<br/>
+
+          But don't worry, you can rejoin if you have an active invitation.
+        </div>
+      </Dialog>
+    </>
   );
 }
 

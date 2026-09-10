@@ -24,4 +24,8 @@ public interface IConfluxClient {
     Task ServerChannelDeleted(ServerChannelDeletedEvent data, CancellationToken cancellationToken = default);
     
     Task MemberRolesUpdated(MemberRolesUpdatedEvent data, CancellationToken cancellationToken = default);
+    
+    Task KickedFromServer(Guid serverId, CancellationToken cancellationToken = default);
+    
+    Task ServerMemberKicked(ServerMemberKickedEvent data, CancellationToken cancellationToken = default);
 }

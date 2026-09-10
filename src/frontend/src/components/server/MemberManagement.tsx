@@ -11,7 +11,12 @@ import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
-import {type InspectMemberQuery, useInspectMemberQuery, useUpdateMemberRolesMutation} from "../../graphql/queries.ts";
+import {
+  type InspectMemberQuery,
+  useInspectMemberQuery,
+  useKickServerMemberMutation,
+  useUpdateMemberRolesMutation
+} from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
 import {BsCheck, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
@@ -20,7 +25,7 @@ import {FaSave} from "react-icons/fa";
 import {Controller, type SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {SpecialRoleType} from "../../graphql/types.ts";
+import {MembershipStatus, SpecialRoleType} from "../../graphql/types.ts";
 import {useQueryClient} from "@tanstack/react-query";
 import {toast} from "react-toastify";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -42,7 +47,9 @@ export default function MemberManagement() {
     serverId,
     after: null,
     search: searchValue,
+    status: Object.values(MembershipStatus),
   }, {
+    enabled: !!searchValue,
     initialPageParam: { after: null },
     getNextPageParam: (lastPage: ServerMemberSearchQuery): { after: string } | undefined => {
       const pageInfo = lastPage?.communityServerMembersFromServerId?.pageInfo;
@@ -162,7 +169,12 @@ export default function MemberManagement() {
 }
 
 function MemberInformation({memberId}: {memberId: string}) {
-  const { data, isLoading, isError } = useInspectMemberQuery({ id: memberId });
+  const { data, isLoading, isError } = useInspectMemberQuery(
+    { id: memberId },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
 
   if (isLoading) {
     return (
@@ -181,7 +193,7 @@ function MemberInformation({memberId}: {memberId: string}) {
     );
   }
 
-  return <MemberInformationContent memberInfo={data.communityServerMemberById}/>
+  return <MemberInformationContent inspectingMemberInfo={data.communityServerMemberById}/>
 }
 
 const updateMemberInformationSchema = z.object({
@@ -191,8 +203,8 @@ const updateMemberInformationSchema = z.object({
 type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationSchema>;
 
 function MemberInformationContent({
-  memberInfo
-}: {memberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
+  inspectingMemberInfo
+}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
   const queryClient = useQueryClient();
   const { serverId, memberPermissions } = useCommunityServerContext();
 
@@ -206,7 +218,7 @@ function MemberInformationContent({
     mode: "onSubmit",
     reValidateMode: "onSubmit",
     defaultValues: {
-      roleIds: memberInfo.roles.filter(r => r.specialRoleType === SpecialRoleType.None).map(r => r.id),
+      roleIds: inspectingMemberInfo.roles.filter(r => r.specialRoleType === SpecialRoleType.None).map(r => r.id),
     }
   });
 
@@ -217,7 +229,7 @@ function MemberInformationContent({
       });
 
       queryClient.invalidateQueries({
-        queryKey: useInspectMemberQuery.getKey({id: memberInfo.id})
+        queryKey: useInspectMemberQuery.getKey({id: inspectingMemberInfo.id})
       });
     },
 
@@ -229,134 +241,225 @@ function MemberInformationContent({
   const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (value: UpdateMemberInformationFormValues) => {
     await updateMemberRolesMutation.mutateAsync({
       serverId,
-      memberId: memberInfo.id,
+      memberId: inspectingMemberInfo.id,
       roleIds: value.roleIds,
     });
   };
 
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (event.serverId !== serverId) return;
-    if (!memberInfo.roles.map(r => r.id).includes(event.roleId)) return;
+    if (!inspectingMemberInfo.roles.map(r => r.id).includes(event.roleId)) return;
 
-    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: memberInfo.id})});
+    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: inspectingMemberInfo.id})});
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
-    if (event.memberId !== memberInfo.id) return;
+    if (event.memberId !== inspectingMemberInfo.id) return;
 
-    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: memberInfo.id})});
+    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: inspectingMemberInfo.id})});
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmitModification)} className="relative overflow-y-hidden">
-      <section className={`absolute ${isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
-        <IconButton type="button" theme="danger" onClick={() => {
-          reset();
-        }}>
-          <FaXmark className="size-6"/>
-        </IconButton>
-
-        {isSubmitting ? (
-          <Spinner className="size-6 fill-white"/>
-        ) : (
-          <IconButton type="submit" theme="default">
-            <FaSave className="size-6"/>
+    <>
+      <form onSubmit={handleSubmit(onSubmitModification)} className="relative overflow-y-hidden">
+        <section className={`absolute ${isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
+          <IconButton type="button" theme="danger" onClick={() => {
+            reset();
+          }}>
+            <FaXmark className="size-6"/>
           </IconButton>
-        )}
-      </section>
 
-      <div>
-        <div className="space-y-2">
-          <h4 className="group-label">
-            User Information
-          </h4>
+          {isSubmitting ? (
+            <Spinner className="size-6 fill-white"/>
+          ) : (
+            <IconButton type="submit" theme="default">
+              <FaSave className="size-6"/>
+            </IconButton>
+          )}
+        </section>
 
-          <div className="flex flex-row items-center gap-2">
-            <UserAvatar
-              hasAvatar={memberInfo.user.hasAvatar}
-              className="flex-none size-10 rounded-full overflow-hidden"
-              userId={memberInfo.user.id}
-            />
+        <div>
+          <div className="space-y-2">
+            <h4 className="group-label">
+              User Information
+            </h4>
 
-            <span className="font-semibold">{memberInfo.user.displayName}</span>
-            <span className="text-sm text-gray-400">@{memberInfo.user.userName}</span>
+            <div className="flex flex-row items-center gap-2">
+              <UserAvatar
+                hasAvatar={inspectingMemberInfo.user.hasAvatar}
+                className="flex-none size-10 rounded-full overflow-hidden"
+                userId={inspectingMemberInfo.user.id}
+              />
+
+              <span className="font-semibold">{inspectingMemberInfo.user.displayName}</span>
+              <span className="text-sm text-gray-400">@{inspectingMemberInfo.user.userName}</span>
+            </div>
+          </div>
+
+          <div className="space-y-2 mt-2">
+            <h4 className="group-label">
+              Member Information
+            </h4>
+
+            <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
+              <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+                <span>Join Date</span>
+
+                <DateTimeText value={new Date(inspectingMemberInfo.createdAt)}/>
+              </li>
+
+              <Separator.Root className="horizontal-separator my-3" />
+
+              <li className="flex items-center justify-between gap-2 px-2.5 py-0.5">
+                <span className="flex-1">Roles</span>
+
+                <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+                  {inspectingMemberInfo.roles.sort(r => r.authorizeLevel).map((r) => {
+                    return (
+                      <span key={r.id} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm shadow-sm">
+                        <BsCircleFill className="size-2 fill-blue-500"/>
+
+                        {r.name}
+                      </span>
+                    )
+                  })}
+
+                  {memberPermissions.effectivePermissions.UpdateMemberRoles && (
+                    <Controller
+                      control={control}
+                      name="roleIds"
+                      render={({field}) => {
+                        return (
+                          <RoleModificationButton
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        )
+                      }}
+                    />
+                  )}
+                </span>
+              </li>
+
+              <Separator.Root className="horizontal-separator my-3" />
+
+              <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+                <span>Authorize Level</span>
+
+                <span className="font-mono">{inspectingMemberInfo.authorizeInfo.authorizeLevel}</span>
+              </li>
+
+              <Separator.Root className="horizontal-separator my-3" />
+
+              <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+                <span>Permissions</span>
+
+                <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+                  {inspectingMemberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((p) => {
+                    return (
+                      <span key={p.permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                        {p.permission}
+                      </span>
+                    )
+                  })}
+                </span>
+              </li>
+
+              <Separator.Root className="horizontal-separator my-3" />
+
+              <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+                <span>Status</span>
+
+                <span className="font-mono">{inspectingMemberInfo.status}</span>
+              </li>
+
+              {inspectingMemberInfo.banExpireAt && (
+                <>
+                  <Separator.Root className="horizontal-separator my-3" />
+
+                  <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+                    <span>Ban Expired At</span>
+
+                    <DateTimeText value={new Date(inspectingMemberInfo.banExpireAt)}/>
+                  </li>
+                </>
+              )}
+            </ul>
           </div>
         </div>
+      </form>
 
+      <MemberActions inspectingMemberInfo={inspectingMemberInfo}/>
+    </>
+  );
+}
+
+function MemberActions({
+  inspectingMemberInfo
+}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMemberById']>}) {
+  const queryClient = useQueryClient();
+  const { serverId, memberPermissions } = useCommunityServerContext();
+
+  const kickMember = useKickServerMemberMutation({
+    onSuccess: async () => {
+      toast.success("Member has been kicked from the server.");
+
+      queryClient.setQueryData<InspectMemberQuery>(
+        useInspectMemberQuery.getKey({id: inspectingMemberInfo.id}),
+        (oldData) => {
+          if (!oldData || !oldData.communityServerMemberById) return oldData;
+
+          return {
+            ...oldData,
+            communityServerMemberById: {
+              ...oldData.communityServerMemberById,
+              status: MembershipStatus.Kicked,
+            }
+          };
+        }
+      );
+    },
+    onError: (_err) => {
+      toast.error("Failed to kick member.");
+    },
+  });
+
+  return (
+    <>
+      {(memberPermissions.effectivePermissions.KickMembers || memberPermissions.effectivePermissions.BanMembers) && (
         <div className="space-y-2 mt-2">
           <h4 className="group-label">
-            Member Information
+            Actions
           </h4>
 
-          <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
-            <li className="flex items-center justify-between gap-2 px-2.5 py-1">
-              <span>Join Date</span>
+          <div className="flex flex-row items-center gap-3">
+            <button
+              type="button"
+              onClick={() => kickMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id })}
+              disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberPermissions.effectivePermissions.KickMembers || kickMember.isPending}
+              className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
+            >
+              {kickMember.isPending ? (
+                <Spinner className="size-6 fill-white"/>
+              ) : (
+                <>Kick Member</>
+              )}
+            </button>
 
-              <DateTimeText value={new Date(memberInfo.createdAt)}/>
-            </li>
-
-            <Separator.Root className="horizontal-separator my-3" />
-
-            <li className="flex items-center justify-between gap-2 px-2.5 py-0.5">
-              <span className="flex-1">Roles</span>
-
-              <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-                {memberInfo.roles.sort(r => r.authorizeLevel).map((r) => {
-                  return (
-                    <span key={r.id} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm shadow-sm">
-                      <BsCircleFill className="size-2 fill-blue-500"/>
-
-                      {r.name}
-                    </span>
-                  )
-                })}
-
-                {memberPermissions.effectivePermissions.UpdateMemberRoles && (
-                  <Controller
-                    control={control}
-                    name="roleIds"
-                    render={({field}) => {
-                      return (
-                        <RoleModificationButton
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )
-                    }}
-                  />
-                )}
-              </span>
-            </li>
-
-            <Separator.Root className="horizontal-separator my-3" />
-
-            <li className="flex items-center justify-between gap-2 px-2.5 py-1">
-              <span>Authorize Level</span>
-
-              <span className="font-mono">{memberInfo.authorizeInfo.authorizeLevel}</span>
-            </li>
-
-            <Separator.Root className="horizontal-separator my-3" />
-
-            <li className="flex items-center justify-between gap-2 px-2.5 py-1">
-              <span>Permissions</span>
-
-              <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-                {memberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((p) => {
-                  return (
-                    <span key={p.permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
-                      {p.permission}
-                    </span>
-                  )
-                })}
-              </span>
-            </li>
-          </ul>
+            <button
+              type="button"
+              onClick={() => console.log('ban')}
+              disabled={!memberPermissions.effectivePermissions.BanMembers}
+              className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer"
+            >
+              Ban Member
+            </button>
+          </div>
         </div>
-      </div>
-    </form>
-  );
+      )}
+    </>
+  )
 }
 
 interface RoleModificationButtonProps {

@@ -1,4 +1,5 @@
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Infrastructure.Repositories;
@@ -19,7 +20,12 @@ internal sealed class ServerMemberRepository(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
-        return await dbContext.CommunityServerMembers
-            .AnyAsync(m => m.CommunityServerId == serverId && m.UserId == userId, cancellationToken);
+        MembershipStatus? status = await dbContext.CommunityServerMembers
+            .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
+            .Select(m => m.Status)
+            .Cast<MembershipStatus?>()
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return status != null && status.Value != MembershipStatus.Left;
     }
 }

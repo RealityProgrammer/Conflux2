@@ -206,11 +206,14 @@ builder.Services.AddMediator(options => {
     ];
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),
+        typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
 
 builder.Services.AddSingleton<JoinTracker>();
+builder.Services.AddSingleton<UserConnectionTracker>();
+
 builder.Services.AddSignalR()
     .AddJsonProtocol(options => {
         options.PayloadSerializerOptions.Converters.Add(

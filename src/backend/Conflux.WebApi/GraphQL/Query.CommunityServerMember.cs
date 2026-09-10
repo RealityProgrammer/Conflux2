@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.WebApi.GraphQL;
 
 partial class Query {
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
+    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection, UseFiltering]
     public IQueryable<CommunityServerMember> GetCommunityServerMembersFromServerId(
         Guid serverId,
         string? search,

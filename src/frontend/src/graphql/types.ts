@@ -8,6 +8,7 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   DateTime: { input: string; output: string; }
+  Duration: { input: unknown; output: unknown; }
   UUID: { input: string; output: string; }
 };
 
@@ -151,6 +152,20 @@ export type CommunityServer = {
   ownerUserId: Scalars['UUID']['output'];
 };
 
+export type CommunityServerBanFilterInput = {
+  and?: InputMaybe<Array<CommunityServerBanFilterInput>>;
+  bannedMember?: InputMaybe<CommunityServerMemberFilterInput>;
+  bannedMemberId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  duration?: InputMaybe<DurationOperationFilterInput>;
+  executorMember?: InputMaybe<CommunityServerMemberFilterInput>;
+  executorMemberId?: InputMaybe<UuidOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  isActive?: InputMaybe<BooleanOperationFilterInput>;
+  or?: InputMaybe<Array<CommunityServerBanFilterInput>>;
+  reason?: InputMaybe<StringOperationFilterInput>;
+};
+
 export type CommunityServerFilterInput = {
   and?: InputMaybe<Array<CommunityServerFilterInput>>;
   channelCategories?: InputMaybe<ListFilterInputTypeOfChannelCategoryFilterInput>;
@@ -173,17 +188,21 @@ export type CommunityServerFilterInput = {
 export type CommunityServerMember = {
   __typename?: 'CommunityServerMember';
   authorizeInfo: MemberAuthorizeInfo;
+  banExpireAt?: Maybe<Scalars['DateTime']['output']>;
   communityServer: CommunityServer;
   communityServerId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
   roles: Array<CommunityServerRole>;
+  status: MembershipStatus;
   user: ApplicationUser;
   userId: Scalars['UUID']['output'];
 };
 
 export type CommunityServerMemberFilterInput = {
   and?: InputMaybe<Array<CommunityServerMemberFilterInput>>;
+  banExpireAt?: InputMaybe<DateTimeOperationFilterInput>;
+  bans?: InputMaybe<ListFilterInputTypeOfCommunityServerBanFilterInput>;
   communityServer?: InputMaybe<CommunityServerFilterInput>;
   communityServerId?: InputMaybe<UuidOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -191,6 +210,7 @@ export type CommunityServerMemberFilterInput = {
   memberRoles?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
   or?: InputMaybe<Array<CommunityServerMemberFilterInput>>;
   roles?: InputMaybe<ListFilterInputTypeOfCommunityServerRoleFilterInput>;
+  status?: InputMaybe<MembershipStatusOperationFilterInput>;
   user?: InputMaybe<ApplicationUserFilterInput>;
   userId?: InputMaybe<UuidOperationFilterInput>;
 };
@@ -250,8 +270,8 @@ export type CommunityServerRoleFilterInput = {
   creatorUser?: InputMaybe<ApplicationUserFilterInput>;
   creatorUserId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
+  memberRoles?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
   members?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
-  membersWithRole?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
   name?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<CommunityServerRoleFilterInput>>;
   permissions?: InputMaybe<ListFilterInputTypeOfRolePermissionFilterInput>;
@@ -302,6 +322,21 @@ export type DateTimeOperationFilterInput = {
   nin?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
   nlt?: InputMaybe<Scalars['DateTime']['input']>;
   nlte?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type DurationOperationFilterInput = {
+  eq?: InputMaybe<Scalars['Duration']['input']>;
+  gt?: InputMaybe<Scalars['Duration']['input']>;
+  gte?: InputMaybe<Scalars['Duration']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['Duration']['input']>>>;
+  lt?: InputMaybe<Scalars['Duration']['input']>;
+  lte?: InputMaybe<Scalars['Duration']['input']>;
+  neq?: InputMaybe<Scalars['Duration']['input']>;
+  ngt?: InputMaybe<Scalars['Duration']['input']>;
+  ngte?: InputMaybe<Scalars['Duration']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['Duration']['input']>>>;
+  nlt?: InputMaybe<Scalars['Duration']['input']>;
+  nlte?: InputMaybe<Scalars['Duration']['input']>;
 };
 
 export type FriendRequestFilterInput = {
@@ -402,6 +437,25 @@ export type JoinedServersEdge = {
   node: CommunityServer;
 };
 
+export type KickCommunityServerMemberInput = {
+  memberId: Scalars['UUID']['input'];
+  serverId: Scalars['UUID']['input'];
+};
+
+export type KickCommunityServerMemberPayload = {
+  __typename?: 'KickCommunityServerMemberPayload';
+  memberId: Scalars['UUID']['output'];
+};
+
+export type LeaveCommunityServerInput = {
+  serverId: Scalars['UUID']['input'];
+};
+
+export type LeaveCommunityServerPayload = {
+  __typename?: 'LeaveCommunityServerPayload';
+  serverId: Scalars['UUID']['output'];
+};
+
 export type ListFilterInputTypeOfAttachmentFilterInput = {
   all?: InputMaybe<AttachmentFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -421,6 +475,13 @@ export type ListFilterInputTypeOfChannelFilterInput = {
   any?: InputMaybe<Scalars['Boolean']['input']>;
   none?: InputMaybe<ChannelFilterInput>;
   some?: InputMaybe<ChannelFilterInput>;
+};
+
+export type ListFilterInputTypeOfCommunityServerBanFilterInput = {
+  all?: InputMaybe<CommunityServerBanFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<CommunityServerBanFilterInput>;
+  some?: InputMaybe<CommunityServerBanFilterInput>;
 };
 
 export type ListFilterInputTypeOfCommunityServerMemberFilterInput = {
@@ -478,6 +539,19 @@ export type MemberAuthorizeInfo = {
   permissions: Array<PermissionEntry>;
 };
 
+export enum MembershipStatus {
+  Active = 'Active',
+  Kicked = 'Kicked',
+  Left = 'Left'
+}
+
+export type MembershipStatusOperationFilterInput = {
+  eq?: InputMaybe<MembershipStatus>;
+  in?: InputMaybe<Array<MembershipStatus>>;
+  neq?: InputMaybe<MembershipStatus>;
+  nin?: InputMaybe<Array<MembershipStatus>>;
+};
+
 export type MessageFilterInput = {
   and?: InputMaybe<Array<MessageFilterInput>>;
   attachments?: InputMaybe<ListFilterInputTypeOfAttachmentFilterInput>;
@@ -498,7 +572,19 @@ export type MessageFilterInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  kickCommunityServerMember: KickCommunityServerMemberPayload;
+  leaveCommunityServer: LeaveCommunityServerPayload;
   updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
+};
+
+
+export type MutationKickCommunityServerMemberArgs = {
+  input: KickCommunityServerMemberInput;
+};
+
+
+export type MutationLeaveCommunityServerArgs = {
+  input: LeaveCommunityServerInput;
 };
 
 
@@ -569,6 +655,7 @@ export type QueryCommunityServerMembersFromServerIdArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
   serverId: Scalars['UUID']['input'];
+  where?: InputMaybe<CommunityServerMemberFilterInput>;
 };
 
 
@@ -622,10 +709,13 @@ export type RolePermissionFilterInput = {
 };
 
 export enum ServerPermission {
+  BanMembers = 'BanMembers',
   CreateChannel = 'CreateChannel',
   CreateRole = 'CreateRole',
   DeleteChannel = 'DeleteChannel',
   DeleteRole = 'DeleteRole',
+  KickMembers = 'KickMembers',
+  ManageMembers = 'ManageMembers',
   UpdateMemberRoles = 'UpdateMemberRoles',
   UpdateRole = 'UpdateRole'
 }

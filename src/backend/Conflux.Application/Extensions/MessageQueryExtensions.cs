@@ -1,8 +1,9 @@
 using Conflux.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace Conflux.Infrastructure.Extensions;
+namespace Conflux.Application.Extensions;
 
-public static class QueryFilterExtensions {
+public static class MessageQueryExtensions {
     public static IQueryable<Message> WithDeleted(this IQueryable<Message> query) {
         return query.IgnoreQueryFilters(["SoftDeletionFilter"]);
     }

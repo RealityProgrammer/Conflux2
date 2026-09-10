@@ -1843,6 +1843,9 @@ export interface components {
                 CreateChannel?: components["schemas"]["PermissionState"];
                 DeleteChannel?: components["schemas"]["PermissionState"];
                 UpdateMemberRoles?: components["schemas"]["PermissionState"];
+                ManageMembers?: components["schemas"]["PermissionState"];
+                KickMembers?: components["schemas"]["PermissionState"];
+                BanMembers?: components["schemas"]["PermissionState"];
             };
         };
         PendingFriendRequestDto: {
@@ -1897,6 +1900,9 @@ export interface components {
                 CreateChannel?: boolean;
                 DeleteChannel?: boolean;
                 UpdateMemberRoles?: boolean;
+                ManageMembers?: boolean;
+                KickMembers?: boolean;
+                BanMembers?: boolean;
             };
             roles: components["schemas"]["MemberRoleDto"][];
         };
@@ -1913,6 +1919,9 @@ export interface components {
                 CreateChannel?: components["schemas"]["PermissionState"];
                 DeleteChannel?: components["schemas"]["PermissionState"];
                 UpdateMemberRoles?: components["schemas"]["PermissionState"];
+                ManageMembers?: components["schemas"]["PermissionState"];
+                KickMembers?: components["schemas"]["PermissionState"];
+                BanMembers?: components["schemas"]["PermissionState"];
             };
             /** Format: int32 */
             authorizeLevel: number;
@@ -2087,7 +2096,10 @@ export enum ServerPermission {
     DeleteRole = "DeleteRole",
     CreateChannel = "CreateChannel",
     DeleteChannel = "DeleteChannel",
-    UpdateMemberRoles = "UpdateMemberRoles"
+    UpdateMemberRoles = "UpdateMemberRoles",
+    ManageMembers = "ManageMembers",
+    KickMembers = "KickMembers",
+    BanMembers = "BanMembers"
 }
 export enum UserRelationshipStatus {
     Stranger = "Stranger",

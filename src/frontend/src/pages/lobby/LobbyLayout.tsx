@@ -23,9 +23,11 @@ import {useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  type GetJoinedCommunityServerQuery,
   useInfiniteGetJoinedCommunityServerQuery
 } from "../../graphql/infiniteQueries.ts";
-import {useQueryClient} from "@tanstack/react-query";
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -74,6 +76,7 @@ function Sidebar() {
 
 function JoinedCommunityServerScrollList() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -99,6 +102,13 @@ function JoinedCommunityServerScrollList() {
   );
 
   const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
+
+  // remove joined server from the query list
+  useSignalREvent("KickedFromServer", (_serverId: string) => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
+    });
+  });
 
   return (
     <VirtualizedScrollList

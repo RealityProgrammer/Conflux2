@@ -10,10 +10,13 @@ namespace Conflux.Application.Features.Servers;
 public sealed record UpdateMemberRolesCommand(
     Guid ExecutorUserId,
     Guid ServerId,
-    Guid MemberId,
+    Guid InteractingMemberId,
     IReadOnlyCollection<Guid> RoleIds
-) : ICommand<Result>, IServerCommand {
-    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateMemberRoles];
+) : ICommand<Result>, IServerMemberInteractCommand {
+    public IEnumerable<ServerPermission> RequiredPermissions => [
+        ServerPermission.ManageMembers, 
+        ServerPermission.UpdateMemberRoles
+    ];
 }
 
 public sealed record MemberRolesUpdatedNotification(
@@ -42,25 +45,9 @@ public sealed class UpdateMemberRolesHandler(
         if (!executorAuthorizeInfoResult.IsSuccess) {
             return executorAuthorizeInfoResult.Error;
         }
-        
-        // get the executed member authorize info
-        var memberAuthorizeInfoResult = await serverPermissionsProvider.GetMemberPermissions(
-            command.ServerId,
-            command.MemberId,
-            cancellationToken
-        );
-
-        if (!memberAuthorizeInfoResult.IsSuccess) {
-            return memberAuthorizeInfoResult.Error;
-        }
 
         var executorAuthorizeInfo = executorAuthorizeInfoResult.Value!;
-        var memberAuthorizeInfo = memberAuthorizeInfoResult.Value!;
 
-        if (executorAuthorizeInfo.AuthorizeLevel < memberAuthorizeInfo.AuthorizeLevel) {
-            return Errors.Forbidden("Your authorize level must be greater or equals to member authorize level to update their roles.");
-        }
-        
         // prevent duplicate role ids
         var deduplicatedRoleIds = command.RoleIds.Distinct().ToHashSet();
         
@@ -92,13 +79,13 @@ public sealed class UpdateMemberRolesHandler(
         }
         
         var member = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.MemberId)
+            .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.InteractingMemberId)
             .Include(member => member.MemberRoles)
             .ThenInclude(role => role.Role)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (member == null) {
-            return Errors.ResourceNotFound($"Community server member (Id = {command.MemberId})");
+            return Errors.ResourceNotFound($"Community server member (Id = {command.InteractingMemberId})");
         }
         
         await unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -132,7 +119,7 @@ public sealed class UpdateMemberRolesHandler(
             return Errors.UnexpectedError();
         }
         
-        await serverPermissionsCacheService.DeleteMemberAuthorizeInfo(command.MemberId, CancellationToken.None);
+        await serverPermissionsCacheService.DeleteMemberAuthorizeInfo(command.InteractingMemberId, CancellationToken.None);
         await mediator.Publish(new MemberRolesUpdatedNotification(member.CommunityServerId, member.UserId, member.Id), CancellationToken.None);
             
         return Result.Success();

@@ -37,6 +37,7 @@ export type ServerMemberSearchQueryVariables = Exact<{
   serverId: string;
   after?: string | null | undefined;
   search?: string | null | undefined;
+  status: Array<Types.MembershipStatus> | Types.MembershipStatus;
 }>;
 
 
@@ -262,11 +263,12 @@ useInfiniteGetServerRolesByServerIdQuery.getKey = (variables: GetServerRolesBySe
 useGetServerRolesByServerIdQuery.fetcher = (variables: GetServerRolesByServerIdQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerRolesByServerIdQuery, GetServerRolesByServerIdQueryVariables>(GetServerRolesByServerIdDocument, variables, options);
 
 export const ServerMemberSearchDocument = new TypedDocumentString(`
-    query ServerMemberSearch($serverId: UUID!, $after: String, $search: String) {
+    query ServerMemberSearch($serverId: UUID!, $after: String, $search: String, $status: [MembershipStatus!]!) {
   communityServerMembersFromServerId(
     serverId: $serverId
     after: $after
     search: $search
+    where: { status: { in: $status } }
   ) {
     pageInfo {
       hasNextPage

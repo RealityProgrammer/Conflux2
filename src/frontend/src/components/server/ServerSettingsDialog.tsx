@@ -6,8 +6,11 @@ import {createTimeline} from "animejs";
 import {FaUserShield} from "react-icons/fa6";
 import RoleManagement from "./RoleManagement.tsx";
 import MemberManagement from "./MemberManagement.tsx";
+import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
+  const { memberPermissions } = useCommunityServerContext();
+
   return (
     <Dialog
       open={open}
@@ -25,18 +28,22 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
             <FaUserShield className="size-8 fill-slate-200"/>
           </Tabs.Trigger>
 
-          <Tabs.Trigger value="members" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
-            <BsPeopleFill className="size-8 fill-slate-200"/>
-          </Tabs.Trigger>
+          {memberPermissions.effectivePermissions.ManageMembers && (
+            <Tabs.Trigger value="members" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
+              <BsPeopleFill className="size-8 fill-slate-200"/>
+            </Tabs.Trigger>
+          )}
         </Tabs.List>
 
         <Tabs.Content value="roles" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
           <RoleManagement/>
         </Tabs.Content>
 
-        <Tabs.Content value="members" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
-          <MemberManagement/>
-        </Tabs.Content>
+        {memberPermissions.effectivePermissions.ManageMembers && (
+          <Tabs.Content value="members" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
+            <MemberManagement/>
+          </Tabs.Content>
+        )}
       </Tabs.Root>
     </Dialog>
   );

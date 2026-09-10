@@ -1,3 +1,5 @@
+using Conflux.Domain.Enums;
+
 namespace Conflux.Domain.Entities;
 
 public class CommunityServerMember : IHasCreatedAt {
@@ -9,8 +11,12 @@ public class CommunityServerMember : IHasCreatedAt {
     public Guid CommunityServerId { get; set; }
     public CommunityServer CommunityServer { get; set; } = null!;
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } 
+    
+    public MembershipStatus Status { get; set; }
+    public DateTimeOffset? BanExpireAt { get; set; }
 
     public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = [];
     public virtual ICollection<CommunityServerRole> Roles { get; set; } = [];
+    public virtual ICollection<CommunityServerBan> Bans { get; set; } = [];
 }
