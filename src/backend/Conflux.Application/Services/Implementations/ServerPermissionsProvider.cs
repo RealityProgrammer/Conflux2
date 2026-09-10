@@ -11,7 +11,8 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class ServerPermissionsProvider(
     IServerMemberReadRepository memberReadRepository,
     ICommunityServerRoleRepository roleRepository,
-    IServerPermissionsCacheService cacheService
+    IServerPermissionsCacheService cacheService,
+    TimeProvider timeProvider
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
 
@@ -26,7 +27,7 @@ internal sealed class ServerPermissionsProvider(
         if (await cacheService.GetUserAuthorizeInfo(serverId, userId, cancellationToken) is { } cached) {
             return Result<ServerMemberAuthorizationInfoDto>.Success(cached);
         }
-        
+
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
@@ -45,7 +46,8 @@ internal sealed class ServerPermissionsProvider(
                 member.Id,
                 int.MaxValue,
                 OwnerEffectivePermissions,
-                [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))]
+                [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))],
+                false
             );
             
             await cacheService.SetUserAuthorizeInfo(serverId, userId, ownerDto, cancellationToken);
@@ -58,7 +60,7 @@ internal sealed class ServerPermissionsProvider(
             return defaultRoleGetResult.Error;
         }
 
-        ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value!);
+        ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value!, timeProvider.GetUtcNow());
         await cacheService.SetUserAuthorizeInfo(serverId, userId, dto, CancellationToken.None);
         
         return Result<ServerMemberAuthorizationInfoDto>.Success(dto);
@@ -124,7 +126,8 @@ internal sealed class ServerPermissionsProvider(
                     member.Id,
                     int.MaxValue,
                     OwnerEffectivePermissions,
-                    [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))]
+                    [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))],
+                    false
                 );
 
                 dtosToCache[userId] = ownerDto;
@@ -139,7 +142,7 @@ internal sealed class ServerPermissionsProvider(
                 continue;
             }
 
-            ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value.Value!);
+            ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value.Value!, timeProvider.GetUtcNow());
 
             dtosToCache[userId] = dto;
             results[userId] = Result<ServerMemberAuthorizationInfoDto>.Success(dto);
@@ -212,7 +215,11 @@ internal sealed class ServerPermissionsProvider(
         return effectivePermissions;
     }
 
-    private static ServerMemberAuthorizationInfoDto CreateMemberAuthorizationInfoDto(CommunityServerMember member, RoleAuthorizationInfo defaultRole) {
+    private static ServerMemberAuthorizationInfoDto CreateMemberAuthorizationInfoDto(
+        CommunityServerMember member, 
+        RoleAuthorizationInfo defaultRole,
+        DateTimeOffset currentTime
+    ) {
         List<RoleAuthorizationInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
 
         Dictionary<ServerPermission, bool> effectivePermissions = CalculateEffectivePermissions(roleAuthInfo);
@@ -225,7 +232,8 @@ internal sealed class ServerPermissionsProvider(
                 .Where(mr => mr.Role.SpecialRoleType != SpecialRoleType.Default)
                 .OrderByDescending(mr => mr.Role.AuthorizeLevel)
                 .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
-            ]
+            ],
+            member.BanExpireAt != null && member.BanExpireAt <= currentTime
         );
 
         return dto;

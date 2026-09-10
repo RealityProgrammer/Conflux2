@@ -31,9 +31,12 @@ internal static class DataLoaders {
                 if (!result.IsSuccess)
                     return Domain.Result<MemberAuthorizeInfoDto>.Failure(result.Error);
 
+                var authInfo = result.Value!;
+                
                 return Domain.Result<MemberAuthorizeInfoDto>.Success(new(
-                    result.Value!.AuthorizeLevel,
-                    [..result.Value.EffectivePermissions.Select(kvp => new PermissionEntry(kvp.Key, kvp.Value))]
+                    authInfo.AuthorizeLevel,
+                    [..authInfo.EffectivePermissions.Select(kvp => new PermissionEntry(kvp.Key, kvp.Value))],
+                    authInfo.IsBanned
                 ));
             }
         );

@@ -1,4 +1,5 @@
 using Conflux.Domain.Enums;
+using MemoryPack;
 
 namespace Conflux.Application.Dto;
 
@@ -6,10 +7,12 @@ public sealed record ServerMemberAuthorizationInfoDto(
     Guid MemberId,
     int AuthorizeLevel,
     IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions,
-    MemberRoleDto[] Roles
+    MemberRoleDto[] Roles,
+    bool IsBanned
 );
 
-public sealed record MemberRoleDto(
+[MemoryPackable]
+public sealed partial record MemberRoleDto(
     Guid Id,
     string Name
 );

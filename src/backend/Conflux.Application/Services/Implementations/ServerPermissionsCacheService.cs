@@ -1,6 +1,9 @@
 using Conflux.Application.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet;
+using Facet.Extensions;
+using MemoryPack;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
@@ -8,10 +11,11 @@ using System.Text.Json;
 
 namespace Conflux.Application.Services.Implementations;
 
-internal sealed class ServerPermissionsCacheService(
+internal sealed partial class ServerPermissionsCacheService(
     IMemoryCache memoryCache,
     IConnectionMultiplexer connectionMultiplexer,
-    IServerMemberReadRepository memberReadRepository
+    IServerMemberReadRepository memberReadRepository,
+    ILogger<ServerPermissionsCacheService> logger
 ) : IServerPermissionsCacheService {
     // permission cache strategy:
     // store the server's permission version in the memory cache, and then redis cache, or else return 0.
@@ -43,14 +47,16 @@ internal sealed class ServerPermissionsCacheService(
             return null;
         }
 
-        var deserialized = JsonSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
+        try {
+            var deserialized = MemoryPackSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
+            // var deserialized = JsonSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
 
-        // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
-        if (deserialized == null) {
-            return null;    
+            // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
+            return deserialized?.ToSource<MemberAuthorizeInfoCacheDto, ServerMemberAuthorizationInfoDto>();
+        } catch (Exception e) {
+            logger.LogError(e, "Failed to deserialize cached member authorize info. Null will be returned.");
+            return null;
         }
-
-        return new(deserialized.MemberId, deserialized.AuthorizeLevel, deserialized.EffectivePermissions, deserialized.Roles);
     }
 
     public async Task SetUserAuthorizeInfo(
@@ -61,17 +67,12 @@ internal sealed class ServerPermissionsCacheService(
     ) {
         int version = await GetServerPermissionVersion(serverId);
         string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
+
+        MemberAuthorizeInfoCacheDto converted = value.ToFacet<ServerMemberAuthorizationInfoDto, MemberAuthorizeInfoCacheDto>();
         
         await _database.StringSetAsync(
             cacheKey, 
-            JsonSerializer.SerializeToUtf8Bytes(
-                new MemberAuthorizeInfoCacheDto(
-                    value.MemberId, 
-                    value.AuthorizeLevel, 
-                    value.EffectivePermissions, 
-                    value.Roles
-                )
-            ), 
+            MemoryPackSerializer.Serialize(converted), 
             TimeSpan.FromHours(1)
         );
     }
@@ -187,10 +188,13 @@ internal sealed class ServerPermissionsCacheService(
         await _database.HashFieldExpireAsync("ServerPermissions:versions", [hashField], TimeSpan.FromHours(24));
     }
 
-    private sealed record MemberAuthorizeInfoCacheDto(
-        Guid MemberId,
-        int AuthorizeLevel,
-        IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions,
-        MemberRoleDto[] Roles
-    );
+    [MemoryPackable]
+    [Facet(typeof(ServerMemberAuthorizationInfoDto))]
+    public sealed partial record MemberAuthorizeInfoCacheDto {
+        public Guid MemberId { get; set; } = MemberId;
+        public int AuthorizeLevel { get; set; } = AuthorizeLevel;
+        public IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions { get; set; } = EffectivePermissions;
+        public MemberRoleDto[] Roles { get; set; } = Roles;
+        public bool IsBanned { get; set; } = IsBanned;
+    }
 }
