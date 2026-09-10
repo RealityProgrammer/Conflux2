@@ -35,7 +35,7 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
           )}
         </Tabs.List>
 
-        <Tabs.Content value="roles" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
+        <Tabs.Content value="roles" className="p-2 flex-1 overflow-hidden relative flex flex-col gap-2">
           <RoleManagement/>
         </Tabs.Content>
 

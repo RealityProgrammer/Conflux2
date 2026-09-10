@@ -171,7 +171,7 @@ export default function RoleManagement() {
         </p>
       </header>
 
-      <div className="flex-1 flex gap-2 min-h-0">
+      <div className="flex-1 flex gap-2 min-h-0 overflow-hidden">
         <section className="w-48 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
           <RoleList
             roles={allRoles}
