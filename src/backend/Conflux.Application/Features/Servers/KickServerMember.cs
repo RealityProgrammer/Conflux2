@@ -42,11 +42,23 @@ public sealed record ServerMemberKickedNotification(Guid ServerId, Guid KickedMe
 public sealed class KickServerMemberHandler(
     IServerMemberReadRepository memberReadRepository,
     IServerPermissionsCacheService permissionsCacheService,
+    IServerModerationLogWriteRepository moderationLogWriteRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<KickServerMemberHandler> logger
 ) : ICommandHandler<KickServerMemberCommand, Result> {
     public async ValueTask<Result> Handle(KickServerMemberCommand command, CancellationToken cancellationToken) {
+        var executorMemberId = memberReadRepository.AsQueryable()
+            .AsNoTracking()
+            .Where(m => m.CommunityServerId == command.ServerId && m.UserId == command.ExecutorUserId)
+            .Select(m => m.Id)
+            .Cast<Guid?>()
+            .FirstOrDefault();
+
+        if (!executorMemberId.HasValue) {
+            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, UserId = {command.ExecutorUserId})");
+        }
+        
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
             .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.InteractingMemberId)
             .Include(m => m.Roles)
@@ -67,6 +79,15 @@ public sealed class KickServerMemberHandler(
         try {
             member.Status = MembershipStatus.Kicked;
             member.Roles.Clear();   // clear the roles too
+            
+            ServerModerationLog log = new() {
+                Action = ServerModerationAction.Kick,
+                Reason = command.Reason,
+                ExecutorMemberId = executorMemberId.Value,
+                AffectedMember = member,
+            };
+            
+            moderationLogWriteRepository.Add(log);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
 

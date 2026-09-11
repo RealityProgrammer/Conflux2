@@ -233,37 +233,33 @@ builder.Services
     .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
-    
+
+    .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
+    .AddScoped<IServerMemberWriteRepository>(services =>
+        (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
+    )
+    .AddScoped<IUserRepository, UserRepository>()
+    .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
+    .AddScoped<IConversationRepository, ConversationRepository>()
+    .AddScoped<IMessageRepository, MessageRepository>()
+    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
+    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
+    .AddScoped<IInvitationRepository, InvitationRepository>()
+    .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>()
+    .AddScoped<IChannelRepository, ChannelRepository>()
+    .AddScoped<IServerModerationLogReadRepository, ServerModerationLogRepository>()
+    .AddScoped<IServerModerationLogWriteRepository>(services => 
+        (ServerModerationLogRepository)services.GetRequiredService<IServerModerationLogReadRepository>()
+    )
+
     .AddScoped<IUnitOfWork, UnitOfWork>()
 
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
-
-    .AddScoped<IUserRepository, UserRepository>()
     .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
-
-    .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
-
-    .AddScoped<IChannelRepository, ChannelRepository>()
-    
-    .AddScoped<IConversationRepository, ConversationRepository>()
-
-    .AddScoped<IMessageRepository, MessageRepository>()
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
-
-    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
-
-    .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
-    .AddScoped<IServerMemberWriteRepository>(services => 
-        (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
-    )
-
-    .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
+    .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"));
     
-    .AddScoped<IInvitationRepository, InvitationRepository>()
-    .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"))
-    
-    .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>();
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
