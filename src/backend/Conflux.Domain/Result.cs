@@ -10,7 +10,11 @@ public readonly record struct Result : IResult<Result> {
         IsSuccess = isSuccess;
         Error = error;
     }
-    
+
+    public object? GetValue() {
+        return null;
+    }
+
     public static Result Success() => new(true, default);
     
     public static Result Failure(Error error) => new(false, error);
@@ -34,6 +38,10 @@ public readonly record struct Result<T> : IResult<Result<T>> {
         IsSuccess = isSuccess;
         Value = value;
         Error = error;
+    }
+
+    public object? GetValue() {
+        return Value;
     }
 
     public static Result<T> Success(T value) => new(true, value, default);

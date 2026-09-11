@@ -27,6 +27,7 @@ using Conflux.WebApi;
 using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.GraphQL;
+using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.NotificationHandlers;
@@ -207,6 +208,7 @@ builder.Services.AddMediator(options => {
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),
         typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
+        typeof(KickServerMemberValidationPipeline),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
@@ -571,6 +573,9 @@ if (app.Environment.IsDevelopment()) {
 
 app.MapControllers();
 app.MapGraphQL();
+app.MapNitroApp().WithOptions(options => {
+    options.Enable = app.Environment.IsDevelopment();
+});
 app.MapHub<GatewayHub>("/hub");
 
 await ExecuteDatabaseMigration();

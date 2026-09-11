@@ -1,6 +1,8 @@
+using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Infrastructure;
+using Conflux.WebApi.Helpers;
 using HotChocolate.Authorization;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
@@ -17,9 +19,7 @@ internal static partial class CommunityServerQuery {
         var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            throw new GraphQLException(new Error {
-                Message = "Invalid or missing user identification claim.",
-            });
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
         return dbContext.CommunityServerMembers

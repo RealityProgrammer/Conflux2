@@ -33,11 +33,12 @@ export type InspectMemberQueryVariables = Exact<{
 }>;
 
 
-export type InspectMemberQuery = { communityServerMember: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+export type InspectMemberQuery = { communityServerMember: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, isBanned: boolean, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
   memberId: string;
+  reason?: string | null | undefined;
 }>;
 
 
@@ -198,6 +199,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
         permission
         isGranted
       }
+      isBanned
     }
     status
     banExpireAt
@@ -227,8 +229,10 @@ useInspectMemberQuery.getKey = (variables: InspectMemberQueryVariables) => ['Ins
 useInspectMemberQuery.fetcher = (variables: InspectMemberQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables, options);
 
 export const KickServerMemberDocument = new TypedDocumentString(`
-    mutation KickServerMember($serverId: UUID!, $memberId: UUID!) {
-  kickCommunityServerMember(input: { serverId: $serverId, memberId: $memberId }) {
+    mutation KickServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
+  kickCommunityServerMember(
+    input: { serverId: $serverId, memberId: $memberId, reason: $reason }
+  ) {
     memberId
   }
 }

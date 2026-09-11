@@ -439,6 +439,7 @@ export type JoinedServersEdge = {
 
 export type KickCommunityServerMemberInput = {
   memberId: Scalars['UUID']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
   serverId: Scalars['UUID']['input'];
 };
 

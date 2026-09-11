@@ -1,9 +1,8 @@
 using Conflux.Application.Features.Servers;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
-using Conflux.WebApi.GraphQL.Attributes;
+using Conflux.WebApi.Helpers;
 using HotChocolate.Authorization;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -38,16 +37,14 @@ internal static class CommunityServerMemberMutation {
         var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            var error = Errors.InvalidIdentifier();
-            
-            throw new GraphQLException(ErrorBuilder.New().SetCode(error.Code).SetMessage(error.Message).Build());
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
         
         var result = await mediator.Send(new UpdateMemberRolesCommand(userId, serverId, memberId, roleIds));
 
         return result.IsSuccess ? 
             new(memberId) : 
-            throw new GraphQLException(ErrorBuilder.New().SetCode(result.Error.Code).SetMessage(result.Error.Message).Build());
+            throw new GraphQLException(result.Error.ToHotChocolateError());
     }
 
     public static async Task<LeaveCommunityServerPayload> LeaveCommunityServer(
@@ -58,35 +55,33 @@ internal static class CommunityServerMemberMutation {
         var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            var error = Errors.InvalidIdentifier();
-            throw new GraphQLException(ErrorBuilder.New().SetCode(error.Code).SetMessage(error.Message).Build());
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
         var result = await mediator.Send(new LeaveServerCommand(userId, serverId));
         
         return result.IsSuccess ?
             new(serverId) :
-            throw new GraphQLException(ErrorBuilder.New().SetCode(result.Error.Code).SetMessage(result.Error.Message).Build());
+            throw new GraphQLException(result.Error.ToHotChocolateError());
     }
 
-    [RequireServerPermissions(ServerPermission.ManageMembers, ServerPermission.KickMembers)]
     public static async Task<KickCommunityServerMemberPayload> KickCommunityServerMember(
         Guid serverId,
         Guid memberId,
+        string? reason,
         [Service] IMediator mediator,
         [Service] IHttpContextAccessor httpContextAccessor
     ) {
         var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            var error = Errors.InvalidIdentifier();
-            throw new GraphQLException(ErrorBuilder.New().SetCode(error.Code).SetMessage(error.Message).Build());
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        var result = await mediator.Send(new KickServerMemberCommand(userId, serverId, memberId));
-        
+        var result = await mediator.Send(new KickServerMemberCommand(userId, serverId, memberId, reason));
+
         return result.IsSuccess ?
             new(serverId) :
-            throw new GraphQLException(ErrorBuilder.New().SetCode(result.Error.Code).SetMessage(result.Error.Message).Build());
+            throw new GraphQLException(result.Error.ToHotChocolateError());
     }
 }

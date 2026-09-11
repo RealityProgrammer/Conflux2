@@ -10,12 +10,31 @@ namespace Conflux.Application.Features.Servers;
 public sealed record KickServerMemberCommand(
     Guid ExecutorUserId, 
     Guid ServerId, 
-    Guid InteractingMemberId
+    Guid InteractingMemberId,
+    string? Reason
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
         ServerPermission.ManageMembers, 
         ServerPermission.KickMembers,
     ];
+}
+
+public sealed class KickServerMemberValidationPipeline : IPipelineBehavior<KickServerMemberCommand, Result> {
+    public async ValueTask<Result> Handle(
+        KickServerMemberCommand message, 
+        MessageHandlerDelegate<KickServerMemberCommand, Result> next, 
+        CancellationToken cancellationToken
+    ) {
+        if (message.Reason is { Length: > 256 }) {
+            return Errors.ValidationErrorsOccurred(new() {
+                ["reason"] = [
+                    "Reason can only have maximum length of 256 characters.",
+                ],
+            });
+        }
+        
+        return await next(message, cancellationToken);
+    }
 }
 
 public sealed record ServerMemberKickedNotification(Guid ServerId, Guid KickedMemberUserId, Guid KickedMemberId) : INotification;
@@ -51,6 +70,7 @@ public sealed class KickServerMemberHandler(
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // delete the permission cache
             await permissionsCacheService.DeleteUserAuthorizeInfo(member.CommunityServerId, member.UserId, CancellationToken.None);
             await mediator.Publish(new ServerMemberKickedNotification(command.ServerId, member.UserId, member.Id), CancellationToken.None);
             

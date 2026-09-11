@@ -298,7 +298,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
   );
 }
 
-function GetInvitationLinkButton() {
+function GetInvitationLinkButton({...props}) {
   const CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const { pending } = useFormStatus();
@@ -333,6 +333,7 @@ function GetInvitationLinkButton() {
       <button
         type="submit"
         className="flex-none cursor-pointer rounded-md button-theme-primary p-2"
+        {...props}
       >
         { pending ? (
           <Spinner className="size-4 fill-white"/>

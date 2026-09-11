@@ -20,6 +20,7 @@ query InspectMember($id: UUID!) {
                 permission
                 isGranted
             }
+            isBanned
         }
         status
         banExpireAt

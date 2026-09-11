@@ -2,8 +2,10 @@ using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.WebApi.Helpers;
 using HotChocolate.Resolvers;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.GraphQL.Middlewares;
 
@@ -18,8 +20,7 @@ internal sealed class RequireServerPermissionsMiddleware(FieldDelegate next, IEn
         var idClaim = httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            var error = Errors.InvalidIdentifier();
-            throw new GraphQLException(ErrorBuilder.New().SetCode(error.Code).SetMessage(error.Message).Build());
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
         
         Guid serverId = Guid.Empty;
@@ -41,15 +42,14 @@ internal sealed class RequireServerPermissionsMiddleware(FieldDelegate next, IEn
 
         var result = await permissionsProvider.GetUserPermissions(serverId, userId, context.RequestAborted);
         if (!result.IsSuccess) {
-            throw new GraphQLException(ErrorBuilder.New().SetCode(result.Error.Code).SetMessage(result.Error.Message).Build());
+            throw new GraphQLException(result.Error.ToHotChocolateError());
         }
 
         var userEffectivePermissions = result.Value!.EffectivePermissions;
         
         foreach (var permission in requiredPermissions) {
             if (!userEffectivePermissions.TryGetValue(permission, out bool isGranted) || !isGranted) {
-                var error = Errors.Forbidden("Insufficient permissions.");
-                throw new GraphQLException(ErrorBuilder.New().SetCode(error.Code).SetMessage(error.Message).Build());
+                throw new GraphQLException(Errors.Forbidden("Insufficient permissions.").ToHotChocolateError());
             }
         }
 

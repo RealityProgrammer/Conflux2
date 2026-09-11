@@ -13,7 +13,6 @@ import type {
 import IconButton from "../../components/IconButton.tsx";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import {useState} from "react";
-import {useFormStatus} from "react-dom";
 import {communityServerService} from "../../api/communityServerService.ts";
 import DialogForm from "../../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
@@ -27,6 +26,7 @@ import {
 } from "../../graphql/infiniteQueries.ts";
 import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import Spinner from "../../components/Spinner.tsx";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -167,20 +167,6 @@ function JoinedCommunityServerScrollList() {
   );
 }
 
-function CreateCommunityServerSubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      className="button-theme-primary px-3 py-2 cursor-pointer rounded-md basis-32"
-      disabled={pending}
-    >
-      Create Server
-    </button>
-  );
-}
-
 const createServerSchema = z.object({
   name: z.string()
     .min(1, "Input name.")
@@ -200,7 +186,7 @@ function CreateCommunityServerButton() {
     setIsOpen(open);
 
     if (open) {
-      methods.reset();
+      formMethods.reset();
       setIdempotencyKey(crypto.randomUUID());
     }
   };
@@ -220,25 +206,25 @@ function CreateCommunityServerButton() {
         const details = response.error.details as unknown as FieldErrors<"name" | "avatar">;
 
         if (details.name && details.name.length > 0) {
-          methods.setError("name", {
+          formMethods.setError("name", {
             message: details.name[0],
           });
         }
 
         if (details.avatar && details.avatar.length > 0) {
-          methods.setError("avatar", {
+          formMethods.setError("avatar", {
             message: details.avatar[0],
           })
         }
       } else {
-        methods.setError("root", {
+        formMethods.setError("root", {
           message: response.error?.message ?? "An unexpected error occurred.",
         });
       }
     }
   };
 
-  const methods = useForm<CreateServerFormValues>({
+  const formMethods = useForm<CreateServerFormValues>({
     resolver: zodResolver(createServerSchema),
     defaultValues: {
       name: "",
@@ -270,25 +256,39 @@ function CreateCommunityServerButton() {
 
       <DialogForm
         open={isOpen} onOpenChange={handleOpenChange}
-        formMethods={methods}
+        formMethods={formMethods}
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
         subtitle="Give it a name, a vessel. Give it a life..."
-        submitButton={(<CreateCommunityServerSubmitButton/>)}
+        submitButton={(
+          <button
+            type="submit"
+            className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
+            disabled={formMethods.formState.isSubmitting}
+          >
+            {formMethods.formState.isSubmitting ? (
+              <Spinner className="size-5 fill-white"/>
+            ) : (
+              <>Create Server</>
+            )}
+          </button>
+        )}
         onSubmit={onSubmit}
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
       >
-        <SelectableAvatar
-          className="size-48 rounded-full flex-none"
-          onAvatarChange={(file) => {
-            methods.setValue("avatar", file, { shouldValidate: true })
-          }}
-          fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
-        />
+        <div className="flex flex-col items-center">
+          <SelectableAvatar
+            className="size-48 rounded-full flex-none"
+            onAvatarChange={(file) => {
+              formMethods.setValue("avatar", file, { shouldValidate: true })
+            }}
+            fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
+          />
 
-        {methods.formState.errors.avatar && (
-          <ErrorText>{methods.formState.errors.avatar.message}</ErrorText>
-        )}
+          {formMethods.formState.errors.avatar && (
+            <ErrorText>{formMethods.formState.errors.avatar.message}</ErrorText>
+          )}
+        </div>
 
         <div className="mt-4 w-full">
           <Label.Root className="label block mb-1">Server name</Label.Root>
@@ -297,12 +297,12 @@ function CreateCommunityServerButton() {
             type="text"
             className="input-field h-11 w-full"
             placeholder="Enter server name"
-            {...methods.register("name")}
+            {...formMethods.register("name")}
           />
         </div>
 
-        {methods.formState.errors.name && (
-          <ErrorText>{methods.formState.errors.name.message}</ErrorText>
+        {formMethods.formState.errors.name && (
+          <ErrorText>{formMethods.formState.errors.name.message}</ErrorText>
         )}
       </DialogForm>
     </>

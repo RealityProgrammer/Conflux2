@@ -360,14 +360,19 @@ export default function ServerSidebar() {
         submitButton={(
           <button
             type="submit"
-            className="button-theme-primary px-3 py-2 cursor-pointer rounded-md basis-32"
+            className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
+            disabled={formMethods.formState.isSubmitting}
           >
-            Create
+            {formMethods.formState.isSubmitting ? (
+              <Spinner className="size-5 fill-white"/>
+            ) : (
+              <>Create</>
+            )}
           </button>
         )}
       >
         <div className="w-full mb-2">
-          <Label.Root className="label block mb-1" htmlFor="name">Label</Label.Root>
+          <Label.Root className="label block" htmlFor="name">Name</Label.Root>
 
           <input
             type="text"

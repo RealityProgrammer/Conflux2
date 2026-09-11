@@ -1,6 +1,6 @@
 import {useDebounceValue} from "usehooks-ts";
 import {useRef, useState} from "react";
-import {Popover, Separator} from "radix-ui";
+import {Label, Popover, Separator} from "radix-ui";
 import {
   type ServerMemberSearchQuery,
   useInfiniteGetAssignableServerRolesQuery,
@@ -18,7 +18,7 @@ import {
   useUpdateMemberRolesMutation
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
-import {BsCheck, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
+import {BsCheck, BsCircleFill, BsExclamationTriangle, BsHammer} from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
 import {FaPlus, FaXmark} from "react-icons/fa6";
 import {FaSave} from "react-icons/fa";
@@ -35,6 +35,9 @@ import type {
   ServerRoleCreatedEvent,
   ServerRoleUpdatedEvent
 } from "../../api/events.ts";
+import Dialog from "../Dialog.tsx";
+import DialogForm from "../DialogForm.tsx";
+import ErrorText from "../ErrorText.tsx";
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -423,8 +426,54 @@ function MemberActions({
     );
   };
 
+  useSignalREvent("ServerMemberKicked", (event: ServerMemberKickedEvent) => {
+    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
+
+    setActiveStatusToKicked();
+  });
+
+  return (
+    <div className="space-y-2 mt-2">
+      <h4 className="group-label">
+        Actions
+      </h4>
+
+      <div className="flex flex-row items-center gap-3">
+        <KickMemberButton
+          inspectingMemberInfo={inspectingMemberInfo}
+          setActiveStatusToKicked={setActiveStatusToKicked}
+        />
+
+        <button
+          type="button"
+          onClick={() => console.log('ban')}
+          disabled={!memberPermissions.effectivePermissions.BanMembers}
+          className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer"
+        >
+          Ban Member
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const kickMemberSchema = z.object({
+  reason: z.string().max(256, { error: "Reason can only have maximum length of 256 characters." }).optional(),
+});
+
+type KickMemberFormValues = z.infer<typeof kickMemberSchema>;
+
+function KickMemberButton({
+  inspectingMemberInfo,
+  setActiveStatusToKicked
+}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>, setActiveStatusToKicked: () => void}) {
+  const { serverId, memberPermissions } = useCommunityServerContext();
+
+  const [openDialog, setOpenDialog] = useState(false);
+
   const kickMember = useKickServerMemberMutation({
     onSuccess: async () => {
+      setOpenDialog(false);
       toast.success("Member has been kicked from the server.");
       setActiveStatusToKicked();
     },
@@ -433,44 +482,81 @@ function MemberActions({
     },
   });
 
-  useSignalREvent("ServerMemberKicked", (event: ServerMemberKickedEvent) => {
-    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
-
-    setActiveStatusToKicked();
+  const formMethods = useForm<KickMemberFormValues>({
+    resolver: zodResolver(kickMemberSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
+
+  const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+
+  const handleSubmit: SubmitHandler<KickMemberFormValues> = async (data: KickMemberFormValues) => {
+    kickMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason });
+  };
 
   return (
     <>
-      {(memberPermissions.effectivePermissions.KickMembers || memberPermissions.effectivePermissions.BanMembers) && (
-        <div className="space-y-2 mt-2">
-          <h4 className="group-label">
-            Actions
-          </h4>
+      <button
+        type="button"
+        disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberPermissions.effectivePermissions.KickMembers || isSubmitting}
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
+        onClick={() => setOpenDialog(true)}
+      >
+        {isSubmitting ? (
+          <Spinner className="size-6 fill-white"/>
+        ) : (
+          <>Kick Member</>
+        )}
+      </button>
 
-          <div className="flex flex-row items-center gap-3">
+      {memberPermissions.effectivePermissions.KickMembers && (
+        <DialogForm
+          open={openDialog}
+          onOpenChange={(open) => {
+            if (open) {
+              setOpenDialog(true);
+            } else {
+              setOpenDialog(false);
+              reset();
+            }
+          }}
+          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          title="Kick Member"
+          subtitle="The council have decided to exile this nerd"
+          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          formMethods={formMethods}
+          submitButton={(
             <button
-              type="button"
-              onClick={() => kickMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id })}
-              disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberPermissions.effectivePermissions.KickMembers || kickMember.isPending}
-              className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
+              type="submit"
+              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              disabled={isSubmitting}
             >
-              {kickMember.isPending ? (
-                <Spinner className="size-6 fill-white"/>
+              {isSubmitting ? (
+                <Spinner className="size-5 fill-white"/>
               ) : (
                 <>Kick Member</>
               )}
             </button>
+          )}
+          onSubmit={handleSubmit}
+        >
+          <p>
+            Are you sure you want to kick this member?<br/>
+            User can only rejoin the server if they have a valid invitation link.
+          </p>
 
-            <button
-              type="button"
-              onClick={() => console.log('ban')}
-              disabled={!memberPermissions.effectivePermissions.BanMembers}
-              className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer"
-            >
-              Ban Member
-            </button>
-          </div>
-        </div>
+          <Label.Root className="block label mt-2 mb-1">Reason</Label.Root>
+
+          <textarea
+            className="input-field h-32 w-full resize-none px-3 py-2"
+            placeholder="Enter reason (Optional)..."
+            {...register("reason")}
+          />
+
+          {errors.reason && (
+            <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
+          )}
+        </DialogForm>
       )}
     </>
   )
