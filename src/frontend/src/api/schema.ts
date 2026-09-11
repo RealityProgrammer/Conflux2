@@ -700,85 +700,6 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/communities/{serverId}/members/me/permissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerMemberAuthorizationInfoDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerMemberAuthorizationInfoDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerMemberAuthorizationInfoDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/members/{userId}/permissions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    userId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerMemberAuthorizationInfoDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerMemberAuthorizationInfoDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerMemberAuthorizationInfoDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/channels/{channelId}/messages": {
         parameters: {
             query?: never;
@@ -1686,10 +1607,6 @@ export interface components {
             data: null | components["schemas"]["ServerIdentityDto"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfServerMemberAuthorizationInfoDto: {
-            data: null | components["schemas"]["ServerMemberAuthorizationInfoDto"];
-            error: components["schemas"]["Error"];
-        };
         ApiResponseOfServerRoleDto: {
             data: null | components["schemas"]["ServerRoleDto"];
             error: components["schemas"]["Error"];
@@ -1804,11 +1721,6 @@ export interface components {
             tokenType: string;
             accessToken: string;
         };
-        MemberRoleDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-        };
         /** @enum {string} */
         MessageLoadDirection: MessageLoadDirection;
         PaginatedResultOfDiscoverFriendSummary: {
@@ -1887,24 +1799,6 @@ export interface components {
             id: string;
             name: string;
             hasAvatar: boolean;
-        };
-        ServerMemberAuthorizationInfoDto: {
-            /** Format: uuid */
-            memberId: string;
-            /** Format: int32 */
-            authorizeLevel: number;
-            effectivePermissions: {
-                CreateRole?: boolean;
-                UpdateRole?: boolean;
-                DeleteRole?: boolean;
-                CreateChannel?: boolean;
-                DeleteChannel?: boolean;
-                UpdateMemberRoles?: boolean;
-                ManageMembers?: boolean;
-                KickMembers?: boolean;
-                BanMembers?: boolean;
-            };
-            roles: components["schemas"]["MemberRoleDto"][];
         };
         /** @enum {string} */
         ServerPermission: ServerPermission;

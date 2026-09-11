@@ -7,22 +7,23 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record KickServerMemberCommand(
-    Guid ExecutorUserId, 
-    Guid ServerId, 
+public sealed record BanServerMemberCommand(
+    Guid ExecutorUserId,
+    Guid ServerId,
     Guid InteractingMemberId,
-    string? Reason
+    string? Reason,
+    TimeSpan? Duration
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
-        ServerPermission.ManageMembers, 
-        ServerPermission.KickMembers,
+        ServerPermission.ManageMembers,
+        ServerPermission.BanMembers,
     ];
 }
 
-public sealed class KickServerMemberValidationPipeline : IPipelineBehavior<KickServerMemberCommand, Result> {
+public sealed class BanServerMemberValidationPipeline : IPipelineBehavior<BanServerMemberCommand, Result> {
     public async ValueTask<Result> Handle(
-        KickServerMemberCommand message, 
-        MessageHandlerDelegate<KickServerMemberCommand, Result> next, 
+        BanServerMemberCommand message, 
+        MessageHandlerDelegate<BanServerMemberCommand, Result> next, 
         CancellationToken cancellationToken
     ) {
         if (message.Reason is { Length: > 256 }) {
@@ -32,26 +33,35 @@ public sealed class KickServerMemberValidationPipeline : IPipelineBehavior<KickS
                 ],
             });
         }
+
+        if (message.Duration is { } duration && duration <= TimeSpan.Zero) {
+            return Errors.ValidationErrorsOccurred(new() {
+                ["duration"] = [
+                    "Duration can only be greater than zero.",
+                ],
+            });
+        }
         
         return await next(message, cancellationToken);
     }
 }
 
-public sealed record ServerMemberKickedNotification(
+public sealed record ServerMemberBannedNotification(
     Guid ServerId, 
-    Guid KickedMemberUserId, 
-    Guid KickedMemberId
+    Guid BannedMemberUserId, 
+    Guid BannedMemberId
 ) : INotification;
 
-public sealed class KickServerMemberHandler(
+public sealed class BanServerMemberHandler(
     IServerMemberReadRepository memberReadRepository,
     IServerPermissionsCacheService permissionsCacheService,
     IServerModerationLogWriteRepository moderationLogWriteRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
-    ILogger<KickServerMemberHandler> logger
-) : ICommandHandler<KickServerMemberCommand, Result> {
-    public async ValueTask<Result> Handle(KickServerMemberCommand command, CancellationToken cancellationToken) {
+    ILogger<BanServerMemberCommand> logger,
+    TimeProvider timeProvider
+) : ICommandHandler<BanServerMemberCommand, Result> {
+    public async ValueTask<Result> Handle(BanServerMemberCommand command, CancellationToken cancellationToken) {
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == command.ServerId && m.UserId == command.ExecutorUserId)
@@ -72,21 +82,28 @@ public sealed class KickServerMemberHandler(
             return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, Id = {command.InteractingMemberId})");
         }
 
-        if (member.Status != MembershipStatus.Active) {
-            return Errors.ServerMemberNotActive();
-        }
-
         if (member.Roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner)) {
-            return Errors.Forbidden("Owner cannot be kicked.");
+            return Errors.Forbidden("Owner cannot be banned.");
         }
 
         try {
-            member.Status = MembershipStatus.Kicked;
-            member.Roles.Clear();   // clear the roles too
+            DateTimeOffset utcNow = timeProvider.GetUtcNow();
+            
+            // if duration is null, it is infinite ban, thus override the BanExpireAt with maximum time.
+            if (command.Duration == null) {
+                member.BanExpireAt = DateTimeOffset.MaxValue;
+            } else if (member.BanExpireAt == null || utcNow >= member.BanExpireAt) {
+                // never been banned or ban expired, set BanExpireAt = now + duration
+                member.BanExpireAt = utcNow + command.Duration;
+            } else {
+                // add duration to BanExpireAt
+                member.BanExpireAt += command.Duration;
+            }
             
             ServerModerationLog log = new() {
-                Action = ServerModerationAction.Kick,
+                Action = ServerModerationAction.Ban,
                 Reason = command.Reason,
+                BanDuration = command.Duration,
                 ExecutorMemberId = executorMemberId.Value,
                 AffectedMember = member,
             };
@@ -97,13 +114,13 @@ public sealed class KickServerMemberHandler(
 
             // delete the permission cache
             await permissionsCacheService.DeleteUserAuthorizeInfo(member.CommunityServerId, member.UserId, CancellationToken.None);
-            await mediator.Publish(new ServerMemberKickedNotification(command.ServerId, member.UserId, member.Id), CancellationToken.None);
+            await mediator.Publish(new ServerMemberBannedNotification(command.ServerId, member.UserId, member.Id), CancellationToken.None);
             
             return Result.Success();
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while kicking member.");
+            logger.LogError(e, "Error occurred while banning member.");
             return Errors.UnexpectedError();
         }
     }

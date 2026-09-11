@@ -1,7 +1,7 @@
 import {Outlet, useNavigate, useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
-import type {ServerDetailDto, ServerMemberAuthorizationInfoDto} from "../../api/types.ts";
+import type {ServerDetailDto} from "../../api/types.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
@@ -10,19 +10,22 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import Dialog from "../../components/Dialog.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {BsHammer} from "react-icons/bs";
+import {toast} from "react-toastify";
+import useServerMemberAuthorizeInfo, {
+  type ServerMemberAuthorizeInfo
+} from "../../hooks/useServerMemberAuthorizeInfo.tsx";
 
 export default function ServerLayout() {
+  // TODO: Fix: When user is kicked, they can still enter server via the URL.
+
   const navigate = useNavigate();
 
   const { userAuthorization } = useAuthorization();
   const { serverId } = useParams();
 
-  const queryClient = useQueryClient();
-
   const serverSummaryQueryKey: QueryKey = ["getServerSummary", serverId];
-  const userMemberPermissionQueryKey: QueryKey = ["getSessionUserMemberServerPermissions", serverId];
 
   const {
     data: serverSummary,
@@ -38,40 +41,36 @@ export default function ServerLayout() {
   });
 
   const {
-    data: memberPermissions,
-    isLoading: isLoadingUserPermissions,
-    isError: isLoadingUserPermissionsError,
-  } = useQuery<ServerMemberAuthorizationInfoDto | null | undefined>({
-    enabled: !!serverId,
-    queryKey: userMemberPermissionQueryKey,
-    queryFn: async (): Promise<ServerMemberAuthorizationInfoDto | null | undefined> => {
-      const response = await communityServerService.getUserPermission(serverId!);
-
-      return response.data;
-    },
-    staleTime: 30 * 60 * 1000,
+    isLoading: isLoadingMemberPermissions,
+    isError: isLoadingMemberPermissionsError,
+    authorizeInfo,
+  } = useServerMemberAuthorizeInfo({
+    serverId: serverId!,
+    userId: userAuthorization?.id!,
+    enabled: !!serverId && !!userAuthorization?.id,
   });
+
+  useEffect(() => {
+    console.log("isLoadingMemberPermissions changed:", isLoadingMemberPermissions);
+  }, [isLoadingMemberPermissions]);
 
   const [showKickedDialog, setShowKickedDialog] = useState(false);
 
-  useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
+  useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
     if (serverId !== event.serverId) return;
+    if (!authorizeInfo) return;
 
-    queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
-  });
+    if (!authorizeInfo.roleIds.includes(event.roleId)) return;
 
-  useSignalREvent("ServerRoleDeleted", (event: ServerRoleDeletedEvent) => {
-    if (serverId !== event.serverId) return;
-    if (!memberPermissions?.roles.map(r => r.id).includes(event.roleId)) return;
-
-    queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
+    authorizeInfo.refreshPermissions();
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
+    if (!authorizeInfo) return;
     if (event.memberUserId !== userAuthorization?.id) return;
 
-    queryClient.invalidateQueries({queryKey: userMemberPermissionQueryKey});
+    authorizeInfo.refreshPermissions();
   });
 
   useSignalREvent("KickedFromServer", (kickedServerId: string) => {
@@ -80,9 +79,25 @@ export default function ServerLayout() {
     }
 
     setShowKickedDialog(true);
+
+    if (authorizeInfo) {
+      authorizeInfo.refreshPermissions();
+    }
   });
 
-  if (isLoadingServerSummary || isLoadingUserPermissions) {
+  useSignalREvent("BannedFromServer", (bannedServerId: string) => {
+    if (serverId !== bannedServerId) {
+      return;
+    }
+
+    if (authorizeInfo) {
+      authorizeInfo.refreshPermissions();
+    }
+
+    toast.info("You have been banned from this server. You can still access some content authorized by the moderation team, but interaction has been restricted to minimum.");
+  });
+
+  if (isLoadingServerSummary || isLoadingMemberPermissions) {
     return (
       <div className="size-full flex flex-row justify-center items-center">
         <Spinner className="size-8 fill-white"/>
@@ -90,7 +105,7 @@ export default function ServerLayout() {
     );
   }
 
-  if (isLoadingServerSummaryError || isLoadingUserPermissionsError || !serverSummary || !memberPermissions) {
+  if (isLoadingServerSummaryError || isLoadingMemberPermissionsError || !serverSummary || !authorizeInfo) {
     return (
       <div className="size-full flex flex-row justify-center items-center">
         <span className="text-white">Failed to load some information. Please try again later...</span>
@@ -104,8 +119,7 @@ export default function ServerLayout() {
         serverId={serverId!}
         serverSummary={serverSummary}
         serverSummaryQueryKey={serverSummaryQueryKey}
-        memberPermissions={memberPermissions}
-        userMemberPermissionQueryKey={userMemberPermissionQueryKey}
+        memberAuthorizeInfo={authorizeInfo}
       />
 
       <Dialog
@@ -143,16 +157,14 @@ interface SuccessfullyLoadedLayoutProps {
   serverId: string;
   serverSummary: ServerDetailDto;
   serverSummaryQueryKey: QueryKey
-  memberPermissions: ServerMemberAuthorizationInfoDto;
-  userMemberPermissionQueryKey: QueryKey
+  memberAuthorizeInfo: ServerMemberAuthorizeInfo;
 }
 
 function SuccessfullyLoadedLayout({
   serverId,
   serverSummary,
   serverSummaryQueryKey,
-  memberPermissions,
-  userMemberPermissionQueryKey,
+  memberAuthorizeInfo,
 }: SuccessfullyLoadedLayoutProps) {
   const queryClient = useQueryClient();
 
@@ -293,14 +305,6 @@ function SuccessfullyLoadedLayout({
     });
   };
 
-  const updateMemberPermissions = (update: Partial<Omit<ServerMemberAuthorizationInfoDto, "memberId">>) => {
-    queryClient.setQueryData<ServerMemberAuthorizationInfoDto>(userMemberPermissionQueryKey, (oldData) => {
-      if (!oldData) return oldData;
-
-      return {...oldData, ...update};
-    });
-  }
-
   return (
     <CommunityServerContextProvider
       serverId={serverId}
@@ -309,8 +313,7 @@ function SuccessfullyLoadedLayout({
       appendChannel={appendChannel}
       removeChannelCategory={removeChannelCategory}
       removeChannel={removeChannel}
-      memberPermissions={memberPermissions}
-      updateMemberPermissions={updateMemberPermissions}
+      memberAuthorizeInfo={memberAuthorizeInfo}
     >
       <div className="size-full flex flex-row">
         <ServerSidebar/>

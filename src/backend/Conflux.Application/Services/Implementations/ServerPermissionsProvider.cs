@@ -31,14 +31,13 @@ internal sealed class ServerPermissionsProvider(
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
-            .Where(m => m.Status == MembershipStatus.Active)
             .Include(m => m.MemberRoles)
             .ThenInclude(m => m.Role)
             .ThenInclude(r => r.Permissions)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (member == null) {
-            return Errors.ResourceNotFound($"Community server member (UserId = {userId})");
+            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, UserId = {userId})");
         }
 
         if (member.MemberRoles.Any(mr => mr.Role.SpecialRoleType == SpecialRoleType.Owner)) {
@@ -116,7 +115,7 @@ internal sealed class ServerPermissionsProvider(
             }
             
             if (!membersByUserId.TryGetValue(userId, out var member)) {
-                results[userId] = Errors.ResourceNotFound($"Community server member (UserId = {userId})");
+                results[userId] = Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, UserId = {userId})");
                 continue;
             }
 
@@ -192,6 +191,33 @@ internal sealed class ServerPermissionsProvider(
         ];
     }
 
+    private static ServerMemberAuthorizationInfoDto CreateMemberAuthorizationInfoDto(
+        CommunityServerMember member, 
+        RoleAuthorizationInfo defaultRole,
+        DateTimeOffset currentTime
+    ) {
+        List<RoleAuthorizationInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
+
+        IReadOnlyDictionary<ServerPermission, bool> effectivePermissions =
+            member.BanExpireAt == null || currentTime >= member.BanExpireAt ?
+                CalculateEffectivePermissions(roleAuthInfo) :
+                [];
+
+        ServerMemberAuthorizationInfoDto dto = new(
+            member.Id,
+            roleAuthInfo[0].AuthorizeLevel,
+            effectivePermissions,
+            [..member.MemberRoles
+                .Where(mr => mr.Role.SpecialRoleType != SpecialRoleType.Default)
+                .OrderByDescending(mr => mr.Role.AuthorizeLevel)
+                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
+            ],
+            member.BanExpireAt != null && member.BanExpireAt <= currentTime
+        );
+
+        return dto;
+    }
+    
     private static Dictionary<ServerPermission, bool> CalculateEffectivePermissions(
         List<RoleAuthorizationInfo> rolesAuthorizationInfo
     ) {
@@ -213,29 +239,5 @@ internal sealed class ServerPermissionsProvider(
         }
 
         return effectivePermissions;
-    }
-
-    private static ServerMemberAuthorizationInfoDto CreateMemberAuthorizationInfoDto(
-        CommunityServerMember member, 
-        RoleAuthorizationInfo defaultRole,
-        DateTimeOffset currentTime
-    ) {
-        List<RoleAuthorizationInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
-
-        Dictionary<ServerPermission, bool> effectivePermissions = CalculateEffectivePermissions(roleAuthInfo);
-
-        ServerMemberAuthorizationInfoDto dto = new(
-            member.Id,
-            roleAuthInfo[0].AuthorizeLevel,
-            effectivePermissions,
-            [..member.MemberRoles
-                .Where(mr => mr.Role.SpecialRoleType != SpecialRoleType.Default)
-                .OrderByDescending(mr => mr.Role.AuthorizeLevel)
-                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
-            ],
-            member.BanExpireAt != null && member.BanExpireAt <= currentTime
-        );
-
-        return dto;
     }
 }

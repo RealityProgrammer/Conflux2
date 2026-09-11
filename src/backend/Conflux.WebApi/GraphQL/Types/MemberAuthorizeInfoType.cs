@@ -8,5 +8,6 @@ internal sealed class MemberAuthorizeInfoType : ObjectType<MemberAuthorizeInfoDt
 
         descriptor.Field(x => x.AuthorizeLevel);
         descriptor.Field(x => x.Permissions);
+        descriptor.Field(x => x.IsBanned);
     }
 }

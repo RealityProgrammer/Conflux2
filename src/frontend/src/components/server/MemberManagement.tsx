@@ -12,7 +12,7 @@ import {UserNameplate} from "../UserNameplate.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import {
-  type InspectMemberQuery,
+  type InspectMemberQuery, useBanServerMemberMutation,
   useInspectMemberQuery,
   useKickServerMemberMutation,
   useUpdateMemberRolesMutation
@@ -35,7 +35,6 @@ import type {
   ServerRoleCreatedEvent,
   ServerRoleUpdatedEvent
 } from "../../api/events.ts";
-import Dialog from "../Dialog.tsx";
 import DialogForm from "../DialogForm.tsx";
 import ErrorText from "../ErrorText.tsx";
 
@@ -214,7 +213,7 @@ function MemberInformationContent({
   inspectingMemberInfo
 }: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
   const queryClient = useQueryClient();
-  const { serverId, memberPermissions } = useCommunityServerContext();
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const {
     handleSubmit,
@@ -333,7 +332,7 @@ function MemberInformationContent({
                     )
                   })}
 
-                  {memberPermissions.effectivePermissions.UpdateMemberRoles && (
+                  {memberAuthorizeInfo.effectivePermissions.UpdateMemberRoles && (
                     <Controller
                       control={control}
                       name="roleIds"
@@ -389,7 +388,11 @@ function MemberInformationContent({
                   <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                     <span>Ban Expired At</span>
 
-                    <DateTimeText value={new Date(inspectingMemberInfo.banExpireAt)}/>
+                    {inspectingMemberInfo.banExpireAt === "9999-12-31T23:59:59.9999999Z" ? (
+                      <span className="text-red-600">Till the end of universe</span>
+                    ) : (
+                      <DateTimeText value={new Date(inspectingMemberInfo.banExpireAt)}/>
+                    )}
                   </li>
                 </>
               )}
@@ -407,7 +410,6 @@ function MemberActions({
   inspectingMemberInfo
 }: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
   const queryClient = useQueryClient();
-  const { serverId, memberPermissions } = useCommunityServerContext();
 
   const setActiveStatusToKicked = () => {
     queryClient.setQueryData<InspectMemberQuery>(
@@ -444,14 +446,9 @@ function MemberActions({
           setActiveStatusToKicked={setActiveStatusToKicked}
         />
 
-        <button
-          type="button"
-          onClick={() => console.log('ban')}
-          disabled={!memberPermissions.effectivePermissions.BanMembers}
-          className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer"
-        >
-          Ban Member
-        </button>
+        <BanMemberButton
+          inspectingMemberInfo={inspectingMemberInfo}
+        />
       </div>
     </div>
   );
@@ -467,7 +464,7 @@ function KickMemberButton({
   inspectingMemberInfo,
   setActiveStatusToKicked
 }: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>, setActiveStatusToKicked: () => void}) {
-  const { serverId, memberPermissions } = useCommunityServerContext();
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -498,7 +495,7 @@ function KickMemberButton({
     <>
       <button
         type="button"
-        disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberPermissions.effectivePermissions.KickMembers || isSubmitting}
+        disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberAuthorizeInfo.effectivePermissions.KickMembers || isSubmitting}
         className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
@@ -509,7 +506,7 @@ function KickMemberButton({
         )}
       </button>
 
-      {memberPermissions.effectivePermissions.KickMembers && (
+      {memberAuthorizeInfo.effectivePermissions.KickMembers && (
         <DialogForm
           open={openDialog}
           onOpenChange={(open) => {
@@ -522,7 +519,7 @@ function KickMemberButton({
           }}
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Kick Member"
-          subtitle="The council have decided to exile this nerd"
+          subtitle="Throw them into the grass field"
           contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
           formMethods={formMethods}
           submitButton={(
@@ -562,6 +559,110 @@ function KickMemberButton({
   )
 }
 
+const banMemberSchema = z.object({
+  reason: z.string().max(256, { error: "Reason can only have maximum length of 256 characters." }).optional(),
+  // TODO: duration
+});
+
+type BanMemberFormValues = z.infer<typeof banMemberSchema>;
+
+function BanMemberButton({
+  inspectingMemberInfo,
+}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const banMember = useBanServerMemberMutation({
+    onSuccess: async () => {
+      setOpenDialog(false);
+      toast.success("Member has been banned from the server.");
+    },
+    onError: (_err) => {
+      toast.error("Failed to ban member.");
+    },
+  });
+
+  const formMethods = useForm<BanMemberFormValues>({
+    resolver: zodResolver(banMemberSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+  });
+
+  const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+
+  const handleSubmit: SubmitHandler<BanMemberFormValues> = async (data: BanMemberFormValues) => {
+    banMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason, duration: null });
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!memberAuthorizeInfo.effectivePermissions.BanMembers || isSubmitting}
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer flex justify-center items-center"
+        onClick={() => setOpenDialog(true)}
+      >
+        {isSubmitting ? (
+          <Spinner className="size-6 fill-white"/>
+        ) : (
+          <>Ban Member</>
+        )}
+      </button>
+
+      {memberAuthorizeInfo.effectivePermissions.BanMembers && (
+        <DialogForm
+          open={openDialog}
+          onOpenChange={(open) => {
+            if (open) {
+              setOpenDialog(true);
+            } else {
+              setOpenDialog(false);
+              reset();
+            }
+          }}
+          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          title="Ban Member"
+          subtitle="The council have decided to exile this nerd"
+          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          formMethods={formMethods}
+          submitButton={(
+            <button
+              type="submit"
+              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Spinner className="size-5 fill-white"/>
+              ) : (
+                <>Ban Member</>
+              )}
+            </button>
+          )}
+          onSubmit={handleSubmit}
+        >
+          <p>
+            Are you sure you want to ban this member?<br/>
+            You can unban them later, but the action will be logged in the moderation log.
+          </p>
+
+          <Label.Root className="block label mt-2 mb-1">Reason</Label.Root>
+
+          <textarea
+            className="input-field h-32 w-full resize-none px-3 py-2"
+            placeholder="Enter reason (Optional)"
+            {...register("reason")}
+          />
+
+          {errors.reason && (
+            <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
+          )}
+        </DialogForm>
+      )}
+    </>
+  );
+}
+
 interface RoleModificationButtonProps {
   value: string[];
   onChange: (value: string[]) => void;
@@ -572,7 +673,7 @@ function RoleModificationButton({
   onChange,
 }: RoleModificationButtonProps) {
   const queryClient = useQueryClient();
-  const { serverId, memberPermissions } = useCommunityServerContext();
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
   const [searchValue, setSearchValue] = useDebounceValue("", 500);
 
   const {
@@ -582,7 +683,7 @@ function RoleModificationButton({
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteGetAssignableServerRolesQuery(
-    { serverId, nameFilter: searchValue, after: null, authorizeLevel: memberPermissions.authorizeLevel },
+    { serverId, nameFilter: searchValue, after: null, authorizeLevel: memberAuthorizeInfo.authorizeLevel },
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
@@ -603,19 +704,19 @@ function RoleModificationButton({
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberAuthorizeInfo.authorizeLevel})});
   });
 
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberAuthorizeInfo.authorizeLevel})});
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberPermissions.authorizeLevel})});
+    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId,authorizeLevel: memberAuthorizeInfo.authorizeLevel})});
   });
 
   return (

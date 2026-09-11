@@ -27,7 +27,7 @@ interface ServerSidebarHeaderProps {
 export default function ServerSidebarHeader({
   onRequestCreate
 }: ServerSidebarHeaderProps) {
-  const { memberPermissions } = useCommunityServerContext();
+  const { memberAuthorizeInfo } = useCommunityServerContext();
 
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const [isOpenInvitationDialog, setIsOpenInvitationDialog] = useState(false);
@@ -35,9 +35,9 @@ export default function ServerSidebarHeader({
 
   const { serverSummary: { name: serverName } } = useCommunityServerContext();
 
-  const allowAccessToServerManagement = (memberPermissions.effectivePermissions.CreateRole ||
-    memberPermissions.effectivePermissions.UpdateRole ||
-    memberPermissions.effectivePermissions.DeleteRole) ?? false;
+  const allowAccessToServerManagement = (memberAuthorizeInfo.effectivePermissions.CreateRole ||
+    memberAuthorizeInfo.effectivePermissions.UpdateRole ||
+    memberAuthorizeInfo.effectivePermissions.DeleteRole) ?? false;
 
   useEffect(() => {
     if (!allowAccessToServerManagement) {
@@ -46,7 +46,7 @@ export default function ServerSidebarHeader({
         toast.info("Your access to the server management has been revoked.");
       }
     }
-  }, [memberPermissions]);
+  }, [memberAuthorizeInfo]);
 
   return (
     <header className="w-full aspect-video relative group">
@@ -71,7 +71,7 @@ export default function ServerSidebarHeader({
                 e.preventDefault();
               }}
             >
-              {memberPermissions.effectivePermissions.CreateChannel && (
+              {memberAuthorizeInfo.effectivePermissions.CreateChannel && (
                 <>
                   <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
                     onRequestCreate("category", crypto.randomUUID());

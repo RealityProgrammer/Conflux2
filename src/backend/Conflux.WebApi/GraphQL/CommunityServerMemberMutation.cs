@@ -25,6 +25,8 @@ public sealed record LeaveCommunityServerPayload(Guid ServerId);
 
 public sealed record KickCommunityServerMemberPayload(Guid MemberId);
 
+public sealed record BanCommunityServerMemberPayload(Guid MemberId);
+
 [MutationType, Authorize]
 internal static class CommunityServerMemberMutation {
     public static async Task<UpdateCommunityServerMemberRolesPayload> UpdateCommunityServerMemberRoles(
@@ -79,6 +81,27 @@ internal static class CommunityServerMemberMutation {
         }
 
         var result = await mediator.Send(new KickServerMemberCommand(userId, serverId, memberId, reason));
+
+        return result.IsSuccess ?
+            new(serverId) :
+            throw new GraphQLException(result.Error.ToHotChocolateError());
+    }
+    
+    public static async Task<BanCommunityServerMemberPayload> BanCommunityServerMember(
+        Guid serverId,
+        Guid memberId,
+        string? reason,
+        TimeSpan? duration,
+        [Service] IMediator mediator,
+        [Service] IHttpContextAccessor httpContextAccessor
+    ) {
+        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
+        }
+        
+        var result = await mediator.Send(new BanServerMemberCommand(userId, serverId, memberId, reason, duration));
 
         return result.IsSuccess ?
             new(serverId) :

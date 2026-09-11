@@ -241,7 +241,7 @@ function RoleList({
   selectedRoleId,
   setSelectedRole,
 }: RoleListProps) {
-  const { serverId, memberPermissions } = useCommunityServerContext();
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const {
     register,
@@ -315,7 +315,7 @@ function RoleList({
           />
         </ErrorPopover>
 
-        {memberPermissions.effectivePermissions.CreateRole && (
+        {memberAuthorizeInfo.effectivePermissions.CreateRole && (
           <button
             type="submit"
             disabled={isSubmitting}
@@ -391,9 +391,9 @@ function RoleDetails({
   updateRoleData,
   deleteRoleData,
 }: RoleDetailsProps) {
-  const { serverId, memberPermissions } = useCommunityServerContext();
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
-  const isEditable = memberPermissions.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
+  const isEditable = memberAuthorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
 
   const {
     register,
@@ -476,7 +476,7 @@ function RoleDetails({
           </span>
         </div>
 
-        {memberPermissions.effectivePermissions.UpdateRole && isEditable && (
+        {memberAuthorizeInfo.effectivePermissions.UpdateRole && isEditable && (
           <>
             {isEditingRole ? (
               <div className="flex flex-row gap-2">
@@ -797,7 +797,7 @@ function RoleDetails({
         </Accordion.Root>
       </section>
 
-      {memberPermissions.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
+      {memberAuthorizeInfo.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
         <div className="flex flex-row justify-end mt-2">
           <button
             type="button"

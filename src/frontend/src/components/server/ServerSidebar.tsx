@@ -70,7 +70,7 @@ export default function ServerSidebar() {
   const {
     serverId,
     serverSummary,
-    memberPermissions,
+    memberAuthorizeInfo,
     appendChannelCategory,
     appendChannel,
     removeChannelCategory,
@@ -81,10 +81,10 @@ export default function ServerSidebar() {
   const [deletionState, setDeletionState] = useState<DeletionState | undefined>();
 
   useEffect(() => {
-    if (isCreateChannelOrCategoryDialogOpen && !memberPermissions.effectivePermissions.CreateChannel) {
+    if (isCreateChannelOrCategoryDialogOpen && !memberAuthorizeInfo.effectivePermissions.CreateChannel) {
       setIsCreateChannelOrCategoryDialogOpen(false);
     }
-  }, [memberPermissions]);
+  }, [memberAuthorizeInfo]);
 
   const formMethods = useForm<CreateChannelOrCategoryFormValues>({
     resolver: zodResolver(createChannelOrCategorySchema),
@@ -453,7 +453,7 @@ function ChannelCategoryView({
   setCreateValues,
   handleChannelAction,
 }: ChannelCategoryViewProps) {
-  const { memberPermissions } = useCommunityServerContext();
+  const { memberAuthorizeInfo } = useCommunityServerContext();
 
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
@@ -466,7 +466,7 @@ function ChannelCategoryView({
 
           <span className="text-gray-300 text-sm line-clamp-1 select-none flex-1">{category.name}</span>
 
-          {(memberPermissions.effectivePermissions.CreateChannel || memberPermissions.effectivePermissions.DeleteChannel) && (
+          {(memberAuthorizeInfo.effectivePermissions.CreateChannel || memberAuthorizeInfo.effectivePermissions.DeleteChannel) && (
             <div className={`h-5 items-center justify-center ${isOpenDropdown ? 'flex' : 'hidden group-hover:flex'}`}>
               <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown} modal={false}>
                 <DropdownMenu.Trigger asChild>
@@ -484,7 +484,7 @@ function ChannelCategoryView({
                       e.preventDefault();
                     }}
                   >
-                    {memberPermissions.effectivePermissions.CreateChannel && (
+                    {memberAuthorizeInfo.effectivePermissions.CreateChannel && (
                       <>
                         <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
                           setIsCategoryOpen(true);
@@ -506,7 +506,7 @@ function ChannelCategoryView({
                       </>
                     )}
 
-                    {memberPermissions.effectivePermissions.DeleteChannel && (
+                    {memberAuthorizeInfo.effectivePermissions.DeleteChannel && (
                       <DropdownMenu.Item className="dropdown-item-danger" onSelect={() => {
                         if (category.id) {
                           handleChannelAction({

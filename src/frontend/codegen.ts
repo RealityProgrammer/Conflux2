@@ -9,6 +9,7 @@ const config: CodegenConfig = {
     scalars: {
       UUID: 'string',
       DateTime: 'string',
+      Duration: 'string',
       JSON: "Record<string, unknown>",
       Any: 'unknown',
     },

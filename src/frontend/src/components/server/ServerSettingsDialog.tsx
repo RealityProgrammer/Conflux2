@@ -9,7 +9,7 @@ import MemberManagement from "./MemberManagement.tsx";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
-  const { memberPermissions } = useCommunityServerContext();
+  const { memberAuthorizeInfo } = useCommunityServerContext();
 
   return (
     <Dialog
@@ -28,7 +28,7 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
             <FaUserShield className="size-8 fill-slate-200"/>
           </Tabs.Trigger>
 
-          {memberPermissions.effectivePermissions.ManageMembers && (
+          {memberAuthorizeInfo.effectivePermissions.ManageMembers && (
             <Tabs.Trigger value="members" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
               <BsPeopleFill className="size-8 fill-slate-200"/>
             </Tabs.Trigger>
@@ -39,7 +39,7 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
           <RoleManagement/>
         </Tabs.Content>
 
-        {memberPermissions.effectivePermissions.ManageMembers && (
+        {memberAuthorizeInfo.effectivePermissions.ManageMembers && (
           <Tabs.Content value="members" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
             <MemberManagement/>
           </Tabs.Content>

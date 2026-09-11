@@ -6,13 +6,31 @@ import { graphqlFetcher } from '../api/client';
 import type * as Types from './types';
 
 import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
-import { useQuery, useMutation, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query';
+import { useMutation, useQuery, type UseMutationOptions, type UseQueryOptions } from '@tanstack/react-query';
+export type BanServerMemberMutationVariables = Exact<{
+  serverId: string;
+  memberId: string;
+  reason?: string | null | undefined;
+  duration?: string | null | undefined;
+}>;
+
+
+export type BanServerMemberMutation = { banCommunityServerMember: { memberId: string } };
+
 export type GetInvitationSummaryQueryVariables = Exact<{
   id: string;
 }>;
 
 
 export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, hasAvatar: boolean, numMembers: number } | null } | null };
+
+export type GetServerMemberAuthorizeInfoQueryVariables = Exact<{
+  serverId: string;
+  userId: string;
+}>;
+
+
+export type GetServerMemberAuthorizeInfoQuery = { communityServerMemberByServerAndUserId: { id: string, authorizeInfo: { authorizeLevel: number, isBanned: boolean, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> }, roles: Array<{ id: string }> } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
@@ -73,6 +91,37 @@ export class TypedDocumentString<TResult, TVariables>
   }
 }
 
+export const BanServerMemberDocument = new TypedDocumentString(`
+    mutation BanServerMember($serverId: UUID!, $memberId: UUID!, $reason: String, $duration: Duration) {
+  banCommunityServerMember(
+    input: {
+      serverId: $serverId
+      memberId: $memberId
+      reason: $reason
+      duration: $duration
+    }
+  ) {
+    memberId
+  }
+}
+    `);
+
+export const useBanServerMemberMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<BanServerMemberMutation, TError, BanServerMemberMutationVariables, TContext>) => {
+    
+    return useMutation<BanServerMemberMutation, TError, BanServerMemberMutationVariables, TContext>(
+      {
+    mutationKey: ['BanServerMember'],
+    mutationFn: (variables?: BanServerMemberMutationVariables) => graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(BanServerMemberDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useBanServerMemberMutation.fetcher = (variables: BanServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(BanServerMemberDocument, variables, options);
+
 export const GetInvitationSummaryDocument = new TypedDocumentString(`
     query GetInvitationSummary($id: String!) {
   invitation(id: $id) {
@@ -107,6 +156,46 @@ useGetInvitationSummaryQuery.getKey = (variables: GetInvitationSummaryQueryVaria
 
 
 useGetInvitationSummaryQuery.fetcher = (variables: GetInvitationSummaryQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables, options);
+
+export const GetServerMemberAuthorizeInfoDocument = new TypedDocumentString(`
+    query GetServerMemberAuthorizeInfo($serverId: UUID!, $userId: UUID!) {
+  communityServerMemberByServerAndUserId(serverId: $serverId, userId: $userId) {
+    id
+    authorizeInfo {
+      authorizeLevel
+      permissions {
+        permission
+        isGranted
+      }
+      isBanned
+    }
+    roles {
+      id
+    }
+  }
+}
+    `);
+
+export const useGetServerMemberAuthorizeInfoQuery = <
+      TData = GetServerMemberAuthorizeInfoQuery,
+      TError = unknown
+    >(
+      variables: GetServerMemberAuthorizeInfoQueryVariables,
+      options?: Omit<UseQueryOptions<GetServerMemberAuthorizeInfoQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetServerMemberAuthorizeInfoQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetServerMemberAuthorizeInfoQuery, TError, TData>(
+      {
+    queryKey: ['GetServerMemberAuthorizeInfo', variables],
+    queryFn: graphqlFetcher<GetServerMemberAuthorizeInfoQuery, GetServerMemberAuthorizeInfoQueryVariables>(GetServerMemberAuthorizeInfoDocument, variables),
+    ...options
+  }
+    )};
+
+useGetServerMemberAuthorizeInfoQuery.getKey = (variables: GetServerMemberAuthorizeInfoQueryVariables) => ['GetServerMemberAuthorizeInfo', variables];
+
+
+useGetServerMemberAuthorizeInfoQuery.fetcher = (variables: GetServerMemberAuthorizeInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerMemberAuthorizeInfoQuery, GetServerMemberAuthorizeInfoQueryVariables>(GetServerMemberAuthorizeInfoDocument, variables, options);
 
 export const GetUserFullProfileDocument = new TypedDocumentString(`
     query GetUserFullProfile($id: UUID!) {

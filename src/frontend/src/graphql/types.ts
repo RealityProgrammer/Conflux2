@@ -8,7 +8,7 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   DateTime: { input: string; output: string; }
-  Duration: { input: unknown; output: unknown; }
+  Duration: { input: string; output: string; }
   UUID: { input: string; output: string; }
 };
 
@@ -71,6 +71,18 @@ export type AttachmentFilterInput = {
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<AttachmentFilterInput>>;
   type?: InputMaybe<StringOperationFilterInput>;
+};
+
+export type BanCommunityServerMemberInput = {
+  duration?: InputMaybe<Scalars['Duration']['input']>;
+  memberId: Scalars['UUID']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+  serverId: Scalars['UUID']['input'];
+};
+
+export type BanCommunityServerMemberPayload = {
+  __typename?: 'BanCommunityServerMemberPayload';
+  memberId: Scalars['UUID']['output'];
 };
 
 export type BooleanOperationFilterInput = {
@@ -574,9 +586,15 @@ export type MessageFilterInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  banCommunityServerMember: BanCommunityServerMemberPayload;
   kickCommunityServerMember: KickCommunityServerMemberPayload;
   leaveCommunityServer: LeaveCommunityServerPayload;
   updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
+};
+
+
+export type MutationBanCommunityServerMemberArgs = {
+  input: BanCommunityServerMemberInput;
 };
 
 

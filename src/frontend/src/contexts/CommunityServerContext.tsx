@@ -1,6 +1,7 @@
-import type {ServerDetailDto, ServerMemberAuthorizationInfoDto} from "../api/types.ts";
+import type {ServerDetailDto} from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
+import type {ServerMemberAuthorizeInfo} from "../hooks/useServerMemberAuthorizeInfo.tsx";
 
 interface CommunityServerContextType {
   serverId: string;
@@ -11,8 +12,7 @@ interface CommunityServerContextType {
   removeChannelCategory: (id: string) => void;
   removeChannel: (id: string) => void;
 
-  memberPermissions: ServerMemberAuthorizationInfoDto;
-  updateMemberPermissions: (update: Partial<Omit<ServerMemberAuthorizationInfoDto, "memberId">>) => void;
+  memberAuthorizeInfo: ServerMemberAuthorizeInfo;
 }
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
@@ -36,8 +36,7 @@ export default function CommunityServerContextProvider({
   appendChannel,
   removeChannelCategory,
   removeChannel,
-  memberPermissions,
-  updateMemberPermissions,
+  memberAuthorizeInfo,
 }: CommunityServerContextProviderProps) {
   useServerConnection(serverId);
 
@@ -49,8 +48,7 @@ export default function CommunityServerContextProvider({
       appendChannel,
       removeChannelCategory,
       removeChannel,
-      memberPermissions,
-      updateMemberPermissions,
+      memberAuthorizeInfo,
     }}>
       {children}
     </CommunityServerContext.Provider>

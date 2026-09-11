@@ -1,9 +1,7 @@
 import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
-  ServerDetailDto, ServerIdentityDto,
-  ServerMemberAuthorizationInfoDto, ServerRoleDto,
-  ServiceResponse
+  ServerDetailDto, ServerIdentityDto, ServerRoleDto, ServiceResponse
 } from "./types.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
@@ -146,22 +144,6 @@ export const communityServerService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
-  getUserPermission: async (serverId: string): Promise<ServiceResponse<ServerMemberAuthorizationInfoDto>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<ServerMemberAuthorizationInfoDto>> =
-        await apiClient.get<BackendResponse<ServerMemberAuthorizationInfoDto>>(`/communities/${encodeURIComponent(serverId)}/members/me/permissions`)
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ServerMemberAuthorizationInfoDto>>;
       return handleAxiosError(axiosError);
     }
   },

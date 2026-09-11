@@ -209,6 +209,7 @@ builder.Services.AddMediator(options => {
         typeof(ServerAuthorizationPipelineBehaviour<,>),
         typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
         typeof(KickServerMemberValidationPipeline),
+        typeof(BanServerMemberValidationPipeline),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
