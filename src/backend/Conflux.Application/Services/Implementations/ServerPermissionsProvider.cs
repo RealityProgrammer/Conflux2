@@ -80,7 +80,7 @@ internal sealed class ServerPermissionsProvider(
             .FirstOrDefaultAsync(cancellationToken);
 
         if (ids == null) {
-            return Errors.ResourceNotFound($"Community server member (Id = {memberId})");
+            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, Id = {memberId})");
         }
 
         return await GetUserPermissions(ids.CommunityServerId, ids.UserId, cancellationToken);

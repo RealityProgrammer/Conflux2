@@ -103,7 +103,6 @@ export default function DurationInput({
 
       {presets && presets.length > 0 && (
         <Select.Root
-          value={undefined}
           onValueChange={(index) => {
             onChange(presets[Number(index)]?.value ?? {});
           }

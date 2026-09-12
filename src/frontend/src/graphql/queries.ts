@@ -62,6 +62,14 @@ export type KickServerMemberMutationVariables = Exact<{
 
 export type KickServerMemberMutation = { kickCommunityServerMember: { memberId: string } };
 
+export type UnbanServerMemberMutationVariables = Exact<{
+  serverId: string;
+  memberId: string;
+}>;
+
+
+export type UnbanServerMemberMutation = { unbanCommunityServerMember: { memberId: string } };
+
 export type UpdateMemberRolesMutationVariables = Exact<{
   serverId: string;
   memberId: string;
@@ -342,6 +350,30 @@ export const useKickServerMemberMutation = <
 
 
 useKickServerMemberMutation.fetcher = (variables: KickServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<KickServerMemberMutation, KickServerMemberMutationVariables>(KickServerMemberDocument, variables, options);
+
+export const UnbanServerMemberDocument = new TypedDocumentString(`
+    mutation UnbanServerMember($serverId: UUID!, $memberId: UUID!) {
+  unbanCommunityServerMember(input: { serverId: $serverId, memberId: $memberId }) {
+    memberId
+  }
+}
+    `);
+
+export const useUnbanServerMemberMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<UnbanServerMemberMutation, TError, UnbanServerMemberMutationVariables, TContext>) => {
+    
+    return useMutation<UnbanServerMemberMutation, TError, UnbanServerMemberMutationVariables, TContext>(
+      {
+    mutationKey: ['UnbanServerMember'],
+    mutationFn: (variables?: UnbanServerMemberMutationVariables) => graphqlFetcher<UnbanServerMemberMutation, UnbanServerMemberMutationVariables>(UnbanServerMemberDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useUnbanServerMemberMutation.fetcher = (variables: UnbanServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UnbanServerMemberMutation, UnbanServerMemberMutationVariables>(UnbanServerMemberDocument, variables, options);
 
 export const UpdateMemberRolesDocument = new TypedDocumentString(`
     mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {

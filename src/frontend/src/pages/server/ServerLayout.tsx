@@ -93,6 +93,20 @@ export default function ServerLayout() {
     toast.info("You have been banned from this server. You can still access some content authorized by the moderation team, but interaction has been restricted to minimum.");
   });
 
+  useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
+    console.log("unbanned");
+
+    if (serverId !== unbannedServerId) {
+      return;
+    }
+
+    if (authorizeInfo) {
+      authorizeInfo.refreshPermissions();
+    }
+
+    toast.info("You have been unbanned on this server.");
+  });
+
   if (isLoadingServerSummary || isLoadingMemberPermissions) {
     return (
       <div className="size-full flex flex-row justify-center items-center">

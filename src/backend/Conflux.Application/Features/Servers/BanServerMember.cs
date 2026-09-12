@@ -92,12 +92,19 @@ public sealed class BanServerMemberHandler(
             // if duration is null, it is infinite ban, thus override the BanExpireAt with maximum time.
             if (command.Duration == null) {
                 member.BanExpireAt = DateTimeOffset.MaxValue;
-            } else if (member.BanExpireAt == null || utcNow >= member.BanExpireAt) {
-                // never been banned or ban expired, set BanExpireAt = now + duration
-                member.BanExpireAt = utcNow + command.Duration;
             } else {
-                // add duration to BanExpireAt
-                member.BanExpireAt += command.Duration;
+                DateTimeOffset baseTime = member.BanExpireAt == null || utcNow >= member.BanExpireAt
+                    ? utcNow 
+                    : member.BanExpireAt.Value;
+                
+                TimeSpan maxAllowedDuration = DateTimeOffset.MaxValue - baseTime;
+                
+                if (command.Duration.Value >= maxAllowedDuration) {
+                    // clamping to MaxValue to prevent out of range exception
+                    member.BanExpireAt = DateTimeOffset.MaxValue;
+                } else {
+                    member.BanExpireAt = baseTime + command.Duration.Value;
+                }
             }
             
             ServerModerationLog log = new() {

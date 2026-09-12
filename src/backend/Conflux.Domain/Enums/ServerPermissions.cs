@@ -12,4 +12,5 @@ public enum ServerPermission {
     ManageMembers,
     KickMembers,
     BanMembers,
+    UnbanMembers,
 }

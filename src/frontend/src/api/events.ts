@@ -81,3 +81,15 @@ export type ServerMemberKickedEvent = {
   kickedMemberUserId: string;
   kickedMemberId: string;
 };
+
+export type ServerMemberBannedEvent = {
+  serverId: string;
+  bannedMemberUserId: string;
+  bannedMemberId: string;
+};
+
+export type ServerMemberUnbannedEvent = {
+  serverId: string;
+  bannedMemberUserId: string;
+  bannedMemberId: string;
+};

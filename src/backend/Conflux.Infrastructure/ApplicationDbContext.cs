@@ -21,7 +21,6 @@ public class ApplicationDbContext(
     public DbSet<CommunityServerRole> CommunityServerRoles { get; set; }
     public DbSet<CommunityServerMemberRole> CommunityServerMemberRoles { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
-    public DbSet<CommunityServerBan> CommunityServerBans { get; set; }
     public DbSet<ServerModerationLog> ServerModerationLogs { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder) {
@@ -37,6 +36,5 @@ public class ApplicationDbContext(
         new CommunityServerRoleConfiguration().Configure(builder.Entity<CommunityServerRole>());
         new CommunityServerMemberRoleConfiguration().Configure(builder.Entity<CommunityServerMemberRole>());
         new RolePermissionConfiguration().Configure(builder.Entity<RolePermission>());
-        new CommunityServerBanConfiguration().Configure(builder.Entity<CommunityServerBan>());
     }
 }

@@ -18,5 +18,4 @@ public class CommunityServerMember : IHasCreatedAt {
 
     public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = [];
     public virtual ICollection<CommunityServerRole> Roles { get; set; } = [];
-    public virtual ICollection<CommunityServerBan> Bans { get; set; } = [];
 }

@@ -1,6 +1,6 @@
 import {useDebounceValue} from "usehooks-ts";
 import {createContext, useContext, useRef, useState} from "react";
-import {Label, Popover, Separator} from "radix-ui";
+import {Dialog as RadixDialog, Label, Popover, Separator} from "radix-ui";
 import {
   type ServerMemberSearchQuery,
   useInfiniteGetAssignableServerRolesQuery,
@@ -14,7 +14,7 @@ import DateTimeText from "../DateTimeText.tsx";
 import {
   type InspectMemberQuery, useBanServerMemberMutation,
   useInspectMemberQuery,
-  useKickServerMemberMutation,
+  useKickServerMemberMutation, useUnbanServerMemberMutation,
   useUpdateMemberRolesMutation
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
@@ -38,6 +38,7 @@ import type {
 import DialogForm from "../DialogForm.tsx";
 import ErrorText from "../ErrorText.tsx";
 import DurationInput, {type DurationValue} from "../DurationInput.tsx";
+import Dialog from "../Dialog.tsx";
 
 type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>;
@@ -422,7 +423,7 @@ function MemberInformationContent() {
                     <span>Ban Expired At</span>
 
                     {inspectingMemberInfo.banExpireAt === "9999-12-31T23:59:59.9999999Z" ? (
-                      <span className="text-red-600">Till the end of universe</span>
+                      <span className="text-red-600">Death of the universe</span>
                     ) : (
                       <DateTimeText value={new Date(inspectingMemberInfo.banExpireAt)}/>
                     )}
@@ -440,7 +441,7 @@ function MemberInformationContent() {
 }
 
 function MemberActions() {
-  const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
+  const { inspectingMemberInfo, refreshInspectingMemberInfo, setBanExpiredAt } = useContext(InspectingMemberContext)!;
   const queryClient = useQueryClient();
 
   const setActiveStatusToKicked = () => {
@@ -466,6 +467,12 @@ function MemberActions() {
     setActiveStatusToKicked();
   });
 
+  useSignalREvent("ServerMemberUnbanned", (event: ServerMemberKickedEvent) => {
+    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
+
+    setActiveStatusToKicked();
+  });
+
   const refreshBanExpireInfo = () => {
     refreshInspectingMemberInfo();
   };
@@ -479,6 +486,7 @@ function MemberActions() {
       <div className="flex flex-row items-center gap-3">
         <KickMemberButton setActiveStatusToKicked={setActiveStatusToKicked}/>
         <BanMemberButton refreshBanExpireInfo={refreshBanExpireInfo}/>
+        <UnbanMemberButton onUnbanned={() => refreshInspectingMemberInfo()}/>
       </div>
     </div>
   );
@@ -606,28 +614,29 @@ function BanMemberButton({
 
   const [openDialog, setOpenDialog] = useState(false);
 
-  const banMember = useBanServerMemberMutation({
-    onSuccess: async () => {
-      setOpenDialog(false);
-      toast.success("Member has been banned from the server.");
-      refreshBanExpireInfo();
-    },
-    onError: (_err) => {
-      toast.error("Failed to ban member.");
-    },
-  });
-
   const formMethods = useForm<BanMemberFormValues>({
     resolver: zodResolver(banMemberSchema),
     defaultValues: {
       reason: undefined,
-      duration: {},
+      duration: { days: 0, hours: 0, minutes: 0, seconds: 0 },
     },
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
 
   const { register, reset, control, formState: { isSubmitting, errors } } = formMethods;
+
+  const banMember = useBanServerMemberMutation({
+    onSuccess: async () => {
+      setOpenDialog(false);
+      toast.success("Member has been banned from the server.");
+      reset();
+      refreshBanExpireInfo();
+    },
+    onError: (_err) => {
+      toast.error("Failed to ban member.");
+    },
+  });
 
   const handleSubmit: SubmitHandler<BanMemberFormValues> = async (data: BanMemberFormValues) => {
     // https://scalars.graphql.org/chillicream/duration.html
@@ -713,7 +722,7 @@ function BanMemberButton({
                     onChange={field.onChange}
                     className="w-3/5"
                     presets={[
-                      {label: "Infinite", value: { days: 2922806, hours: 23, minutes: 59, seconds: 59 }},
+                      {label: "Infinite", value: { days: 9999999, hours: 23, minutes: 59, seconds: 59 }},
                       {label: "1 year", value: { days: 365, hours: 0, minutes: 0, seconds: 0 }},
                       {label: "1 month", value: { days: 28, hours: 0, minutes: 0, seconds: 0 }},
                       {label: "1 week", value: { days: 7, hours: 0, minutes: 0, seconds: 0 }},
@@ -727,9 +736,94 @@ function BanMemberButton({
           />
 
           {errors.duration && (
-            <ErrorText className="mt-1">{errors.duration.message}</ErrorText>
+            <ErrorText className="mt-1 block text-center">{errors.duration.message}</ErrorText>
           )}
         </DialogForm>
+      )}
+    </>
+  );
+}
+
+function UnbanMemberButton({
+  onUnbanned
+}: {onUnbanned: () => void}) {
+  const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+
+  const unbanMutation = useUnbanServerMemberMutation({
+    onSuccess: async () => {
+      setOpenDialog(false);
+      toast.success("Member has been unbanned.");
+      onUnbanned();
+    },
+    onError: (_err) => {
+      toast.error("Failed to unban member.");
+    },
+  });
+
+  const handleUnban = () => {
+    unbanMutation.mutate({ serverId, memberId: inspectingMemberInfo.id });
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!memberAuthorizeInfo.effectivePermissions.BanMembers || unbanMutation.isPending || !inspectingMemberInfo.banExpireAt}
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-success cursor-pointer flex justify-center items-center"
+        onClick={() => setOpenDialog(true)}
+      >
+        {unbanMutation.isPending ? (
+          <Spinner className="size-6 fill-white"/>
+        ) : (
+          <>Unban Member</>
+        )}
+      </button>
+
+      {memberAuthorizeInfo.effectivePermissions.UnbanMembers && (
+        <Dialog
+          open={openDialog}
+          onOpenChange={(open) => {
+            if (open) {
+              setOpenDialog(true);
+            } else {
+              setOpenDialog(false);
+            }
+          }}
+          title="Unban Member"
+          subtitle="Feeling funny today, might unban a guy for a change."
+          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-128"
+          footerContent={(
+            <div className="w-full flex flex-row justify-end p-3 gap-3">
+              <RadixDialog.Close
+                type="button"
+                className="cursor-pointer basis-20 outline-none"
+              >
+                Cancel
+              </RadixDialog.Close>
+
+              <button
+                type="submit"
+                className="button-theme-primary cursor-pointer h-10 rounded-md w-40 flex flex-row justify-center items-center"
+                disabled={unbanMutation.isPending}
+                onClick={handleUnban}
+              >
+                {unbanMutation.isPending ? (
+                  <Spinner className="size-5 fill-white"/>
+                ) : (
+                  <>Unban Member</>
+                )}
+              </button>
+            </div>
+          )}
+        >
+          <div className="px-4 py-2">
+            Are you sure you want to unban this member?<br/>
+          </div>
+        </Dialog>
       )}
     </>
   );

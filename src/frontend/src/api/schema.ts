@@ -1758,6 +1758,7 @@ export interface components {
                 ManageMembers?: components["schemas"]["PermissionState"];
                 KickMembers?: components["schemas"]["PermissionState"];
                 BanMembers?: components["schemas"]["PermissionState"];
+                UnbanMembers?: components["schemas"]["PermissionState"];
             };
         };
         PendingFriendRequestDto: {
@@ -1816,6 +1817,7 @@ export interface components {
                 ManageMembers?: components["schemas"]["PermissionState"];
                 KickMembers?: components["schemas"]["PermissionState"];
                 BanMembers?: components["schemas"]["PermissionState"];
+                UnbanMembers?: components["schemas"]["PermissionState"];
             };
             /** Format: int32 */
             authorizeLevel: number;
@@ -1993,7 +1995,8 @@ export enum ServerPermission {
     UpdateMemberRoles = "UpdateMemberRoles",
     ManageMembers = "ManageMembers",
     KickMembers = "KickMembers",
-    BanMembers = "BanMembers"
+    BanMembers = "BanMembers",
+    UnbanMembers = "UnbanMembers"
 }
 export enum UserRelationshipStatus {
     Stranger = "Stranger",
