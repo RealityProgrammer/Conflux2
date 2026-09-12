@@ -41,9 +41,7 @@ export const router = createBrowserRouter([
     id: "root",
     path: "/",
     loader: async () => {
-      const [authResponse] = await Promise.all([
-        authService.getAuthorizationInfo(),
-      ]);
+      const authResponse = await authService.getAuthorizationInfo();
 
       const authInfo = authResponse.data;
       let profileInfo: UserIdentityProfileDto | null = null;
@@ -56,7 +54,7 @@ export const router = createBrowserRouter([
             staleTime: "static",
           })).user;
         } catch (error) {
-          console.error("Failed to load user profile: ", error);
+          console.error("failed to load user profile: ", error);
         }
       }
 

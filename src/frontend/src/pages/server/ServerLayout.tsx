@@ -50,10 +50,6 @@ export default function ServerLayout() {
     enabled: !!serverId && !!userAuthorization?.id,
   });
 
-  useEffect(() => {
-    console.log("isLoadingMemberPermissions changed:", isLoadingMemberPermissions);
-  }, [isLoadingMemberPermissions]);
-
   const [showKickedDialog, setShowKickedDialog] = useState(false);
 
   useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {

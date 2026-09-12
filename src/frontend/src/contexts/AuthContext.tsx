@@ -1,4 +1,4 @@
-import {createContext, type ReactNode, useContext, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import {useNavigate, useRevalidator, useRouteLoaderData} from "react-router";
 import {authService} from "../api/authService.ts";
 import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/types.ts";
@@ -37,6 +37,10 @@ export default function AuthProvider({children}: { children: ReactNode }) {
       return {...prev, ...updates};
     });
   };
+
+  useEffect(() => {
+    setUserProfile(loaderData?.userProfile ?? null);
+  }, [loaderData?.userProfile]);
 
   const logout = async (): Promise<void> => {
     await authService.logout();

@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from "react";
 import {animate, JSAnimation, random} from "animejs";
-import {useLocation, useNavigate} from "react-router";
+import {useLocation, useNavigate, useRevalidator} from "react-router";
 import {authService} from "../../api/authService.ts";
 import type {LoginRequest, LoginResponse, RegisterRequest, ServiceResponse} from "../../api/types.ts";
 import {HttpStatusCode} from "axios";
@@ -22,6 +22,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
+  const revalidator = useRevalidator();
   const navigate = useNavigate();
 
   const {
@@ -42,6 +43,8 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
       const response: ServiceResponse<LoginResponse> = await authService.login(data as LoginRequest);
 
       if (response.statusCode === HttpStatusCode.Ok) {
+        await revalidator.revalidate();
+
         navigate("/lobby");
         return;
       }
@@ -53,6 +56,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
         return;
       }
 
+      await revalidator.revalidate();
       setError("root", { message: response.error?.message ?? "Unknown error." });
     } catch (err) {
       setError("root", { message: "An unexpected error occurred." });
