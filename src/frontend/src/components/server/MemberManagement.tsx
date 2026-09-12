@@ -1,5 +1,5 @@
 import {useDebounceValue} from "usehooks-ts";
-import {useRef, useState} from "react";
+import {createContext, useContext, useRef, useState} from "react";
 import {Label, Popover, Separator} from "radix-ui";
 import {
   type ServerMemberSearchQuery,
@@ -37,6 +37,15 @@ import type {
 } from "../../api/events.ts";
 import DialogForm from "../DialogForm.tsx";
 import ErrorText from "../ErrorText.tsx";
+import DurationInput, {type DurationValue} from "../DurationInput.tsx";
+
+type InspectingMemberContextResult = {
+  inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>;
+  refreshInspectingMemberInfo: () => void;
+  setBanExpiredAt: (value: string | null) => void;
+}
+
+const InspectingMemberContext = createContext<InspectingMemberContextResult | undefined>(undefined);
 
 export default function MemberManagement() {
   const { serverId } = useCommunityServerContext();
@@ -176,6 +185,7 @@ export default function MemberManagement() {
 }
 
 function MemberInformation({memberId}: {memberId: string}) {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useInspectMemberQuery(
     { id: memberId },
     {
@@ -200,7 +210,33 @@ function MemberInformation({memberId}: {memberId: string}) {
     );
   }
 
-  return <MemberInformationContent inspectingMemberInfo={data.communityServerMember}/>
+  const refreshInspectingMemberInfo = () => {
+    queryClient.invalidateQueries({queryKey: useInspectMemberQuery.getKey({id: memberId})});
+  };
+
+  const setBanExpiredAt = (value: string | null) => {
+    queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
+      if (!oldData || !oldData.communityServerMember) return oldData;
+
+      return {
+        ...oldData,
+        communityServerMember: {
+          ...oldData.communityServerMember,
+          banExpireAt: value,
+        },
+      };
+    });
+  };
+
+  return (
+    <InspectingMemberContext.Provider value={{
+      inspectingMemberInfo: data.communityServerMember,
+      refreshInspectingMemberInfo,
+      setBanExpiredAt,
+    }}>
+      <MemberInformationContent/>
+    </InspectingMemberContext.Provider>
+  )
 }
 
 const updateMemberInformationSchema = z.object({
@@ -209,10 +245,9 @@ const updateMemberInformationSchema = z.object({
 
 type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationSchema>;
 
-function MemberInformationContent({
-  inspectingMemberInfo
-}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
-  const queryClient = useQueryClient();
+function MemberInformationContent() {
+  const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
+
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const {
@@ -235,9 +270,7 @@ function MemberInformationContent({
         roleIds: Array.isArray(variables.roleIds) ? variables.roleIds : [variables.roleIds],
       });
 
-      queryClient.invalidateQueries({
-        queryKey: useInspectMemberQuery.getKey({id: inspectingMemberInfo.id})
-      });
+      refreshInspectingMemberInfo();
     },
 
     onError: (_error, _variables) => {
@@ -257,14 +290,14 @@ function MemberInformationContent({
     if (event.serverId !== serverId) return;
     if (!inspectingMemberInfo.roles.map(r => r.id).includes(event.roleId)) return;
 
-    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: inspectingMemberInfo.id})});
+    refreshInspectingMemberInfo();
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
     if (event.memberId !== inspectingMemberInfo.id) return;
 
-    queryClient.invalidateQueries({queryKey:useInspectMemberQuery.getKey({id: inspectingMemberInfo.id})});
+    refreshInspectingMemberInfo();
   });
 
   return (
@@ -401,14 +434,13 @@ function MemberInformationContent({
         </div>
       </form>
 
-      <MemberActions inspectingMemberInfo={inspectingMemberInfo}/>
+      <MemberActions/>
     </>
   );
 }
 
-function MemberActions({
-  inspectingMemberInfo
-}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
+function MemberActions() {
+  const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
   const queryClient = useQueryClient();
 
   const setActiveStatusToKicked = () => {
@@ -434,6 +466,10 @@ function MemberActions({
     setActiveStatusToKicked();
   });
 
+  const refreshBanExpireInfo = () => {
+    refreshInspectingMemberInfo();
+  };
+
   return (
     <div className="space-y-2 mt-2">
       <h4 className="group-label">
@@ -441,14 +477,8 @@ function MemberActions({
       </h4>
 
       <div className="flex flex-row items-center gap-3">
-        <KickMemberButton
-          inspectingMemberInfo={inspectingMemberInfo}
-          setActiveStatusToKicked={setActiveStatusToKicked}
-        />
-
-        <BanMemberButton
-          inspectingMemberInfo={inspectingMemberInfo}
-        />
+        <KickMemberButton setActiveStatusToKicked={setActiveStatusToKicked}/>
+        <BanMemberButton refreshBanExpireInfo={refreshBanExpireInfo}/>
       </div>
     </div>
   );
@@ -461,9 +491,9 @@ const kickMemberSchema = z.object({
 type KickMemberFormValues = z.infer<typeof kickMemberSchema>;
 
 function KickMemberButton({
-  inspectingMemberInfo,
   setActiveStatusToKicked
-}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>, setActiveStatusToKicked: () => void}) {
+}: {setActiveStatusToKicked: () => void}) {
+  const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -561,14 +591,17 @@ function KickMemberButton({
 
 const banMemberSchema = z.object({
   reason: z.string().max(256, { error: "Reason can only have maximum length of 256 characters." }).optional(),
-  // TODO: duration
+  duration: z.custom<DurationValue>().refine(val => {
+    return val.days != 0 || val.hours != 0 || val.minutes != 0 || val.seconds != 0;
+  }, { error: "Duration should not be zero." }),
 });
 
 type BanMemberFormValues = z.infer<typeof banMemberSchema>;
 
 function BanMemberButton({
-  inspectingMemberInfo,
-}: {inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>}) {
+  refreshBanExpireInfo,
+}: {refreshBanExpireInfo: () => void}) {
+  const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -577,6 +610,7 @@ function BanMemberButton({
     onSuccess: async () => {
       setOpenDialog(false);
       toast.success("Member has been banned from the server.");
+      refreshBanExpireInfo();
     },
     onError: (_err) => {
       toast.error("Failed to ban member.");
@@ -585,14 +619,22 @@ function BanMemberButton({
 
   const formMethods = useForm<BanMemberFormValues>({
     resolver: zodResolver(banMemberSchema),
+    defaultValues: {
+      reason: undefined,
+      duration: {},
+    },
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
 
-  const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+  const { register, reset, control, formState: { isSubmitting, errors } } = formMethods;
 
   const handleSubmit: SubmitHandler<BanMemberFormValues> = async (data: BanMemberFormValues) => {
-    banMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason, duration: null });
+    // https://scalars.graphql.org/chillicream/duration.html
+    const duration = data.duration;
+    const durationString = `P${duration.days}DT${duration.hours}H${duration.minutes}M${duration.seconds}S`;
+
+    banMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason, duration: durationString });
   };
 
   return (
@@ -656,6 +698,36 @@ function BanMemberButton({
 
           {errors.reason && (
             <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
+          )}
+
+          <Label.Root className="block label mt-2 mb-1">Duration</Label.Root>
+
+          <Controller
+            control={control}
+            name="duration"
+            render={({field}) => {
+              return (
+                <div className="flex flex-row justify-center items-center">
+                  <DurationInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="w-3/5"
+                    presets={[
+                      {label: "Infinite", value: { days: 2922806, hours: 23, minutes: 59, seconds: 59 }},
+                      {label: "1 year", value: { days: 365, hours: 0, minutes: 0, seconds: 0 }},
+                      {label: "1 month", value: { days: 28, hours: 0, minutes: 0, seconds: 0 }},
+                      {label: "1 week", value: { days: 7, hours: 0, minutes: 0, seconds: 0 }},
+                      {label: "1 day", value: { days: 1, hours: 0, minutes: 0, seconds: 0 }},
+                      {label: "1 hour", value: { days: 0, hours: 1, minutes: 0, seconds: 0 }},
+                    ]}
+                  />
+                </div>
+              )
+            }}
+          />
+
+          {errors.duration && (
+            <ErrorText className="mt-1">{errors.duration.message}</ErrorText>
           )}
         </DialogForm>
       )}
