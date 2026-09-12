@@ -33,15 +33,14 @@ export type GetServerRolesByServerIdQueryVariables = Exact<{
 
 export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } | null };
 
-export type ServerMemberSearchQueryVariables = Exact<{
+export type SearchServerMemberForAdminQueryVariables = Exact<{
   serverId: string;
   after?: string | null | undefined;
   search?: string | null | undefined;
-  status: Array<Types.MembershipStatus> | Types.MembershipStatus;
 }>;
 
 
-export type ServerMemberSearchQuery = { communityServerMembers: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } | null };
+export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } | null };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -262,14 +261,9 @@ useInfiniteGetServerRolesByServerIdQuery.getKey = (variables: GetServerRolesBySe
 
 useGetServerRolesByServerIdQuery.fetcher = (variables: GetServerRolesByServerIdQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerRolesByServerIdQuery, GetServerRolesByServerIdQueryVariables>(GetServerRolesByServerIdDocument, variables, options);
 
-export const ServerMemberSearchDocument = new TypedDocumentString(`
-    query ServerMemberSearch($serverId: UUID!, $after: String, $search: String, $status: [MembershipStatus!]!) {
-  communityServerMembers(
-    serverId: $serverId
-    after: $after
-    search: $search
-    where: { status: { in: $status } }
-  ) {
+export const SearchServerMemberForAdminDocument = new TypedDocumentString(`
+    query SearchServerMemberForAdmin($serverId: UUID!, $after: String, $search: String) {
+  serverMemberSearchForAdmin(serverId: $serverId, after: $after, search: $search) {
     pageInfo {
       hasNextPage
       endCursor
@@ -287,44 +281,44 @@ export const ServerMemberSearchDocument = new TypedDocumentString(`
 }
     `);
 
-export const useServerMemberSearchQuery = <
-      TData = ServerMemberSearchQuery,
+export const useSearchServerMemberForAdminQuery = <
+      TData = SearchServerMemberForAdminQuery,
       TError = unknown
     >(
-      variables: ServerMemberSearchQueryVariables,
-      options?: Omit<UseQueryOptions<ServerMemberSearchQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServerMemberSearchQuery, TError, TData>['queryKey'] }
+      variables: SearchServerMemberForAdminQueryVariables,
+      options?: Omit<UseQueryOptions<SearchServerMemberForAdminQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SearchServerMemberForAdminQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useQuery<ServerMemberSearchQuery, TError, TData>(
+    return useQuery<SearchServerMemberForAdminQuery, TError, TData>(
       {
-    queryKey: ['ServerMemberSearch', variables],
-    queryFn: graphqlFetcher<ServerMemberSearchQuery, ServerMemberSearchQueryVariables>(ServerMemberSearchDocument, variables),
+    queryKey: ['SearchServerMemberForAdmin', variables],
+    queryFn: graphqlFetcher<SearchServerMemberForAdminQuery, SearchServerMemberForAdminQueryVariables>(SearchServerMemberForAdminDocument, variables),
     ...options
   }
     )};
 
-useServerMemberSearchQuery.getKey = (variables: ServerMemberSearchQueryVariables) => ['ServerMemberSearch', variables];
+useSearchServerMemberForAdminQuery.getKey = (variables: SearchServerMemberForAdminQueryVariables) => ['SearchServerMemberForAdmin', variables];
 
-export const useInfiniteServerMemberSearchQuery = <
-      TData = InfiniteData<ServerMemberSearchQuery>,
+export const useInfiniteSearchServerMemberForAdminQuery = <
+      TData = InfiniteData<SearchServerMemberForAdminQuery>,
       TError = unknown
     >(
-      variables: ServerMemberSearchQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<ServerMemberSearchQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServerMemberSearchQuery, TError, TData>['queryKey'] }
+      variables: SearchServerMemberForAdminQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SearchServerMemberForAdminQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SearchServerMemberForAdminQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useInfiniteQuery<ServerMemberSearchQuery, TError, TData>(
+    return useInfiniteQuery<SearchServerMemberForAdminQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? ['ServerMemberSearch.infinite', variables],
-      queryFn: (metaData) => graphqlFetcher<ServerMemberSearchQuery, ServerMemberSearchQueryVariables>(ServerMemberSearchDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      queryKey: optionsQueryKey ?? ['SearchServerMemberForAdmin.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<SearchServerMemberForAdminQuery, SearchServerMemberForAdminQueryVariables>(SearchServerMemberForAdminDocument, {...variables, ...(metaData.pageParam ?? {})})(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteServerMemberSearchQuery.getKey = (variables: ServerMemberSearchQueryVariables) => ['ServerMemberSearch.infinite', variables];
+useInfiniteSearchServerMemberForAdminQuery.getKey = (variables: SearchServerMemberForAdminQueryVariables) => ['SearchServerMemberForAdmin.infinite', variables];
 
 
-useServerMemberSearchQuery.fetcher = (variables: ServerMemberSearchQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<ServerMemberSearchQuery, ServerMemberSearchQueryVariables>(ServerMemberSearchDocument, variables, options);
+useSearchServerMemberForAdminQuery.fetcher = (variables: SearchServerMemberForAdminQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<SearchServerMemberForAdminQuery, SearchServerMemberForAdminQueryVariables>(SearchServerMemberForAdminDocument, variables, options);

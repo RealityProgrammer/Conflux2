@@ -1,9 +1,8 @@
-query ServerMemberSearch($serverId: UUID!, $after: String, $search: String, $status: [MembershipStatus!]!) {
-    communityServerMembers(
+query SearchServerMemberForAdmin($serverId: UUID!, $after: String, $search: String) {
+    serverMemberSearchForAdmin(
         serverId: $serverId
         after: $after
         search: $search
-        where: { status: { in: $status } }
     ) {
         pageInfo {
             hasNextPage

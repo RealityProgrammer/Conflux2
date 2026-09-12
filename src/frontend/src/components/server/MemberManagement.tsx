@@ -2,9 +2,8 @@ import {useDebounceValue} from "usehooks-ts";
 import {createContext, useContext, useRef, useState} from "react";
 import {Dialog as RadixDialog, Label, Popover, Separator} from "radix-ui";
 import {
-  type ServerMemberSearchQuery,
-  useInfiniteGetAssignableServerRolesQuery,
-  useInfiniteServerMemberSearchQuery,
+  useInfiniteSearchServerMemberForAdminQuery,
+  useInfiniteGetAssignableServerRolesQuery, type SearchServerMemberForAdminQuery,
 } from "../../graphql/infiniteQueries.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
@@ -41,7 +40,7 @@ import DurationInput, {type DurationValue} from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
 
 type InspectingMemberContextResult = {
-  inspectingMemberInfo: NonNullable<InspectMemberQuery['communityServerMember']>;
+  inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
   refreshInspectingMemberInfo: () => void;
   setBanExpiredAt: (value: string | null) => void;
 }
@@ -60,16 +59,15 @@ export default function MemberManagement() {
 
   const [isShowingSearchResults, setIsShowingSearchResults] = useState(false);
 
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteServerMemberSearchQuery({
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteSearchServerMemberForAdminQuery({
     serverId,
     after: null,
     search: searchValue,
-    status: Object.values(MembershipStatus),
   }, {
     enabled: !!searchValue,
     initialPageParam: { after: null },
-    getNextPageParam: (lastPage: ServerMemberSearchQuery): { after: string } | undefined => {
-      const pageInfo = lastPage?.communityServerMembers?.pageInfo;
+    getNextPageParam: (lastPage: SearchServerMemberForAdminQuery): { after: string } | undefined => {
+      const pageInfo = lastPage?.serverMemberSearchForAdmin?.pageInfo;
 
       if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
         return { after: pageInfo.endCursor };
@@ -80,7 +78,7 @@ export default function MemberManagement() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const allMembers = data?.pages.flatMap((page) => page?.communityServerMembers?.nodes ?? []) ?? [];
+  const allMembers = data?.pages.flatMap((page) => page?.serverMemberSearchForAdmin?.nodes ?? []) ?? [];
 
   const [inspectingMemberId, setInspectingMemberId] = useState<string | undefined>(undefined);
 
@@ -202,7 +200,7 @@ function MemberInformation({memberId}: {memberId: string}) {
     );
   }
 
-  if (isError || !data?.communityServerMember) {
+  if (isError || !data?.communityServerMemberForAdmin) {
     return (
       <div className="size-full flex flex-col justify-center items-center gap-y-2">
         <BsExclamationTriangle className="size-8 fill-white"/>
@@ -217,12 +215,12 @@ function MemberInformation({memberId}: {memberId: string}) {
 
   const setBanExpiredAt = (value: string | null) => {
     queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
-      if (!oldData || !oldData.communityServerMember) return oldData;
+      if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
 
       return {
         ...oldData,
         communityServerMember: {
-          ...oldData.communityServerMember,
+          ...oldData.communityServerMemberForAdmin,
           banExpireAt: value,
         },
       };
@@ -231,7 +229,7 @@ function MemberInformation({memberId}: {memberId: string}) {
 
   return (
     <InspectingMemberContext.Provider value={{
-      inspectingMemberInfo: data.communityServerMember,
+      inspectingMemberInfo: data.communityServerMemberForAdmin,
       refreshInspectingMemberInfo,
       setBanExpiredAt,
     }}>
@@ -448,12 +446,12 @@ function MemberActions() {
     queryClient.setQueryData<InspectMemberQuery>(
       useInspectMemberQuery.getKey({id: inspectingMemberInfo.id}),
       (oldData) => {
-        if (!oldData || !oldData.communityServerMember) return oldData;
+        if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
 
         return {
           ...oldData,
           communityServerMember: {
-            ...oldData.communityServerMember,
+            ...oldData.communityServerMemberForAdmin,
             status: MembershipStatus.Kicked,
           }
         };

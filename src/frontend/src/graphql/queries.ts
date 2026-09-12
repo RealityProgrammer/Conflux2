@@ -51,7 +51,7 @@ export type InspectMemberQueryVariables = Exact<{
 }>;
 
 
-export type InspectMemberQuery = { communityServerMember: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, isBanned: boolean, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, isBanned: boolean, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -275,7 +275,7 @@ useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQuery
 
 export const InspectMemberDocument = new TypedDocumentString(`
     query InspectMember($id: UUID!) {
-  communityServerMember(id: $id) {
+  communityServerMemberForAdmin(id: $id) {
     id
     createdAt
     user {

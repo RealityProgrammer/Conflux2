@@ -618,11 +618,14 @@ export type Query = {
   communityServer?: Maybe<CommunityServer>;
   communityServerMember?: Maybe<CommunityServerMember>;
   communityServerMemberByServerAndUserId?: Maybe<CommunityServerMember>;
+  communityServerMemberForAdmin?: Maybe<CommunityServerMember>;
   communityServerMembers?: Maybe<CommunityServerMembersConnection>;
   communityServerRole?: Maybe<CommunityServerRole>;
   communityServerRoles?: Maybe<CommunityServerRolesConnection>;
   invitation?: Maybe<Invitation>;
   joinedServers?: Maybe<JoinedServersConnection>;
+  serverMemberSearch?: Maybe<ServerMemberSearchConnection>;
+  serverMemberSearchForAdmin?: Maybe<ServerMemberSearchForAdminConnection>;
   user?: Maybe<ApplicationUser>;
 };
 
@@ -643,14 +646,17 @@ export type QueryCommunityServerMemberByServerAndUserIdArgs = {
 };
 
 
+export type QueryCommunityServerMemberForAdminArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
 export type QueryCommunityServerMembersArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
-  search?: InputMaybe<Scalars['String']['input']>;
   serverId: Scalars['UUID']['input'];
-  where?: InputMaybe<CommunityServerMemberFilterInput>;
 };
 
 
@@ -682,6 +688,26 @@ export type QueryJoinedServersArgs = {
 };
 
 
+export type QueryServerMemberSearchArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  serverId: Scalars['UUID']['input'];
+};
+
+
+export type QueryServerMemberSearchForAdminArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  serverId: Scalars['UUID']['input'];
+};
+
+
 export type QueryUserArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -701,6 +727,50 @@ export type RolePermissionFilterInput = {
   role?: InputMaybe<CommunityServerRoleFilterInput>;
   roleId?: InputMaybe<UuidOperationFilterInput>;
   state?: InputMaybe<PermissionStateOperationFilterInput>;
+};
+
+/** A connection to a list of items. */
+export type ServerMemberSearchConnection = {
+  __typename?: 'ServerMemberSearchConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<ServerMemberSearchEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<CommunityServerMember>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type ServerMemberSearchEdge = {
+  __typename?: 'ServerMemberSearchEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServerMember;
+};
+
+/** A connection to a list of items. */
+export type ServerMemberSearchForAdminConnection = {
+  __typename?: 'ServerMemberSearchForAdminConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<ServerMemberSearchForAdminEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<CommunityServerMember>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type ServerMemberSearchForAdminEdge = {
+  __typename?: 'ServerMemberSearchForAdminEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServerMember;
 };
 
 export enum ServerPermission {
