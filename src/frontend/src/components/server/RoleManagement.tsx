@@ -791,6 +791,27 @@ function RoleDetails({
                     )}
                   />
                 </li>
+
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Unban Members</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.UnbanMembers"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.UnbanMembers}
+                        content={errors.permissions?.UnbanMembers?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
               </ul>
             </Accordion.Content>
           </Accordion.Item>
