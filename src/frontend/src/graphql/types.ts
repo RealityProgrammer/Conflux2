@@ -781,6 +781,7 @@ export enum ServerPermission {
   DeleteRole = 'DeleteRole',
   KickMembers = 'KickMembers',
   ManageMembers = 'ManageMembers',
+  ReadModerationLogs = 'ReadModerationLogs',
   UnbanMembers = 'UnbanMembers',
   UpdateMemberRoles = 'UpdateMemberRoles',
   UpdateRole = 'UpdateRole'

@@ -815,6 +815,37 @@ function RoleDetails({
               </ul>
             </Accordion.Content>
           </Accordion.Item>
+
+          <Accordion.Item value="misc" className="border-2 border-gray-600 rounded-md mt-1">
+            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
+              Miscellaneous
+            </Accordion.Trigger>
+
+            <Accordion.Content className="border-t-2 border-t-gray-600">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+                <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Read Log</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.ReadModerationLogs"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.ReadModerationLogs}
+                        content={errors.permissions?.ReadModerationLogs?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+              </ul>
+            </Accordion.Content>
+          </Accordion.Item>
         </Accordion.Root>
       </section>
 

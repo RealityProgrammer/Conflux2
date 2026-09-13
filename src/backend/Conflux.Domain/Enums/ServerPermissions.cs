@@ -13,4 +13,6 @@ public enum ServerPermission {
     KickMembers,
     BanMembers,
     UnbanMembers,
+    
+    ReadModerationLogs,
 }
