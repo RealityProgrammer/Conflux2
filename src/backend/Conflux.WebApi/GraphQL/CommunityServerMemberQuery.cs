@@ -2,29 +2,39 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Infrastructure;
 using Conflux.WebApi.GraphQL.Attributes;
+using GreenDonut.Data;
 using HotChocolate.Authorization;
+using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.WebApi.GraphQL;
 
 [QueryType, Authorize]
 internal static partial class CommunityServerMemberQuery {
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
-    public static IQueryable<CommunityServerMember> GetCommunityServerMembers(
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
+    public static async Task<PageConnection<CommunityServerMember>> GetCommunityServerMembers(
         Guid serverId,
-        [Service] ApplicationDbContext dbContext
+        PagingArguments pagingArgs,
+        QueryContext<CommunityServerMember> queryContext,
+        [Service] ApplicationDbContext dbContext,
+        CancellationToken cancellationToken
     ) {
-        return dbContext.CommunityServerMembers
+        return await dbContext.CommunityServerMembers
             .Where(m => m.Status == MembershipStatus.Active)
             .Where(m => m.CommunityServerId == serverId)
-            .OrderBy(m => m.User.DisplayName);
+            .OrderBy(m => m.User.DisplayName)
+            .With(queryContext)
+            .ToPageAsync(pagingArgs, cancellationToken);
     }
     
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
-    public static IQueryable<CommunityServerMember> ServerMemberSearch(
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
+    public static async Task<PageConnection<CommunityServerMember>> ServerMemberSearch(
         Guid serverId,
         string? search,
-        [Service] ApplicationDbContext dbContext
+        PagingArguments pagingArgs,
+        QueryContext<CommunityServerMember> queryContext,
+        [Service] ApplicationDbContext dbContext,
+        CancellationToken cancellationToken
     ) {
         IQueryable<CommunityServerMember> query = dbContext.CommunityServerMembers
             .Where(m => m.Status == MembershipStatus.Active)
@@ -40,15 +50,21 @@ internal static partial class CommunityServerMemberQuery {
             }
         }
 
-        return query.OrderBy(m => m.User.DisplayName);
+        return await query
+            .OrderBy(m => m.User.DisplayName)
+            .With(queryContext)
+            .ToPageAsync(pagingArgs, cancellationToken);
     }
 
     [RequireServerPermissions(ServerPermission.ManageMembers)]
-    [UsePaging(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseProjection]
-    public static IQueryable<CommunityServerMember> ServerMemberSearchForAdmin(
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
+    public static async Task<PageConnection<CommunityServerMember>> ServerMemberSearchForAdmin(
         Guid serverId,
         string? search,
-        [Service] ApplicationDbContext dbContext
+        PagingArguments pagingArgs,
+        QueryContext<CommunityServerMember> queryContext,
+        [Service] ApplicationDbContext dbContext,
+        CancellationToken cancellationToken
     ) {
         IQueryable<CommunityServerMember> query = dbContext.CommunityServerMembers
             .Where(m => m.CommunityServerId == serverId);
@@ -63,7 +79,10 @@ internal static partial class CommunityServerMemberQuery {
             }
         }
 
-        return query.OrderBy(m => m.User.DisplayName);
+        return await query
+            .OrderBy(m => m.User.DisplayName)
+            .With(queryContext)
+            .ToPageAsync(pagingArgs, cancellationToken);
     }
     
     [UseSingleOrDefault, UseProjection]

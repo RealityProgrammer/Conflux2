@@ -180,6 +180,7 @@ builder.Services
     .AddConvention<INamingConventions, CSharpEnumNamingConventions>()
     .AddWebApiTypes()
     .AddProjections()
+    .AddSorting()
     .AddAuthorization()
     .AddFiltering<CustomFilterConvention>()
     .AddMutationConventions(applyToAllMutations: true);
