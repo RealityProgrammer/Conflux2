@@ -49,8 +49,7 @@ internal sealed partial class ServerPermissionsCacheService(
 
         try {
             var deserialized = MemoryPackSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
-            // var deserialized = JsonSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
-
+            
             // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
             return deserialized?.ToSource<MemberAuthorizeInfoCacheDto, ServerMemberAuthorizationInfoDto>();
         } catch (Exception e) {
@@ -189,7 +188,7 @@ internal sealed partial class ServerPermissionsCacheService(
     }
 
     [MemoryPackable]
-    [Facet(typeof(ServerMemberAuthorizationInfoDto))]
+    [Facet(typeof(ServerMemberAuthorizationInfoDto), GenerateToSource = true)]
     public sealed partial record MemberAuthorizeInfoCacheDto {
         public Guid MemberId { get; set; } = MemberId;
         public int AuthorizeLevel { get; set; } = AuthorizeLevel;
