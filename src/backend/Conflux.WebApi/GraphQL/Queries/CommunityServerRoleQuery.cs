@@ -4,7 +4,7 @@ using GreenDonut.Data;
 using HotChocolate.Authorization;
 using HotChocolate.Types.Pagination;
 
-namespace Conflux.WebApi.GraphQL;
+namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 internal static partial class CommunityServerRoleQuery {

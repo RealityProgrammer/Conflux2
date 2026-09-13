@@ -8,7 +8,7 @@ using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 
-namespace Conflux.WebApi.GraphQL;
+namespace Conflux.WebApi.GraphQL.Mutations;
 
 public sealed record UpdateCommunityServerMemberRolesPayload(Guid MemberId) {
     public async Task<CommunityServerMember> GetMemberAsync([Service] IServerMemberReadRepository repository) {

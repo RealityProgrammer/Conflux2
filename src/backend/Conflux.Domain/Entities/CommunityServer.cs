@@ -22,4 +22,5 @@ public class CommunityServer : IHasCreatedAt {
     public virtual ICollection<CommunityServerMember> Members { get; set; } = [];
     public virtual ICollection<Invitation> Invitations { get; set; } = [];
     public virtual ICollection<CommunityServerRole> Roles { get; set; } = [];
+    public virtual ICollection<ServerModerationLog> ModerationLogs { get; set; } = [];
 }

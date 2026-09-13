@@ -2,7 +2,7 @@ using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
 using HotChocolate.Authorization;
 
-namespace Conflux.WebApi.GraphQL;
+namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 internal static partial class InvitationQuery {

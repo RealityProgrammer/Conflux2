@@ -6,6 +6,9 @@ namespace Conflux.Domain.Entities;
 public class ServerModerationLog : IHasCreatedAt {
     public Guid Id { get; set; }
     
+    public Guid CommunityServerId { get; set; }
+    public CommunityServer CommunityServer { get; set; } = null!;
+    
     public Guid? ExecutorMemberId { get; set; }
     public CommunityServerMember? ExecutorMember { get; set; }
     
