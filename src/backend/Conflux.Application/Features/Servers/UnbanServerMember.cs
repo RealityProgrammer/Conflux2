@@ -57,6 +57,7 @@ public sealed class UnbanServerMemberHandler(
             member.BanExpireAt = null;
             
             ServerModerationLog log = new() {
+                CommunityServerId = command.ServerId,
                 Action = ServerModerationAction.Unban,
                 ExecutorMemberId = executorMemberId.Value,
                 AffectedMember = member,

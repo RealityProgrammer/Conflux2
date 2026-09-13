@@ -108,6 +108,7 @@ public sealed class BanServerMemberHandler(
             }
             
             ServerModerationLog log = new() {
+                CommunityServerId = command.ServerId,
                 Action = ServerModerationAction.Ban,
                 Reason = command.Reason,
                 BanDuration = command.Duration,

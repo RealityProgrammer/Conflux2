@@ -85,6 +85,7 @@ public sealed class KickServerMemberHandler(
             member.Roles.Clear();   // clear the roles too
             
             ServerModerationLog log = new() {
+                CommunityServerId = command.ServerId,
                 Action = ServerModerationAction.Kick,
                 Reason = command.Reason,
                 ExecutorMemberId = executorMemberId.Value,

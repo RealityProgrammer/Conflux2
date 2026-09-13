@@ -22,7 +22,7 @@ internal static partial class CommunityServerMemberQuery {
         return await dbContext.CommunityServerMembers
             .Where(m => m.Status == MembershipStatus.Active)
             .Where(m => m.CommunityServerId == serverId)
-            .OrderBy(m => m.User.DisplayName)
+            .OrderBy(m => m.User.Id)
             .With(queryContext)
             .ToPageAsync(pagingArgs, cancellationToken);
     }

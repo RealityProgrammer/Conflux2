@@ -14,11 +14,10 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 internal static partial class CommunityServerQuery {
-    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50)]
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
     public static async Task<PageConnection<CommunityServer>> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
         PagingArguments pagingArgs,
-        QueryContext<CommunityServer> queryContext,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
     ) {
@@ -28,15 +27,10 @@ internal static partial class CommunityServerQuery {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        var r = await dbContext.CommunityServerMembers
-            .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active)
-            .Include(m => m.CommunityServer)
-            .OrderBy(m => m.CommunityServer.Id)
-            .Select(m => m.CommunityServer)
-            .With(queryContext)
+        return await dbContext.CommunityServers
+            .Where(s => s.Members.Any(m => m.UserId == userId && m.Status == MembershipStatus.Active))
+            .OrderBy(s => s.Id)
             .ToPageAsync(pagingArgs, cancellationToken);
-
-        return r;
     }
 
     [UseSingleOrDefault, UseProjection]
