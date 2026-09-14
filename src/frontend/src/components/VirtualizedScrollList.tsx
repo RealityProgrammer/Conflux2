@@ -178,8 +178,8 @@ export default function VirtualizedScrollList({
           /* Virtualized List Container */
           <ul className={`relative w-full ${containerClassName ?? ""}`} style={{height: `${totalHeight}px`}}>
             {virtualItems.map((virtualItem) => {
-              const shouldRenderFetchingPrevious = hasPreviousPage && virtualItem.index === 0;
-              const shouldRenderFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
+              const isLoaderPrev = hasPreviousPage && virtualItem.index === 0;
+              const isLoaderNext = hasNextPage && virtualItem.index === virtualCount - 1;
 
               const itemIndex = virtualItem.index - prevOffset;
 
@@ -195,9 +195,9 @@ export default function VirtualizedScrollList({
                     height: `${virtualItem.size}px`,
                   }}
                 >
-                  {shouldRenderFetchingPrevious ?
+                  {isLoaderPrev ?
                     renderFetchingPrevious && renderFetchingPrevious() :
-                    shouldRenderFetchingNext ?
+                    isLoaderNext ?
                       renderFetchingNext && renderFetchingNext() :
                       renderItem(itemIndex, virtualItem)
                   }

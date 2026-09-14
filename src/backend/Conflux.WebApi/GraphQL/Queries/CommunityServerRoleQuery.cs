@@ -20,13 +20,13 @@ internal static partial class CommunityServerRoleQuery {
     public static async Task<PageConnection<CommunityServerRole>> GetCommunityServerRoles(
         Guid serverId,
         PagingArguments pagingArgs,
-        QueryContext<CommunityServerRole> queryContext,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
     ) {
         return await dbContext.CommunityServerRoles
             .Where(r => r.CommunityServerId == serverId)
-            .With(queryContext)
+            .OrderBy(r => r.AuthorizeLevel)
+            .ThenBy(r => r.Id)
             .ToPageAsync(pagingArgs, cancellationToken);
     }
 }

@@ -56,6 +56,31 @@ export type ApplicationUserFilterInput = {
   userName?: InputMaybe<StringOperationFilterInput>;
 };
 
+export type ApplicationUserSortInput = {
+  accessFailedCount?: InputMaybe<SortEnumType>;
+  avatarUpdatedAt?: InputMaybe<SortEnumType>;
+  biography?: InputMaybe<SortEnumType>;
+  concurrencyStamp?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  displayName?: InputMaybe<SortEnumType>;
+  email?: InputMaybe<SortEnumType>;
+  emailConfirmed?: InputMaybe<SortEnumType>;
+  hasAvatar?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  isProfileSetup?: InputMaybe<SortEnumType>;
+  lockoutEnabled?: InputMaybe<SortEnumType>;
+  lockoutEnd?: InputMaybe<SortEnumType>;
+  normalizedEmail?: InputMaybe<SortEnumType>;
+  normalizedUserName?: InputMaybe<SortEnumType>;
+  passwordHash?: InputMaybe<SortEnumType>;
+  phoneNumber?: InputMaybe<SortEnumType>;
+  phoneNumberConfirmed?: InputMaybe<SortEnumType>;
+  pronouns?: InputMaybe<SortEnumType>;
+  securityStamp?: InputMaybe<SortEnumType>;
+  twoFactorEnabled?: InputMaybe<SortEnumType>;
+  userName?: InputMaybe<SortEnumType>;
+};
+
 /** Defines when a policy shall be executed. */
 export enum ApplyPolicy {
   /** After the resolver was executed. */
@@ -164,6 +189,27 @@ export type CommunityServer = {
   ownerUserId: Scalars['UUID']['output'];
 };
 
+/** A connection to a list of items. */
+export type CommunityServerConnection = {
+  __typename?: 'CommunityServerConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<CommunityServerEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<CommunityServer>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type CommunityServerEdge = {
+  __typename?: 'CommunityServerEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServer;
+};
+
 export type CommunityServerFilterInput = {
   and?: InputMaybe<Array<CommunityServerFilterInput>>;
   channelCategories?: InputMaybe<ListFilterInputTypeOfChannelCategoryFilterInput>;
@@ -176,6 +222,7 @@ export type CommunityServerFilterInput = {
   id?: InputMaybe<UuidOperationFilterInput>;
   invitations?: InputMaybe<ListFilterInputTypeOfInvitationFilterInput>;
   members?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
+  moderationLogs?: InputMaybe<ListFilterInputTypeOfServerModerationLogFilterInput>;
   name?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<CommunityServerFilterInput>>;
   ownerUser?: InputMaybe<ApplicationUserFilterInput>;
@@ -195,6 +242,27 @@ export type CommunityServerMember = {
   status: MembershipStatus;
   user: ApplicationUser;
   userId: Scalars['UUID']['output'];
+};
+
+/** A connection to a list of items. */
+export type CommunityServerMemberConnection = {
+  __typename?: 'CommunityServerMemberConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<CommunityServerMemberEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<CommunityServerMember>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type CommunityServerMemberEdge = {
+  __typename?: 'CommunityServerMemberEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServerMember;
 };
 
 export type CommunityServerMemberFilterInput = {
@@ -221,26 +289,15 @@ export type CommunityServerMemberRoleFilterInput = {
   roleId?: InputMaybe<UuidOperationFilterInput>;
 };
 
-/** A connection to a list of items. */
-export type CommunityServerMembersConnection = {
-  __typename?: 'CommunityServerMembersConnection';
-  /** A list of edges. */
-  edges?: Maybe<Array<CommunityServerMembersEdge>>;
-  /** A flattened list of the nodes. */
-  nodes?: Maybe<Array<CommunityServerMember>>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
-};
-
-/** An edge in a connection. */
-export type CommunityServerMembersEdge = {
-  __typename?: 'CommunityServerMembersEdge';
-  /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
-  /** The item at the end of the edge. */
-  node: CommunityServerMember;
+export type CommunityServerMemberSortInput = {
+  banExpireAt?: InputMaybe<SortEnumType>;
+  communityServer?: InputMaybe<CommunityServerSortInput>;
+  communityServerId?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  status?: InputMaybe<SortEnumType>;
+  user?: InputMaybe<ApplicationUserSortInput>;
+  userId?: InputMaybe<SortEnumType>;
 };
 
 export type CommunityServerRole = {
@@ -256,6 +313,27 @@ export type CommunityServerRole = {
   numMembers: Scalars['Int']['output'];
   permissions: Array<RolePermission>;
   specialRoleType: SpecialRoleType;
+};
+
+/** A connection to a list of items. */
+export type CommunityServerRoleConnection = {
+  __typename?: 'CommunityServerRoleConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<CommunityServerRoleEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<CommunityServerRole>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type CommunityServerRoleEdge = {
+  __typename?: 'CommunityServerRoleEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: CommunityServerRole;
 };
 
 export type CommunityServerRoleFilterInput = {
@@ -275,26 +353,16 @@ export type CommunityServerRoleFilterInput = {
   specialRoleType?: InputMaybe<SpecialRoleTypeOperationFilterInput>;
 };
 
-/** A connection to a list of items. */
-export type CommunityServerRolesConnection = {
-  __typename?: 'CommunityServerRolesConnection';
-  /** A list of edges. */
-  edges?: Maybe<Array<CommunityServerRolesEdge>>;
-  /** A flattened list of the nodes. */
-  nodes?: Maybe<Array<CommunityServerRole>>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
-};
-
-/** An edge in a connection. */
-export type CommunityServerRolesEdge = {
-  __typename?: 'CommunityServerRolesEdge';
-  /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
-  /** The item at the end of the edge. */
-  node: CommunityServerRole;
+export type CommunityServerSortInput = {
+  createdAt?: InputMaybe<SortEnumType>;
+  creatorUser?: InputMaybe<ApplicationUserSortInput>;
+  creatorUserId?: InputMaybe<SortEnumType>;
+  description?: InputMaybe<SortEnumType>;
+  hasAvatar?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  ownerUser?: InputMaybe<ApplicationUserSortInput>;
+  ownerUserId?: InputMaybe<SortEnumType>;
 };
 
 export type ConversationFilterInput = {
@@ -319,6 +387,21 @@ export type DateTimeOperationFilterInput = {
   nin?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
   nlt?: InputMaybe<Scalars['DateTime']['input']>;
   nlte?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type DurationOperationFilterInput = {
+  eq?: InputMaybe<Scalars['Duration']['input']>;
+  gt?: InputMaybe<Scalars['Duration']['input']>;
+  gte?: InputMaybe<Scalars['Duration']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['Duration']['input']>>>;
+  lt?: InputMaybe<Scalars['Duration']['input']>;
+  lte?: InputMaybe<Scalars['Duration']['input']>;
+  neq?: InputMaybe<Scalars['Duration']['input']>;
+  ngt?: InputMaybe<Scalars['Duration']['input']>;
+  ngte?: InputMaybe<Scalars['Duration']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['Duration']['input']>>>;
+  nlt?: InputMaybe<Scalars['Duration']['input']>;
+  nlte?: InputMaybe<Scalars['Duration']['input']>;
 };
 
 export type FriendRequestFilterInput = {
@@ -396,28 +479,6 @@ export enum InvitationStatus {
   MaxUsesReached = 'MaxUsesReached',
   Valid = 'Valid'
 }
-
-/** A connection to a list of items. */
-export type JoinedServersConnection = {
-  __typename?: 'JoinedServersConnection';
-  /** A list of edges. */
-  edges?: Maybe<Array<JoinedServersEdge>>;
-  /** A flattened list of the nodes. */
-  nodes?: Maybe<Array<CommunityServer>>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
-};
-
-/** An edge in a connection. */
-export type JoinedServersEdge = {
-  __typename?: 'JoinedServersEdge';
-  /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
-  /** The item at the end of the edge. */
-  node: CommunityServer;
-};
 
 export type KickCommunityServerMemberInput = {
   memberId: Scalars['UUID']['input'];
@@ -509,6 +570,13 @@ export type ListFilterInputTypeOfRolePermissionFilterInput = {
   some?: InputMaybe<RolePermissionFilterInput>;
 };
 
+export type ListFilterInputTypeOfServerModerationLogFilterInput = {
+  all?: InputMaybe<ServerModerationLogFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ServerModerationLogFilterInput>;
+  some?: InputMaybe<ServerModerationLogFilterInput>;
+};
+
 export type MemberAuthorizeInfo = {
   __typename?: 'MemberAuthorizeInfo';
   authorizeLevel: Scalars['Int']['output'];
@@ -581,11 +649,24 @@ export type MutationUpdateCommunityServerMemberRolesArgs = {
   input: UpdateCommunityServerMemberRolesInput;
 };
 
+/** A cursor that points to a specific page. */
+export type PageCursor = {
+  __typename?: 'PageCursor';
+  /** The cursor. */
+  cursor: Scalars['String']['output'];
+  /** The page number. */
+  page: Scalars['Int']['output'];
+};
+
 /** Information about pagination in a connection. */
 export type PageInfo = {
   __typename?: 'PageInfo';
+  /** A list of cursors to continue paginating backwards. */
+  backwardCursors: Array<PageCursor>;
   /** When paginating forwards, the cursor to continue. */
   endCursor?: Maybe<Scalars['String']['output']>;
+  /** A list of cursors to continue paginating forwards. */
+  forwardCursors: Array<PageCursor>;
   /** Indicates whether more edges exist following the set defined by the clients arguments. */
   hasNextPage: Scalars['Boolean']['output'];
   /** Indicates whether more edges exist prior the set defined by the clients arguments. */
@@ -619,13 +700,14 @@ export type Query = {
   communityServerMember?: Maybe<CommunityServerMember>;
   communityServerMemberByServerAndUserId?: Maybe<CommunityServerMember>;
   communityServerMemberForAdmin?: Maybe<CommunityServerMember>;
-  communityServerMembers?: Maybe<CommunityServerMembersConnection>;
+  communityServerMembers: CommunityServerMemberConnection;
   communityServerRole?: Maybe<CommunityServerRole>;
-  communityServerRoles?: Maybe<CommunityServerRolesConnection>;
+  communityServerRoles: CommunityServerRoleConnection;
   invitation?: Maybe<Invitation>;
-  joinedServers?: Maybe<JoinedServersConnection>;
-  serverMemberSearch?: Maybe<ServerMemberSearchConnection>;
-  serverMemberSearchForAdmin?: Maybe<ServerMemberSearchForAdminConnection>;
+  joinedServers: CommunityServerConnection;
+  serverMemberSearch: CommunityServerMemberConnection;
+  serverMemberSearchForAdmin: CommunityServerMemberConnection;
+  serverModerationLogs: ServerModerationLogConnection;
   user?: Maybe<ApplicationUser>;
 };
 
@@ -708,6 +790,17 @@ export type QueryServerMemberSearchForAdminArgs = {
 };
 
 
+export type QueryServerModerationLogsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<ServerModerationLogSortInput>>;
+  serverId: Scalars['UUID']['input'];
+  where?: InputMaybe<ServerModerationLogFilterInput>;
+};
+
+
 export type QueryUserArgs = {
   id: Scalars['UUID']['input'];
 };
@@ -729,48 +822,81 @@ export type RolePermissionFilterInput = {
   state?: InputMaybe<PermissionStateOperationFilterInput>;
 };
 
+export enum ServerModerationAction {
+  Ban = 'Ban',
+  Kick = 'Kick',
+  Unban = 'Unban'
+}
+
+export type ServerModerationActionOperationFilterInput = {
+  eq?: InputMaybe<ServerModerationAction>;
+  in?: InputMaybe<Array<ServerModerationAction>>;
+  neq?: InputMaybe<ServerModerationAction>;
+  nin?: InputMaybe<Array<ServerModerationAction>>;
+};
+
+export type ServerModerationLog = {
+  __typename?: 'ServerModerationLog';
+  action: ServerModerationAction;
+  affectedMember?: Maybe<CommunityServerMember>;
+  affectedMemberId?: Maybe<Scalars['UUID']['output']>;
+  banDuration?: Maybe<Scalars['Duration']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  executorMember?: Maybe<CommunityServerMember>;
+  executorMemberId?: Maybe<Scalars['UUID']['output']>;
+  id: Scalars['UUID']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
+};
+
 /** A connection to a list of items. */
-export type ServerMemberSearchConnection = {
-  __typename?: 'ServerMemberSearchConnection';
+export type ServerModerationLogConnection = {
+  __typename?: 'ServerModerationLogConnection';
   /** A list of edges. */
-  edges?: Maybe<Array<ServerMemberSearchEdge>>;
-  /** A flattened list of the nodes. */
-  nodes?: Maybe<Array<CommunityServerMember>>;
+  edges?: Maybe<Array<ServerModerationLogEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<ServerModerationLog>>;
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
   totalCount: Scalars['Int']['output'];
 };
 
-/** An edge in a connection. */
-export type ServerMemberSearchEdge = {
-  __typename?: 'ServerMemberSearchEdge';
+export type ServerModerationLogEdge = {
+  __typename?: 'ServerModerationLogEdge';
   /** A cursor for use in pagination. */
   cursor: Scalars['String']['output'];
   /** The item at the end of the edge. */
-  node: CommunityServerMember;
+  node: ServerModerationLog;
 };
 
-/** A connection to a list of items. */
-export type ServerMemberSearchForAdminConnection = {
-  __typename?: 'ServerMemberSearchForAdminConnection';
-  /** A list of edges. */
-  edges?: Maybe<Array<ServerMemberSearchForAdminEdge>>;
-  /** A flattened list of the nodes. */
-  nodes?: Maybe<Array<CommunityServerMember>>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+export type ServerModerationLogFilterInput = {
+  action?: InputMaybe<ServerModerationActionOperationFilterInput>;
+  affectedMember?: InputMaybe<CommunityServerMemberFilterInput>;
+  affectedMemberId?: InputMaybe<UuidOperationFilterInput>;
+  and?: InputMaybe<Array<ServerModerationLogFilterInput>>;
+  banDuration?: InputMaybe<DurationOperationFilterInput>;
+  communityServer?: InputMaybe<CommunityServerFilterInput>;
+  communityServerId?: InputMaybe<UuidOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  executorMember?: InputMaybe<CommunityServerMemberFilterInput>;
+  executorMemberId?: InputMaybe<UuidOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<ServerModerationLogFilterInput>>;
+  reason?: InputMaybe<StringOperationFilterInput>;
 };
 
-/** An edge in a connection. */
-export type ServerMemberSearchForAdminEdge = {
-  __typename?: 'ServerMemberSearchForAdminEdge';
-  /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
-  /** The item at the end of the edge. */
-  node: CommunityServerMember;
+export type ServerModerationLogSortInput = {
+  action?: InputMaybe<SortEnumType>;
+  affectedMember?: InputMaybe<CommunityServerMemberSortInput>;
+  affectedMemberId?: InputMaybe<SortEnumType>;
+  banDuration?: InputMaybe<SortEnumType>;
+  communityServer?: InputMaybe<CommunityServerSortInput>;
+  communityServerId?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  executorMember?: InputMaybe<CommunityServerMemberSortInput>;
+  executorMemberId?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  reason?: InputMaybe<SortEnumType>;
 };
 
 export enum ServerPermission {
@@ -793,6 +919,11 @@ export type ServerPermissionOperationFilterInput = {
   neq?: InputMaybe<ServerPermission>;
   nin?: InputMaybe<Array<ServerPermission>>;
 };
+
+export enum SortEnumType {
+  Asc = 'ASC',
+  Desc = 'DESC'
+}
 
 export enum SpecialRoleType {
   Default = 'Default',

@@ -15,14 +15,22 @@ export type GetAssignableServerRolesQueryVariables = Exact<{
 }>;
 
 
-export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } | null };
+export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
 
-export type GetJoinedCommunityServerQuery = { joinedServers: { totalCount: number, pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } | null };
+export type GetJoinedCommunityServerQuery = { joinedServers: { totalCount: number, pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } };
+
+export type GetServerModerationLogsQueryVariables = Exact<{
+  serverId: string;
+  after?: string | null | undefined;
+}>;
+
+
+export type GetServerModerationLogsQuery = { serverModerationLogs: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, action: Types.ServerModerationAction, createdAt: string, banDuration: string | null, reason: string | null, executorMember: { user: { id: string, displayName: string | null, hasAvatar: boolean } } | null, affectedMember: { user: { id: string, displayName: string | null, hasAvatar: boolean } } | null }> | null } };
 
 export type GetServerRolesByServerIdQueryVariables = Exact<{
   serverId: string;
@@ -31,7 +39,7 @@ export type GetServerRolesByServerIdQueryVariables = Exact<{
 }>;
 
 
-export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } | null };
+export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } };
 
 export type SearchServerMemberForAdminQueryVariables = Exact<{
   serverId: string;
@@ -40,7 +48,7 @@ export type SearchServerMemberForAdminQueryVariables = Exact<{
 }>;
 
 
-export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } | null };
+export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -67,11 +75,7 @@ export const GetAssignableServerRolesDocument = new TypedDocumentString(`
   communityServerRoles(
     serverId: $serverId
     after: $after
-    where: {
-      name: { ilike: $nameFilter }
-      specialRoleType: { eq: None }
-      authorizeLevel: { lte: $authorizeLevel }
-    }
+    where: {name: {ilike: $nameFilter}, specialRoleType: {eq: None}, authorizeLevel: {lte: $authorizeLevel}}
   ) {
     pageInfo {
       endCursor
@@ -187,12 +191,86 @@ useInfiniteGetJoinedCommunityServerQuery.getKey = (variables?: GetJoinedCommunit
 
 useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServerQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetJoinedCommunityServerQuery, GetJoinedCommunityServerQueryVariables>(GetJoinedCommunityServerDocument, variables, options);
 
+export const GetServerModerationLogsDocument = new TypedDocumentString(`
+    query GetServerModerationLogs($serverId: UUID!, $after: String) {
+  serverModerationLogs(serverId: $serverId, after: $after) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    nodes {
+      id
+      executorMember {
+        user {
+          id
+          displayName
+          hasAvatar
+        }
+      }
+      action
+      affectedMember {
+        user {
+          id
+          displayName
+          hasAvatar
+        }
+      }
+      createdAt
+      banDuration
+      reason
+    }
+  }
+}
+    `);
+
+export const useGetServerModerationLogsQuery = <
+      TData = GetServerModerationLogsQuery,
+      TError = unknown
+    >(
+      variables: GetServerModerationLogsQueryVariables,
+      options?: Omit<UseQueryOptions<GetServerModerationLogsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetServerModerationLogsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetServerModerationLogsQuery, TError, TData>(
+      {
+    queryKey: ['GetServerModerationLogs', variables],
+    queryFn: graphqlFetcher<GetServerModerationLogsQuery, GetServerModerationLogsQueryVariables>(GetServerModerationLogsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetServerModerationLogsQuery.getKey = (variables: GetServerModerationLogsQueryVariables) => ['GetServerModerationLogs', variables];
+
+export const useInfiniteGetServerModerationLogsQuery = <
+      TData = InfiniteData<GetServerModerationLogsQuery>,
+      TError = unknown
+    >(
+      variables: GetServerModerationLogsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetServerModerationLogsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetServerModerationLogsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetServerModerationLogsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['GetServerModerationLogs.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetServerModerationLogsQuery, GetServerModerationLogsQueryVariables>(GetServerModerationLogsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetServerModerationLogsQuery.getKey = (variables: GetServerModerationLogsQueryVariables) => ['GetServerModerationLogs.infinite', variables];
+
+
+useGetServerModerationLogsQuery.fetcher = (variables: GetServerModerationLogsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerModerationLogsQuery, GetServerModerationLogsQueryVariables>(GetServerModerationLogsDocument, variables, options);
+
 export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
     query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
   communityServerRoles(
     serverId: $serverId
     after: $after
-    where: { name: { ilike: $nameFilter } }
+    where: {name: {ilike: $nameFilter}}
   ) {
     pageInfo {
       endCursor

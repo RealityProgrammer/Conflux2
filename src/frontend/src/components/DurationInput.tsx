@@ -63,7 +63,7 @@ export default function DurationInput({
       min="0"
       onChange={(e) => {
         const val = e.target.value === "" ? 0 : Number(e.target.value);
-        onChange({ ...value, days: val });
+        onChange({ ...value, [field]: val });
       }}
       onWheel={(e) => {
         e.preventDefault();

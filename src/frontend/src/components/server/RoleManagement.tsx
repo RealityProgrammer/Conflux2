@@ -83,7 +83,7 @@ export default function RoleManagement() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            communityServerRoles: !page.communityServerRoles ? null : {
+            communityServerRoles: {
               ...page.communityServerRoles!,
               nodes: page.communityServerRoles?.nodes!.map(node => {
                 if (node.id !== role.id) {
@@ -119,7 +119,7 @@ export default function RoleManagement() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            communityServerRoles: !page.communityServerRoles ? null : {
+            communityServerRoles: {
               ...page.communityServerRoles!,
               nodes: page.communityServerRoles?.nodes!.filter(node => node.id !== roleId),
             },
@@ -295,7 +295,7 @@ function RoleList({
 
   return (
     <>
-      <form onSubmit={handleSubmit(onCreate)} className="flex flex-row items-center gap-1 pb-2 border-b-2 border-b-gray-600 p-2">
+      <form onSubmit={handleSubmit(onCreate)} className="flex flex-row items-center gap-1 border-b-2 border-b-gray-600 p-2 overflow-x-hidden">
         <ErrorPopover
           open={!!errors.name}
           content={errors.name?.message}
