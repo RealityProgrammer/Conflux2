@@ -3,7 +3,7 @@ using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.NotificationHandlers;
+namespace Conflux.WebApi.Notifications;
 
 public sealed class ServerMemberKickedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,

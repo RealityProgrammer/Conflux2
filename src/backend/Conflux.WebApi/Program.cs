@@ -30,7 +30,7 @@ using Conflux.WebApi.GraphQL;
 using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
-using Conflux.WebApi.NotificationHandlers;
+using Conflux.WebApi.Notifications;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;

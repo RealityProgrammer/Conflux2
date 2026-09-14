@@ -3,14 +3,14 @@ using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.NotificationHandlers;
+namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerChannelCategoryCreatedNotificationHandler(
+public sealed class ServerChannelCategoryDeletedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
-) : INotificationHandler<ServerChannelCategoryCreatedNotification> {
+) : INotificationHandler<ServerChannelCategoryDeletedNotification> {
     public async ValueTask Handle(
-        ServerChannelCategoryCreatedNotification notification, 
+        ServerChannelCategoryDeletedNotification notification, 
         CancellationToken cancellationToken
     ) {
         string? connectionId = 
@@ -20,6 +20,6 @@ public sealed class ServerChannelCategoryCreatedNotificationHandler(
             ? hubContext.Clients.Group($"server:{notification.ServerId}")
             : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
 
-        await target.ServerChannelCategoryCreated(new(notification.ServerId, notification.CategoryIdentity), cancellationToken);
+        await target.ServerChannelCategoryDeleted(new(notification.ServerId, notification.CategoryId), cancellationToken);
     }
 }

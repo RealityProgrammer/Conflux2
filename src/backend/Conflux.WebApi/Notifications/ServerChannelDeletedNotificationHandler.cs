@@ -3,13 +3,16 @@ using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.NotificationHandlers;
+namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerRoleDeletedNotificationHandler(
+public sealed class ServerChannelDeletedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
-) : INotificationHandler<ServerRoleDeletedNotification> {
-    public async ValueTask Handle(ServerRoleDeletedNotification notification, CancellationToken cancellationToken) {
+) : INotificationHandler<ServerChannelDeletedNotification> {
+    public async ValueTask Handle(
+        ServerChannelDeletedNotification notification, 
+        CancellationToken cancellationToken
+    ) {
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
@@ -17,6 +20,6 @@ public sealed class ServerRoleDeletedNotificationHandler(
             ? hubContext.Clients.Group($"server:{notification.ServerId}")
             : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
 
-        await target.ServerRoleDeleted(new(notification.ServerId, notification.RoleId), cancellationToken);
+        await target.ServerChannelDeleted(new(notification.ServerId, notification.ChannelId), cancellationToken);
     }
 }
