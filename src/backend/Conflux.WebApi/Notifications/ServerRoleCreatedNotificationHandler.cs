@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Features.Servers;
 using Conflux.WebApi.SignalR;
 using Mediator;
@@ -5,7 +6,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public class ServerRoleCreatedNotificationHandler(
+public sealed record ServerRoleCreatedEvent(Guid ServerId, ServerRoleDto Role);
+
+internal sealed class ServerRoleCreatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<ServerRoleCreatedNotification> {

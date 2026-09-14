@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class UnfriendNotificationHandler(
+public sealed record UnfriendedEvent(Guid InvokerUserId);
+
+internal sealed class UnfriendNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<UnfriendNotification> {
     public async ValueTask Handle(UnfriendNotification notification, CancellationToken cancellationToken) {

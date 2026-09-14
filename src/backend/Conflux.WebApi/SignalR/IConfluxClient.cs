@@ -1,3 +1,5 @@
+using Conflux.WebApi.Notifications;
+
 namespace Conflux.WebApi.SignalR;
 
 public interface IConfluxClient {

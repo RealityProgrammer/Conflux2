@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerRoleDeletedNotificationHandler(
+public sealed record ServerRoleDeletedEvent(Guid ServerId, Guid RoleId);
+
+internal sealed class ServerRoleDeletedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<ServerRoleDeletedNotification> {

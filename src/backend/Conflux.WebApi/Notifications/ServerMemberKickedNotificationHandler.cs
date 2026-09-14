@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerMemberKickedNotificationHandler(
+public sealed record ServerMemberKickedEvent(Guid ServerId, Guid KickedMemberUserId, Guid KickedMemberId);
+
+internal sealed class ServerMemberKickedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor,
     UserConnectionTracker connectionTracker

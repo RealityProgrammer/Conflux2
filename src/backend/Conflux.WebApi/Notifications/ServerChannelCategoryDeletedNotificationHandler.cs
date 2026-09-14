@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerChannelCategoryDeletedNotificationHandler(
+public sealed record ServerChannelCategoryDeletedEvent(Guid ServerId, Guid CategoryId);
+
+internal sealed class ServerChannelCategoryDeletedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<ServerChannelCategoryDeletedNotification> {

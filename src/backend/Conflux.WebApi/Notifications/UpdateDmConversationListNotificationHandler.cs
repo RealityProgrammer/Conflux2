@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
+public sealed record UpdateDmConversationListEvent(
+    Guid ChannelId, 
+    int UnreadCount
+);
+
 public sealed class UpdateDmConversationListNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<UpdateDmConversationListNotification>

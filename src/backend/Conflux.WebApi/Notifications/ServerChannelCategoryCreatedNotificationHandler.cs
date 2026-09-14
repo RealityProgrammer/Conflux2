@@ -1,11 +1,17 @@
 using Conflux.Application.Features.Servers;
+using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerChannelCategoryCreatedNotificationHandler(
+public sealed record ServerChannelCategoryCreatedEvent(
+    Guid ServerId, 
+    ChannelCategoryIdentityDto CategoryIdentity
+);
+
+internal sealed class ServerChannelCategoryCreatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<ServerChannelCategoryCreatedNotification> {

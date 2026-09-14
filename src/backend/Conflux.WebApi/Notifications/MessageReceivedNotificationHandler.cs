@@ -1,11 +1,14 @@
 using Conflux.Application.Features.Messages;
+using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class MessageReceivedNotificationHandler(
+public sealed record MessageReceivedEvent(TimelineMessageDto Message);
+
+internal sealed class MessageReceivedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<MessageReceivedNotification> {

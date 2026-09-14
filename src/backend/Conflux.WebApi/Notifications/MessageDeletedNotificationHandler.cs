@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class MessageDeletedNotificationHandler(
+public sealed record MessageDeletedEvent(Guid MessageId);
+
+internal sealed class MessageDeletedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<MessageDeletedNotification> {

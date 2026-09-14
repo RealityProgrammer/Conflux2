@@ -5,7 +5,13 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class MemberRolesUpdatedNotificationHandler(
+public sealed record MemberRolesUpdatedEvent(
+    Guid ServerId,
+    Guid MemberUserId,
+    Guid MemberId
+);
+
+internal sealed class MemberRolesUpdatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<MemberRolesUpdatedNotification> {

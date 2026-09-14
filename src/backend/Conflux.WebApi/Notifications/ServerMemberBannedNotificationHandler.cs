@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
+public sealed record ServerMemberBannedEvent(Guid ServerId, Guid BannedMemberUserId, Guid BannedMemberId);
+
 internal sealed class ServerMemberBannedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor,

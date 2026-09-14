@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public class FriendRequestAcceptedNotificationHandler(
+public sealed record FriendRequestAcceptedEvent(Guid AcceptorUserId);
+
+internal sealed class FriendRequestAcceptedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<FriendRequestAcceptedNotification> {
     public async ValueTask Handle(FriendRequestAcceptedNotification notification, CancellationToken cancellationToken) {

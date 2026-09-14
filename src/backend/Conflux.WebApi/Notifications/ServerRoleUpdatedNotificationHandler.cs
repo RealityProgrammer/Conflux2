@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed class ServerRoleUpdatedNotificationHandler(
+public sealed record ServerRoleUpdatedEvent(Guid ServerId, Guid RoleId);
+
+internal sealed class ServerRoleUpdatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<ServerRoleUpdatedNotification> {
     public async ValueTask Handle(ServerRoleUpdatedNotification notification, CancellationToken cancellationToken) {
