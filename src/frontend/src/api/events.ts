@@ -32,7 +32,6 @@ export type MessageEditedEvent = {
 
 export type UpdateDmConversationListEvent = {
   channelId: string;
-  unreadCount: number;
 }
 
 export type ServerRoleCreatedEvent = {

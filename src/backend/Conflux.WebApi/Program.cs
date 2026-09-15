@@ -36,6 +36,7 @@ using FileSignatures;
 using FileSignatures.Formats;
 using HotChocolate.Types.Descriptors;
 using Mediator;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.JsonWebTokens;
 using RedLockNet;
@@ -142,13 +143,14 @@ builder.Services.AddRateLimiter(options => {
             httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
             httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
         
-        return RateLimitPartition.GetFixedWindowLimiter(
+        return RateLimitPartition.GetSlidingWindowLimiter(
             partitionKey: userId,
             factory: _ => new() {
-                // allow for 3 invite creation per 3 hours, nobody need to create that much amount of invitation 
-                PermitLimit = 3,
-                Window = TimeSpan.FromHours(3),
-                QueueLimit = 0,
+                // allow for 10 invitation create per hour (sliding: 2 per 12 min)
+                PermitLimit = 10,
+                SegmentsPerWindow = 5,
+                Window = TimeSpan.FromHours(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             }
         );
     });
@@ -175,6 +177,7 @@ using var redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> {
 builder.Services.AddSingleton<IDistributedLockFactory>(redLockFactory);
 
 // GraphQL
+// TODO: Implement this: https://chillicream.com/docs/hotchocolate/performance/automatic-persisted-operations
 builder.Services
     .AddGraphQLServer()
     .AddConvention<INamingConventions, CSharpEnumNamingConventions>()
@@ -183,7 +186,22 @@ builder.Services
     .AddSorting()
     .AddAuthorization()
     .AddFiltering<CustomFilterConvention>()
-    .AddMutationConventions(applyToAllMutations: true);
+    .DisableIntrospection(builder.Environment.IsProduction())
+    .AddMutationConventions(applyToAllMutations: true)
+    .AddMaxExecutionDepthRule(8)
+    .AddMaxAllowedFieldCycleDepthRule(defaultCycleLimit: 3)
+    .ModifyParserOptions(opt => {
+        opt.MaxAllowedFields = 256;
+        opt.MaxAllowedRecursionDepth = 8;
+        opt.MaxAllowedDirectives = 4;
+    })
+    .ModifyPagingOptions(options => {
+        options.MaxPageSize = 100;
+        options.DefaultPageSize = 20;
+    })
+    .ModifyRequestOptions(options => {
+        options.ExecutionTimeout = TimeSpan.FromSeconds(10);
+    });
 
 // general services needed
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
