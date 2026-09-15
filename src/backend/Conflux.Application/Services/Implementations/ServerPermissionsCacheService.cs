@@ -38,8 +38,8 @@ internal sealed partial class ServerPermissionsCacheService(
         Guid userId,
         CancellationToken cancellationToken = default
     ) {
-        int version = await GetServerPermissionVersion(serverId);
-        string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
+        int version = await GetPermissionVersion(serverId);
+        string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
 
         byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
 
@@ -64,8 +64,8 @@ internal sealed partial class ServerPermissionsCacheService(
         ServerMemberAuthorizationInfoDto value,
         CancellationToken cancellationToken = default
     ) {
-        int version = await GetServerPermissionVersion(serverId);
-        string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
+        int version = await GetPermissionVersion(serverId);
+        string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
 
         MemberAuthorizeInfoCacheDto converted = value.ToFacet<ServerMemberAuthorizationInfoDto, MemberAuthorizeInfoCacheDto>();
         
@@ -77,8 +77,8 @@ internal sealed partial class ServerPermissionsCacheService(
     }
 
     public async Task DeleteUserAuthorizeInfo(Guid serverId, Guid userId, CancellationToken cancellationToken = default) {
-        int version = await GetServerPermissionVersion(serverId);
-        string cacheKey = GetCacheKeyForUserServerPermissions(serverId, userId, version);
+        int version = await GetPermissionVersion(serverId);
+        string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
         await _database.StringDeleteAsync(cacheKey, ValueCondition.Exists);
     }
 
@@ -129,14 +129,11 @@ internal sealed partial class ServerPermissionsCacheService(
         }
     }
 
-    private static string GetCacheKeyForUserServerPermissions(Guid serverId, Guid userId, int version) =>
-        $"ServerPermissions:{serverId}:user:{userId}:version:{version}";
-
     public async Task<RoleAuthorizationInfo?> GetServerDefaultRoleAuthorizationInfo(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
-        string cacheKey = GetCacheKeyForServerDefaultRoleAuthorizationInfo(serverId);
+        string cacheKey = GetRedisKeyForDefaultRoleAuthInfo(serverId);
         
         byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
         return cached == null ? null : JsonSerializer.Deserialize<RoleAuthorizationInfo>(cached);
@@ -147,45 +144,54 @@ internal sealed partial class ServerPermissionsCacheService(
         RoleAuthorizationInfo value, 
         CancellationToken cancellationToken = default
     ) {
-        string cacheKey = GetCacheKeyForServerDefaultRoleAuthorizationInfo(serverId);
+        string cacheKey = GetRedisKeyForDefaultRoleAuthInfo(serverId);
         await _database.StringSetAsync(cacheKey, JsonSerializer.SerializeToUtf8Bytes(value), TimeSpan.FromHours(24));
     }
 
-    private static string GetCacheKeyForServerDefaultRoleAuthorizationInfo(Guid serverId) =>
-        $"ServerPermissions:{serverId}:default_role";
-
-    private async Task<int> GetServerPermissionVersion(Guid serverId) {
-        string memoryCacheKey = $"ServerPermissions:versions:{serverId}";
+    private async Task<int> GetPermissionVersion(Guid serverId) {
+        string memoryKey = GetMemoryKeyForPermissionVersions(serverId);
         
-        // should we use a ConcurrentDictionary instead to reduce the string allocation?
-        if (memoryCache.TryGetValue(memoryCacheKey, out int version)) {
+        if (memoryCache.TryGetValue(memoryKey, out int version)) {
             return version;
         }
         
-        RedisValue redisResult = await _database.HashGetAsync("ServerPermissions:versions", serverId.ToString());
+        RedisValue redisResult = await _database.HashGetAsync(GetRedisKeyForPermissionVersions(), serverId.ToString());
         
         version = redisResult.HasValue ? (int)redisResult : 1;
         
-        memoryCache.Set(memoryCacheKey, version, TimeSpan.FromSeconds(30));
+        memoryCache.Set(memoryKey, version, TimeSpan.FromSeconds(30));
         
         return version;
     }
 
     public async Task IncrementServerPermissionVersion(Guid serverId, CancellationToken cancellationToken = default) {
-        string memoryCacheKey = $"ServerPermissions:versions:{serverId}";
+        string memoryKey = GetMemoryKeyForPermissionVersions(serverId);
+        string redisKey = GetRedisKeyForPermissionVersions();
 
-        if (!memoryCache.TryGetValue(memoryCacheKey, out int oldVersion)) {
-            RedisValue redisResult = await _database.HashGetAsync("ServerPermissions:versions", serverId.ToString());
-            oldVersion = redisResult.HasValue ? (int)redisResult : 1;
+        if (!memoryCache.TryGetValue(memoryKey, out int oldVersion)) {
+            RedisValue result = await _database.HashGetAsync(redisKey, serverId.ToString());
+            oldVersion = result.HasValue ? (int)result : 1;
         }
         
-        memoryCache.Set(memoryCacheKey, oldVersion + 1, TimeSpan.FromSeconds(30));
+        memoryCache.Set(memoryKey, oldVersion + 1, TimeSpan.FromSeconds(30));
 
         var hashField = serverId.ToString();
         
-        await _database.HashSetAsync("ServerPermissions:versions", hashField, oldVersion + 1);
-        await _database.HashFieldExpireAsync("ServerPermissions:versions", [hashField], TimeSpan.FromHours(24));
+        await _database.HashSetAsync(redisKey, hashField, oldVersion + 1);
+        await _database.KeyExpireAsync(redisKey, TimeSpan.FromHours(24), ExpireWhen.HasNoExpiry);
     }
+    
+    private static string GetRedisKeyForUserPermissions(Guid serverId, Guid userId, int version) =>
+        $"server:{serverId}:perms:user:{userId}:version:{version}";
+
+    private static string GetRedisKeyForDefaultRoleAuthInfo(Guid serverId) =>
+        $"server:{serverId}:default_role";
+    
+    private static string GetMemoryKeyForPermissionVersions(Guid serverId) =>
+        $"server:{serverId}:perms:versions";
+    
+    private static string GetRedisKeyForPermissionVersions() =>
+        $"server:perms:versions";
 
     [MemoryPackable]
     [Facet(typeof(ServerMemberAuthorizationInfoDto), GenerateToSource = true)]
