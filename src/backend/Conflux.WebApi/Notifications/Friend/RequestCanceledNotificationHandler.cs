@@ -4,12 +4,12 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Friend;
 
 [Facet(typeof(FriendRequestCanceledNotification), Include = [nameof(FriendRequestCanceledNotification.SenderUserId)])]
 public sealed partial record FriendRequestCanceledEvent;
 
-internal sealed class FriendRequestCanceledNotificationHandler(
+internal sealed class RequestCanceledNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<FriendRequestCanceledNotification> {
     public async ValueTask Handle(FriendRequestCanceledNotification notification, CancellationToken cancellationToken) {

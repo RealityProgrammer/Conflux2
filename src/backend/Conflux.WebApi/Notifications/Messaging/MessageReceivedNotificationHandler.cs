@@ -5,12 +5,12 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Messaging;
 
 [Facet(typeof(MessageReceivedNotification), Include = [nameof(MessageReceivedNotification.Message)])]
 public sealed partial record MessageReceivedEvent;
 
-internal sealed class MessageReceivedNotificationHandler(
+internal sealed class ReceivedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<MessageReceivedNotification> {

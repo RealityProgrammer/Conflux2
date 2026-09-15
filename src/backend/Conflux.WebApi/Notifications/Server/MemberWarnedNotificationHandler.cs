@@ -4,7 +4,7 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Server;
 
 [Facet(typeof(ServerMemberWarnedNotification), Include = [
     nameof(ServerMemberWarnedNotification.ServerId),
@@ -13,7 +13,7 @@ namespace Conflux.WebApi.Notifications;
 ])]
 public sealed partial record ServerMemberUnbannedEvent;
 
-internal sealed class ServerMemberWarnedNotificationHandler(
+internal sealed class MemberWarnedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor,
     UserConnectionTracker connectionTracker

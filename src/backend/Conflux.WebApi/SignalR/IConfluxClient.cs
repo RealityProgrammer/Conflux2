@@ -1,4 +1,7 @@
-using Conflux.WebApi.Notifications;
+using Conflux.WebApi.Notifications.Friend;
+using Conflux.WebApi.Notifications.Messaging;
+using Conflux.WebApi.Notifications.Server;
+using Conflux.WebApi.Notifications.Users;
 
 namespace Conflux.WebApi.SignalR;
 

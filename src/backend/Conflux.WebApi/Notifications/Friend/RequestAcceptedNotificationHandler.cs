@@ -6,12 +6,12 @@ using Facet.Mapping;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Friend;
 
 [Facet(typeof(FriendRequestAcceptedNotification), Include = [nameof(FriendRequestAcceptedNotification.AcceptorUserId)])]
 public sealed partial record FriendRequestAcceptedEvent;
 
-internal sealed class FriendRequestAcceptedNotificationHandler(
+internal sealed class RequestAcceptedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<FriendRequestAcceptedNotification> {
     public async ValueTask Handle(FriendRequestAcceptedNotification notification, CancellationToken cancellationToken) {

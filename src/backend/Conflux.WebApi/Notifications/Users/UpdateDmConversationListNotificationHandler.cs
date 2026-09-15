@@ -4,7 +4,7 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Users;
 
 [Facet(typeof(UpdateDmConversationListNotification), Include = [
     nameof(UpdateDmConversationListNotification.ChannelId)

@@ -31,6 +31,7 @@ using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.Notifications;
+using Conflux.WebApi.Notifications.Users;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
@@ -222,7 +223,8 @@ builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator(options => {
     options.Assemblies = [
-        typeof(CreateServerCommand), typeof(UpdateDmConversationListNotificationHandler),
+        typeof(CreateServerCommand),
+        typeof(UpdateDmConversationListNotificationHandler),
     ];
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),

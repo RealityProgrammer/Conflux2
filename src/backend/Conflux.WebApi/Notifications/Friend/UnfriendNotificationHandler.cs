@@ -4,7 +4,7 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Friend;
 
 [Facet(typeof(UnfriendNotification), Include = [nameof(UnfriendNotification.InvokerUserId)])]
 public sealed partial record UnfriendedEvent;

@@ -1,19 +1,20 @@
 using Conflux.Application.Features.Messages;
+using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
 using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Messaging;
 
-[Facet(typeof(MessageDeletedNotification), Include = [nameof(MessageDeletedNotification.MessageId)])]
-public sealed partial record MessageDeletedEvent;
+[Facet(typeof(MessageEditedNotification), Include = [nameof(MessageEditedNotification.Message)])]
+public sealed partial record MessageEditedEvent;
 
-internal sealed class MessageDeletedNotificationHandler(
+internal sealed class EditedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor
-) : INotificationHandler<MessageDeletedNotification> {
-    public async ValueTask Handle(MessageDeletedNotification notification, CancellationToken cancellationToken) {
+) : INotificationHandler<MessageEditedNotification> {
+    public async ValueTask Handle(MessageEditedNotification notification, CancellationToken cancellationToken) {
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
         
@@ -23,6 +24,6 @@ internal sealed class MessageDeletedNotificationHandler(
             ? hubContext.Clients.Group(groupName)
             : hubContext.Clients.GroupExcept(groupName, connectionId);
         
-        await target.MessageDeleted(new(notification), cancellationToken);
+        await target.MessageEdited(new(notification), cancellationToken);
     }
 }

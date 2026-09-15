@@ -4,7 +4,7 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Server;
 
 [Facet(typeof(ServerMemberKickedNotification), Include = [
     nameof(ServerMemberKickedNotification.ServerId),
@@ -13,7 +13,7 @@ namespace Conflux.WebApi.Notifications;
 ])]
 public sealed partial record ServerMemberKickedEvent;
 
-internal sealed class ServerMemberKickedNotificationHandler(
+internal sealed class MemberKickedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor,
     UserConnectionTracker connectionTracker

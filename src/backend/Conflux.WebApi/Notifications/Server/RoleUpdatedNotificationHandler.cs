@@ -4,7 +4,7 @@ using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Conflux.WebApi.Notifications;
+namespace Conflux.WebApi.Notifications.Server;
 
 [Facet(typeof(ServerRoleUpdatedNotification), Include = [
     nameof(ServerRoleUpdatedNotification.ServerId),
@@ -12,7 +12,7 @@ namespace Conflux.WebApi.Notifications;
 ])]
 public sealed partial record ServerRoleUpdatedEvent;
 
-internal sealed class ServerRoleUpdatedNotificationHandler(
+internal sealed class RoleUpdatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<ServerRoleUpdatedNotification> {
     public async ValueTask Handle(ServerRoleUpdatedNotification notification, CancellationToken cancellationToken) {
