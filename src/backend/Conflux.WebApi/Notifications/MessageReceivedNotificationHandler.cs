@@ -1,12 +1,14 @@
 using Conflux.Application.Features.Messages;
 using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record MessageReceivedEvent(TimelineMessageDto Message);
+[Facet(typeof(MessageReceivedNotification), Include = [nameof(MessageReceivedNotification.Message)])]
+public sealed partial record MessageReceivedEvent;
 
 internal sealed class MessageReceivedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -16,14 +18,10 @@ internal sealed class MessageReceivedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
-        IConfluxClient target;
+        IConfluxClient target = string.IsNullOrEmpty(connectionId) ? 
+            hubContext.Clients.Group($"channel:{notification.ChannelId}") : 
+            hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
         
-        if (string.IsNullOrEmpty(connectionId)) {
-            target = hubContext.Clients.Group($"channel:{notification.ChannelId}");
-        } else {
-            target = hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
-        }
-        
-        await target.MessageReceived(new(notification.Message), cancellationToken);
+        await target.MessageReceived(new(notification), cancellationToken);
     }
 }

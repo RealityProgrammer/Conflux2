@@ -1,11 +1,17 @@
 using Conflux.Application.Features.Servers;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record ServerMemberBannedEvent(Guid ServerId, Guid BannedMemberUserId, Guid BannedMemberId);
+[Facet(typeof(ServerMemberBannedNotification), Include = [
+    nameof(ServerMemberBannedNotification.ServerId),
+    nameof(ServerMemberBannedNotification.BannedMemberUserId),
+    nameof(ServerMemberBannedNotification.BannedMemberId),
+])]
+public sealed partial record ServerMemberBannedEvent;
 
 internal sealed class ServerMemberBannedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -25,9 +31,6 @@ internal sealed class ServerMemberBannedNotificationHandler(
         }
         
         await hubContext.Clients.GroupExcept($"server:{notification.ServerId}", excludedConnectionIds)
-            .ServerMemberBanned(
-                new(notification.ServerId, notification.BannedMemberUserId, notification.BannedMemberId), 
-                cancellationToken
-            );
+            .ServerMemberBanned(new(notification), cancellationToken);
     }
 }

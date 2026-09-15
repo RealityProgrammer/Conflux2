@@ -23,8 +23,7 @@ public sealed record MessageReceivedNotification(Guid ChannelId, TimelineMessage
 public sealed record UpdateDmConversationListNotification(
     Guid SenderUserId,
     Guid ChannelId, 
-    Guid ReceiverUserId,
-    int UnreadCount
+    Guid ReceiverUserId
 ) : INotification;
 
 public sealed class SendMessageHandler(
@@ -123,8 +122,7 @@ public sealed class SendMessageHandler(
             await mediator.Publish(new UpdateDmConversationListNotification(
                 senderUserId,
                 channelMetadata.ChannelId,
-                dmSummary.OtherUser.Id,
-                0
+                dmSummary.OtherUser.Id
             ), CancellationToken.None);
         }
 

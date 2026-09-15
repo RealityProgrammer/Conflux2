@@ -1,11 +1,16 @@
 using Conflux.Application.Features.Servers;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record ServerChannelDeletedEvent(Guid ServerId, Guid ChannelId);
+[Facet(typeof(ServerChannelDeletedNotification), Include = [
+    nameof(ServerChannelDeletedNotification.ServerId),
+    nameof(ServerChannelDeletedNotification.ChannelId),
+])]
+public sealed partial record ServerChannelDeletedEvent;
 
 internal sealed class ServerChannelDeletedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -22,6 +27,6 @@ internal sealed class ServerChannelDeletedNotificationHandler(
             ? hubContext.Clients.Group($"server:{notification.ServerId}")
             : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
 
-        await target.ServerChannelDeleted(new(notification.ServerId, notification.ChannelId), cancellationToken);
+        await target.ServerChannelDeleted(new(notification), cancellationToken);
     }
 }

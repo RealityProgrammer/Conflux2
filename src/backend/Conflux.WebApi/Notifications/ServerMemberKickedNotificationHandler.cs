@@ -1,11 +1,17 @@
 using Conflux.Application.Features.Servers;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record ServerMemberKickedEvent(Guid ServerId, Guid KickedMemberUserId, Guid KickedMemberId);
+[Facet(typeof(ServerMemberKickedNotification), Include = [
+    nameof(ServerMemberKickedNotification.ServerId),
+    nameof(ServerMemberKickedNotification.KickedMemberUserId),
+    nameof(ServerMemberKickedNotification.KickedMemberId),
+])]
+public sealed partial record ServerMemberKickedEvent;
 
 internal sealed class ServerMemberKickedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -24,11 +30,9 @@ internal sealed class ServerMemberKickedNotificationHandler(
             excludedConnectionIds.Add(connectionId);
         }
         
-        await hubContext.Clients.GroupExcept($"server:{notification.ServerId}", excludedConnectionIds)
-            .ServerMemberKicked(
-                new(notification.ServerId, notification.KickedMemberUserId, notification.KickedMemberId), 
-                cancellationToken
-            );
+        await hubContext.Clients
+            .GroupExcept($"server:{notification.ServerId}", excludedConnectionIds)
+            .ServerMemberKicked(new(notification), cancellationToken);
         
         // TODO: Remove user from group to prevent receiving things like messages, etc...
     }

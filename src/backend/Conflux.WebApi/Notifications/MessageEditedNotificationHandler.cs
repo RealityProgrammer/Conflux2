@@ -1,12 +1,14 @@
 using Conflux.Application.Features.Messages;
 using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record MessageEditedEvent(TimelineMessageDto Message);
+[Facet(typeof(MessageEditedNotification), Include = [nameof(MessageEditedNotification.Message)])]
+public sealed partial record MessageEditedEvent;
 
 internal sealed class MessageEditedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -20,6 +22,6 @@ internal sealed class MessageEditedNotificationHandler(
             ? hubContext.Clients.Group($"channel:{notification.ChannelId}")
             : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
         
-        await target.MessageEdited(new(notification.Message), cancellationToken);
+        await target.MessageEdited(new(notification), cancellationToken);
     }
 }

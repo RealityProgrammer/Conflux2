@@ -1,15 +1,17 @@
 using Conflux.Application.Features.Servers;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record MemberRolesUpdatedEvent(
-    Guid ServerId,
-    Guid MemberUserId,
-    Guid MemberId
-);
+[Facet(typeof(MemberRolesUpdatedNotification), Include = [
+    nameof(MemberRolesUpdatedNotification.ServerId),
+    nameof(MemberRolesUpdatedNotification.MemberUserId),
+    nameof(MemberRolesUpdatedNotification.MemberId),
+])]
+public sealed partial record MemberRolesUpdatedEvent;
 
 internal sealed class MemberRolesUpdatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -23,6 +25,6 @@ internal sealed class MemberRolesUpdatedNotificationHandler(
             ? hubContext.Clients.Group($"server:{notification.ServerId}")
             : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
         
-        await target.MemberRolesUpdated(new(notification.ServerId, notification.MemberUserId, notification.MemberId), cancellationToken);
+        await target.MemberRolesUpdated(new(notification), cancellationToken);
     }
 }

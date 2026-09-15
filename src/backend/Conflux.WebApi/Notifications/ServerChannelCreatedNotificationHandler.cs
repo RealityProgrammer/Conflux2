@@ -1,12 +1,17 @@
 using Conflux.Application.Features.Servers;
 using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
+using Facet;
 using Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications;
 
-public sealed record ServerChannelCreatedEvent(Guid ServerId, ServerChannelIdentityDto Channel);
+[Facet(typeof(ServerChannelCreatedNotification), Include = [
+    nameof(ServerChannelCreatedNotification.ServerId),
+    nameof(ServerChannelCreatedNotification.Channel),
+])]
+public sealed partial record ServerChannelCreatedEvent;
 
 internal sealed class ServerChannelCreatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
@@ -23,6 +28,6 @@ internal sealed class ServerChannelCreatedNotificationHandler(
             ? hubContext.Clients.Group($"server:{notification.ServerId}")
             : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
 
-        await target.ServerChannelCreated(new(notification.ServerId, notification.Channel), cancellationToken);
+        await target.ServerChannelCreated(new(notification), cancellationToken);
     }
 }
