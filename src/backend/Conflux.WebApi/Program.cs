@@ -215,8 +215,9 @@ builder.Services.AddMediator(options => {
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
 
-builder.Services.AddSingleton<JoinTracker>();
-builder.Services.AddSingleton<UserConnectionTracker>();
+builder.Services
+    .AddSingleton<JoinTracker>()
+    .AddSingleton<UserConnectionTracker>();
 
 builder.Services.AddSignalR()
     .AddJsonProtocol(options => {

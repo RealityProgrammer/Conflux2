@@ -31,7 +31,7 @@ internal sealed class ServerMemberKickedNotificationHandler(
         }
         
         await hubContext.Clients
-            .GroupExcept($"server:{notification.ServerId}", excludedConnectionIds)
+            .GroupExcept(NameProvider.GetServerGroupName(notification.ServerId), excludedConnectionIds)
             .ServerMemberKicked(new(notification), cancellationToken);
         
         // TODO: Remove user from group to prevent receiving things like messages, etc...

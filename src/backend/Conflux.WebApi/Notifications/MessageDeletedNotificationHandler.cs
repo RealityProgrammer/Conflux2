@@ -17,9 +17,11 @@ internal sealed class MessageDeletedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
         
+        string groupName = NameProvider.GetChannelGroupName(notification.ChannelId);
+        
         var target = string.IsNullOrEmpty(connectionId)
-            ? hubContext.Clients.Group($"channel:{notification.ChannelId}")
-            : hubContext.Clients.GroupExcept($"channel:{notification.ChannelId}", connectionId);
+            ? hubContext.Clients.Group(groupName)
+            : hubContext.Clients.GroupExcept(groupName, connectionId);
         
         await target.MessageDeleted(new(notification), cancellationToken);
     }

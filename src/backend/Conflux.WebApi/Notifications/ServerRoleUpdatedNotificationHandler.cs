@@ -16,8 +16,9 @@ internal sealed class ServerRoleUpdatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<ServerRoleUpdatedNotification> {
     public async ValueTask Handle(ServerRoleUpdatedNotification notification, CancellationToken cancellationToken) {
+        // not filter connection id just in case some server-side computed field pop up.
         await hubContext.Clients
-            .Group($"server:{notification.ServerId}")
+            .Group(NameProvider.GetServerGroupName(notification.ServerId))
             .ServerRoleUpdated(new(notification), cancellationToken);
     }
 }

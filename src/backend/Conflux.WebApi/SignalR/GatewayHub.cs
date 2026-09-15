@@ -12,28 +12,28 @@ public sealed class GatewayHub(
     public async Task JoinChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;
         
-        await Groups.AddToGroupAsync(connectionId, $"channel:{channelId}");
+        await Groups.AddToGroupAsync(connectionId, NameProvider.GetChannelGroupName(channelId));
         await joinTracker.IncrementChannelJoinCount(connectionId, channelId);
     }
 
     public async Task LeaveChannel(Guid channelId) {
         string connectionId = Context.ConnectionId;
         
-        await Groups.RemoveFromGroupAsync(connectionId, $"channel:{channelId}");
+        await Groups.RemoveFromGroupAsync(connectionId, NameProvider.GetChannelGroupName(channelId));
         await joinTracker.DecrementChannelJoinCount(connectionId, channelId);
     }
 
     public async Task JoinServer(Guid serverId) {
         string connectionId = Context.ConnectionId;
         
-        await Groups.AddToGroupAsync(connectionId, $"server:{serverId}");
+        await Groups.AddToGroupAsync(connectionId, NameProvider.GetServerGroupName(serverId));
         await joinTracker.IncrementServerJoinCount(connectionId, serverId);
     }
 
     public async Task LeaveServer(Guid serverId) {
         string connectionId = Context.ConnectionId;
         
-        await Groups.RemoveFromGroupAsync(connectionId, $"server:{serverId}");
+        await Groups.RemoveFromGroupAsync(connectionId, NameProvider.GetServerGroupName(serverId));
         await joinTracker.DecrementServerJoinCount(connectionId, serverId);
     }
 

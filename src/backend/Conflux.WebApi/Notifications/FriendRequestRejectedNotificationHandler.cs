@@ -13,9 +13,8 @@ internal sealed class FriendRequestRejectedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<FriendRequestRejectedNotification> {
     public async ValueTask Handle(FriendRequestRejectedNotification notification, CancellationToken cancellationToken) {
-        await hubContext.Clients.User(notification.SenderUserId.ToString()).FriendRequestRejected(
-            new(notification),
-            cancellationToken: cancellationToken
-        );
+        await hubContext.Clients
+            .User(notification.SenderUserId.ToString())
+            .FriendRequestRejected(new(notification), cancellationToken);
     }
 }

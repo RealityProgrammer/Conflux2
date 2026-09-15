@@ -30,7 +30,8 @@ internal sealed class ServerMemberBannedNotificationHandler(
             excludedConnectionIds.Add(connectionId);
         }
         
-        await hubContext.Clients.GroupExcept($"server:{notification.ServerId}", excludedConnectionIds)
+        await hubContext.Clients
+            .GroupExcept(NameProvider.GetServerGroupName(notification.ServerId), excludedConnectionIds)
             .ServerMemberBanned(new(notification), cancellationToken);
     }
 }

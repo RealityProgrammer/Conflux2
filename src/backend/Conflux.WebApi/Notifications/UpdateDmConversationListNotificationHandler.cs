@@ -13,13 +13,14 @@ public sealed partial record UpdateDmConversationListEvent;
 
 public sealed class UpdateDmConversationListNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
-) : INotificationHandler<UpdateDmConversationListNotification>
-{
+) : INotificationHandler<UpdateDmConversationListNotification> {
     public async ValueTask Handle(UpdateDmConversationListNotification notification, CancellationToken cancellationToken) {
+        UpdateDmConversationListEvent @event = new(notification);
+        
         await hubContext.Clients.User(notification.SenderUserId.ToString())
-            .UpdateDmConversationList(new(notification), cancellationToken);
+            .UpdateDmConversationList(@event, cancellationToken);
 
         await hubContext.Clients.User(notification.ReceiverUserId.ToString())
-            .UpdateDmConversationList(new(notification), cancellationToken);
+            .UpdateDmConversationList(@event, cancellationToken);
     }
 }

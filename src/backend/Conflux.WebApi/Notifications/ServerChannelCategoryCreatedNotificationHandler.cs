@@ -25,9 +25,11 @@ internal sealed class ServerChannelCategoryCreatedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
+        string groupName = NameProvider.GetServerGroupName(notification.ServerId);
+
         var target = string.IsNullOrEmpty(connectionId)
-            ? hubContext.Clients.Group($"server:{notification.ServerId}")
-            : hubContext.Clients.GroupExcept($"server:{notification.ServerId}", connectionId);
+            ? hubContext.Clients.Group(groupName)
+            : hubContext.Clients.GroupExcept(groupName, connectionId);
 
         await target.ServerChannelCategoryCreated(new(notification), cancellationToken);
     }
