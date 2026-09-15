@@ -13,12 +13,12 @@ public class ServerMemberInteractAuthorizationPipelineBehaviour<TMessage, TRespo
         MessageHandlerDelegate<TMessage, TResponse> next, 
         CancellationToken cancellationToken
     ) {
-        var executorPermissionsResult = await permissionsProvider.GetUserPermissions(message.ServerId, message.ExecutorUserId, cancellationToken);
+        var executorPermissionsResult = await permissionsProvider.GetUserAuthorizeInfo(message.ServerId, message.ExecutorUserId, cancellationToken);
         if (!executorPermissionsResult.IsSuccess) {
             return TResponse.Failure(executorPermissionsResult.Error);
         }
 
-        var interactingMemberPermissionsResult = await permissionsProvider.GetMemberPermissions(message.ServerId, message.InteractingMemberId, cancellationToken);
+        var interactingMemberPermissionsResult = await permissionsProvider.GetMemberAuthorizeInfo(message.ServerId, message.InteractingMemberId, cancellationToken);
         if (!interactingMemberPermissionsResult.IsSuccess) {
             return TResponse.Failure(interactingMemberPermissionsResult.Error);
         }

@@ -40,7 +40,7 @@ internal sealed class RequireServerPermissionsMiddleware(FieldDelegate next, IEn
 
         var permissionsProvider = context.Service<IServerPermissionsProvider>();
 
-        var result = await permissionsProvider.GetUserPermissions(serverId, userId, context.RequestAborted);
+        var result = await permissionsProvider.GetUserAuthorizeInfo(serverId, userId, context.RequestAborted);
         if (!result.IsSuccess) {
             throw new GraphQLException(result.Error.ToHotChocolateError());
         }

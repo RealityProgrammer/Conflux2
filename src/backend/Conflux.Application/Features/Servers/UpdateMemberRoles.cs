@@ -36,7 +36,7 @@ public sealed class UpdateMemberRolesHandler(
 ) : ICommandHandler<UpdateMemberRolesCommand, Result> {
     public async ValueTask<Result> Handle(UpdateMemberRolesCommand command, CancellationToken cancellationToken) {
         // get the executor user authorize info to compare role authorize level later.
-        var executorAuthorizeInfoResult = await serverPermissionsProvider.GetUserPermissions(
+        var executorAuthorizeInfoResult = await serverPermissionsProvider.GetUserAuthorizeInfo(
             command.ServerId, 
             command.ExecutorUserId,
             cancellationToken

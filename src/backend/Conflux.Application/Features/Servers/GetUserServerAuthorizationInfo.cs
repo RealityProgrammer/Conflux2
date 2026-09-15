@@ -16,6 +16,6 @@ public sealed class GetUserServerAuthorizationInfoHandler(
         GetUserServerAuthorizationInfoQuery query, 
         CancellationToken cancellationToken
     ) {
-        return await provider.GetUserPermissions(query.CommunityServerId, query.UserId, cancellationToken);
+        return await provider.GetUserAuthorizeInfo(query.CommunityServerId, query.UserId, cancellationToken);
     }
 }

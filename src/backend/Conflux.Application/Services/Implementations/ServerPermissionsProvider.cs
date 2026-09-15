@@ -19,7 +19,7 @@ internal sealed class ServerPermissionsProvider(
     private static readonly FrozenDictionary<ServerPermission, bool> OwnerEffectivePermissions =
         AllPermissions.ToFrozenDictionary(p => p, _ => true);
     
-    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetUserPermissions(
+    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId, 
         CancellationToken cancellationToken = default
@@ -65,7 +65,7 @@ internal sealed class ServerPermissionsProvider(
         return Result<ServerMemberAuthorizationInfoDto>.Success(dto);
     }
 
-    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetMemberPermissions(
+    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetMemberAuthorizeInfo(
         Guid serverId,
         Guid memberId, 
         CancellationToken cancellationToken = default
@@ -83,10 +83,10 @@ internal sealed class ServerPermissionsProvider(
             return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, Id = {memberId})");
         }
 
-        return await GetUserPermissions(ids.CommunityServerId, ids.UserId, cancellationToken);
+        return await GetUserAuthorizeInfo(ids.CommunityServerId, ids.UserId, cancellationToken);
     }
 
-    public async Task<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> GetUsersPermissions(
+    public async Task<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> GetUsersAuthorizeInfo(
         Guid serverId,
         IReadOnlyCollection<Guid> userIds,
         CancellationToken cancellationToken = default

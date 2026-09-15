@@ -53,7 +53,7 @@ public sealed class GetMembersServerAuthorizationInfoHandler(
             }
 
             Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> missRead = 
-                await permissionsProvider.GetUsersPermissions(serverId, missingUserIds, cancellationToken);
+                await permissionsProvider.GetUsersAuthorizeInfo(serverId, missingUserIds, cancellationToken);
             
             foreach ((Guid userId, Result<ServerMemberAuthorizationInfoDto> authInfo) in missRead) {
                 var memberId = userIdToMemberId[userId];

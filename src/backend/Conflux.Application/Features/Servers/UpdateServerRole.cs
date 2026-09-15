@@ -43,7 +43,7 @@ public sealed class UpdateServerRoleHandler(
         }
         
         // restrict member from updating role with higher authorize level
-        var result = await permissionsProvider.GetUserPermissions(command.ServerId, command.ExecutorUserId, cancellationToken);
+        var result = await permissionsProvider.GetUserAuthorizeInfo(command.ServerId, command.ExecutorUserId, cancellationToken);
 
         if (!result.IsSuccess) {
             return result.Error;

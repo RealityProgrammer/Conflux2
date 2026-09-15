@@ -14,7 +14,7 @@ public sealed class ServerAuthorizationPipelineBehaviour<TMessage, TResponse>(
         MessageHandlerDelegate<TMessage, TResponse> next, 
         CancellationToken cancellationToken
     ) {
-        var executorPermissionsResult = await permissionsProvider.GetUserPermissions(message.ServerId, message.ExecutorUserId, cancellationToken);
+        var executorPermissionsResult = await permissionsProvider.GetUserAuthorizeInfo(message.ServerId, message.ExecutorUserId, cancellationToken);
 
         if (!executorPermissionsResult.IsSuccess) {
             return TResponse.Failure(executorPermissionsResult.Error);
