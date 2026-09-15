@@ -51,11 +51,11 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       }
       
       return (
-        <span className="block flex flex-row justify-center items-center gap-2">
+        <span className="flex flex-row justify-center items-center gap-2">
           <UserAvatar
             hasAvatar={executor.hasAvatar}
             userId={executor.id}
-            className="size-6 overflow-hidden rounded-full"
+            className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 
           {executor.displayName}
@@ -83,11 +83,11 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       }
 
       return (
-        <span className="block flex flex-row justify-center items-center gap-2">
+        <span className="flex flex-row justify-center items-center gap-2">
           <UserAvatar
             hasAvatar={affected.hasAvatar}
             userId={affected.id}
-            className="size-6 overflow-hidden rounded-full"
+            className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 
           {affected.displayName ?? "??"}
@@ -106,7 +106,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
         return "\u{2212}";
       }
 
-      return <span className="truncate block w-full">{value}</span>;
+      return <span className="block w-full">{value}</span>;
     },
     size: 160,
   },
@@ -150,7 +150,6 @@ function LogTable() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-    isLoading,
   } = useInfiniteGetServerModerationLogsQuery({ serverId, after: null }, {
     initialPageParam: { after: null },
     getNextPageParam: (lastPage: GetServerModerationLogsQuery): { after: string } | undefined => {
@@ -182,7 +181,7 @@ function LogTable() {
     count: allElements.length,
     getScrollElement: () => containerRef.current,
     estimateSize: () => 44,
-    overscan: 3,
+    overscan: 10,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -246,7 +245,7 @@ function LogTable() {
             <tr><td className="p-0 m-0 border-none" style={{ height: `${paddingTop}px` }} colSpan={logTableColumns.length} /></tr>
           )}
 
-          {virtualItems.map((virtualRow, index) => {
+          {virtualItems.map((virtualRow) => {
             const row = rows[virtualRow.index];
 
             const isEven = virtualRow.index % 2 === 0;

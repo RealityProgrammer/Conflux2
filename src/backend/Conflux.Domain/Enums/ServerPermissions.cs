@@ -11,6 +11,7 @@ public enum ServerPermission {
     UpdateMemberRoles,
     ManageMembers,
     KickMembers,
+    WarnMembers,
     BanMembers,
     UnbanMembers,
     

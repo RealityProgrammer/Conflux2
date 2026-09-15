@@ -5,7 +5,7 @@ using Conflux.Domain;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record GetMembersServerAuthorizationInfoQuery(
-    IReadOnlyCollection<MemberAuthorizeKey> Keys
+    IReadOnlyCollection<GetServerMemberAuthorizeKey> Keys
 ) : IQuery<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>>;
 
 public sealed class GetMembersServerAuthorizationInfoHandler(

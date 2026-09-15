@@ -7,23 +7,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record BanServerMemberCommand(
+public sealed record WarnServerMemberCommand(
     Guid ExecutorUserId,
     Guid ServerId,
     Guid InteractingMemberId,
-    string? Reason,
-    TimeSpan? Duration
+    string? Reason
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
         ServerPermission.ManageMembers,
-        ServerPermission.BanMembers,
+        ServerPermission.WarnMembers,
     ];
 }
 
-public sealed class BanServerMemberValidationPipeline : IPipelineBehavior<BanServerMemberCommand, Result> {
+public sealed class WarnServerMemberValidationPipeline : IPipelineBehavior<WarnServerMemberCommand, Result> {
     public async ValueTask<Result> Handle(
-        BanServerMemberCommand message, 
-        MessageHandlerDelegate<BanServerMemberCommand, Result> next, 
+        WarnServerMemberCommand message, 
+        MessageHandlerDelegate<WarnServerMemberCommand, Result> next, 
         CancellationToken cancellationToken
     ) {
         if (message.Reason is { Length: > 256 }) {
@@ -33,35 +32,25 @@ public sealed class BanServerMemberValidationPipeline : IPipelineBehavior<BanSer
                 ],
             });
         }
-
-        if (message.Duration is { } duration && duration <= TimeSpan.Zero) {
-            return Errors.ValidationErrorsOccurred(new() {
-                ["duration"] = [
-                    "Duration can only be greater than zero.",
-                ],
-            });
-        }
         
         return await next(message, cancellationToken);
     }
 }
 
-public sealed record ServerMemberBannedNotification(
+public sealed record ServerMemberWarnedNotification(
     Guid ServerId, 
-    Guid BannedMemberUserId, 
-    Guid BannedMemberId
+    Guid WarnedMemberUserId, 
+    Guid WarnedMemberId
 ) : INotification;
 
-public sealed class BanServerMemberHandler(
+public sealed class WarnServerMemberHandler(
     IServerMemberReadRepository memberReadRepository,
-    IServerPermissionsCacheService permissionsCacheService,
     IServerModerationLogWriteRepository moderationLogWriteRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
-    ILogger<BanServerMemberCommand> logger,
-    TimeProvider timeProvider
-) : ICommandHandler<BanServerMemberCommand, Result> {
-    public async ValueTask<Result> Handle(BanServerMemberCommand command, CancellationToken cancellationToken) {
+    ILogger<WarnServerMemberCommand> logger
+) : ICommandHandler<WarnServerMemberCommand, Result> {
+    public async ValueTask<Result> Handle(WarnServerMemberCommand command, CancellationToken cancellationToken) {
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == command.ServerId && m.UserId == command.ExecutorUserId)
@@ -81,53 +70,29 @@ public sealed class BanServerMemberHandler(
         if (affectedMember == null) {
             return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, Id = {command.InteractingMemberId})");
         }
-
+        
         if (affectedMember.Roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner)) {
-            return Errors.Forbidden("Owner cannot be banned.");
+            return Errors.Forbidden("Owner cannot be warned.");
         }
-
+        
         try {
-            DateTimeOffset utcNow = timeProvider.GetUtcNow();
-            
-            // if duration is null, it is infinite ban, thus override the BanExpireAt with maximum time.
-            if (command.Duration == null) {
-                affectedMember.BanExpireAt = DateTimeOffset.MaxValue;
-            } else {
-                DateTimeOffset baseTime = affectedMember.BanExpireAt == null || utcNow >= affectedMember.BanExpireAt
-                    ? utcNow 
-                    : affectedMember.BanExpireAt.Value;
-                
-                TimeSpan maxAllowedDuration = DateTimeOffset.MaxValue - baseTime;
-                
-                if (command.Duration.Value >= maxAllowedDuration) {
-                    // clamping to MaxValue to prevent out of range exception
-                    affectedMember.BanExpireAt = DateTimeOffset.MaxValue;
-                } else {
-                    affectedMember.BanExpireAt = baseTime + command.Duration.Value;
-                }
-            }
-            
             ServerModerationLog log = new() {
                 CommunityServerId = command.ServerId,
-                Action = ServerModerationAction.Ban,
+                Action = ServerModerationAction.Warn,
                 Reason = command.Reason,
-                BanDuration = command.Duration,
-                ExecutorMemberId = executorMemberId.Value,
+                ExecutorMemberId = executorMemberId,
                 AffectedMember = affectedMember,
             };
             
             moderationLogWriteRepository.Add(log);
             await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // delete the permission cache
-            await permissionsCacheService.DeleteUserAuthorizeInfo(affectedMember.CommunityServerId, affectedMember.UserId, CancellationToken.None);
-            await mediator.Publish(new ServerMemberBannedNotification(command.ServerId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
+            await mediator.Publish(new ServerMemberWarnedNotification(command.ServerId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
             
             return Result.Success();
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while banning member.");
+            logger.LogError(e, "Error occurred while warning member.");
             return Errors.UnexpectedError();
         }
     }

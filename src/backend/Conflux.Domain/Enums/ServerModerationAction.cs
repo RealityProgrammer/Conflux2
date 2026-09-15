@@ -4,4 +4,5 @@ public enum ServerModerationAction {
     Kick,
     Ban,
     Unban,
+    Warn,
 }

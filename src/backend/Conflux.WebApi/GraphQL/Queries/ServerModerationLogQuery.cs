@@ -11,7 +11,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 [QueryType, Authorize]
 internal static partial class ServerModerationLogQuery {
     [RequireServerPermissions(ServerPermission.ReadModerationLogs)]
-    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
     public static async Task<PageConnection<ServerModerationLog>> GetServerModerationLogs(
         Guid serverId,
         PagingArguments pagingArgs,

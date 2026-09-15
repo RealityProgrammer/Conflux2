@@ -186,7 +186,7 @@ builder.Services
     .AddSorting()
     .AddAuthorization()
     .AddFiltering<CustomFilterConvention>()
-    .DisableIntrospection(builder.Environment.IsProduction())
+    .DisableIntrospection(false)
     .AddMutationConventions(applyToAllMutations: true)
     .AddMaxExecutionDepthRule(8)
     .AddMaxAllowedFieldCycleDepthRule(defaultCycleLimit: 3)
@@ -228,6 +228,7 @@ builder.Services.AddMediator(options => {
         typeof(ServerAuthorizationPipelineBehaviour<,>),
         typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
         typeof(KickServerMemberValidationPipeline),
+        typeof(WarnServerMemberValidationPipeline),
         typeof(BanServerMemberValidationPipeline),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;

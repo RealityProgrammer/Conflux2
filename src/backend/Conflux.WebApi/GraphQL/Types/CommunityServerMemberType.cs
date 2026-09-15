@@ -4,6 +4,7 @@ using Conflux.Domain.Enums;
 using Conflux.WebApi.GraphQL.Dto;
 using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Helpers;
+using System.Runtime.Intrinsics.Arm;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -30,7 +31,7 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
                 var member = context.Parent<CommunityServerMember>();
                 var dataLoader = context.DataLoader<IMemberAuthorizationInfoDataLoader>();
                 
-                MemberAuthorizeKey key = new(member.Id, member.CommunityServerId, member.UserId);
+                GetServerMemberAuthorizeKey key = new(member.Id, member.CommunityServerId, member.UserId);
                 
                 Domain.Result<MemberAuthorizeInfoDto> result = await dataLoader.LoadAsync(key, cancellationToken);
                 
@@ -39,5 +40,18 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
 
         descriptor.Field(m => m.Status)
             .Use((_, next) => new RequireServerPermissionsMiddleware(next, [ServerPermission.ManageMembers]));
+
+        descriptor.Field("numWarn")
+            .Type<NonNullType<IntType>>()
+            .ParentRequires<CommunityServerMember>(m => new {
+                m.Id,
+                m.CommunityServerId,
+            })
+            .Resolve(async (context, cancellationToken) => {
+                var member = context.Parent<CommunityServerMember>();
+                var dataLoader = context.DataLoader<IServerMembersWarnCountsDataLoader>();
+
+                return await dataLoader.LoadAsync(member.Id, cancellationToken);
+            });
     }
 }

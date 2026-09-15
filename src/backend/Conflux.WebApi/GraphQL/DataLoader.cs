@@ -12,10 +12,10 @@ namespace Conflux.WebApi.GraphQL;
 
 internal static class DataLoaders {
     [DataLoader]
-    public static async Task<Dictionary<MemberAuthorizeKey, Domain.Result<MemberAuthorizeInfoDto>>> GetMemberAuthorizationInfo(
-        IReadOnlyList<MemberAuthorizeKey> keys,
-        CancellationToken cancellationToken,
-        [Service] IMediator mediator
+    public static async Task<Dictionary<GetServerMemberAuthorizeKey, Domain.Result<MemberAuthorizeInfoDto>>> GetMemberAuthorizationInfo(
+        IReadOnlyList<GetServerMemberAuthorizeKey> keys,
+        [Service] IMediator mediator,
+        CancellationToken cancellationToken
     ) {
         var authResults = await mediator.Send(
             new GetMembersServerAuthorizationInfoQuery(keys), 
@@ -45,8 +45,8 @@ internal static class DataLoaders {
     [DataLoader]
     public static async Task<IReadOnlyDictionary<Guid, int>> GetCommunityServersMemberCount(
         IReadOnlyList<Guid> serverIds,
-        CancellationToken cancellationToken,
-        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken
     ) {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
@@ -70,8 +70,8 @@ internal static class DataLoaders {
     [DataLoader]
     public static async Task<IReadOnlyDictionary<Guid, int>> GetRolesMemberCount(
         IReadOnlyList<Guid> roleIds,
-        CancellationToken cancellationToken,
-        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken
     ) {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
@@ -95,9 +95,9 @@ internal static class DataLoaders {
     [DataLoader]
     public static async Task<IReadOnlyDictionary<Guid, int>> GetMutualFriendsCount(
         IReadOnlyList<Guid> userIds,
-        CancellationToken cancellationToken,
-        IDbContextFactory<ApplicationDbContext> dbContextFactory,
-        IHttpContextAccessor httpContextAccessor
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        [Service] IHttpContextAccessor httpContextAccessor,
+        CancellationToken cancellationToken
     ) {
         var idClaim = httpContextAccessor.HttpContext!.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
@@ -105,11 +105,11 @@ internal static class DataLoaders {
             currentUserId = Guid.Empty;
         }
         
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        
         if (currentUserId == Guid.Empty) {
             return userIds.ToDictionary(id => id, _ => 0);
         }
+        
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         
         // get user friend ids
         var friendIds = await dbContext.FriendRequests
@@ -146,6 +146,31 @@ internal static class DataLoaders {
         return friendIds.ToDictionary(
             id => id,
             id => countsByTargetUser.GetValueOrDefault(id, 0)
+        );
+    }
+
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<Guid, int>> GetServerMembersWarnCounts(
+        IReadOnlyList<Guid> memberIds,
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken
+    ) {
+        if (memberIds.Count == 0) {
+            return FrozenDictionary<Guid, int>.Empty;
+        }
+        
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        Dictionary<Guid, int> dict = await dbContext.ServerModerationLogs
+            .Where(l => l.Action == ServerModerationAction.Warn)
+            .Where(l => l.AffectedMemberId != null && memberIds.Contains(l.AffectedMemberId.Value))
+            .GroupBy(l => l.AffectedMemberId!.Value)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
+
+        return memberIds.ToDictionary(
+            id => id,
+            id => dict.GetValueOrDefault(id, 0)
         );
     }
 }

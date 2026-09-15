@@ -63,42 +63,41 @@ public sealed class KickServerMemberHandler(
             return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, UserId = {command.ExecutorUserId})");
         }
         
-        CommunityServerMember? member = await memberReadRepository.AsQueryable()
+        CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
             .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.InteractingMemberId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (member == null) {
+        if (affectedMember == null) {
             return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, Id = {command.InteractingMemberId})");
         }
 
-        if (member.Status != MembershipStatus.Active) {
+        if (affectedMember.Status != MembershipStatus.Active) {
             return Errors.ServerMemberNotActive();
         }
 
-        if (member.Roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner)) {
+        if (affectedMember.Roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner)) {
             return Errors.Forbidden("Owner cannot be kicked.");
         }
 
         try {
-            member.Status = MembershipStatus.Kicked;
-            member.Roles.Clear();   // clear the roles too
+            affectedMember.Status = MembershipStatus.Kicked;
+            affectedMember.Roles.Clear();   // clear the roles too
             
             ServerModerationLog log = new() {
                 CommunityServerId = command.ServerId,
                 Action = ServerModerationAction.Kick,
                 Reason = command.Reason,
                 ExecutorMemberId = executorMemberId.Value,
-                AffectedMember = member,
+                AffectedMember = affectedMember,
             };
             
             moderationLogWriteRepository.Add(log);
-
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             // delete the permission cache
-            await permissionsCacheService.DeleteUserAuthorizeInfo(member.CommunityServerId, member.UserId, CancellationToken.None);
-            await mediator.Publish(new ServerMemberKickedNotification(command.ServerId, member.UserId, member.Id), CancellationToken.None);
+            await permissionsCacheService.DeleteUserAuthorizeInfo(affectedMember.CommunityServerId, affectedMember.UserId, CancellationToken.None);
+            await mediator.Publish(new ServerMemberKickedNotification(command.ServerId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
             
             return Result.Success();
         } catch (OperationCanceledException) {
