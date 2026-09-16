@@ -40,7 +40,7 @@ public sealed class GatewayHub(
         
         await joinTracker.IncrementServerJoinCount(connectionId, serverId);
         
-        // join groups specify by server permissions
+        // join groups specify by read/write boundary of server permissions.
         string? userId = Context.UserIdentifier;
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userIdGuid)) {
             return;
@@ -54,17 +54,8 @@ public sealed class GatewayHub(
         }
 
         var effectivePermissions = getMemberAuthorizeInfo.Value!.EffectivePermissions;
-        foreach ((var permission, bool isGranted) in effectivePermissions) {
-            if (!isGranted) {
-                continue;
-            }
 
-            string permissionGroup = NameProvider.GetServerPermissionGroupName(serverId, permission);
-            await Groups.AddToGroupAsync(connectionId, permissionGroup);
-            joinedGroups.Add(permissionGroup);
-        }
         
-        // join groups specify by read/write boundary of server permissions.
         
         // allow role viewing when there are either CreateRole or UpdateRole
         if (effectivePermissions.ContainsKey(ServerPermission.CreateRole) || effectivePermissions.ContainsKey(ServerPermission.UpdateRole)) {
