@@ -30,6 +30,8 @@ public sealed class GatewayHub(
 
     // invoked by the frontend only
     public async Task JoinServer(Guid serverId) {
+        await InternalLeaveServer(serverId);
+        
         string connectionId = Context.ConnectionId;
         List<string> joinedGroups = [];
 
@@ -79,6 +81,10 @@ public sealed class GatewayHub(
 
     // invoked by the frontend only
     public async Task LeaveServer(Guid serverId) {
+        await InternalLeaveServer(serverId);
+    }
+    
+    private async Task InternalLeaveServer(Guid serverId) {
         string connectionId = Context.ConnectionId;
         string itemKey = $"server_groups:{serverId}";
 

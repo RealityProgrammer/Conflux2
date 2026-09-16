@@ -8,7 +8,7 @@ import {
 } from "@microsoft/signalr";
 import {apiClient, graphqlClient} from "../api/client.ts";
 
-interface SignalRContextType {
+export type SignalRContextType = {
   connection: HubConnection | null;
   isConnected: boolean;
 }

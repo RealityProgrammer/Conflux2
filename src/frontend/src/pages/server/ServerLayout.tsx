@@ -16,6 +16,7 @@ import {toast} from "react-toastify";
 import useServerMemberAuthorizeInfo, {
   type ServerMemberAuthorizeInfo
 } from "../../hooks/useServerMemberAuthorizeInfo.tsx";
+import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
   // TODO: Fix: When user is kicked, they can still enter server via the URL.
@@ -61,12 +62,20 @@ export default function ServerLayout() {
     authorizeInfo.refreshPermissions();
   });
 
-  useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
+  const { connection: signalrConnection, isConnected: isSignalRConnection } = useSignalRConnection();
+
+  useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
     if (!authorizeInfo) return;
     if (event.memberUserId !== userAuthorization?.id) return;
 
-    authorizeInfo.refreshPermissions();
+    // invokes leave server and rejoin so that backend can correctly track connection joined groups
+    if (isSignalRConnection && signalrConnection) {
+      await signalrConnection.invoke("LeaveServer", serverId);
+      await signalrConnection.invoke("JoinServer", serverId);
+    }
+
+    await authorizeInfo.refreshPermissions();
   });
 
   useSignalREvent("KickedFromServer", (kickedServerId: string) => {
