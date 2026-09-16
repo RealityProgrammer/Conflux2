@@ -461,7 +461,9 @@ function MemberInformationContent() {
         </div>
       </form>
 
-      <MemberActions/>
+      {inspectingMemberInfo.id !== memberAuthorizeInfo.id && (
+        <MemberActions/>
+      )}
     </>
   );
 }
