@@ -48,7 +48,7 @@ internal sealed class RequireServerPermissionsMiddleware(FieldDelegate next, IEn
         var userEffectivePermissions = result.Value!.EffectivePermissions;
         
         foreach (var permission in requiredPermissions) {
-            if (!userEffectivePermissions.TryGetValue(permission, out bool isGranted) || !isGranted) {
+            if (!userEffectivePermissions.Contains(permission)) {
                 throw new GraphQLException(Errors.Forbidden("Insufficient permissions.").ToHotChocolateError());
             }
         }

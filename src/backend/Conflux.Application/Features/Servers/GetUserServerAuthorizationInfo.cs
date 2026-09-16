@@ -7,12 +7,12 @@ namespace Conflux.Application.Features.Servers;
 public sealed record GetUserServerAuthorizationInfoQuery(
     Guid CommunityServerId,
     Guid UserId
-) : IQuery<Result<ServerMemberAuthorizationInfoDto>>;
+) : IQuery<Result<ServerMemberAuthorizeInfoDto>>;
 
 public sealed class GetUserServerAuthorizationInfoHandler(
     IServerPermissionsProvider provider
-) : IQueryHandler<GetUserServerAuthorizationInfoQuery, Result<ServerMemberAuthorizationInfoDto>> {
-    public async ValueTask<Result<ServerMemberAuthorizationInfoDto>> Handle(
+) : IQueryHandler<GetUserServerAuthorizationInfoQuery, Result<ServerMemberAuthorizeInfoDto>> {
+    public async ValueTask<Result<ServerMemberAuthorizeInfoDto>> Handle(
         GetUserServerAuthorizationInfoQuery query, 
         CancellationToken cancellationToken
     ) {

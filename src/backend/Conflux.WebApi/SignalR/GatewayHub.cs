@@ -55,10 +55,14 @@ public sealed class GatewayHub(
 
         var effectivePermissions = getMemberAuthorizeInfo.Value!.EffectivePermissions;
 
-        
+        if (effectivePermissions.Contains(ServerPermission.ReadModerationLogs)) {
+            string group = NameProvider.GetServerPermissionGroupName(serverId, ServerPermission.ReadModerationLogs);
+            await Groups.AddToGroupAsync(connectionId, group);
+            joinedGroups.Add(group);
+        }
         
         // allow role viewing when there are either CreateRole or UpdateRole
-        if (effectivePermissions.ContainsKey(ServerPermission.CreateRole) || effectivePermissions.ContainsKey(ServerPermission.UpdateRole)) {
+        if (effectivePermissions.Contains(ServerPermission.CreateRole) || effectivePermissions.Contains(ServerPermission.UpdateRole)) {
             string group = NameProvider.GetServerViewRolePermissionGroupName(serverId);
             await Groups.AddToGroupAsync(connectionId, group);
             joinedGroups.Add(group);

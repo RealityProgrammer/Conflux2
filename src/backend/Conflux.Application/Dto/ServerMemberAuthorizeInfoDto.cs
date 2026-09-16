@@ -3,10 +3,10 @@ using MemoryPack;
 
 namespace Conflux.Application.Dto;
 
-public sealed record ServerMemberAuthorizationInfoDto(
+public sealed record ServerMemberAuthorizeInfoDto(
     Guid MemberId,
     int AuthorizeLevel,
-    IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions,
+    IReadOnlySet<ServerPermission> EffectivePermissions,
     MemberRoleDto[] Roles,
     bool IsBanned
 );

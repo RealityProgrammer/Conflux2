@@ -6,18 +6,18 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record GetMembersServerAuthorizationInfoQuery(
     IReadOnlyCollection<GetServerMemberAuthorizeKey> Keys
-) : IQuery<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>>;
+) : IQuery<Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>>>;
 
 public sealed class GetMembersServerAuthorizationInfoHandler(
     IServerPermissionsProvider permissionsProvider,
     IServerPermissionsCacheService cacheService
-) : IQueryHandler<GetMembersServerAuthorizationInfoQuery, Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> {
-    public async ValueTask<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> Handle(
+) : IQueryHandler<GetMembersServerAuthorizationInfoQuery, Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>>> {
+    public async ValueTask<Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>>> Handle(
         GetMembersServerAuthorizationInfoQuery query, 
         CancellationToken cancellationToken
     ) {
         // keyed by member id
-        Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> finalResults = new(query.Keys.Count);
+        Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>> finalResults = new(query.Keys.Count);
         
         // handle the worst case that the composite keys has multiple server ids.
         var groupedRequests = query.Keys.GroupBy(k => k.ServerId);
@@ -35,8 +35,8 @@ public sealed class GetMembersServerAuthorizationInfoHandler(
             var cacheHits = 
                 await cacheService.GetUsersAuthorizeInfo(serverId, userIds, cancellationToken);
 
-            foreach ((_, ServerMemberAuthorizationInfoDto authInfo) in cacheHits) {
-                finalResults.Add(authInfo.MemberId, Result<ServerMemberAuthorizationInfoDto>.Success(authInfo));
+            foreach ((_, ServerMemberAuthorizeInfoDto authInfo) in cacheHits) {
+                finalResults.Add(authInfo.MemberId, Result<ServerMemberAuthorizeInfoDto>.Success(authInfo));
             }
             
             if (cacheHits.Count == userIds.Count) {
@@ -52,10 +52,10 @@ public sealed class GetMembersServerAuthorizationInfoHandler(
                 }
             }
 
-            Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> missRead = 
+            Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>> missRead = 
                 await permissionsProvider.GetUsersAuthorizeInfo(serverId, missingUserIds, cancellationToken);
             
-            foreach ((Guid userId, Result<ServerMemberAuthorizationInfoDto> authInfo) in missRead) {
+            foreach ((Guid userId, Result<ServerMemberAuthorizeInfoDto> authInfo) in missRead) {
                 var memberId = userIdToMemberId[userId];
                 finalResults.Add(memberId, authInfo);
             }

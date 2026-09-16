@@ -31,7 +31,7 @@ public sealed class ServerAuthorizationPipelineBehaviour<TMessage, TResponse>(
 
             default:
                 foreach (var permission in requiredPermissions) {
-                    if (!executorEffectivePermissions.TryGetValue(permission, out bool isGranted) || !isGranted) {
+                    if (!executorEffectivePermissions.Contains(permission)) {
                         return TResponse.Failure(Errors.Forbidden("Insufficient permissions."));
                     }
                 }

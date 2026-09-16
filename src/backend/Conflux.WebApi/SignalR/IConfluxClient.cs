@@ -35,6 +35,7 @@ public interface IConfluxClient {
     Task UnbannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
     
     Task ServerMemberKicked(ServerMemberKickedEvent data, CancellationToken cancellationToken = default);
+    Task ServerMemberWarned(ServerMemberWarnedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberBanned(ServerMemberBannedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
 }

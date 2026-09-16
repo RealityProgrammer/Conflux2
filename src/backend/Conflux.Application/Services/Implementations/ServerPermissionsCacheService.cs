@@ -33,7 +33,7 @@ internal sealed partial class ServerPermissionsCacheService(
     
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
-    public async Task<ServerMemberAuthorizationInfoDto?> GetUserAuthorizeInfo(
+    public async Task<ServerMemberAuthorizeInfoDto?> GetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId,
         CancellationToken cancellationToken = default
@@ -51,7 +51,7 @@ internal sealed partial class ServerPermissionsCacheService(
             var deserialized = MemoryPackSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
             
             // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
-            return deserialized?.ToSource<MemberAuthorizeInfoCacheDto, ServerMemberAuthorizationInfoDto>();
+            return deserialized?.ToSource<MemberAuthorizeInfoCacheDto, ServerMemberAuthorizeInfoDto>();
         } catch (Exception e) {
             logger.LogError(e, "Failed to deserialize cached member authorize info. Null will be returned.");
             return null;
@@ -61,13 +61,13 @@ internal sealed partial class ServerPermissionsCacheService(
     public async Task SetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId,
-        ServerMemberAuthorizationInfoDto value,
+        ServerMemberAuthorizeInfoDto value,
         CancellationToken cancellationToken = default
     ) {
         int version = await GetPermissionVersion(serverId);
         string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
 
-        MemberAuthorizeInfoCacheDto converted = value.ToFacet<ServerMemberAuthorizationInfoDto, MemberAuthorizeInfoCacheDto>();
+        MemberAuthorizeInfoCacheDto converted = value.ToFacet<ServerMemberAuthorizeInfoDto, MemberAuthorizeInfoCacheDto>();
         
         await _database.StringSetAsync(
             cacheKey, 
@@ -99,15 +99,15 @@ internal sealed partial class ServerPermissionsCacheService(
         await DeleteUserAuthorizeInfo(ids.CommunityServerId, ids.UserId, cancellationToken);
     }
 
-    public async Task<Dictionary<Guid, ServerMemberAuthorizationInfoDto>> GetUsersAuthorizeInfo(
+    public async Task<Dictionary<Guid, ServerMemberAuthorizeInfoDto>> GetUsersAuthorizeInfo(
         Guid serverId, 
         IReadOnlyCollection<Guid> userIds, 
         CancellationToken cancellationToken = default
     ) {
-        Dictionary<Guid, ServerMemberAuthorizationInfoDto> results = new(userIds.Count);
+        Dictionary<Guid, ServerMemberAuthorizeInfoDto> results = new(userIds.Count);
 
         foreach (var userId in userIds) {
-            ServerMemberAuthorizationInfoDto? info = await GetUserAuthorizeInfo(serverId, userId, cancellationToken);
+            ServerMemberAuthorizeInfoDto? info = await GetUserAuthorizeInfo(serverId, userId, cancellationToken);
 
             if (info == null) {
                 continue;
@@ -121,27 +121,27 @@ internal sealed partial class ServerPermissionsCacheService(
 
     public async Task SetUsersAuthorizeInfo(
         Guid serverId, 
-        IReadOnlyDictionary<Guid, ServerMemberAuthorizationInfoDto> values, 
+        IReadOnlyDictionary<Guid, ServerMemberAuthorizeInfoDto> values, 
         CancellationToken cancellationToken = default
     ) {
-        foreach ((var userId, ServerMemberAuthorizationInfoDto authorizeInfo) in values) {
+        foreach ((var userId, ServerMemberAuthorizeInfoDto authorizeInfo) in values) {
             await SetUserAuthorizeInfo(serverId, userId, authorizeInfo, cancellationToken);
         }
     }
 
-    public async Task<RoleAuthorizationInfo?> GetServerDefaultRoleAuthorizationInfo(
+    public async Task<RoleAuthorizeInfo?> GetServerDefaultRoleAuthorizationInfo(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
         string cacheKey = GetRedisKeyForDefaultRoleAuthInfo(serverId);
         
         byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
-        return cached == null ? null : JsonSerializer.Deserialize<RoleAuthorizationInfo>(cached);
+        return cached == null ? null : JsonSerializer.Deserialize<RoleAuthorizeInfo>(cached);
     }
 
     public async Task SetServerDefaultRoleAuthorizationInfo(
         Guid serverId, 
-        RoleAuthorizationInfo value, 
+        RoleAuthorizeInfo value, 
         CancellationToken cancellationToken = default
     ) {
         string cacheKey = GetRedisKeyForDefaultRoleAuthInfo(serverId);
@@ -194,11 +194,17 @@ internal sealed partial class ServerPermissionsCacheService(
         $"server:perms:versions";
 
     [MemoryPackable]
-    [Facet(typeof(ServerMemberAuthorizationInfoDto), GenerateToSource = true)]
+    [Facet(typeof(ServerMemberAuthorizeInfoDto), Include = [
+        nameof(ServerMemberAuthorizeInfoDto.MemberId),
+        nameof(ServerMemberAuthorizeInfoDto.AuthorizeLevel),
+        nameof(ServerMemberAuthorizeInfoDto.EffectivePermissions),
+        nameof(ServerMemberAuthorizeInfoDto.Roles),
+        nameof(ServerMemberAuthorizeInfoDto.IsBanned),
+    ], GenerateToSource = true)]
     public sealed partial record MemberAuthorizeInfoCacheDto {
         public Guid MemberId { get; set; } = MemberId;
         public int AuthorizeLevel { get; set; } = AuthorizeLevel;
-        public IReadOnlyDictionary<ServerPermission, bool> EffectivePermissions { get; set; } = EffectivePermissions;
+        public IReadOnlySet<ServerPermission> EffectivePermissions { get; set; } = EffectivePermissions;
         public MemberRoleDto[] Roles { get; set; } = Roles;
         public bool IsBanned { get; set; } = IsBanned;
     }

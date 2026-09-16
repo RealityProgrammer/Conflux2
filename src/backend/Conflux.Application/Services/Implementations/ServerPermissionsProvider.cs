@@ -16,16 +16,16 @@ internal sealed class ServerPermissionsProvider(
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
 
-    private static readonly FrozenDictionary<ServerPermission, bool> OwnerEffectivePermissions =
-        AllPermissions.ToFrozenDictionary(p => p, _ => true);
+    private static readonly FrozenSet<ServerPermission> OwnerEffectivePermissions =
+        AllPermissions.ToFrozenSet();
     
-    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetUserAuthorizeInfo(
+    public async Task<Result<ServerMemberAuthorizeInfoDto>> GetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId, 
         CancellationToken cancellationToken = default
     ) {
         if (await cacheService.GetUserAuthorizeInfo(serverId, userId, cancellationToken) is { } cached) {
-            return Result<ServerMemberAuthorizationInfoDto>.Success(cached);
+            return Result<ServerMemberAuthorizeInfoDto>.Success(cached);
         }
 
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
@@ -41,7 +41,7 @@ internal sealed class ServerPermissionsProvider(
         }
 
         if (member.MemberRoles.Any(mr => mr.Role.SpecialRoleType == SpecialRoleType.Owner)) {
-            ServerMemberAuthorizationInfoDto ownerDto = new(
+            ServerMemberAuthorizeInfoDto ownerDto = new(
                 member.Id,
                 int.MaxValue,
                 OwnerEffectivePermissions,
@@ -51,21 +51,21 @@ internal sealed class ServerPermissionsProvider(
             
             await cacheService.SetUserAuthorizeInfo(serverId, userId, ownerDto, cancellationToken);
             
-            return Result<ServerMemberAuthorizationInfoDto>.Success(ownerDto);
+            return Result<ServerMemberAuthorizeInfoDto>.Success(ownerDto);
         }
 
-        Result<RoleAuthorizationInfo> defaultRoleGetResult = await GetDefaultRoleInfo(serverId, cancellationToken);
+        Result<RoleAuthorizeInfo> defaultRoleGetResult = await GetDefaultRoleInfo(serverId, cancellationToken);
         if (!defaultRoleGetResult.IsSuccess) {
             return defaultRoleGetResult.Error;
         }
 
-        ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value!, timeProvider.GetUtcNow());
+        ServerMemberAuthorizeInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value!, timeProvider.GetUtcNow());
         await cacheService.SetUserAuthorizeInfo(serverId, userId, dto, CancellationToken.None);
         
-        return Result<ServerMemberAuthorizationInfoDto>.Success(dto);
+        return Result<ServerMemberAuthorizeInfoDto>.Success(dto);
     }
 
-    public async Task<Result<ServerMemberAuthorizationInfoDto>> GetMemberAuthorizeInfo(
+    public async Task<Result<ServerMemberAuthorizeInfoDto>> GetMemberAuthorizeInfo(
         Guid serverId,
         Guid memberId, 
         CancellationToken cancellationToken = default
@@ -86,13 +86,13 @@ internal sealed class ServerPermissionsProvider(
         return await GetUserAuthorizeInfo(ids.CommunityServerId, ids.UserId, cancellationToken);
     }
 
-    public async Task<Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>>> GetUsersAuthorizeInfo(
+    public async Task<Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>>> GetUsersAuthorizeInfo(
         Guid serverId,
         IReadOnlyCollection<Guid> userIds,
         CancellationToken cancellationToken = default
     ) {
-        Dictionary<Guid, Result<ServerMemberAuthorizationInfoDto>> results = new(userIds.Count);
-        Dictionary<Guid, ServerMemberAuthorizationInfoDto> dtosToCache = new(userIds.Count);
+        Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>> results = new(userIds.Count);
+        Dictionary<Guid, ServerMemberAuthorizeInfoDto> dtosToCache = new(userIds.Count);
 
         List<CommunityServerMember> members = await memberReadRepository.AsQueryable()
             .AsNoTracking()
@@ -104,12 +104,12 @@ internal sealed class ServerPermissionsProvider(
         
         var membersByUserId = members.ToDictionary(m => m.UserId);
 
-        Result<RoleAuthorizationInfo>? defaultRoleGetResult = null;
+        Result<RoleAuthorizeInfo>? defaultRoleGetResult = null;
         
         foreach (var userId in userIds) {
             if (await cacheService.GetUserAuthorizeInfo(serverId, userId, cancellationToken) is { } cached) {
                 dtosToCache[userId] = cached;
-                results[userId] = Result<ServerMemberAuthorizationInfoDto>.Success(cached);
+                results[userId] = Result<ServerMemberAuthorizeInfoDto>.Success(cached);
 
                 continue;
             }
@@ -121,7 +121,7 @@ internal sealed class ServerPermissionsProvider(
 
             // Handle Owner
             if (member.MemberRoles.Any(mr => mr.Role.SpecialRoleType == SpecialRoleType.Owner)) {
-                ServerMemberAuthorizationInfoDto ownerDto = new(
+                ServerMemberAuthorizeInfoDto ownerDto = new(
                     member.Id,
                     int.MaxValue,
                     OwnerEffectivePermissions,
@@ -130,7 +130,7 @@ internal sealed class ServerPermissionsProvider(
                 );
 
                 dtosToCache[userId] = ownerDto;
-                results[userId] = Result<ServerMemberAuthorizationInfoDto>.Success(ownerDto);
+                results[userId] = Result<ServerMemberAuthorizeInfoDto>.Success(ownerDto);
                 continue;
             }
 
@@ -141,10 +141,10 @@ internal sealed class ServerPermissionsProvider(
                 continue;
             }
 
-            ServerMemberAuthorizationInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value.Value!, timeProvider.GetUtcNow());
+            ServerMemberAuthorizeInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value.Value!, timeProvider.GetUtcNow());
 
             dtosToCache[userId] = dto;
-            results[userId] = Result<ServerMemberAuthorizationInfoDto>.Success(dto);
+            results[userId] = Result<ServerMemberAuthorizeInfoDto>.Success(dto);
         }
 
         if (dtosToCache.Count > 0) {
@@ -154,11 +154,11 @@ internal sealed class ServerPermissionsProvider(
         return results;
     }
 
-    private async Task<Result<RoleAuthorizationInfo>> GetDefaultRoleInfo(
+    private async Task<Result<RoleAuthorizeInfo>> GetDefaultRoleInfo(
         Guid serverId, 
         CancellationToken cancellationToken
     ) {
-        RoleAuthorizationInfo? defaultRoleAuthorizationInfo =
+        RoleAuthorizeInfo? defaultRoleAuthorizationInfo =
             await cacheService.GetServerDefaultRoleAuthorizationInfo(serverId, cancellationToken);
 
         if (defaultRoleAuthorizationInfo == null) {
@@ -177,12 +177,12 @@ internal sealed class ServerPermissionsProvider(
             await cacheService.SetServerDefaultRoleAuthorizationInfo(serverId, defaultRoleAuthorizationInfo, CancellationToken.None);
         }
         
-        return Result<RoleAuthorizationInfo>.Success(defaultRoleAuthorizationInfo);
+        return Result<RoleAuthorizeInfo>.Success(defaultRoleAuthorizationInfo);
     }
 
-    private static List<RoleAuthorizationInfo> ExtractRolesAuthorizationInfo(CommunityServerMember member, RoleAuthorizationInfo defaultRole) {
+    private static List<RoleAuthorizeInfo> ExtractRolesAuthorizationInfo(CommunityServerMember member, RoleAuthorizeInfo defaultRole) {
         return [..member.MemberRoles
-            .Select(mr => new RoleAuthorizationInfo(
+            .Select(mr => new RoleAuthorizeInfo(
                 mr.Role.AuthorizeLevel,
                 mr.Role.Permissions.ToDictionary(p => p.Permission, p => p.State))
             )
@@ -191,19 +191,19 @@ internal sealed class ServerPermissionsProvider(
         ];
     }
 
-    private static ServerMemberAuthorizationInfoDto CreateMemberAuthorizationInfoDto(
+    private static ServerMemberAuthorizeInfoDto CreateMemberAuthorizationInfoDto(
         CommunityServerMember member, 
-        RoleAuthorizationInfo defaultRole,
+        RoleAuthorizeInfo defaultRole,
         DateTimeOffset currentTime
     ) {
-        List<RoleAuthorizationInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
+        List<RoleAuthorizeInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
 
-        IReadOnlyDictionary<ServerPermission, bool> effectivePermissions =
+        IReadOnlySet<ServerPermission> effectivePermissions =
             member.BanExpireAt == null || currentTime >= member.BanExpireAt ?
                 CalculateEffectivePermissions(roleAuthInfo) :
-                [];
+                FrozenSet<ServerPermission>.Empty;
 
-        ServerMemberAuthorizationInfoDto dto = new(
+        ServerMemberAuthorizeInfoDto dto = new(
             member.Id,
             roleAuthInfo[0].AuthorizeLevel,
             effectivePermissions,
@@ -218,10 +218,10 @@ internal sealed class ServerPermissionsProvider(
         return dto;
     }
     
-    private static Dictionary<ServerPermission, bool> CalculateEffectivePermissions(
-        List<RoleAuthorizationInfo> rolesAuthorizationInfo
+    private static IReadOnlySet<ServerPermission> CalculateEffectivePermissions(
+        List<RoleAuthorizeInfo> rolesAuthorizationInfo
     ) {
-        Dictionary<ServerPermission, bool> effectivePermissions = [];
+        HashSet<ServerPermission> effectivePermissions = [];
 
         foreach (var permission in AllPermissions) {
             bool enabled = false;
@@ -235,7 +235,9 @@ internal sealed class ServerPermissionsProvider(
                 break;
             }
 
-            effectivePermissions[permission] = enabled;
+            if (enabled) {
+                effectivePermissions.Add(permission);
+            }
         }
 
         return effectivePermissions;

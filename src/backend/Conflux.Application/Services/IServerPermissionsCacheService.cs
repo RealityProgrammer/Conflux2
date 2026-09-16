@@ -3,7 +3,7 @@ using Conflux.Application.Dto;
 namespace Conflux.Application.Services;
 
 public interface IServerPermissionsCacheService {
-    Task<ServerMemberAuthorizationInfoDto?> GetUserAuthorizeInfo(
+    Task<ServerMemberAuthorizeInfoDto?> GetUserAuthorizeInfo(
         Guid serverId, 
         Guid userId, 
         CancellationToken cancellationToken = default
@@ -12,7 +12,7 @@ public interface IServerPermissionsCacheService {
     Task SetUserAuthorizeInfo(
         Guid serverId,
         Guid userId,
-        ServerMemberAuthorizationInfoDto value, 
+        ServerMemberAuthorizeInfoDto value, 
         CancellationToken cancellationToken = default
     );
     
@@ -27,7 +27,7 @@ public interface IServerPermissionsCacheService {
         CancellationToken cancellationToken = default
     );
     
-    Task<Dictionary<Guid, ServerMemberAuthorizationInfoDto>> GetUsersAuthorizeInfo(
+    Task<Dictionary<Guid, ServerMemberAuthorizeInfoDto>> GetUsersAuthorizeInfo(
         Guid serverId, 
         IReadOnlyCollection<Guid> userIds, 
         CancellationToken cancellationToken = default
@@ -35,18 +35,18 @@ public interface IServerPermissionsCacheService {
 
     Task SetUsersAuthorizeInfo(
         Guid serverId,
-        IReadOnlyDictionary<Guid, ServerMemberAuthorizationInfoDto> values,
+        IReadOnlyDictionary<Guid, ServerMemberAuthorizeInfoDto> values,
         CancellationToken cancellationToken = default
     );
     
-    Task<RoleAuthorizationInfo?> GetServerDefaultRoleAuthorizationInfo(
+    Task<RoleAuthorizeInfo?> GetServerDefaultRoleAuthorizationInfo(
         Guid serverId, 
         CancellationToken cancellationToken = default
     );
 
     Task SetServerDefaultRoleAuthorizationInfo(
         Guid serverId,
-        RoleAuthorizationInfo value,
+        RoleAuthorizeInfo value,
         CancellationToken cancellationToken = default
     );
 

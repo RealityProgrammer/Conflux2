@@ -1,4 +1,5 @@
 using Conflux.Application.Features.Servers;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.SignalR;
 using Facet;
 using Mediator;
@@ -14,26 +15,21 @@ namespace Conflux.WebApi.Notifications.Server;
 public sealed partial record ServerMemberKickedEvent;
 
 internal sealed class MemberKickedNotificationHandler(
-    IHubContext<GatewayHub, IConfluxClient> hubContext,
-    IHttpContextAccessor httpContextAccessor,
-    UserConnectionTracker connectionTracker
+    IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<ServerMemberKickedNotification> {
     public async ValueTask Handle(ServerMemberKickedNotification notification, CancellationToken cancellationToken) {
-        await hubContext.Clients.User(notification.KickedMemberUserId.ToString()).KickedFromServer(notification.ServerId, cancellationToken);
+        // broadcast the banned notification to the kicked user.
+        await hubContext.Clients
+            .User(notification.KickedMemberUserId.ToString())
+            .KickedFromServer(notification.ServerId, cancellationToken);
 
-        string? connectionId = 
-            httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
-        
-        List<string> excludedConnectionIds = await connectionTracker.GetConnectionsAsync(notification.KickedMemberUserId);
-
-        if (connectionId != null) {
-            excludedConnectionIds.Add(connectionId);
-        }
+        // broadcast the kicked notification to whoever has the ability to view the server moderation log
+        string groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
         
         await hubContext.Clients
-            .GroupExcept(NameProvider.GetServerGroupName(notification.ServerId), excludedConnectionIds)
+            .Group(groupName)
             .ServerMemberKicked(new(notification), cancellationToken);
         
-        // TODO: Remove user from group to prevent receiving things like messages, etc...
+        // TODO: remove the user from the server groups
     }
 }
