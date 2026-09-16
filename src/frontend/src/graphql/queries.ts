@@ -51,7 +51,7 @@ export type InspectMemberQueryVariables = Exact<{
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
+export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -78,6 +78,15 @@ export type UpdateMemberRolesMutationVariables = Exact<{
 
 
 export type UpdateMemberRolesMutation = { updateCommunityServerMemberRoles: { memberId: string } };
+
+export type WarnServerMemberMutationVariables = Exact<{
+  serverId: string;
+  memberId: string;
+  reason?: string | null | undefined;
+}>;
+
+
+export type WarnServerMemberMutation = { warnCommunityServerMember: { memberId: string } };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -289,6 +298,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
     }
     status
     banExpireAt
+    numWarn
   }
 }
     `);
@@ -389,3 +399,29 @@ export const useUpdateMemberRolesMutation = <
 
 
 useUpdateMemberRolesMutation.fetcher = (variables: UpdateMemberRolesMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables, options);
+
+export const WarnServerMemberDocument = new TypedDocumentString(`
+    mutation WarnServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
+  warnCommunityServerMember(
+    input: {serverId: $serverId, memberId: $memberId, reason: $reason}
+  ) {
+    memberId
+  }
+}
+    `);
+
+export const useWarnServerMemberMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<WarnServerMemberMutation, TError, WarnServerMemberMutationVariables, TContext>) => {
+    
+    return useMutation<WarnServerMemberMutation, TError, WarnServerMemberMutationVariables, TContext>(
+      {
+    mutationKey: ['WarnServerMember'],
+    mutationFn: (variables?: WarnServerMemberMutationVariables) => graphqlFetcher<WarnServerMemberMutation, WarnServerMemberMutationVariables>(WarnServerMemberDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useWarnServerMemberMutation.fetcher = (variables: WarnServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<WarnServerMemberMutation, WarnServerMemberMutationVariables>(WarnServerMemberDocument, variables, options);

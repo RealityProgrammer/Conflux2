@@ -21,5 +21,6 @@ query InspectMember($id: UUID!) {
         }
         status
         banExpireAt
+        numWarn
     }
 }

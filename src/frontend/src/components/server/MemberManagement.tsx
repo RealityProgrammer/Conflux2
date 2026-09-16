@@ -14,7 +14,7 @@ import {
   type InspectMemberQuery, useBanServerMemberMutation,
   useInspectMemberQuery,
   useKickServerMemberMutation, useUnbanServerMemberMutation,
-  useUpdateMemberRolesMutation
+  useUpdateMemberRolesMutation, useWarnServerMemberMutation
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
 import {BsCheck, BsCircleFill, BsExclamationTriangle, BsHammer} from "react-icons/bs";
@@ -43,6 +43,7 @@ type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
   refreshInspectingMemberInfo: () => void;
   setBanExpiredAt: (value: string | null) => void;
+  setWarnCount: (value: number) => void;
 }
 
 const InspectingMemberContext = createContext<InspectingMemberContextResult | undefined>(undefined);
@@ -219,7 +220,7 @@ function MemberInformation({memberId}: {memberId: string}) {
 
       return {
         ...oldData,
-        communityServerMember: {
+        communityServerMemberForAdmin: {
           ...oldData.communityServerMemberForAdmin,
           banExpireAt: value,
         },
@@ -227,11 +228,26 @@ function MemberInformation({memberId}: {memberId: string}) {
     });
   };
 
+  const setWarnCount = (value: number) => {
+    queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
+      if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
+
+      return {
+        ...oldData,
+        communityServerMemberForAdmin: {
+          ...oldData.communityServerMemberForAdmin,
+          numWarn: value,
+        },
+      };
+    });
+  }
+
   return (
     <InspectingMemberContext.Provider value={{
       inspectingMemberInfo: data.communityServerMemberForAdmin,
       refreshInspectingMemberInfo,
       setBanExpiredAt,
+      setWarnCount
     }}>
       <MemberInformationContent/>
     </InspectingMemberContext.Provider>
@@ -394,15 +410,19 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Permissions</span>
 
-                <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-                  {inspectingMemberInfo.authorizeInfo.permissions.map((permission) => {
-                    return (
-                      <span key={permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
-                        {permission}
-                      </span>
-                    )
-                  })}
-                </span>
+                {inspectingMemberInfo.authorizeInfo.permissions?.length > 0 ? (
+                  <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
+                    {inspectingMemberInfo.authorizeInfo.permissions.map((permission) => {
+                      return (
+                        <span key={permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                          {permission}
+                        </span>
+                      )
+                    })}
+                  </span>
+                ) : (
+                  <span className="text-gray-500 select-none">None</span>
+                )}
               </li>
 
               <Separator.Root className="horizontal-separator my-3" />
@@ -411,6 +431,14 @@ function MemberInformationContent() {
                 <span>Status</span>
 
                 <span className="font-mono">{inspectingMemberInfo.status}</span>
+              </li>
+
+              <Separator.Root className="horizontal-separator my-3" />
+
+              <li className="flex items-center justify-between gap-2 px-2.5 py-1">
+                <span>Warn Count</span>
+
+                <span className="font-mono">{inspectingMemberInfo.numWarn}</span>
               </li>
 
               {inspectingMemberInfo.banExpireAt && (
@@ -483,6 +511,7 @@ function MemberActions() {
 
       <div className="flex flex-row items-center gap-3">
         <KickMemberButton setActiveStatusToKicked={setActiveStatusToKicked}/>
+        <WarnMemberButton/>
         <BanMemberButton refreshBanExpireInfo={refreshBanExpireInfo}/>
         <UnbanMemberButton onUnbanned={() => refreshInspectingMemberInfo()}/>
       </div>
@@ -490,11 +519,11 @@ function MemberActions() {
   );
 }
 
-const kickMemberSchema = z.object({
+const reasonSchema = z.object({
   reason: z.string().max(256, { error: "Reason can only have maximum length of 256 characters." }).optional(),
 });
 
-type KickMemberFormValues = z.infer<typeof kickMemberSchema>;
+type KickMemberFormValues = z.infer<typeof reasonSchema>;
 
 function KickMemberButton({
   setActiveStatusToKicked
@@ -516,7 +545,7 @@ function KickMemberButton({
   });
 
   const formMethods = useForm<KickMemberFormValues>({
-    resolver: zodResolver(kickMemberSchema),
+    resolver: zodResolver(reasonSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
@@ -595,12 +624,108 @@ function KickMemberButton({
   )
 }
 
-const banMemberSchema = z.object({
-  reason: z.string().max(256, { error: "Reason can only have maximum length of 256 characters." }).optional(),
+type WarnMemberFormValues = z.infer<typeof reasonSchema>;
+
+function WarnMemberButton() {
+  const { inspectingMemberInfo, setWarnCount } = useContext(InspectingMemberContext)!;
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const warnMutation = useWarnServerMemberMutation({
+    onSuccess: async () => {
+      setOpenDialog(false);
+      toast.success("Member has been warned.");
+      setWarnCount(inspectingMemberInfo.numWarn + 1);
+    },
+    onError: (_err) => {
+      toast.error("Failed to warn member.");
+    },
+  });
+
+  const formMethods = useForm<WarnMemberFormValues>({
+    resolver: zodResolver(reasonSchema),
+    defaultValues: {
+      reason: undefined,
+    },
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+  });
+
+  const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.WarnMembers) || warnMutation.isPending}
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-warning cursor-pointer flex justify-center items-center"
+        onClick={() => setOpenDialog(true)}
+      >
+        {warnMutation.isPending ? (
+          <Spinner className="size-6 fill-white"/>
+        ) : (
+          <>Warn Member</>
+        )}
+      </button>
+
+      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.WarnMembers) && (
+        <DialogForm
+          open={openDialog}
+          onOpenChange={(open) => {
+            if (open) {
+              setOpenDialog(true);
+            } else {
+              setOpenDialog(false);
+              reset();
+            }
+          }}
+          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          title="Warn Member"
+          subtitle="Somebody has been naughty..."
+          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          formMethods={formMethods}
+          submitButton={(
+            <button
+              type="submit"
+              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Spinner className="size-5 fill-white"/>
+              ) : (
+                <>Warn Member</>
+              )}
+            </button>
+          )}
+          onSubmit={() => warnMutation.mutate({ serverId, memberId: inspectingMemberInfo.id })}
+        >
+          <p>
+            Are you sure you want to warn this member?<br/>
+          </p>
+
+          <Label.Root className="block label mt-2 mb-1">Reason</Label.Root>
+
+          <textarea
+            className="input-field h-32 w-full resize-none px-3 py-2"
+            placeholder="Enter reason (Optional)..."
+            {...register("reason")}
+          />
+
+          {errors.reason && (
+            <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
+          )}
+        </DialogForm>
+      )}
+    </>
+  )
+}
+
+const banMemberSchema = reasonSchema.and(z.object({
   duration: z.custom<DurationValue>().refine(val => {
     return val.days != 0 || val.hours != 0 || val.minutes != 0 || val.seconds != 0;
   }, { error: "Duration should not be zero." }),
-});
+}));
 
 type BanMemberFormValues = z.infer<typeof banMemberSchema>;
 
@@ -624,7 +749,7 @@ function BanMemberButton({
 
   const { register, reset, control, formState: { isSubmitting, errors } } = formMethods;
 
-  const banMember = useBanServerMemberMutation({
+  const banMutation = useBanServerMemberMutation({
     onSuccess: async () => {
       setOpenDialog(false);
       toast.success("Member has been banned from the server.");
@@ -641,7 +766,7 @@ function BanMemberButton({
     const duration = data.duration;
     const durationString = `P${duration.days}DT${duration.hours}H${duration.minutes}M${duration.seconds}S`;
 
-    banMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason, duration: durationString });
+    banMutation.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason, duration: durationString });
   };
 
   return (
@@ -746,9 +871,9 @@ function UnbanMemberButton({
   onUnbanned
 }: {onUnbanned: () => void}) {
   const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
-  const [openDialog, setOpenDialog] = useState(false);
-
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+
+  const [openDialog, setOpenDialog] = useState(false);
 
   const unbanMutation = useUnbanServerMemberMutation({
     onSuccess: async () => {
@@ -760,10 +885,6 @@ function UnbanMemberButton({
       toast.error("Failed to unban member.");
     },
   });
-
-  const handleUnban = () => {
-    unbanMutation.mutate({ serverId, memberId: inspectingMemberInfo.id });
-  };
 
   return (
     <>
@@ -807,7 +928,7 @@ function UnbanMemberButton({
                 type="submit"
                 className="button-theme-primary cursor-pointer h-10 rounded-md w-40 flex flex-row justify-center items-center"
                 disabled={unbanMutation.isPending}
-                onClick={handleUnban}
+                onClick={() => unbanMutation.mutate({ serverId, memberId: inspectingMemberInfo.id })}
               >
                 {unbanMutation.isPending ? (
                   <Spinner className="size-5 fill-white"/>

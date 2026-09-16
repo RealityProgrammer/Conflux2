@@ -33,11 +33,7 @@ internal static class DataLoaders {
 
                 var authInfo = result.Value!;
                 
-                return Domain.Result<MemberAuthorizeInfoDto>.Success(new(
-                    authInfo.AuthorizeLevel,
-                    authInfo.EffectivePermissions,
-                    authInfo.IsBanned
-                ));
+                return Domain.Result<MemberAuthorizeInfoDto>.Success(new(authInfo));
             }
         );
     }

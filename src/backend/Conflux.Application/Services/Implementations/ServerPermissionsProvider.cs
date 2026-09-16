@@ -16,8 +16,7 @@ internal sealed class ServerPermissionsProvider(
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
 
-    private static readonly FrozenSet<ServerPermission> OwnerEffectivePermissions =
-        AllPermissions.ToFrozenSet();
+    private static readonly FrozenSet<ServerPermission> OwnerEffectivePermissions = [..AllPermissions];
     
     public async Task<Result<ServerMemberAuthorizeInfoDto>> GetUserAuthorizeInfo(
         Guid serverId, 
@@ -198,10 +197,10 @@ internal sealed class ServerPermissionsProvider(
     ) {
         List<RoleAuthorizeInfo> roleAuthInfo = ExtractRolesAuthorizationInfo(member, defaultRole);
 
-        IReadOnlySet<ServerPermission> effectivePermissions =
+        HashSet<ServerPermission> effectivePermissions =
             member.BanExpireAt == null || currentTime >= member.BanExpireAt ?
                 CalculateEffectivePermissions(roleAuthInfo) :
-                FrozenSet<ServerPermission>.Empty;
+                [];
 
         ServerMemberAuthorizeInfoDto dto = new(
             member.Id,
@@ -218,7 +217,7 @@ internal sealed class ServerPermissionsProvider(
         return dto;
     }
     
-    private static IReadOnlySet<ServerPermission> CalculateEffectivePermissions(
+    private static HashSet<ServerPermission> CalculateEffectivePermissions(
         List<RoleAuthorizeInfo> rolesAuthorizationInfo
     ) {
         HashSet<ServerPermission> effectivePermissions = [];
