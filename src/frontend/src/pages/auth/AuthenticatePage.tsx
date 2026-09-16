@@ -58,7 +58,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
 
       await revalidator.revalidate();
       setError("root", { message: response.error?.message ?? "Unknown error." });
-    } catch (err) {
+    } catch {
       setError("root", { message: "An unexpected error occurred." });
     }
   };
@@ -209,7 +209,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
       }
 
       setError("root", { message: response.error?.message ?? "Unknown error." });
-    } catch (_err) {
+    } catch {
       setError("root", { message: "An unexpected error occurred." });
     }
   };

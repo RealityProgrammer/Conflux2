@@ -326,11 +326,12 @@ function GetInvitationLinkButton({...props}) {
     return result;
   };
 
-  const baseUrl = window.location.origin;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
-  const [fakeInvitationId, setFakeInvitationId] = useState(generateRandomInvitationId(12));
+  const [fakeInvitationId, setFakeInvitationId] = useState(() => generateRandomInvitationId(12));
+
   useInterval(() => {
-    if (!pending) { // have to do this so that the next fake id update doesn't override the pending status
+    if (!pending) {
       setFakeInvitationId(generateRandomInvitationId(12));
     }
   }, 100);

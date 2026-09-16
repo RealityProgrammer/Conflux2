@@ -54,13 +54,21 @@ export default function DirectMessagePage() {
             />
           )}
         </div>
-      ) : Math.random() * 100 >= 2 ? (
-        <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">
-          <p className="text-transparent">The room between... there is a room between...</p>
-        </div>
-      ) : (
-        <Egg/>
-      )}
+      ) : (<ShowAccessFailure/>)}
+    </div>
+  );
+}
+
+function ShowAccessFailure() {
+  const [isEgg] = useState(() => Math.random() < 0.02);
+
+  if (isEgg) {
+    return <Egg/>;
+  }
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">
+      <p className="text-transparent">The room between... there is a room between...</p>
     </div>
   );
 }

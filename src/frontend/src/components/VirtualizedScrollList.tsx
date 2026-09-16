@@ -146,7 +146,7 @@ export default function VirtualizedScrollList({
     if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [virtualItems, itemCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [virtualItems, itemCount, virtualCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <ScrollArea.Root

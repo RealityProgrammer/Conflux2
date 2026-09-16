@@ -1,13 +1,6 @@
 import {type ButtonHTMLAttributes, type MouseEvent, type ReactNode, useState} from "react";
 import Spinner from "./Spinner.tsx";
-
-export enum IconButtonTheme {
-  Default = 'default',
-  Success = 'success',
-  Warning = 'warning',
-  Danger = 'danger',
-  Info = 'info',
-}
+import {IconButtonTheme} from "./IconButtonTheme.tsx";
 
 const THEME_STYLES: Record<string, string> = {
   [IconButtonTheme.Default]: 'text-slate-200 hover:text-white disabled:text-slate-200/35',

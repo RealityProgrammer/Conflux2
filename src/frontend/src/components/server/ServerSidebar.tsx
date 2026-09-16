@@ -1,5 +1,5 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {
   type ChannelCategoryDetailDto,
   type ChannelCategoryIdentityDto,
@@ -78,14 +78,21 @@ export default function ServerSidebar() {
     removeChannel,
   } = useCommunityServerContext();
   const [createStatus, setCreateStatus] = useState<CreateStatus[]>([]);
-  const [isCreateChannelOrCategoryDialogOpen, setIsCreateChannelOrCategoryDialogOpen] = useState(false);
+  const [isCreatingDialogOpen, setIsCreatingDialogOpen] = useState(false);
   const [deletionState, setDeletionState] = useState<DeletionState | undefined>();
 
+  const allowAccessCreating = memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateChannel);
+  const isCreatingDialogVisible = isCreatingDialogOpen && allowAccessCreating;
+  const prevAccessRef = useRef(allowAccessCreating);
+
   useEffect(() => {
-    if (!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateChannel)) {
-      setIsCreateChannelOrCategoryDialogOpen(false);
+    if (prevAccessRef.current && !allowAccessCreating && isCreatingDialogOpen) {
+      setIsCreatingDialogOpen(false);
+      toast.info("Permission to create channel has been revoked.");
     }
-  }, [memberAuthorizeInfo]);
+
+    prevAccessRef.current = allowAccessCreating;
+  }, [allowAccessCreating, isCreatingDialogOpen]);
 
   const formMethods = useForm<CreateChannelOrCategoryFormValues>({
     resolver: zodResolver(createChannelOrCategorySchema),
@@ -202,7 +209,7 @@ export default function ServerSidebar() {
 
     if (formMethods.getValues("targetCategoryId") === event.categoryId) {
       formMethods.reset();
-      setIsCreateChannelOrCategoryDialogOpen(false);
+      setIsCreatingDialogOpen(false);
 
       toast.info("The channel category has been deleted.");
     }
@@ -235,7 +242,7 @@ export default function ServerSidebar() {
           case "voice_channel": formMethods.setValues({ type: "voice", idempotencyKey, targetCategoryId: null }); break;
         }
 
-        setIsCreateChannelOrCategoryDialogOpen(true);
+        setIsCreatingDialogOpen(true);
       }}/>
 
       <section className="mt-2 px-1 overflow-y-auto scrollbar-hide">
@@ -247,7 +254,7 @@ export default function ServerSidebar() {
               createStatus={createStatus}
               setCreateValues={(idempotencyKey, type) => {
                 formMethods.setValues({ idempotencyKey, type, targetCategoryId: c.id });
-                setIsCreateChannelOrCategoryDialogOpen(true);
+                setIsCreatingDialogOpen(true);
               }}
               handleChannelAction={handleChannelAction}
             />
@@ -262,7 +269,7 @@ export default function ServerSidebar() {
               createStatus={createStatus}
               setCreateValues={(idempotencyKey, type) => {
                 formMethods.setValues({ idempotencyKey, type, targetCategoryId: c.id });
-                setIsCreateChannelOrCategoryDialogOpen(true);
+                setIsCreatingDialogOpen(true);
               }}
               handleChannelAction={handleChannelAction}
             />
@@ -312,11 +319,11 @@ export default function ServerSidebar() {
       />
 
       <DialogForm
-        open={isCreateChannelOrCategoryDialogOpen}
+        open={isCreatingDialogVisible}
         onOpenChange={(open) => {
           if (!open) {
             formMethods.reset();
-            setIsCreateChannelOrCategoryDialogOpen(false);
+            setIsCreatingDialogOpen(false);
           }
         }}
         formMethods={formMethods}
@@ -355,7 +362,7 @@ export default function ServerSidebar() {
               break;
           }
 
-          setIsCreateChannelOrCategoryDialogOpen(false);
+          setIsCreatingDialogOpen(false);
           formMethods.reset();
         }}
         submitButton={(
