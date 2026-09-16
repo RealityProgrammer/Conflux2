@@ -7,8 +7,8 @@ import {FaClipboardList, FaUserShield} from "react-icons/fa6";
 import RoleManagement from "./RoleManagement.tsx";
 import MemberManagement from "./MemberManagement.tsx";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {LuFileClock} from "react-icons/lu";
 import ModerationLog from "./ModerationLog.tsx";
+import {ServerPermission} from "../../graphql/types.ts";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   const { memberAuthorizeInfo } = useCommunityServerContext();
@@ -37,13 +37,13 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
             <FaUserShield className="size-8 fill-slate-200"/>
           </Tabs.Trigger>
 
-          {memberAuthorizeInfo.effectivePermissions.ManageMembers && (
+          {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ManageMembers) && (
             <Tabs.Trigger value="members" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
               <BsPeopleFill className="size-8 fill-slate-200"/>
             </Tabs.Trigger>
           )}
 
-          {memberAuthorizeInfo.effectivePermissions.ReadModerationLogs && (
+          {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ReadModerationLogs) && (
             <Tabs.Trigger value="modlogs" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
               <FaClipboardList className="size-8 fill-slate-200"/>
             </Tabs.Trigger>
@@ -61,13 +61,13 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
           <RoleManagement/>
         </Tabs.Content>
 
-        {memberAuthorizeInfo.effectivePermissions.ManageMembers && (
+        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ManageMembers) && (
           <Tabs.Content value="members" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
             <MemberManagement/>
           </Tabs.Content>
         )}
 
-        {memberAuthorizeInfo.effectivePermissions.ReadModerationLogs && (
+        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ReadModerationLogs) && (
           <Tabs.Content value="modlogs" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
             <ModerationLog/>
           </Tabs.Content>

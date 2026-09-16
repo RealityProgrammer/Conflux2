@@ -24,7 +24,7 @@ import {FaSave} from "react-icons/fa";
 import {Controller, type SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {MembershipStatus, SpecialRoleType} from "../../graphql/types.ts";
+import {MembershipStatus, ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
 import {useQueryClient} from "@tanstack/react-query";
 import {toast} from "react-toastify";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -364,7 +364,7 @@ function MemberInformationContent() {
                     )
                   })}
 
-                  {memberAuthorizeInfo.effectivePermissions.UpdateMemberRoles && (
+                  {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.UpdateMemberRoles) && (
                     <Controller
                       control={control}
                       name="roleIds"
@@ -395,10 +395,10 @@ function MemberInformationContent() {
                 <span>Permissions</span>
 
                 <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-                  {inspectingMemberInfo.authorizeInfo.permissions.filter(p => p.isGranted).map((p) => {
+                  {inspectingMemberInfo.authorizeInfo.permissions.map((permission) => {
                     return (
-                      <span key={p.permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
-                        {p.permission}
+                      <span key={permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
+                        {permission}
                       </span>
                     )
                   })}
@@ -439,7 +439,7 @@ function MemberInformationContent() {
 }
 
 function MemberActions() {
-  const { inspectingMemberInfo, refreshInspectingMemberInfo, setBanExpiredAt } = useContext(InspectingMemberContext)!;
+  const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
   const queryClient = useQueryClient();
 
   const setActiveStatusToKicked = () => {
@@ -531,7 +531,7 @@ function KickMemberButton({
     <>
       <button
         type="button"
-        disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberAuthorizeInfo.effectivePermissions.KickMembers || isSubmitting}
+        disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.KickMembers) || isSubmitting}
         className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
@@ -542,7 +542,7 @@ function KickMemberButton({
         )}
       </button>
 
-      {memberAuthorizeInfo.effectivePermissions.KickMembers && (
+      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.KickMembers) && (
         <DialogForm
           open={openDialog}
           onOpenChange={(open) => {
@@ -648,7 +648,7 @@ function BanMemberButton({
     <>
       <button
         type="button"
-        disabled={!memberAuthorizeInfo.effectivePermissions.BanMembers || isSubmitting}
+        disabled={!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.BanMembers) || isSubmitting}
         className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
@@ -659,7 +659,7 @@ function BanMemberButton({
         )}
       </button>
 
-      {memberAuthorizeInfo.effectivePermissions.BanMembers && (
+      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.BanMembers) && (
         <DialogForm
           open={openDialog}
           onOpenChange={(open) => {
@@ -769,7 +769,7 @@ function UnbanMemberButton({
     <>
       <button
         type="button"
-        disabled={!memberAuthorizeInfo.effectivePermissions.BanMembers || unbanMutation.isPending || !inspectingMemberInfo.banExpireAt}
+        disabled={!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.BanMembers) || unbanMutation.isPending || !inspectingMemberInfo.banExpireAt}
         className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-success cursor-pointer flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
@@ -780,7 +780,7 @@ function UnbanMemberButton({
         )}
       </button>
 
-      {memberAuthorizeInfo.effectivePermissions.UnbanMembers && (
+      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.UnbanMembers) && (
         <Dialog
           open={openDialog}
           onOpenChange={(open) => {

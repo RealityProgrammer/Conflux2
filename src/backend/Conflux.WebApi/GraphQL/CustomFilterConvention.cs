@@ -19,5 +19,7 @@ internal sealed class CustomFilterConvention : FilterConvention {
             new QueryableFilterProvider(x => x
                 .AddFieldHandler(ctx => new CaseInsensitiveILikeOperationHandler(ctx.InputParser))
                 .AddDefaultFieldHandlers()));
+
+        descriptor.MaxAllowedFilterOperations(16);
     }
 }

@@ -30,7 +30,7 @@ export type GetServerMemberAuthorizeInfoQueryVariables = Exact<{
 }>;
 
 
-export type GetServerMemberAuthorizeInfoQuery = { communityServerMemberByServerAndUserId: { id: string, authorizeInfo: { authorizeLevel: number, isBanned: boolean, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> }, roles: Array<{ id: string }> } | null };
+export type GetServerMemberAuthorizeInfoQuery = { communityServerMemberByServerAndUserId: { id: string, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean }, roles: Array<{ id: string }> } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
@@ -51,7 +51,7 @@ export type InspectMemberQueryVariables = Exact<{
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, isBanned: boolean, permissions: Array<{ permission: Types.ServerPermission, isGranted: boolean }> } } | null };
+export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -166,10 +166,7 @@ export const GetServerMemberAuthorizeInfoDocument = new TypedDocumentString(`
     id
     authorizeInfo {
       authorizeLevel
-      permissions {
-        permission
-        isGranted
-      }
+      permissions
       isBanned
     }
     roles {
@@ -287,10 +284,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
     }
     authorizeInfo {
       authorizeLevel
-      permissions {
-        permission
-        isGranted
-      }
+      permissions
       isBanned
     }
     status

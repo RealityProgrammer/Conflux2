@@ -16,10 +16,7 @@ query InspectMember($id: UUID!) {
         }
         authorizeInfo {
             authorizeLevel
-            permissions {
-                permission
-                isGranted
-            }
+            permissions
             isBanned
         }
         status

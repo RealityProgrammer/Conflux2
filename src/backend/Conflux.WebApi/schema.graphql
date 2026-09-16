@@ -1,0 +1,1014 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query @authorize @authorize @authorize @authorize @authorize @authorize {
+  communityServerMembers(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    serverId: UUID!
+  ): CommunityServerMemberConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  serverMemberSearch(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    serverId: UUID!
+    search: String
+  ): CommunityServerMemberConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  serverMemberSearchForAdmin(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    serverId: UUID!
+    search: String
+  ): CommunityServerMemberConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  communityServerMemberByServerAndUserId(serverId: UUID!, userId: UUID!): CommunityServerMember
+    @cost(weight: "10")
+  communityServerMember(id: UUID!): CommunityServerMember @cost(weight: "10")
+  communityServerMemberForAdmin(id: UUID!): CommunityServerMember
+    @cost(weight: "10")
+  joinedServers(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+  ): CommunityServerConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  communityServer(id: UUID!): CommunityServer @cost(weight: "10")
+  communityServerRole(id: UUID!): CommunityServerRole @cost(weight: "10")
+  communityServerRoles(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    serverId: UUID!
+    where: CommunityServerRoleFilterInput @cost(weight: "10")
+  ): CommunityServerRoleConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  invitation(id: String!): Invitation @cost(weight: "10")
+  user(id: UUID!): ApplicationUser @cost(weight: "10")
+  serverModerationLogs(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    serverId: UUID!
+    where: ServerModerationLogFilterInput @cost(weight: "10")
+    order: [ServerModerationLogSortInput!] @cost(weight: "10")
+  ): ServerModerationLogConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+}
+
+type Mutation @authorize {
+  updateCommunityServerMemberRoles(
+    input: UpdateCommunityServerMemberRolesInput!
+  ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
+  leaveCommunityServer(input: LeaveCommunityServerInput!): LeaveCommunityServerPayload!
+    @cost(weight: "10")
+  kickCommunityServerMember(input: KickCommunityServerMemberInput!): KickCommunityServerMemberPayload!
+    @cost(weight: "10")
+  banCommunityServerMember(input: BanCommunityServerMemberInput!): BanCommunityServerMemberPayload!
+    @cost(weight: "10")
+  unbanCommunityServerMember(input: UnbanCommunityServerMemberInput!): UnbanCommunityServerMemberPayload!
+    @cost(weight: "10")
+  warnCommunityServerMember(input: WarnCommunityServerMemberInput!): WarnCommunityServerMemberPayload!
+    @cost(weight: "10")
+}
+
+type ApplicationUser {
+  id: UUID!
+  userName: String
+  displayName: String
+  hasAvatar: Boolean!
+  avatarUpdatedAt: DateTime
+  biography: String
+  pronouns: String
+  createdAt: DateTime!
+  numMutualFriends: Int! @cost(weight: "10")
+}
+
+type BanCommunityServerMemberPayload {
+  memberId: UUID!
+}
+
+type Channel {
+  id: UUID!
+  name: String
+  createdAt: DateTime!
+}
+
+type ChannelCategory {
+  id: UUID!
+  name: String!
+  communityServer: CommunityServer!
+  communityServerId: UUID!
+  createdAt: DateTime!
+  channels: [Channel]
+}
+
+type CommunityServer {
+  id: UUID!
+  name: String!
+  description: String
+  hasAvatar: Boolean!
+  createdAt: DateTime!
+  creatorUserId: UUID!
+  creatorUser: ApplicationUser
+  ownerUserId: UUID!
+  ownerUser: ApplicationUser
+  channelCategories: [ChannelCategory]
+  channels: [Channel]
+  numMembers: Int! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type CommunityServerConnection {
+  "A list of edges."
+  edges: [CommunityServerEdge!]
+  "A flattened list of the nodes"
+  nodes: [CommunityServer!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type CommunityServerEdge {
+  "The item at the end of the edge."
+  node: CommunityServer!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type CommunityServerMember {
+  id: UUID!
+  userId: UUID!
+  user: ApplicationUser!
+  communityServerId: UUID!
+  communityServer: CommunityServer!
+  createdAt: DateTime!
+  roles: [CommunityServerRole!]!
+  banExpireAt: DateTime
+  authorizeInfo: MemberAuthorizeInfo! @cost(weight: "10")
+  status: MembershipStatus!
+  numWarn: Int! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type CommunityServerMemberConnection {
+  "A list of edges."
+  edges: [CommunityServerMemberEdge!]
+  "A flattened list of the nodes"
+  nodes: [CommunityServerMember!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type CommunityServerMemberEdge {
+  "The item at the end of the edge."
+  node: CommunityServerMember!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type CommunityServerRole {
+  id: UUID!
+  name: String!
+  communityServerId: UUID!
+  communityServer: CommunityServer!
+  createdAt: DateTime!
+  authorizeLevel: Int!
+  specialRoleType: SpecialRoleType!
+  permissions: [RolePermission!]!
+  creatorUserId: UUID
+  creatorUser: ApplicationUser
+  numMembers: Int! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type CommunityServerRoleConnection {
+  "A list of edges."
+  edges: [CommunityServerRoleEdge!]
+  "A flattened list of the nodes"
+  nodes: [CommunityServerRole!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type CommunityServerRoleEdge {
+  "The item at the end of the edge."
+  node: CommunityServerRole!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type Invitation {
+  id: String!
+  communityServerId: UUID!
+  communityServer: CommunityServer
+  maxUses: Int
+  currentUses: Int!
+  createdAt: DateTime!
+  expiresAt: DateTime
+  status: InvitationStatus! @cost(weight: "10")
+}
+
+type KickCommunityServerMemberPayload {
+  memberId: UUID!
+}
+
+type LeaveCommunityServerPayload {
+  serverId: UUID!
+}
+
+type MemberAuthorizeInfo {
+  authorizeLevel: Int!
+  permissions: [ServerPermission!]!
+  isBanned: Boolean!
+}
+
+"A cursor that points to a specific page."
+type PageCursor {
+  "The page number."
+  page: Int!
+  "The cursor."
+  cursor: String!
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "Indicates whether more edges exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more edges exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+  "A list of cursors to continue paginating forwards."
+  forwardCursors: [PageCursor!]!
+  "A list of cursors to continue paginating backwards."
+  backwardCursors: [PageCursor!]!
+}
+
+type RolePermission {
+  roleId: UUID!
+  role: CommunityServerRole!
+  permission: ServerPermission!
+  state: PermissionState!
+}
+
+type ServerModerationLog {
+  id: UUID!
+  executorMemberId: UUID
+  executorMember: CommunityServerMember
+  affectedMemberId: UUID
+  affectedMember: CommunityServerMember
+  action: ServerModerationAction!
+  reason: String
+  banDuration: Duration
+  createdAt: DateTime!
+}
+
+"A connection to a list of items."
+type ServerModerationLogConnection {
+  "A list of edges."
+  edges: [ServerModerationLogEdge!]
+  "A flattened list of the nodes"
+  nodes: [ServerModerationLog!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ServerModerationLogEdge {
+  "The item at the end of the edge."
+  node: ServerModerationLog!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type UnbanCommunityServerMemberPayload {
+  memberId: UUID!
+}
+
+type UpdateCommunityServerMemberRolesPayload {
+  member: CommunityServerMember! @cost(weight: "10")
+  memberId: UUID!
+}
+
+type WarnCommunityServerMemberPayload {
+  memberId: UUID!
+}
+
+input ApplicationUserFilterInput {
+  and: [ApplicationUserFilterInput!]
+  or: [ApplicationUserFilterInput!]
+  isProfileSetup: BooleanOperationFilterInput
+  avatarUpdatedAt: DateTimeOperationFilterInput
+  hasAvatar: BooleanOperationFilterInput
+  displayName: StringOperationFilterInput
+  biography: StringOperationFilterInput
+  pronouns: StringOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  sentFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
+  receivedFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
+  friendRequests: ListFilterInputTypeOfFriendRequestFilterInput
+  joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
+  id: UuidOperationFilterInput
+  userName: StringOperationFilterInput
+  normalizedUserName: StringOperationFilterInput
+  email: StringOperationFilterInput
+  normalizedEmail: StringOperationFilterInput
+  emailConfirmed: BooleanOperationFilterInput
+  passwordHash: StringOperationFilterInput
+  securityStamp: StringOperationFilterInput
+  concurrencyStamp: StringOperationFilterInput
+  phoneNumber: StringOperationFilterInput
+  phoneNumberConfirmed: BooleanOperationFilterInput
+  twoFactorEnabled: BooleanOperationFilterInput
+  lockoutEnd: DateTimeOperationFilterInput
+  lockoutEnabled: BooleanOperationFilterInput
+  accessFailedCount: IntOperationFilterInput
+}
+
+input ApplicationUserSortInput {
+  isProfileSetup: SortEnumType @cost(weight: "10")
+  avatarUpdatedAt: SortEnumType @cost(weight: "10")
+  hasAvatar: SortEnumType @cost(weight: "10")
+  displayName: SortEnumType @cost(weight: "10")
+  biography: SortEnumType @cost(weight: "10")
+  pronouns: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  userName: SortEnumType @cost(weight: "10")
+  normalizedUserName: SortEnumType @cost(weight: "10")
+  email: SortEnumType @cost(weight: "10")
+  normalizedEmail: SortEnumType @cost(weight: "10")
+  emailConfirmed: SortEnumType @cost(weight: "10")
+  passwordHash: SortEnumType @cost(weight: "10")
+  securityStamp: SortEnumType @cost(weight: "10")
+  concurrencyStamp: SortEnumType @cost(weight: "10")
+  phoneNumber: SortEnumType @cost(weight: "10")
+  phoneNumberConfirmed: SortEnumType @cost(weight: "10")
+  twoFactorEnabled: SortEnumType @cost(weight: "10")
+  lockoutEnd: SortEnumType @cost(weight: "10")
+  lockoutEnabled: SortEnumType @cost(weight: "10")
+  accessFailedCount: SortEnumType @cost(weight: "10")
+}
+
+input AttachmentFilterInput {
+  and: [AttachmentFilterInput!]
+  or: [AttachmentFilterInput!]
+  id: UuidOperationFilterInput
+  type: StringOperationFilterInput
+}
+
+input BanCommunityServerMemberInput {
+  serverId: UUID!
+  memberId: UUID!
+  reason: String
+  duration: Duration
+}
+
+input BooleanOperationFilterInput {
+  eq: Boolean @cost(weight: "10")
+  neq: Boolean @cost(weight: "10")
+}
+
+input ChannelCategoryFilterInput {
+  and: [ChannelCategoryFilterInput!]
+  or: [ChannelCategoryFilterInput!]
+  id: UuidOperationFilterInput
+  name: StringOperationFilterInput
+  communityServerId: UuidOperationFilterInput
+  communityServer: CommunityServerFilterInput
+  createdAt: DateTimeOperationFilterInput
+  channels: ListFilterInputTypeOfChannelFilterInput
+}
+
+input ChannelFilterInput {
+  and: [ChannelFilterInput!]
+  or: [ChannelFilterInput!]
+  id: UuidOperationFilterInput
+  type: ChannelTypeOperationFilterInput
+  name: StringOperationFilterInput
+  conversationId: UuidOperationFilterInput
+  conversation: ConversationFilterInput
+  friendRequestId: UuidOperationFilterInput
+  friendRequest: FriendRequestFilterInput
+  communityServerId: UuidOperationFilterInput
+  communityServer: CommunityServerFilterInput
+  channelCategoryId: UuidOperationFilterInput
+  channelCategory: ChannelCategoryFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
+input ChannelTypeOperationFilterInput {
+  eq: ChannelType @cost(weight: "10")
+  neq: ChannelType @cost(weight: "10")
+  in: [ChannelType!] @cost(weight: "10")
+  nin: [ChannelType!] @cost(weight: "10")
+}
+
+input CommunityServerFilterInput {
+  and: [CommunityServerFilterInput!]
+  or: [CommunityServerFilterInput!]
+  id: UuidOperationFilterInput
+  name: StringOperationFilterInput
+  description: StringOperationFilterInput
+  hasAvatar: BooleanOperationFilterInput
+  creatorUserId: UuidOperationFilterInput
+  creatorUser: ApplicationUserFilterInput
+  ownerUserId: UuidOperationFilterInput
+  ownerUser: ApplicationUserFilterInput
+  createdAt: DateTimeOperationFilterInput
+  channelCategories: ListFilterInputTypeOfChannelCategoryFilterInput
+  channels: ListFilterInputTypeOfChannelFilterInput
+  members: ListFilterInputTypeOfCommunityServerMemberFilterInput
+  invitations: ListFilterInputTypeOfInvitationFilterInput
+  roles: ListFilterInputTypeOfCommunityServerRoleFilterInput
+  moderationLogs: ListFilterInputTypeOfServerModerationLogFilterInput
+}
+
+input CommunityServerMemberFilterInput {
+  and: [CommunityServerMemberFilterInput!]
+  or: [CommunityServerMemberFilterInput!]
+  id: UuidOperationFilterInput
+  userId: UuidOperationFilterInput
+  user: ApplicationUserFilterInput
+  communityServerId: UuidOperationFilterInput
+  communityServer: CommunityServerFilterInput
+  createdAt: DateTimeOperationFilterInput
+  status: MembershipStatusOperationFilterInput
+  banExpireAt: DateTimeOperationFilterInput
+  memberRoles: ListFilterInputTypeOfCommunityServerMemberRoleFilterInput
+  roles: ListFilterInputTypeOfCommunityServerRoleFilterInput
+}
+
+input CommunityServerMemberRoleFilterInput {
+  and: [CommunityServerMemberRoleFilterInput!]
+  or: [CommunityServerMemberRoleFilterInput!]
+  roleId: UuidOperationFilterInput
+  role: CommunityServerRoleFilterInput
+  memberId: UuidOperationFilterInput
+  member: CommunityServerMemberFilterInput
+}
+
+input CommunityServerMemberSortInput {
+  id: SortEnumType @cost(weight: "10")
+  userId: SortEnumType @cost(weight: "10")
+  user: ApplicationUserSortInput @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  status: SortEnumType @cost(weight: "10")
+  banExpireAt: SortEnumType @cost(weight: "10")
+}
+
+input CommunityServerRoleFilterInput {
+  and: [CommunityServerRoleFilterInput!]
+  or: [CommunityServerRoleFilterInput!]
+  id: UuidOperationFilterInput
+  name: StringOperationFilterInput
+  communityServerId: UuidOperationFilterInput
+  communityServer: CommunityServerFilterInput
+  createdAt: DateTimeOperationFilterInput
+  authorizeLevel: IntOperationFilterInput
+  specialRoleType: SpecialRoleTypeOperationFilterInput
+  creatorUser: ApplicationUserFilterInput
+  creatorUserId: UuidOperationFilterInput
+  permissions: ListFilterInputTypeOfRolePermissionFilterInput
+  memberRoles: ListFilterInputTypeOfCommunityServerMemberRoleFilterInput
+  members: ListFilterInputTypeOfCommunityServerMemberFilterInput
+}
+
+input CommunityServerSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  description: SortEnumType @cost(weight: "10")
+  hasAvatar: SortEnumType @cost(weight: "10")
+  creatorUserId: SortEnumType @cost(weight: "10")
+  creatorUser: ApplicationUserSortInput @cost(weight: "10")
+  ownerUserId: SortEnumType @cost(weight: "10")
+  ownerUser: ApplicationUserSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+}
+
+input ConversationFilterInput {
+  and: [ConversationFilterInput!]
+  or: [ConversationFilterInput!]
+  id: UuidOperationFilterInput
+  latestMessageAt: DateTimeOperationFilterInput
+  messages: ListFilterInputTypeOfMessageFilterInput
+  channel: ChannelFilterInput
+}
+
+input DateTimeOperationFilterInput {
+  eq: DateTime @cost(weight: "10")
+  neq: DateTime @cost(weight: "10")
+  in: [DateTime] @cost(weight: "10")
+  nin: [DateTime] @cost(weight: "10")
+  gt: DateTime @cost(weight: "10")
+  ngt: DateTime @cost(weight: "10")
+  gte: DateTime @cost(weight: "10")
+  ngte: DateTime @cost(weight: "10")
+  lt: DateTime @cost(weight: "10")
+  nlt: DateTime @cost(weight: "10")
+  lte: DateTime @cost(weight: "10")
+  nlte: DateTime @cost(weight: "10")
+}
+
+input DurationOperationFilterInput {
+  eq: Duration @cost(weight: "10")
+  neq: Duration @cost(weight: "10")
+  in: [Duration] @cost(weight: "10")
+  nin: [Duration] @cost(weight: "10")
+  gt: Duration @cost(weight: "10")
+  ngt: Duration @cost(weight: "10")
+  gte: Duration @cost(weight: "10")
+  ngte: Duration @cost(weight: "10")
+  lt: Duration @cost(weight: "10")
+  nlt: Duration @cost(weight: "10")
+  lte: Duration @cost(weight: "10")
+  nlte: Duration @cost(weight: "10")
+}
+
+input FriendRequestFilterInput {
+  and: [FriendRequestFilterInput!]
+  or: [FriendRequestFilterInput!]
+  id: UuidOperationFilterInput
+  senderUserId: UuidOperationFilterInput
+  sender: ApplicationUserFilterInput
+  receiverUserId: UuidOperationFilterInput
+  receiver: ApplicationUserFilterInput
+  status: FriendRequestStatusOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  updatedAt: DateTimeOperationFilterInput
+  conversationChannel: ChannelFilterInput
+}
+
+input FriendRequestStatusOperationFilterInput {
+  eq: FriendRequestStatus @cost(weight: "10")
+  neq: FriendRequestStatus @cost(weight: "10")
+  in: [FriendRequestStatus!] @cost(weight: "10")
+  nin: [FriendRequestStatus!] @cost(weight: "10")
+}
+
+input IntOperationFilterInput {
+  eq: Int @cost(weight: "10")
+  neq: Int @cost(weight: "10")
+  in: [Int] @cost(weight: "10")
+  nin: [Int] @cost(weight: "10")
+  gt: Int @cost(weight: "10")
+  ngt: Int @cost(weight: "10")
+  gte: Int @cost(weight: "10")
+  ngte: Int @cost(weight: "10")
+  lt: Int @cost(weight: "10")
+  nlt: Int @cost(weight: "10")
+  lte: Int @cost(weight: "10")
+  nlte: Int @cost(weight: "10")
+}
+
+input InvitationFilterInput {
+  and: [InvitationFilterInput!]
+  or: [InvitationFilterInput!]
+  id: StringOperationFilterInput
+  communityServerId: UuidOperationFilterInput
+  communityServer: CommunityServerFilterInput
+  maxUses: IntOperationFilterInput
+  currentUses: IntOperationFilterInput
+  expiresAt: DateTimeOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  lastUsedAt: DateTimeOperationFilterInput
+}
+
+input KickCommunityServerMemberInput {
+  serverId: UUID!
+  memberId: UUID!
+  reason: String
+}
+
+input LeaveCommunityServerInput {
+  serverId: UUID!
+}
+
+input ListFilterInputTypeOfAttachmentFilterInput {
+  all: AttachmentFilterInput @cost(weight: "10")
+  none: AttachmentFilterInput @cost(weight: "10")
+  some: AttachmentFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfChannelCategoryFilterInput {
+  all: ChannelCategoryFilterInput @cost(weight: "10")
+  none: ChannelCategoryFilterInput @cost(weight: "10")
+  some: ChannelCategoryFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfChannelFilterInput {
+  all: ChannelFilterInput @cost(weight: "10")
+  none: ChannelFilterInput @cost(weight: "10")
+  some: ChannelFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfCommunityServerMemberFilterInput {
+  all: CommunityServerMemberFilterInput @cost(weight: "10")
+  none: CommunityServerMemberFilterInput @cost(weight: "10")
+  some: CommunityServerMemberFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfCommunityServerMemberRoleFilterInput {
+  all: CommunityServerMemberRoleFilterInput @cost(weight: "10")
+  none: CommunityServerMemberRoleFilterInput @cost(weight: "10")
+  some: CommunityServerMemberRoleFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfCommunityServerRoleFilterInput {
+  all: CommunityServerRoleFilterInput @cost(weight: "10")
+  none: CommunityServerRoleFilterInput @cost(weight: "10")
+  some: CommunityServerRoleFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfFriendRequestFilterInput {
+  all: FriendRequestFilterInput @cost(weight: "10")
+  none: FriendRequestFilterInput @cost(weight: "10")
+  some: FriendRequestFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfInvitationFilterInput {
+  all: InvitationFilterInput @cost(weight: "10")
+  none: InvitationFilterInput @cost(weight: "10")
+  some: InvitationFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfMessageFilterInput {
+  all: MessageFilterInput @cost(weight: "10")
+  none: MessageFilterInput @cost(weight: "10")
+  some: MessageFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfRolePermissionFilterInput {
+  all: RolePermissionFilterInput @cost(weight: "10")
+  none: RolePermissionFilterInput @cost(weight: "10")
+  some: RolePermissionFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfServerModerationLogFilterInput {
+  all: ServerModerationLogFilterInput @cost(weight: "10")
+  none: ServerModerationLogFilterInput @cost(weight: "10")
+  some: ServerModerationLogFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input MembershipStatusOperationFilterInput {
+  eq: MembershipStatus @cost(weight: "10")
+  neq: MembershipStatus @cost(weight: "10")
+  in: [MembershipStatus!] @cost(weight: "10")
+  nin: [MembershipStatus!] @cost(weight: "10")
+}
+
+input MessageFilterInput {
+  and: [MessageFilterInput!]
+  or: [MessageFilterInput!]
+  id: UuidOperationFilterInput
+  body: StringOperationFilterInput
+  attachments: ListFilterInputTypeOfAttachmentFilterInput
+  senderUserId: UuidOperationFilterInput
+  sender: ApplicationUserFilterInput
+  conversationId: UuidOperationFilterInput
+  conversation: ConversationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  updatedAt: DateTimeOperationFilterInput
+  deletedAt: DateTimeOperationFilterInput
+  replyToId: UuidOperationFilterInput
+  replyTo: MessageFilterInput
+  replies: ListFilterInputTypeOfMessageFilterInput
+}
+
+input PermissionStateOperationFilterInput {
+  eq: PermissionState @cost(weight: "10")
+  neq: PermissionState @cost(weight: "10")
+  in: [PermissionState!] @cost(weight: "10")
+  nin: [PermissionState!] @cost(weight: "10")
+}
+
+input RolePermissionFilterInput {
+  and: [RolePermissionFilterInput!]
+  or: [RolePermissionFilterInput!]
+  roleId: UuidOperationFilterInput
+  permission: ServerPermissionOperationFilterInput
+  state: PermissionStateOperationFilterInput
+  role: CommunityServerRoleFilterInput
+}
+
+input ServerModerationActionOperationFilterInput {
+  eq: ServerModerationAction @cost(weight: "10")
+  neq: ServerModerationAction @cost(weight: "10")
+  in: [ServerModerationAction!] @cost(weight: "10")
+  nin: [ServerModerationAction!] @cost(weight: "10")
+}
+
+input ServerModerationLogFilterInput {
+  and: [ServerModerationLogFilterInput!]
+  or: [ServerModerationLogFilterInput!]
+  id: UuidOperationFilterInput
+  communityServerId: UuidOperationFilterInput
+  communityServer: CommunityServerFilterInput
+  executorMemberId: UuidOperationFilterInput
+  executorMember: CommunityServerMemberFilterInput
+  affectedMemberId: UuidOperationFilterInput
+  affectedMember: CommunityServerMemberFilterInput
+  action: ServerModerationActionOperationFilterInput
+  reason: StringOperationFilterInput
+  banDuration: DurationOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
+input ServerModerationLogSortInput {
+  id: SortEnumType @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  executorMemberId: SortEnumType @cost(weight: "10")
+  executorMember: CommunityServerMemberSortInput @cost(weight: "10")
+  affectedMemberId: SortEnumType @cost(weight: "10")
+  affectedMember: CommunityServerMemberSortInput @cost(weight: "10")
+  action: SortEnumType @cost(weight: "10")
+  reason: SortEnumType @cost(weight: "10")
+  banDuration: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+}
+
+input ServerPermissionOperationFilterInput {
+  eq: ServerPermission @cost(weight: "10")
+  neq: ServerPermission @cost(weight: "10")
+  in: [ServerPermission!] @cost(weight: "10")
+  nin: [ServerPermission!] @cost(weight: "10")
+}
+
+input SpecialRoleTypeOperationFilterInput {
+  eq: SpecialRoleType @cost(weight: "10")
+  neq: SpecialRoleType @cost(weight: "10")
+  in: [SpecialRoleType!] @cost(weight: "10")
+  nin: [SpecialRoleType!] @cost(weight: "10")
+}
+
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String @cost(weight: "10")
+  neq: String @cost(weight: "10")
+  contains: String @cost(weight: "20")
+  ncontains: String @cost(weight: "20")
+  in: [String] @cost(weight: "10")
+  nin: [String] @cost(weight: "10")
+  startsWith: String @cost(weight: "20")
+  nstartsWith: String @cost(weight: "20")
+  endsWith: String @cost(weight: "20")
+  nendsWith: String @cost(weight: "20")
+  ilike: String @cost(weight: "10")
+}
+
+input UnbanCommunityServerMemberInput {
+  serverId: UUID!
+  memberId: UUID!
+}
+
+input UpdateCommunityServerMemberRolesInput {
+  serverId: UUID!
+  memberId: UUID!
+  roleIds: [UUID!]!
+}
+
+input UuidOperationFilterInput {
+  eq: UUID @cost(weight: "10")
+  neq: UUID @cost(weight: "10")
+  in: [UUID] @cost(weight: "10")
+  nin: [UUID] @cost(weight: "10")
+  gt: UUID @cost(weight: "10")
+  ngt: UUID @cost(weight: "10")
+  gte: UUID @cost(weight: "10")
+  ngte: UUID @cost(weight: "10")
+  lt: UUID @cost(weight: "10")
+  nlt: UUID @cost(weight: "10")
+  lte: UUID @cost(weight: "10")
+  nlte: UUID @cost(weight: "10")
+}
+
+input WarnCommunityServerMemberInput {
+  serverId: UUID!
+  memberId: UUID!
+  reason: String
+}
+
+"Defines when a policy shall be executed."
+enum ApplyPolicy {
+  "Before the resolver was executed."
+  BEFORE_RESOLVER
+  "After the resolver was executed."
+  AFTER_RESOLVER
+  "The policy is applied in the validation step before the execution."
+  VALIDATION
+}
+
+enum ChannelType {
+  DirectMessage
+  CommunityServerText
+  CommunityServerVoice
+}
+
+enum FriendRequestStatus {
+  None
+  Pending
+  Canceled
+  Accepted
+  Rejected
+}
+
+enum InvitationStatus {
+  Valid
+  Expired
+  MaxUsesReached
+  AlreadyJoinedServer
+}
+
+enum MembershipStatus {
+  Active
+  Left
+  Kicked
+}
+
+enum PermissionState {
+  Inherit
+  Enable
+  Disable
+}
+
+enum ServerModerationAction {
+  Kick
+  Ban
+  Unban
+  Warn
+}
+
+enum ServerPermission {
+  CreateRole
+  UpdateRole
+  DeleteRole
+  CreateChannel
+  DeleteChannel
+  UpdateMemberRoles
+  ManageMembers
+  KickMembers
+  WarnMembers
+  BanMembers
+  UnbanMembers
+  ReadModerationLogs
+}
+
+enum SortEnumType {
+  ASC
+  DESC
+}
+
+enum SpecialRoleType {
+  None
+  Default
+  Owner
+}
+
+"The `DateTime` scalar type represents a date and time with time zone offset information."
+scalar DateTime
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
+
+"The `Duration` scalar type represents a duration of time."
+scalar Duration
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/duration.html")
+
+"The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562."
+scalar UUID
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/uuid.html")
+
+"The authorize directive."
+directive @authorize(
+  "The name of the authorization policy that determines access to the annotated resource."
+  policy: String
+  "Roles that are allowed to access the annotated resource."
+  roles: [String!]
+  "Defines when the authorize directive shall be applied. By default the authorize directive is applied before the resolver is executed."
+  apply: ApplyPolicy! = BEFORE_RESOLVER
+) repeatable on OBJECT | FIELD_DEFINITION
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost(
+  "The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc."
+  weight: String!
+) on
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | ENUM
+  | INPUT_FIELD_DEFINITION
+
+"The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
+directive @listSize(
+  "The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field."
+  assumedSize: Int
+  "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments."
+  slicingArguments: [String!]
+  "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query."
+  slicingArgumentDefaultValue: Int
+  "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields."
+  sizedFields: [String!]
+  "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error."
+  requireOneSlicingArgument: Boolean = true
+) on FIELD_DEFINITION

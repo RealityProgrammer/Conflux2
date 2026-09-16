@@ -35,6 +35,7 @@ using Conflux.WebApi.Notifications.Users;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
+using HotChocolate.Execution;
 using HotChocolate.Types.Descriptors;
 using Mediator;
 using Microsoft.AspNetCore.RateLimiting;
@@ -55,6 +56,8 @@ using Error = Conflux.Domain.Error;
 DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+bool isDevelopment = builder.Environment.IsDevelopment();
 
 // keys and stuffs
 builder.Configuration.AddKeyPerFile("/run/secrets", true);
@@ -187,7 +190,7 @@ builder.Services
     .AddSorting()
     .AddAuthorization()
     .AddFiltering<CustomFilterConvention>()
-    .DisableIntrospection(false)
+    .DisableIntrospection(!isDevelopment)
     .AddMutationConventions(applyToAllMutations: true)
     .AddMaxExecutionDepthRule(8)
     .AddMaxAllowedFieldCycleDepthRule(defaultCycleLimit: 3)
@@ -530,7 +533,7 @@ builder.Services.AddSwaggerGen(options => {
 });
 
 // enable http logging in dev environment.
-if (builder.Environment.IsDevelopment()) {
+if (isDevelopment) {
     builder.Services.AddHttpLogging(options => {
         options.LoggingFields = HttpLoggingFields.Request | HttpLoggingFields.Response;
     });
@@ -554,9 +557,20 @@ builder.Services.AddHostedService<InvitationCleanupWorker>();
 
 var app = builder.Build();
 
+// actions for development environment only
 if (app.Environment.IsDevelopment()) {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
+    
+    // export the graphql schema into file at project root.
+    var executorManager = services.GetRequiredService<IRequestExecutorManager>();
+    var executor = await executorManager.GetExecutorAsync();
+    var schemaText = executor.Schema.ToString();
+    var schemaPath = System.IO.Path.Combine(app.Environment.ContentRootPath, "schema.graphql");
+    
+    await File.WriteAllTextAsync(schemaPath, schemaText);
+    
+    // seeding database
 
     var logger = services.GetRequiredService<ILogger<DatabaseSeedHelper>>();
 

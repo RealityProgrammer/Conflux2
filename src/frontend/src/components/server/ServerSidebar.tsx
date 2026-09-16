@@ -37,6 +37,7 @@ import type {
 } from "../../api/events.ts";
 import {ChannelType} from "../../api/schema.ts";
 import {toast} from "react-toastify";
+import {ServerPermission} from "../../graphql/types.ts";
 
 const createChannelOrCategorySchema = z.object({
   idempotencyKey: z.string(),
@@ -81,7 +82,7 @@ export default function ServerSidebar() {
   const [deletionState, setDeletionState] = useState<DeletionState | undefined>();
 
   useEffect(() => {
-    if (isCreateChannelOrCategoryDialogOpen && !memberAuthorizeInfo.effectivePermissions.CreateChannel) {
+    if (!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateChannel)) {
       setIsCreateChannelOrCategoryDialogOpen(false);
     }
   }, [memberAuthorizeInfo]);
@@ -466,7 +467,7 @@ function ChannelCategoryView({
 
           <span className="text-gray-300 text-sm line-clamp-1 select-none flex-1">{category.name}</span>
 
-          {(memberAuthorizeInfo.effectivePermissions.CreateChannel || memberAuthorizeInfo.effectivePermissions.DeleteChannel) && (
+          {(memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateChannel) || memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.DeleteChannel)) && (
             <div className={`h-5 items-center justify-center ${isOpenDropdown ? 'flex' : 'hidden group-hover:flex'}`}>
               <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown} modal={false}>
                 <DropdownMenu.Trigger asChild>
@@ -484,7 +485,7 @@ function ChannelCategoryView({
                       e.preventDefault();
                     }}
                   >
-                    {memberAuthorizeInfo.effectivePermissions.CreateChannel && (
+                    {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateChannel) && (
                       <>
                         <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
                           setIsCategoryOpen(true);
@@ -506,7 +507,7 @@ function ChannelCategoryView({
                       </>
                     )}
 
-                    {memberAuthorizeInfo.effectivePermissions.DeleteChannel && (
+                    {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.DeleteChannel) && (
                       <DropdownMenu.Item className="dropdown-item-danger" onSelect={() => {
                         if (category.id) {
                           handleChannelAction({

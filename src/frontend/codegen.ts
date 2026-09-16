@@ -1,7 +1,7 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
-  schema: 'http://localhost:5127/graphql',
+  schema: './../backend/Conflux.WebApi/schema.graphql',
   ignoreNoDocuments: true,
   config: {
     reactQueryVersion: 5,

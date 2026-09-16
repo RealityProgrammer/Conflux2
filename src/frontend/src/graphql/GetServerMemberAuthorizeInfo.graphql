@@ -3,10 +3,7 @@ query GetServerMemberAuthorizeInfo($serverId: UUID!, $userId: UUID!) {
         id
         authorizeInfo {
             authorizeLevel
-            permissions {
-                permission
-                isGranted
-            }
+            permissions
             isBanned
         }
         roles {

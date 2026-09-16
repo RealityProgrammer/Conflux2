@@ -11,7 +11,7 @@ export interface UseServerMemberAuthorizeInfoProps {
 export type ServerMemberAuthorizeInfo = {
   id: string;
   authorizeLevel: number;
-  effectivePermissions: Record<ServerPermission, boolean>;
+  effectivePermissions: ServerPermission[];
   isBanned: boolean;
   roleIds: string[];
   refreshPermissions: () => Promise<void>;
@@ -44,13 +44,7 @@ export default function useServerMemberAuthorizeInfo({
 
   const authInfo = data.communityServerMemberByServerAndUserId;
 
-  const effectivePermissions: Record<ServerPermission, boolean> = authInfo.authorizeInfo.permissions.reduce((acc: Record<ServerPermission, boolean>, value) => {
-    if (value.isGranted) {
-      acc[value.permission] = true;
-    }
-
-    return acc;
-  }, {} as Record<ServerPermission, boolean>);
+  const effectivePermissions: ServerPermission[] = authInfo.authorizeInfo.permissions;
 
   const refreshPermissions = async () => {
     await queryClient.invalidateQueries({

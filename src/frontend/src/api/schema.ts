@@ -1757,6 +1757,7 @@ export interface components {
                 UpdateMemberRoles?: components["schemas"]["PermissionState"];
                 ManageMembers?: components["schemas"]["PermissionState"];
                 KickMembers?: components["schemas"]["PermissionState"];
+                WarnMembers?: components["schemas"]["PermissionState"];
                 BanMembers?: components["schemas"]["PermissionState"];
                 UnbanMembers?: components["schemas"]["PermissionState"];
                 ReadModerationLogs?: components["schemas"]["PermissionState"];
@@ -1817,6 +1818,7 @@ export interface components {
                 UpdateMemberRoles?: components["schemas"]["PermissionState"];
                 ManageMembers?: components["schemas"]["PermissionState"];
                 KickMembers?: components["schemas"]["PermissionState"];
+                WarnMembers?: components["schemas"]["PermissionState"];
                 BanMembers?: components["schemas"]["PermissionState"];
                 UnbanMembers?: components["schemas"]["PermissionState"];
                 ReadModerationLogs?: components["schemas"]["PermissionState"];
@@ -1997,6 +1999,7 @@ export enum ServerPermission {
     UpdateMemberRoles = "UpdateMemberRoles",
     ManageMembers = "ManageMembers",
     KickMembers = "KickMembers",
+    WarnMembers = "WarnMembers",
     BanMembers = "BanMembers",
     UnbanMembers = "UnbanMembers",
     ReadModerationLogs = "ReadModerationLogs"

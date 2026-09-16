@@ -101,7 +101,7 @@ graphqlClient.interceptors.response.use(
 
     const isGqlAuthError = response.status === HttpStatusCode.Ok &&
       Array.isArray(data?.errors) &&
-      (data?.errors as any[]).some(e => e.extensions?.code === 'AUTH_NOT_AUTHENTICATED');
+      ((data?.errors as any[]) ?? []).some(e => e.extensions?.code === 'AUTH_NOT_AUTHENTICATED');
 
     if (!isGqlAuthError) {
       return Promise.resolve(response);

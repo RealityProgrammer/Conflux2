@@ -1,5 +1,5 @@
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {DropdownMenu, Label, Select} from "radix-ui";
 import IconButton from "../IconButton.tsx";
 import {BsChevronDown, BsCopy, BsGearFill, BsPersonPlus, BsPersonPlusFill} from "react-icons/bs";
@@ -19,6 +19,7 @@ import {InvitationExpireAfter} from "../../api/schema.ts";
 import type {FieldErrors} from "../../api/types.ts";
 import {ServerSettingsDialog} from "./ServerSettingsDialog.tsx";
 import {toast} from "react-toastify";
+import {ServerPermission} from "../../graphql/types.ts";
 
 interface ServerSidebarHeaderProps {
   onRequestCreate: (type: "category" | "text_channel" | "voice_channel", idempotencyKey: string) => void;
@@ -35,18 +36,31 @@ export default function ServerSidebarHeader({
 
   const { serverSummary: { name: serverName } } = useCommunityServerContext();
 
-  const allowAccessToServerManagement = (memberAuthorizeInfo.effectivePermissions.CreateRole ||
-    memberAuthorizeInfo.effectivePermissions.UpdateRole ||
-    memberAuthorizeInfo.effectivePermissions.DeleteRole) ?? false;
+  const allowAccessToServerManagement =
+    memberAuthorizeInfo.effectivePermissions.some(p => [
+      ServerPermission.CreateRole,
+      ServerPermission.UpdateRole,
+      ServerPermission.DeleteRole,
+      ServerPermission.ManageMembers,
+      ServerPermission.BanMembers,
+      ServerPermission.UnbanMembers,
+      ServerPermission.KickMembers,
+      ServerPermission.WarnMembers,
+      ServerPermission.ReadModerationLogs,
+      ServerPermission.UpdateMemberRoles
+    ].includes(p));
+
+  const isSettingDialogVisible = isOpenSettingDialog && allowAccessToServerManagement;
+  const prevAccessRef = useRef(allowAccessToServerManagement);
 
   useEffect(() => {
-    if (!allowAccessToServerManagement) {
-      if (isOpenSettingDialog) {
-        setIsOpenSettingDialog(false);
-        toast.info("Your access to the server management has been revoked.");
-      }
+    if (prevAccessRef.current && !allowAccessToServerManagement && isOpenSettingDialog) {
+      setIsOpenSettingDialog(false);
+      toast.info("Your access to the server management has been revoked.");
     }
-  }, [memberAuthorizeInfo]);
+
+    prevAccessRef.current = allowAccessToServerManagement;
+  }, [allowAccessToServerManagement, isOpenSettingDialog]);
 
   return (
     <header className="w-full aspect-video relative group">
@@ -71,7 +85,7 @@ export default function ServerSidebarHeader({
                 e.preventDefault();
               }}
             >
-              {memberAuthorizeInfo.effectivePermissions.CreateChannel && (
+              {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateChannel) && (
                 <>
                   <DropdownMenu.Item className="dropdown-item-default mb-1" onSelect={() => {
                     onRequestCreate("category", crypto.randomUUID());
@@ -134,12 +148,10 @@ export default function ServerSidebarHeader({
         onOpenChange={setIsOpenInvitationDialog}
       />
 
-      {allowAccessToServerManagement && (
-        <ServerSettingsDialog
-          open={isOpenSettingDialog}
-          onOpenChanged={setIsOpenSettingDialog}
-        />
-      )}
+      <ServerSettingsDialog
+        open={isSettingDialogVisible}
+        onOpenChanged={setIsOpenSettingDialog}
+      />
     </header>
   );
 }
@@ -314,10 +326,7 @@ function GetInvitationLinkButton({...props}) {
     return result;
   };
 
-  const [baseUrl, setBaseUrl] = useState("");
-  useEffect(() => {
-    setBaseUrl(window.location.origin);
-  }, []);
+  const baseUrl = window.location.origin;
 
   const [fakeInvitationId, setFakeInvitationId] = useState(generateRandomInvitationId(12));
   useInterval(() => {

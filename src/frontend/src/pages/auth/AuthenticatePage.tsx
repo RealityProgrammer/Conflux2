@@ -209,7 +209,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
       }
 
       setError("root", { message: response.error?.message ?? "Unknown error." });
-    } catch (err) {
+    } catch (_err) {
       setError("root", { message: "An unexpected error occurred." });
     }
   };

@@ -315,7 +315,7 @@ function RoleList({
           />
         </ErrorPopover>
 
-        {memberAuthorizeInfo.effectivePermissions.CreateRole && (
+        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateRole) && (
           <button
             type="submit"
             disabled={isSubmitting}
@@ -476,7 +476,7 @@ function RoleDetails({
           </span>
         </div>
 
-        {memberAuthorizeInfo.effectivePermissions.UpdateRole && isEditable && (
+        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.UpdateRole) && isEditable && (
           <>
             {isEditingRole ? (
               <div className="flex flex-row gap-2">
@@ -849,7 +849,7 @@ function RoleDetails({
         </Accordion.Root>
       </section>
 
-      {memberAuthorizeInfo.effectivePermissions.DeleteRole && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
+      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
         <div className="flex flex-row justify-end mt-2">
           <button
             type="button"

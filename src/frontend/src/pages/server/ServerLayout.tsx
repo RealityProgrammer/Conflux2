@@ -10,7 +10,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import Dialog from "../../components/Dialog.tsx";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {BsHammer} from "react-icons/bs";
 import {toast} from "react-toastify";
 import useServerMemberAuthorizeInfo, {

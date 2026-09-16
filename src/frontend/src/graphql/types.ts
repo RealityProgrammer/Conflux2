@@ -7,8 +7,11 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** The `DateTime` scalar type represents a date and time with time zone offset information. */
   DateTime: { input: string; output: string; }
+  /** The `Duration` scalar type represents a duration of time. */
   Duration: { input: string; output: string; }
+  /** The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562. */
   UUID: { input: string; output: string; }
 };
 
@@ -238,6 +241,7 @@ export type CommunityServerMember = {
   communityServerId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
+  numWarn: Scalars['Int']['output'];
   roles: Array<CommunityServerRole>;
   status: MembershipStatus;
   user: ApplicationUser;
@@ -581,7 +585,7 @@ export type MemberAuthorizeInfo = {
   __typename?: 'MemberAuthorizeInfo';
   authorizeLevel: Scalars['Int']['output'];
   isBanned: Scalars['Boolean']['output'];
-  permissions: Array<PermissionEntry>;
+  permissions: Array<ServerPermission>;
 };
 
 export enum MembershipStatus {
@@ -622,6 +626,7 @@ export type Mutation = {
   leaveCommunityServer: LeaveCommunityServerPayload;
   unbanCommunityServerMember: UnbanCommunityServerMemberPayload;
   updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
+  warnCommunityServerMember: WarnCommunityServerMemberPayload;
 };
 
 
@@ -649,6 +654,11 @@ export type MutationUpdateCommunityServerMemberRolesArgs = {
   input: UpdateCommunityServerMemberRolesInput;
 };
 
+
+export type MutationWarnCommunityServerMemberArgs = {
+  input: WarnCommunityServerMemberInput;
+};
+
 /** A cursor that points to a specific page. */
 export type PageCursor = {
   __typename?: 'PageCursor';
@@ -673,12 +683,6 @@ export type PageInfo = {
   hasPreviousPage: Scalars['Boolean']['output'];
   /** When paginating backwards, the cursor to continue. */
   startCursor?: Maybe<Scalars['String']['output']>;
-};
-
-export type PermissionEntry = {
-  __typename?: 'PermissionEntry';
-  isGranted: Scalars['Boolean']['output'];
-  permission: ServerPermission;
 };
 
 export enum PermissionState {
@@ -825,7 +829,8 @@ export type RolePermissionFilterInput = {
 export enum ServerModerationAction {
   Ban = 'Ban',
   Kick = 'Kick',
-  Unban = 'Unban'
+  Unban = 'Unban',
+  Warn = 'Warn'
 }
 
 export type ServerModerationActionOperationFilterInput = {
@@ -910,7 +915,8 @@ export enum ServerPermission {
   ReadModerationLogs = 'ReadModerationLogs',
   UnbanMembers = 'UnbanMembers',
   UpdateMemberRoles = 'UpdateMemberRoles',
-  UpdateRole = 'UpdateRole'
+  UpdateRole = 'UpdateRole',
+  WarnMembers = 'WarnMembers'
 }
 
 export type ServerPermissionOperationFilterInput = {
@@ -989,4 +995,15 @@ export type UuidOperationFilterInput = {
   nin?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
   nlt?: InputMaybe<Scalars['UUID']['input']>;
   nlte?: InputMaybe<Scalars['UUID']['input']>;
+};
+
+export type WarnCommunityServerMemberInput = {
+  memberId: Scalars['UUID']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+  serverId: Scalars['UUID']['input'];
+};
+
+export type WarnCommunityServerMemberPayload = {
+  __typename?: 'WarnCommunityServerMemberPayload';
+  memberId: Scalars['UUID']['output'];
 };
