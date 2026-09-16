@@ -533,17 +533,6 @@ function KickMemberButton({
 
   const [openDialog, setOpenDialog] = useState(false);
 
-  const kickMember = useKickServerMemberMutation({
-    onSuccess: async () => {
-      setOpenDialog(false);
-      toast.success("Member has been kicked from the server.");
-      setActiveStatusToKicked();
-    },
-    onError: (_err) => {
-      toast.error("Failed to kick member.");
-    },
-  });
-
   const formMethods = useForm<KickMemberFormValues>({
     resolver: zodResolver(reasonSchema),
     mode: "onSubmit",
@@ -551,6 +540,19 @@ function KickMemberButton({
   });
 
   const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+
+  const kickMember = useKickServerMemberMutation({
+    onSuccess: async () => {
+      setOpenDialog(false);
+      toast.success("Member has been kicked from the server.");
+      setActiveStatusToKicked();
+      reset();
+    },
+    onError: (_err) => {
+      toast.error("Failed to kick member.");
+    },
+  });
+
 
   const handleSubmit: SubmitHandler<KickMemberFormValues> = async (data: KickMemberFormValues) => {
     kickMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason });
@@ -637,6 +639,7 @@ function WarnMemberButton() {
       setOpenDialog(false);
       toast.success("Member has been warned.");
       setWarnCount(inspectingMemberInfo.numWarn + 1);
+      reset();
     },
     onError: (_err) => {
       toast.error("Failed to warn member.");
@@ -753,8 +756,8 @@ function BanMemberButton({
     onSuccess: async () => {
       setOpenDialog(false);
       toast.success("Member has been banned from the server.");
-      reset();
       refreshBanExpireInfo();
+      reset();
     },
     onError: (_err) => {
       toast.error("Failed to ban member.");
