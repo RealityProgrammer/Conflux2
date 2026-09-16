@@ -75,6 +75,12 @@ export type MemberRolesUpdatedEvent = {
   memberId: string;
 };
 
+export type ServerMemberWarnedEvent = {
+  serverId: string;
+  warnedMemberUserId: string;
+  warnedMemberId: string;
+};
+
 export type ServerMemberKickedEvent = {
   serverId: string;
   kickedMemberUserId: string;

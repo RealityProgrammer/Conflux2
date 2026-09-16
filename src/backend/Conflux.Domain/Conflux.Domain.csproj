@@ -10,6 +10,7 @@
         <PackageReference Include="Facet" Version="6.6.8" />
         <PackageReference Include="Facet.Extensions.EFCore" Version="6.6.8" />
         <PackageReference Include="Facet.Mapping.Expressions" Version="6.6.8" />
+        <PackageReference Include="MemoryPack" Version="1.21.4" />
         <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.13" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />

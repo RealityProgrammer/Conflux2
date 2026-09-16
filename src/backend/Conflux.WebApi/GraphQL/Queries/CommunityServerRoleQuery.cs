@@ -3,6 +3,7 @@ using Conflux.Infrastructure;
 using GreenDonut.Data;
 using HotChocolate.Authorization;
 using HotChocolate.Types.Pagination;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.WebApi.GraphQL.Queries;
 
@@ -19,6 +20,7 @@ internal static partial class CommunityServerRoleQuery {
     [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering]
     public static async Task<PageConnection<CommunityServerRole>> GetCommunityServerRoles(
         Guid serverId,
+        QueryContext<CommunityServerRole> queryContext,
         PagingArguments pagingArgs,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
@@ -27,6 +29,7 @@ internal static partial class CommunityServerRoleQuery {
             .Where(r => r.CommunityServerId == serverId)
             .OrderBy(r => r.AuthorizeLevel)
             .ThenBy(r => r.Id)
+            .With(queryContext)
             .ToPageAsync(pagingArgs, cancellationToken);
     }
 }

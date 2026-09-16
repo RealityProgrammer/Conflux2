@@ -6,7 +6,7 @@ import {
   HubConnectionState,
   LogLevel
 } from "@microsoft/signalr";
-import {apiClient} from "../api/client.ts";
+import {apiClient, graphqlClient} from "../api/client.ts";
 
 interface SignalRContextType {
   connection: HubConnection | null;
@@ -56,6 +56,7 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
 
         if (connectionId) {
           apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = connectionId;
+          graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'] = connectionId;
         }
       }
     });
@@ -63,7 +64,9 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
     newConnection.onclose(() => {
       if (activeConnectionRef.current === newConnection) {
         setIsConnected(false);
+
         delete apiClient.defaults.headers.common['X-SignalR-Connection-Id'];
+        delete graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'];
       }
     });
 
@@ -72,12 +75,11 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
 
     startPromise.then(() => {
       if (isMounted && activeConnectionRef.current === newConnection) {
-        console.log("SignalR connected successfully.");
-
         setIsConnected(true);
 
         if (newConnection.connectionId) {
           apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
+          graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
         }
       }
     }).catch((err) => {
@@ -90,7 +92,9 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
       if (activeConnectionRef.current === newConnection) {
         activeConnectionRef.current = null;
         setIsConnected(false);
+
         delete apiClient.defaults.headers.common['X-SignalR-Connection-Id'];
+        delete graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'];
       }
 
       startPromise.finally(() => {

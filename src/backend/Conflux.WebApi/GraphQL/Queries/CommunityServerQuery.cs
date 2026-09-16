@@ -17,6 +17,7 @@ internal static partial class CommunityServerQuery {
     [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
     public static async Task<PageConnection<CommunityServer>> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
+        QueryContext<CommunityServer> queryContext,
         PagingArguments pagingArgs,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
@@ -30,6 +31,7 @@ internal static partial class CommunityServerQuery {
         return await dbContext.CommunityServers
             .Where(s => s.Members.Any(m => m.UserId == userId && m.Status == MembershipStatus.Active))
             .OrderBy(s => s.Id)
+            .With(queryContext)
             .ToPageAsync(pagingArgs, cancellationToken);
     }
 

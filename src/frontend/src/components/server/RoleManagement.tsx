@@ -751,6 +751,27 @@ function RoleDetails({
                 </li>
 
                 <li className="flex flex-row items-center gap-2 text-sm">
+                  <span className="flex-1">Warn Members</span>
+
+                  <Controller
+                    control={control}
+                    name="permissions.WarnMembers"
+                    render={({field}) => (
+                      <ErrorPopover
+                        open={!!errors.permissions?.WarnMembers}
+                        content={errors.permissions?.WarnMembers?.message}
+                      >
+                        <PermissionStatesPill
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditingRole}
+                        />
+                      </ErrorPopover>
+                    )}
+                  />
+                </li>
+
+                <li className="flex flex-row items-center gap-2 text-sm">
                   <span className="flex-1">Kick Members</span>
 
                   <Controller

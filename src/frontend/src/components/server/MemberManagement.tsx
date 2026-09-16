@@ -2,8 +2,9 @@ import {useDebounceValue} from "usehooks-ts";
 import {createContext, useContext, useRef, useState} from "react";
 import {Dialog as RadixDialog, Label, Popover, Separator} from "radix-ui";
 import {
+  type SearchServerMemberForAdminQuery,
+  useInfiniteGetAssignableServerRolesQuery,
   useInfiniteSearchServerMemberForAdminQuery,
-  useInfiniteGetAssignableServerRolesQuery, type SearchServerMemberForAdminQuery,
 } from "../../graphql/infiniteQueries.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
@@ -11,10 +12,13 @@ import {UserNameplate} from "../UserNameplate.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import {
-  type InspectMemberQuery, useBanServerMemberMutation,
+  type InspectMemberQuery,
+  useBanServerMemberMutation,
   useInspectMemberQuery,
-  useKickServerMemberMutation, useUnbanServerMemberMutation,
-  useUpdateMemberRolesMutation, useWarnServerMemberMutation
+  useKickServerMemberMutation,
+  useUnbanServerMemberMutation,
+  useUpdateMemberRolesMutation,
+  useWarnServerMemberMutation
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
 import {BsCheck, BsCircleFill, BsExclamationTriangle, BsHammer} from "react-icons/bs";
@@ -31,6 +35,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   MemberRolesUpdatedEvent,
   ServerMemberKickedEvent,
+  ServerMemberWarnedEvent,
   ServerRoleCreatedEvent,
   ServerRoleUpdatedEvent
 } from "../../api/events.ts";
@@ -44,6 +49,7 @@ type InspectingMemberContextResult = {
   refreshInspectingMemberInfo: () => void;
   setBanExpiredAt: (value: string | null) => void;
   setWarnCount: (value: number) => void;
+  setMembershipStatus: (value: MembershipStatus) => void;
 }
 
 const InspectingMemberContext = createContext<InspectingMemberContextResult | undefined>(undefined);
@@ -240,14 +246,29 @@ function MemberInformation({memberId}: {memberId: string}) {
         },
       };
     });
-  }
+  };
+
+  const setMembershipStatus = (value: MembershipStatus) => {
+    queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
+      if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
+
+      return {
+        ...oldData,
+        communityServerMemberForAdmin: {
+          ...oldData.communityServerMemberForAdmin,
+          status: value,
+        },
+      };
+    });
+  };
 
   return (
     <InspectingMemberContext.Provider value={{
       inspectingMemberInfo: data.communityServerMemberForAdmin,
       refreshInspectingMemberInfo,
       setBanExpiredAt,
-      setWarnCount
+      setWarnCount,
+      setMembershipStatus,
     }}>
       <MemberInformationContent/>
     </InspectingMemberContext.Provider>
@@ -261,9 +282,14 @@ const updateMemberInformationSchema = z.object({
 type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationSchema>;
 
 function MemberInformationContent() {
-  const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
-
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+  const {
+    inspectingMemberInfo,
+    refreshInspectingMemberInfo,
+    setMembershipStatus,
+    setWarnCount,
+    setBanExpiredAt,
+  } = useContext(InspectingMemberContext)!;
 
   const {
     handleSubmit,
@@ -313,6 +339,24 @@ function MemberInformationContent() {
     if (event.memberId !== inspectingMemberInfo.id) return;
 
     refreshInspectingMemberInfo();
+  });
+
+  useSignalREvent("ServerMemberKicked", (event: ServerMemberKickedEvent) => {
+    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
+
+    setMembershipStatus(MembershipStatus.Kicked);
+  });
+
+  useSignalREvent("ServerMemberWarned", (event: ServerMemberWarnedEvent) => {
+    if (event.warnedMemberId !== inspectingMemberInfo.id) return;
+
+    setWarnCount(inspectingMemberInfo.numWarn + 1);
+  });
+
+  useSignalREvent("ServerMemberUnbanned", (event: ServerMemberKickedEvent) => {
+    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
+
+    setBanExpiredAt(null);
   });
 
   return (
@@ -470,36 +514,6 @@ function MemberInformationContent() {
 
 function MemberActions() {
   const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
-  const queryClient = useQueryClient();
-
-  const setActiveStatusToKicked = () => {
-    queryClient.setQueryData<InspectMemberQuery>(
-      useInspectMemberQuery.getKey({id: inspectingMemberInfo.id}),
-      (oldData) => {
-        if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
-
-        return {
-          ...oldData,
-          communityServerMember: {
-            ...oldData.communityServerMemberForAdmin,
-            status: MembershipStatus.Kicked,
-          }
-        };
-      }
-    );
-  };
-
-  useSignalREvent("ServerMemberKicked", (event: ServerMemberKickedEvent) => {
-    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
-
-    setActiveStatusToKicked();
-  });
-
-  useSignalREvent("ServerMemberUnbanned", (event: ServerMemberKickedEvent) => {
-    if (event.kickedMemberId !== inspectingMemberInfo.id) return;
-
-    setActiveStatusToKicked();
-  });
 
   const refreshBanExpireInfo = () => {
     refreshInspectingMemberInfo();
@@ -512,7 +526,7 @@ function MemberActions() {
       </h4>
 
       <div className="flex flex-row items-center gap-3">
-        <KickMemberButton setActiveStatusToKicked={setActiveStatusToKicked}/>
+        <KickMemberButton/>
         <WarnMemberButton/>
         <BanMemberButton refreshBanExpireInfo={refreshBanExpireInfo}/>
         <UnbanMemberButton onUnbanned={() => refreshInspectingMemberInfo()}/>
@@ -527,10 +541,8 @@ const reasonSchema = z.object({
 
 type KickMemberFormValues = z.infer<typeof reasonSchema>;
 
-function KickMemberButton({
-  setActiveStatusToKicked
-}: {setActiveStatusToKicked: () => void}) {
-  const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
+function KickMemberButton() {
+  const { inspectingMemberInfo, setMembershipStatus } = useContext(InspectingMemberContext)!;
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -547,7 +559,7 @@ function KickMemberButton({
     onSuccess: async () => {
       setOpenDialog(false);
       toast.success("Member has been kicked from the server.");
-      setActiveStatusToKicked();
+      setMembershipStatus(MembershipStatus.Kicked);
       reset();
     },
     onError: (_err) => {
@@ -659,6 +671,10 @@ function WarnMemberButton() {
 
   const { register, reset, formState: { isSubmitting, errors } } = formMethods;
 
+  const handleSubmit = (data: WarnMemberFormValues) => {
+    warnMutation.mutate({ serverId, memberId: inspectingMemberInfo.id, reason: data.reason });
+  }
+
   return (
     <>
       <button
@@ -703,7 +719,7 @@ function WarnMemberButton() {
               )}
             </button>
           )}
-          onSubmit={() => warnMutation.mutate({ serverId, memberId: inspectingMemberInfo.id })}
+          onSubmit={handleSubmit}
         >
           <p>
             Are you sure you want to warn this member?<br/>

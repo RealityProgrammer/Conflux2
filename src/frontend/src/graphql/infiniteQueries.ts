@@ -193,7 +193,11 @@ useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServer
 
 export const GetServerModerationLogsDocument = new TypedDocumentString(`
     query GetServerModerationLogs($serverId: UUID!, $after: String) {
-  serverModerationLogs(serverId: $serverId, after: $after) {
+  serverModerationLogs(
+    serverId: $serverId
+    after: $after
+    order: {createdAt: DESC}
+  ) {
     pageInfo {
       endCursor
       hasNextPage

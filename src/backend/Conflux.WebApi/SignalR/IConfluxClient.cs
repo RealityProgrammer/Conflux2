@@ -38,4 +38,6 @@ public interface IConfluxClient {
     Task ServerMemberWarned(ServerMemberWarnedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberBanned(ServerMemberBannedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
+
+    Task UpdateModerationLog(CancellationToken cancellationToken = default);
 }

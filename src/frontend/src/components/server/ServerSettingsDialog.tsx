@@ -9,11 +9,22 @@ import MemberManagement from "./MemberManagement.tsx";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import ModerationLog from "./ModerationLog.tsx";
 import {ServerPermission} from "../../graphql/types.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {useQueryClient} from "@tanstack/react-query";
+import {useInfiniteGetServerModerationLogsQuery} from "../../graphql/infiniteQueries.ts";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
-  const { memberAuthorizeInfo } = useCommunityServerContext();
+  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<string>("");
+
+  // invalidate the moderation log query when there is update event
+  useSignalREvent("UpdateModerationLog", () => {
+    if (!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ReadModerationLogs)) return;
+
+    queryClient.invalidateQueries({queryKey: useInfiniteGetServerModerationLogsQuery.getKey({ serverId, after: null })});
+  });
 
   return (
     <Dialog

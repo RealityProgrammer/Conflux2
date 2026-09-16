@@ -55,6 +55,12 @@ public sealed class GatewayHub(
 
         var effectivePermissions = getMemberAuthorizeInfo.Value!.EffectivePermissions;
 
+        if (effectivePermissions.Contains(ServerPermission.ManageMembers)) {
+            string group = NameProvider.GetServerPermissionGroupName(serverId, ServerPermission.ManageMembers);
+            await Groups.AddToGroupAsync(connectionId, group);
+            joinedGroups.Add(group);
+        }
+        
         if (effectivePermissions.Contains(ServerPermission.ReadModerationLogs)) {
             string group = NameProvider.GetServerPermissionGroupName(serverId, ServerPermission.ReadModerationLogs);
             await Groups.AddToGroupAsync(connectionId, group);

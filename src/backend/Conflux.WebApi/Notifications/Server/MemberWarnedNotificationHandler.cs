@@ -15,14 +15,26 @@ namespace Conflux.WebApi.Notifications.Server;
 public sealed partial record ServerMemberWarnedEvent;
 
 internal sealed class MemberWarnedNotificationHandler(
-    IHubContext<GatewayHub, IConfluxClient> hubContext
+    IHubContext<GatewayHub, IConfluxClient> hubContext,
+    IHttpContextAccessor httpContextAccessor
 ) : INotificationHandler<ServerMemberWarnedNotification> {
     public async ValueTask Handle(ServerMemberWarnedNotification notification, CancellationToken cancellationToken) {
-        // broadcast the warned notification to whoever has the ability to view the server moderation log
-        string groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
+        string? connectionId = 
+            httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
         
+        // broadcast the notification to whoever has the ability to manage member (except the executor connection).
+        string groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);
+
+        IConfluxClient target = string.IsNullOrEmpty(connectionId) ?
+            hubContext.Clients.Group(groupName) :
+            hubContext.Clients.GroupExcept(groupName, connectionId);
+        
+        await target.ServerMemberWarned(new(notification), cancellationToken);
+        
+        // broadcast the notification to update moderation log
+        groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
         await hubContext.Clients
             .Group(groupName)
-            .ServerMemberWarned(new(notification), cancellationToken);
+            .UpdateModerationLog(cancellationToken);
     }
 }
