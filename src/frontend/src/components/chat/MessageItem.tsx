@@ -14,7 +14,7 @@ import MessageAttachments from "./MessageAttachments.tsx";
 import {estimateMessageLayout} from "./utils.ts";
 import {toast} from "react-toastify";
 
-export type MessageItemProps = {
+type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageClusterItemDto;

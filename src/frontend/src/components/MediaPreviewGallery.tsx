@@ -1,7 +1,7 @@
 import {Dialog} from "radix-ui";
 import IconButton from "./IconButton.tsx";
 import {BsChevronLeft, BsChevronRight, BsX} from "react-icons/bs";
-import {type MouseEvent, useEffect, useState} from "react";
+import {type MouseEvent, useState} from "react";
 import {useEventListener} from "usehooks-ts";
 
 export type MediaGalleryItem = {
@@ -23,21 +23,14 @@ export interface MediaGalleryProps {
 }
 
 export default function MediaPreviewGallery({
-                                              open,
-                                              onOpenChange,
-                                              currentItem,
-                                              hasPreviousItem,
-                                              onPrevious,
-                                              hasNextItem,
-                                              onNext,
-                                            }: MediaGalleryProps) {
-  const [isZoomed, setIsZoomed] = useState(false);
-
-  // Automatically reset zoom whenever the current item changes
-  useEffect(() => {
-    setIsZoomed(false);
-  }, [currentItem.source]);
-
+  open,
+  onOpenChange,
+  currentItem,
+  hasPreviousItem,
+  onPrevious,
+  hasNextItem,
+  onNext,
+}: MediaGalleryProps) {
   const handlePrev = (e?: MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -97,17 +90,10 @@ export default function MediaPreviewGallery({
         )}
 
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 gap-4 shadow-lg duration-200 outline-none w-auto h-[95dvh] aspect-auto overflow-auto flex flex-row items-center">
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 gap-4 shadow-lg duration-200 outline-none w-auto h-[95dvh] aspect-auto overflow-auto flex flex-row items-center"
+        >
           {currentItem.type.startsWith("image") ? (
-            <img
-              src={currentItem.source}
-              alt="Preview"
-              onClick={() => setIsZoomed(!isZoomed)}
-              className={`transition-all duration-200 ${isZoomed ?
-                "w-auto h-auto max-w-none max-h-none cursor-zoom-out" :
-                "w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain cursor-zoom-in"
-              }`}
-            />
+            <ZoomableImage key={currentItem.source} src={currentItem.source}/>
           ) : currentItem.type.startsWith("video") ? (
             <video
               src={currentItem.source}
@@ -132,4 +118,20 @@ export default function MediaPreviewGallery({
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function ZoomableImage({ src }: { src: string }) {
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  return (
+    <img
+      src={src}
+      alt="Image"
+      onClick={() => setIsZoomed(!isZoomed)}
+      className={`transition-all duration-200 ${isZoomed ?
+        "w-auto h-auto max-w-none max-h-none cursor-zoom-out" :
+        "w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain cursor-zoom-in"
+      }`}
+    />
+  )
 }

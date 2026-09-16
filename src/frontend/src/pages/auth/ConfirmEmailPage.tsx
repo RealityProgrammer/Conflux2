@@ -24,7 +24,6 @@ export default function ConfirmEmailPage() {
 
   useEffect(() => {
     if (hasExecuted.current) return;
-
     hasExecuted.current = true;
 
     if (verificationStatus === VerificationStatus.Verifying) {
@@ -45,7 +44,7 @@ export default function ConfirmEmailPage() {
 
       startVerify();
     }
-  }, []);
+  }, [base64EncodedCode, verificationStatus, navigation, userId]);
 
   return (
     <div className="h-dvh w-dvw bg-gray-800 grid grid-cols-1 px-4 md:px-0 md:grid-cols-4 lg:grid-cols-3">

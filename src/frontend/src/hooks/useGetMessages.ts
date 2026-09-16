@@ -96,7 +96,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   const userProfiles: Record<string, UserIdentityProfileDto> = {};
 
   if (queryResult.data?.pages) {
-    for (const page of queryResult.data?.pages) {
+    for (const page of queryResult.data?.pages ?? []) {
       if (page?.users) {
         for (const user of page.users) {
           userProfiles[user.id] = user;

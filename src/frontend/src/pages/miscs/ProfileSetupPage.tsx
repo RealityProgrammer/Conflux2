@@ -54,8 +54,12 @@ interface AvatarPanelProps extends PanelProps {
 }
 
 function AvatarPanel({
-                       setDisplayingPanel, avatarOperation, setAvatarOperation, fieldErrors, clearError
-                     }: AvatarPanelProps) {
+  setDisplayingPanel,
+  avatarOperation,
+  setAvatarOperation,
+  fieldErrors,
+  clearError
+}: AvatarPanelProps) {
   const auth = useAuthorization();
   const hasAvatar = auth.userProfile?.hasAvatar ?? false;
 
@@ -135,7 +139,11 @@ interface NamesPanelProps extends PanelProps {
   clearError: (name: 'userName' | 'displayName') => void;
 }
 
-function NamesPanel({setDisplayingPanel, fieldErrors, clearError}: NamesPanelProps) {
+function NamesPanel({
+  setDisplayingPanel,
+  fieldErrors,
+  clearError
+}: NamesPanelProps) {
   const auth = useAuthorization();
 
   const [userName, setUserName] = useState(auth.userProfile?.userName ?? "???");
@@ -331,7 +339,7 @@ export default function ProfileSetupPage() {
     previousPanel.current = displayingPanel;
 
     animateCameraMovement();
-  }, [displayingPanel]);
+  }, [displayingPanel, animateCameraMovement]);
 
   useEffect(() => {
     const handleResize = () => teleportToPanel(displayingPanel);
