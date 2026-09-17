@@ -6,7 +6,7 @@ import type {
 } from "../api/types.ts";
 import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState} from "react";
 import {type ReactVirtualizer} from "@tanstack/react-virtual";
-import {useResizeObserver} from "usehooks-ts";
+import {useEventListener, useResizeObserver} from "usehooks-ts";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
 import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
@@ -38,6 +38,16 @@ function useChatAutoScroll({
 
   const groupCount = messageGroups.length;
   const lastGroupMessageCount = messageGroups.at(-1)?.messages.length ?? 0;
+
+  const isAtBottomRef = useRef(true);
+
+  useEventListener("scroll", (e) => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const { scrollHeight, scrollTop, clientHeight } = viewport;
+    isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 50;
+  }, viewportRef);
 
   // initial jump to the bottom
   useLayoutEffect(() => {
@@ -79,19 +89,26 @@ function useChatAutoScroll({
       groupCount > prev.groupCount ||
       (lastGroupMessageCount > 0 && lastGroupMessageCount > prev.lastGroupCount);
 
-    if (hasNewMessages && isReady && viewportRef.current) {
-      const viewport = viewportRef.current;
-      const distanceFromBottom =
-        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    if (hasNewMessages && isReady && isAtBottomRef.current) {
+      requestAnimationFrame(() => {
+        const virtualizer = virtualizerRef.current;
+        if (virtualizer) {
+          virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
+        }
+      });
 
-      if (distanceFromBottom < 50) {
-        requestAnimationFrame(() => {
-          const virtualizer = virtualizerRef.current;
-          if (virtualizer) {
-            virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
-          }
-        });
-      }
+      // const viewport = viewportRef.current;
+      // const distanceFromBottom =
+      //   viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+      //
+      // if (distanceFromBottom < 50) {
+      //   requestAnimationFrame(() => {
+      //     const virtualizer = virtualizerRef.current;
+      //     if (virtualizer) {
+      //       virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
+      //     }
+      //   });
+      // }
     }
 
     previousMessageCount.current = {
