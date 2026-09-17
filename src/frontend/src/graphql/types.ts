@@ -38,10 +38,9 @@ export type ApplicationUserFilterInput = {
   displayName?: InputMaybe<StringOperationFilterInput>;
   email?: InputMaybe<StringOperationFilterInput>;
   emailConfirmed?: InputMaybe<BooleanOperationFilterInput>;
-  friendRequests?: InputMaybe<ListFilterInputTypeOfFriendRequestFilterInput>;
   hasAvatar?: InputMaybe<BooleanOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
-  isProfileSetup?: InputMaybe<BooleanOperationFilterInput>;
+  isUserNameLocked?: InputMaybe<BooleanOperationFilterInput>;
   joinedCommunityServers?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
   lockoutEnabled?: InputMaybe<BooleanOperationFilterInput>;
   lockoutEnd?: InputMaybe<DateTimeOperationFilterInput>;
@@ -70,7 +69,7 @@ export type ApplicationUserSortInput = {
   emailConfirmed?: InputMaybe<SortEnumType>;
   hasAvatar?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
-  isProfileSetup?: InputMaybe<SortEnumType>;
+  isUserNameLocked?: InputMaybe<SortEnumType>;
   lockoutEnabled?: InputMaybe<SortEnumType>;
   lockoutEnd?: InputMaybe<SortEnumType>;
   normalizedEmail?: InputMaybe<SortEnumType>;

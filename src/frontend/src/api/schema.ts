@@ -1322,7 +1322,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/users/me/setup-profile": {
+    "/api/users/me/names": {
         parameters: {
             query?: never;
             header?: never;
@@ -1340,14 +1340,48 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/x-www-form-urlencoded": {
-                        UserName?: string;
-                        DisplayName?: string;
-                        AvatarOperation?: components["schemas"]["AvatarOperationType"];
-                        AvatarFile?: components["schemas"]["IFormFile"];
+                    "application/json": components["schemas"]["SetNamesRequest"];
+                    "text/json": components["schemas"]["SetNamesRequest"];
+                    "application/*+json": components["schemas"]["SetNamesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
                     };
                 };
             };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/lock-name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -1519,30 +1553,7 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    userId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1632,8 +1643,6 @@ export interface components {
             id: string;
             type: string;
         };
-        /** @enum {string} */
-        AvatarOperationType: AvatarOperationType;
         ChannelCategoryCreateRequest: {
             name: string;
         };
@@ -1826,6 +1835,10 @@ export interface components {
             /** Format: int32 */
             authorizeLevel: number;
         };
+        SetNamesRequest: {
+            userName: string;
+            displayName: string;
+        };
         TimelineMessageClusterDto: {
             /** Format: uuid */
             senderUserId: string;
@@ -1943,11 +1956,6 @@ export interface operations {
             };
         };
     };
-}
-export enum AvatarOperationType {
-    NoMod = "NoMod",
-    Set = "Set",
-    Delete = "Delete"
 }
 export enum ChannelType {
     DirectMessage = "DirectMessage",
