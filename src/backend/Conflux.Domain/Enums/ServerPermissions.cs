@@ -16,4 +16,5 @@ public enum ServerPermission {
     UnbanMembers,
     
     ReadModerationLogs,
+    CreateInvitation,
 }

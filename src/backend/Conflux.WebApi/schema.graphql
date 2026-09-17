@@ -951,6 +951,7 @@ enum ServerPermission {
   BanMembers
   UnbanMembers
   ReadModerationLogs
+  CreateInvitation
 }
 
 enum SortEnumType {

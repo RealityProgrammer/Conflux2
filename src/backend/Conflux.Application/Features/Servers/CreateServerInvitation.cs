@@ -1,6 +1,7 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -8,10 +9,13 @@ using Npgsql;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record CreateServerInvitationCommand(
-    Guid CommunityServerId,
+    Guid ExecutorUserId,
+    Guid ServerId,
     int? MaxUses,
     TimeSpan? ValidDuration
-) : ICommand<Result<string>>;
+) : ICommand<Result<string>>, IServerCommand {
+    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateInvitation];
+}
 
 public sealed class CreateServerInvitationHandler(
     IInvitationRepository invitationRepository,
@@ -24,7 +28,7 @@ public sealed class CreateServerInvitationHandler(
         if (isPermanent) {
             // special treatment so that user can't spam create infinite invitation and clog the database
             var permanentInvite = 
-                await invitationRepository.GetPermanentInvite(command.CommunityServerId, cancellationToken);
+                await invitationRepository.GetPermanentInvite(command.ServerId, cancellationToken);
             
             if (permanentInvite != null) {
                 return Result<string>.Success(permanentInvite.Id);
@@ -35,7 +39,7 @@ public sealed class CreateServerInvitationHandler(
         
         Invitation invitation = new Invitation {
             Id = Invitation.GenerateKey(),
-            CommunityServerId = command.CommunityServerId,
+            CommunityServerId = command.ServerId,
             MaxUses = command.MaxUses,
             ExpiresAt = command.ValidDuration.HasValue ? timeProvider.GetUtcNow() + command.ValidDuration.Value : null,
         };

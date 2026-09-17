@@ -28,13 +28,11 @@ export default function ServerSidebarHeader({
   onRequestCreate
 }: ServerSidebarHeaderProps) {
   const { memberAuthorizeInfo } = useCommunityServerContext();
-
-  const [isOpenDropdown, setIsOpenDropdown] = useState(false);
-  const [isOpenInvitationDialog, setIsOpenInvitationDialog] = useState(false);
-  const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false);
-
   const { serverSummary: { name: serverName } } = useCommunityServerContext();
 
+  const [isDropdownMenuOpen, setIsDropdownMenuOpen] = useState(false);
+
+  const [isServerSettingsDialogOpen, setIsServerSettingsDialogOpen] = useState(false);
   const allowAccessToServerManagement =
     memberAuthorizeInfo.effectivePermissions.some(p => [
       ServerPermission.CreateRole,
@@ -48,27 +46,38 @@ export default function ServerSidebarHeader({
       ServerPermission.ReadModerationLogs,
       ServerPermission.UpdateMemberRoles
     ].includes(p));
-
-  const isSettingDialogVisible = isOpenSettingDialog && allowAccessToServerManagement;
-  const prevAccessRef = useRef(allowAccessToServerManagement);
+  const isServerSettingDialogVisible = isServerSettingsDialogOpen && allowAccessToServerManagement;
+  const prevAllowAccessToServerManagement = useRef(allowAccessToServerManagement);
 
   useEffect(() => {
-    if (prevAccessRef.current && !allowAccessToServerManagement && isOpenSettingDialog) {
-      setIsOpenSettingDialog(false);
+    if (prevAllowAccessToServerManagement.current && !allowAccessToServerManagement && isServerSettingsDialogOpen) {
+      setIsServerSettingsDialogOpen(false);
       toast.info("Your access to the server management has been revoked.");
     }
 
-    prevAccessRef.current = allowAccessToServerManagement;
-  }, [allowAccessToServerManagement, isOpenSettingDialog]);
+    prevAllowAccessToServerManagement.current = allowAccessToServerManagement;
+  }, [allowAccessToServerManagement, isServerSettingsDialogOpen]);
+
+  const allowCreateInvitation = memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateInvitation);
+  const [isCreateInvitationDialogOpen, setIsCreateInvitationDialogOpen] = useState(false);
+  const isCreateInvitationDialogVisible = isCreateInvitationDialogOpen && allowCreateInvitation;
+  const prevAllowCreateInvitation = useRef(allowCreateInvitation);
+
+  useEffect(() => {
+    if (prevAllowCreateInvitation.current && !allowCreateInvitation && isCreateInvitationDialogOpen) {
+      setIsCreateInvitationDialogOpen(false);
+      toast.info("Your access to the server invite creation has been revoked.");
+    }
+  }, [allowCreateInvitation, isCreateInvitationDialogOpen]);
 
   return (
     <header className="w-full aspect-video relative group">
       <section
-        className={`absolute font-bold top-0 inset-x-0 bg-linear-to-b from-black/60 via-black/60 via-60% to-transparent pb-4 pt-1 px-1 ${isOpenDropdown ? '' : '-translate-y-full group-hover:translate-y-0 transition-transform duration-350 ease-in-out'} flex flex-row justify-center items-center`}
+        className={`absolute font-bold top-0 inset-x-0 bg-linear-to-b from-black/60 via-black/60 via-60% to-transparent pb-4 pt-1 px-1 ${isDropdownMenuOpen ? '' : '-translate-y-full group-hover:translate-y-0 transition-transform duration-350 ease-in-out'} flex flex-row justify-center items-center`}
       >
         <span className="flex-1 select-none truncate">{serverName}</span>
 
-        <DropdownMenu.Root open={isOpenDropdown} onOpenChange={setIsOpenDropdown} modal={false}>
+        <DropdownMenu.Root open={isDropdownMenuOpen} onOpenChange={setIsDropdownMenuOpen} modal={false}>
           <DropdownMenu.Trigger asChild>
             <IconButton isLoading={false} className="flex-none">
               <BsGearFill className="size-4 fill-white"/>
@@ -90,7 +99,6 @@ export default function ServerSidebarHeader({
                     onRequestCreate("category", crypto.randomUUID());
                   }}>
                     Create channel category
-
                     <FaFolderPlus className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
@@ -98,7 +106,6 @@ export default function ServerSidebarHeader({
                     onRequestCreate("text_channel", crypto.randomUUID());
                   }}>
                     Create text channel
-
                     <FaHashtag className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
@@ -106,27 +113,28 @@ export default function ServerSidebarHeader({
                     onRequestCreate("voice_channel", crypto.randomUUID());
                   }}>
                     Create voice channel
-
                     <FaVolumeHigh className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
-
-                  <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
                 </>
               )}
 
-              <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenInvitationDialog(true)}>
-                Invitation
+              {allowCreateInvitation && (
+                <>
+                  <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
-                <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
-              </DropdownMenu.Item>
+                  <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsCreateInvitationDialogOpen(true)}>
+                    Invitation
+                    <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+                </>
+              )}
 
               {allowAccessToServerManagement && (
                 <>
                   <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
-                  <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsOpenSettingDialog(true)}>
+                  <DropdownMenu.Item className="dropdown-item-default" onSelect={() => setIsServerSettingsDialogOpen(true)}>
                     Manage Server
-
                     <BsGearFill className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
                 </>
@@ -142,14 +150,14 @@ export default function ServerSidebarHeader({
         className="size-full bg-purple-600"
       />
 
-      <InvitationDialogForm
-        open={isOpenInvitationDialog}
-        onOpenChange={setIsOpenInvitationDialog}
+      <CreateInvitationDialogForm
+        open={isCreateInvitationDialogVisible}
+        onOpenChange={setIsCreateInvitationDialogOpen}
       />
 
       <ServerSettingsDialog
-        open={isSettingDialogVisible}
-        onOpenChanged={setIsOpenSettingDialog}
+        open={isServerSettingDialogVisible}
+        onOpenChanged={setIsServerSettingsDialogOpen}
       />
     </header>
   );
@@ -182,7 +190,10 @@ const INVITATION_OPTIONS = [
   { label: "Infinite", value: "Infinite" },
 ] as const;
 
-function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange: (open: boolean) => void}) {
+function CreateInvitationDialogForm({
+  open,
+  onOpenChange
+}: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const { serverId } = useCommunityServerContext();
 
   const formMethods = useForm<CreateInvitationFormValues>({

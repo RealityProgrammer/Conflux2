@@ -35,8 +35,19 @@ public sealed class InvitationController(
     [HttpPost]
     [EnableRateLimiting("CreateServerInvitationPolicy")]
     public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationRequest request) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
         var validDuration = ExpirationTimespanLookup.GetValueOrDefault(request.ExpireAfter, TimeSpan.FromMinutes(5));
-        var result = await mediator.Send(new CreateServerInvitationCommand(request.ServerId, request.MaxUses, validDuration));
+        var result = await mediator.Send(new CreateServerInvitationCommand(
+            userId,
+            request.ServerId, 
+            request.MaxUses, 
+            validDuration
+        ));
         
         if (result.IsSuccess) {
             return Ok(new ApiResponse<string>(result.Value, Error.None));

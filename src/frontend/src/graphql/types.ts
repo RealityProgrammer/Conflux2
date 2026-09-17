@@ -906,6 +906,7 @@ export type ServerModerationLogSortInput = {
 export enum ServerPermission {
   BanMembers = 'BanMembers',
   CreateChannel = 'CreateChannel',
+  CreateInvitation = 'CreateInvitation',
   CreateRole = 'CreateRole',
   DeleteChannel = 'DeleteChannel',
   DeleteRole = 'DeleteRole',
