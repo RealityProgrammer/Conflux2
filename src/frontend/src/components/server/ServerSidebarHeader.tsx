@@ -16,7 +16,6 @@ import ErrorText from "../ErrorText.tsx";
 import {invitationService} from "../../api/invitationService.ts";
 import {HttpStatusCode} from "axios";
 import {InvitationExpireAfter} from "../../api/schema.ts";
-import type {FieldErrors} from "../../api/types.ts";
 import {ServerSettingsDialog} from "./ServerSettingsDialog.tsx";
 import {toast} from "react-toastify";
 import {ServerPermission} from "../../graphql/types.ts";
@@ -210,7 +209,7 @@ function InvitationDialogForm({open, onOpenChange}: {open: boolean, onOpenChange
       }
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as unknown as FieldErrors<"expireAfter" | "maxUses">;
+        const details = response.error.details as Record<"expireAfter" | "maxUses", string[]>;
 
         if (details.expireAfter && details.expireAfter.length > 0) {
           formMethods.setError("expireAfter", {

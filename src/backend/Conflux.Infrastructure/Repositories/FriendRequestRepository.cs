@@ -87,7 +87,7 @@ internal sealed class FriendRequestRepository(
     ) {
         var queryable = dbContext.Users
             // ignore the user who requests the search and anyone who hasn't setup their profile
-            .Where(u => u.Id != searcherId && u.IsProfileSetup)
+            .Where(u => u.Id != searcherId && u.IsUserNameLocked)
             .NameContains(nameFilter);
         
         int totalCount = await queryable.CountAsync(cancellationToken);

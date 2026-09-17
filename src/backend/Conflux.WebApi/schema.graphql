@@ -383,7 +383,7 @@ type WarnCommunityServerMemberPayload {
 input ApplicationUserFilterInput {
   and: [ApplicationUserFilterInput!]
   or: [ApplicationUserFilterInput!]
-  isProfileSetup: BooleanOperationFilterInput
+  isUserNameLocked: BooleanOperationFilterInput
   avatarUpdatedAt: DateTimeOperationFilterInput
   hasAvatar: BooleanOperationFilterInput
   displayName: StringOperationFilterInput
@@ -392,7 +392,6 @@ input ApplicationUserFilterInput {
   createdAt: DateTimeOperationFilterInput
   sentFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   receivedFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
-  friendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
   id: UuidOperationFilterInput
   userName: StringOperationFilterInput
@@ -412,7 +411,7 @@ input ApplicationUserFilterInput {
 }
 
 input ApplicationUserSortInput {
-  isProfileSetup: SortEnumType @cost(weight: "10")
+  isUserNameLocked: SortEnumType @cost(weight: "10")
   avatarUpdatedAt: SortEnumType @cost(weight: "10")
   hasAvatar: SortEnumType @cost(weight: "10")
   displayName: SortEnumType @cost(weight: "10")

@@ -42,7 +42,7 @@ public sealed class LoginHandler(
         return Result<LoginResponse>.Success(new(new(
             user.Id,
             user.EmailConfirmed,
-            user.IsProfileSetup,
+            user.IsUserNameLocked,
             roles.AsReadOnly(),
             []
         ), "Bearer", accessToken, refreshToken));

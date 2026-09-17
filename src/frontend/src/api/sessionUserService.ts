@@ -48,24 +48,26 @@ export const sessionUserService = {
     }
   },
 
-  setupProfile: async (userName: string,
-                       displayName: string,
-                       avatarOperation: AvatarOperation): Promise<ServiceResponse> => {
+  setNames: async (userName: string, displayName: string): Promise<ServiceResponse> => {
     try {
-      const formData = new FormData();
-      formData.append("userName", userName);
-      formData.append("displayName", displayName);
-      formData.append("avatarOperation", avatarOperation.type);
-
-      if (avatarOperation.type === "set") {
-        formData.append("avatarFile", avatarOperation.file);
-      }
-
-      const response = await apiClient.post("/users/me/setup-profile", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        }
+      const response = await apiClient.post("/users/me/names", {
+        userName,
+        displayName,
       });
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  lockName: async (): Promise<ServiceResponse> => {
+    try {
+      const response = await apiClient.post("/users/me/lock-name");
 
       if (response.status === HttpStatusCode.Ok) {
         // refresh the authorization information to refresh the profile setup claim.

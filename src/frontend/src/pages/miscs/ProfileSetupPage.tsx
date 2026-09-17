@@ -1,16 +1,21 @@
-import {BsArrowLeft, BsArrowRepeat, BsArrowRight, BsCheck, BsPerson, BsX} from "react-icons/bs";
-import {useActionState, useEffect, useRef, useState} from "react";
+import {BsArrowLeft, BsArrowRight, BsCheck, BsPerson, BsX} from "react-icons/bs";
+import {useEffect, useRef, useState} from "react";
 import {animate, utils} from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
-import Spinner from "../../components/Spinner.tsx";
-import {userService} from "../../api/userService.ts";
 import {HttpStatusCode} from "axios";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {Label} from "radix-ui";
-import {type AvatarOperation, DeleteAvatar, NoAvatarModification, SetAvatar} from "../../api/types.ts";
-import type {FieldErrors} from "../../api/types.ts";
-import {useNavigate} from "react-router";
+import {
+  type ServiceResponse,
+} from "../../api/types.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
+import {useForm} from "react-hook-form";
+import {z} from "zod";
+import {zodResolver} from "@hookform/resolvers/zod";
+import ErrorText from "../../components/ErrorText.tsx";
+import Spinner from "../../components/Spinner.tsx";
+import {useMutation} from "@tanstack/react-query";
+import {useNavigate} from "react-router";
 
 enum DisplayingPanel {
   Intro = 0,
@@ -35,8 +40,10 @@ function IntroPanel({setDisplayingPanel}: PanelProps) {
       <p className="text-sm text-gray-400 text-center mt-2">You don't want to be an unknown, don't you?</p>
 
       <footer className="flex flex-none flex-row justify-center mt-2">
-        <button type="button" className="button-primary inline-flex flex-row items-center py-2 px-3"
-                onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
+        <button
+          type="button" className="button-primary inline-flex flex-row items-center py-2 px-3"
+          onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}
+        >
           Show me the way
 
           <BsArrowRight className="ml-2 size-6 fill-white"/>
@@ -46,43 +53,66 @@ function IntroPanel({setDisplayingPanel}: PanelProps) {
   );
 }
 
-interface AvatarPanelProps extends PanelProps {
-  avatarOperation: AvatarOperation;
-  setAvatarOperation: (operation: AvatarOperation) => void;
-  fieldErrors?: FieldErrors<'avatarFile'> | null;
-  clearError: (name: 'avatarFile') => void;
-}
+interface AvatarPanelProps extends PanelProps {}
+
+const uploadAvatarSchema = z.object({
+  file: z.file().nullable(),
+});
+
+type UploadAvatarFormValues = z.infer<typeof uploadAvatarSchema>;
 
 function AvatarPanel({
   setDisplayingPanel,
-  avatarOperation,
-  setAvatarOperation,
-  fieldErrors,
-  clearError
 }: AvatarPanelProps) {
-  const auth = useAuthorization();
-  const hasAvatar = auth.userProfile?.hasAvatar ?? false;
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
 
-  const userOriginalAvatarUrl = auth.userAuthorization?.id == null || !hasAvatar ?
-    null :
-    userService.getAvatarUrl(auth.userAuthorization.id, false)
+  const {
+    setValue,
+    handleSubmit,
+    formState: { isDirty, errors, isSubmitting },
+    setError,
+    reset,
+  } = useForm<UploadAvatarFormValues>({
+    resolver: zodResolver(uploadAvatarSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+    defaultValues: {
+      file: null,
+    },
+  });
 
-  const onAvatarChanged = (file: File, previewUrl: string) => {
-    setAvatarOperation(new SetAvatar(file, previewUrl));
-    clearError('avatarFile');
+  const onSubmit = async (data: UploadAvatarFormValues) => {
+    if (isDirty) {
+      if (data.file) {
+        const response: ServiceResponse = await sessionUserService.uploadAvatar(data.file);
+
+        if (response.success) {
+          setDisplayingPanel(DisplayingPanel.Name);
+          reset(data);
+        } else {
+          if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
+            const details = response.error.details as Record<"file", string[]>;
+
+            if (details.file && details.file.length > 0) {
+              setError("file", {
+                message: details.file[0],
+              });
+            }
+          } else {
+            setError("root", {
+              message: response.error?.message ?? "An unexpected error occurred.",
+            });
+          }
+        }
+      } else {
+        await sessionUserService.deleteAvatar();
+        setDisplayingPanel(DisplayingPanel.Name);
+        reset(data);
+      }
+    } else {
+      setDisplayingPanel(DisplayingPanel.Name);
+    }
   };
-
-  const onAvatarDelete = () => {
-    setAvatarOperation(new DeleteAvatar());
-    clearError('avatarFile');
-  };
-
-  const onAvatarRevert = () => {
-    setAvatarOperation(new NoAvatarModification());
-    clearError('avatarFile');
-  };
-
-  const hasError = !!fieldErrors?.avatarFile;
 
   return (
     <section
@@ -92,62 +122,130 @@ function AvatarPanel({
         <p className="text-center text-gray-400 text-sm mt-2">Make yourself look special</p>
       </header>
 
-      <div className="flex-1 flex flex-col">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col" id="avatar-form">
         <div className="flex flex-row flex-nowrap justify-center items-start gap-2">
           <SelectableAvatar
-            src={avatarOperation.type == "set" ? avatarOperation.previewUrl : avatarOperation.type == "delete" ? undefined : userOriginalAvatarUrl ?? undefined}
-            onAvatarChange={onAvatarChanged}
-            className={`size-64 rounded-full flex-none ${hasError ? 'ring-4 ring-red-500' : ''}`}
+            src={avatarPreviewUrl}
+            className="size-64 rounded-full flex-none"
+            onAvatarChange={(file, previewUrl) => {
+              setValue("file", file, { shouldValidate: true, shouldDirty: true, });
+              setAvatarPreviewUrl(previewUrl);
+            }}
             fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
           />
 
-          <div className="shadow-xl rounded-lg p-2 flex-none bg-gray-625 flex flex-col gap-1 flex-nowrap">
-            <button type="button" className="button-danger p-1.5! flex flex-row justify-center items-center"
-                    onClick={onAvatarDelete}
-                    disabled={avatarOperation.type === "delete" || (!hasAvatar && avatarOperation.type == "noMod")}>
-              <BsX className="fill-white size-6"/>
-            </button>
-
-            <button type="button" className="button-primary p-1.5 flex flex-row justify-center items-center"
-                    onClick={onAvatarRevert} disabled={avatarOperation.type === "noMod"}>
-              <BsArrowRepeat className="fill-white size-6"/>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="button-theme-danger rounded-md cursor-pointer p-1.5! flex flex-row justify-center items-center"
+            onClick={() => {
+              setValue("file", null, { shouldValidate: true, shouldDirty: true, });
+              setAvatarPreviewUrl(undefined);
+            }}
+            disabled={!avatarPreviewUrl || isSubmitting}
+          >
+            <BsX className="fill-white size-6"/>
+          </button>
         </div>
 
-        {
-          hasError && (
-            <p className="text-center text-red-500 text-sm mt-1">{fieldErrors?.avatarFile[0]}</p>
-          )
-        }
-      </div>
+        {errors.file && (
+          <ErrorText className="block text-center mt-1">{errors.file.message}</ErrorText>
+        )}
+      </form>
+
+      {errors.root && (
+        <ErrorText className="block text-center mt-1">{errors.root.message}</ErrorText>
+      )}
 
       <footer className="flex flex-none flex-row justify-center mt-2">
-        <button type="button" className="button-primary inline-flex flex-row items-center px-3 py-2"
-                onClick={() => setDisplayingPanel(DisplayingPanel.Name)}>
-          Next
-
-          <BsArrowRight className="ml-2 size-6 fill-white"/>
+        <button
+          type="submit"
+          className="button-primary flex flex-row justify-center items-center py-2 w-32"
+          form="avatar-form"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <Spinner className="size-6 fill-white"/>
+          ) : (
+            <>
+              Next
+              <BsArrowRight className="ml-2 size-6 fill-white"/>
+            </>
+          )}
         </button>
       </footer>
     </section>
   );
 }
 
-interface NamesPanelProps extends PanelProps {
-  fieldErrors?: FieldErrors<'userName' | 'displayName'> | null;
-  clearError: (name: 'userName' | 'displayName') => void;
-}
+const setNamesSchema = z.object({
+  userName: z.string()
+    .min(8, { error: "User name must be between 8 and 32 characters." })
+    .max(32, { error: "User name must be between 8 and 32 characters." }),
+
+  displayName: z.string()
+    .min(8, { error: "Display name must be between 8 and 32 characters." })
+    .max(32, { error: "Display name must be between 8 and 32 characters." }),
+});
+
+type SetNamesFormValues = z.infer<typeof setNamesSchema>;
+
+interface NamesPanelProps extends PanelProps {}
 
 function NamesPanel({
   setDisplayingPanel,
-  fieldErrors,
-  clearError
 }: NamesPanelProps) {
-  const auth = useAuthorization();
+  const { userProfile, updateUserProfile } = useAuthorization();
 
-  const [userName, setUserName] = useState(auth.userProfile?.userName ?? "???");
-  const [displayName, setDisplayName] = useState(auth.userProfile?.displayName ?? "???");
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { isDirty, errors, isSubmitting },
+  } = useForm<SetNamesFormValues>({
+    resolver: zodResolver(setNamesSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+    defaultValues: {
+      userName: userProfile?.userName ?? "",
+      displayName: userProfile?.displayName ?? "",
+    }
+  });
+
+  const onSubmit = async (data: SetNamesFormValues) => {
+    if (isDirty) {
+      const response: ServiceResponse = await sessionUserService.setNames(data.userName, data.displayName);
+
+      if (response.success) {
+        setDisplayingPanel(DisplayingPanel.Complete);
+        updateUserProfile({
+          userName: data.userName,
+          displayName: data.displayName,
+        });
+      } else {
+        if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
+          const details = response.error.details as Record<"userName" | "displayName", string[]>;
+
+          if (details.userName && details.userName.length > 0) {
+            setError("userName", {
+              message: details.userName[0],
+            });
+          }
+
+          if (details.displayName && details.displayName.length > 0) {
+            setError("displayName", {
+              message: details.displayName[0],
+            });
+          }
+        } else {
+          setError("root", {
+            message: response.error?.message ?? "An unexpected error occurred.",
+          });
+        }
+      }
+    } else {
+      setDisplayingPanel(DisplayingPanel.Complete);
+    }
+  };
 
   return (
     <section
@@ -157,68 +255,94 @@ function NamesPanel({
         <p className="text-center text-gray-400 text-sm mt-2">Make a name of yourself, literally</p>
       </header>
 
-      <div className="flex-1 flex flex-row gap-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-row gap-2" id="name-form">
         <div className="flex-1">
-          <Label.Root className="label mb-1 block" htmlFor="username">Name</Label.Root>
+          <Label.Root className="label mb-1 block" htmlFor="username">Username</Label.Root>
 
-          <input id="userName" type="text" placeholder="Enter username" name="userName"
-                 className="w-full h-11 px-3 input-field"
-                 value={userName}
-                 onChange={(e) => {
-                   setUserName(e.target.value);
-                   clearError('userName');
-                 }}/>
+          <input
+            type="text"
+            placeholder="Enter username"
+            className="w-full h-11 px-3 input-field"
+            {...register("userName")}
+          />
 
-          {
-            fieldErrors?.userName && (
-              <p className="text-center text-red-500 text-sm mt-1">{fieldErrors?.userName[0]}</p>
-            )
-          }
+          {errors.userName && (
+            <ErrorText className="mt-1">{errors.userName.message}</ErrorText>
+          )}
         </div>
 
         <div className="flex-1">
           <Label.Root className="label mb-1 block" htmlFor="displayName">Display Name</Label.Root>
 
-          <input id="displayName" type="text" placeholder="Enter display name" name="displayName"
-                 className="w-full h-11 px-3 input-field"
-                 value={displayName}
-                 onChange={(e) => {
-                   setDisplayName(e.target.value);
-                   clearError('displayName');
-                 }}/>
+          <input
+            type="text"
+            placeholder="Enter display name"
+            className="w-full h-11 px-3 input-field"
+            {...register("displayName")}
+          />
 
-          {
-            fieldErrors?.displayName && (
-              <p className="text-center text-red-500 text-sm mt-1">{fieldErrors?.displayName[0]}</p>
-            )
-          }
+          {errors.displayName && (
+            <ErrorText className="mt-1">{errors.displayName?.message}</ErrorText>
+          )}
         </div>
-      </div>
+      </form>
+
+      {errors.root && (
+        <ErrorText className="block text-center mt-1">{errors.root.message}</ErrorText>
+      )}
 
       <footer className="flex flex-none flex-row justify-around mt-2">
-        <button type="button" className="button-primary inline-flex flex-row items-center px-3 py-2"
-                onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}>
+        <button
+          type="button"
+          className="button-primary flex flex-row justify-center items-center w-32 py-2"
+          onClick={() => setDisplayingPanel(DisplayingPanel.Avatar)}
+        >
           <BsArrowLeft className="mr-2 size-6 fill-white"/>
 
           Previous
         </button>
 
-        <button type="button" className="button-primary inline-flex flex-row items-center px-3 py-2"
-                onClick={() => setDisplayingPanel(DisplayingPanel.Complete)}>
-          Next
-
-          <BsArrowRight className="ml-2 size-6 fill-white"/>
+        <button
+          type="submit"
+          className="button-primary flex flex-row justify-center items-center w-32 py-2"
+          form="name-form"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <Spinner className="size-6 fill-white"/>
+          ) : (
+            <>
+              Next
+              <BsArrowRight className="ml-2 size-6 fill-white"/>
+            </>
+          )}
         </button>
       </footer>
     </section>
   );
 }
 
-interface CompletePanelProps extends PanelProps {
-  isSaving: boolean;
-}
+interface CompletePanelProps extends PanelProps {}
 
-function CompletePanel({setDisplayingPanel, isSaving}: CompletePanelProps) {
+function CompletePanel({setDisplayingPanel}: CompletePanelProps) {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  const lockMutation = useMutation({
+    mutationFn: async () => {
+      return sessionUserService.lockName();
+    },
+    mutationKey: ["sessionUserLockName"],
+    onSuccess: async (data: ServiceResponse) => {
+      if (data.success) {
+        setError(undefined);
+        navigate("/lobby");
+      } else {
+        setError(data.error?.message ?? "Failed to save profile.");
+      }
+    }
+  });
+
   return (
     <section
       className="sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw] bg-gray-700 rounded-3xl shadow-xl text-white overflow-visible relative p-6">
@@ -234,10 +358,10 @@ function CompletePanel({setDisplayingPanel, isSaving}: CompletePanelProps) {
       </div>
 
       <footer className="flex flex-none flex-row justify-around mt-2">
-        <button type="button"
-                className="button-primary inline-flex flex-row items-center px-3 py-2"
-                onClick={() => setDisplayingPanel(DisplayingPanel.Name)}
-                disabled={isSaving}
+        <button
+          type="button"
+          className="button-primary flex flex-row justify-center items-center w-32 py-2"
+          onClick={() => setDisplayingPanel(DisplayingPanel.Name)}
         >
           <BsArrowLeft className="mr-2 size-6 fill-white"/>
 
@@ -245,42 +369,37 @@ function CompletePanel({setDisplayingPanel, isSaving}: CompletePanelProps) {
         </button>
 
         <button
-          type="submit"
-          className="button-success relative inline-flex flex-row justify-center items-center py-2!"
-          disabled={isSaving}
+          type="button"
+          className="button-success flex flex-row justify-center items-center py-2! w-32"
+          disabled={lockMutation.isPending}
+          onClick={() => {
+            lockMutation.mutate();
+          }}
         >
-          <span className={`inline-flex flex-row items-center ${isSaving ? 'invisible' : 'visible'}`}>
+          {lockMutation.isPending ? (
+            <Spinner className="size-6 fill-white"/>
+          ) : (
+            <span className="inline-flex flex-row items-center">
               Complete
-
               <BsCheck className="ml-2 size-6 fill-white"/>
-          </span>
-
-          {isSaving && (
-            <span className="absolute inset-0 flex justify-center items-center">
-                <Spinner className="size-6 fill-white"/>
             </span>
           )}
         </button>
       </footer>
+
+      {error ?? (
+        <ErrorText className="mt-1 block text-center">{error}</ErrorText>
+      )}
     </section>
   );
 }
 
 export default function ProfileSetupPage() {
-  type State = {
-    success: boolean,
-    fieldErrors?: FieldErrors<'userName' | 'displayName' | 'avatarFile'> | null,
-    message?: string | null
-  };
-
-  const auth = useAuthorization();
-  const navigator = useNavigate();
-
   const [displayingPanel, setDisplayingPanel] = useState<DisplayingPanel>(DisplayingPanel.Intro);
   const previousPanel = useRef<DisplayingPanel>(displayingPanel);
 
   const zoomRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<HTMLFormElement | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   const teleportToPanel = (panel: DisplayingPanel) => {
     if (!mapRef.current) return;
@@ -301,8 +420,6 @@ export default function ProfileSetupPage() {
 
   // teleport the viewport to the intro panel.
   useEffect(() => teleportToPanel(DisplayingPanel.Intro), []);
-
-  const [avatarOperation, setAvatarOperation] = useState<AvatarOperation>(new NoAvatarModification());
 
   const animateCameraMovement = () => {
     if (!mapRef.current || !zoomRef.current) return;
@@ -348,88 +465,13 @@ export default function ProfileSetupPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, [displayingPanel]);
 
-  const setupProfile = async (_prevState: State, formData: FormData): Promise<State> => {
-    const userName = formData.get("userName") as string;
-    const displayName = formData.get("displayName") as string;
-
-    const response = await sessionUserService.setupProfile(userName, displayName, avatarOperation);
-
-    switch (response.statusCode) {
-      case HttpStatusCode.Ok:
-        auth.updateUserProfile({
-          userName,
-          displayName,
-          hasAvatar: avatarOperation.type === "delete" ? false : avatarOperation.type === "set" ? true : auth.userProfile?.hasAvatar
-        });
-
-        navigator("/lobby/me");
-
-        return {
-          success: true,
-        };
-
-      case HttpStatusCode.BadRequest:
-        return response.error?.code === "ValidationErrorsOccurred" ? {
-          success: false,
-          message: response.error?.message,
-          fieldErrors: response.error?.details as unknown as FieldErrors<'userName' | 'displayName' | 'avatarFile'>,
-        } : {
-          success: false,
-          message: response.error?.message,
-        };
-
-      default:
-        return {
-          success: false,
-          message: response.error?.message,
-        };
-    }
-  };
-
-  const [state, formAction, isPending] = useActionState<State, FormData>(setupProfile, {
-    success: false,
-  });
-
-  // jump to the panel when there is field error
-  useEffect(() => {
-    if (!state.fieldErrors) return;
-
-    // this is dogshit but it works for now
-    if (state.fieldErrors.avatarFile) {
-      setDisplayingPanel(DisplayingPanel.Avatar);
-      return;
-    }
-    if (state.fieldErrors.userName || state.fieldErrors.displayName) {
-      setDisplayingPanel(DisplayingPanel.Name);
-      return;
-    }
-  }, [state]);
-
-  // error displaying for each field, copy into a separate field to make the field no longer display error
-  // when the value is changed.
-  const [visibleErrors, setVisibleErrors] = useState<State['fieldErrors']>(null);
-
-  useEffect(() => {
-    setVisibleErrors(state.fieldErrors);
-  }, [state.fieldErrors]);
-
-  const clearError = (field: 'userName' | 'displayName' | 'avatarFile') => {
-    setVisibleErrors(prev => {
-      if (!prev) return prev;
-      const updatedErrors = {...prev};
-      delete updatedErrors[field];    // remove the specific error
-      return updatedErrors;
-    });
-  };
-
   return (
     <div className="fixed bg-fixed inset-0 overflow-hidden mesh-bg-1">
       <div
         ref={zoomRef}
         className="absolute inset-0 origin-center"
       >
-
-        <form ref={mapRef} className="absolute top-0 left-0 w-[3000px] h-[2000px] origin-top-left" action={formAction}>
+        <div ref={mapRef} className="absolute top-0 left-0 w-[3000px] h-[2000px] origin-top-left">
           <div
             id={`panel-${DisplayingPanel.Intro}`}
             className={`absolute left-[15%] top-[20%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Intro ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
@@ -441,11 +483,8 @@ export default function ProfileSetupPage() {
             id={`panel-${DisplayingPanel.Avatar}`}
             className={`absolute left-[40%] top-[60%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Avatar ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
           >
-            <AvatarPanel setDisplayingPanel={setDisplayingPanel}
-                         avatarOperation={avatarOperation}
-                         setAvatarOperation={setAvatarOperation}
-                         fieldErrors={visibleErrors}
-                         clearError={clearError}
+            <AvatarPanel
+              setDisplayingPanel={setDisplayingPanel}
             />
           </div>
 
@@ -453,18 +492,18 @@ export default function ProfileSetupPage() {
             id={`panel-${DisplayingPanel.Name}`}
             className={`absolute left-[70%] top-[30%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Name ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
           >
-            <NamesPanel setDisplayingPanel={setDisplayingPanel}
-                        fieldErrors={visibleErrors}
-                        clearError={clearError}/>
+            <NamesPanel
+              setDisplayingPanel={setDisplayingPanel}
+            />
           </div>
 
           <div
             id={`panel-${DisplayingPanel.Complete}`}
             className={`absolute left-[85%] top-[75%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Complete ? 'opacity-100 z-10' : 'opacity-40 z-0 pointer-events-none'}`}
           >
-            <CompletePanel setDisplayingPanel={setDisplayingPanel} isSaving={isPending}/>
+            <CompletePanel setDisplayingPanel={setDisplayingPanel}/>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

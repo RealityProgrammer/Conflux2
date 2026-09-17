@@ -45,6 +45,9 @@ public sealed class SessionUserController(
             nameof(Errors.ConnectionFailure) or nameof(Errors.InvalidCredentials) => 
                 StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(result.Error)),
             
+            nameof(Errors.ValidationErrorsOccurred) =>
+                BadRequest(new ApiResponse(result.Error)),
+            
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
         };
     }
@@ -63,33 +66,46 @@ public sealed class SessionUserController(
             return NoContent();
         }
 
-        switch (result.Error.Code) {
-            case nameof(Errors.ResourceNotFound):
-                return NoContent();
-            
-            case nameof(Errors.NoUserFoundFromId):
-                return BadRequest(result.Error);
-        }
-
-        return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error));
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NoContent(),
+            nameof(Errors.NoUserFoundFromId) => BadRequest(result.Error),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
+        };
     }
     
-    [HttpPost("setup-profile")]
-    public async Task<ActionResult<ApiResponse>> SetupProfile([FromForm] SetupProfileRequest request) {
+    [HttpPost("names")]
+    public async Task<ActionResult<ApiResponse>> SetNames([FromBody] SetNamesRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        await using var avatarFileStream = request.AvatarFile?.OpenReadStream() ?? Stream.Null;
-        
-        Result result = await mediator.Send(new SetupUserProfileCommand(
+        Result result = await mediator.Send(new SetUserNamesCommand(
             userId,
             request.UserName,
-            request.DisplayName,
-            new(request.AvatarOperation, avatarFileStream, request.AvatarFile?.ContentType)
+            request.DisplayName
         ));
+        
+        if (result.IsSuccess) {
+            return Ok();
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpPost("lock-name")]
+    public async Task<ActionResult<ApiResponse>> LockName() {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result = await mediator.Send(new LockNameCommand(userId));
         
         if (result.IsSuccess) {
             return Ok();
@@ -141,55 +157,14 @@ public sealed class SessionUserController(
 
         return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result, Error.None));
     }
-    
-    public sealed record SetupProfileRequest(
+
+    public sealed record SetNamesRequest(
+        [Required(ErrorMessage = "Username is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 32 characters.")]
         string UserName,
-        string DisplayName,
-        AvatarOperationType AvatarOperation,
-        IFormFile? AvatarFile
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
-            if (string.IsNullOrEmpty(UserName)) {
-                yield return new("Username is required.", [ nameof(UserName) ]);
-            } else if (UserName.Length is < 8 or > 64) {
-                yield return new("Username must be between 8 and 64 characters.", [ nameof(UserName) ]);
-            }
-            
-            if (string.IsNullOrEmpty(DisplayName)) {
-                yield return new("Display name is required.", [ nameof(DisplayName) ]);
-            } else if (DisplayName.Length is < 8 or > 64) {
-                yield return new("Display name must be between 8 and 64 characters.", [ nameof(DisplayName) ]);
-            }
 
-            if (AvatarOperation is not AvatarOperationType.NoMod and not AvatarOperationType.Set and not AvatarOperationType.Delete) {
-                yield return new("Invalid avatar operation.", [ nameof(AvatarOperation) ]);
-            }
-            
-            if (AvatarOperation == AvatarOperationType.Set) {
-                if (AvatarFile == null) {
-                    yield return new("Avatar file is required when setting.", [ nameof(AvatarFile) ]);
-                } else {
-                    if (!AvatarFile.ContentType.StartsWith("image/")) {
-                        yield return new("Avatar file is not an image file.", [ nameof(AvatarFile) ]);
-                    }
-
-                    ReadOnlySpan<char> subtype = AvatarFile.ContentType.AsSpan(6);
-
-                    if (subtype is not "png" and not "jpeg") {
-                        yield return new("Avatar file is using unsupported format.", [ nameof(AvatarFile) ]);
-                    }
-                    
-                    var configuration = context.GetRequiredService<IConfiguration>();
-                    
-                    long maxSize = configuration.GetValue<long>("Services:User:MaxAvatarSizeBytes", 1048576);
-
-                    if (AvatarFile.Length > maxSize) {
-                        yield return new($"Avatar file must be smaller than {maxSize.Bytes():MB}.", [ nameof(AvatarFile) ]);
-                    }
-                }
-            }
-        }
-    }
+        [Required(ErrorMessage = "Display name is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 32 characters.")]
+        string DisplayName
+    );
     
     public sealed record UploadAvatarRequest(IFormFile File) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext context) {
@@ -200,7 +175,7 @@ public sealed class SessionUserController(
                 var options = configuration.GetSection("Services:User").Get<UserServiceOptions>()!;
                 
                 if (File.Length > options.MaxAvatarSizeBytes) {
-                    yield return new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.");
+                    yield return new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.", [ nameof(File) ]);
                 }
             }
         }

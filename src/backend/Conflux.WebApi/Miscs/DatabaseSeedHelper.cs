@@ -32,7 +32,7 @@ internal class DatabaseSeedHelper {
                 (f, _) => f.Random.Bool(0.9f)
             )
             .RuleFor(
-                u => u.IsProfileSetup,
+                u => u.IsUserNameLocked,
                 (f, u) => u.EmailConfirmed && f.Random.Bool(0.9f)
             )
             .RuleFor(

@@ -13,19 +13,4 @@ export const userService = {
 
     return `/api/users/${encodeURIComponent(userId)}/avatar?${queryParams.toString()}`;
   },
-
-  deleteAvatar: async (userId: string): Promise<ServiceResponse> => {
-    try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete<BackendResponse>(`/users/${encodeURIComponent(userId)}/avatar`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
 }

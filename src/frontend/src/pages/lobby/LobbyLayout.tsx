@@ -6,7 +6,6 @@ import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {
-  FieldErrors,
   ServerIdentityDto,
   ServiceResponse
 } from "../../api/types.ts";
@@ -203,7 +202,7 @@ function CreateCommunityServerButton() {
       });
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as unknown as FieldErrors<"name" | "avatar">;
+        const details = response.error.details as Record<"name" | "avatar", string[]>;
 
         if (details.name && details.name.length > 0) {
           formMethods.setError("name", {

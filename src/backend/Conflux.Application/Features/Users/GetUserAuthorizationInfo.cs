@@ -24,7 +24,7 @@ public sealed class GetUserAuthorizationInfoHandler(
         return Result<UserAuthorizationInfo>.Success(new(
             user.Id,
             user.EmailConfirmed,
-            user.IsProfileSetup,
+            user.IsUserNameLocked,
             userRoles.AsReadOnly(),
             []
         ));

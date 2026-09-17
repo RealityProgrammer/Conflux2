@@ -27,15 +27,15 @@ public sealed class UploadUserAvatarHandler(
         if (fileFormat is not Image imageFormat) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(UploadUserAvatarCommand.AvatarStream)] = [
-                    "Image file format required.",
+                    "File is not a valid image format.",
                 ],
             });
         }
 
-        if (fileFormat.MediaType is not "image/png" and not "image/jpeg") {
+        if (fileFormat is not Png and not Jpeg and not Webp) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(UploadUserAvatarCommand.AvatarStream)] = [
-                    "Only PNG or JPEG image formats are supported.",
+                    "Only PNG, JPEG and WEBP image formats are supported.",
                 ],
             });
         }

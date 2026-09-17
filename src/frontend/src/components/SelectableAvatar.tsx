@@ -4,7 +4,7 @@ import {type ChangeEvent, type ReactNode, useEffect, useRef, useState} from "rea
 interface AvatarInputProps {
   src?: string | undefined;
   className?: string | undefined;
-  onAvatarChange: (file: File, previewUrl: string) => void;
+  onAvatarChange?: (file: File, previewUrl: string) => void;
   fallback: () => ReactNode;
 }
 
@@ -38,9 +38,7 @@ export default function SelectableAvatar({src, className, onAvatarChange, fallba
     const newPreviewUrl = URL.createObjectURL(file);
     setLocalPreviewUrl(newPreviewUrl);
 
-    if (onAvatarChange) {
-      onAvatarChange(file, newPreviewUrl);
-    }
+    onAvatarChange?.(file, newPreviewUrl);
 
     // make it selecting exact same file twice still trigger the onChange event
     if (fileInputRef.current) {

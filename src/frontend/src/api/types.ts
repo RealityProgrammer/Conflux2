@@ -33,7 +33,6 @@ export const INVITATION_EXPIRE_VALUES = [
 export type InvitationExpireAfter = components["schemas"]["InvitationExpireAfter"];
 
 // responses
-export type FieldErrors<F extends keyof any> = Record<F, string[]>;
 export type ServiceError = components["schemas"]["Error"];
 
 export type BackendResponse<T = void> =

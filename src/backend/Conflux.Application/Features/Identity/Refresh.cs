@@ -32,7 +32,7 @@ public sealed class RefreshHandler(
         return Result<RefreshResponse>.Success(new(new(
             user.Id,
             user.EmailConfirmed,
-            user.IsProfileSetup,
+            user.IsUserNameLocked,
             roles.AsReadOnly(),
             []
         ), "Bearer", accessToken));

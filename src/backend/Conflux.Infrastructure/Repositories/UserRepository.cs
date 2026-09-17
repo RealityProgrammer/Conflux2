@@ -36,7 +36,7 @@ internal sealed class UserRepository(
     public async Task<Result<bool>> IsProfileSetup(Guid userId, CancellationToken cancellationToken = default) {
         var isProfileSetup = await dbContext.Users
             .Where(u => u.Id == userId)
-            .Select(u => u.IsProfileSetup)
+            .Select(u => u.IsUserNameLocked)
             .Cast<bool?>()
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -45,26 +45,6 @@ internal sealed class UserRepository(
         }
 
         return Result<bool>.Success(value);
-    }
-
-    public async Task<Result> SetupProfile(Guid userId, string userName, string displayName, CancellationToken cancellationToken = default) {
-        var normalizedName = userManager.NormalizeName(userName);
-        
-        int numChanged = await dbContext.Users
-            .Where(u => u.Id == userId)
-            .ExecuteUpdateAsync(setter => {
-                setter
-                    .SetProperty(u => u.UserName, userName)
-                    .SetProperty(u => u.NormalizedUserName, normalizedName)
-                    .SetProperty(u => u.DisplayName, displayName)
-                    .SetProperty(u => u.IsProfileSetup, true);
-            }, cancellationToken);
-
-        if (numChanged > 0) {
-            return Result.Success();
-        }
-
-        return Errors.NoUserFoundFromId();
     }
 
     public async Task<Result<UserIdentityProfileDto>> GetIdentityProfile(Guid userId, CancellationToken cancellationToken = default) {
