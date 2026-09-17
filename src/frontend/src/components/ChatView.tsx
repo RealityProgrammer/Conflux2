@@ -20,6 +20,89 @@ import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import useTimelineEntries from "../hooks/useTimelineEntries.ts";
 import type {TimelineContext} from "./chat/TimelineContext.ts";
 import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
+import Dialog from "./Dialog.tsx";
+import {Dialog as RadixDialog} from "radix-ui";
+
+function useChatAutoScroll({
+  messageGroups,
+  isLoading,
+  virtualizerRef,
+  viewportRef,
+}: {
+  messageGroups: Array<{ messages: unknown[] }>;
+  isLoading: boolean;
+  virtualizerRef: RefObject<ReactVirtualizer<HTMLDivElement, Element>>;
+  viewportRef: RefObject<HTMLDivElement>;
+}) {
+  const [isReady, setIsReady] = useState(false);
+  const isReadyRef = useRef(false);
+
+  const groupCount = messageGroups.length;
+  const lastGroupMessageCount = messageGroups.at(-1)?.messages.length ?? 0;
+
+  // initial jump to the bottom
+  useLayoutEffect(() => {
+    if (isReadyRef.current) return;
+
+    if (groupCount > 0) {
+      const raf1 = requestAnimationFrame(() => {
+        const virtualizer = virtualizerRef.current;
+        if (virtualizer) {
+          virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
+        }
+
+        const raf2 = requestAnimationFrame(() => {
+          isReadyRef.current = true;
+          setIsReady(true);
+        });
+
+        return () => cancelAnimationFrame(raf2);
+      });
+
+      return () => cancelAnimationFrame(raf1);
+    }
+
+    if (!isLoading && groupCount === 0) {
+      isReadyRef.current = true;
+      setIsReady(true);
+    }
+  }, [groupCount, isLoading, virtualizerRef]);
+
+  // autoscroll on new message arrivals
+  const previousMessageCount = useRef({
+    groupCount,
+    lastGroupCount: lastGroupMessageCount,
+  });
+
+  useEffect(() => {
+    const prev = previousMessageCount.current;
+    const hasNewMessages =
+      groupCount > prev.groupCount ||
+      (lastGroupMessageCount > 0 && lastGroupMessageCount > prev.lastGroupCount);
+
+    if (hasNewMessages && isReady && viewportRef.current) {
+      const viewport = viewportRef.current;
+      const distanceFromBottom =
+        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+
+      if (distanceFromBottom < 50) {
+        requestAnimationFrame(() => {
+          const virtualizer = virtualizerRef.current;
+          if (virtualizer) {
+            virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
+          }
+        });
+      }
+    }
+
+    previousMessageCount.current = {
+      groupCount,
+      lastGroupCount: lastGroupMessageCount,
+    };
+  }, [groupCount, lastGroupMessageCount, isReady, viewportRef, virtualizerRef]);
+
+  return { isReady };
+}
 
 type MediaGalleryState = {
   items: { id: string; type: string }[];
@@ -59,55 +142,14 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
     deleteMessage,
   } = useGetMessages(channelId, 50);
 
-  const [isReady, setIsReady] = useState(false);
   const {width: viewportWidth = 0} = useResizeObserver({ref: viewportRef});
 
-  // jump to the bottom when the messages are rendered
-  useLayoutEffect(() => {
-    if (messageGroups.length > 0 && !isReady) {
-      requestAnimationFrame(() => {
-        const virtualizer = virtualizerRef.current;
-        if (!virtualizer) return;
-
-        virtualizer.scrollToIndex(virtualizer.options.count - 1, {align: 'end'});
-
-        requestAnimationFrame(() => setIsReady(true));
-      });
-    } else if (!isLoading && messageGroups.length === 0) {
-      setIsReady(true);
-    }
-  }, [messageGroups.length, isLoading, isReady]);
-
-  // jump to bottom automatically when something arrive.
-  const lastGroupMessageCount = messageGroups.length === 0 ? null : messageGroups.at(-1)?.messages.length;
-
-  const previousMessageCount = useRef({
-    groupCount: messageGroups.length,
-    lastGroupCount: lastGroupMessageCount,
+  const { isReady } = useChatAutoScroll({
+    messageGroups,
+    isLoading,
+    virtualizerRef,
+    viewportRef,
   });
-
-  useEffect(() => {
-    if ((messageGroups.length > previousMessageCount.current.groupCount || (lastGroupMessageCount && previousMessageCount.current.lastGroupCount && lastGroupMessageCount > previousMessageCount.current.lastGroupCount)) && isReady) {
-      const distanceFromBottom = viewportRef.current.scrollHeight - viewportRef.current.scrollTop - viewportRef.current.clientHeight;
-
-      // why not == 0? idk im too tired to think about it lmao
-      const isNearBottom = distanceFromBottom < 50;
-
-      if (isNearBottom) {
-        requestAnimationFrame(() => {
-          const virtualizer = virtualizerRef.current;
-          if (!virtualizer) return;
-
-          virtualizer.scrollToIndex(virtualizer.options.count - 1, {align: 'end'});
-        });
-      }
-    }
-
-    previousMessageCount.current = {
-      groupCount: messageGroups.length,
-      lastGroupCount: lastGroupMessageCount,
-    };
-  }, [messageGroups.length, messageGroups.at(-1)?.messages.length ?? 0, isReady]);
 
   // gallery
   const [galleryState, setGalleryState] = useState<MediaGalleryState>({
@@ -165,6 +207,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
         const userQuery = await queryClient.query({
           queryKey: useGetUserIdentityProfileQuery.getKey({ id: senderId }),
           queryFn: useGetUserIdentityProfileQuery.fetcher({ id: senderId }),
+          staleTime: 30 * 60 * 1000,
         });
 
         knownUser = userQuery.user ?? undefined;
@@ -289,23 +332,58 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
         }}
       />
 
-      <AlertActionDialog
-        panelClassName="w-128"
-        title={"Are you sure?"}
-        description={"This action cannot be undone. You will never see this message and its attachments ever again."}
+      <DeleteMessageConfirmationDialog
         open={!!deletingMessage}
         onOpenChange={(open) => {
           if (!open) {
             setDeletingMessage(undefined);
           }
         }}
-        actionButton={(
-          <button className="button-theme-danger cursor-pointer px-3 py-2 rounded-md"
-                  onClick={() => deletingMessage && onMessageDelete(deletingMessage)}>
-            Delete message
-          </button>
-        )}
+        onConfirm={() => {
+          if (deletingMessage) {
+            onMessageDelete(deletingMessage);
+            setDeletingMessage(undefined);
+          }
+        }}
       />
     </div>
   );
+}
+
+function DeleteMessageConfirmationDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+}: { open: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void }) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Delete Message"
+      subtitle="Nothing happened here, folk..."
+      contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"
+      footerContent={(
+        <div className="w-full flex flex-row justify-end p-3 gap-3">
+          <RadixDialog.Close
+            type="button"
+            className="cursor-pointer basis-20 outline-none"
+          >
+            Cancel
+          </RadixDialog.Close>
+
+          <button
+            className="button-theme-danger cursor-pointer px-3 py-2 rounded-md"
+            onClick={onConfirm}
+          >
+            Delete message
+          </button>
+        </div>
+      )}
+    >
+      <div className="p-3">
+        Are you sure you want to delete this message?<br/>
+        This action cannot be undone. You will never see this message and its attachments ever again.
+      </div>
+    </Dialog>
+  )
 }
