@@ -13,6 +13,7 @@ import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import {estimateMessageLayout} from "./utils.ts";
 import {toast} from "react-toastify";
+import {formatDate} from "date-fns";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -30,7 +31,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     let height = 0;
 
     if (this.data.showHeader) {
-      height += 24;
+      height += 20;
     }
 
     const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
@@ -80,7 +81,7 @@ interface MessageViewProps {
   context: TimelineContext;
 }
 
-export default function MessageView({
+function MessageView({
   senderProfile,
   message,
   showHeader,
@@ -94,7 +95,7 @@ export default function MessageView({
       <ContextMenu.Trigger
         className="w-full flex flex-col"
       >
-        <div className="hover-highlight px-2">
+        <div className="hover-highlight px-2 group">
           {message.replyTo && replyToMessageSenderProfile && (
             <div className="min-w-0">
               <p className="text-xs ml-13">
@@ -103,31 +104,39 @@ export default function MessageView({
             </div>
           )}
 
-          {showHeader ? (
-            <div className="flex flex-row gap-3">
-              <UserAvatar
-                hasAvatar={senderProfile?.hasAvatar ?? false}
-                userId={senderProfile?.id ?? undefined}
-                className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-              />
+          <div className="flex flex-row gap-3">
+            {showHeader ? (
+              <>
+                <UserAvatar
+                  hasAvatar={senderProfile?.hasAvatar ?? false}
+                  userId={senderProfile?.id ?? undefined}
+                  className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                />
 
-              <div className="flex-1 min-w-0">
-                <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">
+                    {senderProfile?.userName ?? "Unknown Sender"}
+                    {" "}
+                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
+                  </p>
+
+                  <MessageContentView
+                    message={{...message, senderUserId: senderProfile!.id}}
+                    onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="select-none basis-10 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
 
                 <MessageContentView
                   message={{...message, senderUserId: senderProfile!.id}}
                   onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
                 />
-              </div>
-            </div>
-          ) : (
-            <div className="ml-13">
-              <MessageContentView
-                message={{...message, senderUserId: senderProfile!.id}}
-                onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
-              />
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </ContextMenu.Trigger>
 
@@ -207,11 +216,9 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
 function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
   return (
     <>
-      <div className="text-sm">
-        <p className="leading-6 whitespace-pre-wrap wrap-break-word">
-          {message.body}
-        </p>
-      </div>
+      <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
+        {message.body}
+      </p>
 
       {message.attachments && message.attachments.length > 0 && (
         <MessageAttachments

@@ -15,7 +15,6 @@ import useGetMessages from "../hooks/useGetMessages.ts";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
-import AlertActionDialog from "./AlertActionDialog.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import useTimelineEntries from "../hooks/useTimelineEntries.ts";
 import type {TimelineContext} from "./chat/TimelineContext.ts";
