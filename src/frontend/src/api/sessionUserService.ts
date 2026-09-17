@@ -8,7 +8,6 @@ import type {
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
-import type {AvatarOperation} from "./types.ts";
 import {authService} from "./authService.ts";
 
 export const sessionUserService = {

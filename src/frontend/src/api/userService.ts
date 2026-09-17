@@ -1,8 +1,3 @@
-import {type AxiosError, type AxiosResponse} from "axios";
-import type {BackendResponse, ServiceResponse,} from "./types.ts";
-import {apiClient} from "./client.ts";
-import {handleAxiosError} from "./errorHandling.ts";
-
 export const userService = {
   getAvatarUrl: (userId: string, forceRefresh: boolean): string => {
     const queryParams: URLSearchParams = new URLSearchParams();

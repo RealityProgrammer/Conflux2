@@ -513,7 +513,7 @@ function MemberInformationContent() {
 }
 
 function MemberActions() {
-  const { inspectingMemberInfo, refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
+  const { refreshInspectingMemberInfo } = useContext(InspectingMemberContext)!;
 
   const refreshBanExpireInfo = () => {
     refreshInspectingMemberInfo();
