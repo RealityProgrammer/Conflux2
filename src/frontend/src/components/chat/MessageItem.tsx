@@ -215,7 +215,7 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
 
 function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
   return (
-    <>
+    <div>
       <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
         {message.body}
       </p>
@@ -226,6 +226,6 @@ function MessageContentView({message, onAttachmentClick}: { message: TimelineMes
           onAttachmentClick={onAttachmentClick}
         />
       )}
-    </>
+    </div>
   );
 }

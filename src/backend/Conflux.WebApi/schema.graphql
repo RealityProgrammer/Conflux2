@@ -438,6 +438,7 @@ input ApplicationUserSortInput {
 input AttachmentFilterInput {
   and: [AttachmentFilterInput!]
   or: [AttachmentFilterInput!]
+  name: StringOperationFilterInput
   id: UuidOperationFilterInput
   type: StringOperationFilterInput
 }

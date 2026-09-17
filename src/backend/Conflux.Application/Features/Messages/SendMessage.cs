@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Services;
 using Conflux.Domain;
@@ -14,7 +15,7 @@ public sealed record SendMessageCommand(
     Guid SenderUserId,
     Guid ChannelId,
     string? Body,
-    IReadOnlyList<Stream> AttachmentStreams,
+    IReadOnlyList<UploadFile> Attachments,
     Guid? ReplyToId
 ) : ICommand<Result<TimelineMessageDto>>;
 
@@ -70,12 +71,14 @@ public sealed class SendMessageHandler(
         
         // upload attachments
         Attachment[] attachments = [];
-        if (request.AttachmentStreams.Count > 0) {
-            Result<Attachment[]> attachmentResults = await UploadAttachments(request.AttachmentStreams, cancellationToken);
+        if (request.Attachments.Count > 0) {
+            Result<Attachment[]> attachmentResults = await UploadAttachments(request.Attachments, cancellationToken);
 
             if (!attachmentResults.IsSuccess) {
                 return attachmentResults.Error;
             }
+
+            attachments = attachmentResults.Value!;
         }
 
         Message message = new() {
@@ -130,16 +133,16 @@ public sealed class SendMessageHandler(
     }
 
     private async Task<Result<Attachment[]>> UploadAttachments(
-        IReadOnlyList<Stream> attachmentStreams, 
+        IReadOnlyList<UploadFile> attachments, 
         CancellationToken cancellationToken
     ) {
-        Attachment?[] attachments = new Attachment?[attachmentStreams.Count];
-
-        for (int i = 0; i < attachments.Length; i++) {
-            var stream = attachmentStreams[i];
+        Attachment?[] finalAttachments = new Attachment?[attachments.Count];
+        
+        for (int i = 0; i < attachments.Count; i++) {
+            var attachment = attachments[i];
             string mediaType;
 
-            switch (fileFormatInspector.DetermineFileFormat(stream)) {
+            switch (fileFormatInspector.DetermineFileFormat(attachment.Stream)) {
                 case Image imageFormat:
                     switch (imageFormat) {
                         case Png pngFormat:
@@ -159,10 +162,10 @@ public sealed class SendMessageHandler(
                             break;
                         
                         default:
-                            await DeleteUploadedAttachments(attachments);
+                            await DeleteUploadedAttachments(finalAttachments);
 
                             return Errors.ValidationErrorsOccurred(new() {
-                                [nameof(attachmentStreams)] = [
+                                [nameof(attachments)] = [
                                     "One of the attachments doesn't have the supported image format.",
                                 ],
                             });
@@ -184,46 +187,47 @@ public sealed class SendMessageHandler(
                     break;
                 
                 case null:
-                    await DeleteUploadedAttachments(attachments);
+                    await DeleteUploadedAttachments(finalAttachments);
 
                     return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(attachmentStreams)] = [
+                        [nameof(attachments)] = [
                             "One of the attachments have an unknown file format.",
                         ],
                     });
                 
                 default:
-                    await DeleteUploadedAttachments(attachments);
+                    await DeleteUploadedAttachments(finalAttachments);
 
                     return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(attachmentStreams)] = [
+                        [nameof(attachments)] = [
                             "One of the attachments doesn't have supported file format.",
                         ],
                     });
             }
 
-            stream.Position = 0;
+            attachment.Stream.Position = 0;
 
             try {
                 Result<Guid> uploadResult =
-                    await blobStorage.UploadMessageAttachment(new(stream, mediaType), cancellationToken);
+                    await blobStorage.UploadMessageAttachment(new(attachment.Stream, mediaType), cancellationToken);
 
                 if (uploadResult.IsSuccess) {
-                    attachments[i] = new() {
+                    finalAttachments[i] = new() {
+                        Name = attachments[i].FileName,
                         Id = uploadResult.Value,
                         Type = mediaType,
                     };
                 } else {
-                    await DeleteUploadedAttachments(attachments);
+                    await DeleteUploadedAttachments(finalAttachments);
                     return Errors.AttachmentUploadFailure();
                 }
             } catch (OperationCanceledException) {
-                await DeleteUploadedAttachments(attachments);
+                await DeleteUploadedAttachments(finalAttachments);
                 throw;
             }
         }
 
-        return Result<Attachment[]>.Success(attachments!);
+        return Result<Attachment[]>.Success(finalAttachments!);
     }
     
     private async ValueTask DeleteUploadedAttachments(IEnumerable<Attachment?> attachments) {

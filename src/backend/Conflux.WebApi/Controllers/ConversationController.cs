@@ -40,18 +40,18 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse(Errors.EmptyMessageContent()));
         }
 
-        Stream[] attachmentStreams;
+        UploadFile[] attachments;
 
         if (request.Attachments is { Length: > 0 }) {
-            attachmentStreams = new Stream[request.Attachments.Length];
+            attachments = new UploadFile[request.Attachments.Length];
             
-            for (int i = 0; i < attachmentStreams.Length; i++) {
+            for (int i = 0; i < attachments.Length; i++) {
                 try {
-                    attachmentStreams[i] = request.Attachments[i].OpenReadStream();
+                    attachments[i] = new(request.Attachments[i].FileName, request.Attachments[i].OpenReadStream());
                 } catch {
-                    foreach (var stream in attachmentStreams) {
-                        if (stream != null!) {
-                            await stream.DisposeAsync();
+                    foreach (var attachment in attachments) {
+                        if (attachment.Stream != null!) {
+                            await attachment.Stream.DisposeAsync();
                         }
                     }
 
@@ -59,7 +59,7 @@ public sealed class ConversationController(
                 }
             }
         } else {
-            attachmentStreams = [];
+            attachments = [];
         }
 
         try {
@@ -67,7 +67,7 @@ public sealed class ConversationController(
                 userId, 
                 channelId, 
                 request.Body, 
-                attachmentStreams, 
+                attachments, 
                 request.ReplyToId
             ), cancellationToken);
 
@@ -81,8 +81,8 @@ public sealed class ConversationController(
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, Errors.UnexpectedError())),
             };
         } finally {
-            foreach (var stream in attachmentStreams) {
-                await stream.DisposeAsync();
+            foreach (var stream in attachments) {
+                await stream.Stream.DisposeAsync();
             }
         }
     }
