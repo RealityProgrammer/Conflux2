@@ -245,7 +245,7 @@ export default function ServerSidebar() {
         setIsCreatingDialogOpen(true);
       }}/>
 
-      <section className="mt-2 px-1 overflow-y-auto scrollbar-hide">
+      <section className="mt-2 px-1 overflow-y-auto scrollbar-none">
         {serverSummary.channelCategories.filter(c => !c.id).map(c => {
           return (
             <ChannelCategoryView

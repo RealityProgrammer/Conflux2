@@ -166,8 +166,17 @@ public sealed class ConversationController(
     
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
-    public ActionResult GetAvatarUrl(Guid attachmentId) {
-        return Redirect(blobUrlProvider.GetMessageAttachmentPreSignedUrl(attachmentId));
+    public async Task<ActionResult> GetAvatarUrl(Guid attachmentId, [FromQuery] bool download = false) {
+        var result = await blobUrlProvider.GetMessageAttachmentPreSignedUrl(attachmentId, download);
+
+        if (result.IsSuccess) {
+            return Redirect(result.Value!);
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
+        };
     }
 
     public record SendMessageRequest(

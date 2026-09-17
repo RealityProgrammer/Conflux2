@@ -132,4 +132,11 @@ export const messageService = {
 
     return `/api/attachments/${encodeURIComponent(attachmentId)}${refreshParam}`;
   },
+
+  getAttachmentDownloadUrl: (attachmentId: string): string => {
+    const searchParams = new URLSearchParams();
+    searchParams.append("download", "true");
+
+    return `/api/attachments/${encodeURIComponent(attachmentId)}?${searchParams.toString()}`;
+  },
 }

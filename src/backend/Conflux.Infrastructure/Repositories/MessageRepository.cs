@@ -124,4 +124,16 @@ internal sealed class MessageRepository(
 
         return Result<PagedTimelineMessageResult>.Success(new(messageProjections, hasMoreBefore, hasMoreAfter));
     }
+
+    public async Task<Attachment?> GetAttachmentById(Guid id, CancellationToken cancellationToken = default) {
+        // have to do this to utilize GIN
+        string searchJson = $$"""[{"Id": "{{id}}"}]""";
+        
+        var attachments = await dbContext.Messages
+            .Where(m => EF.Functions.JsonContains(m.Attachments, searchJson))
+            .Select(m => m.Attachments)
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        return attachments?.FirstOrDefault(a => a.Id == id);
+    }
 }

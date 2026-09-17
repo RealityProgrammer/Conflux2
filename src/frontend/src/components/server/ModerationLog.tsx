@@ -203,7 +203,7 @@ function LogTable() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 w-full overflow-auto rounded-lg border-2 border-gray-600 bg-gray-675 shadow-xl scrollbar-hide"
+      className="flex-1 w-full overflow-auto rounded-lg border-2 border-gray-600 bg-gray-675 shadow-xl scrollbar-none"
     >
       <table
         className="table-fixed text-sm text-center border-separate border-spacing-0 min-w-full"

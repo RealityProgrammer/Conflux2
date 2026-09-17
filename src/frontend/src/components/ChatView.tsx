@@ -96,19 +96,6 @@ function useChatAutoScroll({
           virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
         }
       });
-
-      // const viewport = viewportRef.current;
-      // const distanceFromBottom =
-      //   viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-      //
-      // if (distanceFromBottom < 50) {
-      //   requestAnimationFrame(() => {
-      //     const virtualizer = virtualizerRef.current;
-      //     if (virtualizer) {
-      //       virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
-      //     }
-      //   });
-      // }
     }
 
     previousMessageCount.current = {
@@ -296,6 +283,15 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
               ...prev,
               currentIndex: prev.currentIndex + 1,
             }));
+          }}
+          onDownloadRequested={() => {
+            const downloadUrl = messageService.getAttachmentDownloadUrl(galleryState.items[galleryState.currentIndex].id);
+
+            const link = document.createElement("a");
+            link.href = downloadUrl.toString();
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           }}
         />
       )}

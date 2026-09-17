@@ -3,7 +3,8 @@ using Amazon.S3.Model;
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
 using Conflux.Domain;
-using Microsoft.Extensions.Configuration;
+using Conflux.Domain.Entities;
+using Conflux.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Net;
@@ -15,7 +16,8 @@ internal sealed class StorageService(
     [FromKeyedServices("PreSigningClient")] IAmazonS3 preSigningClient,
     TimeProvider timeProvider,
     ILogger<StorageService> logger,
-    IOptions<StorageServiceOptions> options
+    IOptions<StorageServiceOptions> options,
+    IMessageRepository messageRepository
 ) : IBlobStorage, IBlobUrlProvider {
     private readonly StorageServiceOptions _options = options.Value;
     
@@ -153,20 +155,26 @@ internal sealed class StorageService(
         }
     }
     
-    public string GetMessageAttachmentPreSignedUrl(Guid attachmentId) {
-        var uniqueKey = CreateAttachmentUniqueKey(attachmentId);
-        return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
-    }
-    
-    private string GetPreSignedUrl(string key, DateTime? expires = null) {
+    public async Task<Result<string>> GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool download) {
         var request = new GetPreSignedUrlRequest {
             BucketName = _options.BucketName,
-            Key = key,
-            Expires = expires,
+            Key = CreateAttachmentUniqueKey(attachmentId),
+            Expires = timeProvider.GetUtcNow().AddHours(1).UtcDateTime,
             Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
         };
-        
-        return preSigningClient.GetPreSignedURL(request);
+
+        if (download) {
+            Attachment? attachment = await messageRepository.GetAttachmentById(attachmentId, CancellationToken.None);
+
+            if (attachment == null) {
+                return Errors.ResourceNotFound($"Attachment (Id = {attachment})");
+            }
+
+            string fileName = string.IsNullOrEmpty(attachment.Name) ? "file" : attachment.Name;
+            request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{fileName}\"";
+        }
+
+        return Result<string>.Success(preSigningClient.GetPreSignedURL(request));
     }
 
     public async Task<Result<string>> UploadCommunityServerAvatar(
@@ -188,6 +196,17 @@ internal sealed class StorageService(
     public string GetCommunityServerAvatarPreSignedUrl(Guid serverId) {
         var uniqueKey = CreateCommunityServerAvatarUniqueKey(serverId);
         return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+    }
+    
+    private string GetPreSignedUrl(string key, DateTime? expires) {
+        var request = new GetPreSignedUrlRequest {
+            BucketName = _options.BucketName,
+            Key = key,
+            Expires = expires,
+            Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
+        };
+
+        return preSigningClient.GetPreSignedURL(request);
     }
 
     private static string CreateUserAvatarUniqueKey(Guid userId) {
