@@ -4,7 +4,7 @@ import type {
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/types.ts";
-import {type ReactNode} from "react";
+import {type Key, type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
@@ -25,6 +25,10 @@ type MessageItemProps = {
 export class MessageItem extends TimelineItem<MessageItemProps> {
   constructor(data: MessageItemProps) {
     super(data);
+  }
+
+  getKey(): Key {
+    return `message_${this.data.message.id}`;
   }
 
   measureHeight(context: TimelineContext): number {

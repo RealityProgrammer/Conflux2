@@ -19,8 +19,6 @@ import useServerMemberAuthorizeInfo, {
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
-  // TODO: Fix: When user is kicked, they can still enter server via the URL.
-
   const navigate = useNavigate();
 
   const { userAuthorization } = useAuthorization();

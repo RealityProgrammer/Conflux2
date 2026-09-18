@@ -302,7 +302,9 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
         className="flex-1"
         containerClassName="mt-auto"
         itemCount={timelineItems.length}
-        keyExtractor={(itemIndex) => itemIndex} // TODO: stable key extraction
+        keyExtractor={(itemIndex) => {
+          return timelineItems[itemIndex].getKey();
+        }}
         isLoading={isLoading}
         estimateSize={(target) => {
           if (target === 'previousLoader' || target === 'nextLoader') return 30;

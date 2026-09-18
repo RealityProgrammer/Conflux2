@@ -1,4 +1,4 @@
-import {type ChangeEvent, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
+import {type ChangeEvent, type Key, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
 import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineMessageClusterItemDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
@@ -15,6 +15,10 @@ export type MessageEditorItemProps = {
 export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
   constructor(data: MessageEditorItemProps) {
     super(data);
+  }
+
+  getKey(): Key {
+    return "editing_message";
   }
 
   measureHeight(context: TimelineContext): number {
