@@ -1,12 +1,10 @@
 import {useDebounceValue} from "usehooks-ts";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {
-  type DiscoverFriendElement,
-  type PaginatedResponse,
-  type SendFriendRequestResponse,
+  type DiscoverFriendSummary,
+  type PaginatedResult,
   type ServiceResponse,
-  UserRelationshipStatus
-} from "../../api/responses.ts";
+} from "../../api/types.ts";
 import {friendService} from "../../api/friendService.ts";
 import type {
   FriendRequestAcceptedEvent,
@@ -23,9 +21,10 @@ import Spinner from "../../components/Spinner.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {UserRelationshipStatus} from "../../api/schema.ts";
 
 interface RowProps {
-  user: DiscoverFriendElement;
+  user: DiscoverFriendSummary;
   updateCacheStatus: (userId: string, newStatus: UserRelationshipStatus) => void;
 }
 
@@ -44,8 +43,8 @@ export default function AddFriendTabContent() {
   } = useInfiniteQuery({
     enabled: !!userNameSearch,
     queryKey: ["discoverUsers", userNameSearch],
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<DiscoverFriendElement> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<DiscoverFriendElement>> =
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<DiscoverFriendSummary> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<DiscoverFriendSummary>> =
         await friendService.discover(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
@@ -68,7 +67,7 @@ export default function AddFriendTabContent() {
   const queryClient = useQueryClient();
 
   const updateCacheStatus = (userId: string, newStatus: UserRelationshipStatus) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<DiscoverFriendElement>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<DiscoverFriendSummary>>>(
       ["discoverUsers", userNameSearch],
       (oldData) => {
         if (!oldData) return oldData;
@@ -87,24 +86,24 @@ export default function AddFriendTabContent() {
   };
 
   // handle realtime modification
-  useSignalREvent("FriendRequestReceived", (notif: FriendRequestReceivedEvent) => {
-    updateCacheStatus(notif.senderUserId, UserRelationshipStatus.IncomingRequest);
+  useSignalREvent("FriendRequestReceived", (event: FriendRequestReceivedEvent) => {
+    updateCacheStatus(event.senderUserId, UserRelationshipStatus.IncomingRequest);
   });
 
-  useSignalREvent("FriendRequestCanceled", (notif: FriendRequestCanceledEvent) => {
-    updateCacheStatus(notif.senderUserId, UserRelationshipStatus.Stranger);
+  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
+    updateCacheStatus(event.senderUserId, UserRelationshipStatus.Stranger);
   });
 
-  useSignalREvent("FriendRequestAccepted", (notif: FriendRequestAcceptedEvent) => {
-    updateCacheStatus(notif.acceptorUserId, UserRelationshipStatus.Friended);
+  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
+    updateCacheStatus(event.acceptorUserId, UserRelationshipStatus.Friended);
   });
 
-  useSignalREvent("FriendRequestRejected", (notif: FriendRequestRejectedEvent) => {
-    updateCacheStatus(notif.rejecterUserId, UserRelationshipStatus.Stranger);
+  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
+    updateCacheStatus(event.rejecterUserId, UserRelationshipStatus.Stranger);
   });
 
-  useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
-    updateCacheStatus(notif.invokerUserId, UserRelationshipStatus.Stranger);
+  useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
+    updateCacheStatus(event.invokerUserId, UserRelationshipStatus.Stranger);
   });
 
   return (
@@ -132,6 +131,7 @@ export default function AddFriendTabContent() {
         viewportClassName="rounded-md border-2 border-gray-600"
         itemCount={allElements.length}
         isLoading={isLoading}
+        keyExtractor={(index) => allElements[index].userId}
         estimateSize={() => ITEM_HEIGHT}
         fetchNextPage={() => {
           fetchNextPage()
@@ -168,9 +168,9 @@ function Row({user, updateCacheStatus}: RowProps) {
   const {mutation, activeAction} = useFriendActions(user.userId);
 
   const handleSendFriendRequest = () => mutation.mutate('send', {
-    onSuccess: (response: ServiceResponse<SendFriendRequestResponse>) => {
+    onSuccess: (response: ServiceResponse<UserRelationshipStatus>) => {
       if (response && response.success && response.data) {
-        updateCacheStatus(user.userId, response.data.status);
+        updateCacheStatus(user.userId, response.data);
       }
     },
   });
@@ -244,7 +244,7 @@ function Row({user, updateCacheStatus}: RowProps) {
           Visit Profile
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         {user.status == UserRelationshipStatus.Stranger ? (
           <DropdownMenu.Item
@@ -289,7 +289,7 @@ function Row({user, updateCacheStatus}: RowProps) {
           </DropdownMenu.Item>
         )}
 
-        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         <DropdownMenu.Item
           className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"

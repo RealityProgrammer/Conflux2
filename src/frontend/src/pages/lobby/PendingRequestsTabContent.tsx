@@ -2,13 +2,7 @@ import {useDebounceValue} from "usehooks-ts";
 import {BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import {
-  type PaginatedResponse,
-  type QueryPendingRequestElement,
-  type ServiceResponse,
-  UserRelationshipStatus
-} from "../../api/responses.ts";
-import {friendService} from "../../api/friendService.ts";
+import {type PaginatedResult, type PendingFriendRequestDto, type ServiceResponse} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import Spinner from "../../components/Spinner.tsx";
@@ -22,12 +16,14 @@ import type {
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
+import {sessionUserService} from "../../api/sessionUserService.ts";
+import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
+import {UserRelationshipStatus} from "../../api/schema.ts";
 
 const ITEM_HEIGHT: number = 52;
 
 interface RowProps {
-  element: QueryPendingRequestElement;
+  element: PendingFriendRequestDto;
   removeCacheElement: (userId: string) => void;
 }
 
@@ -47,9 +43,9 @@ export default function PendingRequestsTabContent() {
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<QueryPendingRequestElement> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<QueryPendingRequestElement>> =
-        await friendService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<PendingFriendRequestDto> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<PendingFriendRequestDto>> =
+        await sessionUserService.queryPendingRequests(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
     },
@@ -69,7 +65,7 @@ export default function PendingRequestsTabContent() {
   const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const removeCacheElement = (userId: string) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<PendingFriendRequestDto>>>(
       queryKey,
       (oldData) => {
         if (!oldData) return oldData;
@@ -102,30 +98,30 @@ export default function PendingRequestsTabContent() {
     );
   };
 
-  const getUserBasicProfile = useFetchUserBasicProfile();
+  useSignalREvent("FriendRequestReceived", async (event: FriendRequestReceivedEvent) => {
+    const query = await queryClient.query({
+      queryKey: useGetUserIdentityProfileQuery.getKey({ id: event.senderUserId }),
+      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.senderUserId }),
+    });
 
-  useSignalREvent("FriendRequestReceived", async (notif: FriendRequestReceivedEvent) => {
-    const profileResponse = await getUserBasicProfile(notif.senderUserId);
+    const userProfile = query.user;
+    if (!userProfile) return;
 
-    if (!profileResponse.success) return;
-
-    const userProfile = profileResponse.data!;
-
-    const newElement: QueryPendingRequestElement = {
-      userId: notif.senderUserId,
-      userName: userProfile.userName,
-      displayName: userProfile.displayName,
+    const newElement: PendingFriendRequestDto = {
+      userId: event.senderUserId,
+      userName: userProfile.userName ?? "???",
+      displayName: userProfile.displayName ?? "???",
       hasAvatar: userProfile.hasAvatar,
       status: UserRelationshipStatus.IncomingRequest,
     }
 
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<QueryPendingRequestElement>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<PendingFriendRequestDto>>>(
       queryKey,
       (oldData) => {
         if (!oldData || oldData.pages.length === 0) return oldData;
 
         const alreadyExists = oldData.pages.some(page =>
-          page?.elements.some(el => el.userId === notif.senderUserId)
+          page?.elements.some(el => el.userId === event.senderUserId)
         );
 
         if (alreadyExists) return oldData;
@@ -150,16 +146,16 @@ export default function PendingRequestsTabContent() {
     );
   });
 
-  useSignalREvent("FriendRequestRejected", (notif: FriendRequestRejectedEvent) => {
-    removeCacheElement(notif.rejecterUserId);
+  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
+    removeCacheElement(event.rejecterUserId);
   });
 
-  useSignalREvent("FriendRequestAccepted", (notif: FriendRequestAcceptedEvent) => {
-    removeCacheElement(notif.acceptorUserId);
+  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
+    removeCacheElement(event.acceptorUserId);
   });
 
-  useSignalREvent("FriendRequestCanceled", (notif: FriendRequestCanceledEvent) => {
-    removeCacheElement(notif.senderUserId);
+  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
+    removeCacheElement(event.senderUserId);
   });
 
   return (
@@ -177,8 +173,9 @@ export default function PendingRequestsTabContent() {
       <VirtualizedScrollList
         className="flex-1"
         viewportClassName="rounded-md border-2 border-gray-600"
-        itemCount={allElements.length}
         isLoading={isLoading}
+        itemCount={allElements.length}
+        keyExtractor={(index) => allElements[index].userId}
         estimateSize={() => ITEM_HEIGHT}
         fetchNextPage={() => {
           fetchNextPage()
@@ -264,7 +261,7 @@ function Row({element, removeCacheElement}: RowProps) {
             className="size-6"
             onClick={handleAccept}/>
 
-          <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+          <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
         </>
       ) : element.status === UserRelationshipStatus.OutcomingRequest && (
         <>
@@ -273,7 +270,7 @@ function Row({element, removeCacheElement}: RowProps) {
             className="size-6"
             onClick={handleCancel}/>
 
-          <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+          <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
         </>
       )}
 
@@ -286,7 +283,7 @@ function Row({element, removeCacheElement}: RowProps) {
           Direct Message
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         {element.status === UserRelationshipStatus.IncomingRequest ? (
           <>
@@ -305,7 +302,7 @@ function Row({element, removeCacheElement}: RowProps) {
               Accept Request
             </DropdownMenu.Item>
 
-            <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+            <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
           </>
         ) : element.status === UserRelationshipStatus.OutcomingRequest && (
           <>
@@ -317,7 +314,7 @@ function Row({element, removeCacheElement}: RowProps) {
               Cancel Request
             </DropdownMenu.Item>
 
-            <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+            <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
           </>
         )}
 

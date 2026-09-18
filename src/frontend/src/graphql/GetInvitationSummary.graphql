@@ -1,0 +1,11 @@
+query GetInvitationSummary($id: String!) {
+    invitation(id: $id) {
+        communityServer {
+            id
+            name,
+            hasAvatar
+            numMembers
+        },
+        status
+    }
+}

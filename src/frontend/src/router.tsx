@@ -1,25 +1,39 @@
+import { Suspense, lazy } from 'react';
 import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect} from "react-router";
-import HomePage from "./pages/HomePage"
-import AuthenticatePage, {authAction} from "./pages/auth/AuthenticatePage.tsx";
-import AuthProvider from "./contexts/AuthContext.tsx";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage.tsx";
 import {authService} from "./api/authService.ts";
+import {channelService} from "./api/channelService.ts";
+import {queryClient} from "./main.tsx";
+import {useGetUserIdentityProfileQuery} from "./graphql/queries.ts";
 import {HttpStatusCode} from "axios";
-import type {DmChannelSummary, ServiceResponse, UserAuthorizationInfo,} from "./api/responses.ts";
-import ConfirmEmailPage from "./pages/auth/ConfirmEmailPage.tsx";
-import ProfileSetupPage from "./pages/miscs/ProfileSetupPage.tsx";
-import {userService} from "./api/userService.ts";
-import LobbyLayout from "./layouts/LobbyLayout.tsx";
+import type {
+  DmChannelSummary,
+  ServiceResponse,
+  UserAuthorizationInfo,
+  UserIdentityProfileDto,
+} from "./api/types.ts";
+import HomePage from "./pages/HomePage"
+import AuthenticatePage from "./pages/auth/AuthenticatePage.tsx";
+import AuthProvider from "./contexts/AuthContext.tsx";
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
+const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
+const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
+import LobbyLayout from "./pages/lobby/LobbyLayout.tsx";
 import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
-import {channelService} from "./api/channelService.ts";
 import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
+import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
+import ServerLayout from "./pages/server/ServerLayout.tsx";
+import ChannelPage from "./pages/server/ChannelPage.tsx";
+import ChannelLayout from "./pages/server/ChannelLayout.tsx";
+import SuspenseFallback from "./pages/SuspenseFallback.tsx";
+import {Slide, ToastContainer} from "react-toastify";
+const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
-  channelId: string | null;
-  channelSummary: DmChannelSummary | null;
+  channelId: string | undefined;
+  channelSummary: DmChannelSummary | undefined;
 };
 
 export const router = createBrowserRouter([
@@ -27,19 +41,20 @@ export const router = createBrowserRouter([
     id: "root",
     path: "/",
     loader: async () => {
-      const [authResponse] = await Promise.all([
-        authService.getAuthorizationInfo(),
-      ]);
+      const authResponse = await authService.getAuthorizationInfo();
 
       const authInfo = authResponse.data;
-      let profileInfo = null;
+      let profileInfo: UserIdentityProfileDto | null = null;
 
       if (authInfo?.id) {
         try {
-          const profileResponse = await userService.getUserIdentityProfile(authInfo.id);
-          profileInfo = profileResponse.data;
+          profileInfo = (await queryClient.query({
+            queryKey: useGetUserIdentityProfileQuery.getKey({ id: authInfo.id }),
+            queryFn: useGetUserIdentityProfileQuery.fetcher({ id: authInfo.id }),
+            staleTime: "static",
+          })).user;
         } catch (error) {
-          console.error("Failed to load user profile: ", error);
+          console.error("failed to load user profile: ", error);
         }
       }
 
@@ -64,12 +79,12 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <AuthenticatePage/>,
-            action: authAction,
+            // action: authAction,
             loader: async () => {
               const response = await authService.getAuthorizationInfo();
 
               if (response.statusCode === HttpStatusCode.Ok && response.data) {
-                return redirect('/lobby');
+                return redirect('/lobby/me');
               }
 
               return null;
@@ -77,13 +92,19 @@ export const router = createBrowserRouter([
           },
           {
             path: "verify-email",
-            element: <VerifyEmailPage/>,
             loader: restrictConfirmedUser,
+            element:
+              <Suspense fallback={<SuspenseFallback/>}>
+                <VerifyEmailPage/>
+              </Suspense>
           },
           {
             path: "confirm-email",
-            element: <ConfirmEmailPage/>,
             loader: restrictConfirmedUser,
+            element:
+              <Suspense fallback={<SuspenseFallback/>}>
+                <ConfirmEmailPage/>
+              </Suspense>
           }
         ]
       },
@@ -98,7 +119,10 @@ export const router = createBrowserRouter([
 
           return response.data.isProfileSetup ? redirect('/') : null;
         },
-        element: <ProfileSetupPage/>
+        element:
+          <Suspense fallback={<SuspenseFallback/>}>
+            <ProfileSetupPage/>
+          </Suspense>
       },
       {
         id: "lobby",
@@ -129,51 +153,94 @@ export const router = createBrowserRouter([
         element: (
           <SignalRConnectionProvider>
             <LobbyLayout/>
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              newestOnTop
+              draggable="touch"
+              pauseOnHover
+              theme="dark"
+              transition={Slide}
+            />
           </SignalRConnectionProvider>
         ),
         children: [
           {
             index: true,
-            element: <LobbyPage/>
+            element: <LobbyPage/>,
           },
           {
-            path: "announcements",
-            element: <SystemAnnouncementPage/>
+            path: "me",
+            element: <UserLobbyLayout/>,
+            children: [
+              {
+                path: "announcements",
+                element:
+                  <Suspense fallback={<SuspenseFallback/>}>
+                    <SystemAnnouncementPage/>
+                  </Suspense>
+              },
+              {
+                path: "friends",
+                element: <FriendsPage/>
+              },
+              {
+                path: "dm/:userId?",
+                element: <DirectMessagePage/>,
+                loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
+                  const userId: string | undefined = params.userId;
+
+                  if (!userId) {
+                    return {channelId: undefined, channelSummary: undefined};
+                  }
+
+                  const channelIdResponse: ServiceResponse<string> =
+                    await channelService.getDirectMessageChannelId(userId);
+
+                  if (!channelIdResponse.success) {
+                    return {channelId: undefined, channelSummary: undefined};
+                  }
+
+                  const channelId: string = channelIdResponse.data!;
+
+                  const dmChannelSummary: ServiceResponse<DmChannelSummary> =
+                    await channelService.getDmChannelSummary(channelId);
+
+                  if (!dmChannelSummary.success) {
+                    return {channelId: channelId, channelSummary: undefined};
+                  }
+
+                  return {channelId: channelId, channelSummary: dmChannelSummary.data!};
+                }
+              },
+            ]
           },
           {
-            path: "friends",
-            element: <FriendsPage/>
-          },
-          {
-            path: "dm/:userId?",
-            element: <DirectMessagePage/>,
-            loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
-              const userId: string | undefined = params.userId;
-
-              if (!userId) {
-                return {channelId: null, channelSummary: null};
+            id: "server",
+            path: "servers/:serverId?",
+            element: <ServerLayout/>,
+            children: [
+              {
+                id: "channel",
+                path: "channels/:channelId?",
+                element: <ChannelLayout/>,
+                children: [
+                  {
+                    index: true,
+                    element: <ChannelPage/>
+                  }
+                ]
               }
-
-              const channelIdResponse: ServiceResponse<string> =
-                await channelService.getDirectMessageChannelId(userId);
-
-              if (!channelIdResponse.success) {
-                return {channelId: null, channelSummary: null};
-              }
-
-              const channelId: string = channelIdResponse.data!;
-
-              const dmChannelSummary: ServiceResponse<DmChannelSummary> =
-                await channelService.getDmChannelSummary(channelId);
-
-              if (!dmChannelSummary.success) {
-                return {channelId: channelId, channelSummary: null};
-              }
-
-              return {channelId: channelId, channelSummary: dmChannelSummary.data!};
-            }
-          },
+            ]
+          }
         ]
+      },
+      {
+        path: "invite/:inviteId",
+        element:
+          <Suspense fallback={<SuspenseFallback/>}>
+            <InvitePage/>
+          </Suspense>
       }
     ]
   }

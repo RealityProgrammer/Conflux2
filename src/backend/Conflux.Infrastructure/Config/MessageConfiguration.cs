@@ -20,8 +20,8 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => JsonSerializer.Deserialize<Attachment[]>(v, (JsonSerializerOptions?)null) ?? Array.Empty<Attachment>()
             );
-
-        builder.HasIndex(m => m.ConversationId);
+            
+        builder.HasIndex(m => m.Attachments).HasMethod("gin");
         
         // relationship
         builder.HasOne(m => m.Sender)

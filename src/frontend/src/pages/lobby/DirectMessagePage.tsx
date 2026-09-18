@@ -8,13 +8,15 @@ import ChatContainer from "../../components/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
+import useChannelConnection from "../../hooks/useChannelConnection.ts";
 
 export default function DirectMessagePage() {
-  useDocumentTitle("DM - Conflux");
+  useDocumentTitle("Conflux - DM");
 
   const {channelId, channelSummary}: DirectMessagePageLoaderProps = useLoaderData();
-
   const [showProfile, setShowProfile] = useState(true);
+
+  useChannelConnection(channelId);
 
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -50,21 +52,23 @@ export default function DirectMessagePage() {
               className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
               userId={channelSummary.otherUser.id}
             />
-
-            // <div className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725">
-            //   <UserProfilePanel
-            //     userId={channelSummary.otherUser.id}
-            //   />
-            // </div>
           )}
         </div>
-      ) : Math.random() * 100 >= 2 ? (
-        <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">
-          <p className="text-transparent">The room between... there is a room between...</p>
-        </div>
-      ) : (
-        <Egg/>
-      )}
+      ) : (<ShowAccessFailure/>)}
+    </div>
+  );
+}
+
+function ShowAccessFailure() {
+  const [isEgg] = useState(() => Math.random() < 0.02);
+
+  if (isEgg) {
+    return <Egg/>;
+  }
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">
+      <p className="text-transparent">The room between... there is a room between...</p>
     </div>
   );
 }

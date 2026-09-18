@@ -15,23 +15,21 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNetEnv" Version="3.2.0" />
-        <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.0" />
-        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.6.0" />
-        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.0" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.6" />
+        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.6.6" />
+        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.6" />
+        <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.6" />
         <PackageReference Include="Mediator.SourceGenerator" Version="3.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
-        
-        <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.11" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
         
         <PackageReference Include="RedLock.net" Version="2.3.2" />
         

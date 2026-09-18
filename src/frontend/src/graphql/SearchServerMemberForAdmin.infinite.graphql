@@ -1,0 +1,22 @@
+query SearchServerMemberForAdmin($serverId: UUID!, $after: String, $search: String) {
+    serverMemberSearchForAdmin(
+        serverId: $serverId
+        after: $after
+        search: $search
+    ) {
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+
+        nodes {
+            id
+            user {
+                id
+                userName
+                displayName
+                hasAvatar
+            }
+        }
+    }
+}

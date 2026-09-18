@@ -1,4 +1,4 @@
-import type {DmChannelSummary, ServiceResponse} from "../api/responses.ts";
+import type {DmChannelSummary, ServiceResponse} from "../api/types.ts";
 import {useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
 import {channelService} from "../api/channelService.ts";
 
@@ -24,7 +24,7 @@ export const useFetchDmChannelSummary = () => {
     const cached = queryClient.getQueryData<ServiceResponse<DmChannelSummary>>(queryKey);
     if (cached) return cached;
 
-    return queryClient.fetchQuery({
+    return queryClient.query({
       queryKey,
       queryFn: () => channelService.getDmChannelSummary(channelId),
       staleTime: 15 * 60 * 1000,

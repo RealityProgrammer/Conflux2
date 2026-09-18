@@ -2,8 +2,7 @@ import {useDebounceValue} from "usehooks-ts";
 import {BsChatSquareText, BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import {type PaginatedResponse, type ServiceResponse, type UserIdentityProfileDto} from "../../api/responses.ts";
-import {friendService} from "../../api/friendService.ts";
+import {type PaginatedResult, type ServiceResponse, type UserIdentityProfileDto} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
@@ -14,7 +13,8 @@ import useFriendActions from "../../hooks/useFriendActions.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {useFetchUserBasicProfile} from "../../hooks/fetchUserBasicProfile.ts";
+import {sessionUserService} from "../../api/sessionUserService.ts";
+import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -42,9 +42,9 @@ export default function FriendListTabContent() {
     isLoading,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResponse<UserIdentityProfileDto> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResponse<UserIdentityProfileDto>> =
-        await friendService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
+    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<UserIdentityProfileDto> | null | undefined> => {
+      const response: ServiceResponse<PaginatedResult<UserIdentityProfileDto>> =
+        await sessionUserService.queryFriends(userNameSearch, pageParam, PAGE_SIZE);
 
       return response.data;
     },
@@ -64,7 +64,7 @@ export default function FriendListTabContent() {
   const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const handleRemoveUserFromCache = (userId: string) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto>>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<UserIdentityProfileDto>>>(
       queryKey,
       (oldData) => {
         if (!oldData) return oldData;
@@ -97,26 +97,26 @@ export default function FriendListTabContent() {
     );
   };
 
-  useSignalREvent("Unfriended", (notif: UnfriendedEvent) => {
-    handleRemoveUserFromCache(notif.invokerUserId);
+  useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
+    handleRemoveUserFromCache(event.invokerUserId);
   });
 
-  const getUserBasicProfile = useFetchUserBasicProfile();
+  useSignalREvent("FriendRequestAccepted", async (event: FriendRequestAcceptedEvent) => {
+    const profileResponse = await queryClient.query({
+      queryKey: useGetUserIdentityProfileQuery.getKey({ id: event.acceptorUserId }),
+      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.acceptorUserId }),
+    })
 
-  useSignalREvent("FriendRequestAccepted", async (notif: FriendRequestAcceptedEvent) => {
-    const profileResponse = await getUserBasicProfile(notif.acceptorUserId);
+    const userProfile = profileResponse.user;
+    if (!userProfile) return;
 
-    if (!profileResponse.success) return;
-
-    const userProfile = profileResponse.data!;
-
-    queryClient.setQueryData<InfiniteData<PaginatedResponse<UserIdentityProfileDto> | null | undefined>>(
+    queryClient.setQueryData<InfiniteData<PaginatedResult<UserIdentityProfileDto> | null | undefined>>(
       queryKey,
       (oldData) => {
         if (!oldData || oldData.pages.length === 0) return oldData;
 
         const alreadyExists = oldData.pages.some(page =>
-          page?.elements.some(el => el.id === notif.acceptorUserId)
+          page?.elements.some(el => el.id === event.acceptorUserId)
         );
 
         if (alreadyExists) return oldData;
@@ -157,6 +157,7 @@ export default function FriendListTabContent() {
         className="flex-1"
         viewportClassName="rounded-md border-2 border-gray-600"
         itemCount={allElements.length}
+        keyExtractor={(index) => allElements[index].id}
         isLoading={isLoading}
         estimateSize={() => ITEM_HEIGHT}
         fetchNextPage={() => {
@@ -172,7 +173,7 @@ export default function FriendListTabContent() {
         renderItem={(itemIndex: number) =>
           <Row element={allElements[itemIndex]}
                removeUserFromCache={() => handleRemoveUserFromCache(allElements[itemIndex].id)}
-               navigateToDirectMessage={(userId) => navigation(`/lobby/dm/${encodeURIComponent(userId)}`)}/>
+               navigateToDirectMessage={(userId) => navigation(`/lobby/me/dm/${encodeURIComponent(userId)}`)}/>
         }
         renderSkeletonItem={(index) => (
           <UserNameplate.Skeleton key={index}
@@ -206,8 +207,8 @@ function Row({element, removeUserFromCache, navigateToDirectMessage}: RowProps) 
 
   return (
     <UserNameplate.Root userId={element.id}
-                        userName={element.userName}
-                        displayName={element.displayName}
+                        userName={element.userName ?? "???"}
+                        displayName={element.displayName ?? "???"}
                         hasAvatar={element.hasAvatar}
                         className="w-full p-1.5"
                         style={{height: `${ITEM_HEIGHT}px`}}
@@ -227,13 +228,13 @@ function Row({element, removeUserFromCache, navigateToDirectMessage}: RowProps) 
           Direct Message
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         <DropdownMenu.Item className="dropdown-item-danger" disabled={!!activeAction} onSelect={handleUnfriend}>
           Unfriend
         </DropdownMenu.Item>
 
-        <DropdownMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
         <DropdownMenu.Item className="dropdown-item-danger">
           Block

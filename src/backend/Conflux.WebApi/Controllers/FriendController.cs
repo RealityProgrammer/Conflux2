@@ -1,7 +1,8 @@
-using Conflux.Application.Dto.Responses;
-using Conflux.Application.Services;
+using Conflux.Application.Features.Friends;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -13,20 +14,20 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/friend")]
 [Authorize]
 public sealed class FriendController(
-    IFriendService friendService
+    IMediator mediator
 ) : ControllerBase {
     [HttpPost("requests/{toUserId:guid}")]
-    public async Task<ActionResult<ApiResponse<SendFriendRequestResponse>>> SendFriendRequest(Guid toUserId) {
+    public async Task<ActionResult<ApiResponse<UserRelationshipStatus>>> SendFriendRequest(Guid toUserId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await friendService.SendFriendRequestAsync(userId, toUserId);
+        var result = await mediator.Send(new SendFriendRequestCommand(userId, toUserId));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<SendFriendRequestResponse>(result.Value, Error.None));
+            return Ok(new ApiResponse<UserRelationshipStatus>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
@@ -44,7 +45,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.CancelFriendRequestAsync(userId, toUserId);
+        Result result = await mediator.Send(new CancelFriendRequestCommand(userId, toUserId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -52,7 +53,7 @@ public sealed class FriendController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) or nameof(Errors.FriendRequestRejected) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -66,7 +67,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.RejectFriendRequestAsync(userId, senderUserId);
+        Result result = await mediator.Send(new RejectFriendRequestCommand(userId, senderUserId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -74,7 +75,7 @@ public sealed class FriendController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) or nameof(Errors.FriendRequestCanceled) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -88,7 +89,7 @@ public sealed class FriendController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.AcceptFriendRequestAsync(userId, senderUserId);
+        Result result = await mediator.Send(new AcceptFriendRequestCommand(userId, senderUserId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -96,22 +97,22 @@ public sealed class FriendController(
 
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            nameof(Errors.Unauthorized) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.FriendRequestCanceled) or 
             nameof(Errors.FriendRequestRejected) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
     
-    [HttpPost("unfriend/{userId:guid}")]
-    public async Task<ActionResult<ApiResponse>> Unfriend([FromRoute] Guid userId) {
+    [HttpPost("unfriend/{friendId:guid}")]
+    public async Task<ActionResult<ApiResponse>> Unfriend([FromRoute] Guid friendId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var currentUserId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await friendService.UnfriendAsync(currentUserId, userId);
+        Result result = await mediator.Send(new UnfriendCommand(currentUserId, friendId));
 
         if (result.IsSuccess) {
             return Ok();
@@ -134,77 +135,14 @@ public sealed class FriendController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserProfileDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(null, Errors.InvalidIdentifier()));
         }
         
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await friendService.DiscoverFriendsAsync(userId, name, offset, count);
+        var result = await mediator.Send(new DiscoverFriendsQuery(userId, name, offset, count));
 
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(null, result.Error)
-        );
-    }
-    
-    [HttpGet("friends")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> QueryFriends(
-        [FromQuery] string? name,
-        [FromQuery, Required] int offset,
-        [FromQuery, Required] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserIdentityProfileDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        var result = await friendService.QueryFriendsAsync(userId, name, offset, count);
-
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(null, result.Error)
-        );
-    }
-
-    [HttpGet("pending-requests")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestDto>>>> QueryPendingRequests(
-        [FromQuery] string? name,
-        [FromQuery, Required] int offset,
-        [FromQuery, Required] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        var result = await friendService.QueryPendingRequestsAsync(userId, name, offset, count);
-
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result.Value, Error.None));
-        }
-
-        return StatusCode(
-            StatusCodes.Status500InternalServerError, 
-            new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(null, result.Error)
-        );
+        return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result, Error.None));
     }
 }

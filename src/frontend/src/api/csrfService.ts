@@ -1,5 +1,5 @@
 import {apiClient} from "./client.ts";
-import type {BackendResponse, ServiceResponse,} from "./responses.ts";
+import type {BackendResponse, ServiceResponse,} from "./types.ts";
 import {type AxiosError, type AxiosResponse} from "axios";
 import {handleAxiosError} from "./errorHandling.ts";
 

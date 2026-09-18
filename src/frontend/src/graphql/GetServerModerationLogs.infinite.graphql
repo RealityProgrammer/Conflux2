@@ -1,0 +1,34 @@
+query GetServerModerationLogs($serverId: UUID!, $after: String) {
+    serverModerationLogs(
+        serverId: $serverId
+        after: $after
+        order: { createdAt: DESC }
+    ) {
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+
+        nodes {
+            id
+            executorMember {
+                user {
+                    id
+                    displayName
+                    hasAvatar
+                }
+            }
+            action
+            affectedMember {
+                user {
+                    id
+                    displayName
+                    hasAvatar
+                }
+            }
+            createdAt
+            banDuration
+            reason
+        }
+    }
+}

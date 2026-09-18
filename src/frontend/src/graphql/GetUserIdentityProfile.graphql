@@ -1,0 +1,8 @@
+query GetUserIdentityProfile($id: UUID!) {
+    user(id: $id) {
+        id,
+        userName,
+        displayName,
+        hasAvatar
+    }
+}

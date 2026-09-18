@@ -4,18 +4,16 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IMessageRepository {
-    void Add(Message message);
-
-    Task<Message?> GetByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
+public interface IMessageRepository : IWriteRepository<Message> {
+    Task<Message?> GetById(Guid messageId, bool tracking = true, CancellationToken cancellationToken = default);
     
-    Task<ReplyToMessageDto?> GetReplyMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
-
-    Task<Result<PagedTimelineMessageResult>> GetTimelineMessagesAsync(
+    Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId,
         int limit,
         CancellationToken cancellationToken = default
     );
+
+    Task<Attachment?> GetAttachmentById(Guid id, CancellationToken cancellationToken = default);
 }

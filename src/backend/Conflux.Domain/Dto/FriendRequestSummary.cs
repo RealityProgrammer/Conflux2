@@ -1,10 +1,14 @@
-using Conflux.Domain.Enums;
+using Conflux.Domain.Entities;
+using Facet;
 
 namespace Conflux.Domain.Dto;
 
-public sealed record FriendRequestSummary(
-    Guid Id, 
-    FriendRequestStatus Status, 
-    UserIdentityProfileDto Sender,
-    UserIdentityProfileDto Receiver
-);
+[Facet(typeof(FriendRequest), Include = [
+    nameof(FriendRequest.Id),
+    nameof(FriendRequest.Status),
+    nameof(FriendRequest.Sender),
+    nameof(FriendRequest.Receiver),
+], NestedFacets = [
+    typeof(UserIdentityProfileDto),
+])]
+public sealed partial record FriendRequestSummary;

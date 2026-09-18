@@ -3,26 +3,24 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Extensions;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class FriendRequestRepository(
     ApplicationDbContext dbContext
 ) : IFriendRequestRepository {
-    public async Task<FriendRequestSummary?> GetRequestSummaryAsync(Guid user1, Guid user2) {
+    public IQueryable<FriendRequest> AsQueryable() {
+        return dbContext.FriendRequests;
+    }
+    
+    public async Task<FriendRequestSummary?> GetRequestSummary(Guid user1, Guid user2) {
         return await dbContext.FriendRequests
             .Where(r =>
                 r.SenderUserId == user1 && r.ReceiverUserId == user2 ||
                 r.SenderUserId == user2 && r.ReceiverUserId == user1
             )
-            .Include(r => r.Sender)
-            .Include(r => r.Receiver)
-            .Select(r => new FriendRequestSummary(
-                r.Id, 
-                r.Status, 
-                new(r.Sender.Id, r.Sender.UserName!, r.Sender.DisplayName!, r.Sender.HasAvatar),
-                new(r.Receiver.Id, r.Receiver.UserName!, r.Receiver.DisplayName!, r.Receiver.HasAvatar)
-            ))
+            .SelectFacet<FriendRequestSummary>()
             .FirstOrDefaultAsync();
     }
 
@@ -30,7 +28,7 @@ internal sealed class FriendRequestRepository(
         dbContext.FriendRequests.Add(friendRequest);
     }
 
-    public async Task<Guid?> TryAcceptReverseRequestAsync(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default) {
+    public async Task<Guid?> TryAcceptReverseRequest(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default) {
         var updatedId = await dbContext.Database.SqlQuery<Guid>(
             $"""
              UPDATE "FriendRequests"
@@ -42,7 +40,7 @@ internal sealed class FriendRequestRepository(
         return updatedId == Guid.Empty ? null : updatedId;
     }
 
-    public async Task<bool> ReactivateRequestAsPendingAsync(
+    public async Task<bool> ReactivateRequestAsPending(
         Guid requestId,
         Guid senderUserId,
         Guid receiverUserId,
@@ -63,7 +61,7 @@ internal sealed class FriendRequestRepository(
         return numChanged > 0;
     }
 
-    public async Task<bool> TryTransitionStatusAsync(
+    public async Task<bool> TryTransitionStatus(
         Guid requestId,
         FriendRequestStatus expectedStatus,
         FriendRequestStatus newStatus,
@@ -80,7 +78,7 @@ internal sealed class FriendRequestRepository(
         return numChanged > 0;
     }
 
-    public async Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscoveryAsync(
+    public async Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscovery(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -89,7 +87,7 @@ internal sealed class FriendRequestRepository(
     ) {
         var queryable = dbContext.Users
             // ignore the user who requests the search and anyone who hasn't setup their profile
-            .Where(u => u.Id != searcherId && u.IsProfileSetup)
+            .Where(u => u.Id != searcherId && u.IsUserNameLocked)
             .NameContains(nameFilter);
         
         int totalCount = await queryable.CountAsync(cancellationToken);
@@ -121,7 +119,7 @@ internal sealed class FriendRequestRepository(
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<UserIdentityProfileDto>> GetFriendsAsync(
+    public async Task<PaginatedResult<UserIdentityProfileDto>> GetFriends(
         Guid searcherId, 
         string? nameFilter,
         int offset,
@@ -139,18 +137,13 @@ internal sealed class FriendRequestRepository(
             .OrderBy(u => u.UserName)
             .Skip(offset)
             .Take(count)
-            .Select(u => new UserIdentityProfileDto(
-                u.Id,
-                u.UserName!,
-                u.DisplayName!,
-                u.HasAvatar
-            ))
+            .SelectFacet<UserIdentityProfileDto>()
             .ToListAsync(cancellationToken);
         
         return new(paginatedItems, totalCount);
     }
 
-    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequestsAsync(
+    public async Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequests(
         Guid searcherId, 
         string? nameFilter,
         int offset,

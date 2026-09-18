@@ -1,14 +1,14 @@
 import {createContext, type ReactNode, useContext} from "react";
 import type {MessageInput} from "../components/ChatInput.tsx";
-import type {MessageDto} from "../api/responses.ts";
+import type {TimelineMessageDto} from "../api/types.ts";
 
 interface ChatContainerContextType {
   channelId: string;
-  replyingMessage?: MessageDto;
+  replyingMessage?: TimelineMessageDto;
   onSendMessage: (messageInput: MessageInput) => void;
-  onMessageEdit: (originalMessage: MessageDto, newBody: string | null) => void;
-  onMessageDelete: (originalMessage: MessageDto) => void;
-  onMessageReplyRequested: (message: MessageDto) => void;
+  onMessageEdit: (originalMessage: TimelineMessageDto, newBody: string | null) => void;
+  onMessageDelete: (originalMessage: TimelineMessageDto) => void;
+  onMessageReplyRequested: (message: TimelineMessageDto) => void;
   onCancelMessageReply: () => void;
 }
 
@@ -29,4 +29,9 @@ export default function ChatContainerContextProvider({
   )
 }
 
-export const useChatContainerContext = () => useContext(ChatContainerContext);
+export const useChatContainerContext = () => {
+  const context = useContext(ChatContainerContext);
+  if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
+
+  return context;
+}

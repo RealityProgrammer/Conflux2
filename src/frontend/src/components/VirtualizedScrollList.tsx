@@ -24,7 +24,7 @@ export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<typ
   estimateSize: (target: EstimateHeightTarget) => number;
   pageSize?: number;
   overscan?: number;
-  keyExtractor?: (index: number) => Key;
+  keyExtractor: (index: number) => Key;
 
   hasPreviousPage?: boolean;
   isFetchingPreviousPage?: boolean;
@@ -40,33 +40,36 @@ export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<typ
 
   renderFetchingPrevious?: () => ReactNode;
   renderFetchingNext?: () => ReactNode;
+
+  hideVerticalScrollbar?: boolean;
 }
 
 export default function VirtualizedScrollList({
-                                                virtualizerRef,
-                                                viewportRef,
-                                                className,
-                                                viewportClassName,
-                                                containerClassName,
-                                                itemCount,
-                                                isLoading,
-                                                estimateSize,
-                                                pageSize = 20,
-                                                overscan = 5,
-                                                keyExtractor,
-                                                hasPreviousPage,
-                                                isFetchingPreviousPage,
-                                                fetchPreviousPage,
-                                                hasNextPage,
-                                                isFetchingNextPage,
-                                                fetchNextPage,
-                                                renderEmpty,
-                                                renderItem,
-                                                renderSkeletonItem,
-                                                renderFetchingPrevious,
-                                                renderFetchingNext,
-                                                ...props
-                                              }: VirtualizedScrollListProps) {
+  virtualizerRef,
+  viewportRef,
+  className,
+  viewportClassName,
+  containerClassName,
+  itemCount,
+  isLoading,
+  estimateSize,
+  pageSize = 20,
+  overscan = 5,
+  keyExtractor,
+  hasPreviousPage,
+  isFetchingPreviousPage,
+  fetchPreviousPage,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  renderEmpty,
+  renderItem,
+  renderSkeletonItem,
+  renderFetchingPrevious,
+  renderFetchingNext,
+  hideVerticalScrollbar,
+  ...props
+}: VirtualizedScrollListProps) {
   const scrollViewportRef = useRef<HTMLDivElement>(null!);
 
   const prevOffset = hasPreviousPage ? 1 : 0;
@@ -89,10 +92,7 @@ export default function VirtualizedScrollList({
 
       const itemIndex = index - prevOffset;
 
-      if (keyExtractor) {
-        return keyExtractor(itemIndex);
-      }
-      return index;
+      return keyExtractor(itemIndex);
     }
   });
 
@@ -146,10 +146,14 @@ export default function VirtualizedScrollList({
     if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [virtualItems, itemCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [virtualItems, itemCount, virtualCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <ScrollArea.Root className={`overflow-hidden ${className ?? ''}`} {...props}>
+    <ScrollArea.Root
+      className={`overflow-hidden ${className ?? ''}`}
+      type={hideVerticalScrollbar ? "scroll" : "hover"}
+      {...props}
+    >
       <ScrollArea.Viewport
         ref={(node) => {
           scrollViewportRef.current = node!;
@@ -172,15 +176,15 @@ export default function VirtualizedScrollList({
           )
         ) : (
           /* Virtualized List Container */
-          <div className={`relative w-full ${containerClassName ?? ""}`} style={{height: `${totalHeight}px`}}>
+          <ul className={`relative w-full ${containerClassName ?? ""}`} style={{height: `${totalHeight}px`}}>
             {virtualItems.map((virtualItem) => {
-              const shouldRenderFetchingPrevious = hasPreviousPage && virtualItem.index === 0;
-              const shouldRenderFetchingNext = hasNextPage && virtualItem.index === virtualCount - 1;
+              const isLoaderPrev = hasPreviousPage && virtualItem.index === 0;
+              const isLoaderNext = hasNextPage && virtualItem.index === virtualCount - 1;
 
               const itemIndex = virtualItem.index - prevOffset;
 
               return (
-                <div
+                <li
                   key={virtualItem.key}
                   // according to https://tanstack.com/virtual/latest/docs/api/virtualizer#measureelement-2
                   data-index={virtualItem.index}
@@ -191,25 +195,26 @@ export default function VirtualizedScrollList({
                     height: `${virtualItem.size}px`,
                   }}
                 >
-                  {shouldRenderFetchingPrevious ?
+                  {isLoaderPrev ?
                     renderFetchingPrevious && renderFetchingPrevious() :
-                    shouldRenderFetchingNext ?
+                    isLoaderNext ?
                       renderFetchingNext && renderFetchingNext() :
                       renderItem(itemIndex, virtualItem)
                   }
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </ScrollArea.Viewport>
 
       <ScrollArea.Scrollbar
-        className="flex w-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
+        className={`flex w-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight ${
+          hideVerticalScrollbar ? "opacity-0 pointer-events-none" : ""
+        }`}
         orientation="vertical"
       >
-        <ScrollArea.Thumb
-          className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
+        <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400" />
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   );

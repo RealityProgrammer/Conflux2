@@ -27,5 +27,31 @@ export default defineConfig({
         changeOrigin: true,
       },
     }
+  },
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react-vendor',
+              test: /node_modules[\\/]react/,
+              priority: 20,
+            },
+            {
+              name: 'vendor',
+              test: /node_modules/,
+              priority: 10,
+            },
+            {
+              name: 'common',
+              minShareCount: 2,
+              minSize: 10000,
+              priority: 5,
+            },
+          ],
+        }
+      }
+    }
   }
 })

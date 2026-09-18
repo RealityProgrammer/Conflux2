@@ -112,7 +112,7 @@ export default function Egg() {
     return () => {
       if (animationRef.current) animationRef.current.cancel();
     };
-  }, [lineIndex, currentDialog, showTextbox]);
+  }, [lineIndex, currentDialog, showTextbox, currentStep]);
 
   const handleTextboxContinuation = () => {
     if (!textRef.current || !showTextbox || !currentStep) return;

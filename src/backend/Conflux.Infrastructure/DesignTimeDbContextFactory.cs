@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using DotNetEnv.Configuration;
+using Microsoft.Extensions.Configuration;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -15,6 +16,7 @@ public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<App
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{environment}.json", optional: true)
+            .AddDotNetEnv()
             .Build();
 
         // Build DbContext options

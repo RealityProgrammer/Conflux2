@@ -1,0 +1,10 @@
+mutation BanServerMember($serverId: UUID!, $memberId: UUID!, $reason: String, $duration: Duration) {
+    banCommunityServerMember(input: {
+        serverId: $serverId,
+        memberId: $memberId,
+        reason: $reason,
+        duration: $duration
+    }) {
+        memberId
+    }
+}

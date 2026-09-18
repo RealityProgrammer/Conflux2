@@ -74,7 +74,7 @@ function AuthenticatedNavigationDrawer({userName, logout}: { userName: string, l
 
             <Dialog.Content
               ref={contentRef}
-              className="fixed top-0 right-0 h-full z-50 bg-[#071318] border-l-2 border-l-[#353535] w-2/3 sm:w-1/2 md:w-1/3 p-5 overflow-hidden"
+              className="fixed top-0 right-0 h-full bg-[#071318] border-l-2 border-l-[#353535] w-2/3 sm:w-1/2 md:w-1/3 p-5 overflow-hidden"
               style={{transform: 'translateX(100%)'}}
               onEscapeKeyDown={(e) => {
                 e.preventDefault();
@@ -92,7 +92,7 @@ function AuthenticatedNavigationDrawer({userName, logout}: { userName: string, l
               <div className="flex flex-col gap-2">
                 <NavLink
                   className="text-white rounded-full px-7 py-2 font-bold border-2 border-indigo-500/30 shimmer w-full flex flex-row justify-center items-center gap-3 flex-none group"
-                  to="/lobby">
+                  to="/lobby/me">
                   <BsDoorClosed className="size-5 fill-white flex-none block group-hover:hidden"/>
                   <BsDoorOpen className="size-5 fill-white flex-none hidden group-hover:block"/>
 

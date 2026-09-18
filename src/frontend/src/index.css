@@ -6,6 +6,10 @@
     --color-red-475: color-mix(in oklch, var(--color-red-400) 25%, var(--color-red-500) 75%);
 
     /* "50 shades of gray" - @GameCreator, 2025 */
+    --color-gray-525: color-mix(in oklch, var(--color-gray-500) 75%, var(--color-gray-600) 25%);
+    --color-gray-550: color-mix(in oklch, var(--color-gray-500) 50%, var(--color-gray-600) 50%);
+    --color-gray-575: color-mix(in oklch, var(--color-gray-500) 25%, var(--color-gray-600) 75%);
+
     --color-gray-625: color-mix(in oklch, var(--color-gray-600) 75%, var(--color-gray-700) 25%);
     --color-gray-650: color-mix(in oklch, var(--color-gray-600) 50%, var(--color-gray-700) 50%);
     --color-gray-675: color-mix(in oklch, var(--color-gray-600) 25%, var(--color-gray-700) 75%);
@@ -17,6 +21,39 @@
     --color-gray-825: color-mix(in oklch, var(--color-gray-800) 75%, var(--color-gray-900) 25%);
     --color-gray-850: color-mix(in oklch, var(--color-gray-800) 50%, var(--color-gray-900) 50%);
     --color-gray-875: color-mix(in oklch, var(--color-gray-800) 25%, var(--color-gray-900) 75%);
+}
+
+:root {
+    --toastify-color-dark: var(--color-gray-575) !important;
+    --toastify-text-color-dark: #f3f4f6 !important;
+    --toastify-color-transparent: rgba(255, 255, 255, 0.1) !important;
+    --toastify-toast-min-height: 44px !important;
+}
+
+.Toastify__toast-container {
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+.Toastify__toast {
+    margin-bottom: 8px !important;
+}
+
+.Toastify__toast-body {
+    font-size: 0.875rem !important;
+    line-height: 1.428571rem !important;
+}
+
+@layer base {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        appearance: textfield;
+    }
 }
 
 @layer components {
@@ -57,6 +94,12 @@
         100% {
             opacity: 0;
         }
+    }
+
+    @keyframes animate-horizontalShake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
     }
 
     .shimmer {
@@ -231,13 +274,12 @@
         @apply bg-red-500 sm:bg-blue-500 md:bg-green-500 lg:bg-orange-500 xl:bg-purple-600 2xl:bg-emerald-600;
     }
 
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
+    .label {
+        @apply text-sm text-gray-300;
     }
 
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+    .horizontal-separator {
+        @apply h-px bg-gray-500;
     }
 }
 
@@ -250,7 +292,7 @@
 }
 
 @utility dropdown-item-default {
-    @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight text-sm text-white data-disabled:text-white/35 cursor-pointer data-disabled:pointer-events-none;
+    @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight text-sm text-white data-disabled:text-white/35 cursor-pointer data-disabled:pointer-events-none outline-none;
 }
 
 @utility dropdown-item-danger {
@@ -261,8 +303,16 @@
     @apply bg-blue-500 hover:bg-blue-400 active:bg-blue-600 disabled:bg-blue-500/35 disabled:hover:bg-blue-500/35;
 }
 
+@utility button-theme-warning {
+    @apply bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 disabled:bg-yellow-500/35 disabled:hover:bg-yellow-500/35;
+}
+
 @utility button-theme-danger {
     @apply bg-red-500  hover:bg-red-400 active:bg-red-600 disabled:bg-red-500/35 disabled:hover:bg-red-500/35;
+}
+
+@utility button-theme-danger2 {
+    @apply bg-amber-600  hover:bg-amber-500 active:bg-amber-500 disabled:bg-amber-600/35 disabled:bg-amber-600/35;
 }
 
 @utility button-theme-success {
@@ -270,7 +320,19 @@
 }
 
 @utility backdrop-overlay {
-    @apply fixed inset-0 bg-black/80 z-50
+    @apply fixed inset-0 bg-black/80
+}
+
+@utility animate-horizontalShake {
+    animation: animate-horizontalShake 0.1s ease-in-out 0s 2;
+}
+
+@utility centered-dialog {
+    @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[calc(100dvw-2rem)] max-h-[calc(100dvh-2rem)]
+}
+
+@utility group-label {
+    @apply text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2;
 }
 
 @font-face {

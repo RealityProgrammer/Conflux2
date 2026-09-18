@@ -1,19 +1,19 @@
 import {type InfiniteData, useInfiniteQuery, type UseInfiniteQueryResult, useQueryClient} from "@tanstack/react-query";
 import type {
   GetMessagesResponse,
-  MessageDto,
-  TimelineMessageBlockDto,
+  TimelineMessageDto,
+  TimelineMessageClusterDto,
   UserIdentityProfileDto
-} from "../api/responses.ts";
+} from "../api/types.ts";
 import {messageService} from "../api/messageService.ts";
-import type {MessageLoadDirection} from "../api/requests.ts";
+import {MessageLoadDirection} from "../api/schema.ts";
 
 export interface UseGetMessagesResult {
   useInfiniteQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined, unknown>, Error>;
-  allMessageGroups: TimelineMessageBlockDto[];
+  allMessageGroups: TimelineMessageClusterDto[];
   userProfiles: Record<string, UserIdentityProfileDto>;
   queryKey: (string | null | undefined)[];
-  appendMessage: (newMessage: MessageDto, userSummary?: UserIdentityProfileDto) => void;
+  appendMessage: (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
   editMessage: (messageId: string, newBody: string | null) => void;
   deleteMessage: (messageId: string) => void;
 }
@@ -30,18 +30,18 @@ export default function useGetMessages(channelId: string | null | undefined, loa
     enabled: !!channelId,
     queryKey,
     queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
-      const response = await messageService.getMessages({
-        channelId: channelId!,
-        direction: pageParam.direction,
-        cursor: pageParam.cursorId,
-        count: loadCount,
-      });
+      const response = await messageService.getMessages(
+        channelId!,
+        pageParam.direction,
+        pageParam.cursorId,
+        loadCount,
+      );
 
       return response.data;
     },
     initialPageParam: {
       cursorId: undefined,
-      direction: "Before",
+      direction: MessageLoadDirection.Before,
     },
 
     getPreviousPageParam: (firstPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
@@ -50,7 +50,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
 
         return {
           cursorId: oldestMessage.messages[0].id,
-          direction: 'Before'
+          direction: MessageLoadDirection.Before,
         };
       }
 
@@ -61,22 +61,22 @@ export default function useGetMessages(channelId: string | null | undefined, loa
       if (lastPage?.hasMoreAfter && lastPage.messageGroups.length > 0) {
         return {
           cursorId: lastPage.messageGroups.at(-1)?.messages.at(-1)?.id,
-          direction: 'After'
+          direction: MessageLoadDirection.After,
         };
       }
 
       return undefined;
     },
 
-    staleTime: 60 * 30,
+    staleTime: 60 * 30 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  const allMessageGroups: TimelineMessageBlockDto[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
+  const allMessageGroups: TimelineMessageClusterDto[] = queryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
 
   // allMessageGroups is basically a flatten groups, if page N end and page N+1 have same sender id, it still considered
   // as separate group
-  const mergedGroups: TimelineMessageBlockDto[] = allMessageGroups.reduce<TimelineMessageBlockDto[]>((acc, currentGroup) => {
+  const mergedGroups: TimelineMessageClusterDto[] = allMessageGroups.reduce<TimelineMessageClusterDto[]>((acc, currentGroup) => {
     const lastGroup = acc.at(-1);
 
     if (lastGroup && lastGroup.senderUserId === currentGroup.senderUserId) {
@@ -96,7 +96,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   const userProfiles: Record<string, UserIdentityProfileDto> = {};
 
   if (queryResult.data?.pages) {
-    for (const page of queryResult.data?.pages) {
+    for (const page of queryResult.data?.pages ?? []) {
       if (page?.users) {
         for (const user of page.users) {
           userProfiles[user.id] = user;
@@ -108,10 +108,10 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   // modification callbacks
   const queryClient = useQueryClient();
 
-  const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined, unknown>) => InfiniteData<GetMessagesResponse | null | undefined, unknown>) => {
+  const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined>) => InfiniteData<GetMessagesResponse | null | undefined>) => {
     queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
       queryKey,
-      (oldData) => {
+      (oldData: NoInfer<InfiniteData<GetMessagesResponse | null | undefined>> | undefined): NoInfer<InfiniteData<GetMessagesResponse | null | undefined>> | undefined => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) {
           return oldData;
         }
@@ -121,13 +121,16 @@ export default function useGetMessages(channelId: string | null | undefined, loa
     );
   }
 
-  const appendMessage = (newMessage: MessageDto, userSummary?: UserIdentityProfileDto) => {
-    modifyMessageData((oldData) => {
-      const lastPage = oldData.pages.at(-1)!;
-      const updatedLastPage = {...lastPage};
+  const appendMessage = (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => {
+    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
+      const lastPage: GetMessagesResponse = oldData.pages.at(-1)!;
+      const updatedLastPage: GetMessagesResponse = {...lastPage};
 
-      if (userSummary && !lastPage.users.map(u => u.id).includes(newMessage.senderUserId)) {
-        updatedLastPage.users = [...(updatedLastPage.users || []), userSummary];
+      const existingUsers: UserIdentityProfileDto[] = updatedLastPage.users || [];
+
+      if (userProfile && !existingUsers.some((u: UserIdentityProfileDto) => u.id === userProfile.id)) {
+        // @ts-ignore
+        updatedLastPage.users = [...existingUsers, userProfile];
       }
 
       const currentGroups = updatedLastPage.messageGroups || [];
@@ -140,7 +143,7 @@ export default function useGetMessages(channelId: string | null | undefined, loa
           lastMessageGroup.senderUserId == newMessage.senderUserId;
 
         if (isSameUser) {
-          const updatedGroup: TimelineMessageBlockDto = {
+          const updatedGroup: TimelineMessageClusterDto = {
             ...lastMessageGroup,
             messages: [...lastMessageGroup.messages, newMessage],
           };
@@ -175,13 +178,13 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   };
 
   const editMessage = (messageId: string, newBody: string | null) => {
-    modifyMessageData((oldData) => {
+    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
       let isMessageFound = false;
 
       const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
         if (!page) return page;
 
-        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageBlockDto): TimelineMessageBlockDto => {
+        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageClusterDto): TimelineMessageClusterDto => {
           const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
           if (messageIndex !== -1) {
@@ -222,13 +225,13 @@ export default function useGetMessages(channelId: string | null | undefined, loa
   };
 
   const deleteMessage = (messageId: string) => {
-    modifyMessageData((oldData) => {
+    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
       let isMessageFound = false;
 
       const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
         if (!page) return page;
 
-        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageBlockDto): TimelineMessageBlockDto | null => {
+        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageClusterDto): TimelineMessageClusterDto | null => {
           const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
 
           if (messageIndex === -1) {

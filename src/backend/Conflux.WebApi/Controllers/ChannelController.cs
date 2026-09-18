@@ -1,7 +1,8 @@
-using Conflux.Application.Services;
+using Conflux.Application.Features.Channels;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -13,7 +14,7 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/channels")]
 [Authorize]
 public sealed class ChannelController(
-    IChannelService channelService
+    IMediator mediator
 ) : ControllerBase {
     [HttpGet("dm/{channelId:guid}/summary")]
     public async Task<ActionResult<ApiResponse<DmChannelSummary>>> GetDirectMessageChannelSummary(
@@ -25,8 +26,7 @@ public sealed class ChannelController(
             return BadRequest(new ApiResponse<DmChannelSummary>(null, Errors.InvalidIdentifier()));
         }
         
-        var result =
-            await channelService.GetDmChannelSummaryAsync(currentUserId, channelId);
+        var result = await mediator.Send(new GetDmChannelSummaryQuery(currentUserId, channelId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<DmChannelSummary>(result.Value, Error.None));
@@ -35,7 +35,7 @@ public sealed class ChannelController(
         var errorResponse = new ApiResponse<DmChannelSummary>(null, result.Error);
         
         return result.Error.Code switch {
-            nameof(Errors.NoDirectMessageChannelWithId) => NotFound(errorResponse),
+            nameof(Errors.ResourceNotFound) => NotFound(errorResponse),
             _ => StatusCode(StatusCodes.Status500InternalServerError, errorResponse),
         };
     }
@@ -51,7 +51,7 @@ public sealed class ChannelController(
         }
 
         var result = 
-            await channelService.GetOrCreateDmChannelAsync(currentUserId, toUserId);
+            await mediator.Send(new CreateDmChannelCommand(currentUserId, toUserId));
 
         if (result.IsSuccess) {
             DirectMessageResolutionResponse response = new(result.Value.ChannelId);
@@ -67,26 +67,6 @@ public sealed class ChannelController(
         }
 
         return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<DirectMessageResolutionResponse>(null, result.Error));
-    }
-
-    [HttpGet("dm")]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<DmConversationListItemDto>>>> GetDirectMessageChannels(
-        [FromQuery] int offset, 
-        [FromQuery] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<DirectMessageResolutionResponse>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-
-        PaginatedResult<DmConversationListItemDto> result =
-            await channelService.GetUserConversationsAsync(userId, offset, count);
-
-        return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
     }
 
     public record DirectMessageResolutionResponse(Guid ChannelId);

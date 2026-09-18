@@ -1,7 +1,7 @@
-import {createContext, type ReactNode, useContext, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import {useNavigate, useRevalidator, useRouteLoaderData} from "react-router";
 import {authService} from "../api/authService.ts";
-import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/responses.ts";
+import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/types.ts";
 
 interface AuthorizationContextType {
   userAuthorization: UserAuthorizationInfo | null;
@@ -14,6 +14,7 @@ const AuthorizationContext = createContext<AuthorizationContextType | null>(null
 
 export const useAuthorization = () => {
   const context = useContext(AuthorizationContext);
+
   if (!context) throw new Error("useAuth must be used within an AuthProvider.");
   return context;
 };
@@ -37,6 +38,10 @@ export default function AuthProvider({children}: { children: ReactNode }) {
     });
   };
 
+  useEffect(() => {
+    setUserProfile(loaderData?.userProfile ?? null);
+  }, [loaderData?.userProfile]);
+
   const logout = async (): Promise<void> => {
     await authService.logout();
 
@@ -47,6 +52,8 @@ export default function AuthProvider({children}: { children: ReactNode }) {
       hash: "login",
     });
   }
+
+  console.log("profile:", JSON.stringify(userProfile));
 
   return (
     <AuthorizationContext.Provider value={{

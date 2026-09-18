@@ -5,7 +5,7 @@ public class Conversation {
     
     public DateTimeOffset? LatestMessageAt { get; set; }
 
-    public virtual ICollection<Message> Messages { get; set; } = null!;
+    public virtual ICollection<Message> Messages { get; set; } = [];
 
     public Channel Channel { get; set; } = null!;
 }

@@ -1,0 +1,13 @@
+query GetServerMemberAuthorizeInfo($serverId: UUID!, $userId: UUID!) {
+    communityServerMemberByServerAndUserId(serverId: $serverId, userId: $userId) {
+        id
+        authorizeInfo {
+            authorizeLevel
+            permissions
+            isBanned
+        }
+        roles {
+            id
+        }
+    }
+}

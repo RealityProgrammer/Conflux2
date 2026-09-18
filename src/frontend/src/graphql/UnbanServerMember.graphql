@@ -1,0 +1,8 @@
+mutation UnbanServerMember($serverId: UUID!, $memberId: UUID!) {
+    unbanCommunityServerMember(input: {
+        serverId: $serverId,
+        memberId: $memberId
+    }) {
+        memberId
+    }
+}

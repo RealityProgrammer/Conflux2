@@ -1,10 +1,10 @@
-import type {Attachment, MessageDto} from "../../api/responses.ts";
+import type {Attachment, TimelineMessageDto} from "../../api/types.ts";
 
 export interface TimelineContext {
   actions: {
-    onMessageDeleteTrigger: (message: MessageDto) => void;
-    onMessageEditTrigger: (message: MessageDto) => void;
-    onMessageReplyTrigger: (message: MessageDto) => void;
+    onMessageDeleteTrigger: (message: TimelineMessageDto) => void;
+    onMessageEditTrigger: (message: TimelineMessageDto) => void;
+    onMessageReplyTrigger: (message: TimelineMessageDto) => void;
 
     onEditCancel: () => void;
     onEditDraftChange: (body: string | null) => void;

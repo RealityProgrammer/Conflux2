@@ -1,26 +1,33 @@
-using Conflux.Application.Helpers;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class MessageRepository(
     ApplicationDbContext dbContext
 ) : IMessageRepository {
+    public IQueryable<Message> AsQueryable() {
+        return dbContext.Messages;
+    }
+
     public void Add(Message message) {
         dbContext.Messages.Add(message);
     }
 
-    public Task<Message?> GetByIdAsync(Guid messageId, CancellationToken cancellationToken = default) {
-        return dbContext.Messages
-            .Where(r => r.Id == messageId)
+    public async Task<Message?> GetById(Guid messageId, bool tracking = false, CancellationToken cancellationToken = default) {
+        IQueryable<Message> query = dbContext.Messages;
+        query = tracking ? query.AsTracking() : query.AsNoTracking();
+            
+        return await query.Where(r => r.Id == messageId)
+            .Include(r => r.ReplyTo)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessagesAsync(
+    public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId, 
@@ -28,30 +35,18 @@ internal sealed class MessageRepository(
         CancellationToken cancellationToken = default
     ) {
         var baseQuery = dbContext.Messages
-            .Where(m => m.ConversationId == conversationId);
+            .AsNoTracking()
+            .Where(m => m.ConversationId == conversationId)
+            .Include(m => m.ReplyTo);
 
-        // List<TimelineMessageProjection> messages;
-        List<MessageProjection> messageProjections;
+        List<TimelineMessageDto> messageProjections;
         bool? hasMoreBefore, hasMoreAfter;
         
         // if no cursor message is provided, mean load latest messages, ignore the direction parameter
         if (cursorMessageId is not { } cursorId) {
             messageProjections = await baseQuery
                 .OrderByDescending(m => m.Id)   // uuidv7 btw
-                .Select(m => new MessageProjection(
-                    m.Id,
-                    m.SenderUserId,
-                    m.Body,
-                    m.Attachments,
-                    m.CreatedAt,
-                    m.ReplyTo == null ? null : new ReplyMessageProjection(
-                        m.ReplyTo.Id,
-                        m.ReplyTo.SenderUserId,
-                        m.ReplyTo.Body == null ? null : m.ReplyTo.Body.Substring(0, Math.Min(m.ReplyTo.Body.Length, 128)),
-                        m.ReplyTo.Body != null && m.ReplyTo.Body.Length > 128,
-                        m.ReplyTo.Attachments.Length
-                    )
-                ))
+                .SelectFacet<TimelineMessageDto>()
                 .Take(limit)
                 .Reverse()  // return the messages in chronological order
                 .ToListAsync(cancellationToken);
@@ -64,20 +59,7 @@ internal sealed class MessageRepository(
                     messageProjections = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) < 0)
                         .OrderByDescending(m => m.Id)
-                        .Select(m => new MessageProjection(
-                            m.Id,
-                            m.SenderUserId,
-                            m.Body,
-                            m.Attachments,
-                            m.CreatedAt,
-                            m.ReplyTo == null ? null : new ReplyMessageProjection(
-                                m.ReplyTo.Id,
-                                m.ReplyTo.SenderUserId,
-                                m.ReplyTo.Body == null ? null : m.ReplyTo.Body.Substring(0, Math.Min(m.ReplyTo.Body.Length, 128)),
-                                m.ReplyTo.Body != null && m.ReplyTo.Body.Length > 128,
-                                m.ReplyTo.Attachments.Length
-                            )
-                        ))
+                        .SelectFacet<TimelineMessageDto>()
                         .Take(limit)
                         .Reverse()
                         .ToListAsync(cancellationToken);
@@ -91,20 +73,7 @@ internal sealed class MessageRepository(
                     messageProjections = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) > 0)
                         .OrderBy(m => m.Id)
-                        .Select(m => new MessageProjection(
-                            m.Id,
-                            m.SenderUserId,
-                            m.Body,
-                            m.Attachments,
-                            m.CreatedAt,
-                            m.ReplyTo == null ? null : new ReplyMessageProjection(
-                                m.ReplyTo.Id,
-                                m.ReplyTo.SenderUserId,
-                                m.ReplyTo.Body == null ? null : m.ReplyTo.Body.Substring(0, Math.Min(m.ReplyTo.Body.Length, 128)),
-                                m.ReplyTo.Body != null && m.ReplyTo.Body.Length > 128,
-                                m.ReplyTo.Attachments.Length
-                            )
-                        ))
+                        .SelectFacet<TimelineMessageDto>()
                         .Take(limit)
                         .ToListAsync(cancellationToken);
 
@@ -119,20 +88,7 @@ internal sealed class MessageRepository(
                     var before = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) < 0)
                         .OrderByDescending(m => m.Id)
-                        .Select(m => new MessageProjection(
-                            m.Id,
-                            m.SenderUserId,
-                            m.Body,
-                            m.Attachments,
-                            m.CreatedAt,
-                            m.ReplyTo == null ? null : new ReplyMessageProjection(
-                                m.ReplyTo.Id,
-                                m.ReplyTo.SenderUserId,
-                                m.ReplyTo.Body == null ? null : m.ReplyTo.Body.Substring(0, Math.Min(m.ReplyTo.Body.Length, 128)),
-                                m.ReplyTo.Body != null && m.ReplyTo.Body.Length > 128,
-                                m.ReplyTo.Attachments.Length
-                            )
-                        ))
+                        .SelectFacet<TimelineMessageDto>()
                         .Take(halfLimit)
                         .Reverse()
                         .ToListAsync(cancellationToken);
@@ -140,20 +96,7 @@ internal sealed class MessageRepository(
                     var after = await baseQuery
                         .Where(m => m.Id.CompareTo(cursorId) >= 0) // can't forget the cursor message too lmao
                         .OrderBy(m => m.Id)
-                        .Select(m => new MessageProjection(
-                            m.Id,
-                            m.SenderUserId,
-                            m.Body,
-                            m.Attachments,
-                            m.CreatedAt,
-                            m.ReplyTo == null ? null : new ReplyMessageProjection(
-                                m.ReplyTo.Id,
-                                m.ReplyTo.SenderUserId,
-                                m.ReplyTo.Body == null ? null : m.ReplyTo.Body.Substring(0, Math.Min(m.ReplyTo.Body.Length, 128)),
-                                m.ReplyTo.Body != null && m.ReplyTo.Body.Length > 128,
-                                m.ReplyTo.Attachments.Length
-                            )
-                        ))
+                        .SelectFacet<TimelineMessageDto>()
                         .Take(halfLimit + 1)
                         .ToListAsync(cancellationToken);
 
@@ -179,74 +122,18 @@ internal sealed class MessageRepository(
             }
         }
 
-        return Result<PagedTimelineMessageResult>.Success(new(
-        [..messageProjections.Select(p => {
-            ReplyToMessageDto? replyDto = null;
-            
-            if (p.ReplyProjection != null) {
-                (var snippet, var truncated) = StringHelpers.CutSnippet(p.ReplyProjection.TruncatedBody);
-            
-                replyDto = new(
-                    MessageId: p.ReplyProjection.Id,
-                    SenderUserId: p.ReplyProjection.SenderId,
-                    BodySnippet: snippet,
-                    HasMoreBody: truncated || p.ReplyProjection.IsBodyTruncated,
-                    AttachmentCount: p.ReplyProjection.AttachmentCount
-                );
-            }
-            
-            return new TimelineMessageProjection(
-                p.Id,
-                p.SenderId,
-                p.Body,
-                p.Attachments,
-                p.CreatedAt,
-                replyDto
-            );
-        })], hasMoreBefore, hasMoreAfter));
+        return Result<PagedTimelineMessageResult>.Success(new(messageProjections, hasMoreBefore, hasMoreAfter));
     }
 
-    public async Task<ReplyToMessageDto?> GetReplyMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default) {
-        var projection = await dbContext.Messages
-            .Where(m => m.Id == messageId)
-            .Select(m => new ReplyMessageProjection(
-                m.Id,
-                m.SenderUserId,
-                m.Body == null ? null : m.Body.Substring(0, Math.Min(m.Body.Length, 128)),
-                m.Body != null && m.Body.Length > 128,
-                m.Attachments.Length
-            ))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (projection == null) {
-            return null;
-        }
+    public async Task<Attachment?> GetAttachmentById(Guid id, CancellationToken cancellationToken = default) {
+        // have to do this to utilize GIN
+        string searchJson = $$"""[{"Id": "{{id}}"}]""";
         
-        (var snippet, var truncated) = StringHelpers.CutSnippet(projection.TruncatedBody);
-
-        return new(
-            projection.Id,
-            projection.SenderId,
-            BodySnippet: snippet,
-            HasMoreBody: truncated || projection.IsBodyTruncated,
-            projection.AttachmentCount
-        );
+        var attachments = await dbContext.Messages
+            .Where(m => EF.Functions.JsonContains(m.Attachments, searchJson))
+            .Select(m => m.Attachments)
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        return attachments?.FirstOrDefault(a => a.Id == id);
     }
-
-    private sealed record MessageProjection(
-        Guid Id,
-        Guid SenderId,
-        string? Body,
-        Attachment[] Attachments,
-        DateTimeOffset CreatedAt,
-        ReplyMessageProjection? ReplyProjection
-    );
-
-    private sealed record ReplyMessageProjection(
-        Guid Id, 
-        Guid SenderId, 
-        string? TruncatedBody, 
-        bool IsBodyTruncated, 
-        int AttachmentCount
-    );
 }

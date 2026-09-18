@@ -1,3 +1,8 @@
+using Conflux.WebApi.Notifications.Friend;
+using Conflux.WebApi.Notifications.Messaging;
+using Conflux.WebApi.Notifications.Server;
+using Conflux.WebApi.Notifications.Users;
+
 namespace Conflux.WebApi.SignalR;
 
 public interface IConfluxClient {
@@ -12,4 +17,27 @@ public interface IConfluxClient {
     Task MessageDeleted(MessageDeletedEvent data, CancellationToken cancellationToken = default);
     
     Task UpdateDmConversationList(UpdateDmConversationListEvent data, CancellationToken cancellationToken = default);
+
+    Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerRoleDeleted(ServerRoleDeletedEvent data, CancellationToken cancellationToken = default);
+    
+    Task ServerChannelCategoryCreated(ServerChannelCategoryCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerChannelCategoryDeleted(ServerChannelCategoryDeletedEvent data, CancellationToken cancellationToken = default);
+    
+    Task ServerChannelCreated(ServerChannelCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerChannelDeleted(ServerChannelDeletedEvent data, CancellationToken cancellationToken = default);
+    
+    Task MemberRolesUpdated(MemberRolesUpdatedEvent data, CancellationToken cancellationToken = default);
+    
+    Task KickedFromServer(Guid serverId, CancellationToken cancellationToken = default);
+    Task BannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
+    Task UnbannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
+    
+    Task ServerMemberKicked(ServerMemberKickedEvent data, CancellationToken cancellationToken = default);
+    Task ServerMemberWarned(ServerMemberWarnedEvent data, CancellationToken cancellationToken = default);
+    Task ServerMemberBanned(ServerMemberBannedEvent data, CancellationToken cancellationToken = default);
+    Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
+
+    Task UpdateModerationLog(CancellationToken cancellationToken = default);
 }

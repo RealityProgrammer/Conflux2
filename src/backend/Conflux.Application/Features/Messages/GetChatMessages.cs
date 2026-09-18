@@ -1,0 +1,113 @@
+using Conflux.Application.Dto;
+using Conflux.Application.Services;
+using Conflux.Domain;
+using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
+
+namespace Conflux.Application.Features.Messages;
+
+public sealed record GetChatMessagesQuery(
+    Guid RequesterUserId,
+    Guid ChannelId,
+    MessageLoadDirection? Direction,
+    Guid? CursorMessageId,
+    int Count
+) : IQuery<Result<GetMessagesResponse>>;
+
+public sealed class GetChatMessagesHandler(
+    IChannelRepository channelRepository,
+    IChannelAuthorizationService channelAuthorizationService,
+    IMessageRepository messageRepository,
+    IUserRepository userRepository
+) : IQueryHandler<GetChatMessagesQuery, Result<GetMessagesResponse>> {
+    public async ValueTask<Result<GetMessagesResponse>> Handle(
+        GetChatMessagesQuery query, 
+        CancellationToken cancellationToken
+    ) {
+        Result<ChannelMetadataDto> getChannelMetadataResult = 
+            await channelRepository.GetChannelMetadataFromChannelId(query.ChannelId, cancellationToken);
+        
+        if (!getChannelMetadataResult.IsSuccess) {
+            return getChannelMetadataResult.Error;
+        }
+        
+        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
+        
+        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
+            query.RequesterUserId, 
+            channelMetadata.ChannelId, 
+            channelMetadata.ChannelType
+        );
+
+        if (!authResult.IsSuccess) {
+            return authResult.Error;
+        }
+
+        MessagingPermissions permissions = authResult.Value;
+
+        if (!permissions.HasFlag(MessagingPermissions.ViewMessage)) {
+            return Errors.Forbidden("You do not have permission to view this channel.");
+        }
+        
+        Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessages(
+            channelMetadata.ConversationId, 
+            query.Direction, 
+            query.CursorMessageId,
+            query.Count,
+            cancellationToken
+        );
+
+        if (!getMessagesResult.IsSuccess) {
+            return getMessagesResult.Error;
+        }
+        
+        var messagePage = getMessagesResult.Value!;
+        
+        // bail out early
+        if (messagePage.Messages.Count == 0) {
+            return Result<GetMessagesResponse>.Success(new([], [], messagePage.HasMoreBefore, messagePage.HasMoreAfter));
+        }
+        
+        // group the messages
+        var groups = new List<TimelineMessageClusterDto>();
+        TimelineMessageClusterDto? currentGroup = null;
+
+        foreach (TimelineMessageDto message in getMessagesResult.Value!.Messages) {
+            TimelineMessageClusterItemDto clusterItem = new(message);
+            
+            // if same sender as the last message, append to the current group
+            if (currentGroup != null && currentGroup.SenderUserId == message.SenderUserId) {
+                currentGroup.Messages.Add(clusterItem);
+            } else {
+                // else, create a new group and add it to the list
+                currentGroup = new(message.SenderUserId, [clusterItem]);
+                groups.Add(currentGroup);
+            }
+        }
+
+        // must have at least 1 user
+        List<UserIdentityProfileDto> userProfiles =
+            await userRepository.GetIdentityProfiles(
+                [..groups
+                    .Select(g => g.SenderUserId)
+                    .Concat(
+                        // include the sender user ids from replying
+                        groups
+                            .SelectMany(g => g.Messages)
+                            .Where(m => m.ReplyTo != null)
+                            .Select(m => m.ReplyTo!.SenderUserId)
+                        )
+                    .Distinct(),
+                ],
+                cancellationToken
+            );
+        
+        return Result<GetMessagesResponse>.Success(new(
+            groups, 
+            userProfiles, 
+            messagePage.HasMoreBefore, 
+            messagePage.HasMoreAfter
+        ));
+    }
+}

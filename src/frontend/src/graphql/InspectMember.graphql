@@ -1,0 +1,26 @@
+query InspectMember($id: UUID!) {
+    communityServerMemberForAdmin(id: $id) {
+        id
+        createdAt
+        user {
+            id
+            userName
+            displayName
+            hasAvatar
+        }
+        roles {
+            id
+            name
+            authorizeLevel
+            specialRoleType
+        }
+        authorizeInfo {
+            authorizeLevel
+            permissions
+            isBanned
+        }
+        status
+        banExpireAt
+        numWarn
+    }
+}

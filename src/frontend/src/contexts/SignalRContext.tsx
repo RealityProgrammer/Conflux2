@@ -1,4 +1,4 @@
-import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from "react";
 import {
   HttpTransportType,
   type HubConnection,
@@ -6,9 +6,9 @@ import {
   HubConnectionState,
   LogLevel
 } from "@microsoft/signalr";
-import {apiClient} from "../api/client.ts";
+import {apiClient, graphqlClient} from "../api/client.ts";
 
-interface SignalRContextType {
+export type SignalRContextType = {
   connection: HubConnection | null;
   isConnected: boolean;
 }
@@ -21,72 +21,93 @@ export const useSignalRConnection = (): SignalRContextType => {
   return context;
 };
 
-export default function SignalRConnectionProvider({children}: { children: ReactNode }) {
+export default function SignalRConnectionProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  const activeConnectionRef = useRef<HubConnection | null>(null);
+
   useEffect(() => {
-    // have to do this so that react strict mode double invocation doesn't cause error in the console
+    console.log("begin SignalR connection.")
+
     let isMounted = true;
-    let startPromise: Promise<void> | null = null;
 
     const newConnection = new HubConnectionBuilder()
       .withUrl(`/hub`, {
         withCredentials: true,
         transport: HttpTransportType.WebSockets,
       })
-      .configureLogging(LogLevel.Debug)
+      .configureLogging(LogLevel.Trace)
       .withAutomaticReconnect()
       .build();
 
-    newConnection.onreconnecting(() => setIsConnected(false));
-    newConnection.onreconnected((connectionId) => {
-      setIsConnected(true);
+    activeConnectionRef.current = newConnection;
+    setConnection(newConnection);
 
-      if (connectionId) {
-        apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = connectionId;
+    newConnection.onreconnecting(() => {
+      if (activeConnectionRef.current === newConnection) {
+        setIsConnected(false);
       }
     });
-    newConnection.onclose(() => {
-      setIsConnected(false);
-      delete apiClient.defaults.headers.common['X-SignalR-Connection-Id'];
+
+    newConnection.onreconnected((connectionId) => {
+      if (activeConnectionRef.current === newConnection) {
+        setIsConnected(true);
+
+        if (connectionId) {
+          apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = connectionId;
+          graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'] = connectionId;
+        }
+      }
     });
 
-    if (newConnection.state === HubConnectionState.Disconnected) {
-      startPromise = newConnection.start().then(() => {
-        if (isMounted) {
-          setConnection(newConnection);
-          setIsConnected(true);
+    newConnection.onclose(() => {
+      if (activeConnectionRef.current === newConnection) {
+        setIsConnected(false);
 
-          if (newConnection.connectionId) {
-            apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
-          }
+        delete apiClient.defaults.headers.common['X-SignalR-Connection-Id'];
+        delete graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'];
+      }
+    });
+
+    // Start connection
+    const startPromise = newConnection.start();
+
+    startPromise.then(() => {
+      if (isMounted && activeConnectionRef.current === newConnection) {
+        setIsConnected(true);
+
+        if (newConnection.connectionId) {
+          apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
+          graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
         }
-      }).catch((err) => {
-        console.error("Failed to connect to SignalR: ", err);
-      });
-    }
+      }
+    }).catch((err) => {
+      console.error("failed to connect to SignalR:", err);
+    });
 
     return () => {
       isMounted = false;
-      setIsConnected(false);
 
-      delete apiClient.defaults.headers.common['X-SignalR-Connection-Id'];
+      if (activeConnectionRef.current === newConnection) {
+        activeConnectionRef.current = null;
+        setIsConnected(false);
 
-      if (startPromise) {
-        startPromise.then(() => {
-          if (newConnection.state !== HubConnectionState.Disconnected) {
-            newConnection.stop();
-          }
-        });
-      } else if (newConnection.state !== HubConnectionState.Disconnected) {
-        newConnection.stop();
+        delete apiClient.defaults.headers.common['X-SignalR-Connection-Id'];
+        delete graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'];
       }
+
+      startPromise.finally(() => {
+        if (newConnection.state !== HubConnectionState.Disconnected) {
+          console.log("stopping SignalR connection...");
+          newConnection.stop().catch(console.error);
+        }
+      });
     };
   }, []);
 
   return (
-    <SignalRConnectionContext.Provider value={{connection, isConnected}}>
+    <SignalRConnectionContext.Provider value={{ connection, isConnected }}>
       {children}
     </SignalRConnectionContext.Provider>
   );

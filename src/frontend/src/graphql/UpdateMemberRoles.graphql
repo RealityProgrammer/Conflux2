@@ -1,0 +1,9 @@
+mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {
+    updateCommunityServerMemberRoles(input: {
+        serverId: $serverId,
+        memberId: $memberId,
+        roleIds: $roleIds
+    }) {
+        memberId
+    }
+}

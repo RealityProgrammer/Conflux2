@@ -9,7 +9,7 @@ interface MoreActionsButtonProps {
 
 export default function MoreActionsButton({children}: MoreActionsButtonProps) {
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
         <IconButton className="size-6" theme="default">
           <BsThreeDotsVertical className="size-6"/>

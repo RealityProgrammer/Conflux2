@@ -1,7 +1,7 @@
 namespace Conflux.Domain.Dto;
 
 public sealed record PagedTimelineMessageResult(
-    List<TimelineMessageProjection> Messages, 
+    List<TimelineMessageDto> Messages, 
     bool? HasMoreBefore, 
     bool? HasMoreAfter
 );

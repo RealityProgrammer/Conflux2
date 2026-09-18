@@ -1,0 +1,26 @@
+query GetAssignableServerRoles(
+    $serverId: UUID!,
+    $nameFilter: String,
+    $after: String,
+    $authorizeLevel: Int,
+) {
+    communityServerRoles(
+        serverId: $serverId,
+        after: $after,
+        where: {
+            name: { ilike: $nameFilter }
+            specialRoleType: { eq: None },
+            authorizeLevel:  { lte: $authorizeLevel }
+        }
+    ) {
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+
+        nodes {
+            id
+            name
+        }
+    }
+}

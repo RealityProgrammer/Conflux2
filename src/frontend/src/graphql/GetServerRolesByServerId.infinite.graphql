@@ -1,0 +1,32 @@
+query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: String) {
+    communityServerRoles(
+        serverId: $serverId,
+        after: $after,
+        where: {
+            name: { ilike: $nameFilter }
+        }
+    ) {
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+
+        nodes {
+            id
+            name
+            specialRoleType
+            authorizeLevel
+            createdAt
+            numMembers
+            creatorUser {
+                id
+                displayName
+                hasAvatar
+            }
+            permissions {
+                permission
+                state
+            }
+        }
+    }
+}

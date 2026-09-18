@@ -1,9 +1,6 @@
 namespace Conflux.Domain;
 
 public static class Errors {
-    public static Error MismatchPasswords() =>
-        new(nameof(MismatchPasswords), "Passwords are mismatch.");
-    
     public static Error InvalidCredentials() => 
         new(nameof(InvalidCredentials), "Invalid credentials.");
     
@@ -56,6 +53,12 @@ public static class Errors {
     
     public static Error ResourceNotFound(string typeOfResource) =>
         new(nameof(ResourceNotFound), $"{typeOfResource} not found.");
+    
+    public static Error ResourceExpired(string typeOfResource) =>
+        new(nameof(ResourceExpired), $"{typeOfResource} expired.");
+    
+    public static Error ResourceMaxUsed(string typeOfResource) =>
+        new(nameof(ResourceMaxUsed), $"{typeOfResource} exceeding the usage limit.");
 
     public static Error MissingArgument(string argumentName) =>
         new(nameof(MissingArgument), $"{argumentName} is missing.");
@@ -89,9 +92,6 @@ public static class Errors {
 
     public static Error NoAcceptedFriendRequest() =>
         new(nameof(NoAcceptedFriendRequest), "No accepted friend request between 2 users.");
-    
-    public static Error NoDirectMessageChannelWithId() =>
-        new(nameof(NoDirectMessageChannelWithId), "No direct message channel with the given ID.");
 
     public static Error AttachmentUploadFailure() =>
         new(nameof(AttachmentUploadFailure), "Failed to upload attachments.");
@@ -104,4 +104,16 @@ public static class Errors {
 
     public static Error NoIdempotencyKeyHeader() =>
         new(nameof(NoIdempotencyKeyHeader), "Missing Idempotency-Key header.");
+
+    public static Error AlreadyJoinedServer() =>
+        new(nameof(AlreadyJoinedServer), "User is already joined server.");
+
+    public static Error ResourceNoLongerValid(string typeOfResource) =>
+        new(nameof(ResourceNoLongerValid), $"{typeOfResource} is no longer valid.");
+    
+    public static Error TooManyRequests() =>
+        new(nameof(TooManyRequests), "Too many requests.");
+    
+    public static Error ServerMemberNotActive() =>
+        new(nameof(ServerMemberNotActive), "Community server member is not active.");
 }

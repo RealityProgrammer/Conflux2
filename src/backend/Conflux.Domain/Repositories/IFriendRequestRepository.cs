@@ -4,14 +4,12 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Domain.Repositories;
 
-public interface IFriendRequestRepository {
-    void Add(FriendRequest friendRequest);
-    
-    Task<FriendRequestSummary?> GetRequestSummaryAsync(Guid user1, Guid user2);
+public interface IFriendRequestRepository : IWriteRepository<FriendRequest> {
+    Task<FriendRequestSummary?> GetRequestSummary(Guid user1, Guid user2);
 
-    Task<Guid?> TryAcceptReverseRequestAsync(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default);
+    Task<Guid?> TryAcceptReverseRequest(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default);
     
-    Task<bool> ReactivateRequestAsPendingAsync(
+    Task<bool> ReactivateRequestAsPending(
         Guid requestId, 
         Guid senderUserId, 
         Guid receiverUserId, 
@@ -19,7 +17,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<bool> TryTransitionStatusAsync(
+    Task<bool> TryTransitionStatus(
         Guid requestId, 
         FriendRequestStatus expectedStatus, 
         FriendRequestStatus newStatus, 
@@ -27,7 +25,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
     
-    Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscoveryAsync(
+    Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscovery(
         Guid searcherId, 
         string? nameFilter, 
         int offset,
@@ -35,7 +33,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<PaginatedResult<UserIdentityProfileDto>> GetFriendsAsync(
+    Task<PaginatedResult<UserIdentityProfileDto>> GetFriends(
         Guid searcherId,
         string? nameFilter,
         int offset,
@@ -43,7 +41,7 @@ public interface IFriendRequestRepository {
         CancellationToken cancellationToken = default
     );
 
-    Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequestsAsync(
+    Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequests(
         Guid searcherId,
         string? nameFilter,
         int offset,

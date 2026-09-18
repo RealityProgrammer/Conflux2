@@ -1,9 +1,10 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {
+  TimelineMessageClusterItemDto,
   TimelineMessageDto,
   UserIdentityProfileDto
-} from "../../api/responses.ts";
-import {type ReactNode} from "react";
+} from "../../api/types.ts";
+import {type Key, type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
@@ -11,11 +12,13 @@ import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import {estimateMessageLayout} from "./utils.ts";
+import {toast} from "react-toastify";
+import {formatDate} from "date-fns";
 
-export type MessageItemProps = {
-  senderProfile: UserIdentityProfileDto;
+type MessageItemProps = {
+  senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
-  message: TimelineMessageDto;
+  message: TimelineMessageClusterItemDto;
   showHeader: boolean;
 }
 
@@ -24,11 +27,15 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     super(data);
   }
 
+  getKey(): Key {
+    return `message_${this.data.message.id}`;
+  }
+
   measureHeight(context: TimelineContext): number {
     let height = 0;
 
     if (this.data.showHeader) {
-      height += 24;
+      height += 20;
     }
 
     const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
@@ -46,7 +53,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     if (message.replyTo && this.data.replyToMessageSenderProfile) {
       const layout = estimateMessageLayout(
         `reply_${message.replyTo.messageId}`,
-        buildReplyText(this.data.replyToMessageSenderProfile.displayName, message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
+        buildReplyText(this.data.replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
         messageDisplayWidth,
         16
       );
@@ -71,14 +78,14 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 }
 
 interface MessageViewProps {
-  senderProfile: UserIdentityProfileDto;
+  senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
-  message: TimelineMessageDto;
+  message: TimelineMessageClusterItemDto;
   showHeader: boolean;
   context: TimelineContext;
 }
 
-export default function MessageView({
+function MessageView({
   senderProfile,
   message,
   showHeader,
@@ -92,40 +99,48 @@ export default function MessageView({
       <ContextMenu.Trigger
         className="w-full flex flex-col"
       >
-        <div className="hover-highlight px-2">
+        <div className="hover-highlight px-2 group">
           {message.replyTo && replyToMessageSenderProfile && (
             <div className="min-w-0">
               <p className="text-xs ml-13">
-                {buildReplyText(replyToMessageSenderProfile.displayName, message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount)}
+                {buildReplyText(replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount)}
               </p>
             </div>
           )}
 
-          {showHeader ? (
-            <div className="flex flex-row gap-3">
-              <UserAvatar
-                hasAvatar={senderProfile?.hasAvatar ?? false}
-                userId={senderProfile?.id ?? undefined}
-                className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-              />
+          <div className="flex flex-row gap-3">
+            {showHeader ? (
+              <>
+                <UserAvatar
+                  hasAvatar={senderProfile?.hasAvatar ?? false}
+                  userId={senderProfile?.id ?? undefined}
+                  className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                />
 
-              <div className="flex-1 min-w-0">
-                <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">
+                    {senderProfile?.userName ?? "Unknown Sender"}
+                    {" "}
+                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
+                  </p>
+
+                  <MessageContentView
+                    message={{...message, senderUserId: senderProfile!.id}}
+                    onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="select-none basis-10 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
 
                 <MessageContentView
-                  message={message}
+                  message={{...message, senderUserId: senderProfile!.id}}
                   onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
                 />
-              </div>
-            </div>
-          ) : (
-            <div className="ml-13">
-              <MessageContentView
-                message={message}
-                onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
-              />
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </ContextMenu.Trigger>
 
@@ -139,14 +154,14 @@ export default function MessageView({
             onSelect={() => {
               context.actions.onMessageReplyTrigger({
                 ...message,
-                senderUserId: senderProfile.id,
+                senderUserId: senderProfile?.id!,
               })
             }}
           >
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
 
-          {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile.id && (
+          {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
             <>
               <ContextMenu.Item
                 className="dropdown-item-default"
@@ -174,13 +189,17 @@ export default function MessageView({
             </>
           )}
 
-          <ContextMenu.Separator className="h-px bg-gray-500 my-1.5"/>
+          <ContextMenu.Separator className="horizontal-separator my-1.5"/>
 
           {message?.body && (
             <ContextMenu.Item
               className="dropdown-item-default"
-              onSelect={() => {
-                navigator.clipboard.writeText(message.body!);
+              onSelect={async () => {
+                try {
+                  await navigator.clipboard.writeText(message.body!);
+                } catch {
+                  toast.error("Failed to copy message body to clipboard, possible API error?")
+                }
               }}
             >
               Copy text <BsCopy className="fill-white size-4 ml-auto"/>
@@ -200,12 +219,10 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
 
 function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
   return (
-    <>
-      <div className="text-sm">
-        <p className="leading-6 whitespace-pre-wrap wrap-break-word">
-          {message.body}
-        </p>
-      </div>
+    <div>
+      <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
+        {message.body}
+      </p>
 
       {message.attachments && message.attachments.length > 0 && (
         <MessageAttachments
@@ -213,6 +230,6 @@ function MessageContentView({message, onAttachmentClick}: { message: TimelineMes
           onAttachmentClick={onAttachmentClick}
         />
       )}
-    </>
+    </div>
   );
 }

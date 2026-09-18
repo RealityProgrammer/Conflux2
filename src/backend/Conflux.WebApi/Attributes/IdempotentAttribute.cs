@@ -18,11 +18,19 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(cacheTimeInMinutes);
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next) {
+        // ignore idempotency if request is from swagger, in development environment
+        if (context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment()) {
+            if (context.HttpContext.Request.Headers.Referer.ToString().Contains("/swagger", StringComparison.OrdinalIgnoreCase)) {
+                await next();
+                return;
+            }
+        }
+        
         if (!context.HttpContext.Request.Headers.TryGetValue("Idempotency-Key", out StringValues idempotenceKeyValue)) {
             context.Result = new BadRequestObjectResult(new ApiResponse(Errors.NoIdempotencyKeyHeader()));
             return;
         }
-
+        
         IDistributedCache cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
         IDistributedLockFactory lockFactory = context.HttpContext.RequestServices.GetRequiredService<IDistributedLockFactory>();
 
@@ -55,7 +63,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
             ReturnCachedResult(context, cached);
             return;
         }
-
+        
         ActionExecutedContext executedContext = await next();
 
         if (executedContext.Result is ObjectResult {
@@ -106,6 +114,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
         
         while (!cts.IsCancellationRequested) {
             var cached = await cache.GetStringAsync(cacheKey, CancellationToken.None);
+            
             if (cached is not null) {
                 var serializerOptions = context.HttpContext.RequestServices
                     .GetRequiredService<IOptions<JsonOptions>>()
@@ -117,11 +126,15 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
                 return new ContentResult {
                     Content = response.JsonBody,
                     ContentType = "application/json",
-                    StatusCode = response.StatusCode
+                    StatusCode = response.StatusCode,
                 };
             }
-            
-            await Task.Delay(100, cts.Token);
+
+            try {
+                await Task.Delay(100, cts.Token);
+            } catch (OperationCanceledException) {
+                break;
+            }
         }
 
         return new StatusCodeResult(StatusCodes.Status503ServiceUnavailable);

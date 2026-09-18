@@ -1,0 +1,95 @@
+using Conflux.Domain;
+using Conflux.Domain.Dto;
+using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
+using Facet.Extensions;
+
+namespace Conflux.Infrastructure.Repositories;
+
+internal sealed class CommunityServerRepository(
+    ApplicationDbContext dbContext
+) : ICommunityServerRepository {
+    public IQueryable<CommunityServer> AsQueryable() {
+        return dbContext.CommunityServers;
+    }
+    
+    public void Add(CommunityServer communityServer) {
+        dbContext.CommunityServers.Add(communityServer);
+    }
+
+    public async Task<bool> UpdateHasAvatar(Guid serverId, bool hasAvatar) {
+        int changed = await dbContext.CommunityServers
+            .Where(s => s.Id == serverId)
+            .ExecuteUpdateAsync(setter => {
+                setter.SetProperty(s => s.HasAvatar, hasAvatar);
+            });
+        
+        return changed == 1;
+    }
+    
+    public async Task<Result<CommunityServerProfileDto>> GetProfile(
+        Guid serverId,
+        CancellationToken cancellationToken = default
+    ) {
+        CommunityServerProfileDto? result = await dbContext.CommunityServers
+            .AsNoTracking()
+            .Where(c => c.Id == serverId)
+            .SelectFacet<CommunityServerProfileDto>()
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return result != null ? Result<CommunityServerProfileDto>.Success(result) : Errors.ResourceNotFound("Server");
+    }
+
+    public async Task<List<ChannelCategoryDetailDto>> GetChannelCategorySummaries(
+        Guid serverId, 
+        CancellationToken cancellationToken = default
+    ) {
+        // this query would need to be benchmarked cuz im spewing shits here (compare against GROUP BY).
+        var categories = await dbContext.ChannelCategories
+            .AsNoTracking()
+            .Where(c => c.CommunityServerId == serverId)
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync(cancellationToken);
+
+        var channels = await dbContext.Channels
+            .AsNoTracking()
+            .Where(c => (c.Type == ChannelType.CommunityServerText || c.Type == ChannelType.CommunityServerVoice) && c.CommunityServerId == serverId)
+            .SelectFacet<ServerChannelIdentityDto>()
+            .ToListAsync(cancellationToken);
+
+        var channelsByCategoryId = channels.ToLookup(c => c.CategoryId);
+        
+        var result = new List<ChannelCategoryDetailDto>();
+        
+        var uncategorizedChannels = channelsByCategoryId[null]
+            .ToList();
+
+        if (uncategorizedChannels.Count > 0) {
+            result.Add(new() {
+                Id = null,
+                Name = null,
+                Channels = uncategorizedChannels,
+            });
+        }
+
+        var mappedCategories = categories
+            .Select(c => new ChannelCategoryDetailDto {
+                Id = c.Id, 
+                Name = c.Name,
+                Channels = [..channelsByCategoryId[c.Id]]
+            });
+        
+        result.AddRange(mappedCategories);
+
+        return result;
+    }
+    public async Task<bool> IsCategoryExistsInServer(
+        Guid serverId, 
+        Guid categoryId, 
+        CancellationToken cancellationToken = default
+    ) {
+        return await dbContext.ChannelCategories
+            .AnyAsync(c => c.Id == categoryId && c.CommunityServerId == serverId, cancellationToken);
+    }
+}

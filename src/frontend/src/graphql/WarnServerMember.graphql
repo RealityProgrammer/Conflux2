@@ -1,0 +1,9 @@
+mutation WarnServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
+    warnCommunityServerMember(input: {
+        serverId: $serverId
+        memberId: $memberId
+        reason: $reason
+    }) {
+        memberId
+    }
+}

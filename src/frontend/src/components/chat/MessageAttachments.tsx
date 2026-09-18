@@ -1,7 +1,7 @@
 import {ScrollArea} from "radix-ui";
 import {messageService} from "../../api/messageService.ts";
 import {BsMusicNote} from "react-icons/bs";
-import type {Attachment} from "../../api/responses.ts";
+import type {Attachment} from "../../api/types.ts";
 
 export interface MessageAttachmentsProps {
   attachments: Attachment[];

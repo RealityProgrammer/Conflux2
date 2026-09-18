@@ -19,11 +19,11 @@ function Root({userId, userName, displayName, hasAvatar, children, className, ..
         className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
 
       <div className="flex-1 flex flex-col min-w-0 select-none">
-        <p className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+        <p className="text-sm truncate">
           {displayName}
         </p>
 
-        {userName && (<p className="text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+        {userName && (<p className="text-sm text-gray-400 truncate">
           @{userName}
         </p>)}
       </div>
