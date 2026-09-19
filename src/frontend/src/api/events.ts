@@ -30,6 +30,10 @@ export type MessageEditedEvent = {
   message: TimelineMessageDto;
 }
 
+export type MessageDeletedEvent = {
+  messageId: string;
+}
+
 export type UpdateDmConversationListEvent = {
   channelId: string;
 }

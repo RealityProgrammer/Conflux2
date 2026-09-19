@@ -4,14 +4,13 @@ import type {
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/types.ts";
-import {type Key, type ReactNode} from "react";
+import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
 import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
-import {estimateMessageLayout} from "./utils.ts";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import Markdown from "react-markdown";
@@ -26,42 +25,6 @@ type MessageItemProps = {
 export class MessageItem extends TimelineItem<MessageItemProps> {
   constructor(data: MessageItemProps) {
     super(data);
-  }
-
-  getKey(): Key {
-    return `message_${this.data.message.id}`;
-  }
-
-  measureHeight(context: TimelineContext): number {
-    let height = 0;
-
-    if (this.data.showHeader) {
-      height += 20;
-    }
-
-    const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
-    const message = this.data.message;
-
-    if (message.body) {
-      const layout = estimateMessageLayout(message.id, message.body, messageDisplayWidth, 24);
-      height += layout.height;
-    }
-
-    if (message.attachments && message.attachments.length > 0) {
-      height += 128;
-    }
-
-    if (message.replyTo && this.data.replyToMessageSenderProfile) {
-      const layout = estimateMessageLayout(
-        `reply_${message.replyTo.messageId}`,
-        buildReplyText(this.data.replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
-        messageDisplayWidth,
-        16
-      );
-      height += layout.height;
-    }
-
-    return height;
   }
 
   render(_measuredHeight: number, context: TimelineContext): ReactNode {

@@ -1,16 +1,14 @@
 import type {
   Attachment,
-  GetMessagesResponse,
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../api/types.ts";
-import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useState} from "react";
+import {useState} from "react";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
-import useGetMessages from "../hooks/useGetMessages.ts";
-import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
+import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import useTimelineEntries from "../hooks/useTimelineEntries.ts";
 import type {TimelineContext} from "./chat/TimelineContext.ts";
@@ -32,26 +30,22 @@ export interface QueryModification {
   deleteMessage: (messageId: string) => void;
 }
 
-export interface ChatViewProps {
-  renderEmptyState?: () => ReactNode;
-  queryModificationRef?: RefObject<QueryModification>;
-}
+export interface ChatViewProps {}
 
-export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps) {
-  const {channelId, onMessageEdit, onMessageDelete, onMessageReplyRequested} = useChatContainerContext()!;
-
-  const queryClient = useQueryClient();
-
-  // messages querying
+export function ChatView({}: ChatViewProps) {
   const {
-    useInfiniteQueryResult: messageQueryResult,
-    allMessageGroups: messageGroups,
+    messageQueryResult,
+    messageClusters,
     userProfiles,
-    queryKey,
     appendMessage,
     editMessage,
     deleteMessage,
-  } = useGetMessages(channelId, 50);
+    onMessageEdit,
+    onMessageDelete,
+    setReplyingMessage
+  } = useChatContainerContext()!;
+
+  const queryClient = useQueryClient();
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 
@@ -110,25 +104,10 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
     const senderId = event.message.senderUserId;
 
-    // check if there is this user summary in any page
-    const currentCache = queryClient.getQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(queryKey);
-    let knownUser: UserIdentityProfileDto | undefined = undefined;
-
-    if (currentCache?.pages) {
-      for (const page of currentCache.pages) {
-        if (!page?.users) continue;
-
-        const cached = page.users.find((value) => value.id == senderId);
-
-        if (cached) {
-          knownUser = cached;
-          break;
-        }
-      }
-    }
-
-    // if we don't know this user, fetch from api
-    if (!knownUser) {
+    if (userProfiles[senderId]) {
+      appendMessage(event.message, userProfiles[senderId]);
+    } else {
+      // if we don't know this user, fetch from api
       try {
         const userQuery = await queryClient.query({
           queryKey: useGetUserIdentityProfileQuery.getKey({ id: senderId }),
@@ -136,32 +115,28 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
           staleTime: 30 * 60 * 1000,
         });
 
-        knownUser = userQuery.user ?? undefined;
+        appendMessage(event.message, userQuery.user ?? undefined);
       } catch (error) {
         console.error("Failed to fetch user summary for new message", error);
       }
     }
-
-    appendMessage(event.message, knownUser);
   });
 
   useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
     editMessage(event.message.id, event.message.body);
   });
 
-  useImperativeHandle(queryModificationRef, () => ({
-    appendMessage,
-    editMessage,
-    deleteMessage
-  }), [appendMessage, editMessage, deleteMessage]);
+  useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
+    deleteMessage(event.messageId);
+  });
 
   // timeline entries
-  const timelineItems = useTimelineEntries(messageGroups, userProfiles, editingMessage?.id ?? undefined);
+  const timelineItems = useTimelineEntries(messageClusters, userProfiles, editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
       onMessageEditTrigger: setEditingMessage,
-      onMessageReplyTrigger: onMessageReplyRequested,
+      onMessageReplyTrigger: setReplyingMessage,
       onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
       onEditCancel: () => {
         setEditingMessage(undefined);

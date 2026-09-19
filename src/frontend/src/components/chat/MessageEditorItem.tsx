@@ -1,8 +1,7 @@
-import {type ChangeEvent, type Key, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
+import {type ChangeEvent, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
 import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineMessageClusterItemDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
-import {estimateMessageLayout} from "./utils.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 
@@ -15,46 +14,6 @@ export type MessageEditorItemProps = {
 export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
   constructor(data: MessageEditorItemProps) {
     super(data);
-  }
-
-  getKey(): Key {
-    return "editing_message";
-  }
-
-  measureHeight(context: TimelineContext): number {
-    let height = 0;
-
-    if (this.data.showHeader) {
-      height += 24;
-    }
-
-    const currentDraft = context.states.editingMessageDraft ?? this.data.message.body ?? "";
-    const textContentWidth = Math.max(1, context.states.viewportWidth - 16 - 52 - 24);
-
-    const contentLayout = estimateMessageLayout(
-      `${this.data.message.id}_edit-draft`,
-      currentDraft,
-      textContentWidth,
-      24
-    );
-
-    let contentHeight = contentLayout.height;
-
-    if (currentDraft.endsWith("\n")) {
-      contentHeight += 24;
-    }
-
-    const rawTextareaHeight = contentHeight + 16;
-    const constrainedTextareaHeight = Math.min(Math.max(40, rawTextareaHeight), 160);
-
-    height += constrainedTextareaHeight;
-    height += 20; // height for instructions.
-
-    if (this.data.message.attachments && this.data.message.attachments.length > 0) {
-      height += 128;
-    }
-
-    return height;
   }
 
   render(_measuredHeight: number, context: TimelineContext): ReactNode {

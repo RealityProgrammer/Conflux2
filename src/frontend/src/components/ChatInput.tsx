@@ -13,7 +13,7 @@ export interface ChatInputProps {
 export type MessageInput = {
   messageBody: string;
   attachments: File[];
-  replyingMessage?: TimelineMessageDto | undefined;
+  replyingMessage: TimelineMessageDto | null;
 }
 
 export interface AttachmentThumbnailProps {
@@ -30,7 +30,7 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
-  const {replyingMessage, onSendMessage, onCancelMessageReply} = useChatContainerContext()!;
+  const {replyingMessage, onSendMessage, setReplyingMessage} = useChatContainerContext()!;
 
   const [messageBody, setMessageBody] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -148,7 +148,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
           <div className="flex flex-row gap-2 mb-1">
             <p className="text-sm flex-1">Replying to:</p>
 
-            <IconButton isLoading={false} theme="default" className="ml-auto flex-none" onClick={onCancelMessageReply}>
+            <IconButton isLoading={false} theme="default" className="ml-auto flex-none" onClick={() => setReplyingMessage(null)}>
               <BsX className="size-5 cursor-pointer"/>
             </IconButton>
           </div>
