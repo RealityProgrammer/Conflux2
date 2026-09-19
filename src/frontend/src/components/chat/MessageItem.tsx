@@ -27,7 +27,11 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     super(data);
   }
 
-  render(_measuredHeight: number, context: TimelineContext): ReactNode {
+  getKey(): string {
+    return `message_${this.data.message.id}`;
+  }
+
+  render(context: TimelineContext): ReactNode {
     return (
       <MessageView
         key={`message-${this.data.message.id}`}
@@ -185,11 +189,11 @@ function MessageContentView({message, onAttachmentClick}: { message: TimelineMes
   return (
     <div>
       {message.body && message.body.length > 0 && (
-        <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
+        <div className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
           <Markdown>
             {message.body}
           </Markdown>
-        </p>
+        </div>
       )}
 
       {message.attachments && message.attachments.length > 0 && (

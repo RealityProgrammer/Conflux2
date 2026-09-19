@@ -13,7 +13,11 @@ export class DateSeparator extends TimelineItem<DateSeparatorProps> {
     super(data);
   }
 
-  render(measuredHeight: number, context: TimelineContext): ReactNode {
+  getKey(): string {
+    return `date-separator-${this.data.date.getDate()}`;
+  }
+
+  render(context: TimelineContext): ReactNode {
     return (
       <div className="w-full flex flex-row justify-center items-center gap-2 px-3">
         <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>

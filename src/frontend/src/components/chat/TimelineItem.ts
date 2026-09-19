@@ -5,5 +5,6 @@ export abstract class TimelineItem<T = any> {
   protected constructor(public data: T) {
   }
 
-  abstract render(measuredHeight: number, context: TimelineContext): ReactNode;
+  abstract getKey(): string;
+  abstract render(context: TimelineContext): ReactNode;
 }

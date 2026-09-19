@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Messages;
 
@@ -18,14 +19,17 @@ public sealed class DeleteMessageHandler(
     TimeProvider timeProvider,
     IMediator mediator
 ) : ICommandHandler<DeleteMessageCommand, Result> {
-    public async ValueTask<Result> Handle(DeleteMessageCommand request, CancellationToken cancellationToken) {
-        var message = await messageRepository.GetById(request.MessageId, false, cancellationToken);
+    public async ValueTask<Result> Handle(DeleteMessageCommand command, CancellationToken cancellationToken) {
+        var message = await messageRepository
+            .AsQueryable()
+            .Where(m => m.Id == command.MessageId)
+            .FirstOrDefaultAsync(cancellationToken);
         
         if (message == null) {
             return Errors.ResourceNotFound("Message");
         }
         
-        if (message.SenderUserId != request.RequesterUserId) {
+        if (message.SenderUserId != command.RequesterUserId) {
             return Errors.Forbidden("You do not have permission to delete this message.");
         }
        
@@ -39,7 +43,7 @@ public sealed class DeleteMessageHandler(
         ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            request.RequesterUserId, 
+            command.RequesterUserId, 
             channelMetadata.ChannelId, 
             channelMetadata.ChannelType
         );

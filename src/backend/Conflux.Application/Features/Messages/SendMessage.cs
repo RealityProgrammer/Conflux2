@@ -100,7 +100,7 @@ public sealed class SendMessageHandler(
             
             // load the reply message into memory so that dto the message got the reply to convert to dto
             if (request.ReplyToId.HasValue) {
-                await messageRepository.GetById(request.ReplyToId.Value, true, cancellationToken);
+                await messageRepository.GetById(request.ReplyToId.Value, false, cancellationToken);
             }
 
             await unitOfWork.CommitAsync(cancellationToken);

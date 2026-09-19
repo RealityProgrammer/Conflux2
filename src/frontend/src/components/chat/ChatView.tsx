@@ -3,7 +3,7 @@ import type {
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/types.ts";
-import {useState} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {messageService} from "../../api/messageService.ts";
 import {useQueryClient} from "@tanstack/react-query";
@@ -40,9 +40,9 @@ export function ChatView({}: ChatViewProps) {
     appendMessage,
     editMessage,
     deleteMessage,
-    onMessageEdit,
-    onMessageDelete,
-    setReplyingMessage
+    handleEditMessage,
+    handleDeleteMessage,
+    setReplyingMessage,
   } = useChatContainerContext()!;
 
   const queryClient = useQueryClient();
@@ -51,23 +51,11 @@ export function ChatView({}: ChatViewProps) {
 
   const fetchOlderMessages = async () => {
     if (messageQueryResult.isFetchingPreviousPage || !messageQueryResult.hasPreviousPage) return;
-
-    const { data } = await messageQueryResult.fetchPreviousPage();
-
-    if (data && data.pages.length > 0) {
-      const newlyPrependedPage = data.pages[0];
-
-      const itemsAdded = newlyPrependedPage?.messageGroups.reduce(
-        (acc, group) => acc + group.messages.length, 0
-      ) ?? 0;
-
-      setFirstItemIndex((prev) => prev - itemsAdded);
-    }
+    await messageQueryResult.fetchPreviousPage();
   }
 
   const fetchNewerMessages = async () => {
     if (messageQueryResult.isFetchingNextPage || !messageQueryResult.hasNextPage) return;
-
     await messageQueryResult.fetchNextPage();
   };
 
@@ -94,7 +82,7 @@ export function ChatView({}: ChatViewProps) {
     setEditingMessage(undefined);
     setEditingMessageDraft(null);
 
-    onMessageEdit(editingMessage, newBody?.trim() ?? null);
+    handleEditMessage(editingMessage, newBody?.trim() ?? null);
   };
 
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
@@ -151,6 +139,32 @@ export function ChatView({}: ChatViewProps) {
     }
   };
 
+  // logic to calculate the jump when older messages are loaded
+  const firstStableIndex = timelineItems.findIndex(item => {
+    const key = item.getKey();
+    return !key.includes('date');
+  });
+  const firstStableKey = firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
+  const prevStableRef = useRef({ key: firstStableKey, index: firstStableIndex });
+
+  useLayoutEffect(() => {
+    const prev = prevStableRef.current;
+
+    if (prev.key && firstStableKey && prev.key !== firstStableKey) {
+      const newIndexOfPrevStable = timelineItems.findIndex(item => item.getKey() === prev.key);
+
+      if (newIndexOfPrevStable !== -1) {
+        const itemsAdded = newIndexOfPrevStable - prev.index;
+
+        if (itemsAdded > 0) {
+          setFirstItemIndex(curr => curr - itemsAdded);
+        }
+      }
+    }
+
+    prevStableRef.current = { key: firstStableKey, index: firstStableIndex };
+  }, [timelineItems, firstStableKey, firstStableIndex]);
+
   if (messageQueryResult.isLoading) {
     return <div>Loading chat...</div>;
   }
@@ -184,7 +198,7 @@ export function ChatView({}: ChatViewProps) {
         itemContent={(_index, timelineItem) => {
           if (!timelineItem) return null;
 
-          return timelineItem.render(0, timelineContext);
+          return timelineItem.render(timelineContext);
         }}
       />
 
@@ -238,7 +252,7 @@ export function ChatView({}: ChatViewProps) {
         }}
         onConfirm={() => {
           if (deletingMessage) {
-            onMessageDelete(deletingMessage);
+            handleDeleteMessage(deletingMessage);
             setDeletingMessage(undefined);
           }
         }}

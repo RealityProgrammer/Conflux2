@@ -30,7 +30,7 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
-  const {replyingMessage, onSendMessage, setReplyingMessage} = useChatContainerContext()!;
+  const {replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext()!;
 
   const [messageBody, setMessageBody] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -104,10 +104,10 @@ export default function ChatInput({disabled}: ChatInputProps) {
     });
   };
 
-  const handleSendMessage = () => {
+  const handleSend = () => {
     if (!isSendable) return;
 
-    onSendMessage?.({
+    handleSendMessage?.({
       messageBody: messageBody,
       attachments: attachments.map(attachment => attachment.file),
       replyingMessage: replyingMessage,
@@ -128,7 +128,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSend();
     }
   };
 
@@ -251,8 +251,11 @@ export default function ChatInput({disabled}: ChatInputProps) {
                   className="input-field min-h-10 max-h-36 w-full flex-1 text-sm resize-none py-2 px-3 overflow-y-auto leading-relaxed"
         />
 
-        <IconButton isLoading={false} className="size-6 flex-none mb-2" disabled={!isSendable}
-                    onClick={handleSendMessage}>
+        <IconButton
+          className="size-6 flex-none mb-2"
+          disabled={!isSendable}
+          onClick={handleSend}
+        >
           <BsSend className="size-6"/>
         </IconButton>
       </section>

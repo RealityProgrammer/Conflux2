@@ -58,9 +58,6 @@ interface ChatContainerContextType {
   channelId: string;
   replyingMessage: TimelineMessageDto | null;
 
-  onSendMessage: (messageInput: MessageInput) => void;
-  onMessageEdit: (originalMessage: TimelineMessageDto, newBody: string | null) => void;
-  onMessageDelete: (originalMessage: TimelineMessageDto) => void;
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
 
   messageQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined>>;
@@ -70,6 +67,10 @@ interface ChatContainerContextType {
   appendMessage: (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
   editMessage: (messageId: string, newBody: string | null) => void;
   deleteMessage: (messageId: string) => void;
+
+  handleSendMessage: (messageInput: MessageInput) => void;
+  handleEditMessage: (originalMessage: TimelineMessageDto, newBody: string | null) => void;
+  handleDeleteMessage: (originalMessage: TimelineMessageDto) => void;
 }
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
@@ -401,7 +402,7 @@ export default function ChatContainerContextProvider({
 
   const editMessageMutation = useMutation({
     mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
-      return await messageService.editMessage(payload.operationId, payload.newBody);
+      return await messageService.editMessage(payload.messageId, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
       const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
@@ -519,7 +520,7 @@ export default function ChatContainerContextProvider({
   });
 
   // messaging operation
-  const onSendMessage = async (state: MessageInput) => {
+  const handleSendMessage = async (state: MessageInput) => {
     if (!channelId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
@@ -529,7 +530,7 @@ export default function ChatContainerContextProvider({
     setReplyingMessage(null);
   };
 
-  const onMessageEdit = async (originalMessage: TimelineMessageDto, newBody: string | null) => {
+  const handleEditMessage = async (originalMessage: TimelineMessageDto, newBody: string | null) => {
     if (!channelId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
@@ -540,7 +541,7 @@ export default function ChatContainerContextProvider({
     });
   };
 
-  const onMessageDelete = async (message: TimelineMessageDto) => {
+  const handleDeleteMessage = async (message: TimelineMessageDto) => {
     if (!channelId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
@@ -561,16 +562,16 @@ export default function ChatContainerContextProvider({
       appendMessage,
       editMessage,
       deleteMessage,
-      onSendMessage,
-      onMessageEdit,
-      onMessageDelete,
+      handleSendMessage,
+      handleEditMessage,
+      handleDeleteMessage,
     }}>
       {children}
     </ChatContainerContext.Provider>
   )
 }
 
-export function useChatContainerContext() {
+export function useChatContainerContext(): ChatContainerContextType | null {
   const context = useContext(ChatContainerContext);
   if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
 
