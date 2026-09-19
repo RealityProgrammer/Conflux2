@@ -11,10 +11,11 @@ export default function ChatContainer({channelId}: ChatContainerProps) {
     <ChatContainerContextProvider
       channelId={channelId}
     >
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 gap-1">
         <ChatView/>
         <ChatInput/>
       </div>
     </ChatContainerContextProvider>
   );
 }
+

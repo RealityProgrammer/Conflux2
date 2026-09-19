@@ -17,6 +17,7 @@ import Dialog from "../Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 import {BsBoxArrowUpRight} from "react-icons/bs";
+import Spinner from "../Spinner.tsx";
 
 const START_INDEX = 10000000;
 
@@ -24,12 +25,6 @@ type MediaGalleryState = {
   items: { id: string; type: string }[];
   currentIndex: number;
 };
-
-export interface QueryModification {
-  appendMessage: (message: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
-  editMessage: (messageId: string, newBody: string | null) => void;
-  deleteMessage: (messageId: string) => void;
-}
 
 export interface ChatViewProps {}
 
@@ -78,10 +73,6 @@ export function ChatView({}: ChatViewProps) {
   };
 
   const [accessingExternalUrl, setAccessingExternalUrl] = useState<string | undefined>(undefined);
-
-  const onExternalLinkClicked = (url?: string) => {
-    setAccessingExternalUrl(url);
-  };
 
   // message editing
   const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
@@ -143,7 +134,7 @@ export function ChatView({}: ChatViewProps) {
       },
       onEditSaved: (newBody) => handleSaveEdit(newBody),
       onAttachmentClick: handleAttachmentClick,
-      onExternalLinkClicked: onExternalLinkClicked,
+      onExternalLinkClicked: setAccessingExternalUrl,
     },
     states: {
       viewportWidth: 0,
@@ -178,7 +169,11 @@ export function ChatView({}: ChatViewProps) {
   }, [timelineItems, firstStableKey, firstStableIndex]);
 
   if (isLoading) {
-    return <div>Loading chat...</div>;
+    return (
+      <div className="flex-1 flex flex-col justify-center items-center overflow-hidden h-full text-white bg-gray-700">
+        <Spinner className="size-10 fill-white"/>
+      </div>
+    );
   }
 
   return (
@@ -187,11 +182,12 @@ export function ChatView({}: ChatViewProps) {
         data={timelineItems}
         alignToBottom={true}
         followOutput={(isAtBottom) => (isAtBottom ? 'smooth' : false)}
-        initialTopMostItemIndex={firstItemIndex + timelineItems.length - 1}
+        initialTopMostItemIndex={{ index: "LAST", align: "end" }}
         firstItemIndex={firstItemIndex}
         startReached={fetchOlderMessages}
         endReached={fetchNewerMessages}
         overscan={10}
+        className="h-full"
         components={{
           Header: () => (
             isFetchingPreviousPage ? (
