@@ -41,10 +41,15 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
             <div className="w-10"></div>
           )}
 
-          <MessageContent
-            content={this.data.input.messageBody}
-            className={`flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}
-          />
+          <div className={`flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}>
+            <MessageContent
+              content={this.data.input.messageBody}
+            />
+
+            {this.data.input.attachments && this.data.input.attachments.length > 0 && (
+              <p className="text-xs">With {this.data.input.attachments.length} attachment(s).</p>
+            )}
+          </div>
         </div>
       </div>
     )

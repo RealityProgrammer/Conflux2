@@ -101,6 +101,28 @@ function MessageView({
                     </span>
                   </p>
 
+                  <div>
+                    <MessageContent
+                      content={message.body}
+                      onLinkClicked={handleExternalLinkClicked}
+                    />
+
+                    {message.attachments && message.attachments.length > 0 && (
+                      <MessageAttachments
+                        attachments={message.attachments}
+                        onAttachmentClick={handleAttachmentClicked}
+                      />
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
+                  {formatDate(new Date(message.createdAt), "HH:mm")}
+                </span>
+
+                <div className="flex-1">
                   <MessageContent
                     content={message.body}
                     onLinkClicked={handleExternalLinkClicked}
@@ -113,24 +135,6 @@ function MessageView({
                     />
                   )}
                 </div>
-              </>
-            ) : (
-              <>
-                <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
-                  {formatDate(new Date(message.createdAt), "HH:mm")}
-                </span>
-
-                <MessageContent
-                  content={message.body}
-                  onLinkClicked={handleExternalLinkClicked}
-                />
-
-                {message.attachments && message.attachments.length > 0 && (
-                  <MessageAttachments
-                    attachments={message.attachments}
-                    onAttachmentClick={handleAttachmentClicked}
-                  />
-                )}
               </>
             )}
           </div>
