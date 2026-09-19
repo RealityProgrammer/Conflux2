@@ -189,6 +189,7 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
         initialTopMostItemIndex={firstItemIndex + timelineItems.length - 1}
         startReached={fetchOlderMessages}
         endReached={fetchNewerMessages}
+        overscan={10}
         components={{
           Header: () => (
             messageQueryResult.isFetchingPreviousPage ? (
