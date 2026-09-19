@@ -19,6 +19,7 @@ import {a11yDark} from 'react-syntax-highlighter/dist/esm/styles/prism'
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import IconButton from "../IconButton.tsx";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -261,24 +262,28 @@ function MessageContentView({
                   const className = codeProps.className ?? "";
                   const match = /language-(\w+)/.exec(className);
 
-                  if (match) {
-                    return (
-                      <SyntaxHighlighter
-                        children={String(codeProps.children).replace(/\n$/, "")}
-                        language={match[1]}
-                        style={a11yDark}
-                        className="border-2 border-gray-500 overflow-hidden w-full"
-                      />
-                    );
-                  }
+                  const code = String(codeProps.children).replace(/\n$/, "");
 
                   return (
-                    <pre
-                      className="block w-full overflow-x-auto bg-black/8 p-2 border-2 border-gray-500 rounded-md my-1"
-                      {...props}
-                    >
-                            <code className={className}>{codeProps.children}</code>
-                          </pre>
+                    <div className="relative group my-1">
+                      <div className="flex items-center justify-between px-2 py-1.5 bg-gray-800 text-xs text-gray-400 rounded-t-md border-2 border-b-0 border-gray-500">
+                        <span>{match ? match[1] : "Unknown"}</span>
+
+                        <IconButton
+                          theme="default"
+                          onClick={() => navigator.clipboard.writeText(code)}
+                        >
+                          <BsCopy className="size-4"/>
+                        </IconButton>
+                      </div>
+
+                      <SyntaxHighlighter
+                        children={code}
+                        language={match?.[1]}
+                        style={a11yDark}
+                        className="mt-0! border-2! border-gray-500! rounded-t-none! rounded-b-md! overflow-hidden w-full"
+                      />
+                    </div>
                   );
                 }
 
@@ -296,7 +301,6 @@ function MessageContentView({
                 );
               },
 
-              // list and task list (Removed whitespace-normal)
               ul: ({ children, className, node, ...props }) => {
                 const isTaskList = className?.includes('contains-task-list');
 
@@ -313,7 +317,7 @@ function MessageContentView({
                   </ol>
                 );
               },
-              // Added wrapping classes to list items
+
               li: ({ children, className, node, ...props }) => {
                 const isTaskListItem = className?.includes('task-list-item');
 
@@ -323,7 +327,7 @@ function MessageContentView({
                   </li>
                 );
               },
-              // Added wrapping classes to paragraphs
+
               p: ({ children, node, ...props }) => (
                 <p className="mb-2 last:mb-0 whitespace-pre-wrap wrap-break-word" {...props}>
                   {children}
@@ -371,7 +375,6 @@ function MessageContentView({
               thead: ({ children, node, ...props }) => (
                 <thead className="bg-white/5 border-b border-gray-500" {...props}>{children}</thead>
               ),
-              // Added wrapping classes to table cells just in case of long text/links
               th: ({ children, node, ...props }) => (
                 <th className="px-3 py-2 font-semibold border-r border-gray-500 last:border-r-0 whitespace-pre-wrap wrap-break-word" {...props}>{children}</th>
               ),
@@ -379,7 +382,7 @@ function MessageContentView({
                 <td className="px-3 py-2 border-t border-r border-gray-500 last:border-r-0 whitespace-pre-wrap wrap-break-word" {...props}>{children}</td>
               ),
 
-              // section (Removed whitespace-normal)
+              // section
               section: ({ children, node, className, ...props }) => {
                 if (className?.includes("footnotes")) {
                   return (
