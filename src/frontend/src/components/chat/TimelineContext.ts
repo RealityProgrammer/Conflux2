@@ -11,6 +11,7 @@ export interface TimelineContext {
     onEditSaved: (newBody: string | null) => void;
 
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
+    onExternalLinkClicked: (url?: string) => void;
   };
 
   states: {

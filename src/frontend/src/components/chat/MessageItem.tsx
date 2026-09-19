@@ -4,7 +4,7 @@ import type {
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/types.ts";
-import {type ReactNode} from "react";
+import {isValidElement, type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
@@ -14,6 +14,8 @@ import MessageAttachments from "./MessageAttachments.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import Markdown from "react-markdown";
+import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
+import {a11yDark} from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -62,6 +64,14 @@ function MessageView({
 }: MessageViewProps) {
   const auth = useAuthorization();
 
+  const handleAttachmentClicked = (index: number) => {
+    context.actions.onAttachmentClick(message.attachments, index);
+  };
+
+  const handleExternalLinkClicked = (url?: string)=> {
+    context.actions.onExternalLinkClicked(url);
+  };
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
@@ -89,22 +99,28 @@ function MessageView({
                   <p className="text-sm font-semibold text-white">
                     {senderProfile?.userName ?? "Unknown Sender"}
                     {" "}
-                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
+                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">
+                      {formatDate(new Date(message.createdAt), "HH:mm")}
+                    </span>
                   </p>
 
                   <MessageContentView
                     message={{...message, senderUserId: senderProfile!.id}}
-                    onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
+                    onAttachmentClicked={handleAttachmentClicked}
+                    onExternalLinkClicked={handleExternalLinkClicked}
                   />
                 </div>
               </>
             ) : (
               <>
-                <span className="select-none basis-10 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
+                <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
+                  {formatDate(new Date(message.createdAt), "HH:mm")}
+                </span>
 
                 <MessageContentView
                   message={{...message, senderUserId: senderProfile!.id}}
-                  onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
+                  onAttachmentClicked={handleAttachmentClicked}
+                  onExternalLinkClicked={handleExternalLinkClicked}
                 />
               </>
             )}
@@ -185,23 +201,108 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
   return `@${name} sent${content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;
 }
 
-function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
+function MessageContentView({
+  message,
+  onAttachmentClicked,
+  onExternalLinkClicked,
+}: { message: TimelineMessageDto, onAttachmentClicked: (index: number) => void, onExternalLinkClicked: (url: string) => void}) {
   return (
-    <div>
+    <>
       {message.body && message.body.length > 0 && (
-        <div className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
-          <Markdown>
-            {message.body}
-          </Markdown>
+        <div className="text-sm leading-6 whitespace-pre-wrap wrap-break-word w-full">
+          <Markdown
+            children={message.body}
+            components={{
+              // codeblock
+              pre: ({ children, ...props }) => {
+                if (isValidElement(children)) {
+                  const codeProps = children.props as any;
+                  const className = codeProps.className ?? "";
+                  const match = /language-(\w+)/.exec(className);
+
+                  if (match) {
+                    return (
+                      <SyntaxHighlighter
+                        children={String(codeProps.children).replace(/\n$/, "")}
+                        language={match[1]}
+                        style={a11yDark}
+                        className="border-2 border-gray-500 overflow-hidden w-full"
+                      />
+                    );
+                  }
+
+                  return (
+                    <pre
+                      className="block w-full overflow-x-auto bg-black/8 p-2 border-2 border-gray-500 rounded-md my-1"
+                      {...props}
+                    >
+                      <code className={className}>{codeProps.children}</code>
+                    </pre>
+                  );
+                }
+
+                return <pre {...props}>{children}</pre>;
+              },
+
+              code: ({ className, children, node, ...props }) => {
+                return (
+                  <code
+                    className={`${className ?? ""} bg-black/8 px-1.5 py-0.5 rounded-md inline-block`}
+                    {...props}
+                  >
+                    {children}
+                  </code>
+                );
+              },
+
+              // list item
+              ul: ({ children, ...props }) => (
+                <ul className="list-disc ml-5 my-1 whitespace-normal" {...props}>
+                  {children}
+                </ul>
+              ),
+              ol: ({ children, ...props }) => (
+                <ol className="list-decimal ml-5 my-1 whitespace-normal" {...props}>
+                  {children}
+                </ol>
+              ),
+              li: ({ children, ...props }) => (
+                <li className="my-0.5" {...props}>
+                  {children}
+                </li>
+              ),
+              p: ({ children, node, ...props }) => (
+                <p className="mb-2 last:mb-0" {...props}>
+                  {children}
+                </p>
+              ),
+
+              // link
+              a: ({children, node, className, href, ...props}) => (
+                // TODO: confirmation on clicking external URL
+                <a
+                  target="_blank"
+                  className={`${className ?? ""} text-blue-400 cursor-pointer`}
+                  onClick={(e) => {
+                    if (!href) return;
+
+                    onExternalLinkClicked(href);
+                    e.preventDefault();
+                  }}
+                  {...props}
+                >{children}</a>
+              ),
+            }}
+          />
         </div>
       )}
 
       {message.attachments && message.attachments.length > 0 && (
         <MessageAttachments
           attachments={message.attachments}
-          onAttachmentClick={onAttachmentClick}
+          onAttachmentClick={onAttachmentClicked}
         />
       )}
-    </div>
+    </>
   );
 }
