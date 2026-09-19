@@ -424,6 +424,16 @@ function MessageContentView({
                   {children}
                 </blockquote>
               ),
+
+              img: ({ alt, src, ...props }) => (
+                <img
+                  src={src}
+                  alt={alt}
+                  loading="lazy"
+                  className="max-w-48 max-h-48 rounded-md my-1 border border-gray-600 object-contain"
+                  {...props}
+                />
+              ),
             }}
           />
         </div>
