@@ -34,7 +34,11 @@ export interface ChatViewProps {}
 
 export function ChatView({}: ChatViewProps) {
   const {
-    messageQueryResult,
+    messageQueryResult: {
+      isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
+      isFetchingNextPage, hasNextPage, fetchNextPage,
+      isLoading,
+    },
     messageClusters,
     userProfiles,
     appendMessage,
@@ -50,13 +54,13 @@ export function ChatView({}: ChatViewProps) {
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 
   const fetchOlderMessages = async () => {
-    if (messageQueryResult.isFetchingPreviousPage || !messageQueryResult.hasPreviousPage) return;
-    await messageQueryResult.fetchPreviousPage();
+    if (isFetchingPreviousPage || !hasPreviousPage) return;
+    await fetchPreviousPage();
   }
 
   const fetchNewerMessages = async () => {
-    if (messageQueryResult.isFetchingNextPage || !messageQueryResult.hasNextPage) return;
-    await messageQueryResult.fetchNextPage();
+    if (isFetchingNextPage || !hasNextPage) return;
+    await fetchNextPage();
   };
 
   // gallery
@@ -165,7 +169,7 @@ export function ChatView({}: ChatViewProps) {
     prevStableRef.current = { key: firstStableKey, index: firstStableIndex };
   }, [timelineItems, firstStableKey, firstStableIndex]);
 
-  if (messageQueryResult.isLoading) {
+  if (isLoading) {
     return <div>Loading chat...</div>;
   }
 
@@ -176,19 +180,20 @@ export function ChatView({}: ChatViewProps) {
         alignToBottom={true}
         followOutput={(isAtBottom) => (isAtBottom ? 'smooth' : false)}
         initialTopMostItemIndex={firstItemIndex + timelineItems.length - 1}
+        firstItemIndex={firstItemIndex}
         startReached={fetchOlderMessages}
         endReached={fetchNewerMessages}
         overscan={10}
         components={{
           Header: () => (
-            messageQueryResult.isFetchingPreviousPage ? (
+            isFetchingPreviousPage ? (
               <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
                 Loading older messages...
               </div>
             ) : null
           ),
           Footer: () => (
-            messageQueryResult.isFetchingNextPage ? (
+            isFetchingNextPage ? (
               <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
                 Loading newer messages...
               </div>

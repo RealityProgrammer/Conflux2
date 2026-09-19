@@ -40,9 +40,9 @@ export default function useTimelineEntries(
       // insert DateSeparator if calendar day changed
       const dateChanged = !lastMessageDate || !isSameDay(lastMessageDate, messageDate);
       if (dateChanged) {
-        // items.push(new DateSeparator({
-        //   date: messageDate,
-        // }));
+        items.push(new DateSeparator({
+          date: messageDate,
+        }));
 
         lastMessageDate = messageDate;
       }

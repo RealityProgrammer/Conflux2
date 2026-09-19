@@ -22,7 +22,7 @@ export class DateSeparator extends TimelineItem<DateSeparatorProps> {
       <div className="w-full flex flex-row justify-center items-center gap-2 px-3">
         <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>
 
-        <span className="flex-none text-xs font-semibold text-gray-400">{formatDate(this.data.date, "PPP")}</span>
+        <span className="flex-none text-xs font-semibold text-gray-400 select-none">{formatDate(this.data.date, "PPP")}</span>
 
         <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>
       </div>
