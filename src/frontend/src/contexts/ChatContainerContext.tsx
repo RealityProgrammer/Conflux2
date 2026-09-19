@@ -1,5 +1,5 @@
 import {createContext, type ReactNode, useContext, useState} from "react";
-import type {MessageInput} from "../components/ChatInput.tsx";
+import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import type {
   GetMessagesResponse, ServiceResponse,
   TimelineMessageClusterDto,

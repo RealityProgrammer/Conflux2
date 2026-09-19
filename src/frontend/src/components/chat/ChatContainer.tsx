@@ -1,6 +1,6 @@
 import {ChatView} from "./ChatView.tsx";
 import ChatInput from "./ChatInput.tsx";
-import ChatContainerContextProvider from "../contexts/ChatContainerContext.tsx";
+import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 
 export interface ChatContainerProps {
   channelId: string;

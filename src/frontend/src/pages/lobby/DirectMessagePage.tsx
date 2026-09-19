@@ -4,7 +4,7 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useState} from "react";
 import {BsPerson} from "react-icons/bs";
-import ChatContainer from "../../components/ChatContainer.tsx";
+import ChatContainer from "../../components/chat/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";

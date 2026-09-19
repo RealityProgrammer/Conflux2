@@ -2,18 +2,18 @@ import type {
   Attachment,
   TimelineMessageDto,
   UserIdentityProfileDto
-} from "../api/types.ts";
+} from "../../api/types.ts";
 import {useState} from "react";
-import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
-import {messageService} from "../api/messageService.ts";
+import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
+import {messageService} from "../../api/messageService.ts";
 import {useQueryClient} from "@tanstack/react-query";
-import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../api/events.ts";
-import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
-import useTimelineEntries from "../hooks/useTimelineEntries.ts";
-import type {TimelineContext} from "./chat/TimelineContext.ts";
-import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
-import Dialog from "./Dialog.tsx";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../../api/events.ts";
+import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import useTimelineEntries from "../../hooks/useTimelineEntries.ts";
+import type {TimelineContext} from "./TimelineContext.ts";
+import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
+import Dialog from "../Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 
