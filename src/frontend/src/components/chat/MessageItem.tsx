@@ -14,6 +14,7 @@ import MessageAttachments from "./MessageAttachments.tsx";
 import {estimateMessageLayout} from "./utils.ts";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
+import Markdown from "react-markdown";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -220,9 +221,13 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
 function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
   return (
     <div>
-      <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
-        {message.body}
-      </p>
+      {message.body && message.body.length > 0 && (
+        <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
+          <Markdown>
+            {message.body}
+          </Markdown>
+        </p>
+      )}
 
       {message.attachments && message.attachments.length > 0 && (
         <MessageAttachments

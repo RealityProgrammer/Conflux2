@@ -4,13 +4,9 @@ import type {
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../api/types.ts";
-import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState} from "react";
-import {type ReactVirtualizer} from "@tanstack/react-virtual";
-import {useEventListener, useResizeObserver} from "usehooks-ts";
+import {type ReactNode, type RefObject, useEffect, useImperativeHandle, useState} from "react";
 import MediaPreviewGallery from "./MediaPreviewGallery.tsx";
 import {messageService} from "../api/messageService.ts";
-import VirtualizedScrollList from "./VirtualizedScrollList.tsx";
-import Spinner from "./Spinner.tsx";
 import useGetMessages from "../hooks/useGetMessages.ts";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
@@ -21,91 +17,9 @@ import type {TimelineContext} from "./chat/TimelineContext.ts";
 import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
 import Dialog from "./Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui";
+import {Virtuoso} from "react-virtuoso";
 
-function useChatAutoScroll({
-  messageGroups,
-  isLoading,
-  virtualizerRef,
-  viewportRef,
-}: {
-  messageGroups: Array<{ messages: unknown[] }>;
-  isLoading: boolean;
-  virtualizerRef: RefObject<ReactVirtualizer<HTMLDivElement, Element>>;
-  viewportRef: RefObject<HTMLDivElement>;
-}) {
-  const [isReady, setIsReady] = useState(false);
-  const isReadyRef = useRef(false);
-
-  const groupCount = messageGroups.length;
-  const lastGroupMessageCount = messageGroups.at(-1)?.messages.length ?? 0;
-
-  const isAtBottomRef = useRef(true);
-
-  useEventListener("scroll", (e) => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const { scrollHeight, scrollTop, clientHeight } = viewport;
-    isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 50;
-  }, viewportRef);
-
-  // initial jump to the bottom
-  useLayoutEffect(() => {
-    if (isReadyRef.current) return;
-
-    if (groupCount > 0) {
-      const raf1 = requestAnimationFrame(() => {
-        const virtualizer = virtualizerRef.current;
-        if (virtualizer) {
-          virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
-        }
-
-        const raf2 = requestAnimationFrame(() => {
-          isReadyRef.current = true;
-          setIsReady(true);
-        });
-
-        return () => cancelAnimationFrame(raf2);
-      });
-
-      return () => cancelAnimationFrame(raf1);
-    }
-
-    if (!isLoading && groupCount === 0) {
-      isReadyRef.current = true;
-      setIsReady(true);
-    }
-  }, [groupCount, isLoading, virtualizerRef]);
-
-  // autoscroll on new message arrivals
-  const previousMessageCount = useRef({
-    groupCount,
-    lastGroupCount: lastGroupMessageCount,
-  });
-
-  useEffect(() => {
-    const prev = previousMessageCount.current;
-    const hasNewMessages =
-      groupCount > prev.groupCount ||
-      (lastGroupMessageCount > 0 && lastGroupMessageCount > prev.lastGroupCount);
-
-    if (hasNewMessages && isReady && isAtBottomRef.current) {
-      requestAnimationFrame(() => {
-        const virtualizer = virtualizerRef.current;
-        if (virtualizer) {
-          virtualizer.scrollToIndex(virtualizer.options.count - 1, { align: 'end' });
-        }
-      });
-    }
-
-    previousMessageCount.current = {
-      groupCount,
-      lastGroupCount: lastGroupMessageCount,
-    };
-  }, [groupCount, lastGroupMessageCount, isReady, viewportRef, virtualizerRef]);
-
-  return { isReady };
-}
+const START_INDEX = 10000000;
 
 type MediaGalleryState = {
   items: { id: string; type: string }[];
@@ -126,17 +40,11 @@ export interface ChatViewProps {
 export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps) {
   const {channelId, onMessageEdit, onMessageDelete, onMessageReplyRequested} = useChatContainerContext()!;
 
-  const viewportRef = useRef<HTMLDivElement>(null!);
-  const virtualizerRef = useRef<ReactVirtualizer<HTMLDivElement, Element>>(null!);
-
   const queryClient = useQueryClient();
 
-  // querying
+  // messages querying
   const {
-    useInfiniteQueryResult: {
-      hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage, hasNextPage, isFetchingNextPage, fetchNextPage,
-      isLoading,
-    },
+    useInfiniteQueryResult: messageQueryResult,
     allMessageGroups: messageGroups,
     userProfiles,
     queryKey,
@@ -145,14 +53,29 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
     deleteMessage,
   } = useGetMessages(channelId, 50);
 
-  const {width: viewportWidth = 0} = useResizeObserver({ref: viewportRef});
+  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 
-  const { isReady } = useChatAutoScroll({
-    messageGroups,
-    isLoading,
-    virtualizerRef,
-    viewportRef,
-  });
+  const fetchOlderMessages = async () => {
+    if (messageQueryResult.isFetchingPreviousPage || !messageQueryResult.hasPreviousPage) return;
+
+    const { data } = await messageQueryResult.fetchPreviousPage();
+
+    if (data && data.pages.length > 0) {
+      const newlyPrependedPage = data.pages[0];
+
+      const itemsAdded = newlyPrependedPage?.messageGroups.reduce(
+        (acc, group) => acc + group.messages.length, 0
+      ) ?? 0;
+
+      setFirstItemIndex((prev) => prev - itemsAdded);
+    }
+  }
+
+  const fetchNewerMessages = async () => {
+    if (messageQueryResult.isFetchingNextPage || !messageQueryResult.hasNextPage) return;
+
+    await messageQueryResult.fetchNextPage();
+  };
 
   // gallery
   const [galleryState, setGalleryState] = useState<MediaGalleryState>({
@@ -248,13 +171,47 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
       onEditSaved: (newBody) => handleSaveEdit(newBody),
     },
     states: {
-      viewportWidth: viewportWidth,
+      viewportWidth: 0,
       editingMessageDraft: editingMessageDraft,
     }
   };
 
+  if (messageQueryResult.isLoading) {
+    return <div>Loading chat...</div>;
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
+      <Virtuoso
+        data={timelineItems}
+        alignToBottom={true}
+        followOutput={(isAtBottom) => (isAtBottom ? 'smooth' : false)}
+        initialTopMostItemIndex={firstItemIndex + timelineItems.length - 1}
+        startReached={fetchOlderMessages}
+        endReached={fetchNewerMessages}
+        components={{
+          Header: () => (
+            messageQueryResult.isFetchingPreviousPage ? (
+              <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
+                Loading older messages...
+              </div>
+            ) : null
+          ),
+          Footer: () => (
+            messageQueryResult.isFetchingNextPage ? (
+              <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
+                Loading newer messages...
+              </div>
+            ) : null
+          )
+        }}
+        itemContent={(_index, timelineItem) => {
+          if (!timelineItem) return null;
+
+          return timelineItem.render(0, timelineContext);
+        }}
+      />
+
       {galleryState.items && galleryState.items.length > 0 && (
         <MediaPreviewGallery
           open={!!galleryState.items}
@@ -295,56 +252,6 @@ export function ChatView({renderEmptyState, queryModificationRef}: ChatViewProps
           }}
         />
       )}
-
-      <VirtualizedScrollList
-        virtualizerRef={virtualizerRef}
-        viewportRef={viewportRef}
-        className="flex-1"
-        containerClassName="mt-auto"
-        itemCount={timelineItems.length}
-        keyExtractor={(itemIndex) => {
-          return timelineItems[itemIndex].getKey();
-        }}
-        isLoading={isLoading}
-        estimateSize={(target) => {
-          if (target === 'previousLoader' || target === 'nextLoader') return 30;
-
-          const entry = timelineItems[target.itemIndex];
-          return entry.measureHeight(timelineContext);
-        }}
-        hasPreviousPage={hasPreviousPage}
-        isFetchingPreviousPage={isFetchingPreviousPage}
-        fetchPreviousPage={() => {
-          if (isReady) {
-            fetchPreviousPage();
-          }
-        }}
-        renderFetchingPrevious={() => (
-          <div className="size-6 flex flex-row justify-center items-center w-full">
-            <Spinner className="size-6 fill-white"/>
-          </div>
-        )}
-        hasNextPage={hasNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-        fetchNextPage={() => {
-          fetchNextPage();
-        }}
-        renderFetchingNext={() => (
-          <div className="size-6 flex flex-row justify-center items-center w-full">
-            <Spinner className="size-6 fill-white"/>
-          </div>
-        )}
-        renderEmpty={() => {
-          return renderEmptyState && (
-            <div className="flex flex-1 select-none justify-center items-end text-gray-300 pb-3">
-              {renderEmptyState()}
-            </div>
-          );
-        }}
-        renderItem={(itemIndex, virtualItem) => {
-          return timelineItems[itemIndex].render(virtualItem.size, timelineContext);
-        }}
-      />
 
       <DeleteMessageConfirmationDialog
         open={!!deletingMessage}
