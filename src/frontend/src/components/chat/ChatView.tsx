@@ -1,7 +1,6 @@
 import type {
   Attachment,
   TimelineMessageDto,
-  UserIdentityProfileDto
 } from "../../api/types.ts";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
@@ -10,7 +9,7 @@ import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../../api/events.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import useTimelineEntries from "../../hooks/useTimelineEntries.ts";
+import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 import Dialog from "../Dialog.tsx";
@@ -43,6 +42,8 @@ export function ChatView({}: ChatViewProps) {
     handleEditMessage,
     handleDeleteMessage,
     setReplyingMessage,
+    removeSendingOperation,
+    retrySendingOperation,
   } = useChatContainerContext()!;
 
   const queryClient = useQueryClient();
@@ -121,7 +122,7 @@ export function ChatView({}: ChatViewProps) {
   });
 
   // timeline entries
-  const timelineItems = useTimelineEntries(messageClusters, userProfiles, editingMessage?.id ?? undefined);
+  const timelineItems = useTimelineItems(messageClusters, userProfiles, editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
@@ -135,9 +136,11 @@ export function ChatView({}: ChatViewProps) {
       onEditSaved: (newBody) => handleSaveEdit(newBody),
       onAttachmentClick: handleAttachmentClick,
       onExternalLinkClicked: setAccessingExternalUrl,
+
+      removeSendingOperation,
+      retrySendingOperation,
     },
     states: {
-      viewportWidth: 0,
       editingMessageDraft: editingMessageDraft,
     }
   };

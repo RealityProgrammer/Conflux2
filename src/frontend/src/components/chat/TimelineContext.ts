@@ -12,10 +12,12 @@ export interface TimelineContext {
 
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
     onExternalLinkClicked: (url?: string) => void;
+
+    retrySendingOperation: (operationId: string) => void;
+    removeSendingOperation: (operationId: string) => void;
   };
 
   states: {
-    viewportWidth: number;
     editingMessageDraft: string | null;
   }
 }

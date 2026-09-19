@@ -1,5 +1,4 @@
 using Conflux.Domain.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain.Entities;
 
@@ -8,7 +7,7 @@ public class Channel : IHasCreatedAt {
     
     public ChannelType Type { get; set; }
 
-    [MaxLength(32)] public string? Name { get; set; } = null!;
+    public string? Name { get; set; }
     
     public Guid ConversationId { get; set; }
     public Conversation Conversation { get; set; } = null!;

@@ -21,34 +21,25 @@ import {MessageLoadDirection} from "../api/schema.ts";
 const LOAD_COUNT = 50;
 
 type SendingMessageOperation = {
-  type: "sending";
+  operationId: string;
   input: MessageInput;
   idempotencyKey: string;
+  error: boolean;
 };
 
-type EditMessageOperation = {
-  type: "edit";
-  messageId: string;
-  newBody: string | null;
-};
-
-type DeleteMessageOperation = {
-  type: "delete";
-  messageId: string;
-}
-
-type ErrorMessageOperation = {
-  type: "error";
-  errorMessage: string;
-  retryOperation: RetryOperation;
-};
-
-type RetryOperation = SendingMessageOperation | EditMessageOperation | DeleteMessageOperation;
-
-type MessageOperation = {
-  operationId: string;
-  operation: SendingMessageOperation | EditMessageOperation | DeleteMessageOperation | ErrorMessageOperation;
-};
+// type EditMessageOperation = {
+//   messageId: string;
+//   newBody: string | null;
+// };
+//
+// type DeleteMessageOperation = {
+//   messageId: string;
+// }
+//
+// type MessageOperation = {
+//   operationId: string;
+//   operation: SendingMessageOperation | EditMessageOperation | DeleteMessageOperation | ErrorMessageOperation;
+// };
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string };
 type EditMessagePayload = { operationId: string, messageId: string, newBody: string | null };
@@ -71,6 +62,10 @@ interface ChatContainerContextType {
   handleSendMessage: (messageInput: MessageInput) => void;
   handleEditMessage: (originalMessage: TimelineMessageDto, newBody: string | null) => void;
   handleDeleteMessage: (originalMessage: TimelineMessageDto) => void;
+
+  sendingMessageOperations: SendingMessageOperation[];
+  retrySendingOperation: (operationId: string) => void;
+  removeSendingOperation: (operationId: string) => void;
 }
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
@@ -91,7 +86,6 @@ export default function ChatContainerContextProvider({
 
   const authorization = useAuthorization();
 
-  const [processingOperations, setProcessingOperations] = useState<MessageOperation[]>([]);
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
 
   const queryKey: QueryKey = ["channelConversation", channelId];
@@ -335,6 +329,8 @@ export default function ChatContainerContextProvider({
     });
   };
 
+  const [sendingMessageOperations, setSendingMessageOperations] = useState<SendingMessageOperation[]>([]);
+
   // message mutations
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
@@ -347,116 +343,116 @@ export default function ChatContainerContextProvider({
       );
     },
     onMutate: async (payload: SendMessagePayload) => {
-      const processingMessage: MessageOperation | undefined =
-        processingOperations.find(op => op.operationId == payload.operationId);
+      setSendingMessageOperations((prev) => {
+        // Check if this is a retry
+        const isRetry = prev.some(op => op.operationId === payload.operationId && op.error);
 
-      if (processingMessage === undefined) {
-        const newProcessingMessage: MessageOperation = {
+        if (isRetry) {
+          return prev.map(op =>
+            op.operationId === payload.operationId ? { ...op, error: false } : op
+          );
+        }
+
+        return [...prev, {
           operationId: payload.operationId,
-          operation: {
-            type: "sending",
-            input: payload.input,
-            idempotencyKey: payload.idempotencyKey,
-          },
-        };
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => [...prev, newProcessingMessage]);
-      } else if (processingMessage.operation.type === "error") {
-        // retry
-        const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
-            op.operationId === payload.operationId ? {
-              operationId: payload.operationId,
-              operation: retryOperation as SendingMessageOperation,
-            } : op
-        )));
-      }
+          input: payload.input,
+          idempotencyKey: payload.idempotencyKey,
+          error: false,
+        }];
+      });
     },
     onSuccess: async (data: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
       if (data.success) {
         appendMessage(data.data!, authorization.userProfile ?? undefined);
-        setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
+        setSendingMessageOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
       } else {
-        let reason: string;
-
-        if (data.statusCode === HttpStatusCode.InternalServerError) {
-          reason = " due to internal server error.";
-        } else {
-          reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
-        }
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
+        setSendingMessageOperations((prev) => prev.map(op =>
           op.operationId === payload.operationId ? {
-            operationId: payload.operationId,
-            operation: {
-              type: "error",
-              errorMessage: `Cannot send message${reason}`,
-              retryOperation: op.operation as RetryOperation,
-            },
+            ...op,
+            error: true,
           } : op
         ));
       }
     },
+    onError: (_error, payload) => {
+      setSendingMessageOperations((prev) =>
+        prev.map(op =>
+          op.operationId === payload.operationId ? { ...op, error: true } : op
+        )
+      );
+    },
   });
+
+  const retrySendingOperation = (operationId: string) => {
+    const operation = sendingMessageOperations.find(o => o.operationId === operationId && o.error);
+    if (!operation) return;
+
+    sendMessageMutation.mutate({
+      operationId: operationId,
+      idempotencyKey: operation.idempotencyKey,
+      input: operation.input,
+    });
+  };
+
+  const removeSendingOperation = (operationId: string) => {
+    setSendingMessageOperations((prev) => prev.filter(o => o.operationId !== operationId));
+  };
 
   const editMessageMutation = useMutation({
     mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
       return await messageService.editMessage(payload.messageId, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
-      const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
-
-      if (processingMessage === undefined) {
-        const newProcessingMessage: MessageOperation = {
-          operationId: payload.operationId,
-          operation: {
-            type: "edit",
-            messageId: payload.messageId,
-            newBody: payload.newBody,
-          },
-        };
-
-        setProcessingOperations((prev) => [...prev, newProcessingMessage]);
-      } else if (processingMessage.operation.type === "error") {
-        // retry
-        const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
-            op.operationId === payload.operationId ? {
-              operationId: payload.operationId,
-              operation: retryOperation as EditMessageOperation,
-            } : op
-        )));
-      }
+      // const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
+      //
+      // if (processingMessage === undefined) {
+      //   const newProcessingMessage: MessageOperation = {
+      //     operationId: payload.operationId,
+      //     operation: {
+      //       type: "edit",
+      //       messageId: payload.messageId,
+      //       newBody: payload.newBody,
+      //     },
+      //   };
+      //
+      //   setProcessingOperations((prev) => [...prev, newProcessingMessage]);
+      // } else if (processingMessage.operation.type === "error") {
+      //   // retry
+      //   const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
+      //
+      //   setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
+      //       op.operationId === payload.operationId ? {
+      //         operationId: payload.operationId,
+      //         operation: retryOperation as EditMessageOperation,
+      //       } : op
+      //   )));
+      // }
     },
     onSuccess: async (data: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
       if (!data.success) {
-        let reason: string;
-
-        if (data.statusCode === HttpStatusCode.InternalServerError) {
-          reason = " due to internal server error.";
-        } else {
-          reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
-        }
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
-          op.operationId === payload.operationId ? {
-            operationId: payload.operationId,
-            operation: {
-              type: "error",
-              errorMessage: `Cannot edit message${reason}`,
-              retryOperation: op.operation as RetryOperation,
-            },
-          } : op
-        ));
+        // let reason: string;
+        //
+        // if (data.statusCode === HttpStatusCode.InternalServerError) {
+        //   reason = " due to internal server error.";
+        // } else {
+        //   reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
+        // }
+        //
+        // setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
+        //   op.operationId === payload.operationId ? {
+        //     operationId: payload.operationId,
+        //     operation: {
+        //       type: "error",
+        //       errorMessage: `Cannot edit message${reason}`,
+        //       retryOperation: op.operation as RetryOperation,
+        //     },
+        //   } : op
+        // ));
         return;
       }
 
       editMessage(payload.messageId, payload.newBody);
-
-      // remove the query
-      setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
+      // setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
     },
   });
 
@@ -465,57 +461,55 @@ export default function ChatContainerContextProvider({
       return await messageService.deleteMessage(payload.messageId);
     },
     onMutate: async (payload: DeleteMessagePayload) => {
-      const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
-
-      if (processingMessage === undefined) {
-        const newProcessingMessage: MessageOperation = {
-          operationId: payload.operationId,
-          operation: {
-            type: "delete",
-            messageId: payload.messageId,
-          },
-        };
-
-        setProcessingOperations((prev) => [...prev, newProcessingMessage]);
-      } else if (processingMessage.operation.type === "error") {
-        // retry
-        const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
-            op.operationId === payload.operationId ? {
-              operationId: payload.operationId,
-              operation: retryOperation as DeleteMessageOperation,
-            } : op
-        )));
-      }
+      // const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
+      //
+      // if (processingMessage === undefined) {
+      //   const newProcessingMessage: MessageOperation = {
+      //     operationId: payload.operationId,
+      //     operation: {
+      //       type: "delete",
+      //       messageId: payload.messageId,
+      //     },
+      //   };
+      //
+      //   setProcessingOperations((prev) => [...prev, newProcessingMessage]);
+      // } else if (processingMessage.operation.type === "error") {
+      //   // retry
+      //   const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
+      //
+      //   setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
+      //       op.operationId === payload.operationId ? {
+      //         operationId: payload.operationId,
+      //         operation: retryOperation as DeleteMessageOperation,
+      //       } : op
+      //   )));
+      // }
     },
     onSuccess: async (data: ServiceResponse, payload: DeleteMessagePayload) => {
       if (!data.success) {
-        let reason: string;
-
-        if (data.statusCode === HttpStatusCode.InternalServerError) {
-          reason = " due to internal server error.";
-        } else {
-          reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
-        }
-
-        setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
-          op.operationId === payload.operationId ? {
-            operationId: payload.operationId,
-            operation: {
-              type: "error",
-              errorMessage: `Cannot delete message${reason}`,
-              retryOperation: op.operation as RetryOperation,
-            },
-          } : op
-        ));
+        // let reason: string;
+        //
+        // if (data.statusCode === HttpStatusCode.InternalServerError) {
+        //   reason = " due to internal server error.";
+        // } else {
+        //   reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
+        // }
+        //
+        // setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
+        //   op.operationId === payload.operationId ? {
+        //     operationId: payload.operationId,
+        //     operation: {
+        //       type: "error",
+        //       errorMessage: `Cannot delete message${reason}`,
+        //       retryOperation: op.operation as RetryOperation,
+        //     },
+        //   } : op
+        // ));
         return;
       }
 
       deleteMessage(payload.messageId);
-
-      // remove the query
-      setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
+      // setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
     },
   });
 
@@ -565,6 +559,9 @@ export default function ChatContainerContextProvider({
       handleSendMessage,
       handleEditMessage,
       handleDeleteMessage,
+      sendingMessageOperations,
+      removeSendingOperation,
+      retrySendingOperation,
     }}>
       {children}
     </ChatContainerContext.Provider>

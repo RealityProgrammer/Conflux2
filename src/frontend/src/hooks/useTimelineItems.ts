@@ -4,6 +4,8 @@ import type {TimelineItem} from "../components/chat/TimelineItem.ts";
 import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";
 import {useEffect} from "react";
 import {DateSeparator} from "../components/chat/DateSeparator.tsx";
+import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
+import {SendingMessage} from "../components/chat/SendingMessage.tsx";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -13,17 +15,11 @@ function isSameDay(d1: Date, d2: Date): boolean {
   );
 }
 
-export default function useTimelineEntries(
+export default function useTimelineItems(
   messageGroups: TimelineMessageClusterDto[],
   userProfiles: Record<string, UserIdentityProfileDto>,
   editingMessageId?: string,
 ): TimelineItem[] {
-  useEffect(() => {
-    console.log("re-render useTimelineEntries");
-  }, []);
-
-  if (!messageGroups.length) return [];
-
   const items: TimelineItem[] = [];
   let lastMessageDate: Date | null = null;
 
@@ -64,6 +60,17 @@ export default function useTimelineEntries(
         replyToMessageSenderProfile,
       }));
     }
+  }
+
+  // sending messages appending
+  const { sendingMessageOperations } = useChatContainerContext()!;
+
+  for (const operation of sendingMessageOperations) {
+    items.push(new SendingMessage({
+      operationId: operation.operationId,
+      input: operation.input,
+      error: operation.error,
+    }));
   }
 
   return items;
