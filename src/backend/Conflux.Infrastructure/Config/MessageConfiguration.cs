@@ -14,6 +14,8 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
         // key configuration to use uuid v7
         builder.Property(m => m.Id).HasValueGenerator<GuidV7ValueGenerator>();
 
+        builder.Property(m => m.Body).HasMaxLength(4000);
+
         builder.Property(m => m.Attachments)
             .HasColumnType("jsonb")
             .HasConversion(
