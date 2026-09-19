@@ -20,17 +20,20 @@ export default function useTimelineItems(
   userProfiles: Record<string, UserIdentityProfileDto>,
   editingMessageId?: string,
 ): TimelineItem[] {
+  const { sendingMessageOperations, deletingMessageIds } = useChatContainerContext()!;
+
   const items: TimelineItem[] = [];
   let lastMessageDate: Date | null = null;
 
   // foreach message cluster group from the backend
   for (const group of messageGroups) {
-    if (!group.messages.length) continue;
+    const activeMessages = group.messages.filter(m => !deletingMessageIds.has(m.id));
+    if (!activeMessages.length) continue;
 
     const sender = userProfiles[group.senderUserId];
 
-    for (let i = 0; i < group.messages.length; i++) {
-      const message = group.messages[i];
+    for (let i = 0; i < activeMessages.length; i++) {
+      const message = activeMessages[i];
       const messageDate = new Date(message.createdAt);
 
       // insert DateSeparator if calendar day changed
@@ -63,8 +66,6 @@ export default function useTimelineItems(
   }
 
   // sending messages appending
-  const { sendingMessageOperations } = useChatContainerContext()!;
-
   for (const operation of sendingMessageOperations) {
     items.push(new SendingMessage({
       operationId: operation.operationId,

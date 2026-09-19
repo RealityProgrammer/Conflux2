@@ -17,6 +17,7 @@ import {useAuthorization} from "./AuthContext.tsx";
 import {messageService} from "../api/messageService.ts";
 import {HttpStatusCode} from "axios";
 import {MessageLoadDirection} from "../api/schema.ts";
+import {toast} from "react-toastify";
 
 const LOAD_COUNT = 50;
 
@@ -66,6 +67,8 @@ interface ChatContainerContextType {
   sendingMessageOperations: SendingMessageOperation[];
   retrySendingOperation: (operationId: string) => void;
   removeSendingOperation: (operationId: string) => void;
+
+  deletingMessageIds: Set<string>;
 }
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
@@ -456,60 +459,35 @@ export default function ChatContainerContextProvider({
     },
   });
 
+  const [deletingMessageIds, setDeletingMessageIds] = useState<Set<string>>(new Set());
+
   const deleteMessageMutation = useMutation({
     mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
       return await messageService.deleteMessage(payload.messageId);
     },
     onMutate: async (payload: DeleteMessagePayload) => {
-      // const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
-      //
-      // if (processingMessage === undefined) {
-      //   const newProcessingMessage: MessageOperation = {
-      //     operationId: payload.operationId,
-      //     operation: {
-      //       type: "delete",
-      //       messageId: payload.messageId,
-      //     },
-      //   };
-      //
-      //   setProcessingOperations((prev) => [...prev, newProcessingMessage]);
-      // } else if (processingMessage.operation.type === "error") {
-      //   // retry
-      //   const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
-      //
-      //   setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
-      //       op.operationId === payload.operationId ? {
-      //         operationId: payload.operationId,
-      //         operation: retryOperation as DeleteMessageOperation,
-      //       } : op
-      //   )));
-      // }
+      setDeletingMessageIds((prev) => new Set(prev).add(payload.messageId));
     },
     onSuccess: async (data: ServiceResponse, payload: DeleteMessagePayload) => {
       if (!data.success) {
-        // let reason: string;
-        //
-        // if (data.statusCode === HttpStatusCode.InternalServerError) {
-        //   reason = " due to internal server error.";
-        // } else {
-        //   reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
-        // }
-        //
-        // setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
-        //   op.operationId === payload.operationId ? {
-        //     operationId: payload.operationId,
-        //     operation: {
-        //       type: "error",
-        //       errorMessage: `Cannot delete message${reason}`,
-        //       retryOperation: op.operation as RetryOperation,
-        //     },
-        //   } : op
-        // ));
-        return;
+        // TODO: Jump to the message when click on the toast.
+        toast.error("Failed to delete message.");
+      } else {
+        deleteMessage(payload.messageId);
       }
 
-      deleteMessage(payload.messageId);
-      // setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
+      setDeletingMessageIds((prev) => {
+        const next = new Set(prev);
+        next.delete(payload.messageId);
+        return next;
+      });
+    },
+    onError: (_error, payload) => {
+      setDeletingMessageIds((prev) => {
+        const next = new Set(prev);
+        next.delete(payload.messageId);
+        return next;
+      });
     },
   });
 
@@ -562,6 +540,7 @@ export default function ChatContainerContextProvider({
       sendingMessageOperations,
       removeSendingOperation,
       retrySendingOperation,
+      deletingMessageIds,
     }}>
       {children}
     </ChatContainerContext.Provider>
