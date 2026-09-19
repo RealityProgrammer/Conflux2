@@ -206,10 +206,10 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
 }
 
 function MessageContentView({
-                              message,
-                              onAttachmentClicked,
-                              onExternalLinkClicked,
-                            }: {
+  message,
+  onAttachmentClicked,
+  onExternalLinkClicked,
+}: {
   message: TimelineMessageDto,
   onAttachmentClicked: (index: number) => void,
   onExternalLinkClicked: (url: string) => void
@@ -220,7 +220,7 @@ function MessageContentView({
         <div className="text-sm leading-6 w-full">
           <Markdown
             remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeKatex]}
+            rehypePlugins={[[rehypeKatex, { strict: "warn" }]]}
             children={message.body}
             components={{
               // heading
@@ -412,6 +412,7 @@ function MessageContentView({
                     />
                   );
                 }
+
                 return <input type={type} {...props} />;
               },
 
@@ -425,10 +426,8 @@ function MessageContentView({
                 </blockquote>
               ),
 
-              img: ({ alt, src, ...props }) => (
+              img: ({ ...props }) => (
                 <img
-                  src={src}
-                  alt={alt}
                   loading="lazy"
                   className="max-w-48 max-h-48 rounded-md my-1 border border-gray-600 object-contain"
                   {...props}

@@ -5,8 +5,6 @@ using Conflux.Domain.Enums;
 namespace Conflux.Domain.Repositories;
 
 public interface IMessageRepository : IWriteRepository<Message> {
-    Task<Message?> GetById(Guid messageId, bool tracking = true, CancellationToken cancellationToken = default);
-    
     Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 
