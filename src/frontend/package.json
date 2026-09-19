@@ -27,6 +27,7 @@
     "graphql": "^16.0.1",
     "iso8601-duration": "^2.1.4",
     "js-cookie": "^3.0.8",
+    "katex": "^0.18.7",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -37,7 +38,9 @@
     "react-syntax-highlighter": "^16.1.1",
     "react-toastify": "^11.1.0",
     "react-virtuoso": "^4.18.13",
+    "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "tailwindcss": "^4.3.2",
     "usehooks-ts": "^3.1.1",
     "zod": "^4.5.4"

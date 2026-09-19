@@ -1,4 +1,14 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+}
 
 @theme {
     --color-red-425: color-mix(in oklch, var(--color-red-400) 75%, var(--color-red-500) 25%);

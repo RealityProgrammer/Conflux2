@@ -17,6 +17,8 @@ import Markdown from "react-markdown";
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {a11yDark} from 'react-syntax-highlighter/dist/esm/styles/prism'
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -216,7 +218,8 @@ function MessageContentView({
       {message.body && message.body.length > 0 && (
         <div className="text-sm leading-6 w-full">
           <Markdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
             children={message.body}
             components={{
               // heading
