@@ -1,6 +1,10 @@
+using Conflux.Domain.Enums;
+
 namespace Conflux.Application.Services;
 
 public interface IPresenceService {
-    Task UserConnectedAsync(Guid userId);
-    Task UserDisconnectedAsync(Guid userId);
+    Task<PresenceStatus> UserConnected(Guid userId);
+    Task<PresenceStatus> UserDisconnected(Guid userId);
+
+    Task SetUserManualPresenceStatus(Guid userId, PresenceStatus status);
 }

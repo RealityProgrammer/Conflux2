@@ -1,6 +1,7 @@
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
 using Microsoft.AspNetCore.Identity;
@@ -68,5 +69,19 @@ internal sealed class UserRepository(
             .ToListAsync(cancellationToken);
 
         return results;
+    }
+
+    public async Task<Result<PresenceStatus>> GetManualPresenceStatus(Guid userId, CancellationToken cancellationToken = default) {
+        var result = await dbContext.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.ManualPresenceStatus)
+            .Cast<PresenceStatus?>()
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (result == null) {
+            return Errors.NoUserFoundFromId();
+        }
+
+        return Result<PresenceStatus>.Success(result.Value);
     }
 }

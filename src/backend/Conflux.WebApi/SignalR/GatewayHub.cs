@@ -129,7 +129,7 @@ public sealed class GatewayHub(
             bool isFirstConnection = await connectionTracker.TrackConnection(userId, Context.ConnectionId);
             
             if (isFirstConnection) {
-                await presenceService.UserConnectedAsync(userId);
+                await presenceService.UserConnected(userId);
             }
         }
         
@@ -145,7 +145,7 @@ public sealed class GatewayHub(
             bool isLastConnection = await connectionTracker.UntrackConnection(userId, Context.ConnectionId);
 
             if (isLastConnection) {
-                await presenceService.UserDisconnectedAsync(userId);
+                await presenceService.UserDisconnected(userId);
             }
         }
         
