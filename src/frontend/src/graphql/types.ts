@@ -24,7 +24,7 @@ export type ApplicationUser = {
   hasAvatar: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
-  manualPresenceStatus: PresenceStatus;
+  manualPresenceStatus?: Maybe<PresenceStatus>;
   numMutualFriends: Scalars['Int']['output'];
   pronouns?: Maybe<Scalars['String']['output']>;
   userName?: Maybe<Scalars['String']['output']>;

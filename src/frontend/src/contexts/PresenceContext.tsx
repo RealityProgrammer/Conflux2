@@ -1,6 +1,6 @@
 import {PresenceStatus} from "../graphql/types.ts";
 import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from "react";
-import {useGetUserManualPresenceQuery, useUpdateManualPresenceStatusMutation} from "../graphql/queries.ts";
+import {useGetSessionUserManualPresenceStatusQuery, useUpdateManualPresenceStatusMutation} from "../graphql/queries.ts";
 import {useAuthorization} from "./AuthContext.tsx";
 import {toast} from "react-toastify";
 
@@ -20,7 +20,7 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
   const [isIdle, setIsIdle] = useState(false);
   const idleTimerRef = useRef<number | null>(null);
 
-  const { data, isLoading, isError } = useGetUserManualPresenceQuery(
+  const { data, isLoading, isError } = useGetSessionUserManualPresenceStatusQuery(
     { userId: userProfile?.id ?? "" },
     {
       enabled: !!userProfile?.id,

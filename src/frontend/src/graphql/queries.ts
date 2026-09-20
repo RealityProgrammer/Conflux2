@@ -32,6 +32,13 @@ export type GetServerMemberAuthorizeInfoQueryVariables = Exact<{
 
 export type GetServerMemberAuthorizeInfoQuery = { communityServerMemberByServerAndUserId: { id: string, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean }, roles: Array<{ id: string }> } | null };
 
+export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{
+  userId: string;
+}>;
+
+
+export type GetSessionUserManualPresenceStatusQuery = { user: { manualPresenceStatus: Types.PresenceStatus | null } | null };
+
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
@@ -45,13 +52,6 @@ export type GetUserIdentityProfileQueryVariables = Exact<{
 
 
 export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
-
-export type GetUserManualPresenceQueryVariables = Exact<{
-  userId: string;
-}>;
-
-
-export type GetUserManualPresenceQuery = { user: { manualPresenceStatus: Types.PresenceStatus } | null };
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
@@ -220,6 +220,35 @@ useGetServerMemberAuthorizeInfoQuery.getKey = (variables: GetServerMemberAuthori
 
 useGetServerMemberAuthorizeInfoQuery.fetcher = (variables: GetServerMemberAuthorizeInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerMemberAuthorizeInfoQuery, GetServerMemberAuthorizeInfoQueryVariables>(GetServerMemberAuthorizeInfoDocument, variables, options);
 
+export const GetSessionUserManualPresenceStatusDocument = new TypedDocumentString(`
+    query GetSessionUserManualPresenceStatus($userId: UUID!) {
+  user(id: $userId) {
+    manualPresenceStatus
+  }
+}
+    `);
+
+export const useGetSessionUserManualPresenceStatusQuery = <
+      TData = GetSessionUserManualPresenceStatusQuery,
+      TError = unknown
+    >(
+      variables: GetSessionUserManualPresenceStatusQueryVariables,
+      options?: Omit<UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetSessionUserManualPresenceStatusQuery, TError, TData>(
+      {
+    queryKey: ['GetSessionUserManualPresenceStatus', variables],
+    queryFn: graphqlFetcher<GetSessionUserManualPresenceStatusQuery, GetSessionUserManualPresenceStatusQueryVariables>(GetSessionUserManualPresenceStatusDocument, variables),
+    ...options
+  }
+    )};
+
+useGetSessionUserManualPresenceStatusQuery.getKey = (variables: GetSessionUserManualPresenceStatusQueryVariables) => ['GetSessionUserManualPresenceStatus', variables];
+
+
+useGetSessionUserManualPresenceStatusQuery.fetcher = (variables: GetSessionUserManualPresenceStatusQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetSessionUserManualPresenceStatusQuery, GetSessionUserManualPresenceStatusQueryVariables>(GetSessionUserManualPresenceStatusDocument, variables, options);
+
 export const GetUserFullProfileDocument = new TypedDocumentString(`
     query GetUserFullProfile($id: UUID!) {
   user(id: $id) {
@@ -287,35 +316,6 @@ useGetUserIdentityProfileQuery.getKey = (variables: GetUserIdentityProfileQueryV
 
 
 useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables, options);
-
-export const GetUserManualPresenceDocument = new TypedDocumentString(`
-    query GetUserManualPresence($userId: UUID!) {
-  user(id: $userId) {
-    manualPresenceStatus
-  }
-}
-    `);
-
-export const useGetUserManualPresenceQuery = <
-      TData = GetUserManualPresenceQuery,
-      TError = unknown
-    >(
-      variables: GetUserManualPresenceQueryVariables,
-      options?: Omit<UseQueryOptions<GetUserManualPresenceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserManualPresenceQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetUserManualPresenceQuery, TError, TData>(
-      {
-    queryKey: ['GetUserManualPresence', variables],
-    queryFn: graphqlFetcher<GetUserManualPresenceQuery, GetUserManualPresenceQueryVariables>(GetUserManualPresenceDocument, variables),
-    ...options
-  }
-    )};
-
-useGetUserManualPresenceQuery.getKey = (variables: GetUserManualPresenceQueryVariables) => ['GetUserManualPresence', variables];
-
-
-useGetUserManualPresenceQuery.fetcher = (variables: GetUserManualPresenceQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserManualPresenceQuery, GetUserManualPresenceQueryVariables>(GetUserManualPresenceDocument, variables, options);
 
 export const InspectMemberDocument = new TypedDocumentString(`
     query InspectMember($id: UUID!) {

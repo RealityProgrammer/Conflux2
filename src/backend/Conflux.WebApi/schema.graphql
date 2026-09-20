@@ -161,7 +161,7 @@ type ApplicationUser {
   pronouns: String
   createdAt: DateTime!
   lastSeenAt: DateTime!
-  manualPresenceStatus: PresenceStatus!
+  manualPresenceStatus: PresenceStatus @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
 }
 
