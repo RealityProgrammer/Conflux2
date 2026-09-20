@@ -11,11 +11,12 @@ import {apiClient, graphqlClient} from "../api/client.ts";
 export type SignalRContextType = {
   connection: HubConnection | null;
   isConnected: boolean;
+  invokeSafely: (methodName: string, ...args: unknown[]) => Promise<any>;
 }
 
-const SignalRConnectionContext = createContext<SignalRContextType | null>(null);
+const SignalRContext = createContext<SignalRContextType | null>(null);
 
-export default function SignalRConnectionProvider({ children }: { children: ReactNode }) {
+export default function SignalRProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -100,15 +101,25 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
     };
   }, []);
 
+  const invokeSafely = async (methodName: string, ...args: unknown[]) => {
+    if (connection && connection.state === HubConnectionState.Connected) {
+      try {
+        await connection.invoke(methodName, ...args);
+      } catch (err) {
+        console.error(`SignalR invocation failed for [${methodName}]:`, err);
+      }
+    }
+  };
+
   return (
-    <SignalRConnectionContext.Provider value={{ connection, isConnected }}>
+    <SignalRContext.Provider value={{ connection, isConnected, invokeSafely }}>
       {children}
-    </SignalRConnectionContext.Provider>
+    </SignalRContext.Provider>
   );
 }
 
-export function useSignalRConnection(): SignalRContextType {
-  const context = useContext(SignalRConnectionContext);
+export function useSignalR(): SignalRContextType {
+  const context = useContext(SignalRContext);
   if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
 
   return context;

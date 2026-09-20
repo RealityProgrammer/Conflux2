@@ -22,7 +22,7 @@ import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
-import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
+import SignalRProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
 import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
@@ -152,7 +152,7 @@ export const router = createBrowserRouter([
           return currentUrl.pathname !== nextUrl.pathname;
         },
         element: (
-          <SignalRConnectionProvider>
+          <SignalRProvider>
             <PresenceProvider>
               <LobbyLayout/>
               <ToastContainer
@@ -165,7 +165,7 @@ export const router = createBrowserRouter([
                 transition={Slide}
               />
             </PresenceProvider>
-          </SignalRConnectionProvider>
+          </SignalRProvider>
         ),
         children: [
           {

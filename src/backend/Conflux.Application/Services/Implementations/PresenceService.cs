@@ -6,15 +6,20 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class PresenceService(
     IUserRepository userRepository,
-    IPresenceCacheService cacheService
+    IPresenceCacheService cacheService,
+    ILogger<PresenceService> logger
 ) : IPresenceService {
     public async Task<PresenceStatus> UserConnected(Guid userId) {
+        logger.LogInformation("UserConnected {userId}", userId);
+        
         // should only be called once when user connected (connection count go from 0 to 1)
         await cacheService.SetSessionStatus(userId, null);
         return await GetEffectivePresenceAsync(userId);
     }
 
     public async Task<PresenceStatus> UserDisconnected(Guid userId) {
+        logger.LogInformation("UserDisconnected {userId}", userId);
+        
         // should only be called once when user finally disconnected everything (connection count go from N to 0)
         await cacheService.SetSessionStatus(userId, null); 
         return PresenceStatus.Offline;  // always return offline, obviously

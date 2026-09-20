@@ -20,7 +20,12 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
   const [isIdle, setIsIdle] = useState(false);
   const idleTimerRef = useRef<number | null>(null);
 
-  const { data, isLoading, isError } = useGetUserManualPresenceQuery({ userId: userProfile!.id });
+  const { data, isLoading, isError } = useGetUserManualPresenceQuery(
+    { userId: userProfile?.id ?? "" },
+    {
+      enabled: !!userProfile?.id,
+    }
+  );
 
   const updateManualPresenceMutation = useUpdateManualPresenceStatusMutation({
     onMutate: async () => {
@@ -44,6 +49,8 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
   };
 
   const updateManualStatus = async (newStatus: PresenceStatus) => {
+    if (!data?.user?.manualPresenceStatus) return;
+
     updateManualPresenceMutation.mutate({ value: newStatus });
   };
 

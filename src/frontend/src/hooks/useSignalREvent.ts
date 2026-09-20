@@ -1,8 +1,8 @@
 import {useEffect, useRef} from "react";
-import {useSignalRConnection} from "../contexts/SignalRContext.tsx";
+import {useSignalR} from "../contexts/SignalRContext.tsx";
 
 export default function useSignalREvent(methodNames: string[] | string, callback: (...args: any[]) => void | any) {
-  const {connection, isConnected} = useSignalRConnection();
+  const {connection, isConnected} = useSignalR();
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 
