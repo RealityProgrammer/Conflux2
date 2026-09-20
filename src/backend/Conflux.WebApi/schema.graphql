@@ -133,7 +133,9 @@ type Query @authorize @authorize @authorize @authorize @authorize @authorize {
     @cost(weight: "10")
 }
 
-type Mutation @authorize {
+type Mutation @authorize @authorize {
+  updateManualPresenceStatus(input: UpdateManualPresenceStatusInput!): UpdateManualPresenceStatusPayload!
+    @cost(weight: "10")
   updateCommunityServerMemberRoles(
     input: UpdateCommunityServerMemberRolesInput!
   ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
@@ -158,8 +160,8 @@ type ApplicationUser {
   biography: String
   pronouns: String
   createdAt: DateTime!
-  manualPresenceStatus: PresenceStatus!
   lastSeenAt: DateTime!
+  manualPresenceStatus: PresenceStatus!
   numMutualFriends: Int! @cost(weight: "10")
 }
 
@@ -376,6 +378,10 @@ type UnbanCommunityServerMemberPayload {
 type UpdateCommunityServerMemberRolesPayload {
   member: CommunityServerMember! @cost(weight: "10")
   memberId: UUID!
+}
+
+type UpdateManualPresenceStatusPayload {
+  userId: UUID!
 }
 
 type WarnCommunityServerMemberPayload {
@@ -879,6 +885,10 @@ input UpdateCommunityServerMemberRolesInput {
   serverId: UUID!
   memberId: UUID!
   roleIds: [UUID!]!
+}
+
+input UpdateManualPresenceStatusInput {
+  status: PresenceStatus!
 }
 
 input UuidOperationFilterInput {

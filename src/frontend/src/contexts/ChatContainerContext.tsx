@@ -544,7 +544,7 @@ export default function ChatContainerContextProvider({
   )
 }
 
-export function useChatContainerContext(): ChatContainerContextType | null {
+export function useChatContainerContext(): ChatContainerContextType {
   const context = useContext(ChatContainerContext);
   if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
 

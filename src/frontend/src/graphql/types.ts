@@ -23,6 +23,8 @@ export type ApplicationUser = {
   displayName?: Maybe<Scalars['String']['output']>;
   hasAvatar: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
+  lastSeenAt: Scalars['DateTime']['output'];
+  manualPresenceStatus: PresenceStatus;
   numMutualFriends: Scalars['Int']['output'];
   pronouns?: Maybe<Scalars['String']['output']>;
   userName?: Maybe<Scalars['String']['output']>;
@@ -42,8 +44,10 @@ export type ApplicationUserFilterInput = {
   id?: InputMaybe<UuidOperationFilterInput>;
   isUserNameLocked?: InputMaybe<BooleanOperationFilterInput>;
   joinedCommunityServers?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
+  lastSeenAt?: InputMaybe<DateTimeOperationFilterInput>;
   lockoutEnabled?: InputMaybe<BooleanOperationFilterInput>;
   lockoutEnd?: InputMaybe<DateTimeOperationFilterInput>;
+  manualPresenceStatus?: InputMaybe<PresenceStatusOperationFilterInput>;
   normalizedEmail?: InputMaybe<StringOperationFilterInput>;
   normalizedUserName?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<ApplicationUserFilterInput>>;
@@ -70,8 +74,10 @@ export type ApplicationUserSortInput = {
   hasAvatar?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   isUserNameLocked?: InputMaybe<SortEnumType>;
+  lastSeenAt?: InputMaybe<SortEnumType>;
   lockoutEnabled?: InputMaybe<SortEnumType>;
   lockoutEnd?: InputMaybe<SortEnumType>;
+  manualPresenceStatus?: InputMaybe<SortEnumType>;
   normalizedEmail?: InputMaybe<SortEnumType>;
   normalizedUserName?: InputMaybe<SortEnumType>;
   passwordHash?: InputMaybe<SortEnumType>;
@@ -96,6 +102,7 @@ export enum ApplyPolicy {
 export type AttachmentFilterInput = {
   and?: InputMaybe<Array<AttachmentFilterInput>>;
   id?: InputMaybe<UuidOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<AttachmentFilterInput>>;
   type?: InputMaybe<StringOperationFilterInput>;
 };
@@ -625,6 +632,7 @@ export type Mutation = {
   leaveCommunityServer: LeaveCommunityServerPayload;
   unbanCommunityServerMember: UnbanCommunityServerMemberPayload;
   updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
+  updateManualPresenceStatus: UpdateManualPresenceStatusPayload;
   warnCommunityServerMember: WarnCommunityServerMemberPayload;
 };
 
@@ -651,6 +659,11 @@ export type MutationUnbanCommunityServerMemberArgs = {
 
 export type MutationUpdateCommunityServerMemberRolesArgs = {
   input: UpdateCommunityServerMemberRolesInput;
+};
+
+
+export type MutationUpdateManualPresenceStatusArgs = {
+  input: UpdateManualPresenceStatusInput;
 };
 
 
@@ -695,6 +708,21 @@ export type PermissionStateOperationFilterInput = {
   in?: InputMaybe<Array<PermissionState>>;
   neq?: InputMaybe<PermissionState>;
   nin?: InputMaybe<Array<PermissionState>>;
+};
+
+export enum PresenceStatus {
+  DoNotDisturb = 'DoNotDisturb',
+  Idle = 'Idle',
+  Invisible = 'Invisible',
+  Offline = 'Offline',
+  Online = 'Online'
+}
+
+export type PresenceStatusOperationFilterInput = {
+  eq?: InputMaybe<PresenceStatus>;
+  in?: InputMaybe<Array<PresenceStatus>>;
+  neq?: InputMaybe<PresenceStatus>;
+  nin?: InputMaybe<Array<PresenceStatus>>;
 };
 
 export type Query = {
@@ -980,6 +1008,15 @@ export type UpdateCommunityServerMemberRolesPayload = {
   __typename?: 'UpdateCommunityServerMemberRolesPayload';
   member: CommunityServerMember;
   memberId: Scalars['UUID']['output'];
+};
+
+export type UpdateManualPresenceStatusInput = {
+  status: PresenceStatus;
+};
+
+export type UpdateManualPresenceStatusPayload = {
+  __typename?: 'UpdateManualPresenceStatusPayload';
+  userId: Scalars['UUID']['output'];
 };
 
 export type UuidOperationFilterInput = {

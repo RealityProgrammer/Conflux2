@@ -22,7 +22,7 @@ export default function useTimelineItems(
     sendingMessageOperations,
     deletingMessageIds,
     editingOperations,
-  } = useChatContainerContext()!;
+  } = useChatContainerContext();
 
   const items: TimelineItem[] = [];
   let lastMessageDate: Date | null = null;

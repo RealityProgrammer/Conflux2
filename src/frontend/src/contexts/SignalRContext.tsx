@@ -15,12 +15,6 @@ export type SignalRContextType = {
 
 const SignalRConnectionContext = createContext<SignalRContextType | null>(null);
 
-export const useSignalRConnection = (): SignalRContextType => {
-  const context = useContext(SignalRConnectionContext);
-  if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
-  return context;
-};
-
 export default function SignalRConnectionProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -111,4 +105,11 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
       {children}
     </SignalRConnectionContext.Provider>
   );
+}
+
+export function useSignalRConnection(): SignalRContextType {
+  const context = useContext(SignalRConnectionContext);
+  if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
+
+  return context;
 }

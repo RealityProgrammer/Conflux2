@@ -848,7 +848,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    download?: boolean;
+                };
                 header?: never;
                 path: {
                     attachmentId: string;
@@ -1639,6 +1641,7 @@ export interface components {
             error: components["schemas"]["Error"];
         };
         Attachment: {
+            name: string;
             /** Format: uuid */
             id: string;
             type: string;

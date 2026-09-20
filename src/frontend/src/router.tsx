@@ -29,6 +29,7 @@ import ChannelPage from "./pages/server/ChannelPage.tsx";
 import ChannelLayout from "./pages/server/ChannelLayout.tsx";
 import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 import {Slide, ToastContainer} from "react-toastify";
+import PresenceProvider from "./contexts/PresenceContext.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
@@ -152,16 +153,18 @@ export const router = createBrowserRouter([
         },
         element: (
           <SignalRConnectionProvider>
-            <LobbyLayout/>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              newestOnTop
-              draggable="touch"
-              pauseOnHover
-              theme="dark"
-              transition={Slide}
-            />
+            <PresenceProvider>
+              <LobbyLayout/>
+              <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                newestOnTop
+                draggable="touch"
+                pauseOnHover
+                theme="dark"
+                transition={Slide}
+              />
+            </PresenceProvider>
           </SignalRConnectionProvider>
         ),
         children: [

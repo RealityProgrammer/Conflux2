@@ -17,13 +17,6 @@ interface CommunityServerContextType {
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
 
-export const useCommunityServerContext = () => {
-  const context = useContext(CommunityServerContext);
-  if (!context) throw new Error("useChatContainerContext must be used within an CommunityServerContextProvider.");
-
-  return context;
-}
-
 interface CommunityServerContextProviderProps extends CommunityServerContextType {
   children: ReactNode;
 }
@@ -53,4 +46,11 @@ export default function CommunityServerContextProvider({
       {children}
     </CommunityServerContext.Provider>
   )
+}
+
+export function useCommunityServerContext(): CommunityServerContextType {
+  const context = useContext(CommunityServerContext);
+  if (!context) throw new Error("useChatContainerContext must be used within an CommunityServerContextProvider.");
+
+  return context;
 }

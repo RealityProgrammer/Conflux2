@@ -1,0 +1,5 @@
+query GetUserManualPresence($userId: UUID!) {
+    user(id: $userId) {
+        manualPresenceStatus
+    }
+}

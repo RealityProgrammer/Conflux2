@@ -1,0 +1,7 @@
+mutation UpdateManualPresenceStatus($value: PresenceStatus!) {
+    updateManualPresenceStatus(input: {
+        status: $value
+    }) {
+        userId
+    }
+}
