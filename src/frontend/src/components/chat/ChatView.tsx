@@ -17,6 +17,9 @@ import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 import {BsBoxArrowUpRight} from "react-icons/bs";
 import Spinner from "../Spinner.tsx";
+import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
+import TypingIndicator from "./TypingIndicator.tsx";
 
 const START_INDEX = 10000000;
 
@@ -174,6 +177,9 @@ export function ChatView({}: ChatViewProps) {
     prevStableRef.current = { key: firstStableKey, index: firstStableIndex };
   }, [timelineItems, firstStableKey, firstStableIndex]);
 
+  const { userProfile } = useAuthorization();
+  const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
+
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center overflow-hidden h-full text-white bg-gray-700">
@@ -193,7 +199,7 @@ export function ChatView({}: ChatViewProps) {
         startReached={fetchOlderMessages}
         endReached={fetchNewerMessages}
         overscan={10}
-        className="h-full"
+        className="flex-1 min-h-0"
         components={{
           Header: () => (
             isFetchingPreviousPage ? (
@@ -216,6 +222,8 @@ export function ChatView({}: ChatViewProps) {
           return timelineItem.render(timelineContext);
         }}
       />
+
+      <TypingIndicator displayUsers={typingUsers.slice(0, 4)}/>
 
       {galleryState.items && galleryState.items.length > 0 && (
         <MediaPreviewGallery

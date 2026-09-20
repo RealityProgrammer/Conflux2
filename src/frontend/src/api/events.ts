@@ -102,3 +102,9 @@ export type ServerMemberUnbannedEvent = {
   bannedMemberUserId: string;
   bannedMemberId: string;
 };
+
+export type TypingUserEvent = {
+  userId: string;
+  displayName: string;
+  hasAvatar: boolean;
+}

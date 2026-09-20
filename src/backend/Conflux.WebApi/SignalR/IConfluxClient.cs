@@ -40,4 +40,6 @@ public interface IConfluxClient {
     Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
 
     Task UpdateModerationLog(CancellationToken cancellationToken = default);
+    
+    Task UserTyping(UserTypingEvent data, CancellationToken cancellationToken = default);
 }

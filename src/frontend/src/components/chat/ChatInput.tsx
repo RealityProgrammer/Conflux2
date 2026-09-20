@@ -5,6 +5,7 @@ import {ScrollArea} from "radix-ui";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
+import {useTypingEmitter} from "../../hooks/useTypingEmitter.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -30,7 +31,7 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
-  const {replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext()!;
+  const {channelId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext()!;
 
   const [messageBody, setMessageBody] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -39,6 +40,8 @@ export default function ChatInput({disabled}: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
+
+  const notifyTyping = useTypingEmitter(channelId);
 
   const handleAttachmentButtonClick = () => {
     if (!fileInputRef.current) {
@@ -50,6 +53,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setMessageBody(e.target.value);
+    notifyTyping();
 
     const textarea = textareaRef.current;
     if (textarea) {
@@ -227,32 +231,37 @@ export default function ChatInput({disabled}: ChatInputProps) {
       )}
 
       <section className="flex flex-row items-end gap-2">
-        <input ref={fileInputRef}
-               type="file"
-               accept="image/jpeg, image/png, image/gif, audio/ogg, audio/wav, audio/mp4, audio/mpeg, audio/vorbis, video/H263, video/H264, video/H265, video/mp4, video/ogg"
-               multiple
-               hidden
-               onChange={handleAttachmentChanged}
-        />
-
-        <IconButton isLoading={false} className="size-6 flex-none mb-2" disabled={disabled}
-                    onClick={handleAttachmentButtonClick}>
-          <BsPaperclip className="size-6"/>
-        </IconButton>
-
-        <textarea ref={textareaRef}
-                  rows={1}
-                  value={messageBody}
-                  onChange={handleInput}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Message body goes here"
-                  disabled={disabled}
-                  maxLength={1024}
-                  className="input-field min-h-10 max-h-36 w-full flex-1 text-sm resize-none py-2 px-3 overflow-y-auto leading-relaxed"
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg, image/png, image/gif, audio/ogg, audio/wav, audio/mp4, audio/mpeg, audio/vorbis, video/H263, video/H264, video/H265, video/mp4, video/ogg"
+          multiple
+          hidden
+          onChange={handleAttachmentChanged}
         />
 
         <IconButton
-          className="size-6 flex-none mb-2"
+          className="flex-none mb-2"
+          disabled={disabled}
+          onClick={handleAttachmentButtonClick}
+        >
+          <BsPaperclip className="size-6"/>
+        </IconButton>
+
+        <textarea
+          ref={textareaRef}
+          rows={1}
+          value={messageBody}
+          onChange={handleInput}
+          onKeyDown={handleKeyDown}
+          placeholder="Message body goes here"
+          disabled={disabled}
+          maxLength={1024}
+          className="input-field min-h-10 max-h-36 w-full flex-1 text-sm resize-none py-2 px-3 overflow-y-auto leading-relaxed"
+        />
+
+        <IconButton
+          className="flex-none mb-2"
           disabled={!isSendable}
           onClick={handleSend}
         >

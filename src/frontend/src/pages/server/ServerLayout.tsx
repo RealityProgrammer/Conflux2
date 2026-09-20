@@ -15,7 +15,7 @@ import {BsHammer} from "react-icons/bs";
 import {toast} from "react-toastify";
 import useServerMemberAuthorizeInfo, {
   type ServerMemberAuthorizeInfo
-} from "../../hooks/useServerMemberAuthorizeInfo.tsx";
+} from "../../hooks/useServerMemberAuthorizeInfo.ts";
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
