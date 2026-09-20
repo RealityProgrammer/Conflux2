@@ -263,6 +263,8 @@ builder.Services
     .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
+    .AddScoped<IPresenceCacheService, PresenceCacheService>()
+    .AddScoped<IPresenceService, PresenceService>()
 
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
