@@ -7,7 +7,7 @@ import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
+import {BsArrowReturnLeft, BsCopy, BsPencil, BsPencilFill, BsTrash} from "react-icons/bs";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
@@ -69,6 +69,13 @@ function MessageView({
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger({
+      ...message,
+      senderUserId: senderProfile?.id!,
+    });
+  };
+
+  const handleEditTrigger = () => {
+    context.actions.onMessageEditTrigger({
       ...message,
       senderUserId: senderProfile?.id!,
     });
@@ -176,9 +183,17 @@ function MessageView({
             )}
 
             {editingStatus === "none" && (
-              <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
-                <BsArrowReturnLeft className="size-5 ml-auto"/>
-              </IconButton>
+              <>
+                {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
+                  <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
+                    <BsPencilFill className="size-5 ml-auto"/>
+                  </IconButton>
+                )}
+
+                <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
+                  <BsArrowReturnLeft className="size-5 ml-auto"/>
+                </IconButton>
+              </>
             )}
           </section>
         )}
@@ -200,12 +215,7 @@ function MessageView({
             <>
               <ContextMenu.Item
                 className="dropdown-item-default"
-                onSelect={() => {
-                  context.actions.onMessageEditTrigger({
-                    ...message,
-                    senderUserId: senderProfile.id,
-                  });
-                }}
+                onSelect={handleEditTrigger}
               >
                 Edit message <BsPencil className="fill-white size-4 ml-auto"/>
               </ContextMenu.Item>
