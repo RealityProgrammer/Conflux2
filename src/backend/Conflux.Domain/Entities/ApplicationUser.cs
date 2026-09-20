@@ -1,6 +1,6 @@
+using Conflux.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Conflux.Domain.Entities;
 
@@ -15,6 +15,10 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     [MaxLength(32)] public string? Pronouns { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+    
+    // manual != current
+    public PresenceStatus ManualPresenceStatus { get; set; } = PresenceStatus.Online;
+    public DateTimeOffset LastSeenAt { get; set; }
 
     public virtual ICollection<FriendRequest> SentFriendRequests { get; set; } = [];
     public virtual ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = [];

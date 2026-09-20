@@ -243,7 +243,7 @@ builder.Services.AddMediator(options => {
 
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<UserConnectionTracker>()
+    .AddSingleton<SignalRConnectionTracker>()
     .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()

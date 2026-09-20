@@ -1,24 +1,21 @@
 using Conflux.Application.Services;
 using Conflux.Domain.Enums;
-using Conflux.Domain.Repositories;
 using Conflux.WebApi.Dto;
-using Conflux.WebApi.Notifications.Messaging;
 using Conflux.WebApi.Services;
-using MemoryPack;
+using Conflux.WebApi.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.SignalR;
 
 [Authorize]
-public sealed partial class GatewayHub(
+public sealed class GatewayHub(
     JoinTracker joinTracker,
-    UserConnectionTracker connectionTracker,
+    SignalRConnectionTracker connectionTracker,
     IServerPermissionsProvider serverPermissionsProvider,
-    ITypingIndicatorService typingIndicatorService
+    ITypingIndicatorService typingIndicatorService,
+    IPresenceService presenceService
 ) : Hub<IConfluxClient> {
     // invoked by the frontend only
     public async Task JoinChannel(Guid channelId) {
@@ -129,7 +126,11 @@ public sealed partial class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
-            await connectionTracker.AddConnectionAsync(userId, Context.ConnectionId);
+            bool isFirstConnection = await connectionTracker.TrackConnection(userId, Context.ConnectionId);
+            
+            if (isFirstConnection) {
+                await presenceService.UserConnectedAsync(userId);
+            }
         }
         
         await base.OnConnectedAsync();
@@ -141,7 +142,11 @@ public sealed partial class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
-            await connectionTracker.RemoveConnectionAsync(userId, Context.ConnectionId);
+            bool isLastConnection = await connectionTracker.UntrackConnection(userId, Context.ConnectionId);
+
+            if (isLastConnection) {
+                await presenceService.UserDisconnectedAsync(userId);
+            }
         }
         
         await base.OnDisconnectedAsync(exception);
