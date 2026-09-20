@@ -53,8 +53,6 @@ export default function AuthProvider({children}: { children: ReactNode }) {
     });
   }
 
-  console.log("profile:", JSON.stringify(userProfile));
-
   return (
     <AuthorizationContext.Provider value={{
       userAuthorization: authorizationInfo,

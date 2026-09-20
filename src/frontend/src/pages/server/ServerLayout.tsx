@@ -101,8 +101,6 @@ export default function ServerLayout() {
   });
 
   useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
-    console.log("unbanned");
-
     if (serverId !== unbannedServerId) {
       return;
     }
