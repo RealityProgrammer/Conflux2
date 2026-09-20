@@ -15,6 +15,9 @@ export interface TimelineContext {
 
     retrySendingOperation: (operationId: string) => void;
     removeSendingOperation: (operationId: string) => void;
+
+    retryEditingOperation: (messageId: string) => void;
+    removeEditingOperation: (messageId: string) => void;
   };
 
   states: {

@@ -2,7 +2,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import {type HTMLAttributes, isValidElement} from "react";
+import {isValidElement} from "react";
 import IconButton from "../IconButton.tsx";
 import {BsCopy} from "react-icons/bs";
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";

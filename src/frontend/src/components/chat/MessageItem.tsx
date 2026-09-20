@@ -13,12 +13,15 @@ import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import MessageContent from "./MessageContent.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
+import IconButton from "../IconButton.tsx";
+import {FaRepeat, FaTrashCan} from "react-icons/fa6";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageClusterItemDto;
   showHeader: boolean;
+  editingStatus: "none" | "error" | "saving";
 }
 
 export class MessageItem extends TimelineItem<MessageItemProps> {
@@ -38,6 +41,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
         replyToMessageSenderProfile={this.data.replyToMessageSenderProfile}
         message={this.data.message}
         showHeader={this.data.showHeader}
+        editingStatus={this.data.editingStatus}
         context={context}
       />
     );
@@ -49,6 +53,7 @@ interface MessageViewProps {
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageClusterItemDto;
   showHeader: boolean;
+  editingStatus: "none" | "error" | "saving"
   context: TimelineContext;
 }
 
@@ -56,10 +61,18 @@ function MessageView({
   senderProfile,
   message,
   showHeader,
+  replyToMessageSenderProfile,
+  editingStatus,
   context,
-  replyToMessageSenderProfile
 }: MessageViewProps) {
   const auth = useAuthorization();
+
+  const handleReplyTrigger = () => {
+    context.actions.onMessageReplyTrigger({
+      ...message,
+      senderUserId: senderProfile?.id!,
+    });
+  };
 
   const handleAttachmentClicked = (index: number) => {
     context.actions.onAttachmentClick(message.attachments, index);
@@ -69,12 +82,20 @@ function MessageView({
     context.actions.onExternalLinkClicked(url);
   };
 
+  const handleRetryEditingOperation = () => {
+    context.actions.retryEditingOperation(message.id);
+  };
+
+  const handleRemoveEditingOperation = () => {
+    context.actions.removeEditingOperation(message.id);
+  };
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
-        className="w-full flex flex-col"
+        className="relative w-full flex flex-col hover-highlight group"
       >
-        <div className="hover-highlight px-2 group">
+        <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
           {message.replyTo && replyToMessageSenderProfile && (
             <div className="min-w-0">
               <p className="text-xs ml-13">
@@ -101,7 +122,7 @@ function MessageView({
                     </span>
                   </p>
 
-                  <div>
+                  <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
                     <MessageContent
                       content={message.body}
                       onLinkClicked={handleExternalLinkClicked}
@@ -122,7 +143,7 @@ function MessageView({
                   {formatDate(new Date(message.createdAt), "HH:mm")}
                 </span>
 
-                <div className="flex-1">
+                <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
                   <MessageContent
                     content={message.body}
                     onLinkClicked={handleExternalLinkClicked}
@@ -139,6 +160,28 @@ function MessageView({
             )}
           </div>
         </div>
+
+        {editingStatus !== "saving" && (
+          <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
+            {editingStatus === "error" && (
+              <>
+                <IconButton theme="default" className="size-5" onClick={handleRetryEditingOperation}>
+                  <FaRepeat className=" size-5 ml-auto"/>
+                </IconButton>
+
+                <IconButton theme="danger" className="size-5" onClick={handleRemoveEditingOperation}>
+                  <FaTrashCan className="size-5 ml-auto"/>
+                </IconButton>
+              </>
+            )}
+
+            {editingStatus === "none" && (
+              <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
+                <BsArrowReturnLeft className="size-5 ml-auto"/>
+              </IconButton>
+            )}
+          </section>
+        )}
       </ContextMenu.Trigger>
 
       <ContextMenu.Portal>
@@ -148,12 +191,7 @@ function MessageView({
         >
           <ContextMenu.Item
             className="dropdown-item-default"
-            onSelect={() => {
-              context.actions.onMessageReplyTrigger({
-                ...message,
-                senderUserId: senderProfile?.id!,
-              })
-            }}
+            onSelect={handleReplyTrigger}
           >
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>

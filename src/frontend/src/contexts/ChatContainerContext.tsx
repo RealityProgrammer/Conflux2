@@ -15,7 +15,6 @@ import {
 } from "@tanstack/react-query";
 import {useAuthorization} from "./AuthContext.tsx";
 import {messageService} from "../api/messageService.ts";
-import {HttpStatusCode} from "axios";
 import {MessageLoadDirection} from "../api/schema.ts";
 import {toast} from "react-toastify";
 
@@ -28,22 +27,13 @@ type SendingMessageOperation = {
   error: boolean;
 };
 
-// type EditMessageOperation = {
-//   messageId: string;
-//   newBody: string | null;
-// };
-//
-// type DeleteMessageOperation = {
-//   messageId: string;
-// }
-//
-// type MessageOperation = {
-//   operationId: string;
-//   operation: SendingMessageOperation | EditMessageOperation | DeleteMessageOperation | ErrorMessageOperation;
-// };
+type EditingMessageOperation = {
+  newBody: string | null;
+  error: boolean;
+}
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string };
-type EditMessagePayload = { operationId: string, messageId: string, newBody: string | null };
+type EditMessagePayload = { messageId: string, newBody: string | null };
 type DeleteMessagePayload = { operationId: string, messageId: string };
 
 interface ChatContainerContextType {
@@ -69,6 +59,10 @@ interface ChatContainerContextType {
   removeSendingOperation: (operationId: string) => void;
 
   deletingMessageIds: Set<string>;
+
+  editingOperations: Map<string, EditingMessageOperation>;
+  retryEditingOperation: (messageId: string) => void;
+  removeEditingOperation: (messageId: string) => void;
 }
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
@@ -347,7 +341,7 @@ export default function ChatContainerContextProvider({
     },
     onMutate: async (payload: SendMessagePayload) => {
       setSendingMessageOperations((prev) => {
-        // Check if this is a retry
+        // check if this is a retry
         const isRetry = prev.some(op => op.operationId === payload.operationId && op.error);
 
         if (isRetry) {
@@ -364,16 +358,13 @@ export default function ChatContainerContextProvider({
         }];
       });
     },
-    onSuccess: async (data: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
-      if (data.success) {
-        appendMessage(data.data!, authorization.userProfile ?? undefined);
+    onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
+      if (result.success) {
+        appendMessage(result.data!, authorization.userProfile ?? undefined);
         setSendingMessageOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
       } else {
         setSendingMessageOperations((prev) => prev.map(op =>
-          op.operationId === payload.operationId ? {
-            ...op,
-            error: true,
-          } : op
+          op.operationId === payload.operationId ? { ...op, error: true } : op
         ));
       }
     },
@@ -401,63 +392,71 @@ export default function ChatContainerContextProvider({
     setSendingMessageOperations((prev) => prev.filter(o => o.operationId !== operationId));
   };
 
+  // TODO: switch value to MessageInput once we have attachments editing
+  const [editingOperations, setEditingOperations] = useState<Map<string, EditingMessageOperation>>(new Map());
+
   const editMessageMutation = useMutation({
     mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
       return await messageService.editMessage(payload.messageId, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
-      // const processingMessage: MessageOperation | undefined = processingOperations.find(m => m.operationId == payload.operationId);
-      //
-      // if (processingMessage === undefined) {
-      //   const newProcessingMessage: MessageOperation = {
-      //     operationId: payload.operationId,
-      //     operation: {
-      //       type: "edit",
-      //       messageId: payload.messageId,
-      //       newBody: payload.newBody,
-      //     },
-      //   };
-      //
-      //   setProcessingOperations((prev) => [...prev, newProcessingMessage]);
-      // } else if (processingMessage.operation.type === "error") {
-      //   // retry
-      //   const retryOperation: RetryOperation = processingMessage.operation.retryOperation;
-      //
-      //   setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map((op =>
-      //       op.operationId === payload.operationId ? {
-      //         operationId: payload.operationId,
-      //         operation: retryOperation as EditMessageOperation,
-      //       } : op
-      //   )));
-      // }
+      setEditingOperations((prev) => {
+        return new Map(prev).set(payload.messageId, {newBody: payload.newBody, error: false});
+      });
     },
-    onSuccess: async (data: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
-      if (!data.success) {
-        // let reason: string;
-        //
-        // if (data.statusCode === HttpStatusCode.InternalServerError) {
-        //   reason = " due to internal server error.";
-        // } else {
-        //   reason = `. Reason: ${data.error?.message ?? "Unknown error"}`;
-        // }
-        //
-        // setProcessingOperations((prev: MessageOperation[]): MessageOperation[] => prev.map(op =>
-        //   op.operationId === payload.operationId ? {
-        //     operationId: payload.operationId,
-        //     operation: {
-        //       type: "error",
-        //       errorMessage: `Cannot edit message${reason}`,
-        //       retryOperation: op.operation as RetryOperation,
-        //     },
-        //   } : op
-        // ));
+    onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
+      if (!result.success) {
+        setEditingOperations((prev) => {
+          const op = prev.get(payload.messageId);
+          if (!op) return prev;
+
+          const next = new Map(prev);
+          next.delete(payload.messageId);
+          return next.set(payload.messageId, { ...op, error: true });
+        });
+
+        toast.error("Failed to edit message.");
         return;
       }
 
       editMessage(payload.messageId, payload.newBody);
-      // setProcessingOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
+      setEditingOperations((prev) => {
+        const next = new Map(prev);
+        next.delete(payload.messageId);
+        return next;
+      });
+    },
+    onError: (_error, payload) => {
+      setEditingOperations((prev) => {
+        const op = prev.get(payload.messageId);
+        if (!op) return prev;
+
+        const next = new Map(prev);
+        next.delete(payload.messageId);
+        return next.set(payload.messageId, { ...op, error: true });
+      });
+
+      toast.error("Failed to edit message.");
     },
   });
+
+  const retryEditingOperation = (messageId: string) => {
+    const op = editingOperations.get(messageId);
+    if (!op) return;
+
+    editMessageMutation.mutate({
+      messageId,
+      newBody: op.newBody,
+    });
+  };
+
+  const removeEditingOperation = (messageId: string) => {
+    setEditingOperations((prev) => {
+      const next = new Map(prev);
+      next.delete(messageId);
+      return next;
+    });
+  };
 
   const [deletingMessageIds, setDeletingMessageIds] = useState<Set<string>>(new Set());
 
@@ -468,21 +467,18 @@ export default function ChatContainerContextProvider({
     onMutate: async (payload: DeleteMessagePayload) => {
       setDeletingMessageIds((prev) => new Set(prev).add(payload.messageId));
     },
-    onSuccess: async (data: ServiceResponse, payload: DeleteMessagePayload) => {
-      if (!data.success) {
+    onSuccess: async (result: ServiceResponse, payload: DeleteMessagePayload) => {
+      if (!result.success) {
         // TODO: Jump to the message when click on the toast.
         toast.error("Failed to delete message.");
       } else {
         deleteMessage(payload.messageId);
       }
-
-      setDeletingMessageIds((prev) => {
-        const next = new Set(prev);
-        next.delete(payload.messageId);
-        return next;
-      });
     },
-    onError: (_error, payload) => {
+    onError: (_error, _payload) => {
+      toast.error("Failed to delete message.");
+    },
+    onSettled: (_data, _error, payload) => {
       setDeletingMessageIds((prev) => {
         const next = new Set(prev);
         next.delete(payload.messageId);
@@ -505,9 +501,7 @@ export default function ChatContainerContextProvider({
   const handleEditMessage = async (originalMessage: TimelineMessageDto, newBody: string | null) => {
     if (!channelId) return;
 
-    const operationId = `__queue_message-${crypto.randomUUID()}`;
     editMessageMutation.mutate({
-      operationId,
       messageId: originalMessage.id,
       newBody
     });
@@ -541,6 +535,9 @@ export default function ChatContainerContextProvider({
       removeSendingOperation,
       retrySendingOperation,
       deletingMessageIds,
+      editingOperations,
+      retryEditingOperation,
+      removeEditingOperation,
     }}>
       {children}
     </ChatContainerContext.Provider>

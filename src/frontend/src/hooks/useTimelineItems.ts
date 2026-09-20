@@ -1,8 +1,6 @@
-import type {TimelineMessageClusterDto, UserIdentityProfileDto} from "../api/types.ts";
 import {MessageItem} from "../components/chat/MessageItem.tsx";
 import type {TimelineItem} from "../components/chat/TimelineItem.ts";
 import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";
-import {useEffect} from "react";
 import {DateSeparator} from "../components/chat/DateSeparator.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {SendingMessage} from "../components/chat/SendingMessage.tsx";
@@ -16,17 +14,21 @@ function isSameDay(d1: Date, d2: Date): boolean {
 }
 
 export default function useTimelineItems(
-  messageGroups: TimelineMessageClusterDto[],
-  userProfiles: Record<string, UserIdentityProfileDto>,
   editingMessageId?: string,
 ): TimelineItem[] {
-  const { sendingMessageOperations, deletingMessageIds } = useChatContainerContext()!;
+  const {
+    messageClusters,
+    userProfiles,
+    sendingMessageOperations,
+    deletingMessageIds,
+    editingOperations,
+  } = useChatContainerContext()!;
 
   const items: TimelineItem[] = [];
   let lastMessageDate: Date | null = null;
 
   // foreach message cluster group from the backend
-  for (const group of messageGroups) {
+  for (const group of messageClusters) {
     const activeMessages = group.messages.filter(m => !deletingMessageIds.has(m.id));
     if (!activeMessages.length) continue;
 
@@ -34,6 +36,8 @@ export default function useTimelineItems(
 
     for (let i = 0; i < activeMessages.length; i++) {
       const message = activeMessages[i];
+      const editingOperation = editingOperations.get(message.id);
+
       const messageDate = new Date(message.createdAt);
 
       // insert DateSeparator if calendar day changed
@@ -56,11 +60,16 @@ export default function useTimelineItems(
       const isEditing = editingMessageId === message.id;
       const ItemClass = isEditing ? MessageEditorItem : MessageItem;
 
+      const displayingMessage = editingOperation ?
+        { ...message, body: editingOperation.newBody } :
+        message;
+
       items.push(new ItemClass({
         senderProfile: sender,
-        message,
+        message: displayingMessage,
         showHeader,
         replyToMessageSenderProfile,
+        editingStatus: editingOperation ? editingOperation.error ? "error" : "saving" : "none",
       }));
     }
   }

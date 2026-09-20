@@ -34,7 +34,6 @@ export function ChatView({}: ChatViewProps) {
       isFetchingNextPage, hasNextPage, fetchNextPage,
       isLoading,
     },
-    messageClusters,
     userProfiles,
     appendMessage,
     editMessage,
@@ -44,6 +43,8 @@ export function ChatView({}: ChatViewProps) {
     setReplyingMessage,
     removeSendingOperation,
     retrySendingOperation,
+    retryEditingOperation,
+    removeEditingOperation,
   } = useChatContainerContext()!;
 
   const queryClient = useQueryClient();
@@ -122,7 +123,7 @@ export function ChatView({}: ChatViewProps) {
   });
 
   // timeline entries
-  const timelineItems = useTimelineItems(messageClusters, userProfiles, editingMessage?.id ?? undefined);
+  const timelineItems = useTimelineItems(editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
@@ -139,6 +140,8 @@ export function ChatView({}: ChatViewProps) {
 
       removeSendingOperation,
       retrySendingOperation,
+      retryEditingOperation,
+      removeEditingOperation,
     },
     states: {
       editingMessageDraft: editingMessageDraft,
