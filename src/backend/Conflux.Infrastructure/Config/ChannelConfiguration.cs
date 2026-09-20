@@ -1,4 +1,3 @@
-using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,6 +6,9 @@ namespace Conflux.Infrastructure.Config;
 internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel> {
     public void Configure(EntityTypeBuilder<Channel> builder) {
         builder.HasKey(c => c.Id);
+
+        builder.Property(c => c.Name)
+            .HasMaxLength(32);
         
         builder.HasOne(c => c.Conversation)
             .WithOne(c => c.Channel)

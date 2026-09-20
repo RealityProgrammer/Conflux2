@@ -30,6 +30,10 @@ export type MessageEditedEvent = {
   message: TimelineMessageDto;
 }
 
+export type MessageDeletedEvent = {
+  messageId: string;
+}
+
 export type UpdateDmConversationListEvent = {
   channelId: string;
 }
@@ -98,3 +102,9 @@ export type ServerMemberUnbannedEvent = {
   bannedMemberUserId: string;
   bannedMemberId: string;
 };
+
+export type TypingUserEvent = {
+  userId: string;
+  displayName: string;
+  hasAvatar: boolean;
+}

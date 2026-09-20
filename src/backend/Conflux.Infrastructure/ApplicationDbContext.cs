@@ -36,5 +36,7 @@ public class ApplicationDbContext(
         new CommunityServerRoleConfiguration().Configure(builder.Entity<CommunityServerRole>());
         new CommunityServerMemberRoleConfiguration().Configure(builder.Entity<CommunityServerMemberRole>());
         new RolePermissionConfiguration().Configure(builder.Entity<RolePermission>());
+        new ServerModerationLogConfiguration().Configure(builder.Entity<ServerModerationLog>());
+        new ChannelCategoryConfiguration().Configure(builder.Entity<ChannelCategory>());
     }
 }

@@ -6,6 +6,10 @@ namespace Conflux.Infrastructure.Config;
 public sealed class CommunityServerRoleConfiguration : IEntityTypeConfiguration<CommunityServerRole> {
     public void Configure(EntityTypeBuilder<CommunityServerRole> builder) {
         builder.HasKey(e => e.Id);
+        
+        builder.Property(r => r.Name)
+            .IsRequired()
+            .HasMaxLength(32);
 
         builder.HasOne(r => r.CommunityServer)
             .WithMany(s => s.Roles)

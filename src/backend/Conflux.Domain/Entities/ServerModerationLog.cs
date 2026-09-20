@@ -16,7 +16,7 @@ public class ServerModerationLog : IHasCreatedAt {
     public CommunityServerMember? AffectedMember { get; set; }
     
     public ServerModerationAction Action { get; set; }
-    [MaxLength(256)] public string? Reason { get; set; }
+    public string? Reason { get; set; }
     public TimeSpan? BanDuration { get; set; }
     
     public DateTimeOffset CreatedAt { get; set; }

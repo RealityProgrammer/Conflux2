@@ -11,10 +11,16 @@ export interface TimelineContext {
     onEditSaved: (newBody: string | null) => void;
 
     onAttachmentClick: (attachments: Attachment[], index: number) => void;
+    onExternalLinkClicked: (url?: string) => void;
+
+    retrySendingOperation: (operationId: string) => void;
+    removeSendingOperation: (operationId: string) => void;
+
+    retryEditingOperation: (messageId: string) => void;
+    removeEditingOperation: (messageId: string) => void;
   };
 
   states: {
-    viewportWidth: number;
     editingMessageDraft: string | null;
   }
 }

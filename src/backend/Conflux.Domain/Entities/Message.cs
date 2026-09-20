@@ -1,10 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Conflux.Domain.Entities;
 
 public class Message : IHasCreatedAt {
     public Guid Id { get; set; }
-    [MaxLength(1024)] public string? Body { get; set; }
+    public string? Body { get; set; }
 
     public Attachment[] Attachments { get; set; } = [];
     

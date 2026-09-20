@@ -32,6 +32,8 @@ using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.Notifications;
 using Conflux.WebApi.Notifications.Users;
+using Conflux.WebApi.Services;
+using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
@@ -241,7 +243,8 @@ builder.Services.AddMediator(options => {
 
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<UserConnectionTracker>();
+    .AddSingleton<UserConnectionTracker>()
+    .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()
     .AddJsonProtocol(options => {

@@ -18,15 +18,6 @@ internal sealed class MessageRepository(
         dbContext.Messages.Add(message);
     }
 
-    public async Task<Message?> GetById(Guid messageId, bool tracking = false, CancellationToken cancellationToken = default) {
-        IQueryable<Message> query = dbContext.Messages;
-        query = tracking ? query.AsTracking() : query.AsNoTracking();
-            
-        return await query.Where(r => r.Id == messageId)
-            .Include(r => r.ReplyTo)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
     public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 

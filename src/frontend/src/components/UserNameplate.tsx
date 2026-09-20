@@ -16,7 +16,8 @@ function Root({userId, userName, displayName, hasAvatar, children, className, ..
       <UserAvatar
         userId={userId}
         hasAvatar={hasAvatar ?? false}
-        className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"/>
+        className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+      />
 
       <div className="flex-1 flex flex-col min-w-0 select-none">
         <p className="text-sm truncate">

@@ -1,16 +1,24 @@
 using Conflux.Application.Services;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
+using Conflux.WebApi.Dto;
+using Conflux.WebApi.Notifications.Messaging;
+using Conflux.WebApi.Services;
+using MemoryPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.SignalR;
 
 [Authorize]
-public sealed class GatewayHub(
+public sealed partial class GatewayHub(
     JoinTracker joinTracker,
     UserConnectionTracker connectionTracker,
-    IServerPermissionsProvider serverPermissionsProvider
+    IServerPermissionsProvider serverPermissionsProvider,
+    ITypingIndicatorService typingIndicatorService
 ) : Hub<IConfluxClient> {
     // invoked by the frontend only
     public async Task JoinChannel(Guid channelId) {
@@ -100,6 +108,21 @@ public sealed class GatewayHub(
         }
 
         await joinTracker.DecrementServerJoinCount(connectionId, serverId);
+    }
+    
+    // invoked by the frontend only
+    public async Task NotifyTyping(string channelId) {
+        if (!Guid.TryParse(channelId, out var channelIdGuid)) return;
+        
+        var userId = Context.UserIdentifier;
+        if (userId == null) return;
+
+        TypingUserDto? dto = await typingIndicatorService.GetTypingUserAsync(userId);
+        if (dto == null) return;
+        
+        await Clients
+            .OthersInGroup(NameProvider.GetChannelGroupName(channelIdGuid))
+            .UserTyping(new(dto.UserId, dto.DisplayName, dto.HasAvatar), Context.ConnectionAborted);
     }
 
     public override async Task OnConnectedAsync() {

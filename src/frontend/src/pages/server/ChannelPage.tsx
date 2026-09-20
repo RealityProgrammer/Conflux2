@@ -1,5 +1,5 @@
 import {useCommunityServerChannelContext} from "../../contexts/CommunityServerChannelContext.tsx";
-import ChatContainer from "../../components/ChatContainer.tsx";
+import ChatContainer from "../../components/chat/ChatContainer.tsx";
 
 export default function ChannelPage() {
   const { channelSummary } = useCommunityServerChannelContext();

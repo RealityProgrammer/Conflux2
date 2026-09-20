@@ -6,6 +6,9 @@ namespace Conflux.Infrastructure.Config;
 public sealed class ServerModerationLogConfiguration : IEntityTypeConfiguration<ServerModerationLog> {
     public void Configure(EntityTypeBuilder<ServerModerationLog> builder) {
         builder.HasKey(l => l.Id);
+
+        builder.Property(l => l.Reason)
+            .HasMaxLength(256);
         
         builder.HasOne(l => l.CommunityServer)
             .WithMany(s => s.ModerationLogs)

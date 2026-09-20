@@ -1,7 +1,7 @@
 import type {ServerDetailDto} from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
-import type {ServerMemberAuthorizeInfo} from "../hooks/useServerMemberAuthorizeInfo.tsx";
+import type {ServerMemberAuthorizeInfo} from "../hooks/useServerMemberAuthorizeInfo.ts";
 
 interface CommunityServerContextType {
   serverId: string;

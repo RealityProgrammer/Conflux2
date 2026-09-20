@@ -1,9 +1,9 @@
-import type {TimelineMessageClusterDto, UserIdentityProfileDto} from "../api/types.ts";
 import {MessageItem} from "../components/chat/MessageItem.tsx";
 import type {TimelineItem} from "../components/chat/TimelineItem.ts";
 import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";
-import {useEffect} from "react";
 import {DateSeparator} from "../components/chat/DateSeparator.tsx";
+import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
+import {SendingMessage} from "../components/chat/SendingMessage.tsx";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -13,28 +13,31 @@ function isSameDay(d1: Date, d2: Date): boolean {
   );
 }
 
-export default function useTimelineEntries(
-  messageGroups: TimelineMessageClusterDto[],
-  userProfiles: Record<string, UserIdentityProfileDto>,
+export default function useTimelineItems(
   editingMessageId?: string,
 ): TimelineItem[] {
-  useEffect(() => {
-    console.log("re-render useTimelineEntries");
-  }, []);
-
-  if (!messageGroups.length) return [];
+  const {
+    messageClusters,
+    userProfiles,
+    sendingMessageOperations,
+    deletingMessageIds,
+    editingOperations,
+  } = useChatContainerContext()!;
 
   const items: TimelineItem[] = [];
   let lastMessageDate: Date | null = null;
 
   // foreach message cluster group from the backend
-  for (const group of messageGroups) {
-    if (!group.messages.length) continue;
+  for (const group of messageClusters) {
+    const activeMessages = group.messages.filter(m => !deletingMessageIds.has(m.id));
+    if (!activeMessages.length) continue;
 
     const sender = userProfiles[group.senderUserId];
 
-    for (let i = 0; i < group.messages.length; i++) {
-      const message = group.messages[i];
+    for (let i = 0; i < activeMessages.length; i++) {
+      const message = activeMessages[i];
+      const editingOperation = editingOperations.get(message.id);
+
       const messageDate = new Date(message.createdAt);
 
       // insert DateSeparator if calendar day changed
@@ -57,13 +60,27 @@ export default function useTimelineEntries(
       const isEditing = editingMessageId === message.id;
       const ItemClass = isEditing ? MessageEditorItem : MessageItem;
 
+      const displayingMessage = editingOperation ?
+        { ...message, body: editingOperation.newBody } :
+        message;
+
       items.push(new ItemClass({
         senderProfile: sender,
-        message,
+        message: displayingMessage,
         showHeader,
         replyToMessageSenderProfile,
+        editingStatus: editingOperation ? editingOperation.error ? "error" : "saving" : "none",
       }));
     }
+  }
+
+  // sending messages appending
+  for (const operation of sendingMessageOperations) {
+    items.push(new SendingMessage({
+      operationId: operation.operationId,
+      input: operation.input,
+      error: operation.error,
+    }));
   }
 
   return items;

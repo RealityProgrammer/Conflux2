@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Messages;
 
@@ -22,15 +23,19 @@ public sealed class EditMessageHandler(
     TimeProvider timeProvider,
     IMediator mediator
 ) : ICommandHandler<EditMessageCommand, Result<TimelineMessageDto>> {
-    public async ValueTask<Result<TimelineMessageDto>> Handle(EditMessageCommand request, CancellationToken cancellationToken) {
-        var message = await messageRepository.GetById(request.MessageId, true, cancellationToken);
-        var newBody = request.Body;
+    public async ValueTask<Result<TimelineMessageDto>> Handle(EditMessageCommand command, CancellationToken cancellationToken) {
+        var message = await messageRepository
+            .AsQueryable()
+            .Where(m => m.Id == command.MessageId)
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        var newBody = command.Body;
         
         if (message == null) {
             return Errors.ResourceNotFound("Message");
         }
         
-        if (message.SenderUserId != request.SenderUserId) {
+        if (message.SenderUserId != command.SenderUserId) {
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
        
@@ -44,7 +49,7 @@ public sealed class EditMessageHandler(
         ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
         Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            request.SenderUserId, 
+            command.SenderUserId, 
             channelMetadata.ChannelId, 
             channelMetadata.ChannelType
         );

@@ -1,25 +1,27 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {
   TimelineMessageClusterItemDto,
-  TimelineMessageDto,
   UserIdentityProfileDto
 } from "../../api/types.ts";
-import {type Key, type ReactNode} from "react";
+import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsPencil, BsTrash} from "react-icons/bs";
+import {BsArrowReturnLeft, BsCopy, BsPencil, BsPencilFill, BsTrash} from "react-icons/bs";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import MessageAttachments from "./MessageAttachments.tsx";
-import {estimateMessageLayout} from "./utils.ts";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
+import MessageContent from "./MessageContent.tsx";
+import MessageAttachments from "./MessageAttachments.tsx";
+import IconButton from "../IconButton.tsx";
+import {FaRepeat, FaTrashCan} from "react-icons/fa6";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageClusterItemDto;
   showHeader: boolean;
+  editingStatus: "none" | "error" | "saving";
 }
 
 export class MessageItem extends TimelineItem<MessageItemProps> {
@@ -27,43 +29,11 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     super(data);
   }
 
-  getKey(): Key {
+  getKey(): string {
     return `message_${this.data.message.id}`;
   }
 
-  measureHeight(context: TimelineContext): number {
-    let height = 0;
-
-    if (this.data.showHeader) {
-      height += 20;
-    }
-
-    const messageDisplayWidth = context.states.viewportWidth - 16 - 52;
-    const message = this.data.message;
-
-    if (message.body) {
-      const layout = estimateMessageLayout(message.id, message.body, messageDisplayWidth, 24);
-      height += layout.height;
-    }
-
-    if (message.attachments && message.attachments.length > 0) {
-      height += 128;
-    }
-
-    if (message.replyTo && this.data.replyToMessageSenderProfile) {
-      const layout = estimateMessageLayout(
-        `reply_${message.replyTo.messageId}`,
-        buildReplyText(this.data.replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount),
-        messageDisplayWidth,
-        16
-      );
-      height += layout.height;
-    }
-
-    return height;
-  }
-
-  render(_measuredHeight: number, context: TimelineContext): ReactNode {
+  render(context: TimelineContext): ReactNode {
     return (
       <MessageView
         key={`message-${this.data.message.id}`}
@@ -71,6 +41,7 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
         replyToMessageSenderProfile={this.data.replyToMessageSenderProfile}
         message={this.data.message}
         showHeader={this.data.showHeader}
+        editingStatus={this.data.editingStatus}
         context={context}
       />
     );
@@ -82,6 +53,7 @@ interface MessageViewProps {
   replyToMessageSenderProfile?: UserIdentityProfileDto;
   message: TimelineMessageClusterItemDto;
   showHeader: boolean;
+  editingStatus: "none" | "error" | "saving"
   context: TimelineContext;
 }
 
@@ -89,17 +61,48 @@ function MessageView({
   senderProfile,
   message,
   showHeader,
+  replyToMessageSenderProfile,
+  editingStatus,
   context,
-  replyToMessageSenderProfile
 }: MessageViewProps) {
   const auth = useAuthorization();
+
+  const handleReplyTrigger = () => {
+    context.actions.onMessageReplyTrigger({
+      ...message,
+      senderUserId: senderProfile?.id!,
+    });
+  };
+
+  const handleEditTrigger = () => {
+    context.actions.onMessageEditTrigger({
+      ...message,
+      senderUserId: senderProfile?.id!,
+    });
+  };
+
+  const handleAttachmentClicked = (index: number) => {
+    context.actions.onAttachmentClick(message.attachments, index);
+  };
+
+  const handleExternalLinkClicked = (url?: string)=> {
+    context.actions.onExternalLinkClicked(url);
+  };
+
+  const handleRetryEditingOperation = () => {
+    context.actions.retryEditingOperation(message.id);
+  };
+
+  const handleRemoveEditingOperation = () => {
+    context.actions.removeEditingOperation(message.id);
+  };
 
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
-        className="w-full flex flex-col"
+        className="relative w-full flex flex-col hover-highlight group"
       >
-        <div className="hover-highlight px-2 group">
+        <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
           {message.replyTo && replyToMessageSenderProfile && (
             <div className="min-w-0">
               <p className="text-xs ml-13">
@@ -121,27 +124,79 @@ function MessageView({
                   <p className="text-sm font-semibold text-white">
                     {senderProfile?.userName ?? "Unknown Sender"}
                     {" "}
-                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
+                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">
+                      {formatDate(new Date(message.createdAt), "HH:mm")}
+                    </span>
                   </p>
 
-                  <MessageContentView
-                    message={{...message, senderUserId: senderProfile!.id}}
-                    onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
-                  />
+                  <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
+                    <MessageContent
+                      content={message.body}
+                      onLinkClicked={handleExternalLinkClicked}
+                    />
+
+                    {message.attachments && message.attachments.length > 0 && (
+                      <MessageAttachments
+                        attachments={message.attachments}
+                        onAttachmentClick={handleAttachmentClicked}
+                      />
+                    )}
+                  </div>
                 </div>
               </>
             ) : (
               <>
-                <span className="select-none basis-10 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">{formatDate(new Date(message.createdAt), "HH:mm")}</span>
+                <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
+                  {formatDate(new Date(message.createdAt), "HH:mm")}
+                </span>
 
-                <MessageContentView
-                  message={{...message, senderUserId: senderProfile!.id}}
-                  onAttachmentClick={(index: number) => context.actions.onAttachmentClick(message.attachments, index)}
-                />
+                <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
+                  <MessageContent
+                    content={message.body}
+                    onLinkClicked={handleExternalLinkClicked}
+                  />
+
+                  {message.attachments && message.attachments.length > 0 && (
+                    <MessageAttachments
+                      attachments={message.attachments}
+                      onAttachmentClick={handleAttachmentClicked}
+                    />
+                  )}
+                </div>
               </>
             )}
           </div>
         </div>
+
+        {editingStatus !== "saving" && (
+          <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
+            {editingStatus === "error" && (
+              <>
+                <IconButton theme="default" className="size-5" onClick={handleRetryEditingOperation}>
+                  <FaRepeat className=" size-5 ml-auto"/>
+                </IconButton>
+
+                <IconButton theme="danger" className="size-5" onClick={handleRemoveEditingOperation}>
+                  <FaTrashCan className="size-5 ml-auto"/>
+                </IconButton>
+              </>
+            )}
+
+            {editingStatus === "none" && (
+              <>
+                {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
+                  <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
+                    <BsPencilFill className="size-5 ml-auto"/>
+                  </IconButton>
+                )}
+
+                <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
+                  <BsArrowReturnLeft className="size-5 ml-auto"/>
+                </IconButton>
+              </>
+            )}
+          </section>
+        )}
       </ContextMenu.Trigger>
 
       <ContextMenu.Portal>
@@ -151,12 +206,7 @@ function MessageView({
         >
           <ContextMenu.Item
             className="dropdown-item-default"
-            onSelect={() => {
-              context.actions.onMessageReplyTrigger({
-                ...message,
-                senderUserId: senderProfile?.id!,
-              })
-            }}
+            onSelect={handleReplyTrigger}
           >
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
@@ -165,12 +215,7 @@ function MessageView({
             <>
               <ContextMenu.Item
                 className="dropdown-item-default"
-                onSelect={() => {
-                  context.actions.onMessageEditTrigger({
-                    ...message,
-                    senderUserId: senderProfile.id,
-                  });
-                }}
+                onSelect={handleEditTrigger}
               >
                 Edit message <BsPencil className="fill-white size-4 ml-auto"/>
               </ContextMenu.Item>
@@ -215,21 +260,4 @@ function buildReplyText(name: string, content: string | null, ellipsis: boolean,
   const attachmentText = attachmentCount > 0 ? `${attachmentCount} attachment${attachmentCount > 1 ? 's' : ''}` : '';
 
   return `@${name} sent${content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;
-}
-
-function MessageContentView({message, onAttachmentClick}: { message: TimelineMessageDto, onAttachmentClick: (index: number) => void }) {
-  return (
-    <div>
-      <p className="text-sm leading-6 whitespace-pre-wrap wrap-break-word">
-        {message.body}
-      </p>
-
-      {message.attachments && message.attachments.length > 0 && (
-        <MessageAttachments
-          attachments={message.attachments}
-          onAttachmentClick={onAttachmentClick}
-        />
-      )}
-    </div>
-  );
 }

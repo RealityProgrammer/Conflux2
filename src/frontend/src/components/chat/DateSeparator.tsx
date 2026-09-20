@@ -1,6 +1,6 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
-import {type Key, type ReactNode} from "react";
+import {type ReactNode} from "react";
 import {Separator} from "radix-ui";
 import {formatDate} from "date-fns";
 
@@ -13,20 +13,16 @@ export class DateSeparator extends TimelineItem<DateSeparatorProps> {
     super(data);
   }
 
-  measureHeight(context: TimelineContext): number {
-    return 20;
+  getKey(): string {
+    return `date-separator-${this.data.date.getDate()}`;
   }
 
-  getKey(): Key {
-    return `date_separator_${this.data.date}`;
-  }
-
-  render(measuredHeight: number, context: TimelineContext): ReactNode {
+  render(_context: TimelineContext): ReactNode {
     return (
       <div className="w-full flex flex-row justify-center items-center gap-2 px-3">
         <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>
 
-        <span className="flex-none text-xs font-semibold text-gray-400">{formatDate(this.data.date, "PPP")}</span>
+        <span className="flex-none text-xs font-semibold text-gray-400 select-none">{formatDate(this.data.date, "PPP")}</span>
 
         <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>
       </div>

@@ -8,6 +8,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Messages;
 
@@ -100,7 +101,9 @@ public sealed class SendMessageHandler(
             
             // load the reply message into memory so that dto the message got the reply to convert to dto
             if (request.ReplyToId.HasValue) {
-                await messageRepository.GetById(request.ReplyToId.Value, true, cancellationToken);
+                await messageRepository
+                    .AsQueryable()
+                    .FirstOrDefaultAsync(m => m.Id == request.ReplyToId.Value, cancellationToken);
             }
 
             await unitOfWork.CommitAsync(cancellationToken);

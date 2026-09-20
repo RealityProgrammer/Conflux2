@@ -15,7 +15,7 @@ import {BsHammer} from "react-icons/bs";
 import {toast} from "react-toastify";
 import useServerMemberAuthorizeInfo, {
   type ServerMemberAuthorizeInfo
-} from "../../hooks/useServerMemberAuthorizeInfo.tsx";
+} from "../../hooks/useServerMemberAuthorizeInfo.ts";
 import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
@@ -101,8 +101,6 @@ export default function ServerLayout() {
   });
 
   useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
-    console.log("unbanned");
-
     if (serverId !== unbannedServerId) {
       return;
     }
