@@ -9,19 +9,41 @@ public sealed class SignalRConnectionTracker(
     
     public async Task<bool> TrackConnection(Guid userId, string connectionId) {
         var key = GetKey(userId);
-        await _database.SetAddAsync(key, connectionId);
-        await _database.KeyExpireAsync(key, TimeSpan.FromHours(6)); 
         
-        var count = await _database.SetLengthAsync(key);
-        return count == 1;
+        // React StrictMode double invocation can hit this code funny
+        const string script = 
+            """
+            local countBefore = redis.call('SCARD', KEYS[1])
+            redis.call('SADD', KEYS[1], ARGV[1])
+            redis.call('EXPIRE', KEYS[1], ARGV[2])
+            return countBefore
+            """;
+        
+        var result = await _database.ScriptEvaluateAsync(
+            script,
+            keys: [key],
+            values: [connectionId, (int)TimeSpan.FromHours(6).TotalSeconds]
+        );
+        
+        return (int)result == 0;
     }
 
     public async Task<bool> UntrackConnection(Guid userId, string connectionId) {
         var key = GetKey(userId);
-        await _database.SetRemoveAsync(key, connectionId);
+
+        const string script =
+            """
+            redis.call('SREM', KEYS[1], ARGV[1])
+            return redis.call('SCARD', KEYS[1])
+            """;
         
-        var count = await _database.SetLengthAsync(key);
-        if (count == 0) {
+        var setCount = await _database.ScriptEvaluateAsync(
+            script,
+            keys: [key],
+            values: [connectionId]
+        );
+        
+        if ((int)setCount == 0) {
             await _database.KeyDeleteAsync(key);
             return true;
         }
