@@ -158,6 +158,8 @@ type ApplicationUser {
   biography: String
   pronouns: String
   createdAt: DateTime!
+  manualPresenceStatus: PresenceStatus!
+  lastSeenAt: DateTime!
   numMutualFriends: Int! @cost(weight: "10")
 }
 
@@ -390,6 +392,8 @@ input ApplicationUserFilterInput {
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
   createdAt: DateTimeOperationFilterInput
+  manualPresenceStatus: PresenceStatusOperationFilterInput
+  lastSeenAt: DateTimeOperationFilterInput
   sentFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   receivedFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
@@ -418,6 +422,8 @@ input ApplicationUserSortInput {
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
+  manualPresenceStatus: SortEnumType @cost(weight: "10")
+  lastSeenAt: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")
   userName: SortEnumType @cost(weight: "10")
   normalizedUserName: SortEnumType @cost(weight: "10")
@@ -781,6 +787,13 @@ input PermissionStateOperationFilterInput {
   nin: [PermissionState!] @cost(weight: "10")
 }
 
+input PresenceStatusOperationFilterInput {
+  eq: PresenceStatus @cost(weight: "10")
+  neq: PresenceStatus @cost(weight: "10")
+  in: [PresenceStatus!] @cost(weight: "10")
+  nin: [PresenceStatus!] @cost(weight: "10")
+}
+
 input RolePermissionFilterInput {
   and: [RolePermissionFilterInput!]
   or: [RolePermissionFilterInput!]
@@ -930,6 +943,14 @@ enum PermissionState {
   Inherit
   Enable
   Disable
+}
+
+enum PresenceStatus {
+  Online
+  Offline
+  Idle
+  DoNotDisturb
+  Invisible
 }
 
 enum ServerModerationAction {

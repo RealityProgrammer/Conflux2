@@ -14,6 +14,10 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.Biography);
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);
+        descriptor.Field(u => u.LastSeenAt);
+        
+        // TODO: only allow user to read their own manual presence status
+        descriptor.Field(u => u.ManualPresenceStatus);
 
         descriptor.Field("numMutualFriends")
             .Type<NonNullType<IntType>>()
