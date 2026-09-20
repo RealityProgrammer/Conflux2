@@ -1,9 +1,14 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Features.Servers;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.Infrastructure;
 using Conflux.WebApi.GraphQL.Dto;
 using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Helpers;
+using Mediator;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Frozen;
 using System.Runtime.Intrinsics.Arm;
 
 namespace Conflux.WebApi.GraphQL.Types;
@@ -53,5 +58,82 @@ public sealed class CommunityServerMemberType : ObjectType<CommunityServerMember
 
                 return await dataLoader.LoadAsync(member.Id, cancellationToken);
             });
+    }
+    
+    [DataLoader]
+    public static async Task<Dictionary<GetServerMemberAuthorizeKey, Domain.Result<MemberAuthorizeInfoDto>>> GetMemberAuthorizationInfo(
+        IReadOnlyList<GetServerMemberAuthorizeKey> keys,
+        [Service] IMediator mediator,
+        CancellationToken cancellationToken
+    ) {
+        var authResults = await mediator.Send(
+            new GetMembersServerAuthorizationInfoQuery(keys), 
+            cancellationToken
+        );
+
+        return keys.ToDictionary(
+            key => key,
+            key => {
+                // the results are keyed by member id, if changed, change in the GetMembersAuthorizationInfoHandler too
+                var result = authResults[key.MemberId];
+
+                if (!result.IsSuccess)
+                    return Domain.Result<MemberAuthorizeInfoDto>.Failure(result.Error);
+
+                var authInfo = result.Value!;
+                
+                return Domain.Result<MemberAuthorizeInfoDto>.Success(new(authInfo));
+            }
+        );
+    }
+    
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<Guid, int>> GetCommunityServersMemberCount(
+        IReadOnlyList<Guid> serverIds,
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken
+    ) {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        if (serverIds.Count == 0) {
+            return FrozenDictionary<Guid, int>.Empty;
+        }
+        
+        var counts = await dbContext.CommunityServerMembers
+            .AsNoTracking()
+            .Where(m => serverIds.Contains(m.CommunityServerId) && m.Status == MembershipStatus.Active)
+            .GroupBy(m => m.CommunityServerId)
+            .Select(g => new {
+                ServerId = g.Key,
+                Count = g.Count(),
+            })
+            .ToDictionaryAsync(x => x.ServerId, x => x.Count, cancellationToken);
+    
+        return serverIds.ToDictionary(id => id, id => counts.GetValueOrDefault(id, 0));
+    }
+    
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<Guid, int>> GetServerMembersWarnCounts(
+        IReadOnlyList<Guid> memberIds,
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken
+    ) {
+        if (memberIds.Count == 0) {
+            return FrozenDictionary<Guid, int>.Empty;
+        }
+        
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        Dictionary<Guid, int> dict = await dbContext.ServerModerationLogs
+            .Where(l => l.Action == ServerModerationAction.Warn)
+            .Where(l => l.AffectedMemberId != null && memberIds.Contains(l.AffectedMemberId.Value))
+            .GroupBy(l => l.AffectedMemberId!.Value)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
+
+        return memberIds.ToDictionary(
+            id => id,
+            id => dict.GetValueOrDefault(id, 0)
+        );
     }
 }
