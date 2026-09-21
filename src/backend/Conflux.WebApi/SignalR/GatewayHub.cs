@@ -132,6 +132,15 @@ public sealed class GatewayHub(
             await connectionTracker.Heartbeat(userId, Context.ConnectionId);
         }
     }
+    
+    // invoked by the frontend only
+    public async Task SetAutoIdle(bool idle) {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+    
+        if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
+            logger.LogDebug("User {id} invokes SetAutoIdle({v})", userId, idle);
+        }
+    }
 
     public override async Task OnConnectedAsync() {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
