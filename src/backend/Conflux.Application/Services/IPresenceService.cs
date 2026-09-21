@@ -6,5 +6,8 @@ public interface IPresenceService {
     Task<PresenceStatus> UserConnected(Guid userId);
     Task<PresenceStatus> UserDisconnected(Guid userId);
 
-    Task SetUserManualPresenceStatus(Guid userId, PresenceStatus status);
+    Task SetManualPresenceStatus(Guid userId, PresenceStatus status);
+
+    Task<PresenceStatus> GetEffectivePresenceStatus(Guid userId);
+    Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetEffectivePresenceStatuses(IReadOnlyList<Guid> userIds);
 }

@@ -9,5 +9,7 @@ public sealed class ChannelType : ObjectType<Channel> {
         descriptor.Field(c => c.Id);
         descriptor.Field(c => c.Name);
         descriptor.Field(c => c.CreatedAt);
+        descriptor.Field(c => c.Conversation);
+        descriptor.Field(c => c.ConversationId);
     }
 }

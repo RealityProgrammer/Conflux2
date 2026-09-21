@@ -1,6 +1,8 @@
+using Conflux.Application.Services;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Infrastructure;
+using HotChocolate.Resolvers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using StackExchange.Redis;
@@ -25,19 +27,19 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         descriptor.Field("manualPresenceStatus")
             .Type<EnumType<PresenceStatus>>()
             .ParentRequires<ApplicationUser>(u => new { u.Id })
-            .Resolve(async context => {
+            .Resolve(ResolveManualPresenceStatus);
+        
+        descriptor.Field("effectivePresenceStatus")
+            .Type<NonNullType<EnumType<PresenceStatus>>>()
+            .ParentRequires<ApplicationUser>(u => new {
+                u.Id,
+                u.ManualPresenceStatus,
+            })
+            .Resolve(async (context, cancellationContext) => {
                 var targetUser = context.Parent<ApplicationUser>();
-                var httpContextAccessor = context.Service<IHttpContextAccessor>();
+                var dataLoader = context.DataLoader<EffectivePresenceByIdDataLoader>();
                 
-                var userId = httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId) || parsedUserId != targetUser.Id) {
-                    return null;
-                }
-                
-                var dataLoader = context.DataLoader<IManualPresenceStatusDataLoader>();
-
-                return await dataLoader.LoadAsync(targetUser.Id, context.RequestAborted);
+                return await dataLoader.LoadAsync(targetUser.Id, cancellationContext);
             });
 
         descriptor.Field("numMutualFriends")
@@ -48,6 +50,23 @@ public sealed class UserType : ObjectType<ApplicationUser> {
 
                 return await dataLoader.LoadAsync(targetUser.Id, context.RequestAborted);
             });
+
+        return;
+
+        async Task<PresenceStatus?> ResolveManualPresenceStatus(IResolverContext context, CancellationToken cancellationToken) {
+            var targetUser = context.Parent<ApplicationUser>();
+            var httpContextAccessor = context.Service<IHttpContextAccessor>();
+            
+            var userId = httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId) || parsedUserId != targetUser.Id) {
+                return null;
+            }
+            
+            var dataLoader = context.DataLoader<IManualPresenceStatusDataLoader>();
+
+            return await dataLoader.LoadAsync(targetUser.Id, cancellationToken);
+        }
     }
 
     [DataLoader]
@@ -55,7 +74,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         IReadOnlyList<Guid> userIds,
         [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
         [Service] IHttpContextAccessor httpContextAccessor,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     ) {
         var idClaim = httpContextAccessor.HttpContext!.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -123,9 +142,10 @@ public sealed class UserType : ObjectType<ApplicationUser> {
     [DataLoader]
     public static async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetManualPresenceStatus(
         IReadOnlyList<Guid> keys,
-        CancellationToken cancellationToken,
         [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
-        [Service] IConnectionMultiplexer connectionMultiplexer
+        [Service] IConnectionMultiplexer connectionMultiplexer,
+        [Service] IPresenceCacheService presenceCacheService,
+        CancellationToken cancellationToken = default
     ) {
         var redisDatabase = connectionMultiplexer.GetDatabase();
 
@@ -161,24 +181,25 @@ public sealed class UserType : ObjectType<ApplicationUser> {
             })
             .ToDictionaryAsync(u => u.Id, u => u.ManualPresenceStatus, cancellationToken);
 
-        // backfill redis cache with batch
-        IBatch batch = redisDatabase.CreateBatch();
-        List<Task<bool>> tasks = new(statuses.Count);
-        
-        foreach ((Guid userId, PresenceStatus status) in statuses) {
-            results[userId] = status;
-            
-            var task = batch.StringSetAsync($"presence:manual:{userId}", (int)status, TimeSpan.FromDays(7));
-            tasks.Add(task);
-        }
+        // backfill redis cache
+        await presenceCacheService.SetManualStatuses(statuses);
 
-        batch.Execute();
-        await Task.WhenAll(tasks);
+        foreach ((Guid userId, PresenceStatus presenceStatus) in statuses) {
+            results[userId] = presenceStatus;
+        }
         
         foreach (Guid key in missingKeys) {
             results.TryAdd(key, PresenceStatus.Offline);
         }
 
         return results;
+    }
+
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetEffectivePresenceByIdAsync(
+        IReadOnlyList<Guid> keys,
+        [Service] IPresenceService presenceService
+    ) {
+        return await presenceService.GetEffectivePresenceStatuses(keys);
     }
 }

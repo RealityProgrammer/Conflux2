@@ -6,28 +6,127 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class PresenceService(
     IUserRepository userRepository,
-    IPresenceCacheService cacheService,
-    ILogger<PresenceService> logger
+    IPresenceCacheService cacheService
 ) : IPresenceService {
     public async Task<PresenceStatus> UserConnected(Guid userId) {
         // should only be called once when user connected (connection count go from 0 to 1)
         await cacheService.SetSessionStatus(userId, null);
+        
+        var effective = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, effective);
+        
         return await GetEffectivePresenceAsync(userId);
     }
 
     public async Task<PresenceStatus> UserDisconnected(Guid userId) {
         // should only be called once when user finally disconnected everything (connection count go from N to 0)
-        await cacheService.SetSessionStatus(userId, null); 
+        await cacheService.SetSessionStatus(userId, null);
+        await cacheService.SetEffectiveStatus(userId, PresenceStatus.Offline);
+        
         return PresenceStatus.Offline;  // always return offline, obviously
     }
 
-    public async Task SetUserManualPresenceStatus(Guid userId, PresenceStatus status) {
+    public async Task SetManualPresenceStatus(Guid userId, PresenceStatus status) {
         await cacheService.SetManualStatus(userId, status);
         await userRepository.AsQueryable()
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(builder => {
                 builder.SetProperty(u => u.ManualPresenceStatus, status);
             });
+        
+        var effective = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, effective);
+    }
+    
+    public async Task<PresenceStatus> GetEffectivePresenceStatus(Guid userId) {
+        var cached = await cacheService.GetEffectiveStatus(userId);
+        if (cached != null) return cached.Value;
+
+        var computed = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, computed);
+        return computed;
+    }
+    
+    public async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetEffectivePresenceStatuses(IReadOnlyList<Guid> userIds) {
+        var cached = await cacheService.GetEffectiveStatuses(userIds);
+        
+        var results = new Dictionary<Guid, PresenceStatus>();
+        var missingIds = new List<Guid>();
+
+        // extract cached result first
+        foreach (var userId in userIds) {
+            if (cached.TryGetValue(userId, out var status) && status != null) {
+                results[userId] = status.Value;
+            } else {
+                missingIds.Add(userId);
+            }
+        }
+
+        // you know the drill and so do i
+        if (missingIds.Count == 0) {
+            return results;
+        }
+        
+        var rawData = await cacheService.GetRawPresenceData(userIds);
+        
+        var computedResults = new Dictionary<Guid, PresenceStatus>();
+        var missingManualUserIds = new List<Guid>();
+
+        foreach (var userId in missingIds) {
+            if (rawData[userId].IsConnected && rawData[userId].ManualStatus == null) {
+                missingManualUserIds.Add(userId);
+            }
+        }
+
+        // 1 DB Query for all users who missed both caches
+        Dictionary<Guid, PresenceStatus> dbStatuses = new();
+        if (missingManualUserIds.Count > 0) {
+            dbStatuses = await userRepository.AsQueryable()
+                .Where(u => missingManualUserIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.ManualPresenceStatus })
+                .ToDictionaryAsync(u => u.Id, u => u.ManualPresenceStatus);
+                
+            await cacheService.SetManualStatuses(dbStatuses);   // free shit lmao
+        }
+
+        foreach (var userId in missingIds) {
+            var data = rawData[userId];
+            
+            if (!data.IsConnected) {
+                computedResults[userId] = PresenceStatus.Offline;
+                continue;
+            }
+
+            var manual = data.ManualStatus ?? dbStatuses.GetValueOrDefault(userId, PresenceStatus.Offline);
+
+            switch (manual) {
+                case PresenceStatus.Offline or PresenceStatus.Invisible:
+                    computedResults[userId] = PresenceStatus.Offline;
+                    break;
+
+                case PresenceStatus.DoNotDisturb:
+                    computedResults[userId] = PresenceStatus.DoNotDisturb;
+                    break;
+
+                default: {
+                    if (data.SessionStatus == PresenceStatus.Idle) {
+                        computedResults[userId] = PresenceStatus.Idle;
+                    } else {
+                        computedResults[userId] = PresenceStatus.Online;
+                    }
+                    break;
+                }
+            }
+        }
+
+        await cacheService.SetEffectiveStatuses(computedResults);
+        
+        // merge results
+        foreach ((Guid userId, PresenceStatus status) in computedResults) {
+            results[userId] = status;
+        }
+
+        return results;
     }
 
     private async Task<PresenceStatus> GetEffectivePresenceAsync(Guid userId) {
