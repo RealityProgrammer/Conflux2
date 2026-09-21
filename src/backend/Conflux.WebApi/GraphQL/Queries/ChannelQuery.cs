@@ -14,7 +14,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 public static partial class ChannelQuery {
-    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering]
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
     public static async Task<PageConnection<Channel>> GetDirectMessageChannels(
         ClaimsPrincipal claimsPrincipal,
         QueryContext<Channel> queryContext,

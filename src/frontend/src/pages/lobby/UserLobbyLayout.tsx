@@ -1,14 +1,15 @@
 import {NavLink, Outlet, useNavigate} from "react-router";
 import {BsMegaphone, BsPeople} from "react-icons/bs";
 import {Separator} from "radix-ui";
-import {useFetchDmChannelSummary} from "../../hooks/fetchDmChannelSummary.ts";
-import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import type {DmConversationListItemDto, PaginatedResult, ServiceResponse} from "../../api/types.ts";
-import {sessionUserService} from "../../api/sessionUserService.ts";
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {UpdateDmConversationListEvent} from "../../api/events.ts";
+import type {UpdateDmConversationListEvent, UserPresenceChangedEvent} from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
+import {
+  type GetDirectMessageChannelsQuery,
+  useInfiniteGetDirectMessageChannelsQuery
+} from "../../graphql/infiniteQueries.ts";
 
 export default function UserLobbyLayout() {
   return (
@@ -58,9 +59,7 @@ function Sidebar() {
 function DirectMessagesList() {
   const navigate = useNavigate();
 
-  const queryKey = ["dmConversations"];
-
-  const getDmChannelSummary = useFetchDmChannelSummary();
+  // const getDmChannelSummary = useFetchDmChannelSummary();
   const queryClient = useQueryClient();
 
   const {
@@ -69,66 +68,76 @@ function DirectMessagesList() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-  } = useInfiniteQuery({
-    queryKey: queryKey,
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<DmConversationListItemDto> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResult<DmConversationListItemDto>> =
-        await sessionUserService.getDmConversations(pageParam, 30);
+  } = useInfiniteGetDirectMessageChannelsQuery(
+    {},
+    {
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage) => {
+        const pageInfo = lastPage?.directMessageChannels?.pageInfo;
 
-      return response.data;
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage: PaginatedResult<DmConversationListItemDto> | null | undefined, allPages) => {
-      if (!lastPage) return undefined;
-
-      const loadedCount = allPages.reduce(
-        (acc, page) => acc + (page?.elements.length ?? 0),
-        0
-      );
-
-      return loadedCount < lastPage.totalCount ? loadedCount : undefined;
-    },
-  });
-
-  const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
-
-  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
-    const dmChannelSummary = await getDmChannelSummary(event.channelId);
-
-    queryClient.setQueryData<InfiniteData<PaginatedResult<DmConversationListItemDto> | undefined | null>>(
-      queryKey,
-      (oldData: NoInfer<InfiniteData<PaginatedResult<DmConversationListItemDto> | null | undefined>> | undefined): NoInfer<InfiniteData<PaginatedResult<DmConversationListItemDto> | null | undefined>> | undefined => {
-        if (!oldData || oldData.pages.length === 0) {
-          return oldData;
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
         }
 
-        const updatedPages = oldData.pages.map((page: PaginatedResult<DmConversationListItemDto> | null | undefined) => ({
-          ...page!,
-          elements: page!.elements.filter(item => item.channelId !== event.channelId)
-        }));
+        return undefined;
+      },
+      staleTime: 30 * 60 * 1000,
+    }
+  );
 
-        const updatedChannel = {
-          channelId: event.channelId,
-          userProfile: dmChannelSummary.data!.otherUser,
-        };
+  const allElements = data?.pages.flatMap((page) => page?.directMessageChannels.nodes ?? []) ?? [];
 
-        updatedPages[0] = {
-          ...updatedPages[0],
-          elements: [updatedChannel, ...updatedPages[0].elements],
-        };
+  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
+    if (!allElements || allElements.length == 0 || allElements[0].id === event.channelId) return;
+
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetDirectMessageChannelsQuery.getKey({}),
+    })
+  });
+
+  useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {
+    console.log("PresenceUpdated user", event.userId, "to status", event.status);
+
+    if (allElements.findIndex(e => e.friendRequest!.otherUser!.id) === -1) return;
+
+    queryClient.setQueryData<InfiniteData<GetDirectMessageChannelsQuery, unknown>>(
+      useInfiniteGetDirectMessageChannelsQuery.getKey({}),
+      (oldData) => {
+        if (!oldData || !oldData.pages || oldData.pages.length == 0) return oldData;
 
         return {
           ...oldData,
-          pages: updatedPages,
-        };
+          pages: oldData.pages.map(page => ({
+            ...page,
+            directMessageChannels: {
+              ...page.directMessageChannels,
+              nodes: !page.directMessageChannels.nodes ?
+                null :
+                page.directMessageChannels.nodes.map(node =>
+                  node.friendRequest?.otherUser?.id !== event.userId ?
+                    node :
+                    {
+                      ...node,
+                      friendRequest: {
+                        ...node.friendRequest,
+                        otherUser: {
+                          ...node.friendRequest.otherUser,
+                          effectivePresenceStatus: event.status,
+                        }
+                      },
+                    },
+                ),
+            }
+          })),
+        }
       }
-    );
+    )
   });
 
   return (
     <VirtualizedScrollList
       className="flex-1"
-      keyExtractor={(index) => allElements[index].channelId}
+      keyExtractor={(index) => allElements[index].id}
       itemCount={allElements.length}
       isLoading={isLoading}
       estimateSize={() => 44}
@@ -142,12 +151,17 @@ function DirectMessagesList() {
 
         return (
           <UserNameplate.Root
-            userId={item.userProfile.id}
-            displayName={item.userProfile.displayName ?? "???"}
-            hasAvatar={item.userProfile.hasAvatar}
+            userId={item.friendRequest?.otherUser?.id ?? ""}
+            displayName={item.friendRequest?.otherUser?.displayName ?? "???"}
+            hasAvatar={item.friendRequest?.otherUser?.hasAvatar}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
+            presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
+            presenceStatusCutoff="ring-2 ring-gray-725"
             onClick={() => {
-              navigate("/lobby/me/dm/" + item.userProfile.id);
+              const otherUserId = item.friendRequest?.otherUser?.id;
+              if (!otherUserId) return;
+
+              navigate(`/lobby/me/dm/${encodeURIComponent(otherUserId)}`);
             }}
           />
         );

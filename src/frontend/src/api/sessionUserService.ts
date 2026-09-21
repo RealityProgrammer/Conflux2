@@ -1,6 +1,5 @@
 import type {
   BackendResponse,
-  DmConversationListItemDto,
   PaginatedResult, PendingFriendRequestDto,
   ServiceResponse,
   UserIdentityProfileDto
@@ -79,28 +78,6 @@ export const sessionUserService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
-  getDmConversations: async (offset: number, count: number): Promise<ServiceResponse<PaginatedResult<DmConversationListItemDto>>> => {
-    try {
-      const searchParams = new URLSearchParams();
-      searchParams.set("offset", String(offset));
-      searchParams.set("count", String(count));
-
-      const response: AxiosResponse<BackendResponse<PaginatedResult<DmConversationListItemDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResult<DmConversationListItemDto>>>(
-          `/users/me/dm?${searchParams.toString()}`
-        );
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<PaginatedResult<DmConversationListItemDto>>>;
       return handleAxiosError(axiosError);
     }
   },

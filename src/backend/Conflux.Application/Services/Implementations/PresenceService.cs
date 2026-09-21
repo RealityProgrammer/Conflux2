@@ -1,3 +1,4 @@
+using Conflux.Application.Features.Users;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -6,27 +7,37 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class PresenceService(
     IUserRepository userRepository,
-    IPresenceCacheService cacheService
+    IPresenceCacheService cacheService,
+    IMediator mediator
 ) : IPresenceService {
     public async Task<PresenceStatus> UserConnected(Guid userId) {
         // should only be called once when user connected (connection count go from 0 to 1)
+        var oldStatus = await GetCurrentEffectiveStatusOrDefault(userId);
+        
         await cacheService.SetSessionStatus(userId, null);
+        var newStatus = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, newStatus);
         
-        var effective = await GetEffectivePresenceAsync(userId);
-        await cacheService.SetEffectiveStatus(userId, effective);
+        await NotifyIfChanged(userId, oldStatus, newStatus);
         
-        return await GetEffectivePresenceAsync(userId);
+        return newStatus;
     }
 
     public async Task<PresenceStatus> UserDisconnected(Guid userId) {
         // should only be called once when user finally disconnected everything (connection count go from N to 0)
-        await cacheService.SetSessionStatus(userId, null);
-        await cacheService.SetEffectiveStatus(userId, PresenceStatus.Offline);
+        var oldStatus = await GetCurrentEffectiveStatusOrDefault(userId);
         
-        return PresenceStatus.Offline;  // always return offline, obviously
+        await cacheService.SetSessionStatus(userId, null);
+        await cacheService.SetEffectiveStatus(userId, PresenceStatus.Offline);  // always return offline, obviously
+        
+        await NotifyIfChanged(userId, oldStatus, PresenceStatus.Offline);
+        
+        return PresenceStatus.Offline;
     }
 
     public async Task SetManualPresenceStatus(Guid userId, PresenceStatus status) {
+        var oldStatus = await GetCurrentEffectiveStatusOrDefault(userId);
+        
         await cacheService.SetManualStatus(userId, status);
         await userRepository.AsQueryable()
             .Where(u => u.Id == userId)
@@ -34,8 +45,23 @@ internal sealed class PresenceService(
                 builder.SetProperty(u => u.ManualPresenceStatus, status);
             });
         
-        var effective = await GetEffectivePresenceAsync(userId);
-        await cacheService.SetEffectiveStatus(userId, effective);
+        var newStatus = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, newStatus);
+        
+        await NotifyIfChanged(userId, oldStatus, newStatus);
+    }
+    
+    private async Task<PresenceStatus> GetCurrentEffectiveStatusOrDefault(Guid userId) {
+        var cached = await cacheService.GetEffectiveStatus(userId);
+        if (cached != null) return cached.Value;
+        
+        return await GetEffectivePresenceAsync(userId);
+    }
+
+    private async Task NotifyIfChanged(Guid userId, PresenceStatus oldStatus, PresenceStatus newStatus) {
+        if (oldStatus != newStatus) {
+            await mediator.Publish(new UserPresenceChangedNotification(userId, oldStatus, newStatus));
+        }
     }
     
     public async Task<PresenceStatus> GetEffectivePresenceStatus(Guid userId) {

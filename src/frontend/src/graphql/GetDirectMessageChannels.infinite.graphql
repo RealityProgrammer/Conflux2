@@ -1,0 +1,24 @@
+query GetDirectMessageChannels($after: String) {
+    directMessageChannels(
+        after: $after
+        order: { conversation: { latestMessageAt: DESC } }
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            endCursor
+        }
+
+        nodes {
+            id
+            friendRequest {
+                otherUser {
+                    id
+                    displayName
+                    hasAvatar
+                    effectivePresenceStatus
+                }
+            }
+        }
+    }
+}

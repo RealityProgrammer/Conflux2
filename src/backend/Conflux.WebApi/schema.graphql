@@ -22,6 +22,7 @@ type Query
     "Returns the elements in the list that come before the specified cursor."
     before: String
     where: ChannelFilterInput @cost(weight: "10")
+    order: [ChannelSortInput!] @cost(weight: "10")
   ): ChannelConnection!
     @listSize(
       assumedSize: 50
@@ -222,6 +223,8 @@ type Channel {
   createdAt: DateTime!
   conversation: Conversation!
   conversationId: UUID!
+  friendRequest: FriendRequest
+  friendRequestId: UUID
 }
 
 type ChannelCategory {
@@ -583,6 +586,14 @@ input ChannelCategoryFilterInput {
   channels: ListFilterInputTypeOfChannelFilterInput
 }
 
+input ChannelCategorySortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+}
+
 input ChannelFilterInput {
   and: [ChannelFilterInput!]
   or: [ChannelFilterInput!]
@@ -598,6 +609,21 @@ input ChannelFilterInput {
   channelCategoryId: UuidOperationFilterInput
   channelCategory: ChannelCategoryFilterInput
   createdAt: DateTimeOperationFilterInput
+}
+
+input ChannelSortInput {
+  id: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  conversationId: SortEnumType @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
+  friendRequestId: SortEnumType @cost(weight: "10")
+  friendRequest: FriendRequestSortInput @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  channelCategoryId: SortEnumType @cost(weight: "10")
+  channelCategory: ChannelCategorySortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
 }
 
 input ChannelTypeOperationFilterInput {
@@ -700,6 +726,12 @@ input ConversationFilterInput {
   channel: ChannelFilterInput
 }
 
+input ConversationSortInput {
+  id: SortEnumType @cost(weight: "10")
+  latestMessageAt: SortEnumType @cost(weight: "10")
+  channel: ChannelSortInput @cost(weight: "10")
+}
+
 input DateTimeOperationFilterInput {
   eq: DateTime @cost(weight: "10")
   neq: DateTime @cost(weight: "10")
@@ -742,6 +774,18 @@ input FriendRequestFilterInput {
   createdAt: DateTimeOperationFilterInput
   updatedAt: DateTimeOperationFilterInput
   conversationChannel: ChannelFilterInput
+}
+
+input FriendRequestSortInput {
+  id: SortEnumType @cost(weight: "10")
+  senderUserId: SortEnumType @cost(weight: "10")
+  sender: ApplicationUserSortInput @cost(weight: "10")
+  receiverUserId: SortEnumType @cost(weight: "10")
+  receiver: ApplicationUserSortInput @cost(weight: "10")
+  status: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  updatedAt: SortEnumType @cost(weight: "10")
+  conversationChannel: ChannelSortInput @cost(weight: "10")
 }
 
 input FriendRequestStatusOperationFilterInput {

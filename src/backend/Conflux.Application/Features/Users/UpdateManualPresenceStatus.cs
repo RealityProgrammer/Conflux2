@@ -6,6 +6,12 @@ namespace Conflux.Application.Features.Users;
 
 public sealed record UpdateManualPresenceStatusCommand(Guid UserId, PresenceStatus Status) : ICommand<Result>;
 
+public record UserPresenceChangedNotification(
+    Guid UserId, 
+    PresenceStatus OldStatus, 
+    PresenceStatus NewStatus
+) : INotification;
+
 public sealed class UpdateManualPresenceStatus(
     IPresenceService presenceService
 ) : ICommandHandler<UpdateManualPresenceStatusCommand, Result> {

@@ -65,7 +65,6 @@ export type TimelineMessageClusterItemDto = components["schemas"]["TimelineMessa
 export type TimelineMessageReplyDto = components["schemas"]["TimelineMessageReplyDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
 export type GetMessagesResponse = components["schemas"]["GetMessagesResponse"];
-export type DmConversationListItemDto = components["schemas"]["DmConversationListItemDto"];
 export type ServerChannelIdentityDto = components["schemas"]["ServerChannelIdentityDto"];
 export type ChannelCategoryDetailDto = components["schemas"]["ChannelCategoryDetailDto"];
 export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryIdentityDto"];
