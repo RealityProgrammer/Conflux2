@@ -558,7 +558,9 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 });
 
 // jobs/workers
-builder.Services.AddHostedService<InvitationCleanupWorker>();
+builder.Services
+    .AddHostedService<InvitationCleanupWorker>()
+    .AddHostedService<GhostConnectionCleanupWorker>();
 
 var app = builder.Build();
 

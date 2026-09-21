@@ -128,7 +128,7 @@ public sealed class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
     
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
-            logger.LogInformation("User {id} invokes Heartbeat", userId);
+            logger.LogDebug("User {id} invokes Heartbeat", userId);
             await connectionTracker.Heartbeat(userId, Context.ConnectionId);
         }
     }

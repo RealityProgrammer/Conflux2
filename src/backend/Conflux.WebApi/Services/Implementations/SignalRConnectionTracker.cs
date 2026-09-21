@@ -1,10 +1,13 @@
+using Conflux.Application.Services;
 using StackExchange.Redis;
 
 namespace Conflux.WebApi.Services.Implementations;
 
-public sealed class SignalRConnectionTracker(
+public sealed partial class SignalRConnectionTracker(
     IConnectionMultiplexer connectionMultiplexer,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    ILogger<SignalRConnectionTracker> logger,
+    IServiceProvider serviceProvider
 ) {
     public const int TimeToLive = 120;  // in seconds
     
@@ -47,6 +50,36 @@ public sealed class SignalRConnectionTracker(
         await _database.SortedSetAddAsync(GetConnectionsKey(userId), connectionId, expireTime);
         await _database.SortedSetAddAsync("presence:active_users", userId.ToString(), expireTime);
     }
+
+    public async Task PruneConnections() {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        
+        // get all users whose last heartbeat is older than NOW
+        var expiredUserIds = await _database.SortedSetRangeByScoreAsync("presence:active_users", start: 0, stop: now - 1);
+        
+        if (expiredUserIds.Length > 0) {
+            using var scope = serviceProvider.CreateScope();
+            var presenceService = scope.ServiceProvider.GetRequiredService<IPresenceService>();
+
+            foreach (RedisValue redisVal in expiredUserIds) {
+                if (Guid.TryParse(redisVal.ToString(), out var userId)) {
+                    var userConnectionsKey = GetConnectionsKey(userId);
+                    
+                    // double check just to be safe
+                    await _database.SortedSetRemoveRangeByScoreAsync(userConnectionsKey, 0, now - 1);
+                    long activeConnections = await _database.SortedSetLengthAsync(userConnectionsKey);
+
+                    if (activeConnections == 0) {
+                        await presenceService.UserDisconnected(userId);
+                        await _database.SortedSetRemoveAsync("presence:active_users", redisVal);
+                        PruneConnectionForUser(logger, userId);
+                    } else {
+                        await _database.SortedSetAddAsync("presence:active_users", redisVal, now + TimeToLive);
+                    }
+                }
+            }
+        }
+    }
     
     private async Task PruneExpiredConnections(Guid userId) {
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -56,4 +89,7 @@ public sealed class SignalRConnectionTracker(
     private static string GetConnectionsKey(Guid userId) {
         return $"presence:connections:{userId}";
     }
+    
+    [LoggerMessage(LogLevel.Debug, "Prune connection for user {UserId}")]
+    private static partial void PruneConnectionForUser(ILogger logger, Guid userId);
 }
