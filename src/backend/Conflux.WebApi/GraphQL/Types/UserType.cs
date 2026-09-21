@@ -35,7 +35,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
                     return null;
                 }
                 
-                var dataLoader = context.DataLoader<IPresenceStatusDataLoader>();
+                var dataLoader = context.DataLoader<IManualPresenceStatusDataLoader>();
 
                 return await dataLoader.LoadAsync(targetUser.Id, context.RequestAborted);
             });
@@ -82,23 +82,27 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         }
 
         var targetAsSender = dbContext.FriendRequests
-            .Where(f => f.Status == FriendRequestStatus.Accepted
-                        && userIds.Contains(f.SenderUserId)
-                        && friendIds.Contains(f.ReceiverUserId)
-                        && f.SenderUserId != currentUserId)
+            .Where(f => 
+                f.Status == FriendRequestStatus.Accepted && 
+                userIds.Contains(f.SenderUserId) && 
+                friendIds.Contains(f.ReceiverUserId) && 
+                f.SenderUserId != currentUserId
+            )
             .Select(f => new {
                 TargetUserId = f.SenderUserId,
-                MutualFriendId = f.ReceiverUserId
+                MutualFriendId = f.ReceiverUserId,
             });
 
         var targetAsReceiver = dbContext.FriendRequests
-            .Where(f => f.Status == FriendRequestStatus.Accepted
-                        && userIds.Contains(f.ReceiverUserId)
-                        && friendIds.Contains(f.SenderUserId)
-                        && f.ReceiverUserId != currentUserId)
+            .Where(f => 
+                f.Status == FriendRequestStatus.Accepted && 
+                userIds.Contains(f.ReceiverUserId) && 
+                friendIds.Contains(f.SenderUserId) && 
+                f.ReceiverUserId != currentUserId
+            )
             .Select(f => new {
                 TargetUserId = f.ReceiverUserId,
-                MutualFriendId = f.SenderUserId
+                MutualFriendId = f.SenderUserId,
             });
 
         var countsByTargetUser = await targetAsSender
@@ -106,7 +110,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
             .GroupBy(x => x.TargetUserId)
             .Select(g => new {
                 TargetUserId = g.Key,
-                Count = g.Count()
+                Count = g.Count(),
             })
             .ToDictionaryAsync(x => x.TargetUserId, x => x.Count, cancellationToken);
 
@@ -117,7 +121,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
     }
 
     [DataLoader]
-    public static async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetPresenceStatus(
+    public static async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetManualPresenceStatus(
         IReadOnlyList<Guid> keys,
         CancellationToken cancellationToken,
         [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
@@ -134,7 +138,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         for (int i = 0; i < keys.Count; i++) {
             RedisValue value = cachedValues[i];
             
-            if (value.HasValue && value.IsInteger) {
+            if (value is { HasValue: true, IsInteger: true }) {
                 results[keys[i]] = (PresenceStatus)(int)value;
             } else {
                 missingKeys.Add(keys[i]); // cache miss

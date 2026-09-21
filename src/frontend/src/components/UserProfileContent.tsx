@@ -41,11 +41,13 @@ export default function UserProfileContent({
           <div className="size-full bg-indigo-500"/>
         )}
 
-        <UserAvatar
-          userId={userId}
-          hasAvatar={!!hasAvatar}
-          className="absolute -bottom-10 left-4 size-21 rounded-full overflow-hidden"
-        />
+        <div className="absolute -bottom-10 left-4">
+          <UserAvatar
+            userId={userId}
+            hasAvatar={!!hasAvatar}
+            className="size-21 border-4 border-gray-725"
+          />
+        </div>
       </div>
 
       <div className="mt-12 px-2">

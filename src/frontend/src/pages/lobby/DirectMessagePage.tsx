@@ -14,7 +14,7 @@ export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
 
   const {channelId, channelSummary}: DirectMessagePageLoaderProps = useLoaderData();
-  const [showProfile, setShowProfile] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
 
   useChannelConnection(channelId);
 
@@ -24,8 +24,10 @@ export default function DirectMessagePage() {
         className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2">
         {!!channelId && !!channelSummary ? (
           <>
-            <UserAvatar hasAvatar={channelSummary.otherUser.hasAvatar}
-                        className="size-8 overflow-hidden rounded-full"/>
+            <UserAvatar
+              hasAvatar={channelSummary.otherUser.hasAvatar}
+              className="size-8"
+            />
 
             <p>{channelSummary.otherUser.userName}</p>
 
