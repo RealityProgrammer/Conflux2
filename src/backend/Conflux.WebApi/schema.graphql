@@ -10,6 +10,7 @@ type Query
   @authorize
   @authorize
   @authorize
+  @authorize
   @authorize {
   directMessageChannels(
     "Returns the first _n_ elements from the list."
@@ -126,6 +127,25 @@ type Query
     serverId: UUID!
     where: CommunityServerRoleFilterInput @cost(weight: "10")
   ): CommunityServerRoleConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  friendRequests(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: FriendRequestFilterInput @cost(weight: "10")
+  ): FriendRequestConnection!
     @listSize(
       assumedSize: 50
       slicingArguments: ["first", "last"]
@@ -336,6 +356,37 @@ type Conversation {
   id: UUID!
   latestMessageAt: DateTime
   channel: Channel!
+}
+
+type FriendRequest {
+  id: UUID!
+  conversationChannel: Channel
+  createdAt: DateTime!
+  receiver: ApplicationUser!
+  receiverUserId: UUID!
+  sender: ApplicationUser!
+  senderUserId: UUID!
+  status: FriendRequestStatus!
+  otherUser: ApplicationUser @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type FriendRequestConnection {
+  "A list of edges."
+  edges: [FriendRequestEdge!]
+  "A flattened list of the nodes"
+  nodes: [FriendRequest!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type FriendRequestEdge {
+  "The item at the end of the edge."
+  node: FriendRequest!
+  "A cursor for use in pagination."
+  cursor: String!
 }
 
 type Invitation {

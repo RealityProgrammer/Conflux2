@@ -14,7 +14,7 @@ public sealed class UserType : ObjectType<ApplicationUser> {
     protected override void Configure(IObjectTypeDescriptor<ApplicationUser> descriptor) {
         descriptor.BindFieldsExplicitly();
 
-        descriptor.Field(u => u.Id);
+        descriptor.Field(u => u.Id).IsProjected();
         descriptor.Field(u => u.UserName);
         descriptor.Field(u => u.DisplayName);
         descriptor.Field(u => u.HasAvatar);
