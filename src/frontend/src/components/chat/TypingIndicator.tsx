@@ -19,21 +19,21 @@ export default function TypingIndicator({
   }, [displayUsers]);
 
   const renderTypingText = () => {
-    switch (displayUsers.length) {
+    switch (renderedUsers.length) {
       case 0: return null;
       case 1: return (
         <>
-          <DisplayName name={displayUsers[0].displayName}/> is typing...
+          <DisplayName name={renderedUsers[0].displayName}/> is typing...
         </>
       );
       case 2: return (
         <>
-          <DisplayName name={displayUsers[0].displayName}/> and <DisplayName name={displayUsers[1].displayName}/> is typing...
+          <DisplayName name={renderedUsers[0].displayName}/> and <DisplayName name={renderedUsers[1].displayName}/> is typing...
         </>
       );
       case 3: return (
         <>
-          <DisplayName name={displayUsers[0].displayName}/>, <DisplayName name={displayUsers[1].displayName}/> and <DisplayName name={displayUsers[2].displayName}/> is typing...
+          <DisplayName name={renderedUsers[0].displayName}/>, <DisplayName name={renderedUsers[1].displayName}/> and <DisplayName name={displayUsers[2].displayName}/> is typing...
         </>
       );
       default: return <span className="font-semibold text-gray-200">Several people are typing...</span>;
@@ -42,8 +42,8 @@ export default function TypingIndicator({
 
   return (
     <div
-      className={`flex-none overflow-hidden transition-[max-height,opacity] duration-500 ease-linear ${
-        isVisible ? "max-h-15 opacity-100" : "max-h-0 opacity-0"
+      className={`flex-none overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+        isVisible ? "max-h-15" : "max-h-0"
       }`}
     >
       <section className="flex items-center gap-3 px-4 py-0.5 border-t border-t-gray-600 bg-gray-650 text-sm text-gray-400">
