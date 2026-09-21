@@ -138,7 +138,7 @@ public sealed class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
     
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
-            logger.LogDebug("User {id} invokes SetAutoIdle({v})", userId, idle);
+            await presenceService.SetAutoIdle(userId, idle);
         }
     }
 

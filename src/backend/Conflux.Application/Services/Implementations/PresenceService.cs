@@ -155,6 +155,18 @@ internal sealed class PresenceService(
         return results;
     }
 
+    public async Task SetAutoIdle(Guid userId, bool isIdle) {
+        var oldStatus = await GetCurrentEffectiveStatusOrDefault(userId);
+
+        PresenceStatus? sessionStatus = isIdle ? PresenceStatus.Idle : null;
+        await cacheService.SetSessionStatus(userId, sessionStatus);
+
+        var newStatus = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, newStatus);
+
+        await NotifyIfChanged(userId, oldStatus, newStatus);
+    }
+
     private async Task<PresenceStatus> GetEffectivePresenceAsync(Guid userId) {
         bool isConnected = await cacheService.IsUserConnected(userId);
         if (!isConnected) return PresenceStatus.Offline;

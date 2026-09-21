@@ -154,7 +154,7 @@ function DirectMessagesList() {
             hasAvatar={item.friendRequest?.otherUser?.hasAvatar}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
-            presenceStatusCutoff="ring-2 ring-gray-725"
+            presenceStatusCutoff="ring-2 ring-gray-725 bg-gray-725"
             onClick={() => {
               const otherUserId = item.friendRequest?.otherUser?.id;
               if (!otherUserId) return;

@@ -10,4 +10,6 @@ public interface IPresenceService {
 
     Task<PresenceStatus> GetEffectivePresenceStatus(Guid userId);
     Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetEffectivePresenceStatuses(IReadOnlyList<Guid> userIds);
+    
+    Task SetAutoIdle(Guid userId, bool isIdle);
 }

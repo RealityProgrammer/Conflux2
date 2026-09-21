@@ -1,8 +1,8 @@
 import {Avatar} from "radix-ui";
-import {BsCircleFill, BsPerson} from "react-icons/bs";
+import {BsCircleFill, BsDashCircleFill, BsPerson, BsSlashCircleFill} from "react-icons/bs";
 import {userService} from "../api/userService.ts";
 import type {HTMLAttributes} from "react";
-import type {PresenceStatus} from "../graphql/types.ts";
+import {PresenceStatus} from "../graphql/types.ts";
 
 interface UserAvatarProps extends HTMLAttributes<HTMLDivElement> {
   userId?: string;
@@ -43,9 +43,15 @@ export default function UserAvatar({
         <span
           className={`absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full ${presenceStatusCutoff}`}
         >
-          <BsCircleFill
-            className={`size-3 ${presenceStatus === 'Online' ? 'fill-green-500' : 'fill-gray-400'}`}
-          />
+          {presenceStatus === PresenceStatus.Online ? (
+            <BsCircleFill className="size-3 fill-green-500"/>
+          ) : presenceStatus === PresenceStatus.DoNotDisturb ? (
+            <BsSlashCircleFill className="size-3 fill-red-400"/>
+          ) : presenceStatus === PresenceStatus.Idle ? (
+            <BsDashCircleFill className="size-3 fill-amber-400"/>
+          ) : (
+            <BsCircleFill className="size-3 fill-gray-400"/>
+          )}
         </span>
       )}
     </div>

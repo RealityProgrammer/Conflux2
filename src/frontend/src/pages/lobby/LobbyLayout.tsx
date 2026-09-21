@@ -33,7 +33,7 @@ function Sidebar() {
   const auth = useAuthorization();
   const navigate = useNavigate();
   const location = useLocation();
-  const { manualStatus } = usePresence();
+  const { effectiveStatus } = usePresence();
 
   return (
     <aside className="flex-none flex flex-col py-1.5 w-14 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
@@ -51,8 +51,8 @@ function Sidebar() {
                     navigate("/lobby/me");
                   }
                 }}
-                presenceStatus={manualStatus}
-                presenceStatusCutoff="ring-2 ring-gray-750"
+                presenceStatus={effectiveStatus}
+                presenceStatusCutoff="ring-2 ring-gray-750 bg-gray-750"
               />
             </Tooltip.Trigger>
 

@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 import {useSignalR} from "../contexts/SignalRContext.tsx";
 
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000;   // 5 minutes
+const IDLE_TIMEOUT_MS = 10 * 1000;   // 5 minutes
 const THROTTLE_MS = 1000;
 
 export default function useIdleTimer() {
