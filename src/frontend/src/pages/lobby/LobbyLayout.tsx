@@ -43,8 +43,7 @@ function Sidebar() {
             <Tooltip.Trigger asChild>
               <UserAvatar
                 userId={auth.userAuthorization?.id}
-                // hasAvatar={auth.userProfile?.hasAvatar ?? false}
-                hasAvatar={false}
+                hasAvatar={auth.userProfile?.hasAvatar ?? false}
                 className="flex-none size-10 cursor-pointer"
                 onClick={() => {
                   if (location.pathname !== "/lobby/me") {
