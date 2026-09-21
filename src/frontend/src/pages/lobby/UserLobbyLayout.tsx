@@ -96,8 +96,6 @@ function DirectMessagesList() {
   });
 
   useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {
-    console.log("PresenceUpdated user", event.userId, "to status", event.status);
-
     if (allElements.findIndex(e => e.friendRequest!.otherUser!.id) === -1) return;
 
     queryClient.setQueryData<InfiniteData<GetDirectMessageChannelsQuery, unknown>>(

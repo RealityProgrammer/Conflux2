@@ -15,7 +15,8 @@ public sealed class GatewayHub(
     SignalRConnectionTracker connectionTracker,
     IServerPermissionsProvider serverPermissionsProvider,
     ITypingIndicatorService typingIndicatorService,
-    IPresenceService presenceService
+    IPresenceService presenceService,
+    ILogger<GatewayHub> logger
 ) : Hub<IConfluxClient> {
     // invoked by the frontend only
     public async Task JoinChannel(Guid channelId) {
@@ -120,6 +121,16 @@ public sealed class GatewayHub(
         await Clients
             .OthersInGroup(NameProvider.GetChannelGroupName(channelIdGuid))
             .UserTyping(new(dto.UserId, dto.DisplayName, dto.HasAvatar), Context.ConnectionAborted);
+    }
+    
+    // invoked by the frontend only
+    public async Task Heartbeat() {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+    
+        if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
+            logger.LogInformation("User {id} invokes Heartbeat", userId);
+            await connectionTracker.Heartbeat(userId, Context.ConnectionId);
+        }
     }
 
     public override async Task OnConnectedAsync() {
