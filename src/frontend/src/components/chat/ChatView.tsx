@@ -48,7 +48,7 @@ export function ChatView({}: ChatViewProps) {
     retrySendingOperation,
     retryEditingOperation,
     removeEditingOperation,
-  } = useChatContainerContext()!;
+  } = useChatContainerContext();
 
   const queryClient = useQueryClient();
 

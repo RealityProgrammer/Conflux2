@@ -1,6 +1,7 @@
 import UserAvatar from "./UserAvatar.tsx";
 import {type HTMLAttributes, type ReactNode} from "react";
 import {random} from "animejs";
+import type {PresenceStatus} from "../graphql/types.ts";
 
 interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
   userId: string;
@@ -8,15 +9,29 @@ interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
   userName?: string;
   hasAvatar?: boolean;
   children?: ReactNode;
+  presenceStatus?: PresenceStatus;
+  presenceStatusCutoff?: string;
 }
 
-function Root({userId, userName, displayName, hasAvatar, children, className, ...props}: UserNameplateProps) {
+function Root({
+  userId,
+  userName,
+  displayName,
+  hasAvatar,
+  children,
+  className,
+  presenceStatus,
+  presenceStatusCutoff,
+  ...props
+}: UserNameplateProps) {
   return (
     <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
       <UserAvatar
         userId={userId}
         hasAvatar={hasAvatar ?? false}
-        className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+        className="flex-none size-8 cursor-pointer"
+        presenceStatus={presenceStatus}
+        presenceStatusCutoff={presenceStatusCutoff}
       />
 
       <div className="flex-1 flex flex-col min-w-0 select-none">

@@ -1,9 +1,9 @@
-import {useSignalRConnection} from "../contexts/SignalRContext.tsx";
+import {useSignalR} from "../contexts/SignalRContext.tsx";
 import {useEffect, useRef} from "react";
 import {HubConnectionState} from "@microsoft/signalr";
 
 export default function useServerConnection(serverId: string | undefined) {
-  const { connection, isConnected } = useSignalRConnection();
+  const { connection, isConnected, invokeSafely } = useSignalR();
 
   const operationPromiseRef = useRef<Promise<void>>(Promise.resolve());
 
@@ -32,13 +32,12 @@ export default function useServerConnection(serverId: string | undefined) {
       }
 
       try {
-        await connection.invoke("JoinServer", serverId);
+        await invokeSafely("JoinServer", serverId);
 
         // race-condition preventing
         if (!isMounted) {
           if (connection.state === HubConnectionState.Connected) {
-            await connection
-              .invoke("LeaveServer", serverId)
+            invokeSafely("LeaveServer", serverId)
               .catch(err => console.error(`Failed to leave server ${serverId}:`, err));
           }
           return;
@@ -57,7 +56,7 @@ export default function useServerConnection(serverId: string | undefined) {
       isMounted = false;
 
       if (hasJoined && connection.state === HubConnectionState.Connected) {
-        const leavePromise = connection.invoke("LeaveServer", serverId)
+        const leavePromise = invokeSafely("LeaveServer", serverId)
           .then(() => console.log(`Left server: ${serverId}`))
           .catch(err => console.error(`Failed to leave server ${serverId}:`, err));
 

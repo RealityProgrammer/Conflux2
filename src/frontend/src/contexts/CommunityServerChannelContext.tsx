@@ -9,13 +9,6 @@ interface CommunityServerChannelContextType {
 
 const CommunityServerChannelContext = createContext<CommunityServerChannelContextType | null>(null);
 
-export const useCommunityServerChannelContext = () => {
-  const context = useContext(CommunityServerChannelContext);
-  if (!context) throw new Error("useCommunityServerChannelContext must be used within an CommunityServerChannelContextProvider.");
-
-  return context;
-}
-
 interface CommunityServerChannelContextProviderProps {
   children: ReactNode;
   channelId: string | undefined;
@@ -48,4 +41,11 @@ export default function CommunityServerChannelContextProvider({
       {children}
     </CommunityServerChannelContext.Provider>
   )
+}
+
+export function useCommunityServerChannelContext(): CommunityServerChannelContextType {
+  const context = useContext(CommunityServerChannelContext);
+  if (!context) throw new Error("useCommunityServerChannelContext must be used within an CommunityServerChannelContextProvider.");
+
+  return context;
 }

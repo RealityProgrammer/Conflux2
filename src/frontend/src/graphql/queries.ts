@@ -32,6 +32,13 @@ export type GetServerMemberAuthorizeInfoQueryVariables = Exact<{
 
 export type GetServerMemberAuthorizeInfoQuery = { communityServerMemberByServerAndUserId: { id: string, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean }, roles: Array<{ id: string }> } | null };
 
+export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{
+  userId: string;
+}>;
+
+
+export type GetSessionUserManualPresenceStatusQuery = { user: { manualPresenceStatus: Types.PresenceStatus | null } | null };
+
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
@@ -69,6 +76,13 @@ export type UnbanServerMemberMutationVariables = Exact<{
 
 
 export type UnbanServerMemberMutation = { unbanCommunityServerMember: { memberId: string } };
+
+export type UpdateManualPresenceStatusMutationVariables = Exact<{
+  value: Types.PresenceStatus;
+}>;
+
+
+export type UpdateManualPresenceStatusMutation = { updateManualPresenceStatus: { userId: string } };
 
 export type UpdateMemberRolesMutationVariables = Exact<{
   serverId: string;
@@ -205,6 +219,35 @@ useGetServerMemberAuthorizeInfoQuery.getKey = (variables: GetServerMemberAuthori
 
 
 useGetServerMemberAuthorizeInfoQuery.fetcher = (variables: GetServerMemberAuthorizeInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerMemberAuthorizeInfoQuery, GetServerMemberAuthorizeInfoQueryVariables>(GetServerMemberAuthorizeInfoDocument, variables, options);
+
+export const GetSessionUserManualPresenceStatusDocument = new TypedDocumentString(`
+    query GetSessionUserManualPresenceStatus($userId: UUID!) {
+  user(id: $userId) {
+    manualPresenceStatus
+  }
+}
+    `);
+
+export const useGetSessionUserManualPresenceStatusQuery = <
+      TData = GetSessionUserManualPresenceStatusQuery,
+      TError = unknown
+    >(
+      variables: GetSessionUserManualPresenceStatusQueryVariables,
+      options?: Omit<UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetSessionUserManualPresenceStatusQuery, TError, TData>(
+      {
+    queryKey: ['GetSessionUserManualPresenceStatus', variables],
+    queryFn: graphqlFetcher<GetSessionUserManualPresenceStatusQuery, GetSessionUserManualPresenceStatusQueryVariables>(GetSessionUserManualPresenceStatusDocument, variables),
+    ...options
+  }
+    )};
+
+useGetSessionUserManualPresenceStatusQuery.getKey = (variables: GetSessionUserManualPresenceStatusQueryVariables) => ['GetSessionUserManualPresenceStatus', variables];
+
+
+useGetSessionUserManualPresenceStatusQuery.fetcher = (variables: GetSessionUserManualPresenceStatusQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetSessionUserManualPresenceStatusQuery, GetSessionUserManualPresenceStatusQueryVariables>(GetSessionUserManualPresenceStatusDocument, variables, options);
 
 export const GetUserFullProfileDocument = new TypedDocumentString(`
     query GetUserFullProfile($id: UUID!) {
@@ -373,6 +416,30 @@ export const useUnbanServerMemberMutation = <
 
 
 useUnbanServerMemberMutation.fetcher = (variables: UnbanServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UnbanServerMemberMutation, UnbanServerMemberMutationVariables>(UnbanServerMemberDocument, variables, options);
+
+export const UpdateManualPresenceStatusDocument = new TypedDocumentString(`
+    mutation UpdateManualPresenceStatus($value: PresenceStatus!) {
+  updateManualPresenceStatus(input: {status: $value}) {
+    userId
+  }
+}
+    `);
+
+export const useUpdateManualPresenceStatusMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(options?: UseMutationOptions<UpdateManualPresenceStatusMutation, TError, UpdateManualPresenceStatusMutationVariables, TContext>) => {
+    
+    return useMutation<UpdateManualPresenceStatusMutation, TError, UpdateManualPresenceStatusMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateManualPresenceStatus'],
+    mutationFn: (variables?: UpdateManualPresenceStatusMutationVariables) => graphqlFetcher<UpdateManualPresenceStatusMutation, UpdateManualPresenceStatusMutationVariables>(UpdateManualPresenceStatusDocument, variables)(),
+    ...options
+  }
+    )};
+
+
+useUpdateManualPresenceStatusMutation.fetcher = (variables: UpdateManualPresenceStatusMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateManualPresenceStatusMutation, UpdateManualPresenceStatusMutationVariables>(UpdateManualPresenceStatusDocument, variables, options);
 
 export const UpdateMemberRolesDocument = new TypedDocumentString(`
     mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {

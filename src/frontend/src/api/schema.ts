@@ -848,7 +848,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    download?: boolean;
+                };
                 header?: never;
                 path: {
                     attachmentId: string;
@@ -1402,46 +1404,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/users/me/dm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    offset?: number;
-                    count?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfPaginatedResultOfDmConversationListItemDto"];
-                        "application/json": components["schemas"]["ApiResponseOfPaginatedResultOfDmConversationListItemDto"];
-                        "text/json": components["schemas"]["ApiResponseOfPaginatedResultOfDmConversationListItemDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/users/me/friends": {
         parameters: {
             query?: never;
@@ -1590,10 +1552,6 @@ export interface components {
             data: null | components["schemas"]["PaginatedResultOfDiscoverFriendSummary"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfPaginatedResultOfDmConversationListItemDto: {
-            data: null | components["schemas"]["PaginatedResultOfDmConversationListItemDto"];
-            error: components["schemas"]["Error"];
-        };
         ApiResponseOfPaginatedResultOfPendingFriendRequestDto: {
             data: null | components["schemas"]["PaginatedResultOfPendingFriendRequestDto"];
             error: components["schemas"]["Error"];
@@ -1639,6 +1597,7 @@ export interface components {
             error: components["schemas"]["Error"];
         };
         Attachment: {
+            name: string;
             /** Format: uuid */
             id: string;
             type: string;
@@ -1699,11 +1658,6 @@ export interface components {
             otherUser: components["schemas"]["UserIdentityProfileDto"];
             friendRequestStatus: components["schemas"]["FriendRequestStatus"];
         };
-        DmConversationListItemDto: {
-            /** Format: uuid */
-            channelId: string;
-            userProfile: components["schemas"]["UserIdentityProfileDto"];
-        };
         Error: {
             code?: null | string;
             message?: null | string;
@@ -1734,11 +1688,6 @@ export interface components {
         MessageLoadDirection: MessageLoadDirection;
         PaginatedResultOfDiscoverFriendSummary: {
             elements: components["schemas"]["DiscoverFriendSummary"][];
-            /** Format: int32 */
-            totalCount: number;
-        };
-        PaginatedResultOfDmConversationListItemDto: {
-            elements: components["schemas"]["DmConversationListItemDto"][];
             /** Format: int32 */
             totalCount: number;
         };

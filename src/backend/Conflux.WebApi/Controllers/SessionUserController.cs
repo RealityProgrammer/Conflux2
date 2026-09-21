@@ -117,26 +117,26 @@ public sealed class SessionUserController(
         };
     }
     
-    [HttpGet("dm")]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<DmConversationListItemDto>>>> GetDirectMessageChannels(
-        [FromQuery] int offset, 
-        [FromQuery] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<ChannelController.DirectMessageResolutionResponse>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-
-        PaginatedResult<DmConversationListItemDto> result = await mediator.Send(
-            new GetUserDmConversationsQuery(userId, offset, count)
-        );
-
-        return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
-    }
+    // [HttpGet("dm")]
+    // public async Task<ActionResult<ApiResponse<PaginatedResult<DmConversationListItemDto>>>> GetDirectMessageChannels(
+    //     [FromQuery] int offset, 
+    //     [FromQuery] int count
+    // ) {
+    //     var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+    //     
+    //     if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+    //         return BadRequest(new ApiResponse<ChannelController.DirectMessageResolutionResponse>(null, Errors.InvalidIdentifier()));
+    //     }
+    //     
+    //     offset = int.Max(offset, 0);
+    //     count = int.Max(count, 1);
+    //
+    //     PaginatedResult<DmConversationListItemDto> result = await mediator.Send(
+    //         new GetUserDmConversationsQuery(userId, offset, count)
+    //     );
+    //
+    //     return Ok(new ApiResponse<PaginatedResult<DmConversationListItemDto>>(result, Error.None));
+    // }
     
     [HttpGet("friends")]
     public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> GetFriends(

@@ -17,6 +17,13 @@ export type GetAssignableServerRolesQueryVariables = Exact<{
 
 export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } };
 
+export type GetDirectMessageChannelsQueryVariables = Exact<{
+  after?: string | null | undefined;
+}>;
+
+
+export type GetDirectMessageChannelsQuery = { directMessageChannels: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, friendRequest: { otherUser: { id: string, displayName: string | null, hasAvatar: boolean, effectivePresenceStatus: Types.PresenceStatus } | null } | null }> | null } };
+
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
@@ -130,6 +137,74 @@ useInfiniteGetAssignableServerRolesQuery.getKey = (variables: GetAssignableServe
 
 
 useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, variables, options);
+
+export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
+    query GetDirectMessageChannels($after: String) {
+  directMessageChannels(
+    after: $after
+    order: {conversation: {latestMessageAt: DESC}}
+  ) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+    nodes {
+      id
+      friendRequest {
+        otherUser {
+          id
+          displayName
+          hasAvatar
+          effectivePresenceStatus
+        }
+      }
+    }
+  }
+}
+    `);
+
+export const useGetDirectMessageChannelsQuery = <
+      TData = GetDirectMessageChannelsQuery,
+      TError = unknown
+    >(
+      variables?: GetDirectMessageChannelsQueryVariables,
+      options?: Omit<UseQueryOptions<GetDirectMessageChannelsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetDirectMessageChannelsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetDirectMessageChannelsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['GetDirectMessageChannels'] : ['GetDirectMessageChannels', variables],
+    queryFn: graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetDirectMessageChannelsQuery.getKey = (variables?: GetDirectMessageChannelsQueryVariables) => variables === undefined ? ['GetDirectMessageChannels'] : ['GetDirectMessageChannels', variables];
+
+export const useInfiniteGetDirectMessageChannelsQuery = <
+      TData = InfiniteData<GetDirectMessageChannelsQuery>,
+      TError = unknown
+    >(
+      variables: GetDirectMessageChannelsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetDirectMessageChannelsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetDirectMessageChannelsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetDirectMessageChannelsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['GetDirectMessageChannels.infinite'] : ['GetDirectMessageChannels.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetDirectMessageChannelsQuery.getKey = (variables?: GetDirectMessageChannelsQueryVariables) => variables === undefined ? ['GetDirectMessageChannels.infinite'] : ['GetDirectMessageChannels.infinite', variables];
+
+
+useGetDirectMessageChannelsQuery.fetcher = (variables?: GetDirectMessageChannelsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, variables, options);
 
 export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     query GetJoinedCommunityServer($after: String) {

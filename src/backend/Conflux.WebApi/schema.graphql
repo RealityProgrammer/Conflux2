@@ -3,7 +3,35 @@ schema {
   mutation: Mutation
 }
 
-type Query @authorize @authorize @authorize @authorize @authorize @authorize {
+type Query
+  @authorize
+  @authorize
+  @authorize
+  @authorize
+  @authorize
+  @authorize
+  @authorize
+  @authorize {
+  directMessageChannels(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: ChannelFilterInput @cost(weight: "10")
+    order: [ChannelSortInput!] @cost(weight: "10")
+  ): ChannelConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
   communityServerMembers(
     "Returns the first _n_ elements from the list."
     first: Int
@@ -108,6 +136,25 @@ type Query @authorize @authorize @authorize @authorize @authorize @authorize {
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
+  friendRequests(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: FriendRequestFilterInput @cost(weight: "10")
+  ): FriendRequestConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
   invitation(id: String!): Invitation @cost(weight: "10")
   user(id: UUID!): ApplicationUser @cost(weight: "10")
   serverModerationLogs(
@@ -133,7 +180,9 @@ type Query @authorize @authorize @authorize @authorize @authorize @authorize {
     @cost(weight: "10")
 }
 
-type Mutation @authorize {
+type Mutation @authorize @authorize {
+  updateManualPresenceStatus(input: UpdateManualPresenceStatusInput!): UpdateManualPresenceStatusPayload!
+    @cost(weight: "10")
   updateCommunityServerMemberRoles(
     input: UpdateCommunityServerMemberRolesInput!
   ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
@@ -158,6 +207,9 @@ type ApplicationUser {
   biography: String
   pronouns: String
   createdAt: DateTime!
+  lastSeenAt: DateTime!
+  manualPresenceStatus: PresenceStatus @cost(weight: "10")
+  effectivePresenceStatus: PresenceStatus! @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
 }
 
@@ -169,6 +221,10 @@ type Channel {
   id: UUID!
   name: String
   createdAt: DateTime!
+  conversation: Conversation!
+  conversationId: UUID!
+  friendRequest: FriendRequest
+  friendRequestId: UUID
 }
 
 type ChannelCategory {
@@ -178,6 +234,25 @@ type ChannelCategory {
   communityServerId: UUID!
   createdAt: DateTime!
   channels: [Channel]
+}
+
+"A connection to a list of items."
+type ChannelConnection {
+  "A list of edges."
+  edges: [ChannelEdge!]
+  "A flattened list of the nodes"
+  nodes: [Channel!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ChannelEdge {
+  "The item at the end of the edge."
+  node: Channel!
+  "A cursor for use in pagination."
+  cursor: String!
 }
 
 type CommunityServer {
@@ -280,6 +355,43 @@ type CommunityServerRoleEdge {
   cursor: String!
 }
 
+type Conversation {
+  id: UUID!
+  latestMessageAt: DateTime
+  channel: Channel!
+}
+
+type FriendRequest {
+  id: UUID!
+  conversationChannel: Channel
+  createdAt: DateTime!
+  receiver: ApplicationUser!
+  receiverUserId: UUID!
+  sender: ApplicationUser!
+  senderUserId: UUID!
+  status: FriendRequestStatus!
+  otherUser: ApplicationUser @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type FriendRequestConnection {
+  "A list of edges."
+  edges: [FriendRequestEdge!]
+  "A flattened list of the nodes"
+  nodes: [FriendRequest!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type FriendRequestEdge {
+  "The item at the end of the edge."
+  node: FriendRequest!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
 type Invitation {
   id: String!
   communityServerId: UUID!
@@ -376,6 +488,10 @@ type UpdateCommunityServerMemberRolesPayload {
   memberId: UUID!
 }
 
+type UpdateManualPresenceStatusPayload {
+  userId: UUID!
+}
+
 type WarnCommunityServerMemberPayload {
   memberId: UUID!
 }
@@ -390,6 +506,8 @@ input ApplicationUserFilterInput {
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
   createdAt: DateTimeOperationFilterInput
+  manualPresenceStatus: PresenceStatusOperationFilterInput
+  lastSeenAt: DateTimeOperationFilterInput
   sentFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   receivedFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
@@ -418,6 +536,8 @@ input ApplicationUserSortInput {
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
+  manualPresenceStatus: SortEnumType @cost(weight: "10")
+  lastSeenAt: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")
   userName: SortEnumType @cost(weight: "10")
   normalizedUserName: SortEnumType @cost(weight: "10")
@@ -466,6 +586,14 @@ input ChannelCategoryFilterInput {
   channels: ListFilterInputTypeOfChannelFilterInput
 }
 
+input ChannelCategorySortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+}
+
 input ChannelFilterInput {
   and: [ChannelFilterInput!]
   or: [ChannelFilterInput!]
@@ -481,6 +609,21 @@ input ChannelFilterInput {
   channelCategoryId: UuidOperationFilterInput
   channelCategory: ChannelCategoryFilterInput
   createdAt: DateTimeOperationFilterInput
+}
+
+input ChannelSortInput {
+  id: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  conversationId: SortEnumType @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
+  friendRequestId: SortEnumType @cost(weight: "10")
+  friendRequest: FriendRequestSortInput @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  channelCategoryId: SortEnumType @cost(weight: "10")
+  channelCategory: ChannelCategorySortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
 }
 
 input ChannelTypeOperationFilterInput {
@@ -583,6 +726,12 @@ input ConversationFilterInput {
   channel: ChannelFilterInput
 }
 
+input ConversationSortInput {
+  id: SortEnumType @cost(weight: "10")
+  latestMessageAt: SortEnumType @cost(weight: "10")
+  channel: ChannelSortInput @cost(weight: "10")
+}
+
 input DateTimeOperationFilterInput {
   eq: DateTime @cost(weight: "10")
   neq: DateTime @cost(weight: "10")
@@ -625,6 +774,18 @@ input FriendRequestFilterInput {
   createdAt: DateTimeOperationFilterInput
   updatedAt: DateTimeOperationFilterInput
   conversationChannel: ChannelFilterInput
+}
+
+input FriendRequestSortInput {
+  id: SortEnumType @cost(weight: "10")
+  senderUserId: SortEnumType @cost(weight: "10")
+  sender: ApplicationUserSortInput @cost(weight: "10")
+  receiverUserId: SortEnumType @cost(weight: "10")
+  receiver: ApplicationUserSortInput @cost(weight: "10")
+  status: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  updatedAt: SortEnumType @cost(weight: "10")
+  conversationChannel: ChannelSortInput @cost(weight: "10")
 }
 
 input FriendRequestStatusOperationFilterInput {
@@ -781,6 +942,13 @@ input PermissionStateOperationFilterInput {
   nin: [PermissionState!] @cost(weight: "10")
 }
 
+input PresenceStatusOperationFilterInput {
+  eq: PresenceStatus @cost(weight: "10")
+  neq: PresenceStatus @cost(weight: "10")
+  in: [PresenceStatus!] @cost(weight: "10")
+  nin: [PresenceStatus!] @cost(weight: "10")
+}
+
 input RolePermissionFilterInput {
   and: [RolePermissionFilterInput!]
   or: [RolePermissionFilterInput!]
@@ -868,6 +1036,10 @@ input UpdateCommunityServerMemberRolesInput {
   roleIds: [UUID!]!
 }
 
+input UpdateManualPresenceStatusInput {
+  status: PresenceStatus!
+}
+
 input UuidOperationFilterInput {
   eq: UUID @cost(weight: "10")
   neq: UUID @cost(weight: "10")
@@ -930,6 +1102,14 @@ enum PermissionState {
   Inherit
   Enable
   Disable
+}
+
+enum PresenceStatus {
+  Online
+  Offline
+  Idle
+  DoNotDisturb
+  Invisible
 }
 
 enum ServerModerationAction {

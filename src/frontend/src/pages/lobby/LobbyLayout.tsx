@@ -26,11 +26,14 @@ import {
 import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import Spinner from "../../components/Spinner.tsx";
+import {PresenceStatus} from "../../graphql/types.ts";
+import {usePresence} from "../../contexts/PresenceContext.tsx";
 
 function Sidebar() {
   const auth = useAuthorization();
   const navigate = useNavigate();
   const location = useLocation();
+  const { effectiveStatus } = usePresence();
 
   return (
     <aside className="flex-none flex flex-col py-1.5 w-14 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
@@ -41,17 +44,19 @@ function Sidebar() {
               <UserAvatar
                 userId={auth.userAuthorization?.id}
                 hasAvatar={auth.userProfile?.hasAvatar ?? false}
-                className="flex-none size-12 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                className="flex-none size-10 cursor-pointer"
                 onClick={() => {
                   if (location.pathname !== "/lobby/me") {
                     navigate("/lobby/me");
                   }
                 }}
+                presenceStatus={effectiveStatus}
+                presenceStatusCutoff="ring-2 ring-gray-750 bg-gray-750"
               />
             </Tooltip.Trigger>
 
             <Tooltip.Portal>
-              <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+              <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-625 shadow-xl">
                 <p className="text-white font-semibold px-3 py-1">To your private space</p>
 
                 <Tooltip.Arrow className="fill-gray-600"/>

@@ -11,17 +11,12 @@ import {apiClient, graphqlClient} from "../api/client.ts";
 export type SignalRContextType = {
   connection: HubConnection | null;
   isConnected: boolean;
+  invokeSafely: (methodName: string, ...args: unknown[]) => Promise<any>;
 }
 
-const SignalRConnectionContext = createContext<SignalRContextType | null>(null);
+const SignalRContext = createContext<SignalRContextType | null>(null);
 
-export const useSignalRConnection = (): SignalRContextType => {
-  const context = useContext(SignalRConnectionContext);
-  if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
-  return context;
-};
-
-export default function SignalRConnectionProvider({ children }: { children: ReactNode }) {
+export default function SignalRProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -72,6 +67,7 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
 
     // Start connection
     const startPromise = newConnection.start();
+    let heartbeatInterval: number | undefined;
 
     startPromise.then(() => {
       if (isMounted && activeConnectionRef.current === newConnection) {
@@ -81,6 +77,16 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
           apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
           graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
         }
+
+        heartbeatInterval = setInterval(() => {
+          if (newConnection.state === "Connected") {
+            newConnection.invoke("Heartbeat").catch(err => console.error("Heartbeat failed", err));
+          }
+        }, 60000);
+
+        newConnection.onclose(() => {
+          clearInterval(heartbeatInterval);
+        })
       }
     }).catch((err) => {
       console.error("failed to connect to SignalR:", err);
@@ -106,9 +112,26 @@ export default function SignalRConnectionProvider({ children }: { children: Reac
     };
   }, []);
 
+  const invokeSafely = async (methodName: string, ...args: unknown[]) => {
+    if (connection && connection.state === HubConnectionState.Connected) {
+      try {
+        await connection.invoke(methodName, ...args);
+      } catch (err) {
+        console.error(`SignalR invocation failed for [${methodName}]:`, err);
+      }
+    }
+  };
+
   return (
-    <SignalRConnectionContext.Provider value={{ connection, isConnected }}>
+    <SignalRContext.Provider value={{ connection, isConnected, invokeSafely }}>
       {children}
-    </SignalRConnectionContext.Provider>
+    </SignalRContext.Provider>
   );
+}
+
+export function useSignalR(): SignalRContextType {
+  const context = useContext(SignalRContext);
+  if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
+
+  return context;
 }

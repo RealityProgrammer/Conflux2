@@ -31,7 +31,7 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
-  const {channelId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext()!;
+  const {channelId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
 
   const [messageBody, setMessageBody] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);

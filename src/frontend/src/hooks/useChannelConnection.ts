@@ -1,9 +1,9 @@
-import {useSignalRConnection} from "../contexts/SignalRContext.tsx";
+import {useSignalR} from "../contexts/SignalRContext.tsx";
 import {useEffect, useRef} from "react";
 import {HubConnectionState} from "@microsoft/signalr";
 
 export default function useChannelConnection(channelId: string | undefined) {
-  const { connection, isConnected } = useSignalRConnection();
+  const { connection, isConnected, invokeSafely } = useSignalR();
 
   const operationPromiseRef = useRef<Promise<void>>(Promise.resolve());
 
@@ -32,13 +32,12 @@ export default function useChannelConnection(channelId: string | undefined) {
       }
 
       try {
-        await connection.invoke("JoinChannel", channelId);
+        await invokeSafely("JoinChannel", channelId);
 
         // race-condition preventing
         if (!isMounted) {
           if (connection.state === HubConnectionState.Connected) {
-            connection
-              .invoke("LeaveChannel", channelId)
+            invokeSafely("LeaveChannel", channelId)
               .catch(err => console.error(`Failed to leave channel ${channelId}:`, err));
           }
 
@@ -58,7 +57,7 @@ export default function useChannelConnection(channelId: string | undefined) {
       isMounted = false;
 
       if (hasJoined && connection.state === HubConnectionState.Connected) {
-        const leavePromise = connection.invoke("LeaveChannel", channelId)
+        const leavePromise = invokeSafely("LeaveChannel", channelId)
           .then(() => console.log(`Left channel: ${channelId}`))
           .catch(err => console.error(`Failed to leave channel ${channelId}:`, err));
 

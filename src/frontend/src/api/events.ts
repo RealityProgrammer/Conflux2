@@ -1,6 +1,7 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto,
 } from "./types.ts";
+import type {PresenceStatus} from "../graphql/types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -107,4 +108,9 @@ export type TypingUserEvent = {
   userId: string;
   displayName: string;
   hasAvatar: boolean;
+}
+
+export type UserPresenceChangedEvent = {
+  userId: string;
+  status: PresenceStatus;
 }

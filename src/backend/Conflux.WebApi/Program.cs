@@ -243,7 +243,7 @@ builder.Services.AddMediator(options => {
 
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<UserConnectionTracker>()
+    .AddSingleton<SignalRConnectionTracker>()
     .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()
@@ -263,6 +263,8 @@ builder.Services
     .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
+    .AddScoped<IPresenceCacheService, PresenceCacheService>()
+    .AddScoped<IPresenceService, PresenceService>()
 
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
@@ -556,7 +558,9 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 });
 
 // jobs/workers
-builder.Services.AddHostedService<InvitationCleanupWorker>();
+builder.Services
+    .AddHostedService<InvitationCleanupWorker>()
+    .AddHostedService<GhostConnectionCleanupWorker>();
 
 var app = builder.Build();
 

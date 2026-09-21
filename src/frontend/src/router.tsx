@@ -22,13 +22,14 @@ import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
 import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
 import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
 import FriendsPage from "./pages/lobby/FriendsPage.tsx";
-import SignalRConnectionProvider from "./contexts/SignalRContext.tsx";
+import SignalRProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
 import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
 import ChannelLayout from "./pages/server/ChannelLayout.tsx";
 import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 import {Slide, ToastContainer} from "react-toastify";
+import PresenceProvider from "./contexts/PresenceContext.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
@@ -151,18 +152,20 @@ export const router = createBrowserRouter([
           return currentUrl.pathname !== nextUrl.pathname;
         },
         element: (
-          <SignalRConnectionProvider>
-            <LobbyLayout/>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              newestOnTop
-              draggable="touch"
-              pauseOnHover
-              theme="dark"
-              transition={Slide}
-            />
-          </SignalRConnectionProvider>
+          <SignalRProvider>
+            <PresenceProvider>
+              <LobbyLayout/>
+              <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                newestOnTop
+                draggable="touch"
+                pauseOnHover
+                theme="dark"
+                transition={Slide}
+              />
+            </PresenceProvider>
+          </SignalRProvider>
         ),
         children: [
           {

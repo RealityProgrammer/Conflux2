@@ -16,7 +16,7 @@ import {toast} from "react-toastify";
 import useServerMemberAuthorizeInfo, {
   type ServerMemberAuthorizeInfo
 } from "../../hooks/useServerMemberAuthorizeInfo.ts";
-import {useSignalRConnection} from "../../contexts/SignalRContext.tsx";
+import {useSignalR} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ export default function ServerLayout() {
     authorizeInfo.refreshPermissions();
   });
 
-  const { connection: signalrConnection, isConnected: isSignalRConnection } = useSignalRConnection();
+  const { connection: signalrConnection, isConnected: isSignalRConnection, invokeSafely } = useSignalR();
 
   useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
@@ -69,8 +69,8 @@ export default function ServerLayout() {
 
     // invokes leave server and rejoin so that backend can correctly track connection joined groups
     if (isSignalRConnection && signalrConnection) {
-      await signalrConnection.invoke("LeaveServer", serverId);
-      await signalrConnection.invoke("JoinServer", serverId);
+      await invokeSafely("LeaveServer", serverId);
+      await invokeSafely("JoinServer", serverId);
     }
 
     await authorizeInfo.refreshPermissions();
