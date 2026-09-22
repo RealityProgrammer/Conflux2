@@ -1,7 +1,7 @@
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import {Label, Separator, Tooltip} from "radix-ui";
+import {Label, Popover, Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
-import {BsPeople, BsPlus} from "react-icons/bs";
+import {Bs2Circle, Bs3Circle, Bs4Circle, BsGearFill, BsPeople, BsPlus, BsThreeDots} from "react-icons/bs";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
@@ -26,8 +26,11 @@ import {
 import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import Spinner from "../../components/Spinner.tsx";
-import {PresenceStatus} from "../../graphql/types.ts";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
+import AnimatedGearIcon from "../../components/AnimatedGearIcon.tsx";
+import {FaEllipsisH} from "react-icons/fa";
+import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
+import {FaGear, FaGears} from "react-icons/fa6";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -66,12 +69,14 @@ function Sidebar() {
         </Tooltip.Provider>
       </div>
 
-      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1.5"/>
+      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
 
       <JoinedCommunityServerScrollList/>
 
+      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
+
       <div className="flex-none flex flex-col items-center">
-        <CreateCommunityServerButton/>
+        <ExpandableMenuIcon/>
       </div>
     </aside>
   );
@@ -179,6 +184,35 @@ const createServerSchema = z.object({
   avatar: z.file().optional(),
 });
 
+function ExpandableMenuIcon() {
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <IconButton theme="default">
+          <HiOutlineSquares2X2 className="size-10"/>
+        </IconButton>
+      </Popover.Trigger>
+
+      <Popover.Portal>
+        <Popover.Content
+          side="right"
+          sideOffset={12}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-50 overflow-hidden rounded-2xl bg-gray-775 shadow-sm p-1.5 outline-none origin-[50%_100%] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-4 duration-300"
+        >
+          <div className="flex items-center gap-2">
+            <CreateCommunityServerButton/>
+
+            <SettingsDialogButton/>
+          </div>
+
+          <Popover.Arrow className="fill-gray-775" />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 type CreateServerFormValues = z.infer<typeof createServerSchema>;
 
 function CreateCommunityServerButton() {
@@ -243,13 +277,13 @@ function CreateCommunityServerButton() {
       <Tooltip.Provider delayDuration={500}>
         <Tooltip.Root>
           <Tooltip.Trigger asChild>
-            <IconButton isLoading={false} theme="default" className="hover-highlight rounded-full" onClick={() => handleOpenChange(true)}>
-              <BsPlus className="size-10"/>
+            <IconButton theme="default" onClick={() => handleOpenChange(true)}>
+              <HiOutlineUserGroup className="size-10"/>
             </IconButton>
           </Tooltip.Trigger>
 
           <Tooltip.Portal>
-            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+            <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
               <p className="text-white font-semibold px-3 py-1">Create your own community</p>
 
               <Tooltip.Arrow className="fill-gray-600"/>
@@ -311,6 +345,30 @@ function CreateCommunityServerButton() {
       </DialogForm>
     </>
   );
+}
+
+function SettingsDialogButton() {
+  return (
+    <>
+      <Tooltip.Provider delayDuration={500}>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild>
+            <IconButton theme="default">
+              <FaGears className="size-10"/>
+            </IconButton>
+          </Tooltip.Trigger>
+
+          <Tooltip.Portal>
+            <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+              <p className="text-white font-semibold px-3 py-1">Application settings</p>
+
+              <Tooltip.Arrow className="fill-gray-600"/>
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </>
+  )
 }
 
 export default function LobbyLayout() {
