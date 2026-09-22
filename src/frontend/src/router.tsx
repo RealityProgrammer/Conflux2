@@ -254,6 +254,24 @@ export const router = createBrowserRouter([
           {
             path: "settings",
             element: <SettingsLayout/>,
+            children: [
+              {
+                index: true,
+                element: (
+                  <div className="flex flex-row justify-center items-center size-full">
+                    <span className="select-none text-gray-400">Pick what you want to configure on the left sidebar</span>
+                  </div>
+                ),
+              },
+              {
+                path: ":placeholder",
+                element: (
+                  <div className="flex flex-row justify-center items-center size-full">
+                    <span className="select-none text-gray-400">TODO</span>
+                  </div>
+                )
+              }
+            ]
           }
         ]
       },
