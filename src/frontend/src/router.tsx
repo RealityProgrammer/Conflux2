@@ -31,6 +31,7 @@ import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 import {Slide, ToastContainer} from "react-toastify";
 import PresenceProvider from "./contexts/PresenceContext.tsx";
 import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
+import ProfilePage from "./pages/settings/ProfilePage.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
@@ -264,14 +265,18 @@ export const router = createBrowserRouter([
                 ),
               },
               {
-                path: ":placeholder",
+                path: "profile",
+                element: <ProfilePage/>
+              },
+              {
+                path: "*",
                 element: (
                   <div className="flex flex-row justify-center items-center size-full">
-                    <span className="select-none text-gray-400">TODO</span>
+                    <span className="select-none text-gray-400">You are not supposed to be here...</span>
                   </div>
-                )
+                ),
               }
-            ]
+            ],
           }
         ]
       },
