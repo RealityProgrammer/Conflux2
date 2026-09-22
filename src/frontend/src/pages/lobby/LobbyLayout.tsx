@@ -1,7 +1,7 @@
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {Label, Popover, Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
-import {Bs2Circle, Bs3Circle, Bs4Circle, BsGearFill, BsPeople, BsPlus, BsThreeDots} from "react-icons/bs";
+import {BsPeople} from "react-icons/bs";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
@@ -11,7 +11,7 @@ import type {
 } from "../../api/types.ts";
 import IconButton from "../../components/IconButton.tsx";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import DialogForm from "../../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
@@ -27,10 +27,8 @@ import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
-import AnimatedGearIcon from "../../components/AnimatedGearIcon.tsx";
-import {FaEllipsisH} from "react-icons/fa";
 import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
-import {FaGear, FaGears} from "react-icons/fa6";
+import {FaGears} from "react-icons/fa6";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -185,56 +183,115 @@ const createServerSchema = z.object({
 });
 
 function ExpandableMenuIcon() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [isCreateServerDialogOpen, setIsCreateServerDialogOpen] = useState(false);
+  const navigate = useNavigate();
+
   return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
-        <IconButton theme="default">
-          <HiOutlineSquares2X2 className="size-10"/>
-        </IconButton>
-      </Popover.Trigger>
+    <>
+      <Popover.Root open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <Popover.Trigger asChild>
+          <IconButton theme="default">
+            <HiOutlineSquares2X2 className="size-10"/>
+          </IconButton>
+        </Popover.Trigger>
 
-      <Popover.Portal>
-        <Popover.Content
-          side="right"
-          sideOffset={12}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-50 overflow-hidden rounded-2xl bg-gray-775 shadow-sm p-1.5 outline-none origin-[50%_100%] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-4 duration-300"
-        >
-          <div className="flex items-center gap-2">
-            <CreateCommunityServerButton/>
+        <Popover.Portal>
+          <Popover.Content
+            side="right"
+            sideOffset={12}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            className="z-50 overflow-hidden rounded-2xl bg-gray-775 shadow-sm p-1.5 outline-none origin-[50%_100%] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-4 duration-300"
+          >
+            <div className="flex items-center gap-2">
+              <Tooltip.Provider delayDuration={500}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <IconButton theme="default" onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsCreateServerDialogOpen(true);
+                    }}>
+                      <HiOutlineUserGroup className="size-10"/>
+                    </IconButton>
+                  </Tooltip.Trigger>
 
-            <SettingsDialogButton/>
-          </div>
+                  <Tooltip.Portal>
+                    <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                      <p className="text-white font-semibold px-3 py-1">Create your own community</p>
 
-          <Popover.Arrow className="fill-gray-775" />
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+                      <Tooltip.Arrow className="fill-gray-600"/>
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+
+              <Tooltip.Provider delayDuration={500}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <IconButton theme="default" onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate("/settings");
+                    }}>
+                      <FaGears className="size-10"/>
+                    </IconButton>
+                  </Tooltip.Trigger>
+
+                  <Tooltip.Portal>
+                    <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                      <p className="text-white font-semibold px-3 py-1">Application settings</p>
+
+                      <Tooltip.Arrow className="fill-gray-600"/>
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+            </div>
+
+            <Popover.Arrow className="fill-gray-775" />
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
+
+      <CreateServerDialogForm open={isCreateServerDialogOpen} onOpenChange={setIsCreateServerDialogOpen}/>
+    </>
   );
 }
 
 type CreateServerFormValues = z.infer<typeof createServerSchema>;
 
-function CreateCommunityServerButton() {
+function CreateServerDialogForm({
+  open,
+  onOpenChange,
+}: {open: boolean, onOpenChange: (open: boolean) => void}) {
   const queryClient = useQueryClient();
-  const [isOpen, setIsOpen] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
+  const idempotencyKey = useRef("");
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
+  const formMethods = useForm<CreateServerFormValues>({
+    resolver: zodResolver(createServerSchema),
+    defaultValues: {
+      name: "",
+      avatar: undefined,
+    },
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+  });
 
+  useEffect(() => {
     if (open) {
+      idempotencyKey.current = crypto.randomUUID();
+      console.log("created new idempotency key.");
+    } else {
       formMethods.reset();
-      setIdempotencyKey(crypto.randomUUID());
     }
-  };
+  }, [open, formMethods]);
 
   const onSubmit = async (data: CreateServerFormValues) => {
     const response: ServiceResponse<ServerIdentityDto> =
-      await communityServerService.createServer(idempotencyKey, data.name, data.avatar ?? undefined);
+      await communityServerService.createServer(idempotencyKey.current, data.name, data.avatar ?? undefined);
 
     if (response.success) {
-      setIsOpen(false);
+      onOpenChange(false);
 
       queryClient.invalidateQueries({
         queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
@@ -262,38 +319,11 @@ function CreateCommunityServerButton() {
     }
   };
 
-  const formMethods = useForm<CreateServerFormValues>({
-    resolver: zodResolver(createServerSchema),
-    defaultValues: {
-      name: "",
-      avatar: undefined,
-    },
-    mode: "onSubmit",
-    reValidateMode: "onSubmit",
-  });
-
   return (
     <>
-      <Tooltip.Provider delayDuration={500}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <IconButton theme="default" onClick={() => handleOpenChange(true)}>
-              <HiOutlineUserGroup className="size-10"/>
-            </IconButton>
-          </Tooltip.Trigger>
-
-          <Tooltip.Portal>
-            <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-              <p className="text-white font-semibold px-3 py-1">Create your own community</p>
-
-              <Tooltip.Arrow className="fill-gray-600"/>
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-
       <DialogForm
-        open={isOpen} onOpenChange={handleOpenChange}
+        open={open}
+        onOpenChange={onOpenChange}
         formMethods={formMethods}
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
@@ -345,30 +375,6 @@ function CreateCommunityServerButton() {
       </DialogForm>
     </>
   );
-}
-
-function SettingsDialogButton() {
-  return (
-    <>
-      <Tooltip.Provider delayDuration={500}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <IconButton theme="default">
-              <FaGears className="size-10"/>
-            </IconButton>
-          </Tooltip.Trigger>
-
-          <Tooltip.Portal>
-            <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-              <p className="text-white font-semibold px-3 py-1">Application settings</p>
-
-              <Tooltip.Arrow className="fill-gray-600"/>
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-    </>
-  )
 }
 
 export default function LobbyLayout() {
