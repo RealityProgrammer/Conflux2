@@ -30,6 +30,7 @@ import ChannelLayout from "./pages/server/ChannelLayout.tsx";
 import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 import {Slide, ToastContainer} from "react-toastify";
 import PresenceProvider from "./contexts/PresenceContext.tsx";
+import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
@@ -126,8 +127,6 @@ export const router = createBrowserRouter([
           </Suspense>
       },
       {
-        id: "lobby",
-        path: "lobby",
         loader: async () => {
           const response = await authService.getAuthorizationInfo();
 
@@ -152,99 +151,112 @@ export const router = createBrowserRouter([
           return currentUrl.pathname !== nextUrl.pathname;
         },
         element: (
-          <SignalRProvider>
-            <PresenceProvider>
-              <LobbyLayout/>
-              <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                newestOnTop
-                draggable="touch"
-                pauseOnHover
-                theme="dark"
-                transition={Slide}
-              />
-            </PresenceProvider>
-          </SignalRProvider>
+          <>
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              newestOnTop
+              draggable="touch"
+              pauseOnHover
+              theme="dark"
+              transition={Slide}
+            />
+
+            <SignalRProvider>
+              <PresenceProvider>
+                <Outlet/>
+              </PresenceProvider>
+            </SignalRProvider>
+          </>
         ),
         children: [
           {
-            index: true,
-            element: <LobbyPage/>,
-          },
-          {
-            path: "me",
-            element: <UserLobbyLayout/>,
+            path: "lobby",
+            element: <LobbyLayout/>,
             children: [
               {
-                path: "announcements",
-                element:
-                  <Suspense fallback={<SuspenseFallback/>}>
-                    <SystemAnnouncementPage/>
-                  </Suspense>
+                index: true,
+                element: <LobbyPage/>,
               },
               {
-                path: "friends",
-                element: <FriendsPage/>
-              },
-              {
-                path: "dm/:userId?",
-                element: <DirectMessagePage/>,
-                loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
-                  const userId: string | undefined = params.userId;
-
-                  if (!userId) {
-                    return {channelId: undefined, channelSummary: undefined};
-                  }
-
-                  const channelIdResponse: ServiceResponse<string> =
-                    await channelService.getDirectMessageChannelId(userId);
-
-                  if (!channelIdResponse.success) {
-                    return {channelId: undefined, channelSummary: undefined};
-                  }
-
-                  const channelId: string = channelIdResponse.data!;
-
-                  const dmChannelSummary: ServiceResponse<DmChannelSummary> =
-                    await channelService.getDmChannelSummary(channelId);
-
-                  if (!dmChannelSummary.success) {
-                    return {channelId: channelId, channelSummary: undefined};
-                  }
-
-                  return {channelId: channelId, channelSummary: dmChannelSummary.data!};
-                }
-              },
-            ]
-          },
-          {
-            id: "server",
-            path: "servers/:serverId?",
-            element: <ServerLayout/>,
-            children: [
-              {
-                id: "channel",
-                path: "channels/:channelId?",
-                element: <ChannelLayout/>,
+                path: "me",
+                element: <UserLobbyLayout/>,
                 children: [
                   {
-                    index: true,
-                    element: <ChannelPage/>
+                    path: "announcements",
+                    element:
+                      <Suspense fallback={<SuspenseFallback/>}>
+                        <SystemAnnouncementPage/>
+                      </Suspense>
+                  },
+                  {
+                    path: "friends",
+                    element: <FriendsPage/>
+                  },
+                  {
+                    path: "dm/:userId?",
+                    element: <DirectMessagePage/>,
+                    loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
+                      const userId: string | undefined = params.userId;
+
+                      if (!userId) {
+                        return {channelId: undefined, channelSummary: undefined};
+                      }
+
+                      const channelIdResponse: ServiceResponse<string> =
+                        await channelService.getDirectMessageChannelId(userId);
+
+                      if (!channelIdResponse.success) {
+                        return {channelId: undefined, channelSummary: undefined};
+                      }
+
+                      const channelId: string = channelIdResponse.data!;
+
+                      const dmChannelSummary: ServiceResponse<DmChannelSummary> =
+                        await channelService.getDmChannelSummary(channelId);
+
+                      if (!dmChannelSummary.success) {
+                        return {channelId: channelId, channelSummary: undefined};
+                      }
+
+                      return {channelId: channelId, channelSummary: dmChannelSummary.data!};
+                    }
+                  },
+                ]
+              },
+              {
+                id: "server",
+                path: "servers/:serverId?",
+                element: <ServerLayout/>,
+                children: [
+                  {
+                    id: "channel",
+                    path: "channels/:channelId?",
+                    element: <ChannelLayout/>,
+                    children: [
+                      {
+                        index: true,
+                        element: <ChannelPage/>
+                      }
+                    ]
                   }
                 ]
               }
             ]
+          },
+          {
+            path: "invite/:inviteId",
+            element:
+              <Suspense fallback={<SuspenseFallback/>}>
+                <InvitePage/>
+              </Suspense>
+          },
+          {
+            path: "settings",
+            element: <SettingsLayout/>,
           }
         ]
       },
-      {
-        path: "invite/:inviteId",
-        element:
-          <Suspense fallback={<SuspenseFallback/>}>
-            <InvitePage/>
-          </Suspense>
-      }
     ]
   }
 ]);
