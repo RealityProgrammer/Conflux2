@@ -175,6 +175,7 @@ function ProfileForm() {
               avatarSrc="https://placehold.co/256x256"
               avatarClassName="border-gray-675"
               presenceStatus={watchedValues.presence}
+              presenceStatusClassName="bg-gray-675 border-4 border-gray-675"
             />
 
             <div className="px-2">

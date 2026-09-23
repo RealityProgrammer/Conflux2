@@ -12,7 +12,7 @@ interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
   userName?: string;
   children?: ReactNode;
   presenceStatus?: PresenceStatus;
-  presenceStatusCutoff?: string;
+  presenceStatusClassName?: string;
 }
 
 function Root({
@@ -23,7 +23,7 @@ function Root({
   children,
   className,
   presenceStatus,
-  presenceStatusCutoff,
+  presenceStatusClassName,
   ...props
 }: UserNameplateProps) {
   return (
@@ -38,7 +38,7 @@ function Root({
         {presenceStatus && (
           <PresenceStatusIcon
             status={presenceStatus}
-            className={`absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-3 ${presenceStatusCutoff}`}
+            className={`absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-3 ${presenceStatusClassName}`}
           />
         )}
       </div>

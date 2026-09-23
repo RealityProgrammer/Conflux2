@@ -11,7 +11,7 @@ interface AvatarAndBannerProps {
   bannerAlt?: string;
   avatarClassName?: string;
   presenceStatus?: PresenceStatus;
-  presenceStatusCutoff?: string;
+  presenceStatusClassName?: string;
 }
 
 export default function UserAvatarAndBanner({
@@ -21,7 +21,7 @@ export default function UserAvatarAndBanner({
   bannerAlt,
   avatarClassName = "",
   presenceStatus,
-  presenceStatusCutoff,
+  presenceStatusClassName,
 }: AvatarAndBannerProps) {
   return (
     <div className="relative w-full aspect-video mb-11">
@@ -42,7 +42,7 @@ export default function UserAvatarAndBanner({
           {presenceStatus && (
             <PresenceStatusIcon
               status={presenceStatus}
-              className={`absolute bottom-0 right-0 rounded-full size-1/3 ${presenceStatusCutoff}`}
+              className={`absolute bottom-0 right-0 rounded-full size-1/3 ${presenceStatusClassName}`}
             />
           )}
         </div>
