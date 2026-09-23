@@ -9,6 +9,7 @@ import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 import useChannelConnection from "../../hooks/useChannelConnection.ts";
+import {userService} from "../../api/userService.ts";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -25,7 +26,7 @@ export default function DirectMessagePage() {
         {!!channelId && !!channelSummary ? (
           <>
             <UserAvatar
-              hasAvatar={channelSummary.otherUser.hasAvatar}
+              src={channelSummary.otherUser.hasAvatar ? userService.getAvatarUrl(channelSummary.otherUser.id) : undefined}
               className="size-8"
             />
 

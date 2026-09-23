@@ -2,6 +2,7 @@ import UserAvatar from "./UserAvatar.tsx";
 import {Separator} from "radix-ui";
 import {FaBirthdayCake} from "react-icons/fa";
 import {FaHandshake, FaMarsAndVenus} from "react-icons/fa6";
+import {userService} from "../api/userService.ts";
 
 interface UserProfileContentProps {
   userId: string;
@@ -43,8 +44,7 @@ export default function UserProfileContent({
 
         <div className="absolute -bottom-10 left-4">
           <UserAvatar
-            userId={userId}
-            hasAvatar={!!hasAvatar}
+            src={hasAvatar ? userService.getAvatarUrl(userId) : undefined}
             className="size-21 border-4 border-gray-725"
           />
         </div>

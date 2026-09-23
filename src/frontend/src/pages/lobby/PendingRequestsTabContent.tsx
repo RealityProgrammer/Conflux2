@@ -19,6 +19,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 import {UserRelationshipStatus} from "../../api/schema.ts";
+import {userService} from "../../api/userService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -242,10 +243,9 @@ function Row({element, removeCacheElement}: RowProps) {
 
   return (
     <UserNameplate.Root
-      userId={element.userId}
+      avatarSrc={element.hasAvatar ? userService.getAvatarUrl(element.userId) : undefined}
       userName={element.userName}
       displayName={element.displayName}
-      hasAvatar={element.hasAvatar}
       className="w-full p-1.5"
       style={{height: `${ITEM_HEIGHT}px`}}
     >

@@ -4,6 +4,7 @@ import type {TimelineMessageClusterItemDto, TimelineMessageDto, UserIdentityProf
 import type {TimelineContext} from "./TimelineContext.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
 import UserAvatar from "../UserAvatar.tsx";
+import {userService} from "../../api/userService.ts";
 
 export type MessageEditorItemProps = {
   senderProfile: UserIdentityProfileDto;
@@ -94,8 +95,7 @@ function MessageEditorView({
       {showHeader ? (
         <div className="flex flex-row gap-3">
           <UserAvatar
-            hasAvatar={senderProfile?.hasAvatar ?? false}
-            userId={senderProfile?.id ?? undefined}
+            src={senderProfile?.hasAvatar ? userService.getAvatarUrl(senderProfile.id) : undefined}
             className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
           />
 

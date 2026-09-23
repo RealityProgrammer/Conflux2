@@ -1,5 +1,5 @@
 export const userService = {
-  getAvatarUrl: (userId: string, forceRefresh: boolean): string => {
+  getAvatarUrl: (userId: string, forceRefresh?: boolean): string => {
     const queryParams: URLSearchParams = new URLSearchParams();
 
     if (forceRefresh) {

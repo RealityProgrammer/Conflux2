@@ -29,6 +29,7 @@ import Spinner from "../../components/Spinner.tsx";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
 import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears} from "react-icons/fa6";
+import {userService} from "../../api/userService.ts";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -43,8 +44,7 @@ function Sidebar() {
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
               <UserAvatar
-                userId={auth.userAuthorization?.id}
-                hasAvatar={auth.userProfile?.hasAvatar ?? false}
+                src={auth.userProfile?.hasAvatar ? userService.getAvatarUrl(auth.userProfile.id) : undefined}
                 className="flex-none size-10 cursor-pointer"
                 onClick={() => {
                   if (location.pathname !== "/lobby/me") {

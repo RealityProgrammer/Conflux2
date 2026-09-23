@@ -1,35 +1,28 @@
 import {Avatar} from "radix-ui";
-import {BsCircleFill, BsDashCircleFill, BsPerson, BsSlashCircleFill} from "react-icons/bs";
-import {userService} from "../api/userService.ts";
+import {BsPerson} from "react-icons/bs";
 import type {HTMLAttributes} from "react";
 import {PresenceStatus} from "../graphql/types.ts";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 
 interface UserAvatarProps extends HTMLAttributes<HTMLDivElement> {
-  userId?: string;
-  hasAvatar?: boolean;
+  src?: string;
   presenceStatus?: PresenceStatus;
   presenceStatusCutoff?: string;
 }
 
 export default function UserAvatar({
-  userId,
-  hasAvatar = false,
+  src,
   presenceStatus,
   className = "",
   presenceStatusCutoff = "",
   ...props
 }: UserAvatarProps) {
-  const avatarUrl = hasAvatar && userId ?
-    userService.getAvatarUrl(userId, false) :
-    undefined;
-
   return (
     <div className={`relative inline-flex aspect-square rounded-full ${className}`} {...props}>
       <Avatar.Root className="size-full overflow-hidden rounded-[inherit]">
         <Avatar.Image
           className="size-full object-cover"
-          src={avatarUrl}
+          src={src}
           alt="User Avatar"
         />
 

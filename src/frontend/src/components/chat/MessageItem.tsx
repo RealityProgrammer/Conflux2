@@ -15,6 +15,7 @@ import MessageContent from "./MessageContent.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {userService} from "../../api/userService.ts";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -115,8 +116,7 @@ function MessageView({
             {showHeader ? (
               <>
                 <UserAvatar
-                  hasAvatar={senderProfile?.hasAvatar ?? false}
-                  userId={senderProfile?.id ?? undefined}
+                  src={senderProfile?.hasAvatar ? userService.getAvatarUrl(senderProfile.id) : undefined}
                   className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
                 />
 

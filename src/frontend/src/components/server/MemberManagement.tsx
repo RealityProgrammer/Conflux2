@@ -43,6 +43,7 @@ import DialogForm from "../DialogForm.tsx";
 import ErrorText from "../ErrorText.tsx";
 import DurationInput, {type DurationValue} from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
+import {userService} from "../../api/userService.ts";
 
 type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
@@ -158,8 +159,7 @@ export default function MemberManagement() {
                   return (
                     <UserNameplate.Root
                       key={member.id}
-                      userId={member.user.id}
-                      hasAvatar={member.user.hasAvatar}
+                      avatarSrc={member.user.hasAvatar ? userService.getAvatarUrl(member.user.id) : undefined}
                       displayName={member.user.displayName ?? "???"}
                       userName={member.user.userName ?? "???"}
                       className="p-1 hover-highlight cursor-pointer w-full"
@@ -386,9 +386,8 @@ function MemberInformationContent() {
 
             <div className="flex flex-row items-center gap-2">
               <UserAvatar
-                hasAvatar={inspectingMemberInfo.user.hasAvatar}
+                src={inspectingMemberInfo.user.hasAvatar ? userService.getAvatarUrl(inspectingMemberInfo.user.id) : undefined}
                 className="flex-none size-10 rounded-full overflow-hidden"
-                userId={inspectingMemberInfo.user.id}
               />
 
               <span className="font-semibold">{inspectingMemberInfo.user.displayName}</span>

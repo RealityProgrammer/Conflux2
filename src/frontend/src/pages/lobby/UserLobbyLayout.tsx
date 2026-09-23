@@ -10,6 +10,7 @@ import {
   type GetDirectMessageChannelsQuery,
   useInfiniteGetDirectMessageChannelsQuery
 } from "../../graphql/infiniteQueries.ts";
+import {userService} from "../../api/userService.ts";
 
 export default function UserLobbyLayout() {
   return (
@@ -149,9 +150,8 @@ function DirectMessagesList() {
 
         return (
           <UserNameplate.Root
-            userId={item.friendRequest?.otherUser?.id ?? ""}
+            avatarSrc={item.friendRequest?.otherUser?.hasAvatar ? userService.getAvatarUrl(item.friendRequest?.otherUser?.id) : undefined}
             displayName={item.friendRequest?.otherUser?.displayName ?? "???"}
-            hasAvatar={item.friendRequest?.otherUser?.hasAvatar}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
             presenceStatusCutoff="ring-2 ring-gray-725 bg-gray-725"
