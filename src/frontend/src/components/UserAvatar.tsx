@@ -3,6 +3,7 @@ import {BsCircleFill, BsDashCircleFill, BsPerson, BsSlashCircleFill} from "react
 import {userService} from "../api/userService.ts";
 import type {HTMLAttributes} from "react";
 import {PresenceStatus} from "../graphql/types.ts";
+import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 
 interface UserAvatarProps extends HTMLAttributes<HTMLDivElement> {
   userId?: string;
@@ -43,15 +44,7 @@ export default function UserAvatar({
         <span
           className={`absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full ${presenceStatusCutoff}`}
         >
-          {presenceStatus === PresenceStatus.Online ? (
-            <BsCircleFill className="size-3 fill-green-500"/>
-          ) : presenceStatus === PresenceStatus.DoNotDisturb ? (
-            <BsSlashCircleFill className="size-3 fill-red-400"/>
-          ) : presenceStatus === PresenceStatus.Idle ? (
-            <BsDashCircleFill className="size-3 fill-amber-400"/>
-          ) : (
-            <BsCircleFill className="size-3 fill-gray-400"/>
-          )}
+          <PresenceStatusIcon status={presenceStatus} className="size-3"/>
         </span>
       )}
     </div>
