@@ -53,6 +53,13 @@ export type GetUserIdentityProfileQueryVariables = Exact<{
 
 export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
 
+export type GetUserSettingProfileInfoQueryVariables = Exact<{
+  id: string;
+}>;
+
+
+export type GetUserSettingProfileInfoQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string } | null };
+
 export type InspectMemberQueryVariables = Exact<{
   id: string;
 }>;
@@ -316,6 +323,41 @@ useGetUserIdentityProfileQuery.getKey = (variables: GetUserIdentityProfileQueryV
 
 
 useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables, options);
+
+export const GetUserSettingProfileInfoDocument = new TypedDocumentString(`
+    query GetUserSettingProfileInfo($id: UUID!) {
+  user(id: $id) {
+    id
+    userName
+    displayName
+    hasAvatar
+    biography
+    pronouns
+    createdAt
+  }
+}
+    `);
+
+export const useGetUserSettingProfileInfoQuery = <
+      TData = GetUserSettingProfileInfoQuery,
+      TError = unknown
+    >(
+      variables: GetUserSettingProfileInfoQueryVariables,
+      options?: Omit<UseQueryOptions<GetUserSettingProfileInfoQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserSettingProfileInfoQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetUserSettingProfileInfoQuery, TError, TData>(
+      {
+    queryKey: ['GetUserSettingProfileInfo', variables],
+    queryFn: graphqlFetcher<GetUserSettingProfileInfoQuery, GetUserSettingProfileInfoQueryVariables>(GetUserSettingProfileInfoDocument, variables),
+    ...options
+  }
+    )};
+
+useGetUserSettingProfileInfoQuery.getKey = (variables: GetUserSettingProfileInfoQueryVariables) => ['GetUserSettingProfileInfo', variables];
+
+
+useGetUserSettingProfileInfoQuery.fetcher = (variables: GetUserSettingProfileInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserSettingProfileInfoQuery, GetUserSettingProfileInfoQueryVariables>(GetUserSettingProfileInfoDocument, variables, options);
 
 export const InspectMemberDocument = new TypedDocumentString(`
     query InspectMember($id: UUID!) {

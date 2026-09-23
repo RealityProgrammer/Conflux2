@@ -1,0 +1,11 @@
+query GetUserSettingProfileInfo($id: UUID!) {
+    user(id: $id) {
+        id,
+        userName,
+        displayName,
+        hasAvatar,
+        biography,
+        pronouns,
+        createdAt,
+    }
+}

@@ -10,6 +10,9 @@ import UserProfileContent from "../../components/UserProfileContent.tsx";
 import UserAvatarAndBanner from "../../components/UserAvatarAndBanner.tsx";
 import {FaBirthdayCake} from "react-icons/fa";
 import {FaHandshake, FaMarsAndVenus} from "react-icons/fa6";
+import {useGetUserSettingProfileInfoQuery} from "../../graphql/queries.ts";
+import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {TruncatedText} from "../../components/TruncatedText.tsx";
 
 export default function ProfilePage() {
   return (
@@ -45,11 +48,22 @@ const profileSchema = z.object({
 type UpdateProfileFormValues = z.infer<typeof profileSchema>;
 
 function ProfileForm() {
+  const auth = useAuthorization();
+  const { data, isLoading, isError } = useGetUserSettingProfileInfoQuery(
+    { id: auth.userProfile?.id ?? "" },
+    {
+      enabled: !!auth.userProfile,
+    }
+  );
+
   const formMethods = useForm<UpdateProfileFormValues>({
     resolver: zodResolver(profileSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
-    defaultValues: {
+    values: {
+      displayName: data?.user?.displayName ?? "",
+      bio: data?.user?.biography ?? "",
+      pronouns: data?.user?.pronouns ?? "",
       presence: PresenceStatus.Online,
     }
   });
@@ -179,24 +193,24 @@ function ProfileForm() {
             />
 
             <div className="px-2">
-              <p className="text-xl font-bold truncate">{watchedValues.displayName || "<Display Name>"}</p>
-              <p className="text-sm ml-1 truncate text-stone-300">@Username</p>
+              <p className="text-xl font-bold truncate">{watchedValues.displayName || "\u003CDisplay Name\u003E"}</p>
+              <p className="text-sm ml-1 truncate text-stone-300">@{data?.user?.userName}</p>
 
               <div className="grid grid-cols-2 gap-x-2 text-sm mt-2">
                 {joinDate && (
-                  <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-                    <FaBirthdayCake className="size-4 fill-gray-50 mr-2"/>
+                  <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
+                    <FaBirthdayCake className="flex-none size-4 fill-gray-50 mr-2"/>
 
                     {joinDate?.toLocaleDateString() || ""}
-                  </span>
+                  </p>
                 )}
 
                 {watchedValues.pronouns && (
-                  <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-                    <FaMarsAndVenus className="size-4 fill-gray-50 mr-2"/>
+                  <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
+                    <FaMarsAndVenus className="flex-none size-4 fill-gray-50 mr-2"/>
 
-                    {watchedValues.pronouns}
-                  </span>
+                    <TruncatedText>{watchedValues.pronouns}</TruncatedText>
+                  </p>
                 )}
               </div>
 
@@ -204,7 +218,7 @@ function ProfileForm() {
 
               <p className="group-label">About me</p>
 
-              <p className="text-[13px] text-gray-50">{watchedValues.bio || "<Biography>"}</p>
+              <p className="text-[13px] text-gray-50">{watchedValues.bio || "\u003CBiography\u003E"}</p>
             </div>
           </div>
         </div>
