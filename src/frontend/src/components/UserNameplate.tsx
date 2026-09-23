@@ -3,9 +3,11 @@ import {type HTMLAttributes, type ReactNode} from "react";
 import {random} from "animejs";
 import type {PresenceStatus} from "../graphql/types.ts";
 import {userService} from "../api/userService.ts";
+import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 
 interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
   avatarSrc?: string;
+  avatarAlt?: string;
   displayName: string;
   userName?: string;
   children?: ReactNode;
@@ -15,6 +17,7 @@ interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
 
 function Root({
   avatarSrc,
+  avatarAlt,
   userName,
   displayName,
   children,
@@ -25,12 +28,20 @@ function Root({
 }: UserNameplateProps) {
   return (
     <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
-      <UserAvatar
-        src={avatarSrc}
-        className="flex-none size-8 cursor-pointer"
-        presenceStatus={presenceStatus}
-        presenceStatusCutoff={presenceStatusCutoff}
-      />
+      <div className="relative">
+        <UserAvatar
+          src={avatarSrc}
+          alt={avatarAlt}
+          className="flex-none size-8 cursor-pointer"
+        />
+
+        {presenceStatus && (
+          <PresenceStatusIcon
+            status={presenceStatus}
+            className={`absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-3 ${presenceStatusCutoff}`}
+          />
+        )}
+      </div>
 
       <div className="flex-1 flex flex-col min-w-0 select-none">
         <p className="text-sm truncate">

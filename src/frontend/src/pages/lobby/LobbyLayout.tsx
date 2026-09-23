@@ -30,6 +30,7 @@ import {usePresence} from "../../contexts/PresenceContext.tsx";
 import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
+import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -42,17 +43,19 @@ function Sidebar() {
       <div className="flex justify-center items-center">
         <Tooltip.Provider delayDuration={500}>
           <Tooltip.Root>
-            <Tooltip.Trigger asChild>
+            <Tooltip.Trigger className="relative" onClick={() => {
+              if (location.pathname !== "/lobby/me") {
+                navigate("/lobby/me");
+              }
+            }}>
               <UserAvatar
                 src={auth.userProfile?.hasAvatar ? userService.getAvatarUrl(auth.userProfile.id) : undefined}
                 className="flex-none size-10 cursor-pointer"
-                onClick={() => {
-                  if (location.pathname !== "/lobby/me") {
-                    navigate("/lobby/me");
-                  }
-                }}
-                presenceStatus={effectiveStatus}
-                presenceStatusCutoff="ring-2 ring-gray-750 bg-gray-750"
+              />
+
+              <PresenceStatusIcon
+                status={effectiveStatus}
+                className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750"
               />
             </Tooltip.Trigger>
 
