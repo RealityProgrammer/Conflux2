@@ -22,7 +22,7 @@ public sealed class UpdateUserProfileHandler(
     IUserMediaService userMediaService
 ) : ICommandHandler<UpdateUserProfileCommand, Result> {
     public async ValueTask<Result> Handle(UpdateUserProfileCommand command, CancellationToken cancellationToken) {
-        bool? hasAvatar;
+        bool? hasAvatar, hasBanner;
         
         switch (command.AvatarOperation.Type) {
             case AvatarOperationType.Set:
@@ -50,11 +50,38 @@ public sealed class UpdateUserProfileHandler(
                 break;
         }
         
+        switch (command.BannerOperation.Type) {
+            case AvatarOperationType.Set:
+                var uploadResult = await userMediaService.UploadBanner(command.UserId, command.BannerOperation.AvatarStream!, cancellationToken);
+
+                if (!uploadResult.IsSuccess) {
+                    return uploadResult;
+                }
+
+                hasBanner = true;
+                break;
+            
+            case AvatarOperationType.Delete:
+                var deleteResult = await userMediaService.DeleteBanner(command.UserId, cancellationToken);
+                
+                if (!deleteResult.IsSuccess) {
+                    return deleteResult;
+                }
+                
+                hasBanner = false;
+                break;
+            
+            default:
+                hasBanner = null;
+                break;
+        }
+        
         if (command.DisplayName.IsSet || 
             command.Pronouns.IsSet ||
             command.Biography.IsSet || 
             command.ManualPresenceStatus.IsSet ||
-            hasAvatar.HasValue
+            hasAvatar.HasValue ||
+            hasBanner.HasValue
         ) {
             int changed = await userRepository.AsQueryable()
                 .Where(u => u.Id == command.UserId)
@@ -79,6 +106,10 @@ public sealed class UpdateUserProfileHandler(
 
                     if (hasAvatar.HasValue) {
                         builder.SetProperty(u => u.HasAvatar, hasAvatar.Value);
+                    }
+
+                    if (hasBanner.HasValue) {
+                        builder.SetProperty(u => u.HasBanner, hasBanner.Value);
                     }
                 }, cancellationToken);
 

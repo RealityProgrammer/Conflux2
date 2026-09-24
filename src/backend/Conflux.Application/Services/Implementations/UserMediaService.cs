@@ -13,6 +13,52 @@ internal sealed class UserMediaService(
         Stream stream, 
         CancellationToken cancellationToken = default
     ) {
+        Result<Image> validateResult = ValidateImageFormat(stream);
+
+        if (!validateResult.IsSuccess) {
+            return validateResult;
+        }
+
+        Image imageFormat = validateResult.Value!;
+        var uploadResult = await blobStorage.UploadUserAvatar(userId, new(stream, imageFormat.MediaType), cancellationToken);
+
+        if (!uploadResult.IsSuccess) {
+            return uploadResult;
+        }
+
+        return Result.Success();
+    }
+
+    public async Task<Result> DeleteAvatar(Guid userId, CancellationToken cancellationToken = default) {
+        return await blobStorage.DeleteUserAvatar(userId, cancellationToken);
+    }
+    
+    public async Task<Result> UploadBanner(
+        Guid userId, 
+        Stream stream, 
+        CancellationToken cancellationToken = default
+    ) {
+        Result<Image> validateResult = ValidateImageFormat(stream);
+
+        if (!validateResult.IsSuccess) {
+            return validateResult;
+        }
+
+        Image imageFormat = validateResult.Value!;
+        var uploadResult = await blobStorage.UploadUserBanner(userId, new(stream, imageFormat.MediaType), cancellationToken);
+
+        if (!uploadResult.IsSuccess) {
+            return uploadResult;
+        }
+
+        return Result.Success();
+    }
+
+    public async Task<Result> DeleteBanner(Guid userId, CancellationToken cancellationToken = default) {
+        return await blobStorage.DeleteUserBanner(userId, cancellationToken);
+    }
+
+    private Result<Image> ValidateImageFormat(Stream stream) {
         if (fileFormatInspector.DetermineFileFormat(stream) is not { } fileFormat) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(stream)] = [
@@ -41,17 +87,6 @@ internal sealed class UserMediaService(
             stream.Position = 0;
         }
 
-        // upload
-        var uploadResult = await blobStorage.UploadUserAvatar(userId, new(stream, fileFormat.MediaType), cancellationToken);
-
-        if (!uploadResult.IsSuccess) {
-            return uploadResult;
-        }
-
-        return Result.Success();
-    }
-
-    public async Task<Result> DeleteAvatar(Guid userId, CancellationToken cancellationToken = default) {
-        return await blobStorage.DeleteUserAvatar(userId, cancellationToken);
+        return Result<Image>.Success(imageFormat);
     }
 }
