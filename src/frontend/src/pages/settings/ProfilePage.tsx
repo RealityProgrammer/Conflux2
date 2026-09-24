@@ -76,12 +76,13 @@ function ProfileForm() {
     }
   });
 
-  const { control, register, reset, handleSubmit, formState: { errors, isSubmitting, isDirty } } = formMethods;
+  const { control, register, reset, handleSubmit, formState: { errors, isSubmitting } } = formMethods;
 
   const watchedValues = useWatch<UpdateProfileFormValues>({ control, });
 
-  const onSubmit: SubmitHandler<UpdateProfileFormValues> = (data: UpdateProfileFormValues) => {
+  const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (data: UpdateProfileFormValues) => {
     console.log("submit", JSON.stringify(data));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   };
 
   const joinDate = new Date();
@@ -229,10 +230,10 @@ function ProfileForm() {
             </div>
           </div>
 
-          <div className="flex flex-row justify-start items-center gap-2">
+          <div className="flex flex-row justify-start items-center gap-2 mt-3">
             <button
               type="button"
-              className="button-theme-danger px-3 py-2 cursor-pointer mt-3 rounded-md"
+              className="button-theme-danger w-32 py-2 cursor-pointer rounded-md"
               onClick={() => {
                 reset();
               }}
@@ -242,9 +243,14 @@ function ProfileForm() {
 
             <button
               type="submit"
-              className="button-theme-primary px-3 py-2 cursor-pointer mt-3 rounded-md"
+              className="button-theme-primary w-32 py-2 cursor-pointer rounded-md flex flex-row justify-center items-center"
+              disabled={isSubmitting}
             >
-              Save Profile
+              {isSubmitting ? (
+                <Spinner className="size-6 fill-white"/>
+              ) : (
+                "Save Profile"
+              )}
             </button>
           </div>
         </section>
