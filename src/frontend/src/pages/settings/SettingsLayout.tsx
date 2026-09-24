@@ -21,7 +21,7 @@ export default function SettingsLayout() {
 
         <div className="border-2 border-red-800 bg-red-500/20 rounded-lg">
           <button
-            className="w-full px-3 py-1 text-left cursor-pointer transition-colors text-red font-bold hover-highlight"
+            className="w-full px-3 py-1 text-left cursor-pointer transition-colors text-red font-bold hover-highlight text-red-100"
             onClick={() => {
               auth.logout();
             }}
@@ -43,8 +43,8 @@ function NavigateLink({to, children}: {to: string, children: ReactNode}) {
     <NavLink
       to={`/settings/${encodeURIComponent(to)}`}
       className={({ isActive }) =>
-        `px-3 py-1 rounded-full text-left cursor-pointer transition-colors ${
-          isActive ? "text-white" : "hover-highlight text-gray-300"
+        `px-3 py-1 rounded-lg text-left cursor-pointer transition-colors ${
+          isActive ? "text-white bg-white/10" : "hover-highlight text-gray-300"
         }`
       }
     >
