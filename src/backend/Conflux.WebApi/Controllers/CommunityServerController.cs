@@ -45,8 +45,8 @@ public sealed class CommunityServerController(
     
     [HttpGet("{serverId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public RedirectResult GetAvatarUrl(Guid serverId) {
-        return Redirect(blobUrlProvider.GetCommunityServerAvatarPreSignedUrl(serverId));
+    public async Task<RedirectResult> GetAvatarUrl(Guid serverId) {
+        return Redirect(await blobUrlProvider.GetServerAvatarPreSignedUrl(serverId));
     }
 
     [HttpGet("{serverId:guid}/summary")]

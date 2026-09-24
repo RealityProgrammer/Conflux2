@@ -27,14 +27,9 @@ internal sealed class StorageService(
         CancellationToken cancellationToken = default
     ) {
         string uniqueKey = CreateUserAvatarUniqueKey(userId);
-
         var result = await UploadToS3Storage(uniqueKey, avatar.Stream, avatar.ContentType, cancellationToken);
 
-        if (result.IsSuccess) {
-            return Result<string>.Success(uniqueKey);
-        }
-
-        return result.Error;
+        return result.IsSuccess ? Result<string>.Success(uniqueKey) : result.Error;
     }
 
     public async Task<Result> DeleteUserAvatar(Guid userId, CancellationToken cancellationToken = default) {
@@ -42,10 +37,80 @@ internal sealed class StorageService(
         return await DeleteFromS3Storage(uniqueKey, cancellationToken);
     }
 
-    public string GetUserAvatarPreSignedUrl(Guid userId) {
+    public async Task<string> GetUserAvatarPreSignedUrl(Guid userId) {
         var uniqueKey = CreateUserAvatarUniqueKey(userId);
+        var request = CreatePreSignedUrlRequest(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
 
-        return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+        return await preSigningClient.GetPreSignedURLAsync(request);
+    }
+    
+    public async Task<Result<string>> UploadUserBanner(
+        Guid userId,
+        UploadItem banner,
+        CancellationToken cancellationToken = default
+    ) {
+        string key = CreateUserBannerUniqueKey(userId);
+        var result = await UploadToS3Storage(key, banner.Stream, banner.ContentType, cancellationToken);
+
+        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
+    }
+
+    public async Task<Result> DeleteUserBanner(Guid userId, CancellationToken cancellationToken = default) {
+        var uniqueKey = CreateUserBannerUniqueKey(userId);
+        return await DeleteFromS3Storage(uniqueKey, cancellationToken);
+    }
+
+    public async Task<string> GetUserBannerPreSignedUrl(Guid userId) {
+        var uniqueKey = CreateUserAvatarUniqueKey(userId);
+        var request = CreatePreSignedUrlRequest(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+
+        return await preSigningClient.GetPreSignedURLAsync(request);
+    }
+
+    public async Task<Result<string>> UploadServerAvatar(
+        Guid serverId, 
+        UploadItem avatar, 
+        CancellationToken cancellationToken = default
+    ) {
+        string key = CreateServerAvatarUniqueKey(serverId);
+        var result = await UploadToS3Storage(key, avatar.Stream, avatar.ContentType, cancellationToken);
+
+        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
+    }
+
+    public async Task<Result> DeleteServerAvatar(Guid serverId, CancellationToken cancellationToken = default) {
+        string key = CreateServerAvatarUniqueKey(serverId);
+        var result = await DeleteFromS3Storage(key, cancellationToken);
+
+        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
+    }
+
+    public async Task<string> GetServerAvatarPreSignedUrl(Guid serverId) {
+        var key = CreateServerAvatarUniqueKey(serverId);
+        var request = CreatePreSignedUrlRequest(key, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+
+        return await preSigningClient.GetPreSignedURLAsync(request);
+    }
+
+    public async Task<Result<string>> UploadServerBanner(Guid serverId, UploadItem avatar, CancellationToken cancellationToken = default) {
+        string key = CreateServerBannerUniqueKey(serverId);
+        var result = await UploadToS3Storage(key, avatar.Stream, avatar.ContentType, cancellationToken);
+
+        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
+    }
+
+    public async Task<Result> DeleteServerBanner(Guid serverId, CancellationToken cancellationToken = default) {
+        string key = CreateServerBannerUniqueKey(serverId);
+        var result = await DeleteFromS3Storage(key, cancellationToken);
+
+        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
+    }
+
+    public async Task<string> GetServerBannerPreSignedUrl(Guid serverId) {
+        var key = CreateServerBannerUniqueKey(serverId);
+        var request = CreatePreSignedUrlRequest(key, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
+
+        return await preSigningClient.GetPreSignedURLAsync(request);
     }
 
     public async Task<Result<Guid>> UploadMessageAttachment(
@@ -68,7 +133,36 @@ internal sealed class StorageService(
         string key = CreateAttachmentUniqueKey(attachmentId);
         return await DeleteFromS3Storage(key, cancellationToken);
     }
+    
+    public async Task<Result<string>> GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool download) {
+        string key = CreateAttachmentUniqueKey(attachmentId);
+        var request = CreatePreSignedUrlRequest(key, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
 
+        if (download) {
+            Attachment? attachment = await messageRepository.GetAttachmentById(attachmentId, CancellationToken.None);
+
+            if (attachment == null) {
+                return Errors.ResourceNotFound($"Attachment (Id = {attachment})");
+            }
+
+            string fileName = string.IsNullOrEmpty(attachment.Name) ? "file" : attachment.Name;
+            request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{fileName}\"";
+        }
+
+        // probably no need to try-catch since it only throws Arguments related exceptions.
+        string preSignedUrl = await preSigningClient.GetPreSignedURLAsync(request);
+        return Result<string>.Success(preSignedUrl);
+    }
+
+    private GetPreSignedUrlRequest CreatePreSignedUrlRequest(string key, DateTime? expires) {
+        return new() {
+            BucketName = _options.BucketName,
+            Key = key,
+            Expires = expires,
+            Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
+        };
+    }
+    
     private async Task<Result> UploadToS3Storage(
         string key,
         Stream stream,
@@ -154,69 +248,21 @@ internal sealed class StorageService(
             return Errors.UnexpectedError();
         }
     }
-    
-    public async Task<Result<string>> GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool download) {
-        var request = new GetPreSignedUrlRequest {
-            BucketName = _options.BucketName,
-            Key = CreateAttachmentUniqueKey(attachmentId),
-            Expires = timeProvider.GetUtcNow().AddHours(1).UtcDateTime,
-            Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
-        };
-
-        if (download) {
-            Attachment? attachment = await messageRepository.GetAttachmentById(attachmentId, CancellationToken.None);
-
-            if (attachment == null) {
-                return Errors.ResourceNotFound($"Attachment (Id = {attachment})");
-            }
-
-            string fileName = string.IsNullOrEmpty(attachment.Name) ? "file" : attachment.Name;
-            request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{fileName}\"";
-        }
-
-        // probably no need to try-catch since it only throws Arguments related exceptions.
-        string preSignedUrl = await preSigningClient.GetPreSignedURLAsync(request);
-        return Result<string>.Success(preSignedUrl);
-    }
-
-    public async Task<Result<string>> UploadCommunityServerAvatar(
-        Guid communityServerId, 
-        UploadItem avatar, 
-        CancellationToken cancellationToken = default
-    ) {
-        string uniqueKey = CreateCommunityServerAvatarUniqueKey(communityServerId);
-
-        var result = await UploadToS3Storage(uniqueKey, avatar.Stream, avatar.ContentType, cancellationToken);
-
-        if (result.IsSuccess) {
-            return Result<string>.Success(uniqueKey);
-        }
-
-        return result.Error;
-    }
-
-    public string GetCommunityServerAvatarPreSignedUrl(Guid serverId) {
-        var uniqueKey = CreateCommunityServerAvatarUniqueKey(serverId);
-        return GetPreSignedUrl(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
-    }
-    
-    private string GetPreSignedUrl(string key, DateTime? expires) {
-        var request = new GetPreSignedUrlRequest {
-            BucketName = _options.BucketName,
-            Key = key,
-            Expires = expires,
-            Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
-        };
-
-        return preSigningClient.GetPreSignedURL(request);
-    }
 
     private static string CreateUserAvatarUniqueKey(Guid userId) {
         return $"users/{userId}/avatar";
     }
     
-    private static string CreateCommunityServerAvatarUniqueKey(Guid userId) {
+    private static string CreateUserBannerUniqueKey(Guid userId) {
+        return $"users/{userId}/banner";
+    }
+    
+    private static string CreateServerAvatarUniqueKey(Guid userId) {
         return $"servers/{userId}/avatar";
+    }
+    
+    private static string CreateServerBannerUniqueKey(Guid userId) {
+        return $"servers/{userId}/banner";
     }
 
     private static string CreateAttachmentUniqueKey(Guid attachmentId) {
