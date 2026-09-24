@@ -174,7 +174,9 @@ internal sealed class StorageService(
             request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{fileName}\"";
         }
 
-        return Result<string>.Success(preSigningClient.GetPreSignedURL(request));
+        // probably no need to try-catch since it only throws Arguments related exceptions.
+        string preSignedUrl = await preSigningClient.GetPreSignedURLAsync(request);
+        return Result<string>.Success(preSignedUrl);
     }
 
     public async Task<Result<string>> UploadCommunityServerAvatar(
@@ -210,11 +212,11 @@ internal sealed class StorageService(
     }
 
     private static string CreateUserAvatarUniqueKey(Guid userId) {
-        return $"avatars/users/{userId}";
+        return $"users/{userId}/avatar";
     }
     
     private static string CreateCommunityServerAvatarUniqueKey(Guid userId) {
-        return $"avatars/community-servers/{userId}";
+        return $"servers/{userId}/avatar";
     }
 
     private static string CreateAttachmentUniqueKey(Guid attachmentId) {

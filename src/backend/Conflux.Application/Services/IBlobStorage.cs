@@ -11,7 +11,7 @@ public interface IBlobStorage {
     );
 
     Task<Result> DeleteUserAvatar(Guid userId, CancellationToken cancellationToken = default);
-
+    
     Task<Result<Guid>> UploadMessageAttachment(
         UploadItem attachment, 
         CancellationToken cancellationToken = default
