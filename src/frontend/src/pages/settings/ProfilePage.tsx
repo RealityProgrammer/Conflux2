@@ -9,7 +9,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import UserAvatarAndBanner from "../../components/UserAvatarAndBanner.tsx";
 import {FaBirthdayCake} from "react-icons/fa";
 import {FaMarsAndVenus, FaRepeat, FaXmark} from "react-icons/fa6";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {TruncatedText} from "../../components/TruncatedText.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
@@ -58,7 +58,7 @@ const profileSchema = z.object({
 type UpdateProfileFormValues = z.infer<typeof profileSchema>;
 
 function ProfileForm() {
-  const auth = useAuthorization();
+  const auth = useAuth();
   const presence = usePresence();
 
   const { data, isLoading, isError } = useGetSessionUserProfileSettingInfoQuery(

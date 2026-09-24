@@ -1,4 +1,4 @@
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {Label, Popover, Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {BsPeople} from "react-icons/bs";
@@ -33,7 +33,7 @@ import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 
 function Sidebar() {
-  const auth = useAuthorization();
+  const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { effectiveStatus } = usePresence();

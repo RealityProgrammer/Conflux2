@@ -1,10 +1,10 @@
 import {Separator} from "radix-ui";
 import {NavLink, Outlet} from "react-router";
 import type {ReactNode} from "react";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 
 export default function SettingsLayout() {
-  const auth = useAuthorization();
+  const auth = useAuth();
 
   return (
     <div className="w-dvw h-dvh grid grid-cols-5 text-white">

@@ -3,7 +3,7 @@ import {useEffect, useRef, useState} from "react";
 import {animate, utils} from "animejs";
 import SelectableAvatar from "../../components/SelectableAvatar.tsx";
 import {HttpStatusCode} from "axios";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {Label} from "radix-ui";
 import {
   type ServiceResponse,
@@ -193,7 +193,7 @@ interface NamesPanelProps extends PanelProps {}
 function NamesPanel({
   setDisplayingPanel,
 }: NamesPanelProps) {
-  const { userProfile, updateUserProfile } = useAuthorization();
+  const { userProfile, updateUserProfile } = useAuth();
 
   const {
     register,

@@ -8,7 +8,7 @@ import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
 import {BsArrowReturnLeft, BsCopy, BsPencil, BsPencilFill, BsTrash} from "react-icons/bs";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import MessageContent from "./MessageContent.tsx";
@@ -66,7 +66,7 @@ function MessageView({
   editingStatus,
   context,
 }: MessageViewProps) {
-  const auth = useAuthorization();
+  const auth = useAuth();
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger({

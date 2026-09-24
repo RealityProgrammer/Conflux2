@@ -3,14 +3,14 @@ import {useNavigate, useRevalidator, useRouteLoaderData} from "react-router";
 import {authService} from "../api/authService.ts";
 import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/types.ts";
 
-interface AuthorizationContextType {
+interface AuthContextType {
   userAuthorization: UserAuthorizationInfo | null;
   userProfile: UserIdentityProfileDto | null;
   updateUserProfile: (updates: Partial<UserIdentityProfileDto>) => void;
   logout: () => void;
 }
 
-const AuthorizationContext = createContext<AuthorizationContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export default function AuthProvider({children}: { children: ReactNode }) {
   const revalidator = useRevalidator();
@@ -47,19 +47,19 @@ export default function AuthProvider({children}: { children: ReactNode }) {
   }
 
   return (
-    <AuthorizationContext.Provider value={{
+    <AuthContext.Provider value={{
       userAuthorization: authorizationInfo,
       userProfile: userProfile,
       updateUserProfile: updateUserProfile,
       logout,
     }}>
       {children}
-    </AuthorizationContext.Provider>
+    </AuthContext.Provider>
   );
 }
 
-export function useAuthorization(): AuthorizationContextType {
-  const context = useContext(AuthorizationContext);
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider.");
 
   return context;

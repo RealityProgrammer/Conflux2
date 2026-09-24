@@ -4,7 +4,7 @@ import {
   type GetSessionUserManualPresenceStatusQuery,
   useGetSessionUserManualPresenceStatusQuery, useUpdateManualPresenceStatusMutation
 } from "../graphql/queries.ts";
-import {useAuthorization} from "./AuthContext.tsx";
+import {useAuth} from "./AuthContext.tsx";
 import {toast} from "react-toastify";
 import useIdleTimer from "../hooks/useIdleTimer.tsx";
 import {useQueryClient} from "@tanstack/react-query";
@@ -19,7 +19,7 @@ interface PresenceContextType {
 const PresenceContext = createContext<PresenceContextType | null>(null);
 
 export default function PresenceProvider({children} : {children: ReactNode}) {
-  const { userProfile } = useAuthorization()!;
+  const { userProfile } = useAuth()!;
   const queryClient = useQueryClient();
 
   const isIdle = useIdleTimer();
