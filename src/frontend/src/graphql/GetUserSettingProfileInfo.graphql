@@ -7,5 +7,6 @@ query GetUserSettingProfileInfo($id: UUID!) {
         biography,
         pronouns,
         createdAt,
+        manualPresenceStatus,
     }
 }

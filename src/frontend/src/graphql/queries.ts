@@ -58,7 +58,7 @@ export type GetUserSettingProfileInfoQueryVariables = Exact<{
 }>;
 
 
-export type GetUserSettingProfileInfoQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string } | null };
+export type GetUserSettingProfileInfoQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
@@ -334,6 +334,7 @@ export const GetUserSettingProfileInfoDocument = new TypedDocumentString(`
     biography
     pronouns
     createdAt
+    manualPresenceStatus
   }
 }
     `);
