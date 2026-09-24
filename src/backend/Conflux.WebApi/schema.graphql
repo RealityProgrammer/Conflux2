@@ -157,6 +157,7 @@ type Query
     @cost(weight: "10")
   invitation(id: String!): Invitation @cost(weight: "10")
   user(id: UUID!): ApplicationUser @cost(weight: "10")
+  sessionUser: ApplicationUser @cost(weight: "10")
   serverModerationLogs(
     "Returns the first _n_ elements from the list."
     first: Int

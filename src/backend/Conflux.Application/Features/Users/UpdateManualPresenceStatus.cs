@@ -12,7 +12,7 @@ public record UserPresenceChangedNotification(
     PresenceStatus NewStatus
 ) : INotification;
 
-public sealed class UpdateManualPresenceStatus(
+public sealed class UpdateManualPresenceStatusHandler(
     IPresenceService presenceService
 ) : ICommandHandler<UpdateManualPresenceStatusCommand, Result> {
     public async ValueTask<Result> Handle(UpdateManualPresenceStatusCommand command, CancellationToken cancellationToken) {

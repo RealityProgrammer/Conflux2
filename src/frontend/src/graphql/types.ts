@@ -849,6 +849,7 @@ export type Query = {
   serverMemberSearch: CommunityServerMemberConnection;
   serverMemberSearchForAdmin: CommunityServerMemberConnection;
   serverModerationLogs: ServerModerationLogConnection;
+  sessionUser?: Maybe<ApplicationUser>;
   user?: Maybe<ApplicationUser>;
 };
 

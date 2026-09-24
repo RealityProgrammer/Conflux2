@@ -6,4 +6,4 @@ public enum AvatarOperationType {
     Delete,
 }
 
-public readonly record struct AvatarOperation(AvatarOperationType Type, Stream? AvatarStream, string? ContentType);
+public readonly record struct AvatarOperation(AvatarOperationType Type, Stream? AvatarStream);

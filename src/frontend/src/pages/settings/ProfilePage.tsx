@@ -2,18 +2,24 @@ import {Label, Select, Separator} from "radix-ui";
 import {Controller, type SubmitHandler, useForm, useWatch} from "react-hook-form";
 import {z} from "zod";
 import {PresenceStatus} from "../../graphql/types.ts";
-import {BsChevronDown} from "react-icons/bs";
+import {BsChevronDown, BsPerson} from "react-icons/bs";
 import SelectItem from "../../components/SelectItem.tsx";
 import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
 import {zodResolver} from "@hookform/resolvers/zod";
 import UserAvatarAndBanner from "../../components/UserAvatarAndBanner.tsx";
 import {FaBirthdayCake} from "react-icons/fa";
-import {FaMarsAndVenus} from "react-icons/fa6";
-import {useGetUserSettingProfileInfoQuery} from "../../graphql/queries.ts";
+import {FaMarsAndVenus, FaRepeat, FaXmark} from "react-icons/fa6";
 import {useAuthorization} from "../../contexts/AuthContext.tsx";
 import {TruncatedText} from "../../components/TruncatedText.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
+import {sessionUserService} from "../../api/sessionUserService.ts";
+import {toast} from "react-toastify";
+import {usePresence} from "../../contexts/PresenceContext.tsx";
+import SelectableAvatar from "../../components/SelectableAvatar.tsx";
+import {useGetSessionUserProfileSettingInfoQuery} from "../../graphql/queries.ts";
+import {userService} from "../../api/userService.ts";
+import IconButton from "../../components/IconButton.tsx";
 
 export default function ProfilePage() {
   return (
@@ -42,14 +48,21 @@ const profileSchema = z.object({
     .optional(),
 
   presence: z.enum(PresenceStatus),
+
+  avatar: z.file()
+    .max(4194304, "Avatar can only have maximum size of 4MB (4194304 bytes).")
+    .optional()
+    .nullable()
 });
 
 type UpdateProfileFormValues = z.infer<typeof profileSchema>;
 
 function ProfileForm() {
   const auth = useAuthorization();
-  const { data, isLoading, isError } = useGetUserSettingProfileInfoQuery(
-    { id: auth.userProfile?.id ?? "" },
+  const presence = usePresence();
+
+  const { data, isLoading, isError } = useGetSessionUserProfileSettingInfoQuery(
+    {},
     {
       enabled: !!auth.userProfile,
     }
@@ -64,28 +77,42 @@ function ProfileForm() {
       bio: "",
       pronouns: "",
       presence: PresenceStatus.Online,
+      avatar: undefined,
     },
     values: {
-      displayName: data?.user?.displayName ?? "",
-      bio: data?.user?.biography ?? "",
-      pronouns: data?.user?.pronouns ?? "",
-      presence: data?.user?.manualPresenceStatus ?? PresenceStatus.Online,
-    },
-    resetOptions: {
-      keepDirtyValues: false,
+      displayName: data?.sessionUser?.displayName ?? "",
+      bio: data?.sessionUser?.biography ?? "",
+      pronouns: data?.sessionUser?.pronouns ?? "",
+      presence: data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Online,
     }
   });
 
-  const { control, register, reset, handleSubmit, formState: { errors, isSubmitting } } = formMethods;
+  const { control, reset, resetField, handleSubmit, formState: { errors, isSubmitting, dirtyFields } } = formMethods;
 
   const watchedValues = useWatch<UpdateProfileFormValues>({ control, });
 
   const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (data: UpdateProfileFormValues) => {
-    console.log("submit", JSON.stringify(data));
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  };
+    const response = await sessionUserService.updateProfile(
+      dirtyFields.displayName ? data.displayName : undefined,
+      dirtyFields.pronouns ? data.pronouns : undefined,
+      dirtyFields.bio ? data.bio : undefined,
+      dirtyFields.presence ? data.presence : undefined,
+      data.avatar
+    );
 
-  const joinDate = new Date();
+    if (response.success) {
+      reset(data);
+      auth?.updateUserProfile({
+        displayName: data.displayName,
+      });
+
+      if (dirtyFields.presence) {
+        presence.updateManualStatus(data.presence, "client");
+      }
+    } else {
+      toast.error("Failed to update profile.");
+    }
+  };
 
   return (
     <form className="relative" onSubmit={handleSubmit(onSubmit)}>
@@ -101,6 +128,37 @@ function ProfileForm() {
           <p className="group-label">Fields</p>
 
           <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label.Root htmlFor="displayName" className="label mb-1 block">Avatar</Label.Root>
+
+              <div className="flex flex-row justify-center items-center">
+                <Controller
+                  control={control}
+                  name="avatar"
+                  render={({ field }) => (
+                    <div className="flex flex-row gap-3">
+                      <SelectableAvatar
+                        value={field.value === undefined ? data?.sessionUser?.hasAvatar ? userService.getAvatarUrl(data.sessionUser.id) : null : field.value}
+                        onChange={field.onChange}
+                        className="size-48 rounded-full overflow-hidden flex-none"
+                        fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
+                      />
+
+                      <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
+                        <IconButton type="button" theme="default" onClick={() => resetField("avatar")} disabled={field.value === undefined}>
+                          <FaRepeat className="size-5"/>
+                        </IconButton>
+
+                        <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
+                          <FaXmark className="size-5"/>
+                        </IconButton>
+                      </div>
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
+
             <div>
               <Label.Root htmlFor="displayName" className="label mb-1 block">Display Name</Label.Root>
 
@@ -130,7 +188,7 @@ function ProfileForm() {
                 className="input-field h-10 px-3 w-full"
                 disabled
                 readOnly aria-readonly="true"
-                value={data?.user?.userName ?? ""}
+                value={data?.sessionUser?.userName ?? ""}
               />
             </div>
 
@@ -270,16 +328,14 @@ function ProfileForm() {
 
               <div className="px-2">
                 <p className="text-xl font-bold truncate">{watchedValues.displayName || "\u003CDisplay Name\u003E"}</p>
-                <p className="text-sm ml-1 truncate text-stone-300">@{data?.user?.userName}</p>
+                <p className="text-sm ml-1 truncate text-stone-300">@{data?.sessionUser?.userName}</p>
 
                 <div className="grid grid-cols-2 gap-x-2 text-sm mt-2">
-                  {joinDate && (
-                    <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
-                      <FaBirthdayCake className="flex-none size-4 fill-gray-50 mr-2"/>
+                  <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
+                    <FaBirthdayCake className="flex-none size-4 fill-gray-50 mr-2"/>
 
-                      {joinDate?.toLocaleDateString() || ""}
-                    </p>
-                  )}
+                    {data?.sessionUser?.createdAt ? new Date(data?.sessionUser?.createdAt).toLocaleDateString() : "-"}
+                  </p>
 
                   {watchedValues.pronouns && (
                     <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">

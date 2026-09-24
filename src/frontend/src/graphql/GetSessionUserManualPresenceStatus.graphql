@@ -1,5 +1,5 @@
-query GetSessionUserManualPresenceStatus($userId: UUID!) {
-    user(id: $userId) {
+query GetSessionUserManualPresenceStatus {
+    sessionUser {
         manualPresenceStatus
     }
 }

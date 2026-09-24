@@ -8,18 +8,15 @@ import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {authService} from "./authService.ts";
+import type {PresenceStatus} from "../graphql/types.ts";
 
 export const sessionUserService = {
   uploadAvatar: async (file: File): Promise<ServiceResponse> => {
     try {
-      const formData: FormData = new FormData();
+      const formData = new FormData();
       formData.set("File", file);
 
-      const response: AxiosResponse<BackendResponse> = await apiClient.post("/users/me/avatar", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        }
-      });
+      const response: AxiosResponse<BackendResponse> = await apiClient.postForm("/users/me/avatar", formData);
 
       return {
         success: true,
@@ -131,4 +128,51 @@ export const sessionUserService = {
       return handleAxiosError(axiosError);
     }
   },
+
+  updateProfile: async (
+    displayName?: string,
+    pronouns?: string | null,
+    biography?: string | null,
+    manualPresenceStatus?: PresenceStatus,
+    avatar?: File | null
+  ): Promise<ServiceResponse> => {
+    try {
+      const formData = new FormData();
+
+      if (displayName !== undefined) {
+        formData.append("displayName", displayName);
+      }
+
+      if (pronouns !== undefined) {
+        formData.append("pronouns", pronouns || "");
+      }
+
+      if (biography !== undefined) {
+        formData.append("biography", biography || "");
+      }
+
+      if (manualPresenceStatus !== undefined) {
+        formData.append("manualPresenceStatus", manualPresenceStatus);
+      }
+
+      if (avatar !== undefined) {
+        formData.append("avatar.type", avatar === null ? "Delete" : "Set");
+
+        if (avatar !== null) {
+          formData.append("avatar.file", avatar);
+        }
+      }
+
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.patchForm<BackendResponse>(`users/me/profile`, formData);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  }
 }

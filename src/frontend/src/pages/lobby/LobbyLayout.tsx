@@ -15,9 +15,8 @@ import {useEffect, useRef, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import DialogForm from "../../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
-import ErrorText from "../../components/ErrorText.tsx";
 import ServerAvatar from "../../components/ServerAvatar.tsx";
-import {useForm} from "react-hook-form";
+import {Controller, useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -28,9 +27,10 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
 import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
-import {FaGears} from "react-icons/fa6";
+import {FaGears, FaXmark} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
 import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
+import ErrorPopover from "../../components/ErrorPopover.tsx";
 
 function Sidebar() {
   const auth = useAuthorization();
@@ -280,14 +280,15 @@ function CreateServerDialogForm({
     reValidateMode: "onSubmit",
   });
 
+  const { control, reset, setError, register, formState: { errors, isSubmitting } } = formMethods;
+
   useEffect(() => {
     if (open) {
       idempotencyKey.current = crypto.randomUUID();
-      console.log("created new idempotency key.");
     } else {
-      formMethods.reset();
+      reset();
     }
-  }, [open, formMethods]);
+  }, [open, reset]);
 
   const onSubmit = async (data: CreateServerFormValues) => {
     const response: ServiceResponse<ServerIdentityDto> =
@@ -304,18 +305,18 @@ function CreateServerDialogForm({
         const details = response.error.details as Record<"name" | "avatar", string[]>;
 
         if (details.name && details.name.length > 0) {
-          formMethods.setError("name", {
+          setError("name", {
             message: details.name[0],
           });
         }
 
         if (details.avatar && details.avatar.length > 0) {
-          formMethods.setError("avatar", {
+          setError("avatar", {
             message: details.avatar[0],
           })
         }
       } else {
-        formMethods.setError("root", {
+        setError("root", {
           message: response.error?.message ?? "An unexpected error occurred.",
         });
       }
@@ -335,9 +336,9 @@ function CreateServerDialogForm({
           <button
             type="submit"
             className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
-            disabled={formMethods.formState.isSubmitting}
+            disabled={isSubmitting}
           >
-            {formMethods.formState.isSubmitting ? (
+            {isSubmitting ? (
               <Spinner className="size-5 fill-white"/>
             ) : (
               <>Create Server</>
@@ -348,33 +349,48 @@ function CreateServerDialogForm({
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
       >
         <div className="flex flex-col items-center">
-          <SelectableAvatar
-            className="size-48 rounded-full flex-none"
-            onAvatarChange={(file) => {
-              formMethods.setValue("avatar", file, { shouldValidate: true })
-            }}
-            fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
-          />
+          <Controller
+            control={control}
+            name="avatar"
+            render={({ field }) => (
+              <div className="flex flex-row gap-3">
+                <ErrorPopover
+                  open={!!errors.avatar}
+                  content={errors.avatar?.message}
+                >
+                  <SelectableAvatar
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="size-48 rounded-full overflow-hidden flex-none"
+                    fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
+                  />
+                </ErrorPopover>
 
-          {formMethods.formState.errors.avatar && (
-            <ErrorText>{formMethods.formState.errors.avatar.message}</ErrorText>
-          )}
+                <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={!field.value}>
+                    <FaXmark className="size-5"/>
+                  </IconButton>
+                </div>
+              </div>
+            )}
+          />
         </div>
 
         <div className="mt-4 w-full">
           <Label.Root className="label block mb-1">Server name</Label.Root>
 
-          <input
-            type="text"
-            className="input-field h-11 w-full"
-            placeholder="Enter server name"
-            {...formMethods.register("name")}
-          />
+          <ErrorPopover
+            open={!!errors.name}
+            content={errors.name?.message}
+          >
+            <input
+              type="text"
+              className="input-field h-11 w-full"
+              placeholder="Enter server name"
+              {...register("name")}
+            />
+          </ErrorPopover>
         </div>
-
-        {formMethods.formState.errors.name && (
-          <ErrorText>{formMethods.formState.errors.name.message}</ErrorText>
-        )}
       </DialogForm>
     </>
   );

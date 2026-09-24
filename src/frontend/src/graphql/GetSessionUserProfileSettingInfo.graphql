@@ -1,5 +1,5 @@
-query GetUserSettingProfileInfo($id: UUID!) {
-    user(id: $id) {
+query GetSessionUserProfileSettingInfo {
+    sessionUser {
         id,
         userName,
         displayName,

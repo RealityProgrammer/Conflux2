@@ -3,7 +3,7 @@ import Spinner from "./Spinner.tsx";
 import {IconButtonTheme} from "./IconButtonTheme.tsx";
 
 const THEME_STYLES: Record<string, string> = {
-  [IconButtonTheme.Default]: 'text-slate-200 hover:text-white disabled:text-slate-200/35',
+  [IconButtonTheme.Default]: 'text-slate-300 hover:text-white disabled:text-slate-200/35',
   [IconButtonTheme.Success]: 'text-green-400 hover:text-green-600 disabled:text-green-400/35',
   [IconButtonTheme.Warning]: 'text-yellow-400 hover:text-yellow-500 disabled:text-yellow-400/35',
   [IconButtonTheme.Danger]: 'text-red-400 hover:text-red-600 disabled:text-red-400/35',
