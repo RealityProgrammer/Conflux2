@@ -28,7 +28,6 @@ internal sealed class UserRepository(
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(builder => {
                 builder.SetProperty(u => u.HasAvatar, hasAvatar);
-                builder.SetProperty(u => u.AvatarUpdatedAt, utcNow);
             }, cancellationToken);
 
         return numChange > 0;

@@ -18,7 +18,6 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.UserName);
         descriptor.Field(u => u.DisplayName);
         descriptor.Field(u => u.HasAvatar);
-        descriptor.Field(u => u.AvatarUpdatedAt);
         descriptor.Field(u => u.Biography);
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);

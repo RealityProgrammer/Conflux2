@@ -6,8 +6,6 @@ namespace Conflux.Domain.Entities;
 
 public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public bool IsUserNameLocked { get; set; }
-    
-    public DateTimeOffset? AvatarUpdatedAt { get; set; }
     public bool HasAvatar { get; set; }
     
     [MaxLength(32)] public string? DisplayName { get; set; }
