@@ -3,8 +3,6 @@ using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
-using FileSignatures;
-using FileSignatures.Formats;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Users;
@@ -20,46 +18,14 @@ public sealed record UpdateUserProfileCommand(
 
 public sealed class UpdateUserProfileHandler(
     IUserRepository userRepository,
-    IBlobStorage blobStorage,
-    IFileFormatInspector fileFormatInspector
+    IUserMediaService userMediaService
 ) : ICommandHandler<UpdateUserProfileCommand, Result> {
     public async ValueTask<Result> Handle(UpdateUserProfileCommand command, CancellationToken cancellationToken) {
         bool? hasAvatar;
         
         switch (command.AvatarOperation.Type) {
             case AvatarOperationType.Set:
-                Stream avatarStream = command.AvatarOperation.AvatarStream!;
-
-                if (fileFormatInspector.DetermineFileFormat(avatarStream) is not { } fileFormat) {
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(UploadUserAvatarCommand.AvatarStream)] = [
-                            "Unknown file format.",
-                        ]
-                    });
-                }
-
-                if (fileFormat is not Image imageFormat) {
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(UploadUserAvatarCommand.AvatarStream)] = [
-                            "File is not a valid image format.",
-                        ],
-                    });
-                }
-
-                if (imageFormat is not Png and not Jpeg and not Webp) {
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(UploadUserAvatarCommand.AvatarStream)] = [
-                            "Only PNG, JPEG and WEBP image formats are supported.",
-                        ],
-                    });
-                }
-
-                if (avatarStream is { CanSeek: true, Position: > 0 }) {
-                    avatarStream.Position = 0;
-                }
-
-                // upload
-                var uploadResult = await blobStorage.UploadUserAvatar(command.UserId, new(avatarStream, fileFormat.MediaType), cancellationToken);
+                var uploadResult = await userMediaService.UploadAvatar(command.UserId, command.AvatarOperation.AvatarStream!, cancellationToken);
 
                 if (!uploadResult.IsSuccess) {
                     return uploadResult;
@@ -69,7 +35,7 @@ public sealed class UpdateUserProfileHandler(
                 break;
             
             case AvatarOperationType.Delete:
-                var deleteResult = await blobStorage.DeleteUserAvatar(command.UserId, cancellationToken);
+                var deleteResult = await userMediaService.DeleteAvatar(command.UserId, cancellationToken);
                 
                 if (!deleteResult.IsSuccess) {
                     return deleteResult;
@@ -118,7 +84,7 @@ public sealed class UpdateUserProfileHandler(
             if (changed == 0) {
                 // Delete avatar if has avatar and upload is failed.
                 if (hasAvatar.HasValue && hasAvatar.Value) {
-                    await blobStorage.DeleteUserAvatar(command.UserId, CancellationToken.None);
+                    await userMediaService.DeleteAvatar(command.UserId, CancellationToken.None);
                 }
                 
                 return Errors.NoUserFoundFromId();

@@ -8,10 +8,10 @@ public sealed record DeleteUserAvatarCommand(Guid UserId) : ICommand<Result>;
 
 public sealed class DeleteUserAvatarHandler(
     IUserRepository userRepository,
-    IBlobStorage blobStorage
+    IUserMediaService userMediaService
 ) : ICommandHandler<DeleteUserAvatarCommand, Result> {
     public async ValueTask<Result> Handle(DeleteUserAvatarCommand request, CancellationToken cancellationToken) {
-        var result = await blobStorage.DeleteUserAvatar(request.UserId, cancellationToken);
+        var result = await userMediaService.DeleteAvatar(request.UserId, cancellationToken);
 
         if (!result.IsSuccess) {
             return result;
