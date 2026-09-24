@@ -13,7 +13,8 @@ public sealed record UpdateUserProfileCommand(
     PatchField<string> Pronouns,
     PatchField<string> Biography,
     PatchField<PresenceStatus> ManualPresenceStatus,
-    AvatarOperation AvatarOperation
+    FileOperation AvatarOperation,
+    FileOperation BannerOperation
 ) : ICommand<Result>;
 
 public sealed class UpdateUserProfileHandler(

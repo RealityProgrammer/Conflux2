@@ -1,5 +1,4 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Channels;
 using Conflux.Application.Features.Friends;
 using Conflux.Application.Features.Users;
 using Conflux.Application.Options;
@@ -148,7 +147,8 @@ public sealed class SessionUserController(
             return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
         }
 
-        await using var stream = request.Avatar.Type == AvatarOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
+        await using var avatarStream = request.Avatar.Type == AvatarOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
+        await using var bannerStream = request.Avatar.Type == AvatarOperationType.Set ? request.Banner.File!.OpenReadStream() : Stream.Null;
 
         var result = await mediator.Send(new UpdateUserProfileCommand(
             userId, 
@@ -156,7 +156,8 @@ public sealed class SessionUserController(
             request.Pronouns, 
             request.Biography, 
             request.ManualPresenceStatus,
-            new(request.Avatar.Type, stream)
+            new(request.Avatar.Type, avatarStream),
+            new(request.Banner.Type, avatarStream)
         ));
 
         if (result.IsSuccess) {
@@ -217,7 +218,8 @@ public sealed class SessionUserController(
         PatchField<string> Pronouns,
         PatchField<string> Biography,
         PatchField<PresenceStatus> ManualPresenceStatus,
-        AvatarOperationInput Avatar
+        AvatarOperationInput Avatar,
+        AvatarOperationInput Banner
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             List<ValidationResult> results = [];
@@ -252,9 +254,18 @@ public sealed class SessionUserController(
                         results.Add(new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.", [nameof(Avatar)]));
                     }
                 } else {
-                    results.Add(new($"Avatar is required for Set operation.", [nameof(Avatar)]));
+                    results.Add(new("Avatar is required for Set operation.", [nameof(Avatar)]));
                 }
-                
+            }
+
+            if (Banner.Type == AvatarOperationType.Set) {
+                if (Banner.File is { } avatarFile) {
+                    if (avatarFile.Length > options.MaxBannerSizeBytes) {
+                        results.Add(new($"Banner must be smaller than {options.MaxBannerSizeBytes.Bytes():MB}.", [nameof(Banner)]));
+                    }
+                } else {
+                    results.Add(new("Banner is required for Set operation.", [nameof(Banner)]));
+                }
             }
 
             return results;
