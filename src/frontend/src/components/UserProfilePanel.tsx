@@ -22,7 +22,7 @@ export default function UserProfilePanel({ userId, className, ...props }: UserPr
           userId={userId}
           username={data.user.userName ?? "???"}
           displayName={data.user.displayName ?? "???"}
-          hasAvatar={data.user.hasAvatar}
+          avatarRevision={data.user.avatarRevision}
           joinDate={new Date(data.user.createdAt)}
           friendedDate={new Date()}
           pronouns={data.user.pronouns ?? undefined}

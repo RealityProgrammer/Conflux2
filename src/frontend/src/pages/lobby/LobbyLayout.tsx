@@ -49,7 +49,7 @@ function Sidebar() {
               }
             }}>
               <UserAvatar
-                src={auth.userProfile?.hasAvatar ? userService.getAvatarUrl(auth.userProfile.id) : undefined}
+                src={auth.userProfile?.avatarRevision ? userService.getAvatarUrl(auth.userProfile.id, auth.userProfile.avatarRevision) : undefined}
                 className="flex-none size-10 cursor-pointer"
               />
 

@@ -159,7 +159,7 @@ export default function MemberManagement() {
                   return (
                     <UserNameplate.Root
                       key={member.id}
-                      avatarSrc={member.user.hasAvatar ? userService.getAvatarUrl(member.user.id) : undefined}
+                      avatarSrc={member.user.avatarRevision ? userService.getAvatarUrl(member.user.id, member.user.avatarRevision) : undefined}
                       displayName={member.user.displayName ?? "???"}
                       userName={member.user.userName ?? "???"}
                       className="p-1 hover-highlight cursor-pointer w-full"
@@ -386,7 +386,7 @@ function MemberInformationContent() {
 
             <div className="flex flex-row items-center gap-2">
               <UserAvatar
-                src={inspectingMemberInfo.user.hasAvatar ? userService.getAvatarUrl(inspectingMemberInfo.user.id) : undefined}
+                src={inspectingMemberInfo.user.avatarRevision ? userService.getAvatarUrl(inspectingMemberInfo.user.id, inspectingMemberInfo.user.avatarRevision) : undefined}
                 className="flex-none size-10 rounded-full overflow-hidden"
               />
 

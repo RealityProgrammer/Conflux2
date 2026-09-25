@@ -3,7 +3,7 @@ query GetUserFullProfile($id: UUID!) {
         id,
         userName,
         displayName,
-        hasAvatar,
+        avatarRevision,
         biography,
         pronouns,
         createdAt,

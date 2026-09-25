@@ -8,7 +8,7 @@ interface UserProfileContentProps {
   userId: string;
   username: string;
   displayName: string;
-  hasAvatar?: boolean;
+  avatarRevision: number | null;
   bannerUrl?: string;
   joinDate?: Date;
   friendedDate?: Date;
@@ -21,7 +21,7 @@ export default function UserProfileContent({
   userId,
   username,
   displayName,
-  hasAvatar,
+  avatarRevision,
   bannerUrl,
   joinDate,
   pronouns,
@@ -44,7 +44,7 @@ export default function UserProfileContent({
 
         <div className="absolute -bottom-10 left-4">
           <UserAvatar
-            src={hasAvatar ? userService.getAvatarUrl(userId) : undefined}
+            src={avatarRevision ? userService.getAvatarUrl(userId, avatarRevision) : undefined}
             className="size-21 border-4 border-gray-725"
           />
         </div>

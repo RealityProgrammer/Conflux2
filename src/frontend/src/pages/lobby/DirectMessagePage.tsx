@@ -26,7 +26,7 @@ export default function DirectMessagePage() {
         {!!channelId && !!channelSummary ? (
           <>
             <UserAvatar
-              src={channelSummary.otherUser.hasAvatar ? userService.getAvatarUrl(channelSummary.otherUser.id) : undefined}
+              src={channelSummary.otherUser.avatarRevision ? userService.getAvatarUrl(channelSummary.otherUser.id, channelSummary.otherUser.avatarRevision) : undefined}
               className="size-8"
             />
 

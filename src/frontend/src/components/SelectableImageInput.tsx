@@ -51,7 +51,7 @@ export default function SelectableImageInput({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept="image/png, image/jpeg, image/webp"
         className="hidden"
       />
 

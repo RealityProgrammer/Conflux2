@@ -116,7 +116,7 @@ function MessageView({
             {showHeader ? (
               <>
                 <UserAvatar
-                  src={senderProfile?.hasAvatar ? userService.getAvatarUrl(senderProfile.id) : undefined}
+                  src={senderProfile?.avatarRevision ? userService.getAvatarUrl(senderProfile.id, senderProfile.avatarRevision) : undefined}
                   className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
                 />
 

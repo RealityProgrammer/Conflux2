@@ -203,8 +203,8 @@ type ApplicationUser {
   id: UUID!
   userName: String
   displayName: String
-  hasAvatar: Boolean!
-  hasBanner: Boolean!
+  avatarRevision: Int
+  bannerRevision: Int
   biography: String
   pronouns: String
   createdAt: DateTime!
@@ -501,8 +501,8 @@ input ApplicationUserFilterInput {
   and: [ApplicationUserFilterInput!]
   or: [ApplicationUserFilterInput!]
   isUserNameLocked: BooleanOperationFilterInput
-  hasAvatar: BooleanOperationFilterInput
-  hasBanner: BooleanOperationFilterInput
+  avatarRevision: IntOperationFilterInput
+  bannerRevision: IntOperationFilterInput
   displayName: StringOperationFilterInput
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
@@ -531,8 +531,8 @@ input ApplicationUserFilterInput {
 
 input ApplicationUserSortInput {
   isUserNameLocked: SortEnumType @cost(weight: "10")
-  hasAvatar: SortEnumType @cost(weight: "10")
-  hasBanner: SortEnumType @cost(weight: "10")
+  avatarRevision: SortEnumType @cost(weight: "10")
+  bannerRevision: SortEnumType @cost(weight: "10")
   displayName: SortEnumType @cost(weight: "10")
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")

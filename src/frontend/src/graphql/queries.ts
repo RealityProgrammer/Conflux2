@@ -40,28 +40,28 @@ export type GetSessionUserManualPresenceStatusQuery = { sessionUser: { manualPre
 export type GetSessionUserProfileSettingInfoQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, hasBanner: boolean, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
+export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null, bannerRevision: number | null, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number } | null };
+export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number } | null };
 
 export type GetUserIdentityProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } | null };
+export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null } | null };
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
+export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -258,8 +258,8 @@ export const GetSessionUserProfileSettingInfoDocument = new TypedDocumentString(
     id
     userName
     displayName
-    hasAvatar
-    hasBanner
+    avatarRevision
+    bannerRevision
     biography
     pronouns
     createdAt
@@ -295,7 +295,7 @@ export const GetUserFullProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    hasAvatar
+    avatarRevision
     biography
     pronouns
     createdAt
@@ -331,7 +331,7 @@ export const GetUserIdentityProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    hasAvatar
+    avatarRevision
   }
 }
     `);
@@ -366,7 +366,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
       id
       userName
       displayName
-      hasAvatar
+      avatarRevision
     }
     roles {
       id

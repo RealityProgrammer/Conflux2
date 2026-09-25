@@ -182,7 +182,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full justify-center">
                 <SelectableImageInput
-                  value={field.value === undefined ? userData?.hasAvatar ? userService.getAvatarUrl(userData.id, true) : null : field.value}
+                  value={userData ? field.value === undefined ? userData.avatarRevision !== null ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
                   fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
@@ -193,7 +193,7 @@ function FormFields({
                     <FaRepeat className="size-5"/>
                   </IconButton>
 
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null || !userData?.hasAvatar}>
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
                     <FaXmark className="size-5"/>
                   </IconButton>
                 </div>
@@ -213,7 +213,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full">
                 <SelectableImageInput
-                  value={field.value === undefined ? userData?.hasBanner ? userService.getBannerUrl(userData.id, true) : null : field.value}
+                  value={userData ? field.value === undefined ? userData.bannerRevision !== null ? userService.getBannerUrl(userData.id, userData.bannerRevision) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
@@ -243,7 +243,7 @@ function FormFields({
                     <FaRepeat className="size-5"/>
                   </IconButton>
 
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null || !userData?.hasBanner}>
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
                     <FaXmark className="size-5"/>
                   </IconButton>
                 </div>

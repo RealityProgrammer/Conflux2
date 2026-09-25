@@ -3,6 +3,6 @@ query GetUserIdentityProfile($id: UUID!) {
         id,
         userName,
         displayName,
-        hasAvatar
+        avatarRevision
     }
 }
