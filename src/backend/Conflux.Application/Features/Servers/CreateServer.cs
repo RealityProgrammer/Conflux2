@@ -20,44 +20,12 @@ public sealed record CreateServerCommand(
 public sealed class CreateServerHandler(
     ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
-    IFileFormatInspector fileFormatInspector,
-    IBlobStorage blobStorage
+    IServerMediaService serverMediaService
 ) : ICommandHandler<CreateServerCommand, Result<ServerIdentityDto>> {
     public async ValueTask<Result<ServerIdentityDto>> Handle(
         CreateServerCommand request, 
         CancellationToken cancellationToken
     ) {
-        string? avatarImageType = null;
-        
-        if (request.AvatarStream != null) {
-            if (fileFormatInspector.DetermineFileFormat(request.AvatarStream) is not { } fileFormat) {
-                return Errors.ValidationErrorsOccurred(new() {
-                    [nameof(request.AvatarStream)] = [
-                        "Unknown file format.",
-                    ]
-                });
-            }
-
-            if (fileFormat is not Image imageFormat) {
-                return Errors.ValidationErrorsOccurred(new() {
-                    [nameof(request.AvatarStream)] = [
-                        "Image file format required.",
-                    ],
-                });
-            }
-
-            if (imageFormat.MediaType is not "image/png" and not "image/jpeg") {
-                return Errors.ValidationErrorsOccurred(new() {
-                    [nameof(request.AvatarStream)] = [
-                        "Only PNG or JPEG image formats are supported.",
-                    ],
-                });
-            }
-
-            request.AvatarStream.Position = 0;
-            avatarImageType = imageFormat.MediaType;
-        }
-        
         CommunityServer server = new() {
             Name = request.Name,
             Description = null,
@@ -108,32 +76,18 @@ public sealed class CreateServerHandler(
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
         } catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation } postgresException) {
-            if (postgresException.ConstraintName == "FK_CommunityServers_AspNetUsers_CreatorUserId") {
-                return Errors.ResourceNotFound("Creator user");
-            }
-
-            return Errors.UnexpectedError();
+            return postgresException.ConstraintName == "FK_CommunityServers_AspNetUsers_CreatorUserId" ? 
+                Errors.ResourceNotFound("Creator user") : 
+                Errors.UnexpectedError();
         } catch (OperationCanceledException) {
             throw;
         } catch {
             return Errors.UnexpectedError();
         }
         
-        // finally, upload the avatar
-        if (avatarImageType != null) {
-            // none because avatar is not as important as server creation, allow it to pass the cancellation.
-            Result<string> uploadResult = 
-                await blobStorage.UploadServerAvatar(server.Id, new(request.AvatarStream!, avatarImageType), CancellationToken.None);
-
-            if (uploadResult.IsSuccess) {
-                server.HasAvatar = true;
-                
-                try {
-                    await unitOfWork.SaveChangesAsync(CancellationToken.None);
-                } catch {
-                    return Errors.UnexpectedError();
-                }
-            }
+        // upload the avatar, doesn't matter if it's upload successfully or not the importance is we got everything created.
+        if (request.AvatarStream is { } avatarStream) {
+            await serverMediaService.UploadAvatar(server.Id, avatarStream, CancellationToken.None);
         }
 
         return Result<ServerIdentityDto>.Success(new(server));

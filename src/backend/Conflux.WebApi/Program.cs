@@ -325,7 +325,8 @@ builder.Services
     .AddScoped<StorageService>()
     .AddScoped<IBlobUrlProvider>(services => services.GetRequiredService<StorageService>())
     .AddScoped<IBlobStorage>(services => services.GetRequiredService<StorageService>())
-    .AddScoped<IUserMediaService, UserMediaService>();
+    .AddScoped<IUserMediaService, UserMediaService>()
+    .AddScoped<IServerMediaService, ServerMediaService>();
 
 
 // only AddControllersWithViews support for antiforgery for some reason.
