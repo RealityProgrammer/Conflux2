@@ -182,7 +182,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full justify-center">
                 <SelectableImageInput
-                  value={field.value === undefined ? userData?.hasAvatar ? userService.getAvatarUrl(userData.id) : null : field.value}
+                  value={field.value === undefined ? userData?.hasAvatar ? userService.getAvatarUrl(userData.id, true) : null : field.value}
                   onChange={field.onChange}
                   className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
                   fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
@@ -213,7 +213,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full">
                 <SelectableImageInput
-                  value={field.value === undefined ? userData?.hasBanner ? userService.getBannerUrl(userData.id) : null : field.value}
+                  value={field.value === undefined ? userData?.hasBanner ? userService.getBannerUrl(userData.id, true) : null : field.value}
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
