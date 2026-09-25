@@ -13,7 +13,7 @@ import {
   type UseInfiniteQueryResult,
   useMutation, useQueryClient
 } from "@tanstack/react-query";
-import {useAuthorization} from "./AuthContext.tsx";
+import {useAuth} from "./AuthContext.tsx";
 import {messageService} from "../api/messageService.ts";
 import {MessageLoadDirection} from "../api/schema.ts";
 import {toast} from "react-toastify";
@@ -81,7 +81,7 @@ export default function ChatContainerContextProvider({
     direction: MessageLoadDirection;
   }
 
-  const authorization = useAuthorization();
+  const authorization = useAuth();
 
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
 

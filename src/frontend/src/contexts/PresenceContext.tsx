@@ -1,28 +1,32 @@
 import {PresenceStatus} from "../graphql/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
-import {useGetSessionUserManualPresenceStatusQuery, useUpdateManualPresenceStatusMutation} from "../graphql/queries.ts";
-import {useAuthorization} from "./AuthContext.tsx";
+import {
+  type GetSessionUserManualPresenceStatusQuery,
+  useGetSessionUserManualPresenceStatusQuery, useUpdateManualPresenceStatusMutation
+} from "../graphql/queries.ts";
+import {useAuth} from "./AuthContext.tsx";
 import {toast} from "react-toastify";
 import useIdleTimer from "../hooks/useIdleTimer.tsx";
+import {useQueryClient} from "@tanstack/react-query";
 
 interface PresenceContextType {
   manualStatus: PresenceStatus; // TODO: intersect with a type containing Error value?
   effectiveStatus: PresenceStatus;
-  updateManualStatus: (newStatus: PresenceStatus) => Promise<void>;
+  // updateManualStatus: (newStatus: PresenceStatus) => Promise<void>;
+  updateManualStatus: (newStatus: PresenceStatus, side: "client" | "server") => void;
 }
 
 const PresenceContext = createContext<PresenceContextType | null>(null);
 
 export default function PresenceProvider({children} : {children: ReactNode}) {
-  const { userProfile } = useAuthorization()!;
+  const { userProfile } = useAuth()!;
+  const queryClient = useQueryClient();
 
   const isIdle = useIdleTimer();
 
   const { data, isLoading, isError } = useGetSessionUserManualPresenceStatusQuery(
-    { userId: userProfile?.id ?? "" },
-    {
-      enabled: !!userProfile?.id,
-    }
+    {},
+    { enabled: !!userProfile?.id }
   );
 
   const updateManualPresenceMutation = useUpdateManualPresenceStatusMutation({
@@ -34,7 +38,7 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
     },
   });
 
-  const manualStatus = data?.user?.manualPresenceStatus ?? PresenceStatus.Offline;
+  const manualStatus = data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Offline;
 
   const getEffectiveStatus = (): PresenceStatus => {
     if (isLoading || isError) return PresenceStatus.Offline;
@@ -46,16 +50,33 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
     return manualStatus;
   };
 
-  const updateManualStatus = async (newStatus: PresenceStatus) => {
-    if (!data?.user?.manualPresenceStatus) return;
+  const updateManualStatus = async (newStatus: PresenceStatus, side: "client" | "server") => {
+    if (!data?.sessionUser?.manualPresenceStatus) return;
 
-    updateManualPresenceMutation.mutate({ value: newStatus });
+    if (side === "server") {
+      updateManualPresenceMutation.mutate({ value: newStatus });
+    }
+
+    queryClient.setQueryData<GetSessionUserManualPresenceStatusQuery>(
+      useGetSessionUserManualPresenceStatusQuery.getKey({}),
+      (oldData: NoInfer<GetSessionUserManualPresenceStatusQuery> | undefined): NoInfer<GetSessionUserManualPresenceStatusQuery> | undefined => {
+        if (!oldData || !oldData.sessionUser) return oldData;
+
+        return {
+          ...oldData,
+          sessionUser: {
+            ...oldData.sessionUser,
+            manualPresenceStatus: newStatus,
+          },
+        };
+      }
+    );
   };
 
   return (
     <PresenceContext.Provider
       value={{
-        manualStatus: data?.user?.manualPresenceStatus ?? PresenceStatus.Offline,
+        manualStatus: data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Offline,
         effectiveStatus: getEffectiveStatus(),
         updateManualStatus,
       }}

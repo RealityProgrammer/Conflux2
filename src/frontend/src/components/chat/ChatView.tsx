@@ -17,7 +17,7 @@ import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 import {BsBoxArrowUpRight} from "react-icons/bs";
 import Spinner from "../Spinner.tsx";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
 
@@ -177,7 +177,7 @@ export function ChatView({}: ChatViewProps) {
     prevStableRef.current = { key: firstStableKey, index: firstStableIndex };
   }, [timelineItems, firstStableKey, firstStableIndex]);
 
-  const { userProfile } = useAuthorization();
+  const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
 
   if (isLoading) {

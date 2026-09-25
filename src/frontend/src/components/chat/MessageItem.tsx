@@ -8,13 +8,14 @@ import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
 import {BsArrowReturnLeft, BsCopy, BsPencil, BsPencilFill, BsTrash} from "react-icons/bs";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import MessageContent from "./MessageContent.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {userService} from "../../api/userService.ts";
 
 type MessageItemProps = {
   senderProfile?: UserIdentityProfileDto;
@@ -65,7 +66,7 @@ function MessageView({
   editingStatus,
   context,
 }: MessageViewProps) {
-  const auth = useAuthorization();
+  const auth = useAuth();
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger({
@@ -115,8 +116,7 @@ function MessageView({
             {showHeader ? (
               <>
                 <UserAvatar
-                  hasAvatar={senderProfile?.hasAvatar ?? false}
-                  userId={senderProfile?.id ?? undefined}
+                  src={senderProfile?.hasAvatar ? userService.getAvatarUrl(senderProfile.id) : undefined}
                   className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
                 />
 

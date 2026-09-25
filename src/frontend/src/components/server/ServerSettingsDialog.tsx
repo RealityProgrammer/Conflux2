@@ -1,8 +1,7 @@
 import Dialog from "../Dialog.tsx";
 import {Tabs} from "radix-ui";
-import {BsGearFill, BsPeopleFill} from "react-icons/bs";
-import {useEffect, useRef, useState} from "react";
-import {createTimeline} from "animejs";
+import {BsPeopleFill} from "react-icons/bs";
+import {useState} from "react";
 import {FaClipboardList, FaUserShield} from "react-icons/fa6";
 import RoleManagement from "./RoleManagement.tsx";
 import MemberManagement from "./MemberManagement.tsx";
@@ -12,6 +11,7 @@ import {ServerPermission} from "../../graphql/types.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {useQueryClient} from "@tanstack/react-query";
 import {useInfiniteGetServerModerationLogsQuery} from "../../graphql/infiniteQueries.ts";
+import AnimatedGearIcon from "../AnimatedGearIcon.tsx";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
@@ -31,7 +31,7 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
       open={open}
       onOpenChange={onOpenChanged}
       headerIcon={(
-        <AnimatedGearIcon/>
+        <AnimatedGearIcon className="size-10 fill-white"/>
       )}
       title="Server Configuration Panel"
       subtitle="Click-clack, what is that sound?"
@@ -85,34 +85,5 @@ export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOp
         )}
       </Tabs.Root>
     </Dialog>
-  );
-}
-
-function AnimatedGearIcon() {
-  const gearIcon = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!gearIcon.current) return;
-
-    const timeline = createTimeline({
-      loop: true,
-    });
-
-    timeline.add(gearIcon.current, {
-      rotate: '+=45deg',
-      duration: 500,
-      delay: 1000,
-      ease: 'inOutBack(2.5)',
-    });
-
-    return () => {
-      timeline.pause();
-    };
-  }, []);
-
-  return (
-    <div ref={gearIcon}>
-      {<BsGearFill className="size-10 fill-white"/>}
-    </div>
   );
 }

@@ -31,6 +31,7 @@ public static partial class FriendRequestQuery {
         return await dbContext.FriendRequests
             .AsNoTracking()
             .Where(r => r.SenderUserId == userId || r.ReceiverUserId == userId)
+            .Where(r => r.Status != FriendRequestStatus.None && r.Status != FriendRequestStatus.Canceled && r.Status != FriendRequestStatus.Rejected)
             .OrderBy(r => r.Id)
             .With(queryContext)
             .ToPageAsync(pagingArgs, cancellationToken);

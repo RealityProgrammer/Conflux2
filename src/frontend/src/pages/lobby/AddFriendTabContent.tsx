@@ -22,6 +22,7 @@ import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {UserRelationshipStatus} from "../../api/schema.ts";
+import {userService} from "../../api/userService.ts";
 
 interface RowProps {
   user: DiscoverFriendSummary;
@@ -204,11 +205,11 @@ function Row({user, updateCacheStatus}: RowProps) {
   });
 
   return (
-    <UserNameplate.Root userId={user.userId}
-                        userName={user.userName}
-                        displayName={user.displayName}
-                        hasAvatar={user.hasAvatar}
-                        className="w-full p-1.5"
+    <UserNameplate.Root
+      avatarSrc={user.hasAvatar ? userService.getAvatarUrl(user.userId) : undefined}
+      userName={user.userName}
+      displayName={user.displayName}
+      className="w-full p-1.5"
     >
       {user.status == UserRelationshipStatus.Stranger ? (
         <FriendActionButtons.Send

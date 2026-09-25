@@ -28,6 +28,7 @@ import {PermissionState} from "../../api/schema.ts";
 import {useDebounceValue} from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
+import {userService} from "../../api/userService.ts";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
@@ -515,8 +516,7 @@ function RoleDetails({
 
             <div className="flex items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
               <UserAvatar
-                userId={role.creatorUser?.id}
-                hasAvatar={role.creatorUser?.hasAvatar ?? false}
+                src={role.creatorUser?.hasAvatar ? userService.getAvatarUrl(role.creatorUser.id) : undefined}
                 className="size-5 rounded-full overflow-hidden"
               />
 

@@ -10,6 +10,7 @@ import DateTimeText from "../DateTimeText.tsx";
 import {parse as parseDuration} from "iso8601-duration";
 import {BiInfinite} from "react-icons/bi";
 import UserAvatar from "../UserAvatar.tsx";
+import {userService} from "../../api/userService.ts";
 
 type LogElement = NonNullable<GetServerModerationLogsQuery["serverModerationLogs"]["nodes"]>[number];
 
@@ -53,8 +54,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       return (
         <span className="flex flex-row justify-center items-center gap-2">
           <UserAvatar
-            hasAvatar={executor.hasAvatar}
-            userId={executor.id}
+            src={executor.hasAvatar ? userService.getAvatarUrl(executor.id) : undefined}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 
@@ -85,8 +85,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       return (
         <span className="flex flex-row justify-center items-center gap-2">
           <UserAvatar
-            hasAvatar={affected.hasAvatar}
-            userId={affected.id}
+            src={affected.hasAvatar ? userService.getAvatarUrl(affected.id) : undefined}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 

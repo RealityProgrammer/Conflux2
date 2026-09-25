@@ -1,6 +1,7 @@
 import type {TypingUser} from "../../hooks/useTypingIndicator.ts";
 import UserAvatar from "../UserAvatar.tsx";
 import {useEffect, useState} from "react";
+import {userService} from "../../api/userService.ts";
 
 interface TypingIndicatorProps {
   displayUsers: TypingUser[];
@@ -51,8 +52,7 @@ export default function TypingIndicator({
           {renderedUsers.map((user) => (
             <UserAvatar
               key={user.id}
-              id={user.id}
-              hasAvatar={user.hasAvatar}
+              src={user.hasAvatar ? userService.getAvatarUrl(user.id) : undefined}
               className="size-7 rounded-full overflow-hidden ring-2 ring-gray-650"
             />
           ))}

@@ -1,0 +1,13 @@
+query GetSessionUserProfileSettingInfo {
+    sessionUser {
+        id,
+        userName,
+        displayName,
+        hasAvatar,
+        hasBanner,
+        biography,
+        pronouns,
+        createdAt,
+        manualPresenceStatus,
+    }
+}

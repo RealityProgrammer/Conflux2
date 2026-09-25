@@ -123,7 +123,7 @@ public sealed class CreateServerHandler(
         if (avatarImageType != null) {
             // none because avatar is not as important as server creation, allow it to pass the cancellation.
             Result<string> uploadResult = 
-                await blobStorage.UploadCommunityServerAvatar(server.Id, new(request.AvatarStream!, avatarImageType), CancellationToken.None);
+                await blobStorage.UploadServerAvatar(server.Id, new(request.AvatarStream!, avatarImageType), CancellationToken.None);
 
             if (uploadResult.IsSuccess) {
                 server.HasAvatar = true;

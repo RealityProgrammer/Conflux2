@@ -8,7 +8,7 @@ import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ChannelType} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import Dialog from "../../components/Dialog.tsx";
 import {useState} from "react";
 import {BsHammer} from "react-icons/bs";
@@ -21,7 +21,7 @@ import {useSignalR} from "../../contexts/SignalRContext.tsx";
 export default function ServerLayout() {
   const navigate = useNavigate();
 
-  const { userAuthorization } = useAuthorization();
+  const { userAuthorization } = useAuth();
   const { serverId } = useParams();
 
   const serverSummaryQueryKey: QueryKey = ["getServerSummary", serverId];

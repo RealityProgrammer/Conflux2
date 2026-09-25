@@ -20,9 +20,8 @@ export const communityServerService = {
       }
 
       const response: AxiosResponse<BackendResponse<ServerIdentityDto>> =
-        await apiClient.post(`/communities`, formData, {
+        await apiClient.postForm<BackendResponse<ServerIdentityDto>>(`/communities`, formData, {
           headers: {
-            "Content-Type": "multipart/form-data",
             "Idempotency-Key": idempotencyKey,
           },
         });

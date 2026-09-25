@@ -1,5 +1,5 @@
 import Logo from "../components/Logo.tsx";
-import {useAuthorization} from "../contexts/AuthContext.tsx";
+import {useAuth} from "../contexts/AuthContext.tsx";
 import {Dialog} from "radix-ui";
 import {useEffect, useRef, useState} from "react";
 import {animate} from "animejs";
@@ -130,7 +130,7 @@ function AuthenticatedNavigationDrawer({userName, logout}: { userName: string, l
 export default function HomePage() {
   useDocumentTitle("Conflux");
 
-  const auth = useAuthorization();
+  const auth = useAuth();
 
   return (
     <>

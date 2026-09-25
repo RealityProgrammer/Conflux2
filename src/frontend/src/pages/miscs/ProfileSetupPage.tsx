@@ -1,21 +1,23 @@
 import {BsArrowLeft, BsArrowRight, BsCheck, BsPerson, BsX} from "react-icons/bs";
 import {useEffect, useRef, useState} from "react";
 import {animate, utils} from "animejs";
-import SelectableAvatar from "../../components/SelectableAvatar.tsx";
+import SelectableImageInput from "../../components/SelectableImageInput.tsx";
 import {HttpStatusCode} from "axios";
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 import {Label} from "radix-ui";
 import {
   type ServiceResponse,
 } from "../../api/types.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
-import {useForm} from "react-hook-form";
+import {Controller, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import ErrorText from "../../components/ErrorText.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import {useMutation} from "@tanstack/react-query";
 import {useNavigate} from "react-router";
+import IconButton from "../../components/IconButton.tsx";
+import {FaXmark} from "react-icons/fa6";
 
 enum DisplayingPanel {
   Intro = 0,
@@ -64,10 +66,8 @@ type UploadAvatarFormValues = z.infer<typeof uploadAvatarSchema>;
 function AvatarPanel({
   setDisplayingPanel,
 }: AvatarPanelProps) {
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
-
   const {
-    setValue,
+    control,
     handleSubmit,
     formState: { isDirty, errors, isSubmitting },
     setError,
@@ -124,27 +124,26 @@ function AvatarPanel({
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col" id="avatar-form">
         <div className="flex flex-row flex-nowrap justify-center items-start gap-2">
-          <SelectableAvatar
-            src={avatarPreviewUrl}
-            className="size-64 rounded-full flex-none"
-            onAvatarChange={(file, previewUrl) => {
-              setValue("file", file, { shouldValidate: true, shouldDirty: true, });
-              setAvatarPreviewUrl(previewUrl);
-            }}
-            fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
-          />
+          <Controller
+            control={control}
+            name="file"
+            render={({ field }) => (
+              <div className="flex flex-row gap-3">
+                <SelectableImageInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  className="size-64 rounded-full flex-none"
+                  fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
+                />
 
-          <button
-            type="button"
-            className="button-theme-danger rounded-md cursor-pointer p-1.5! flex flex-row justify-center items-center"
-            onClick={() => {
-              setValue("file", null, { shouldValidate: true, shouldDirty: true, });
-              setAvatarPreviewUrl(undefined);
-            }}
-            disabled={!avatarPreviewUrl || isSubmitting}
-          >
-            <BsX className="fill-white size-6"/>
-          </button>
+                <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={!field.value}>
+                    <FaXmark className="size-5"/>
+                  </IconButton>
+                </div>
+              </div>
+            )}
+          />
         </div>
 
         {errors.file && (
@@ -194,7 +193,7 @@ interface NamesPanelProps extends PanelProps {}
 function NamesPanel({
   setDisplayingPanel,
 }: NamesPanelProps) {
-  const { userProfile, updateUserProfile } = useAuthorization();
+  const { userProfile, updateUserProfile } = useAuth();
 
   const {
     register,

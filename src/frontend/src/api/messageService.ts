@@ -33,9 +33,8 @@ export const messageService = {
       }
 
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.post(`channels/${encodeURIComponent(channelId)}/messages`, formData, {
+        await apiClient.postForm(`channels/${encodeURIComponent(channelId)}/messages`, formData, {
           headers: {
-            "Content-Type": "multipart/form-data",
             "Idempotency-Key": idempotencyKey,
           },
         });
@@ -62,11 +61,7 @@ export const messageService = {
       }
 
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.patch(`/messages/${encodeURIComponent(messageId)}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          }
-        });
+        await apiClient.patchForm(`/messages/${encodeURIComponent(messageId)}`, formData);
 
       return {
         success: true,

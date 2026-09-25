@@ -31,9 +31,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset?>("AvatarUpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Biography")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -57,6 +54,9 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("HasAvatar")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasBanner")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsUserNameLocked")

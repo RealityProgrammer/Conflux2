@@ -2,55 +2,51 @@ import {Avatar} from "radix-ui";
 import {type ChangeEvent, type ReactNode, useEffect, useRef, useState} from "react";
 
 interface AvatarInputProps {
-  src?: string | undefined;
+  value?: string | File | null;
+  onChange?: (file: File | null) => void;
   className?: string | undefined;
-  onAvatarChange?: (file: File, previewUrl: string) => void;
   fallback: () => ReactNode;
 }
 
-export default function SelectableAvatar({src, className, onAvatarChange, fallback}: AvatarInputProps) {
-  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+export default function SelectableImageInput({
+  value,
+  onChange,
+  className,
+  fallback
+}: AvatarInputProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
-  // if src updated, clear the preview url
   useEffect(() => {
-    setLocalPreviewUrl(null);
-  }, [src]);
+    if (value instanceof File) {
+      const objectUrl = URL.createObjectURL(value);
+      setPreviewUrl(objectUrl);
 
-  // revoke the object url
-  useEffect(() => {
-    return () => {
-      if (localPreviewUrl) {
-        URL.revokeObjectURL(localPreviewUrl);
-      }
-    };
-  }, [localPreviewUrl]);
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [value]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-
     if (!file) return;
 
-    const newPreviewUrl = URL.createObjectURL(file);
-    setLocalPreviewUrl(newPreviewUrl);
+    onChange?.(file);
 
-    onAvatarChange?.(file, newPreviewUrl);
-
-    // make it selecting exact same file twice still trigger the onChange event
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const displayUrl = localPreviewUrl || src;
+  const displayUrl = previewUrl || (typeof value === 'string' ? value : undefined);
 
   return (
-    <div className={`relative inline-block group overflow-hidden ${className}`}>
-      { /* Hidden input field */}
+    <div className={`relative block w-full group overflow-hidden ${className}`}>
       <input
         type="file"
         ref={fileInputRef}
@@ -59,7 +55,6 @@ export default function SelectableAvatar({src, className, onAvatarChange, fallba
         className="hidden"
       />
 
-      {/* Radix UI Avatar */}
       <Avatar.Root
         className="inline-flex items-center justify-center align-middle w-full h-full bg-black rounded-[inherit] overflow-hidden">
         <Avatar.Image
@@ -74,13 +69,13 @@ export default function SelectableAvatar({src, className, onAvatarChange, fallba
         </Avatar.Fallback>
       </Avatar.Root>
 
-      {/* Hover Overlay */}
       <div
         className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
-        onClick={handleAvatarClick}>
-                <span className="text-white text-sm text-center font-medium px-2">
-                    Click to select new avatar
-                </span>
+        onClick={handleAvatarClick}
+      >
+        <span className="text-white text-sm text-center font-medium px-2">
+           Select new image
+        </span>
       </div>
     </div>
   );

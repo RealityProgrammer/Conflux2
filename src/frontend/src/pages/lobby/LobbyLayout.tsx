@@ -1,7 +1,7 @@
-import {useAuthorization} from "../../contexts/AuthContext.tsx";
-import {Label, Separator, Tooltip} from "radix-ui";
+import {useAuth} from "../../contexts/AuthContext.tsx";
+import {Label, Popover, Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
-import {BsPeople, BsPlus} from "react-icons/bs";
+import {BsPeople} from "react-icons/bs";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
@@ -10,14 +10,13 @@ import type {
   ServiceResponse
 } from "../../api/types.ts";
 import IconButton from "../../components/IconButton.tsx";
-import SelectableAvatar from "../../components/SelectableAvatar.tsx";
-import {useState} from "react";
+import SelectableImageInput from "../../components/SelectableImageInput.tsx";
+import {useEffect, useRef, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import DialogForm from "../../components/DialogForm.tsx";
 import {HttpStatusCode} from "axios";
-import ErrorText from "../../components/ErrorText.tsx";
 import ServerAvatar from "../../components/ServerAvatar.tsx";
-import {useForm} from "react-hook-form";
+import {Controller, useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -26,11 +25,15 @@ import {
 import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import Spinner from "../../components/Spinner.tsx";
-import {PresenceStatus} from "../../graphql/types.ts";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
+import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
+import {FaGears, FaXmark} from "react-icons/fa6";
+import {userService} from "../../api/userService.ts";
+import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
+import ErrorPopover from "../../components/ErrorPopover.tsx";
 
 function Sidebar() {
-  const auth = useAuthorization();
+  const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { effectiveStatus } = usePresence();
@@ -40,18 +43,19 @@ function Sidebar() {
       <div className="flex justify-center items-center">
         <Tooltip.Provider delayDuration={500}>
           <Tooltip.Root>
-            <Tooltip.Trigger asChild>
+            <Tooltip.Trigger className="relative" onClick={() => {
+              if (location.pathname !== "/lobby/me") {
+                navigate("/lobby/me");
+              }
+            }}>
               <UserAvatar
-                userId={auth.userAuthorization?.id}
-                hasAvatar={auth.userProfile?.hasAvatar ?? false}
+                src={auth.userProfile?.hasAvatar ? userService.getAvatarUrl(auth.userProfile.id) : undefined}
                 className="flex-none size-10 cursor-pointer"
-                onClick={() => {
-                  if (location.pathname !== "/lobby/me") {
-                    navigate("/lobby/me");
-                  }
-                }}
-                presenceStatus={effectiveStatus}
-                presenceStatusCutoff="ring-2 ring-gray-750 bg-gray-750"
+              />
+
+              <PresenceStatusIcon
+                status={effectiveStatus}
+                className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750"
               />
             </Tooltip.Trigger>
 
@@ -66,12 +70,14 @@ function Sidebar() {
         </Tooltip.Provider>
       </div>
 
-      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1.5"/>
+      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
 
       <JoinedCommunityServerScrollList/>
 
+      <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
+
       <div className="flex-none flex flex-col items-center">
-        <CreateCommunityServerButton/>
+        <ExpandableMenuIcon/>
       </div>
     </aside>
   );
@@ -179,54 +185,90 @@ const createServerSchema = z.object({
   avatar: z.file().optional(),
 });
 
+function ExpandableMenuIcon() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [isCreateServerDialogOpen, setIsCreateServerDialogOpen] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <Popover.Root open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <Popover.Trigger asChild>
+          <IconButton theme="default">
+            <HiOutlineSquares2X2 className="size-10"/>
+          </IconButton>
+        </Popover.Trigger>
+
+        <Popover.Portal>
+          <Popover.Content
+            side="right"
+            sideOffset={12}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            className="z-50 overflow-hidden rounded-2xl bg-gray-775 shadow-sm p-1.5 outline-none origin-[50%_100%] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-4 duration-300"
+          >
+            <div className="flex items-center gap-2">
+              <Tooltip.Provider delayDuration={500}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <IconButton theme="default" onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsCreateServerDialogOpen(true);
+                    }}>
+                      <HiOutlineUserGroup className="size-10"/>
+                    </IconButton>
+                  </Tooltip.Trigger>
+
+                  <Tooltip.Portal>
+                    <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                      <p className="text-white font-semibold px-3 py-1">Create your own community</p>
+
+                      <Tooltip.Arrow className="fill-gray-600"/>
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+
+              <Tooltip.Provider delayDuration={500}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <IconButton theme="default" onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate("/settings");
+                    }}>
+                      <FaGears className="size-10"/>
+                    </IconButton>
+                  </Tooltip.Trigger>
+
+                  <Tooltip.Portal>
+                    <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                      <p className="text-white font-semibold px-3 py-1">Application settings</p>
+
+                      <Tooltip.Arrow className="fill-gray-600"/>
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+            </div>
+
+            <Popover.Arrow className="fill-gray-775" />
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
+
+      <CreateServerDialogForm open={isCreateServerDialogOpen} onOpenChange={setIsCreateServerDialogOpen}/>
+    </>
+  );
+}
+
 type CreateServerFormValues = z.infer<typeof createServerSchema>;
 
-function CreateCommunityServerButton() {
+function CreateServerDialogForm({
+  open,
+  onOpenChange,
+}: {open: boolean, onOpenChange: (open: boolean) => void}) {
   const queryClient = useQueryClient();
-  const [isOpen, setIsOpen] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
-
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-
-    if (open) {
-      formMethods.reset();
-      setIdempotencyKey(crypto.randomUUID());
-    }
-  };
-
-  const onSubmit = async (data: CreateServerFormValues) => {
-    const response: ServiceResponse<ServerIdentityDto> =
-      await communityServerService.createServer(idempotencyKey, data.name, data.avatar ?? undefined);
-
-    if (response.success) {
-      setIsOpen(false);
-
-      queryClient.invalidateQueries({
-        queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
-      });
-    } else {
-      if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as Record<"name" | "avatar", string[]>;
-
-        if (details.name && details.name.length > 0) {
-          formMethods.setError("name", {
-            message: details.name[0],
-          });
-        }
-
-        if (details.avatar && details.avatar.length > 0) {
-          formMethods.setError("avatar", {
-            message: details.avatar[0],
-          })
-        }
-      } else {
-        formMethods.setError("root", {
-          message: response.error?.message ?? "An unexpected error occurred.",
-        });
-      }
-    }
-  };
+  const idempotencyKey = useRef("");
 
   const formMethods = useForm<CreateServerFormValues>({
     resolver: zodResolver(createServerSchema),
@@ -238,28 +280,54 @@ function CreateCommunityServerButton() {
     reValidateMode: "onSubmit",
   });
 
+  const { control, reset, setError, register, formState: { errors, isSubmitting } } = formMethods;
+
+  useEffect(() => {
+    if (open) {
+      idempotencyKey.current = crypto.randomUUID();
+    } else {
+      reset();
+    }
+  }, [open, reset]);
+
+  const onSubmit = async (data: CreateServerFormValues) => {
+    const response: ServiceResponse<ServerIdentityDto> =
+      await communityServerService.createServer(idempotencyKey.current, data.name, data.avatar ?? undefined);
+
+    if (response.success) {
+      onOpenChange(false);
+
+      queryClient.invalidateQueries({
+        queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
+      });
+    } else {
+      if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
+        const details = response.error.details as Record<"name" | "avatar", string[]>;
+
+        if (details.name && details.name.length > 0) {
+          setError("name", {
+            message: details.name[0],
+          });
+        }
+
+        if (details.avatar && details.avatar.length > 0) {
+          setError("avatar", {
+            message: details.avatar[0],
+          })
+        }
+      } else {
+        setError("root", {
+          message: response.error?.message ?? "An unexpected error occurred.",
+        });
+      }
+    }
+  };
+
   return (
     <>
-      <Tooltip.Provider delayDuration={500}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <IconButton isLoading={false} theme="default" className="hover-highlight rounded-full" onClick={() => handleOpenChange(true)}>
-              <BsPlus className="size-10"/>
-            </IconButton>
-          </Tooltip.Trigger>
-
-          <Tooltip.Portal>
-            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-              <p className="text-white font-semibold px-3 py-1">Create your own community</p>
-
-              <Tooltip.Arrow className="fill-gray-600"/>
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-
       <DialogForm
-        open={isOpen} onOpenChange={handleOpenChange}
+        open={open}
+        onOpenChange={onOpenChange}
         formMethods={formMethods}
         headerIcon={(<BsPeople className="size-10 fill-white"/>)}
         title="Create a new Community Server"
@@ -268,9 +336,9 @@ function CreateCommunityServerButton() {
           <button
             type="submit"
             className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
-            disabled={formMethods.formState.isSubmitting}
+            disabled={isSubmitting}
           >
-            {formMethods.formState.isSubmitting ? (
+            {isSubmitting ? (
               <Spinner className="size-5 fill-white"/>
             ) : (
               <>Create Server</>
@@ -281,33 +349,48 @@ function CreateCommunityServerButton() {
         contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
       >
         <div className="flex flex-col items-center">
-          <SelectableAvatar
-            className="size-48 rounded-full flex-none"
-            onAvatarChange={(file) => {
-              formMethods.setValue("avatar", file, { shouldValidate: true })
-            }}
-            fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
-          />
+          <Controller
+            control={control}
+            name="avatar"
+            render={({ field }) => (
+              <div className="flex flex-row gap-3">
+                <ErrorPopover
+                  open={!!errors.avatar}
+                  content={errors.avatar?.message}
+                >
+                  <SelectableImageInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="size-48 rounded-full overflow-hidden flex-none"
+                    fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
+                  />
+                </ErrorPopover>
 
-          {formMethods.formState.errors.avatar && (
-            <ErrorText>{formMethods.formState.errors.avatar.message}</ErrorText>
-          )}
+                <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={!field.value}>
+                    <FaXmark className="size-5"/>
+                  </IconButton>
+                </div>
+              </div>
+            )}
+          />
         </div>
 
         <div className="mt-4 w-full">
           <Label.Root className="label block mb-1">Server name</Label.Root>
 
-          <input
-            type="text"
-            className="input-field h-11 w-full"
-            placeholder="Enter server name"
-            {...formMethods.register("name")}
-          />
+          <ErrorPopover
+            open={!!errors.name}
+            content={errors.name?.message}
+          >
+            <input
+              type="text"
+              className="input-field h-11 w-full"
+              placeholder="Enter server name"
+              {...register("name")}
+            />
+          </ErrorPopover>
         </div>
-
-        {formMethods.formState.errors.name && (
-          <ErrorText>{formMethods.formState.errors.name.message}</ErrorText>
-        )}
       </DialogForm>
     </>
   );
