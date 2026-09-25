@@ -61,7 +61,7 @@ internal sealed class StorageService(
     }
 
     public async Task<string> GetUserBannerPreSignedUrl(Guid userId) {
-        var uniqueKey = CreateUserAvatarUniqueKey(userId);
+        var uniqueKey = CreateUserBannerUniqueKey(userId);
         var request = CreatePreSignedUrlRequest(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
 
         return await preSigningClient.GetPreSignedURLAsync(request);

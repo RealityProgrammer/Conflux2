@@ -23,6 +23,7 @@ import {
 } from "../../graphql/queries.ts";
 import {userService} from "../../api/userService.ts";
 import IconButton from "../../components/IconButton.tsx";
+import {useQueryClient} from "@tanstack/react-query";
 
 export default function ProfilePage() {
   return (
@@ -68,6 +69,7 @@ type UpdateProfileFormValues = z.infer<typeof profileSchema>;
 function ProfileForm() {
   const auth = useAuth();
   const presence = usePresence();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useGetSessionUserProfileSettingInfoQuery(
     {},
@@ -96,7 +98,7 @@ function ProfileForm() {
     }
   });
 
-  const { reset, handleSubmit, formState: { isSubmitting, dirtyFields, isDirty } } = formMethods;
+  const { reset, handleSubmit, formState: { dirtyFields, isDirty } } = formMethods;
 
   const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (data: UpdateProfileFormValues) => {
     if (!isDirty) return;
@@ -111,7 +113,11 @@ function ProfileForm() {
     );
 
     if (response.success) {
-      reset(data);
+      reset({
+        ...data,
+        avatar: undefined,
+        banner: undefined,
+      });
       auth?.updateUserProfile({
         displayName: data.displayName,
       });
@@ -119,6 +125,8 @@ function ProfileForm() {
       if (dirtyFields.presence) {
         presence.updateManualStatus(data.presence, "client");
       }
+
+      await queryClient.invalidateQueries({ queryKey: useGetSessionUserProfileSettingInfoQuery.getKey({}) });
 
       toast.success("Profile updated successfully.");
     } else {
@@ -130,7 +138,7 @@ function ProfileForm() {
     <FormProvider {...formMethods}>
       <form className="relative overflow-y-hidden" onSubmit={handleSubmit(onSubmit)}>
       {(!auth.userProfile?.id || isLoading || isError) && (
-        <div className="absolute z-10 inset-0 backdrop-blur-xs flex flex-col justify-center items-center">
+        <div className="absolute z-10 inset-0 flex flex-col justify-center items-center backdrop-blur-xs">
           <Spinner className="size-10 fill-white mb-2"/>
           <span>Please wait...</span>
         </div>
@@ -141,30 +149,7 @@ function ProfileForm() {
           <p className="group-label">Fields</p>
 
           <FormFields userData={data?.sessionUser}/>
-
-          <div className="flex flex-row justify-start items-center gap-2 mt-3">
-            <button
-              type="button"
-              className="button-theme-danger w-32 py-2 cursor-pointer rounded-md"
-              onClick={() => {
-                reset();
-              }}
-            >
-              Reset Profile
-            </button>
-
-            <button
-              type="submit"
-              className="button-theme-primary w-32 py-2 cursor-pointer rounded-md flex flex-row justify-center items-center"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Spinner className="size-6 fill-white"/>
-              ) : (
-                "Save Profile"
-              )}
-            </button>
-          </div>
+          <FormButtons/>
         </section>
 
         <section className="overflow-y-auto">
@@ -397,6 +382,36 @@ function FormFields({
       </div>
     </div>
   )
+}
+
+function FormButtons() {
+  const { reset, formState: { isSubmitting } } = useFormContext();
+
+  return (
+    <div className="flex flex-row justify-start items-center gap-2 mt-3">
+      <button
+        type="button"
+        className="button-theme-danger w-32 py-2 cursor-pointer rounded-md"
+        onClick={() => {
+          reset();
+        }}
+      >
+        Reset Profile
+      </button>
+
+      <button
+        type="submit"
+        className="button-theme-primary w-32 py-2 cursor-pointer rounded-md flex flex-row justify-center items-center"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <Spinner className="size-6 fill-white"/>
+        ) : (
+          "Save Profile"
+        )}
+      </button>
+    </div>
+  );
 }
 
 function Displayer({
