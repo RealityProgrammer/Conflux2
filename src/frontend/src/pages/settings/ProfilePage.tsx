@@ -24,6 +24,8 @@ import {
 import {userService} from "../../api/userService.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useQueryClient} from "@tanstack/react-query";
+import {usePreviewUrl} from "../../hooks/usePreviewUrl.ts";
+import {hash} from "../../utils/hashing.ts";
 
 export default function ProfilePage() {
   return (
@@ -217,21 +219,11 @@ function FormFields({
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
-                    const stringToColor = (str: string): string => {
-                      let hash = 0;
-                      for (let i = 0; i < str.length; i++) {
-                        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                      }
-
-                      const hue = Math.abs(hash) % 360;
-                      return `hsl(${hue}, 60%, 40%)`;
-                    };
-
                     return (
                       <span
                         className="size-full"
                         style={{
-                          backgroundColor: stringToColor(userData?.id ?? "")
+                          backgroundColor: `hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`
                         }}>
                       </span>
                     );
@@ -420,11 +412,15 @@ function Displayer({
   const { control } = useFormContext<UpdateProfileFormValues>();
   const watchedValues = useWatch({ control });
 
+  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatarRevision ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : undefined);
+  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.bannerRevision ? userService.getBannerUrl(userData.id, userData.bannerRevision) : undefined);
+
   return (
     <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden">
       <UserAvatarAndBanner
-        bannerSrc="https://placehold.co/1600x900"
-        avatarSrc="https://placehold.co/256x256"
+        avatarSrc={avatarDisplayUrl ?? undefined}
+        bannerSrc={bannerDisplayUrl ?? undefined}
+        bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}
         avatarClassName="border-gray-675"
         presenceStatus={watchedValues.presence}
         presenceStatusClassName="bg-gray-675 border-4 border-gray-675"
