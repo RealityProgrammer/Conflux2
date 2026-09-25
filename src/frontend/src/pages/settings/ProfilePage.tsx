@@ -422,7 +422,7 @@ function Displayer({
         avatarSrc={avatarDisplayUrl ?? undefined}
         bannerSrc={bannerDisplayUrl ?? undefined}
         bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}
-        avatarClassName="border-gray-675"
+        avatarClassName="border-gray-675 bg-gray-675"
         presenceStatus={watchedValues.presence}
         presenceStatusClassName="size-1/3 bg-gray-675 border-4 border-gray-675"
         displayName={watchedValues.displayName || "\u003CDisplay Name\u003E"}

@@ -45,7 +45,7 @@ export default function SelectableImageInput({
       />
 
       <Avatar.Root
-        className="inline-flex items-center justify-center align-middle w-full h-full bg-black rounded-[inherit] overflow-hidden">
+        className="inline-flex items-center justify-center align-middle w-full h-full border-2 border-white/10 rounded-[inherit] overflow-hidden">
         <Avatar.Image
           className="w-full h-full object-cover rounded-[inherit]"
           src={displayUrl ?? undefined}
