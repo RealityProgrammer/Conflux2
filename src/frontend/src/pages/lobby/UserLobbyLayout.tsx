@@ -58,10 +58,8 @@ function Sidebar() {
 }
 
 function DirectMessagesList() {
-  const navigate = useNavigate();
-
-  // const getDmChannelSummary = useFetchDmChannelSummary();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const {
     data,

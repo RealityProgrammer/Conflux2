@@ -5,7 +5,7 @@ import {ScrollArea} from "radix-ui";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
-import {useTypingEmitter} from "../../hooks/useTypingEmitter.tsx";
+import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 
 export interface ChatInputProps {
   disabled?: boolean;

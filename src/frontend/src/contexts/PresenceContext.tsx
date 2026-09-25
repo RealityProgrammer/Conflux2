@@ -6,7 +6,7 @@ import {
 } from "../graphql/queries.ts";
 import {useAuth} from "./AuthContext.tsx";
 import {toast} from "react-toastify";
-import useIdleTimer from "../hooks/useIdleTimer.tsx";
+import useIdleTimer from "../hooks/useIdleTimer.ts";
 import {useQueryClient} from "@tanstack/react-query";
 
 interface PresenceContextType {
