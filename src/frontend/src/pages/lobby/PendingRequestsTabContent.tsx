@@ -17,7 +17,6 @@ import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
-import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 import {UserRelationshipStatus} from "../../api/schema.ts";
 import {userService} from "../../api/userService.ts";
 
@@ -99,7 +98,7 @@ export default function PendingRequestsTabContent() {
     );
   };
 
-  useSignalREvent("FriendRequestReceived", async (event: FriendRequestReceivedEvent) => {
+  useSignalREvent("FriendRequestReceived", async (_event: FriendRequestReceivedEvent) => {
     queryClient.invalidateQueries({
       queryKey: ['queryPendingRequests'],
     });

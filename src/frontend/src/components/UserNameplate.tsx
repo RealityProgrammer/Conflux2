@@ -2,7 +2,6 @@ import UserAvatar from "./UserAvatar.tsx";
 import {type HTMLAttributes, type ReactNode} from "react";
 import {random} from "animejs";
 import type {PresenceStatus} from "../graphql/types.ts";
-import {userService} from "../api/userService.ts";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 
 interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {

@@ -1,8 +1,6 @@
 import {Avatar} from "radix-ui";
 import {BsPerson} from "react-icons/bs";
 import type {HTMLAttributes} from "react";
-import {PresenceStatus} from "../graphql/types.ts";
-import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 
 interface UserAvatarProps extends HTMLAttributes<HTMLDivElement> {
   src?: string;

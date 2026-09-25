@@ -1,5 +1,5 @@
 import {Avatar} from "radix-ui";
-import {type ChangeEvent, type ReactNode, useEffect, useRef, useState} from "react";
+import {type ChangeEvent, type ReactNode, useRef} from "react";
 import {usePreviewUrl} from "../hooks/usePreviewUrl.ts";
 
 interface AvatarInputProps {

@@ -2,7 +2,6 @@ import {Separator} from "radix-ui";
 import {FaBirthdayCake} from "react-icons/fa";
 import {FaHandshake, FaMarsAndVenus} from "react-icons/fa6";
 import UserAvatarAndBanner from "./UserAvatarAndBanner.tsx";
-import {hash} from "../utils/hashing.ts";
 import type {CSSProperties} from "react";
 import type {PresenceStatus} from "../graphql/types.ts";
 import {TruncatedText} from "./TruncatedText.tsx";

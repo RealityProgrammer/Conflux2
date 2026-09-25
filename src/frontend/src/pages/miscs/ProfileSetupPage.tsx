@@ -1,4 +1,4 @@
-import {BsArrowLeft, BsArrowRight, BsCheck, BsPerson, BsX} from "react-icons/bs";
+import {BsArrowLeft, BsArrowRight, BsCheck, BsPerson} from "react-icons/bs";
 import {useEffect, useRef, useState} from "react";
 import {animate, utils} from "animejs";
 import SelectableImageInput from "../../components/SelectableImageInput.tsx";

@@ -1,9 +1,7 @@
 import {Avatar} from "radix-ui";
 import type {PresenceStatus} from "../graphql/types.ts";
-import {BsPerson} from "react-icons/bs";
 import UserAvatar from "./UserAvatar.tsx";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
-import {hash} from "../utils/hashing.ts";
 import type {CSSProperties} from "react";
 
 interface AvatarAndBannerProps {
