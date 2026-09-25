@@ -116,4 +116,7 @@ public static class Errors {
     
     public static Error ServerMemberNotActive() =>
         new(nameof(ServerMemberNotActive), "Community server member is not active.");
+    
+    public static Error FileNotExists(string file) =>
+        new(nameof(FileNotExists), $"File {file} does not exist.");
 }

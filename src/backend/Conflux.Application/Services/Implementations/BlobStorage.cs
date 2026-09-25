@@ -21,11 +21,64 @@ internal sealed class StorageService(
     private readonly StorageServiceOptions _options = options.Value;
 
     public async Task<Result> Upload(string key, Stream stream, string contentType, CancellationToken cancellationToken = default) {
-        return await UploadToS3Storage(key, stream, contentType, cancellationToken);
+        var uploadRequest = new PutObjectRequest {
+            InputStream = stream,
+            BucketName = _options.BucketName,
+            Key = key,
+            ContentType = contentType,
+            UseChunkEncoding = false,
+        };
+        
+        try {
+            PutObjectResponse response = await s3Client.PutObjectAsync(uploadRequest, cancellationToken);
+
+            switch (response.HttpStatusCode) {
+                case HttpStatusCode.OK or HttpStatusCode.Created:
+                    return Result.Success();
+
+                case HttpStatusCode.Unauthorized:
+                    return Errors.InvalidCredentials("S3");
+
+                case HttpStatusCode.ServiceUnavailable:
+                    return Errors.ConnectionFailure("S3");
+
+                case HttpStatusCode.MethodNotAllowed:
+                    return Errors.Discontinued("S3 no longer support Email Grantee ACLs.");
+
+                default:
+                    logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
+                    return Errors.UnexpectedError();
+            }
+        } catch (HttpRequestException e) when (e.HttpRequestError == HttpRequestError.ConnectionError) {
+            return Errors.ConnectionFailure("S3");
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while uploading file to S3.");
+            return Errors.UnexpectedError();
+        }
     }
     
     public async Task<Result> Delete(string key, CancellationToken cancellationToken = default) {
-        return await DeleteFromS3Storage(key, cancellationToken);
+        try {
+            await s3Client.DeleteObjectAsync(_options.BucketName, key, cancellationToken);
+            return Result.Success();
+        } catch (HttpRequestException e) when (e.HttpRequestError == HttpRequestError.ConnectionError) {
+            return Errors.ConnectionFailure("S3");
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while deleting file from S3.");
+            return Errors.UnexpectedError();
+        }
+    }
+
+    public async Task<Result> Copy(string from, string to, CancellationToken cancellationToken = default) {
+        try {
+            await s3Client.CopyObjectAsync(_options.BucketName, from, _options.BucketName, to, cancellationToken);
+            return Result.Success();
+        } catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.ErrorCode == "NoSuchKey") {
+            return Errors.FileNotExists(from);
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while copying file in S3.");
+            return Errors.UnexpectedError();
+        }
     }
 
     public async Task<string> GetPreSignedUrl(
@@ -51,91 +104,5 @@ internal sealed class StorageService(
             Expires = expires,
             Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
         };
-    }
-    
-    private async Task<Result> UploadToS3Storage(
-        string key,
-        Stream stream,
-        string contentType,
-        CancellationToken cancellationToken = default
-    ) {
-        var uploadRequest = new PutObjectRequest {
-            InputStream = stream,
-            BucketName = _options.BucketName,
-            Key = key,
-            ContentType = contentType,
-            UseChunkEncoding = false,
-        };
-
-        try {
-            PutObjectResponse response = await s3Client.PutObjectAsync(uploadRequest, cancellationToken);
-
-            switch (response.HttpStatusCode) {
-                case HttpStatusCode.OK or HttpStatusCode.Created:
-                    return Result.Success();
-
-                case HttpStatusCode.Unauthorized:
-                    return Errors.InvalidCredentials("S3");
-
-                case HttpStatusCode.ServiceUnavailable:
-                    return Errors.ConnectionFailure("S3");
-
-                case HttpStatusCode.MethodNotAllowed:
-                    return Errors.Discontinued("S3 no longer support Email Grantee ACLs.");
-
-                default:
-                    logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
-                    return Errors.UnexpectedError();
-            }
-        } catch (AmazonS3Exception e) {
-            logger.LogError(e, "S3 threw exception.");
-            return Errors.UnexpectedError();
-        } catch (HttpRequestException e) {
-            switch (e.HttpRequestError) {
-                case HttpRequestError.ConnectionError:
-                    return Errors.ConnectionFailure("S3");
-
-                default:
-                    logger.LogError(e, "S3 threw exception.");
-                    return Errors.UnexpectedError();
-
-            }
-        } catch (Exception e) {
-            logger.LogError(e, "S3 threw exception.");
-            return Errors.UnexpectedError();
-        }
-    }
-
-    private async Task<Result> DeleteFromS3Storage(string uniqueKey, CancellationToken cancellationToken = default) {
-        try {
-            var response = await s3Client.DeleteObjectAsync(_options.BucketName, uniqueKey, cancellationToken);
-
-            switch (response.HttpStatusCode) {
-                case HttpStatusCode.OK or HttpStatusCode.NoContent:
-                    return Result.Success();
-                
-                case HttpStatusCode.NotFound:
-                    return Errors.ResourceNotFound();
-                
-                default:
-                    logger.LogWarning("Unhandled S3 response status code {c}.", response.HttpStatusCode);
-                    return Errors.UnexpectedError();
-            }
-        } catch (AmazonS3Exception e) {
-            logger.LogError(e, "S3 threw exception.");
-            return Errors.UnexpectedError();
-        } catch (HttpRequestException e) {
-            switch (e.HttpRequestError) {
-                case HttpRequestError.ConnectionError:
-                    return Errors.ConnectionFailure("S3");
-
-                default:
-                    logger.LogError(e, "S3 threw exception.");
-                    return Errors.UnexpectedError();
-            }
-        } catch (Exception e) {
-            logger.LogError(e, "S3 threw exception.");
-            return Errors.UnexpectedError();
-        }
     }
 }
