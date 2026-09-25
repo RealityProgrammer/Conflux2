@@ -8,4 +8,7 @@ public interface IServerMediaService {
     
     Task<Result> UploadBanner(Guid serverId, Stream stream, CancellationToken cancellationToken = default);
     Task<Result> DeleteBanner(Guid serverId, CancellationToken cancellationToken = default);
+    
+    Task<string> GetAvatarPreSignedUrl(Guid userId, CancellationToken cancellationToken = default);
+    Task<string> GetBannerPreSignedUrl(Guid userId, CancellationToken cancellationToken = default);
 }

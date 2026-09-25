@@ -35,9 +35,8 @@ public sealed class SendMessageHandler(
     IConversationRepository conversationRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
-    IBlobStorage blobStorage,
-    IFileFormatInspector fileFormatInspector,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IMessageMediaService messageMediaService
 ) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken) {
         Guid channelId = request.ChannelId;
@@ -143,83 +142,14 @@ public sealed class SendMessageHandler(
         
         for (int i = 0; i < attachments.Count; i++) {
             var attachment = attachments[i];
-            string mediaType;
-
-            switch (fileFormatInspector.DetermineFileFormat(attachment.Stream)) {
-                case Image imageFormat:
-                    switch (imageFormat) {
-                        case Png pngFormat:
-                            mediaType = pngFormat.MediaType;
-                            break;
-                        
-                        case Jpeg jpegFormat:
-                            mediaType = jpegFormat.MediaType;
-                            break;
-                        
-                        case Gif gifFormat:
-                            mediaType = gifFormat.MediaType;
-                            break;
-                        
-                        case Webp webpFormat:
-                            mediaType = webpFormat.MediaType;
-                            break;
-                        
-                        default:
-                            await DeleteUploadedAttachments(finalAttachments);
-
-                            return Errors.ValidationErrorsOccurred(new() {
-                                [nameof(attachments)] = [
-                                    "One of the attachments doesn't have the supported image format.",
-                                ],
-                            });
-                    }
-                    break;
-                
-                case MP4V1 mp4Format:
-                    mediaType = mp4Format.MediaType;
-                    break;
-                
-                case Mpeg4Iso4 mpeg4Iso4Format:
-                    mediaType = mpeg4Iso4Format.MediaType;
-                    break;
-                
-                // TODO: Add .webm once FileSignatures add it
-                
-                case Wav wavFormat:
-                    mediaType = wavFormat.MediaType;
-                    break;
-                
-                case null:
-                    await DeleteUploadedAttachments(finalAttachments);
-
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(attachments)] = [
-                            "One of the attachments have an unknown file format.",
-                        ],
-                    });
-                
-                default:
-                    await DeleteUploadedAttachments(finalAttachments);
-
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(attachments)] = [
-                            "One of the attachments doesn't have supported file format.",
-                        ],
-                    });
-            }
-
-            attachment.Stream.Position = 0;
+            
 
             try {
-                Result<Guid> uploadResult =
-                    await blobStorage.UploadMessageAttachment(new(attachment.Stream, mediaType), cancellationToken);
+                Result<Attachment> uploaded = 
+                    await messageMediaService.UploadAttachment(attachment.Stream, attachment.FileName, cancellationToken);
 
-                if (uploadResult.IsSuccess) {
-                    finalAttachments[i] = new() {
-                        Name = attachments[i].FileName,
-                        Id = uploadResult.Value,
-                        Type = mediaType,
-                    };
+                if (uploaded.IsSuccess) {
+                    finalAttachments[i] = uploaded.Value;
                 } else {
                     await DeleteUploadedAttachments(finalAttachments);
                     return Errors.AttachmentUploadFailure();
@@ -236,7 +166,7 @@ public sealed class SendMessageHandler(
     private async ValueTask DeleteUploadedAttachments(IEnumerable<Attachment?> attachments) {
         foreach (var attachment in attachments) {
             if (attachment != null && attachment.Id != Guid.Empty) {
-                await blobStorage.DeleteMessageAttachment(attachment.Id, CancellationToken.None);
+                await messageMediaService.DeleteAttachment(attachment.Id, CancellationToken.None);
             }
         }
     }

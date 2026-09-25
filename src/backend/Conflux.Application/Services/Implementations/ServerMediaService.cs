@@ -16,17 +16,16 @@ internal sealed class ServerMediaService(
         }
         
         Image imageFormat = validateResult.Value!;
-        var uploadResult = await blobStorage.UploadServerAvatar(serverId, new(stream, imageFormat.MediaType), cancellationToken);
-
-        if (!uploadResult.IsSuccess) {
-            return uploadResult;
-        }
         
-        return Result.Success();
+        string key = GetAvatarKey(serverId);
+        var uploadResult = await blobStorage.Upload(key, stream, imageFormat.MediaType, cancellationToken);
+
+        return uploadResult.IsSuccess ? Result.Success() : uploadResult;
     }
 
     public async Task<Result> DeleteAvatar(Guid serverId, CancellationToken cancellationToken = default) {
-        return Result.Success();
+        string key = GetAvatarKey(serverId);
+        return await blobStorage.Delete(key, cancellationToken);
     }
 
     public async Task<Result> UploadBanner(Guid serverId, Stream stream, CancellationToken cancellationToken = default) {
@@ -37,17 +36,24 @@ internal sealed class ServerMediaService(
         }
         
         Image imageFormat = validateResult.Value!;
-        var uploadResult = await blobStorage.UploadUserBanner(serverId, new(stream, imageFormat.MediaType), cancellationToken);
-
-        if (!uploadResult.IsSuccess) {
-            return uploadResult;
-        }
         
-        return Result.Success();
+        string key = GetBannerKey(serverId);
+        return await blobStorage.Upload(key, stream, imageFormat.MediaType, cancellationToken);
     }
 
     public async Task<Result> DeleteBanner(Guid serverId, CancellationToken cancellationToken = default) {
-        return Result.Success();
+        string key = GetBannerKey(serverId);
+        return await blobStorage.Delete(key, cancellationToken);
+    }
+    
+    public async Task<string> GetAvatarPreSignedUrl(Guid serverId, CancellationToken cancellationToken = default) {
+        string key = GetAvatarKey(serverId);
+        return await blobStorage.GetPreSignedUrl(key, TimeSpan.FromHours(1), cancellationToken: cancellationToken);
+    }
+    
+    public async Task<string> GetBannerPreSignedUrl(Guid serverId, CancellationToken cancellationToken = default) {
+        string key = GetBannerKey(serverId);
+        return await blobStorage.GetPreSignedUrl(key, TimeSpan.FromHours(1), cancellationToken: cancellationToken);
     }
     
     private Result<Image> ValidateImageFormat(Stream stream) {
@@ -80,5 +86,13 @@ internal sealed class ServerMediaService(
         }
 
         return Result<Image>.Success(imageFormat);
+    }
+    
+    private static string GetAvatarKey(Guid userId) {
+        return $"servers/{userId}/avatar";
+    }
+    
+    private static string GetBannerKey(Guid userId) {
+        return $"servers/{userId}/banner";
     }
 }

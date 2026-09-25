@@ -16,142 +16,32 @@ internal sealed class StorageService(
     [FromKeyedServices("PreSigningClient")] IAmazonS3 preSigningClient,
     TimeProvider timeProvider,
     ILogger<StorageService> logger,
-    IOptions<StorageServiceOptions> options,
-    IMessageRepository messageRepository
-) : IBlobStorage, IBlobUrlProvider {
+    IOptions<StorageServiceOptions> options
+) : IBlobStorage {
     private readonly StorageServiceOptions _options = options.Value;
-    
-    public async Task<Result<string>> UploadUserAvatar(
-        Guid userId,
-        UploadItem avatar,
-        CancellationToken cancellationToken = default
-    ) {
-        string uniqueKey = CreateUserAvatarUniqueKey(userId);
-        var result = await UploadToS3Storage(uniqueKey, avatar.Stream, avatar.ContentType, cancellationToken);
 
-        return result.IsSuccess ? Result<string>.Success(uniqueKey) : result.Error;
-    }
-
-    public async Task<Result> DeleteUserAvatar(Guid userId, CancellationToken cancellationToken = default) {
-        var uniqueKey = CreateUserAvatarUniqueKey(userId);
-        return await DeleteFromS3Storage(uniqueKey, cancellationToken);
-    }
-
-    public async Task<string> GetUserAvatarPreSignedUrl(Guid userId) {
-        var uniqueKey = CreateUserAvatarUniqueKey(userId);
-        var request = CreatePreSignedUrlRequest(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
-
-        return await preSigningClient.GetPreSignedURLAsync(request);
+    public async Task<Result> Upload(string key, Stream stream, string contentType, CancellationToken cancellationToken = default) {
+        return await UploadToS3Storage(key, stream, contentType, cancellationToken);
     }
     
-    public async Task<Result<string>> UploadUserBanner(
-        Guid userId,
-        UploadItem banner,
-        CancellationToken cancellationToken = default
-    ) {
-        string key = CreateUserBannerUniqueKey(userId);
-        var result = await UploadToS3Storage(key, banner.Stream, banner.ContentType, cancellationToken);
-
-        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
-    }
-
-    public async Task<Result> DeleteUserBanner(Guid userId, CancellationToken cancellationToken = default) {
-        var uniqueKey = CreateUserBannerUniqueKey(userId);
-        return await DeleteFromS3Storage(uniqueKey, cancellationToken);
-    }
-
-    public async Task<string> GetUserBannerPreSignedUrl(Guid userId) {
-        var uniqueKey = CreateUserBannerUniqueKey(userId);
-        var request = CreatePreSignedUrlRequest(uniqueKey, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
-
-        return await preSigningClient.GetPreSignedURLAsync(request);
-    }
-
-    public async Task<Result<string>> UploadServerAvatar(
-        Guid serverId, 
-        UploadItem avatar, 
-        CancellationToken cancellationToken = default
-    ) {
-        string key = CreateServerAvatarUniqueKey(serverId);
-        var result = await UploadToS3Storage(key, avatar.Stream, avatar.ContentType, cancellationToken);
-
-        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
-    }
-
-    public async Task<Result> DeleteServerAvatar(Guid serverId, CancellationToken cancellationToken = default) {
-        string key = CreateServerAvatarUniqueKey(serverId);
-        var result = await DeleteFromS3Storage(key, cancellationToken);
-
-        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
-    }
-
-    public async Task<string> GetServerAvatarPreSignedUrl(Guid serverId) {
-        var key = CreateServerAvatarUniqueKey(serverId);
-        var request = CreatePreSignedUrlRequest(key, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
-
-        return await preSigningClient.GetPreSignedURLAsync(request);
-    }
-
-    public async Task<Result<string>> UploadServerBanner(Guid serverId, UploadItem avatar, CancellationToken cancellationToken = default) {
-        string key = CreateServerBannerUniqueKey(serverId);
-        var result = await UploadToS3Storage(key, avatar.Stream, avatar.ContentType, cancellationToken);
-
-        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
-    }
-
-    public async Task<Result> DeleteServerBanner(Guid serverId, CancellationToken cancellationToken = default) {
-        string key = CreateServerBannerUniqueKey(serverId);
-        var result = await DeleteFromS3Storage(key, cancellationToken);
-
-        return result.IsSuccess ? Result<string>.Success(key) : result.Error;
-    }
-
-    public async Task<string> GetServerBannerPreSignedUrl(Guid serverId) {
-        var key = CreateServerBannerUniqueKey(serverId);
-        var request = CreatePreSignedUrlRequest(key, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
-
-        return await preSigningClient.GetPreSignedURLAsync(request);
-    }
-
-    public async Task<Result<Guid>> UploadMessageAttachment(
-        UploadItem attachment, 
-        CancellationToken cancellationToken = default
-    ) {
-        Guid attachmentId = Guid.NewGuid();
-        string key = CreateAttachmentUniqueKey(attachmentId);
-
-        Result result = await UploadToS3Storage(key, attachment.Stream, attachment.ContentType, cancellationToken);
-
-        if (result.IsSuccess) {
-            return Result<Guid>.Success(attachmentId);
-        }
-        
-        return result.Error;
-    }
-
-    public async Task<Result> DeleteMessageAttachment(Guid attachmentId, CancellationToken cancellationToken = default) {
-        string key = CreateAttachmentUniqueKey(attachmentId);
+    public async Task<Result> Delete(string key, CancellationToken cancellationToken = default) {
         return await DeleteFromS3Storage(key, cancellationToken);
     }
-    
-    public async Task<Result<string>> GetMessageAttachmentPreSignedUrl(Guid attachmentId, bool download) {
-        string key = CreateAttachmentUniqueKey(attachmentId);
-        var request = CreatePreSignedUrlRequest(key, timeProvider.GetUtcNow().AddHours(1).UtcDateTime);
 
-        if (download) {
-            Attachment? attachment = await messageRepository.GetAttachmentById(attachmentId, CancellationToken.None);
-
-            if (attachment == null) {
-                return Errors.ResourceNotFound($"Attachment (Id = {attachment})");
-            }
-
-            string fileName = string.IsNullOrEmpty(attachment.Name) ? "file" : attachment.Name;
-            request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{fileName}\"";
+    public async Task<string> GetPreSignedUrl(
+        string key, 
+        TimeSpan? expires = null, 
+        BlobDownloadOptions? downloadOptions = null, 
+        CancellationToken cancellationToken = default
+    ) {
+        var request = CreatePreSignedUrlRequest(key, expires == null ? null : timeProvider.GetUtcNow().Add(expires.Value).UtcDateTime);
+        
+        if (downloadOptions is { Download: true }) {
+            string? fileName = downloadOptions.Value.FileName;
+            request.ResponseHeaderOverrides.ContentDisposition = string.IsNullOrWhiteSpace(fileName) ? "attachment" : $"attachment; filename=\"{fileName}\"";
         }
-
-        // probably no need to try-catch since it only throws Arguments related exceptions.
-        string preSignedUrl = await preSigningClient.GetPreSignedURLAsync(request);
-        return Result<string>.Success(preSignedUrl);
+        
+        return await preSigningClient.GetPreSignedURLAsync(request);
     }
 
     private GetPreSignedUrlRequest CreatePreSignedUrlRequest(string key, DateTime? expires) {
@@ -247,25 +137,5 @@ internal sealed class StorageService(
             logger.LogError(e, "S3 threw exception.");
             return Errors.UnexpectedError();
         }
-    }
-
-    private static string CreateUserAvatarUniqueKey(Guid userId) {
-        return $"users/{userId}/avatar";
-    }
-    
-    private static string CreateUserBannerUniqueKey(Guid userId) {
-        return $"users/{userId}/banner";
-    }
-    
-    private static string CreateServerAvatarUniqueKey(Guid userId) {
-        return $"servers/{userId}/avatar";
-    }
-    
-    private static string CreateServerBannerUniqueKey(Guid userId) {
-        return $"servers/{userId}/banner";
-    }
-
-    private static string CreateAttachmentUniqueKey(Guid attachmentId) {
-        return $"attachments/{attachmentId}";
     }
 }

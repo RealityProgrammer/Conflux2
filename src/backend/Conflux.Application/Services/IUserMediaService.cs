@@ -8,4 +8,7 @@ public interface IUserMediaService {
     
     Task<Result> UploadBanner(Guid userId, Stream stream, CancellationToken cancellationToken = default);
     Task<Result> DeleteBanner(Guid userId, CancellationToken cancellationToken = default);
+    
+    Task<string> GetAvatarPreSignedUrl(Guid userId, CancellationToken cancellationToken = default);
+    Task<string> GetBannerPreSignedUrl(Guid userId, CancellationToken cancellationToken = default);
 }
