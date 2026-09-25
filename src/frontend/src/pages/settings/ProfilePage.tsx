@@ -26,6 +26,7 @@ import IconButton from "../../components/IconButton.tsx";
 import {useQueryClient} from "@tanstack/react-query";
 import {usePreviewUrl} from "../../hooks/usePreviewUrl.ts";
 import {hash} from "../../utils/hashing.ts";
+import UserProfileContent from "../../components/UserProfileContent.tsx";
 
 export default function ProfilePage() {
   return (
@@ -416,42 +417,20 @@ function Displayer({
   const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.bannerRevision ? userService.getBannerUrl(userData.id, userData.bannerRevision) : undefined);
 
   return (
-    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden">
-      <UserAvatarAndBanner
+    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container">
+      <UserProfileContent
         avatarSrc={avatarDisplayUrl ?? undefined}
         bannerSrc={bannerDisplayUrl ?? undefined}
         bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}
         avatarClassName="border-gray-675"
         presenceStatus={watchedValues.presence}
-        presenceStatusClassName="bg-gray-675 border-4 border-gray-675"
+        presenceStatusClassName="size-1/3 bg-gray-675 border-4 border-gray-675"
+        displayName={watchedValues.displayName || "\u003CDisplay Name\u003E"}
+        username={userData?.userName ?? "???"}
+        joinDate={userData ? new Date(userData.createdAt) : undefined}
+        pronouns={watchedValues.pronouns}
+        bio={watchedValues.bio || "\u003CBiography\u003E"}
       />
-
-      <div className="px-2">
-        <p className="text-xl font-bold truncate">{watchedValues.displayName || "\u003CDisplay Name\u003E"}</p>
-        <p className="text-sm ml-1 truncate text-stone-300">@{userData?.userName}</p>
-
-        <div className="grid grid-cols-2 gap-x-2 text-sm mt-2">
-          <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
-            <FaBirthdayCake className="flex-none size-4 fill-gray-50 mr-2"/>
-
-            {userData?.createdAt ? new Date(userData?.createdAt).toLocaleDateString() : "-"}
-          </p>
-
-          {watchedValues.pronouns && (
-            <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
-              <FaMarsAndVenus className="flex-none size-4 fill-gray-50 mr-2"/>
-
-              <TruncatedText>{watchedValues.pronouns}</TruncatedText>
-            </p>
-          )}
-        </div>
-
-        <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
-
-        <p className="group-label">About me</p>
-
-        <p className="text-[13px] text-gray-50">{watchedValues.bio || "\u003CBiography\u003E"}</p>
-      </div>
     </div>
   );
 }

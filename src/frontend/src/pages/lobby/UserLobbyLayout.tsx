@@ -154,7 +154,7 @@ function DirectMessagesList() {
             displayName={item.friendRequest?.otherUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
-            presenceStatusClassName="ring-2 ring-gray-725 bg-gray-725"
+            presenceStatusClassName="size-3 ring-2 ring-gray-725 bg-gray-725"
             onClick={() => {
               const otherUserId = item.friendRequest?.otherUser?.id;
               if (!otherUserId) return;

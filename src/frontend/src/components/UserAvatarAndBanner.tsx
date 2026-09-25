@@ -51,7 +51,7 @@ export default function UserAvatarAndBanner({
           {presenceStatus && (
             <PresenceStatusIcon
               status={presenceStatus}
-              className={`absolute bottom-0 right-0 rounded-full size-1/3 ${presenceStatusClassName}`}
+              className={`absolute bottom-0 right-0 rounded-full ${presenceStatusClassName}`}
             />
           )}
         </div>

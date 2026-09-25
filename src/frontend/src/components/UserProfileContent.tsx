@@ -1,28 +1,41 @@
-import UserAvatar from "./UserAvatar.tsx";
 import {Separator} from "radix-ui";
 import {FaBirthdayCake} from "react-icons/fa";
 import {FaHandshake, FaMarsAndVenus} from "react-icons/fa6";
-import {userService} from "../api/userService.ts";
+import UserAvatarAndBanner from "./UserAvatarAndBanner.tsx";
+import {hash} from "../utils/hashing.ts";
+import type {CSSProperties} from "react";
+import type {PresenceStatus} from "../graphql/types.ts";
+import {TruncatedText} from "./TruncatedText.tsx";
 
 interface UserProfileContentProps {
-  userId: string;
   username: string;
   displayName: string;
-  avatarRevision: number | null;
-  bannerUrl?: string;
+  avatarSrc?: string;
+  avatarAlt?: string;
+  avatarClassName?: string;
+  bannerSrc?: string;
+  bannerAlt?: string;
+  bannerFallbackColor?: CSSProperties["backgroundColor"];
+  presenceStatus?: PresenceStatus;
+  presenceStatusClassName?: string;
   joinDate?: Date;
-  friendedDate?: Date;
   pronouns?: string;
   bio?: string;
-  mutualFriendsCount: number;
+  friendedDate?: Date;
+  mutualFriendsCount?: number;
 }
 
 export default function UserProfileContent({
-  userId,
   username,
   displayName,
-  avatarRevision,
-  bannerUrl,
+  avatarSrc,
+  avatarAlt,
+  avatarClassName,
+  bannerSrc,
+  bannerAlt,
+  bannerFallbackColor,
+  presenceStatus,
+  presenceStatusClassName,
   joinDate,
   pronouns,
   bio,
@@ -31,68 +44,61 @@ export default function UserProfileContent({
 }: UserProfileContentProps) {
   return (
     <>
-      <div className="relative aspect-video w-full">
-        {bannerUrl ? (
-          <img
-            src={bannerUrl}
-            alt={`${displayName}'s banner`}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="size-full bg-indigo-500"/>
-        )}
+      <UserAvatarAndBanner
+        avatarSrc={avatarSrc}
+        avatarAlt={avatarAlt}
+        bannerSrc={bannerSrc}
+        bannerAlt={bannerAlt}
+        bannerFallbackColor={bannerFallbackColor}
+        presenceStatus={presenceStatus}
+        presenceStatusClassName={presenceStatusClassName}
+        avatarClassName={avatarClassName}
+      />
 
-        <div className="absolute -bottom-10 left-4">
-          <UserAvatar
-            src={avatarRevision ? userService.getAvatarUrl(userId, avatarRevision) : undefined}
-            className="size-21 border-4 border-gray-725"
-          />
-        </div>
-      </div>
+      <div className="px-2">
+        <p className="text-xl font-bold truncate">{displayName}</p>
+        <p className="text-sm ml-1 truncate text-stone-300">@{username}</p>
 
-      <div className="mt-12 px-2">
-        <span className="text-xl font-bold leading-none text-gray-50">
-          {displayName}
-        </span>
+        <div className="grid grid-cols-2 gap-x-2 text-sm mt-2 text-gray-500">
+          <p className="mt-1 min-w-0 flex items-center gap-2">
+            <FaBirthdayCake className="flex-none size-4 fill-gray-50"/>
 
-        <span className="ml-2 text-sm font-medium leading-none text-gray-400">
-          @{username}
-        </span>
-
-        <div className="grid grid-cols-2 gap-x-2 text-[13px]">
-          {joinDate && (
-            <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-              <FaBirthdayCake className="size-4 fill-gray-50 mr-2"/>
-              {joinDate?.toLocaleDateString() || ""}
-            </span>
-          )}
+            {joinDate ? new Date(joinDate).toLocaleDateString() : "-"}
+          </p>
 
           {friendedDate && (
-            <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-              <FaHandshake className="size-4 fill-gray-50 mr-2"/>
-              {friendedDate?.toLocaleDateString() || ""}
-            </span>
+            <p className="mt-1 min-w-0 flex items-center gap-2">
+              <FaHandshake className="flex-none size-4 fill-gray-50 mr-2"/>
+
+              {new Date(friendedDate).toLocaleDateString()}
+            </p>
           )}
 
           {pronouns && (
-            <span className="mt-1 inline-flex items-center text-sm text-gray-50">
-              <FaMarsAndVenus className="size-4 fill-gray-50 mr-2"/>
-              {pronouns || ""}
-            </span>
+            <p className="mt-1 min-w-0 flex items-center gap-2">
+              <FaMarsAndVenus className="flex-none size-4 fill-gray-50 mr-2"/>
+
+              <TruncatedText>{pronouns}</TruncatedText>
+            </p>
           )}
         </div>
 
-        <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-2 flex-none"/>
-
         {bio && (
           <>
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+
+            <p className="group-label">About me</p>
+
             <p className="text-[13px] text-gray-50">{bio}</p>
-            <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-2 flex-none"/>
           </>
         )}
 
-        <span className="text-xs block">{mutualFriendsCount} mutual friends.</span>
-        <span className="text-xs block">N mutual server.</span>
+        {mutualFriendsCount && (
+          <>
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+            <span className="text-xs block">{mutualFriendsCount} mutual friends.</span>
+          </>
+        )}
       </div>
     </>
   );

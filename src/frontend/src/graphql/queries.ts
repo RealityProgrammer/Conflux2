@@ -47,7 +47,7 @@ export type GetUserFullProfileQueryVariables = Exact<{
 }>;
 
 
-export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number } | null };
+export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null, bannerRevision: number | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number, effectivePresenceStatus: Types.PresenceStatus } | null };
 
 export type GetUserIdentityProfileQueryVariables = Exact<{
   id: string;
@@ -296,10 +296,12 @@ export const GetUserFullProfileDocument = new TypedDocumentString(`
     userName
     displayName
     avatarRevision
+    bannerRevision
     biography
     pronouns
     createdAt
     numMutualFriends
+    effectivePresenceStatus
   }
 }
     `);

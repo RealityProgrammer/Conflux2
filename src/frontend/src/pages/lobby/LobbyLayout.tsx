@@ -55,7 +55,7 @@ function Sidebar() {
 
               <PresenceStatusIcon
                 status={effectiveStatus}
-                className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750"
+                className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750 bg-gray-750"
               />
             </Tooltip.Trigger>
 
