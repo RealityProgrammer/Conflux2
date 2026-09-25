@@ -134,7 +134,8 @@ export const sessionUserService = {
     pronouns?: string | null,
     biography?: string | null,
     manualPresenceStatus?: PresenceStatus,
-    avatar?: File | null
+    avatar?: File | null,
+    banner?: File | null,
   ): Promise<ServiceResponse> => {
     try {
       const formData = new FormData();
@@ -161,6 +162,18 @@ export const sessionUserService = {
         if (avatar !== null) {
           formData.append("avatar.file", avatar);
         }
+      } else {
+        formData.append("avatar.type", "NoMod");
+      }
+
+      if (banner !== undefined) {
+        formData.append("banner.type", banner === null ? "Delete" : "Set");
+
+        if (banner !== null) {
+          formData.append("banner.file", banner);
+        }
+      } else {
+        formData.append("banner.type", "NoMod");
       }
 
       const response: AxiosResponse<BackendResponse> =

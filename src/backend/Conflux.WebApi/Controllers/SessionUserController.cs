@@ -147,8 +147,8 @@ public sealed class SessionUserController(
             return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
         }
 
-        await using var avatarStream = request.Avatar.Type == AvatarOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
-        await using var bannerStream = request.Avatar.Type == AvatarOperationType.Set ? request.Banner.File!.OpenReadStream() : Stream.Null;
+        await using var avatarStream = request.Avatar.Type == FileOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
+        await using var bannerStream = request.Banner.Type == FileOperationType.Set ? request.Banner.File!.OpenReadStream() : Stream.Null;
 
         var result = await mediator.Send(new UpdateUserProfileCommand(
             userId, 
@@ -157,7 +157,7 @@ public sealed class SessionUserController(
             request.Biography, 
             request.ManualPresenceStatus,
             new(request.Avatar.Type, avatarStream),
-            new(request.Banner.Type, avatarStream)
+            new(request.Banner.Type, bannerStream)
         ));
 
         if (result.IsSuccess) {
@@ -248,7 +248,7 @@ public sealed class SessionUserController(
 
             var options = validationContext.GetRequiredService<IOptions<UserServiceOptions>>().Value;
 
-            if (Avatar.Type == AvatarOperationType.Set) {
+            if (Avatar.Type == FileOperationType.Set) {
                 if (Avatar.File is { } avatarFile) {
                     if (avatarFile.Length > options.MaxAvatarSizeBytes) {
                         results.Add(new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.", [nameof(Avatar)]));
@@ -258,7 +258,7 @@ public sealed class SessionUserController(
                 }
             }
 
-            if (Banner.Type == AvatarOperationType.Set) {
+            if (Banner.Type == FileOperationType.Set) {
                 if (Banner.File is { } avatarFile) {
                     if (avatarFile.Length > options.MaxBannerSizeBytes) {
                         results.Add(new($"Banner must be smaller than {options.MaxBannerSizeBytes.Bytes():MB}.", [nameof(Banner)]));

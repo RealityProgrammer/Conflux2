@@ -17,12 +17,12 @@ export type Scalars = {
 
 export type ApplicationUser = {
   __typename?: 'ApplicationUser';
-  avatarUpdatedAt?: Maybe<Scalars['DateTime']['output']>;
   biography?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   displayName?: Maybe<Scalars['String']['output']>;
   effectivePresenceStatus: PresenceStatus;
   hasAvatar: Scalars['Boolean']['output'];
+  hasBanner: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
   manualPresenceStatus?: Maybe<PresenceStatus>;
@@ -34,7 +34,6 @@ export type ApplicationUser = {
 export type ApplicationUserFilterInput = {
   accessFailedCount?: InputMaybe<IntOperationFilterInput>;
   and?: InputMaybe<Array<ApplicationUserFilterInput>>;
-  avatarUpdatedAt?: InputMaybe<DateTimeOperationFilterInput>;
   biography?: InputMaybe<StringOperationFilterInput>;
   concurrencyStamp?: InputMaybe<StringOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -42,6 +41,7 @@ export type ApplicationUserFilterInput = {
   email?: InputMaybe<StringOperationFilterInput>;
   emailConfirmed?: InputMaybe<BooleanOperationFilterInput>;
   hasAvatar?: InputMaybe<BooleanOperationFilterInput>;
+  hasBanner?: InputMaybe<BooleanOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   isUserNameLocked?: InputMaybe<BooleanOperationFilterInput>;
   joinedCommunityServers?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
@@ -65,7 +65,6 @@ export type ApplicationUserFilterInput = {
 
 export type ApplicationUserSortInput = {
   accessFailedCount?: InputMaybe<SortEnumType>;
-  avatarUpdatedAt?: InputMaybe<SortEnumType>;
   biography?: InputMaybe<SortEnumType>;
   concurrencyStamp?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
@@ -73,6 +72,7 @@ export type ApplicationUserSortInput = {
   email?: InputMaybe<SortEnumType>;
   emailConfirmed?: InputMaybe<SortEnumType>;
   hasAvatar?: InputMaybe<SortEnumType>;
+  hasBanner?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   isUserNameLocked?: InputMaybe<SortEnumType>;
   lastSeenAt?: InputMaybe<SortEnumType>;

@@ -8,7 +8,7 @@ interface AvatarInputProps {
   fallback: () => ReactNode;
 }
 
-export default function SelectableAvatar({
+export default function SelectableImageInput({
   value,
   onChange,
   className,
@@ -46,7 +46,7 @@ export default function SelectableAvatar({
   const displayUrl = previewUrl || (typeof value === 'string' ? value : undefined);
 
   return (
-    <div className={`relative inline-block group overflow-hidden ${className}`}>
+    <div className={`relative block w-full group overflow-hidden ${className}`}>
       <input
         type="file"
         ref={fileInputRef}
@@ -74,7 +74,7 @@ export default function SelectableAvatar({
         onClick={handleAvatarClick}
       >
         <span className="text-white text-sm text-center font-medium px-2">
-           Select new avatar
+           Select new image
         </span>
       </div>
     </div>

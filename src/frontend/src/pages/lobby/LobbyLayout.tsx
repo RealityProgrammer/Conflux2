@@ -10,7 +10,7 @@ import type {
   ServiceResponse
 } from "../../api/types.ts";
 import IconButton from "../../components/IconButton.tsx";
-import SelectableAvatar from "../../components/SelectableAvatar.tsx";
+import SelectableImageInput from "../../components/SelectableImageInput.tsx";
 import {useEffect, useRef, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import DialogForm from "../../components/DialogForm.tsx";
@@ -358,7 +358,7 @@ function CreateServerDialogForm({
                   open={!!errors.avatar}
                   content={errors.avatar?.message}
                 >
-                  <SelectableAvatar
+                  <SelectableImageInput
                     value={field.value}
                     onChange={field.onChange}
                     className="size-48 rounded-full overflow-hidden flex-none"

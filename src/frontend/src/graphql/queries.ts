@@ -40,7 +40,7 @@ export type GetSessionUserManualPresenceStatusQuery = { sessionUser: { manualPre
 export type GetSessionUserProfileSettingInfoQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
+export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean, hasBanner: boolean, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
@@ -259,6 +259,7 @@ export const GetSessionUserProfileSettingInfoDocument = new TypedDocumentString(
     userName
     displayName
     hasAvatar
+    hasBanner
     biography
     pronouns
     createdAt

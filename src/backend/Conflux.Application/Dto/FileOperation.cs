@@ -1,9 +1,9 @@
 namespace Conflux.Application.Dto;
 
-public enum AvatarOperationType {
+public enum FileOperationType {
     NoMod,
     Set,
     Delete,
 }
 
-public readonly record struct FileOperation(AvatarOperationType Type, Stream? AvatarStream);
+public readonly record struct FileOperation(FileOperationType Type, Stream? Stream);

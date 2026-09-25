@@ -25,8 +25,8 @@ public sealed class UpdateUserProfileHandler(
         bool? hasAvatar, hasBanner;
         
         switch (command.AvatarOperation.Type) {
-            case AvatarOperationType.Set:
-                var uploadResult = await userMediaService.UploadAvatar(command.UserId, command.AvatarOperation.AvatarStream!, cancellationToken);
+            case FileOperationType.Set:
+                var uploadResult = await userMediaService.UploadAvatar(command.UserId, command.AvatarOperation.Stream!, cancellationToken);
 
                 if (!uploadResult.IsSuccess) {
                     return uploadResult;
@@ -35,7 +35,7 @@ public sealed class UpdateUserProfileHandler(
                 hasAvatar = true;
                 break;
             
-            case AvatarOperationType.Delete:
+            case FileOperationType.Delete:
                 var deleteResult = await userMediaService.DeleteAvatar(command.UserId, cancellationToken);
                 
                 if (!deleteResult.IsSuccess) {
@@ -51,8 +51,8 @@ public sealed class UpdateUserProfileHandler(
         }
         
         switch (command.BannerOperation.Type) {
-            case AvatarOperationType.Set:
-                var uploadResult = await userMediaService.UploadBanner(command.UserId, command.BannerOperation.AvatarStream!, cancellationToken);
+            case FileOperationType.Set:
+                var uploadResult = await userMediaService.UploadBanner(command.UserId, command.BannerOperation.Stream!, cancellationToken);
 
                 if (!uploadResult.IsSuccess) {
                     return uploadResult;
@@ -61,7 +61,7 @@ public sealed class UpdateUserProfileHandler(
                 hasBanner = true;
                 break;
             
-            case AvatarOperationType.Delete:
+            case FileOperationType.Delete:
                 var deleteResult = await userMediaService.DeleteBanner(command.UserId, cancellationToken);
                 
                 if (!deleteResult.IsSuccess) {

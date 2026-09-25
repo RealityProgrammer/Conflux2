@@ -4,6 +4,7 @@ query GetSessionUserProfileSettingInfo {
         userName,
         displayName,
         hasAvatar,
+        hasBanner,
         biography,
         pronouns,
         createdAt,

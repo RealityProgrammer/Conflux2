@@ -204,7 +204,7 @@ type ApplicationUser {
   userName: String
   displayName: String
   hasAvatar: Boolean!
-  avatarUpdatedAt: DateTime
+  hasBanner: Boolean!
   biography: String
   pronouns: String
   createdAt: DateTime!
@@ -501,8 +501,8 @@ input ApplicationUserFilterInput {
   and: [ApplicationUserFilterInput!]
   or: [ApplicationUserFilterInput!]
   isUserNameLocked: BooleanOperationFilterInput
-  avatarUpdatedAt: DateTimeOperationFilterInput
   hasAvatar: BooleanOperationFilterInput
+  hasBanner: BooleanOperationFilterInput
   displayName: StringOperationFilterInput
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
@@ -531,8 +531,8 @@ input ApplicationUserFilterInput {
 
 input ApplicationUserSortInput {
   isUserNameLocked: SortEnumType @cost(weight: "10")
-  avatarUpdatedAt: SortEnumType @cost(weight: "10")
   hasAvatar: SortEnumType @cost(weight: "10")
+  hasBanner: SortEnumType @cost(weight: "10")
   displayName: SortEnumType @cost(weight: "10")
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")

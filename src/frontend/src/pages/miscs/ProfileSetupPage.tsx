@@ -1,7 +1,7 @@
 import {BsArrowLeft, BsArrowRight, BsCheck, BsPerson, BsX} from "react-icons/bs";
 import {useEffect, useRef, useState} from "react";
 import {animate, utils} from "animejs";
-import SelectableAvatar from "../../components/SelectableAvatar.tsx";
+import SelectableImageInput from "../../components/SelectableImageInput.tsx";
 import {HttpStatusCode} from "axios";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {Label} from "radix-ui";
@@ -129,7 +129,7 @@ function AvatarPanel({
             name="file"
             render={({ field }) => (
               <div className="flex flex-row gap-3">
-                <SelectableAvatar
+                <SelectableImageInput
                   value={field.value}
                   onChange={field.onChange}
                   className="size-64 rounded-full flex-none"
