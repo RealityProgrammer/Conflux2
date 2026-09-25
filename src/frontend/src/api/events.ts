@@ -107,7 +107,7 @@ export type ServerMemberUnbannedEvent = {
 export type TypingUserEvent = {
   userId: string;
   displayName: string;
-  hasAvatar: boolean;
+  avatarRevision: number | null;
 }
 
 export type UserPresenceChangedEvent = {

@@ -208,7 +208,7 @@ function Row({element, removeUserFromCache, navigateToDirectMessage}: RowProps) 
 
   return (
     <UserNameplate.Root
-      avatarSrc={element.hasAvatar ? userService.getAvatarUrl(element.id) : undefined}
+      avatarSrc={element.avatarRevision ? userService.getAvatarUrl(element.id, element.avatarRevision) : undefined}
       userName={element.userName ?? "???"}
       displayName={element.displayName ?? "???"}
       className="w-full p-1.5"

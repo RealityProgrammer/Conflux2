@@ -52,7 +52,7 @@ export default function TypingIndicator({
           {renderedUsers.map((user) => (
             <UserAvatar
               key={user.id}
-              src={user.hasAvatar ? userService.getAvatarUrl(user.id) : undefined}
+              src={user.avatarRevision ? userService.getAvatarUrl(user.id, user.avatarRevision) : undefined}
               className="size-7 rounded-full overflow-hidden ring-2 ring-gray-650"
             />
           ))}

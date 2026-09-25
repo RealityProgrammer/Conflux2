@@ -24,6 +24,9 @@ import {
 import {userService} from "../../api/userService.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useQueryClient} from "@tanstack/react-query";
+import {usePreviewUrl} from "../../hooks/usePreviewUrl.ts";
+import {hash} from "../../utils/hashing.ts";
+import UserProfileContent from "../../components/UserProfileContent.tsx";
 
 export default function ProfilePage() {
   return (
@@ -182,7 +185,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full justify-center">
                 <SelectableImageInput
-                  value={field.value === undefined ? userData?.hasAvatar ? userService.getAvatarUrl(userData.id, true) : null : field.value}
+                  value={userData ? field.value === undefined ? userData.avatarRevision !== null ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
                   fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
@@ -193,7 +196,7 @@ function FormFields({
                     <FaRepeat className="size-5"/>
                   </IconButton>
 
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null || !userData?.hasAvatar}>
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
                     <FaXmark className="size-5"/>
                   </IconButton>
                 </div>
@@ -213,25 +216,15 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full">
                 <SelectableImageInput
-                  value={field.value === undefined ? userData?.hasBanner ? userService.getBannerUrl(userData.id, true) : null : field.value}
+                  value={userData ? field.value === undefined ? userData.bannerRevision !== null ? userService.getBannerUrl(userData.id, userData.bannerRevision) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
-                    const stringToColor = (str: string): string => {
-                      let hash = 0;
-                      for (let i = 0; i < str.length; i++) {
-                        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                      }
-
-                      const hue = Math.abs(hash) % 360;
-                      return `hsl(${hue}, 60%, 40%)`;
-                    };
-
                     return (
                       <span
                         className="size-full"
                         style={{
-                          backgroundColor: stringToColor(userData?.id ?? "")
+                          backgroundColor: `hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`
                         }}>
                       </span>
                     );
@@ -243,7 +236,7 @@ function FormFields({
                     <FaRepeat className="size-5"/>
                   </IconButton>
 
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null || !userData?.hasBanner}>
+                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
                     <FaXmark className="size-5"/>
                   </IconButton>
                 </div>
@@ -420,42 +413,24 @@ function Displayer({
   const { control } = useFormContext<UpdateProfileFormValues>();
   const watchedValues = useWatch({ control });
 
+  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatarRevision ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : undefined);
+  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.bannerRevision ? userService.getBannerUrl(userData.id, userData.bannerRevision) : undefined);
+
   return (
-    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden">
-      <UserAvatarAndBanner
-        bannerSrc="https://placehold.co/1600x900"
-        avatarSrc="https://placehold.co/256x256"
-        avatarClassName="border-gray-675"
+    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container">
+      <UserProfileContent
+        avatarSrc={avatarDisplayUrl ?? undefined}
+        bannerSrc={bannerDisplayUrl ?? undefined}
+        bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}
+        avatarClassName="border-gray-675 bg-gray-675"
         presenceStatus={watchedValues.presence}
-        presenceStatusClassName="bg-gray-675 border-4 border-gray-675"
+        presenceStatusClassName="size-1/3 bg-gray-675 border-4 border-gray-675"
+        displayName={watchedValues.displayName || "\u003CDisplay Name\u003E"}
+        username={userData?.userName ?? "???"}
+        joinDate={userData ? new Date(userData.createdAt) : undefined}
+        pronouns={watchedValues.pronouns}
+        bio={watchedValues.bio || "\u003CBiography\u003E"}
       />
-
-      <div className="px-2">
-        <p className="text-xl font-bold truncate">{watchedValues.displayName || "\u003CDisplay Name\u003E"}</p>
-        <p className="text-sm ml-1 truncate text-stone-300">@{userData?.userName}</p>
-
-        <div className="grid grid-cols-2 gap-x-2 text-sm mt-2">
-          <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
-            <FaBirthdayCake className="flex-none size-4 fill-gray-50 mr-2"/>
-
-            {userData?.createdAt ? new Date(userData?.createdAt).toLocaleDateString() : "-"}
-          </p>
-
-          {watchedValues.pronouns && (
-            <p className="mt-1 flex min-w-0 items-center text-sm text-gray-50">
-              <FaMarsAndVenus className="flex-none size-4 fill-gray-50 mr-2"/>
-
-              <TruncatedText>{watchedValues.pronouns}</TruncatedText>
-            </p>
-          )}
-        </div>
-
-        <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
-
-        <p className="group-label">About me</p>
-
-        <p className="text-[13px] text-gray-50">{watchedValues.bio || "\u003CBiography\u003E"}</p>
-      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ query SearchServerMemberForAdmin($serverId: UUID!, $after: String, $search: Stri
                 id
                 userName
                 displayName
-                hasAvatar
+                avatarRevision
             }
         }
     }

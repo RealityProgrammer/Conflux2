@@ -17,7 +17,7 @@ public sealed class DeleteUserAvatarHandler(
             return result;
         }
 
-        bool updateSuccessful = await userRepository.UpdateAvatarStatus(request.UserId, false, CancellationToken.None);
+        bool updateSuccessful = await userRepository.UpdateAvatarRevision(request.UserId, null, CancellationToken.None);
 
         if (updateSuccessful) {
             return Result.Success();

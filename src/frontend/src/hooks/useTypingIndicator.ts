@@ -8,7 +8,7 @@ const TYPING_TIMEOUT_MS = 3000;
 export type TypingUser = {
   id: string;
   displayName: string;
-  hasAvatar: boolean;
+  avatarRevision: number | null;
 }
 
 interface UseTypingIndicatorResult {
@@ -26,7 +26,7 @@ export default function useTypingIndicator(
 
     setTypingUsersMap((prev) => {
       const next = new Map(prev);
-      next.set(event.userId, { id: event.userId, displayName: event.displayName, hasAvatar: event.hasAvatar });
+      next.set(event.userId, { id: event.userId, displayName: event.displayName, avatarRevision: event.avatarRevision });
       return next;
     });
 

@@ -1,21 +1,21 @@
 export const userService = {
-  getAvatarUrl: (userId: string, forceRefresh?: boolean): string => {
+  getAvatarUrl: (userId: string, revision?: number): string => {
+    const url = `/api/users/${encodeURIComponent(userId)}/avatar`;
+    if (revision === undefined) return url;
+
     const queryParams: URLSearchParams = new URLSearchParams();
+    queryParams.append("v", String(revision));
 
-    if (forceRefresh) {
-      queryParams.append("t", new Date().getTime().toString());
-    }
-
-    return `/api/users/${encodeURIComponent(userId)}/avatar?${queryParams.toString()}`;
+    return `${url}?${queryParams.toString()}`;
   },
 
-  getBannerUrl: (userId: string, forceRefresh?: boolean): string => {
+  getBannerUrl: (userId: string, revision?: number): string => {
+    const url = `/api/users/${encodeURIComponent(userId)}/banner`;
+    if (revision === undefined) return url;
+
     const queryParams: URLSearchParams = new URLSearchParams();
+    queryParams.append("v", String(revision));
 
-    if (forceRefresh) {
-      queryParams.append("t", new Date().getTime().toString());
-    }
-
-    return `/api/users/${encodeURIComponent(userId)}/banner?${queryParams.toString()}`;
+    return `${url}?${queryParams.toString()}`;
   },
 }

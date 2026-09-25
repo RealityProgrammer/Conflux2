@@ -1,12 +1,14 @@
 query GetUserFullProfile($id: UUID!) {
     user(id: $id) {
-        id,
-        userName,
-        displayName,
-        hasAvatar,
-        biography,
-        pronouns,
-        createdAt,
+        id
+        userName
+        displayName
+        avatarRevision
+        bannerRevision
+        biography
+        pronouns
+        createdAt
         numMutualFriends
+        effectivePresenceStatus
     }
 }

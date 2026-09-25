@@ -34,7 +34,7 @@ export default function PendingRequestsTabContent() {
   const queryClient = useQueryClient();
   const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
 
-  const queryKey = ["queryPendingRequests", userNameSearch];
+  const queryKey = ["queryPendingRequests", { userNameSearch }];
 
   const {
     data,
@@ -100,51 +100,9 @@ export default function PendingRequestsTabContent() {
   };
 
   useSignalREvent("FriendRequestReceived", async (event: FriendRequestReceivedEvent) => {
-    const query = await queryClient.query({
-      queryKey: useGetUserIdentityProfileQuery.getKey({ id: event.senderUserId }),
-      queryFn: useGetUserIdentityProfileQuery.fetcher({ id: event.senderUserId }),
+    queryClient.invalidateQueries({
+      queryKey: ['queryPendingRequests'],
     });
-
-    const userProfile = query.user;
-    if (!userProfile) return;
-
-    const newElement: PendingFriendRequestDto = {
-      userId: event.senderUserId,
-      userName: userProfile.userName ?? "???",
-      displayName: userProfile.displayName ?? "???",
-      hasAvatar: userProfile.hasAvatar,
-      status: UserRelationshipStatus.IncomingRequest,
-    }
-
-    queryClient.setQueryData<InfiniteData<PaginatedResult<PendingFriendRequestDto>>>(
-      queryKey,
-      (oldData) => {
-        if (!oldData || oldData.pages.length === 0) return oldData;
-
-        const alreadyExists = oldData.pages.some(page =>
-          page?.elements.some(el => el.userId === event.senderUserId)
-        );
-
-        if (alreadyExists) return oldData;
-
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page, index) => {
-            if (!page) return page;
-
-            const updatedElements = index === 0
-              ? [newElement, ...page.elements]
-              : page.elements;
-
-            return {
-              ...page,
-              elements: updatedElements,
-              totalCount: page.totalCount + 1,
-            };
-          }),
-        };
-      }
-    );
   });
 
   useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
@@ -243,7 +201,7 @@ function Row({element, removeCacheElement}: RowProps) {
 
   return (
     <UserNameplate.Root
-      avatarSrc={element.hasAvatar ? userService.getAvatarUrl(element.userId) : undefined}
+      avatarSrc={element.avatarRevision ? userService.getAvatarUrl(element.userId, element.avatarRevision) : undefined}
       userName={element.userName}
       displayName={element.displayName}
       className="w-full p-1.5"

@@ -6,6 +6,6 @@ public sealed record PendingFriendRequestDto(
     Guid UserId, 
     string UserName, 
     string DisplayName, 
-    bool HasAvatar, 
+    int? AvatarRevision, 
     UserRelationshipStatus Status
 );

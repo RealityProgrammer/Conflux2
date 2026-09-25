@@ -10,24 +10,21 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class UserRepository(
     UserManager<ApplicationUser> userManager,
-    ApplicationDbContext dbContext,
-    TimeProvider timeProvider
+    ApplicationDbContext dbContext
 ) : IUserRepository {
     public IQueryable<ApplicationUser> AsQueryable() {
         return userManager.Users;
     }
 
-    public async Task<bool> UpdateAvatarStatus(
+    public async Task<bool> UpdateAvatarRevision(
         Guid userId, 
-        bool hasAvatar, 
+        int? revision,
         CancellationToken cancellationToken = default
     ) {
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
-
         int numChange = await dbContext.Users
             .Where(u => u.Id == userId)
             .ExecuteUpdateAsync(builder => {
-                builder.SetProperty(u => u.HasAvatar, hasAvatar);
+                builder.SetProperty(u => u.AvatarRevision, revision);
             }, cancellationToken);
 
         return numChange > 0;

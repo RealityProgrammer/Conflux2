@@ -516,7 +516,7 @@ function RoleDetails({
 
             <div className="flex items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
               <UserAvatar
-                src={role.creatorUser?.hasAvatar ? userService.getAvatarUrl(role.creatorUser.id) : undefined}
+                src={role.creatorUser?.avatarRevision ? userService.getAvatarUrl(role.creatorUser.id, role.creatorUser.avatarRevision) : undefined}
                 className="size-5 rounded-full overflow-hidden"
               />
 

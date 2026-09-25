@@ -1,5 +1,6 @@
 import {Avatar} from "radix-ui";
 import {type ChangeEvent, type ReactNode, useEffect, useRef, useState} from "react";
+import {usePreviewUrl} from "../hooks/usePreviewUrl.ts";
 
 interface AvatarInputProps {
   value?: string | File | null;
@@ -14,23 +15,13 @@ export default function SelectableImageInput({
   className,
   fallback
 }: AvatarInputProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
-  useEffect(() => {
-    if (value instanceof File) {
-      const objectUrl = URL.createObjectURL(value);
-      setPreviewUrl(objectUrl);
-
-      return () => URL.revokeObjectURL(objectUrl);
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [value]);
+  const displayUrl = usePreviewUrl(value);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,23 +34,21 @@ export default function SelectableImageInput({
     }
   };
 
-  const displayUrl = previewUrl || (typeof value === 'string' ? value : undefined);
-
   return (
     <div className={`relative block w-full group overflow-hidden ${className}`}>
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept="image/png, image/jpeg, image/webp"
         className="hidden"
       />
 
       <Avatar.Root
-        className="inline-flex items-center justify-center align-middle w-full h-full bg-black rounded-[inherit] overflow-hidden">
+        className="inline-flex items-center justify-center align-middle w-full h-full border-2 border-white/10 rounded-[inherit] overflow-hidden">
         <Avatar.Image
           className="w-full h-full object-cover rounded-[inherit]"
-          src={displayUrl}
+          src={displayUrl ?? undefined}
           alt="User Avatar"
         />
         <Avatar.Fallback

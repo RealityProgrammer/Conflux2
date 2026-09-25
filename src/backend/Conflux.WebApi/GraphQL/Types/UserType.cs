@@ -17,8 +17,8 @@ public sealed class UserType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.Id).IsProjected();
         descriptor.Field(u => u.UserName);
         descriptor.Field(u => u.DisplayName);
-        descriptor.Field(u => u.HasAvatar);
-        descriptor.Field(u => u.HasBanner);
+        descriptor.Field(u => u.AvatarRevision);
+        descriptor.Field(u => u.BannerRevision);
         descriptor.Field(u => u.Biography);
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);

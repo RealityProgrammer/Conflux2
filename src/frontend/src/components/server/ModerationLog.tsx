@@ -54,7 +54,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       return (
         <span className="flex flex-row justify-center items-center gap-2">
           <UserAvatar
-            src={executor.hasAvatar ? userService.getAvatarUrl(executor.id) : undefined}
+            src={executor.avatarRevision ? userService.getAvatarUrl(executor.id, executor.avatarRevision) : undefined}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 
@@ -85,7 +85,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       return (
         <span className="flex flex-row justify-center items-center gap-2">
           <UserAvatar
-            src={affected.hasAvatar ? userService.getAvatarUrl(affected.id) : undefined}
+            src={affected.avatarRevision ? userService.getAvatarUrl(affected.id, affected.avatarRevision) : undefined}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 

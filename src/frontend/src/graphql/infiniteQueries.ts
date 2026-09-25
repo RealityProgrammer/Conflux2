@@ -22,7 +22,7 @@ export type GetDirectMessageChannelsQueryVariables = Exact<{
 }>;
 
 
-export type GetDirectMessageChannelsQuery = { directMessageChannels: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, friendRequest: { otherUser: { id: string, displayName: string | null, hasAvatar: boolean, effectivePresenceStatus: Types.PresenceStatus } | null } | null }> | null } };
+export type GetDirectMessageChannelsQuery = { directMessageChannels: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, friendRequest: { otherUser: { id: string, displayName: string | null, avatarRevision: number | null, effectivePresenceStatus: Types.PresenceStatus } | null } | null }> | null } };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
@@ -37,7 +37,7 @@ export type GetServerModerationLogsQueryVariables = Exact<{
 }>;
 
 
-export type GetServerModerationLogsQuery = { serverModerationLogs: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, action: Types.ServerModerationAction, createdAt: string, banDuration: string | null, reason: string | null, executorMember: { user: { id: string, displayName: string | null, hasAvatar: boolean } } | null, affectedMember: { user: { id: string, displayName: string | null, hasAvatar: boolean } } | null }> | null } };
+export type GetServerModerationLogsQuery = { serverModerationLogs: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, action: Types.ServerModerationAction, createdAt: string, banDuration: string | null, reason: string | null, executorMember: { user: { id: string, displayName: string | null, avatarRevision: number | null } } | null, affectedMember: { user: { id: string, displayName: string | null, avatarRevision: number | null } } | null }> | null } };
 
 export type GetServerRolesByServerIdQueryVariables = Exact<{
   serverId: string;
@@ -46,7 +46,7 @@ export type GetServerRolesByServerIdQueryVariables = Exact<{
 }>;
 
 
-export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, hasAvatar: boolean } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } };
+export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, avatarRevision: number | null } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } };
 
 export type SearchServerMemberForAdminQueryVariables = Exact<{
   serverId: string;
@@ -55,7 +55,7 @@ export type SearchServerMemberForAdminQueryVariables = Exact<{
 }>;
 
 
-export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, hasAvatar: boolean } }> | null } };
+export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null } }> | null } };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -155,7 +155,7 @@ export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
         otherUser {
           id
           displayName
-          hasAvatar
+          avatarRevision
           effectivePresenceStatus
         }
       }
@@ -283,7 +283,7 @@ export const GetServerModerationLogsDocument = new TypedDocumentString(`
         user {
           id
           displayName
-          hasAvatar
+          avatarRevision
         }
       }
       action
@@ -291,7 +291,7 @@ export const GetServerModerationLogsDocument = new TypedDocumentString(`
         user {
           id
           displayName
-          hasAvatar
+          avatarRevision
         }
       }
       createdAt
@@ -365,7 +365,7 @@ export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
       creatorUser {
         id
         displayName
-        hasAvatar
+        avatarRevision
       }
       permissions {
         permission
@@ -431,7 +431,7 @@ export const SearchServerMemberForAdminDocument = new TypedDocumentString(`
         id
         userName
         displayName
-        hasAvatar
+        avatarRevision
       }
     }
   }

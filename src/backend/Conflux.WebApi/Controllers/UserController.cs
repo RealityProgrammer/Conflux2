@@ -9,18 +9,17 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/users")]
 [Authorize]
 public sealed class UserController(
-    IBlobUrlProvider blobUrlProvider,
-    IMediator mediator
+    IUserMediaService userMediaService
 ) : ControllerBase {
     [HttpGet("{userId:guid}/avatar")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
     public async Task<RedirectResult> GetAvatarUrl(Guid userId) {
-        return Redirect(await blobUrlProvider.GetUserAvatarPreSignedUrl(userId));
+        return Redirect(await userMediaService.GetAvatarPreSignedUrl(userId));
     }
     
     [HttpGet("{userId:guid}/banner")]
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
     public async Task<RedirectResult> GetBannerUrl(Guid userId) {
-        return Redirect(await blobUrlProvider.GetUserBannerPreSignedUrl(userId));
+        return Redirect(await userMediaService.GetBannerPreSignedUrl(userId));
     }
 }

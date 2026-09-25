@@ -4,6 +4,7 @@ using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
@@ -21,7 +22,7 @@ namespace Conflux.WebApi.Controllers;
 [Authorize]
 public sealed class ConversationController(
     IMediator mediator,
-    IBlobUrlProvider blobUrlProvider
+    IMessageMediaService messageMediaService
 ) : ControllerBase {
     [HttpPost("channels/{channelId:guid}/messages")]
     [Idempotent(20)]
@@ -39,9 +40,9 @@ public sealed class ConversationController(
         if (request.Body.AsSpan().Trim().IsEmpty && request.Attachments is not { Length: > 0 }) {
             return BadRequest(new ApiResponse(Errors.EmptyMessageContent()));
         }
-
+        
         UploadFile[] attachments;
-
+        
         if (request.Attachments is { Length: > 0 }) {
             attachments = new UploadFile[request.Attachments.Length];
             
@@ -54,7 +55,7 @@ public sealed class ConversationController(
                             await attachment.Stream.DisposeAsync();
                         }
                     }
-
+        
                     return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, Errors.OperationFailure("open attachment stream")));
                 }
             }
@@ -166,8 +167,8 @@ public sealed class ConversationController(
     
     [HttpGet("attachments/{attachmentId:guid}")]
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAvatarUrl(Guid attachmentId, [FromQuery] bool download = false) {
-        var result = await blobUrlProvider.GetMessageAttachmentPreSignedUrl(attachmentId, download);
+    public async Task<ActionResult> GetAttachmentUrl(Guid attachmentId, [FromQuery] bool download = false) {
+        var result = await messageMediaService.GetAttachmentUrl(attachmentId, TimeSpan.FromHours(1), download: download);
 
         if (result.IsSuccess) {
             return Redirect(result.Value!);

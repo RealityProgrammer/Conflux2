@@ -19,7 +19,7 @@ public sealed class UploadUserAvatarHandler(
             return result.Error;
         }
 
-        bool updateSuccessful = await userRepository.UpdateAvatarStatus(command.UserId, true, CancellationToken.None);
+        bool updateSuccessful = await userRepository.UpdateAvatarRevision(command.UserId, Random.Shared.Next(1, int.MaxValue), CancellationToken.None);
 
         if (updateSuccessful) {
             return Result.Success();

@@ -384,6 +384,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communities/{serverId}/banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/communities/{serverId}/summary": {
         parameters: {
             query?: never;
@@ -1445,6 +1480,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        "DisplayName.Value"?: string;
+                        "DisplayName.IsSet"?: boolean;
+                        "Pronouns.Value"?: string;
+                        "Pronouns.IsSet"?: boolean;
+                        "Biography.Value"?: string;
+                        "Biography.IsSet"?: boolean;
+                        "ManualPresenceStatus.Value"?: components["schemas"]["PresenceStatus"];
+                        "ManualPresenceStatus.IsSet"?: boolean;
+                        "Avatar.Type"?: components["schemas"]["FileOperationType"];
+                        "Avatar.File"?: components["schemas"]["IFormFile"];
+                        "Banner.Type"?: components["schemas"]["FileOperationType"];
+                        "Banner.File"?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/users/me/pending-requests": {
         parameters: {
             query?: never;
@@ -1487,6 +1576,41 @@ export interface paths {
         trace?: never;
     };
     "/api/users/{userId}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{userId}/banner": {
         parameters: {
             query?: never;
             header?: never;
@@ -1649,7 +1773,8 @@ export interface components {
             userId: string;
             userName: string;
             displayName: string;
-            hasAvatar: boolean;
+            /** Format: int32 */
+            avatarRevision: null | number;
             status: components["schemas"]["UserRelationshipStatus"];
         };
         DmChannelSummary: {
@@ -1663,6 +1788,8 @@ export interface components {
             message?: null | string;
             details?: null | string | Record<string, never>;
         };
+        /** @enum {string} */
+        FileOperationType: FileOperationType;
         /** @enum {string} */
         FriendRequestStatus: FriendRequestStatus;
         GetMessagesResponse: {
@@ -1727,11 +1854,14 @@ export interface components {
             userId: string;
             userName: string;
             displayName: string;
-            hasAvatar: boolean;
+            /** Format: int32 */
+            avatarRevision: null | number;
             status: components["schemas"]["UserRelationshipStatus"];
         };
         /** @enum {string} */
         PermissionState: PermissionState;
+        /** @enum {string} */
+        PresenceStatus: PresenceStatus;
         RefreshResponse: {
             authorizationInfo: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
@@ -1838,7 +1968,10 @@ export interface components {
             id: string;
             userName: null | string;
             displayName: null | string;
-            hasAvatar: boolean;
+            /** Format: int32 */
+            avatarRevision: null | number;
+            /** Format: int32 */
+            bannerRevision: null | number;
         };
         /** @enum {string} */
         UserRelationshipStatus: UserRelationshipStatus;
@@ -1917,6 +2050,11 @@ export enum CommunityServerChannelType {
     Text = "Text",
     Voice = "Voice"
 }
+export enum FileOperationType {
+    NoMod = "NoMod",
+    Set = "Set",
+    Delete = "Delete"
+}
 export enum FriendRequestStatus {
     None = "None",
     Pending = "Pending",
@@ -1948,6 +2086,13 @@ export enum PermissionState {
     Inherit = "Inherit",
     Enable = "Enable",
     Disable = "Disable"
+}
+export enum PresenceStatus {
+    Online = "Online",
+    Offline = "Offline",
+    Idle = "Idle",
+    DoNotDisturb = "DoNotDisturb",
+    Invisible = "Invisible"
 }
 export enum ServerPermission {
     CreateRole = "CreateRole",

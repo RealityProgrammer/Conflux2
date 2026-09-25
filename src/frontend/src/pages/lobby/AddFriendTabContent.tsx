@@ -206,7 +206,7 @@ function Row({user, updateCacheStatus}: RowProps) {
 
   return (
     <UserNameplate.Root
-      avatarSrc={user.hasAvatar ? userService.getAvatarUrl(user.userId) : undefined}
+      avatarSrc={user.avatarRevision ? userService.getAvatarUrl(user.userId, user.avatarRevision) : undefined}
       userName={user.userName}
       displayName={user.displayName}
       className="w-full p-1.5"

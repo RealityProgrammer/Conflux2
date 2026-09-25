@@ -150,11 +150,11 @@ function DirectMessagesList() {
 
         return (
           <UserNameplate.Root
-            avatarSrc={item.friendRequest?.otherUser?.hasAvatar ? userService.getAvatarUrl(item.friendRequest?.otherUser?.id) : undefined}
+            avatarSrc={item.friendRequest?.otherUser?.avatarRevision ? userService.getAvatarUrl(item.friendRequest.otherUser.id, item.friendRequest.otherUser.avatarRevision) : undefined}
             displayName={item.friendRequest?.otherUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
-            presenceStatusClassName="ring-2 ring-gray-725 bg-gray-725"
+            presenceStatusClassName="size-3 ring-2 ring-gray-725 bg-gray-725"
             onClick={() => {
               const otherUserId = item.friendRequest?.otherUser?.id;
               if (!otherUserId) return;
