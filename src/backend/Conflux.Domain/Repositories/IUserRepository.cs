@@ -5,7 +5,7 @@ using Conflux.Domain.Enums;
 namespace Conflux.Domain.Repositories;
 
 public interface IUserRepository : IRepository<ApplicationUser> {
-    Task<bool> UpdateAvatarStatus(Guid userId, bool hasAvatar, CancellationToken cancellationToken = default);
+    Task<bool> UpdateAvatarRevision(Guid userId, int? revision, CancellationToken cancellationToken = default);
     Task<Result<bool>> IsProfileSetup(Guid userId, CancellationToken cancellationToken = default);
     
     Task<Result<UserIdentityProfileDto>> GetIdentityProfile(

@@ -105,11 +105,11 @@ public sealed class UpdateUserProfileHandler(
                     }
 
                     if (hasAvatar.HasValue) {
-                        builder.SetProperty(u => u.HasAvatar, hasAvatar.Value);
+                        builder.SetProperty(u => u.AvatarRevision, hasAvatar.Value ? Random.Shared.Next(1, int.MaxValue) : null);
                     }
 
                     if (hasBanner.HasValue) {
-                        builder.SetProperty(u => u.HasBanner, hasBanner.Value);
+                        builder.SetProperty(u => u.BannerRevision, hasBanner.Value ? Random.Shared.Next(1, int.MaxValue) : null);
                     }
                 }, cancellationToken);
 

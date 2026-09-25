@@ -1,3 +1,3 @@
 namespace Conflux.WebApi.Dto;
 
-public sealed record TypingUserDto(Guid UserId, string DisplayName, bool HasAvatar);
+public sealed record TypingUserDto(Guid UserId, string DisplayName, int? AvatarRevision);

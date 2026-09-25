@@ -120,7 +120,7 @@ public sealed class GatewayHub(
         
         await Clients
             .OthersInGroup(NameProvider.GetChannelGroupName(channelIdGuid))
-            .UserTyping(new(dto.UserId, dto.DisplayName, dto.HasAvatar), Context.ConnectionAborted);
+            .UserTyping(new(dto.UserId, dto.DisplayName, dto.AvatarRevision), Context.ConnectionAborted);
     }
     
     // invoked by the frontend only
