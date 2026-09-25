@@ -2,6 +2,7 @@ import {createContext, type ReactNode, useContext, useEffect, useState} from "re
 import {useNavigate, useRevalidator, useRouteLoaderData} from "react-router";
 import {authService} from "../api/authService.ts";
 import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/types.ts";
+import {useQueryClient} from "@tanstack/react-query";
 
 interface AuthContextType {
   userAuthorization: UserAuthorizationInfo | null;
@@ -13,6 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export default function AuthProvider({children}: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
 
@@ -39,6 +41,7 @@ export default function AuthProvider({children}: { children: ReactNode }) {
     await authService.logout();
 
     await revalidator.revalidate();
+    queryClient.clear();
 
     navigate({
       pathname: "/auth",
