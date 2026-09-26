@@ -4,15 +4,18 @@ import type {ResizeEvent} from "@interactjs/actions/resize/plugin";
 import type {InteractEvent} from "@interactjs/core/InteractEvent";
 import {useEffect, useRef} from "react";
 import IconButton from "./IconButton.tsx";
-import {FaExpand, FaMinus, FaXmark} from "react-icons/fa6";
+import {FaExpand, FaMinus} from "react-icons/fa6";
+import Spinner from "./Spinner.tsx";
+import {BsExclamationTriangle, BsTelephoneXFill} from "react-icons/bs";
+import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
 
 export default function CallOverlay() {
   const calls = useCallStore((state) => state.calls);
 
   return (
     <section className="fixed inset-0 z-100000 pointer-events-none overflow-hidden">
-      {calls.map((call, index) => (
-        <CallWindow key={index}/>
+      {calls.map((call) => (
+        <CallWindow key={call.sessionId} callSessionId={call.sessionId}/>
       ))}
     </section>
   )
@@ -20,7 +23,9 @@ export default function CallOverlay() {
 
 let highestZIndex = 1;
 
-function CallWindow() {
+function CallWindow({
+  callSessionId
+}: {callSessionId: string}) {
   const windowRef = useRef<HTMLDivElement>(null);
 
   const bringToFront = () => {
@@ -39,7 +44,6 @@ function CallWindow() {
     const interactable = interact(element)
       .resizable({
         edges: { left: true, right: true, bottom: true, top: false },
-        margin: 4,
 
         listeners: {
           move: (event: ResizeEvent) => {
@@ -49,8 +53,8 @@ function CallWindow() {
             let x: number = (parseFloat(target.getAttribute('data-x') || "0") || 0);
             let y: number = (parseFloat(target.getAttribute('data-y') || "0") || 0);
 
-            target.style.width = event.rect.width + 'px'
-            target.style.height = event.rect.height + 'px'
+            target.style.width = event.rect.width + 'px';
+            target.style.height = event.rect.height + 'px';
 
             x += event.deltaRect?.left ?? 0;
             y += event.deltaRect?.top ?? 0;
@@ -97,20 +101,65 @@ function CallWindow() {
     <div
       ref={windowRef}
       onPointerDown={bringToFront}
-      className="pointer-events-auto absolute bg-gray-750 shadow-md border-2 border-gray-600 rounded-md overflow-hidden flex flex-col"
+      className="pointer-events-auto absolute bg-gray-750 shadow-md border-2 border-gray-600 rounded-lg overflow-hidden flex flex-col"
       style={{
         width: "400px",
         height: "225px",
       }}
     >
+      <CallWindowContent callSessionId={callSessionId}/>
+    </div>
+  )
+}
+
+function CallWindowContent({callSessionId}: {callSessionId: string}) {
+  const updateCallState = useCallStore((state) => state.updateCallState);
+  const endCall = useCallStore((state) => state.endCall);
+
+  const calls = useCallStore((state) => state.calls);
+
+  const call = calls.find((c) => c.sessionId === callSessionId);
+
+  const { data: directCallCalleeInfo, isLoading, isError, isSuccess } = useGetUserIdentityProfileQuery(
+    { id: call?.type === "direct" ? call.calleeId : "" },
+    {
+      enabled: call?.type === "direct",
+      staleTime: Infinity,
+    },
+  );
+
+  useEffect(() => {
+    if (call && call.state === "init") {
+      if (isSuccess && directCallCalleeInfo) {
+        updateCallState(call.sessionId, "dialing");
+      } else if (isError) {
+        updateCallState(call.sessionId, "init_error");
+      }
+    }
+  }, [callSessionId, call, directCallCalleeInfo, updateCallState, isLoading, isError, isSuccess]);
+
+  const handleEndCall = () => {
+    endCall(callSessionId);
+  };
+
+  return (
+    <>
       <header
         className="drag-handle bg-gray-775 px-3 py-2 flex flex-row justify-between items-center select-none border-b-2 border-gray-600"
       >
-        <span className="text-gray-200 text-sm font-semibold truncate pointer-events-none">
-          Insert title here
+        <span className="flex-1 text-gray-200 text-sm font-semibold truncate pointer-events-none animate-pulse">
+          { !call ? (
+            <span>Can't find the right call...</span>
+          ) : call.state === "init" ? (
+            <span className="animate-pulse">Initializing...</span>
+          ) : call.state === "init_error" ? (
+            "Something happened..."
+          ) : (
+            "Insert title here"
+          )}
         </span>
 
-        <div className="flex gap-3 pointer-events-auto cursor-default">
+        <div className="flex-none flex gap-3 pointer-events-auto cursor-default">
           <IconButton theme="default">
             <FaMinus className="size-4"/>
           </IconButton>
@@ -119,14 +168,26 @@ function CallWindow() {
             <FaExpand className="size-4"/>
           </IconButton>
 
-          <IconButton theme="danger">
-            <FaXmark className="size-5"/>
+          <IconButton theme="danger" onClick={handleEndCall}>
+            <BsTelephoneXFill className="size-4"/>
           </IconButton>
         </div>
       </header>
 
       <section className="flex-1 bg-black relative">
+        {call && (call.state === "init" ? (
+          <div className="size-full flex flex-col justify-center items-center">
+            <Spinner className="size-12 fill-white"/>
+          </div>
+        ) : call.state === "init_error" ? (
+          <div className="size-full flex flex-col justify-center items-center gap-3">
+            <BsExclamationTriangle className="size-12 fill-white"/>
+            <p>Failed to load callee information.</p>
+          </div>
+        ) : (
+          <p>state: {call.state}</p>
+        ))}
       </section>
-    </div>
-  )
+    </>
+  );
 }

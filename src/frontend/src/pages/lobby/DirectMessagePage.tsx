@@ -20,7 +20,7 @@ export default function DirectMessagePage() {
 
   useChannelConnection(channelId);
 
-  const startCall = useCallStore((state) => state.addCall);
+  const startDirectCall = useCallStore((state) => state.startDirectCall);
 
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -38,7 +38,7 @@ export default function DirectMessagePage() {
             <div className="flex-none flex flex-row items-center gap-2">
               <IconButton
                 theme="default"
-                onClick={() => startCall(0)}
+                onClick={() => startDirectCall(channelSummary.otherUser.id)}
               >
                 <BsTelephoneFill className="size-6"/>
               </IconButton>
