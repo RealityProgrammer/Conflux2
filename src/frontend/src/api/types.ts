@@ -71,3 +71,14 @@ export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryI
 export type ServerDetailDto = components["schemas"]["ServerDetailDto"];
 export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
+
+export enum CallResult {
+  Success = "Success",
+  Unauthorized = "Unauthorized",
+  Unfriended = "Unfriended",
+}
+
+export type DirectCallContext = {
+  result: CallResult;
+  calleeProfile: UserIdentityProfileDto;
+}

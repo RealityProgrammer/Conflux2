@@ -1,23 +1,20 @@
 import { create } from 'zustand';
+import type {UserIdentityProfileDto} from "../api/types.ts";
 
-// dialing: WebRTC doing routing stuffs trying to reach the callee or the call conversation
-// ringing: waiting for callee to accept the call, no use if the call is already started between multiple users
-// accepting: callee accepted the call, initializing the call room
-// on_call: is on call
-// should i add "rejected" state?
-type CallState = "init" | "init_error" | "dialing" | "ringing" | "accepting" | "on_call";
+export type DirectCallState = "initialize" | "initialize_error" | "dialing";
 
 export type DirectCall = {
   type: "direct";
-  state: CallState;
+  state: DirectCallState;
   sessionId: string;
   calleeId: string;
+  calleeProfile?: UserIdentityProfileDto;
 }
 
 interface CallStoreType {
   calls: DirectCall[];
   startDirectCall: (calleeUserId: string) => void;
-  updateCallState: (callSessionId: string, value: CallState) => void;
+  beginDialingDirectCall: (callSessionId: string, calleeProfile: UserIdentityProfileDto) => void;
   endCall: (callSessionId: string) => void;
 }
 
@@ -27,14 +24,17 @@ export const useCallStore = create<CallStoreType>((set) => ({
     return {
       calls: [
         ...state.calls,
-        { type: "direct", state: "init", sessionId: crypto.randomUUID(), calleeId: calleeUserId },
+        { type: "direct", state: "initialize", sessionId: crypto.randomUUID(), calleeId: calleeUserId },
       ],
     };
   }),
-  updateCallState: (callSessionId: string, value: CallState) => set((state) => {
-    return { calls: state.calls.map(call => call.sessionId === callSessionId ? { ...call, state: value } : call) };
-  }),
   endCall: (callSessionId: string) => set((state) => {
     return { calls: state.calls.filter(call => call.sessionId !== callSessionId) };
-  })
+  }),
+  beginDialingDirectCall: (callSessionId: string, calleeProfile: UserIdentityProfileDto) => set((state) => {
+    return { calls: state.calls.map(call => call.sessionId === callSessionId ?
+        { ...call, state: "dialing", calleeProfile } :
+        call)
+    };
+  }),
 }));

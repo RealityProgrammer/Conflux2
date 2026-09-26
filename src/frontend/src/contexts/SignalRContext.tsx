@@ -115,9 +115,10 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
   const invokeSafely = async (methodName: string, ...args: unknown[]) => {
     if (connection && connection.state === HubConnectionState.Connected) {
       try {
-        await connection.invoke(methodName, ...args);
+        return await connection.invoke(methodName, ...args);
       } catch (err) {
         console.error(`SignalR invocation failed for [${methodName}]:`, err);
+        throw err;
       }
     }
   };

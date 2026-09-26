@@ -7,13 +7,20 @@ import IconButton from "./IconButton.tsx";
 import {FaExpand, FaMinus} from "react-icons/fa6";
 import Spinner from "./Spinner.tsx";
 import {BsExclamationTriangle, BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
-import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
 import UserAvatar from "./UserAvatar.tsx";
-import {useAuth} from "../contexts/AuthContext.tsx";
 import {userService} from "../api/userService.ts";
+import {useSignalR} from "../contexts/SignalRContext.tsx";
+import {CallResult, type DirectCallContext} from "../api/types.ts";
+import {useAuth} from "../contexts/AuthContext.tsx";
+import useSignalREvent from "../hooks/useSignalREvent.ts";
+import type {IncomingDirectCallEvent} from "../api/events.ts";
 
 export default function CallOverlay() {
   const calls = useCallStore((state) => state.calls);
+
+  useSignalREvent("IncomingDirectCall", (event: IncomingDirectCallEvent) => {
+    console.log("received call from", event.callerProfile.displayName);
+  });
 
   return (
     <section className="fixed inset-0 z-100000 pointer-events-none overflow-hidden">
@@ -117,30 +124,42 @@ function CallWindow({
 
 function CallWindowContent({callSessionId}: {callSessionId: string}) {
   const { userProfile } = useAuth();
-  const updateCallState = useCallStore((state) => state.updateCallState);
+  const beginDialingDirectCall = useCallStore((state) => state.beginDialingDirectCall);
   const endCall = useCallStore((state) => state.endCall);
-
   const calls = useCallStore((state) => state.calls);
-
   const call = calls.find((c) => c.sessionId === callSessionId);
 
-  const { data: directCallCalleeInfo, isLoading, isError, isSuccess } = useGetUserIdentityProfileQuery(
-    { id: call?.type === "direct" ? call.calleeId : "" },
-    {
-      enabled: call?.type === "direct",
-      staleTime: Infinity,
-    },
-  );
+  const { invokeSafely } = useSignalR();
+
+  const initRequested = useRef(false);
 
   useEffect(() => {
-    if (call && call.state === "init") {
-      if (isSuccess && directCallCalleeInfo) {
-        updateCallState(call.sessionId, "dialing");
-      } else if (isError) {
-        updateCallState(call.sessionId, "init_error");
-      }
+    if (call?.state === "initialize" && !initRequested.current) {
+      initRequested.current = true;
+
+      (async () => {
+        try {
+          const result: DirectCallContext = await invokeSafely("StartDirectCall", call.calleeId);
+
+          switch (result.result) {
+            case CallResult.Success:
+              beginDialingDirectCall(callSessionId, result.calleeProfile!);
+              break;
+
+            case CallResult.Unfriended:
+
+              break;
+
+            case CallResult.Unfriended:
+
+              break;
+          }
+        } catch (err) {
+          console.error("Failed to start direct call:", err);
+        }
+      })();
     }
-  }, [callSessionId, call, directCallCalleeInfo, updateCallState, isLoading, isError, isSuccess]);
+  }, [call?.state, call?.calleeId, callSessionId, invokeSafely, beginDialingDirectCall]);
 
   const handleEndCall = () => {
     endCall(callSessionId);
@@ -154,12 +173,12 @@ function CallWindowContent({callSessionId}: {callSessionId: string}) {
         <span className="flex-1 text-gray-200 text-sm font-semibold truncate pointer-events-none animate-pulse">
           { !call ? (
             <span>Can't find the right call...</span>
-          ) : call.state === "init" ? (
+          ) : call.state === "initialize" ? (
             <span className="animate-pulse">Initializing...</span>
-          ) : call.state === "init_error" ? (
+          ) : call.state === "initialize_error" ? (
             "Something happened..."
           ) : call.state === "dialing" ? (
-            `Dialing ${directCallCalleeInfo?.user!.displayName}...`
+            `Dialing ${call.calleeProfile?.displayName}...`
           ) : (
             "Insert title here"
           )}
@@ -181,19 +200,19 @@ function CallWindowContent({callSessionId}: {callSessionId: string}) {
       </header>
 
       <section className="flex-1 bg-black relative">
-        {call && (call.state === "init" ? (
+        {call && (call.state === "initialize" ? (
           <div className="size-full flex flex-col justify-center items-center">
             <Spinner className="size-12 fill-white"/>
           </div>
-        ) : call.state === "init_error" ? (
+        ) : call.state === "initialize_error" ? (
           <div className="size-full flex flex-col justify-center items-center gap-3">
             <BsExclamationTriangle className="size-12 fill-white"/>
-            <p>Failed to load callee information.</p>
+            <p>Failed to start the call.</p>
           </div>
         ) : call.state === "dialing" ? (
           <DialingScene
             callerAvatarSrc={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
-            calleeAvatarSrc={directCallCalleeInfo?.user?.avatarRevision ? userService.getAvatarUrl(directCallCalleeInfo.user.id, directCallCalleeInfo.user.avatarRevision) : undefined}
+            calleeAvatarSrc={call?.calleeProfile?.avatarRevision ? userService.getAvatarUrl(call.calleeProfile.id, call.calleeProfile.avatarRevision) : undefined}
           />
         ) : (
             <p>state: {call.state}</p>

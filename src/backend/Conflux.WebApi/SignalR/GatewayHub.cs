@@ -1,10 +1,13 @@
 using Conflux.Application.Services;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
 using Conflux.WebApi.Dto;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.SignalR;
@@ -16,6 +19,7 @@ public sealed class GatewayHub(
     IServerPermissionsProvider serverPermissionsProvider,
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,
+    IFriendRequestRepository friendRequestRepository,
     ILogger<GatewayHub> logger
 ) : Hub<IConfluxClient> {
     // invoked by the frontend only
@@ -140,6 +144,32 @@ public sealed class GatewayHub(
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
             await presenceService.SetAutoIdle(userId, idle);
         }
+    }
+    
+    // invoked by frontend only
+    public async Task<DirectCallContext> StartDirectCall(Guid calleeUserId) {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
+            return new(CallResult.Unauthorized, null);
+        }
+
+        var profiles = await friendRequestRepository.AsQueryable()
+            .Where(r => r.Status == FriendRequestStatus.Accepted)
+            .Where(r => r.SenderUserId == callerId && r.ReceiverUserId == calleeUserId || r.SenderUserId == calleeUserId && r.ReceiverUserId == callerId)
+            .Select(r => new {
+                Sender = new UserIdentityProfileDto(r.Sender),
+                Receiver = new UserIdentityProfileDto(r.Receiver),
+            })
+            .FirstOrDefaultAsync();
+
+        if (profiles == null) {
+            return new(CallResult.Unfriended, null);
+        }
+        
+        await Clients.User(calleeUserId.ToString()).IncomingDirectCall(new(profiles.Sender.Id == calleeUserId ? profiles.Receiver : profiles.Sender));
+
+        return new(CallResult.Success, profiles.Sender.Id == calleeUserId ? profiles.Sender : profiles.Receiver);
     }
 
     public override async Task OnConnectedAsync() {
