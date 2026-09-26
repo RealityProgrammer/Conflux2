@@ -32,7 +32,7 @@ import {Slide, ToastContainer} from "react-toastify";
 import PresenceProvider from "./contexts/PresenceContext.tsx";
 import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
 import ProfilePage from "./pages/settings/ProfilePage.tsx";
-import CallOverlay from "./components/CallOverlay.tsx";
+import CallOverlay from "./components/call/CallOverlay.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
