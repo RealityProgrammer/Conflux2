@@ -6,8 +6,11 @@ import {useEffect, useRef} from "react";
 import IconButton from "./IconButton.tsx";
 import {FaExpand, FaMinus} from "react-icons/fa6";
 import Spinner from "./Spinner.tsx";
-import {BsExclamationTriangle, BsTelephoneXFill} from "react-icons/bs";
+import {BsExclamationTriangle, BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
 import {useGetUserIdentityProfileQuery} from "../graphql/queries.ts";
+import UserAvatar from "./UserAvatar.tsx";
+import {useAuth} from "../contexts/AuthContext.tsx";
+import {userService} from "../api/userService.ts";
 
 export default function CallOverlay() {
   const calls = useCallStore((state) => state.calls);
@@ -113,6 +116,7 @@ function CallWindow({
 }
 
 function CallWindowContent({callSessionId}: {callSessionId: string}) {
+  const { userProfile } = useAuth();
   const updateCallState = useCallStore((state) => state.updateCallState);
   const endCall = useCallStore((state) => state.endCall);
 
@@ -154,6 +158,8 @@ function CallWindowContent({callSessionId}: {callSessionId: string}) {
             <span className="animate-pulse">Initializing...</span>
           ) : call.state === "init_error" ? (
             "Something happened..."
+          ) : call.state === "dialing" ? (
+            `Dialing ${directCallCalleeInfo?.user!.displayName}...`
           ) : (
             "Insert title here"
           )}
@@ -184,10 +190,40 @@ function CallWindowContent({callSessionId}: {callSessionId: string}) {
             <BsExclamationTriangle className="size-12 fill-white"/>
             <p>Failed to load callee information.</p>
           </div>
+        ) : call.state === "dialing" ? (
+          <DialingScene
+            callerAvatarSrc={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
+            calleeAvatarSrc={directCallCalleeInfo?.user?.avatarRevision ? userService.getAvatarUrl(directCallCalleeInfo.user.id, directCallCalleeInfo.user.avatarRevision) : undefined}
+          />
         ) : (
-          <p>state: {call.state}</p>
+            <p>state: {call.state}</p>
         ))}
       </section>
     </>
+  );
+}
+
+function DialingScene({
+  callerAvatarSrc,
+  calleeAvatarSrc
+}: {callerAvatarSrc: string | undefined, calleeAvatarSrc: string | undefined}) {
+  return (
+    <div className="size-full p-6 @container-size">
+      <div className="size-full flex flex-row justify-center items-center gap-[10%]">
+        <UserAvatar
+          src={callerAvatarSrc}
+          alt="Caller avatar"
+          className="w-[min(calc(50cqw-0.75rem),50cqh)] border-2 border-gray-600"
+        />
+
+        <BsTelephoneFill className="size-24 fill-white animate-pulse"/>
+
+        <UserAvatar
+          src={calleeAvatarSrc}
+          alt="Callee avatar"
+          className="w-[min(calc(50cqw-0.75rem),50cqh)] border-2 border-gray-600"
+        />
+      </div>
+    </div>
   );
 }
