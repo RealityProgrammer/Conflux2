@@ -34,12 +34,12 @@ internal sealed class CallingService(
     }
 
     public async Task<Result> CancelCall(Guid callUser1, Guid callUser2) {
-        long deletedCount = await _database.KeyDeleteAsync([
+        await _database.KeyDeleteAsync([
             GetStateKey(callUser1),
             GetStateKey(callUser2),
         ]);
-        
-        return deletedCount == 2 ? Result.Success() : Errors.InvalidCallStates();
+
+        return Result.Success();
     }
 
     public async Task<Result> AcceptCall(Guid callerId, Guid calleeId, string calleeConnectionId) {
@@ -66,10 +66,20 @@ internal sealed class CallingService(
         calleeState = calleeState with { State = CallState.Active, ConnectionId = calleeConnectionId };
         var activeTimeout = TimeSpan.FromHours(12);
         
-        await _database.StringSetAsync([
-            new(callerKey, MemoryPackSerializer.Serialize(callerState)),
-            new(calleeKey, MemoryPackSerializer.Serialize(calleeState)),
-        ], expiry: activeTimeout);
+        ITransaction transaction = _database.CreateTransaction();
+
+        transaction.AddCondition(Condition.KeyExists(callerKey));
+        transaction.AddCondition(Condition.KeyExists(calleeKey));
+        
+        _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(callerState), activeTimeout);
+        _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(calleeState), activeTimeout);
+        
+        bool committed = await transaction.ExecuteAsync();
+        
+        if (!committed) {
+            // caller hung up (or timeout occurred) right as the callee clicked accept.
+            return Errors.InvalidCallStates(); 
+        }
 
         return Result.Success();
     }
