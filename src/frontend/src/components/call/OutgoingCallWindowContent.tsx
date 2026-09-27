@@ -10,7 +10,7 @@ import {useTimeout} from "usehooks-ts";
 import {useEffect, useRef, useState} from "react";
 import {animate} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {DirectCallDeniedEvent, DirectCallDroppedEvent} from "../../api/events.ts";
+import type {DirectCallAcceptedEvent, DirectCallDeniedEvent, DirectCallDroppedEvent} from "../../api/events.ts";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   if (!call) return null;
@@ -24,6 +24,7 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
 
 function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
+  const markCallAsConnected = useCallStore((state) => state.markCallAsConnected);
   const endCall = useCallStore((state) => state.endCall);
   const { invokeSafely } = useSignalR();
 
@@ -94,6 +95,12 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
     if (call.calleeProfile.id === event.droppedUserId) {
       setStatus("dropped");
+    }
+  });
+
+  useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
+    if (call.calleeProfile.id === event.calleeUserId) {
+      markCallAsConnected(call.sessionId);
     }
   });
 
