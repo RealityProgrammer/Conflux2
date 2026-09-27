@@ -48,7 +48,7 @@ internal sealed class CallingService(
 
         RedisValue[] serializedStates = await _database.StringGetAsync([callerKey, calleeKey]);
 
-        if (serializedStates.Length != 2) {
+        if (!serializedStates[0].HasValue || !serializedStates[1].HasValue) {
             return Errors.InvalidCallStates();
         }
 
@@ -69,7 +69,7 @@ internal sealed class CallingService(
         await _database.StringSetAsync([
             new(callerKey, MemoryPackSerializer.Serialize(callerState)),
             new(calleeKey, MemoryPackSerializer.Serialize(calleeState)),
-        ]);
+        ], expiry: activeTimeout);
 
         return Result.Success();
     }

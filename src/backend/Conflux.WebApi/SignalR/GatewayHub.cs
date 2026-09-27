@@ -1,11 +1,14 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Conflux.WebApi.Dto;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
+using Facet;
+using Facet.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +24,7 @@ public sealed class GatewayHub(
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,
     IFriendRequestRepository friendRequestRepository,
+    IUserRepository userRepository,
     ICallingService callingService,
     ILogger<GatewayHub> logger
 ) : Hub<IConfluxClient> {
@@ -165,9 +169,23 @@ public sealed class GatewayHub(
         var profiles = await friendRequestRepository.AsQueryable()
             .Where(r => r.Status == FriendRequestStatus.Accepted)
             .Where(r => r.SenderUserId == callerId && r.ReceiverUserId == calleeUserId || r.SenderUserId == calleeUserId && r.ReceiverUserId == callerId)
+            .Include(r => r.Sender)
+            .Include(r => r.Receiver)
             .Select(r => new {
-                Sender = new UserIdentityProfileDto(r.Sender),
-                Receiver = new UserIdentityProfileDto(r.Receiver),
+                Sender = new UserIdentityProfileDto {
+                    Id = r.Sender.Id,
+                    UserName = r.Sender.UserName,
+                    DisplayName = r.Sender.DisplayName,
+                    AvatarRevision = r.Sender.AvatarRevision,
+                    BannerRevision = r.Sender.BannerRevision,
+                },
+                Receiver = new UserIdentityProfileDto {
+                    Id = r.Receiver.Id,
+                    UserName = r.Receiver.UserName,
+                    DisplayName = r.Receiver.DisplayName,
+                    AvatarRevision = r.Receiver.AvatarRevision,
+                    BannerRevision = r.Receiver.BannerRevision,
+                },
             })
             .FirstOrDefaultAsync();
 

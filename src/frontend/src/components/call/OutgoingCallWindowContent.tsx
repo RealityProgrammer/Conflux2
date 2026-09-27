@@ -6,6 +6,7 @@ import {useAuth} from "../../contexts/AuthContext.tsx";
 import {userService} from "../../api/userService.ts";
 import IconButton from "../IconButton.tsx";
 import {BsTelephoneXFill} from "react-icons/bs";
+import {useTimeout} from "usehooks-ts";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   if (call.state === "dialing") {
@@ -29,6 +30,10 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
       console.error("Failed to cancel call:", err);
     }
   };
+
+  useTimeout(() => {
+    handleCancelCall();
+  }, 60000);
 
   return (
     <>

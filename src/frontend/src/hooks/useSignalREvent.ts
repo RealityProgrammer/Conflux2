@@ -4,7 +4,10 @@ import {useSignalR} from "../contexts/SignalRContext.tsx";
 export default function useSignalREvent(methodNames: string[] | string, callback: (...args: any[]) => void | any) {
   const {connection, isConnected} = useSignalR();
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
   useEffect(() => {
     if (!connection || !isConnected) {
