@@ -126,3 +126,7 @@ export type CancelDirectCallEvent = {
 export type AcceptDirectCallEvent = {
   calleeUserId: string;
 }
+
+export type DirectCallEndedEvent = {
+  enderUserId: string;
+}

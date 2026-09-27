@@ -156,7 +156,7 @@ public sealed class GatewayHub(
             return new(Errors.InvalidIdentifier(), null);
         }
 
-        Result lockResult = await callingService.TryLockCallerAndCallee(callerId, calleeUserId);
+        Result lockResult = await callingService.TryLockCallerAndCallee(callerId, Context.ConnectionId, calleeUserId);
 
         if (!lockResult.IsSuccess) {
             return new(lockResult, null);
@@ -204,7 +204,7 @@ public sealed class GatewayHub(
             return new(Errors.InvalidIdentifier(), null);
         }
 
-        Result result = await callingService.AcceptCall(callerUserId, calleeUserId);
+        Result result = await callingService.AcceptCall(callerUserId, calleeUserId, Context.ConnectionId);
         
         if (!result.IsSuccess) {
             return new(result, null);
@@ -239,8 +239,17 @@ public sealed class GatewayHub(
             if (isLastConnection) {
                 await presenceService.UserDisconnected(userId);
             }
+
+            await HandleDropCall(userId);
         }
         
         await base.OnDisconnectedAsync(exception);
+    }
+
+    private async Task HandleDropCall(Guid userId) {
+        var result = await callingService.DropCall(userId, Context.ConnectionId);
+        if (!result.IsSuccess) return;
+
+        await Clients.User(result.Value.ToString()).DirectCallEnded(new(userId));
     }
 }

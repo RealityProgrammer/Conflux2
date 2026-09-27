@@ -1,6 +1,11 @@
 import {useCallStore} from "../../store/useCallStore.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {AcceptDirectCallEvent, CancelDirectCallEvent, IncomingDirectCallEvent} from "../../api/events.ts";
+import type {
+  AcceptDirectCallEvent,
+  CancelDirectCallEvent,
+  DirectCallEndedEvent,
+  IncomingDirectCallEvent
+} from "../../api/events.ts";
 import CallWindow from "./CallWindow.tsx";
 
 export default function CallOverlay() {
@@ -14,36 +19,34 @@ export default function CallOverlay() {
   });
 
   useSignalREvent("DirectCallCanceled", (event: CancelDirectCallEvent) => {
-    // caller cancel the call to callee
-    let callToCancel = useCallStore.getState().calls.find(
-      c => c.type === "incoming_direct" && c.callerProfile.id === event.cancelerUserId
+    const callToCancel = useCallStore.getState().calls.find(c =>
+      (c.type === "incoming_direct" && c.callerProfile.id === event.cancelerUserId) ||
+      (c.type === "outgoing_direct" && c.calleeProfile.id === event.cancelerUserId)
     );
 
     if (callToCancel) {
       endCall(callToCancel.sessionId);
-      return;
-    }
-
-    // callee cancel the call to caller
-    callToCancel = useCallStore.getState().calls.find(
-      c => c.type === "outgoing_direct" && c.calleeProfile.id === event.cancelerUserId
-    );
-
-    if (callToCancel) {
-      endCall(callToCancel.sessionId);
-      return;
     }
   });
 
   useSignalREvent("DirectCallAccepted", (event: AcceptDirectCallEvent) => {
-    let callToUpdate = useCallStore.getState().calls.find(
+    const callToUpdate = useCallStore.getState().calls.find(
       c => c.type === "outgoing_direct" && c.calleeProfile.id === event.calleeUserId
     );
 
-    console.log("callee:", event.calleeUserId, "call:", JSON.stringify(callToUpdate));
-
     if (callToUpdate) {
       markCallAsConnected(callToUpdate.sessionId);
+    }
+  });
+
+  useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
+    let callToRemove = useCallStore.getState().calls.find(c =>
+      (c.type === "outgoing_direct" && c.calleeProfile.id === event.enderUserId) ||
+      (c.type === "incoming_direct" && c.callerProfile.id === event.enderUserId)
+    );
+
+    if (callToRemove) {
+      endCall(callToRemove.sessionId);
     }
   });
 
