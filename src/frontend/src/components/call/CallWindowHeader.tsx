@@ -5,12 +5,10 @@ import {BsTelephoneXFill} from "react-icons/bs";
 
 interface CallWindowHeaderProps {
   title: ReactNode;
-  onEndCall: () => void;
 }
 
 export default function CallWindowHeader({
   title,
-  onEndCall,
 }: CallWindowHeaderProps) {
   return (
     <header
@@ -29,9 +27,9 @@ export default function CallWindowHeader({
         {/*  <FaExpand className="size-4"/>*/}
         {/*</IconButton>*/}
 
-        <IconButton theme="danger" onClick={onEndCall}>
-          <BsTelephoneXFill className="size-5"/>
-        </IconButton>
+        {/*<IconButton theme="danger" onClick={onEndCall}>*/}
+        {/*  <BsTelephoneXFill className="size-5"/>*/}
+        {/*</IconButton>*/}
       </div>
     </header>
   );

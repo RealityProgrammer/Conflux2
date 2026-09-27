@@ -265,7 +265,7 @@ builder.Services
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
-
+    .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
         (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
@@ -283,15 +283,13 @@ builder.Services
     .AddScoped<IServerModerationLogWriteRepository>(services => 
         (ServerModerationLogRepository)services.GetRequiredService<IServerModerationLogReadRepository>()
     )
-
-    .AddScoped<IUnitOfWork, UnitOfWork>()
+    .AddScoped<ICallingService, CallingService>()
 
     .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
     .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
     .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
     .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
     .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"));
-    
 
 // blob service.
 var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()

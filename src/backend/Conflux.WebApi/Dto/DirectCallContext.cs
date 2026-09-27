@@ -1,11 +1,6 @@
+using Conflux.Domain;
 using Conflux.Domain.Dto;
 
 namespace Conflux.WebApi.Dto;
 
-public enum CallResult {
-    Success,
-    Unauthorized,
-    Unfriended,
-}
-
-public sealed record DirectCallContext(CallResult Result, UserIdentityProfileDto? CalleeProfile);
+public sealed record DirectCallContext(Result Result, UserIdentityProfileDto? CalleeProfile);

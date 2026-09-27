@@ -46,4 +46,5 @@ public interface IConfluxClient {
     Task PresenceUpdated(UserPresenceChangedEvent data, CancellationToken cancellationToken = default);
 
     Task IncomingDirectCall(IncomingDirectCallEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallCanceled(CancelDirectCallEvent data, CancellationToken cancellationToken = default);
 }

@@ -7,33 +7,14 @@ export type LoginRequest = components["schemas"]["LoginRequest"];
 export type RegisterRequest = components["schemas"]["RegisterRequest"];
 export type EmailConfirmationRequest = components["schemas"]["ConfirmEmailRequest"];
 
-export class SetAvatar {
-  readonly type = "set";
-
-  constructor(public file: File, public previewUrl: string) {
-  }
-}
-
-export class DeleteAvatar {
-  readonly type = "delete";
-}
-
-export class NoAvatarModification {
-  readonly type = "noMod";
-}
-
-export type AvatarOperation = SetAvatar | DeleteAvatar | NoAvatarModification;
-
-export const INVITATION_EXPIRE_VALUES = [
-  "FiveMinutes", "FifteenMinutes", "ThirtyMinutes", "OneHour", "TwoHours",
-  "ThreeHours", "SixHours", "TwelveHours", "OneDay", "OneWeek",
-  "TwoWeeks", "FourWeeks", "Infinite"
-] as const;
-
 export type InvitationExpireAfter = components["schemas"]["InvitationExpireAfter"];
 
 // responses
 export type ServiceError = components["schemas"]["Error"];
+export type BackendResult<T = void> = {
+  isSuccess: boolean;
+  error: ServiceError;
+} & (T extends void ? {} : { value?: T | null })
 
 export type BackendResponse<T = void> =
   Omit<components["schemas"]["ApiResponseOfLoginResponse"], "data"> & (T extends void ? {} : { data?: T | null });
@@ -72,13 +53,7 @@ export type ServerDetailDto = components["schemas"]["ServerDetailDto"];
 export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
 
-export enum CallResult {
-  Success = "Success",
-  Unauthorized = "Unauthorized",
-  Unfriended = "Unfriended",
-}
-
 export type DirectCallContext = {
-  result: CallResult;
+  result: BackendResult;
   calleeProfile: UserIdentityProfileDto;
 }

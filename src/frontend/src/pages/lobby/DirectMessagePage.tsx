@@ -11,6 +11,8 @@ import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 import useChannelConnection from "../../hooks/useChannelConnection.ts";
 import {userService} from "../../api/userService.ts";
 import {useCallStore} from "../../store/useCallStore.ts";
+import {useSignalR} from "../../contexts/SignalRContext.tsx";
+import type {DirectCallContext} from "../../api/types.ts";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -19,8 +21,26 @@ export default function DirectMessagePage() {
   const [showProfile, setShowProfile] = useState(false);
 
   useChannelConnection(channelId);
+  const { invokeSafely } = useSignalR();
 
   const startOutgoingDirectCall = useCallStore((state) => state.startOutgoingDirectCall);
+
+  const handleCall = async () => {
+    if (!channelSummary) return;
+
+    try {
+      const context: DirectCallContext = await invokeSafely("StartDirectCall", channelSummary.otherUser.id);
+
+      if (context.result.isSuccess) {
+        startOutgoingDirectCall(context.calleeProfile);
+      } else {
+        console.error("Failed to start call:", context.result.error.message);
+      }
+
+    } catch (err) {
+      console.error("Failed to start call:", err);
+    }
+  }
 
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -37,8 +57,9 @@ export default function DirectMessagePage() {
 
             <div className="flex-none flex flex-row items-center gap-2">
               <IconButton
+                isLoading={false}
                 theme="default"
-                onClick={() => startOutgoingDirectCall(channelSummary.otherUser.id)}
+                onClick={handleCall}
               >
                 <BsTelephoneFill className="size-6"/>
               </IconButton>

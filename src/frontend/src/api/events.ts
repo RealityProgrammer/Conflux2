@@ -118,3 +118,7 @@ export type UserPresenceChangedEvent = {
 export type IncomingDirectCallEvent = {
   callerProfile: UserIdentityProfileDto;
 }
+
+export type CancelDirectCallEvent = {
+  cancelerUserId: string;
+}

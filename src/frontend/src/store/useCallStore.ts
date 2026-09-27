@@ -5,13 +5,12 @@ type BaseCall = {
   sessionId: string;
 }
 
-export type OutgoingDirectCallState = "initialize" | "initialize_error" | "dialing" | "connected";
+export type OutgoingDirectCallState = "dialing" | "connected";
 
 export type OutgoingDirectCall = BaseCall & {
   type: "outgoing_direct";
   state: OutgoingDirectCallState;
-  calleeId: string;
-  calleeProfile?: UserIdentityProfileDto;
+  calleeProfile: UserIdentityProfileDto;
 }
 
 export type IncomingDirectCallState = "incoming" | "accepting" | "connected";
@@ -26,19 +25,18 @@ export type Call = OutgoingDirectCall | IncomingDirectCall;
 
 interface CallStoreType {
   calls: Call[];
-  startOutgoingDirectCall: (calleeUserId: string) => void;
+  startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => void;
   startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => void;
-  beginDialingDirectCall: (callSessionId: string, calleeProfile: UserIdentityProfileDto) => void;
   endCall: (callSessionId: string) => void;
 }
 
 export const useCallStore = create<CallStoreType>((set) => ({
   calls: [],
-  startOutgoingDirectCall: (calleeUserId: string) => set((state) => {
+  startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => set((state) => {
     return {
       calls: [
         ...state.calls,
-        { type: "outgoing_direct", state: "initialize", sessionId: crypto.randomUUID(), calleeId: calleeUserId },
+        { type: "outgoing_direct", state: "dialing", sessionId: crypto.randomUUID(), calleeProfile, },
       ],
     };
   }),
@@ -52,13 +50,5 @@ export const useCallStore = create<CallStoreType>((set) => ({
   }),
   endCall: (callSessionId: string) => set((state) => {
     return { calls: state.calls.filter(call => call.sessionId !== callSessionId) };
-  }),
-  beginDialingDirectCall: (callSessionId: string, calleeProfile: UserIdentityProfileDto) => set((state) => {
-    return {
-      calls: state.calls.map(call => call.type === "outgoing_direct" && call.state === "initialize" && call.sessionId === callSessionId ?
-        { ...call, state: "dialing", calleeProfile } :
-        call
-      )
-    };
   }),
 }));

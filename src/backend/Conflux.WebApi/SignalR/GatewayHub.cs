@@ -1,4 +1,5 @@
 using Conflux.Application.Services;
+using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -20,6 +21,7 @@ public sealed class GatewayHub(
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,
     IFriendRequestRepository friendRequestRepository,
+    ICallingService callingService,
     ILogger<GatewayHub> logger
 ) : Hub<IConfluxClient> {
     // invoked by the frontend only
@@ -151,7 +153,13 @@ public sealed class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
-            return new(CallResult.Unauthorized, null);
+            return new(Errors.InvalidIdentifier(), null);
+        }
+
+        Result lockResult = await callingService.TryLockCallerAndCallee(callerId, calleeUserId);
+
+        if (!lockResult.IsSuccess) {
+            return new(lockResult, null);
         }
 
         var profiles = await friendRequestRepository.AsQueryable()
@@ -164,12 +172,26 @@ public sealed class GatewayHub(
             .FirstOrDefaultAsync();
 
         if (profiles == null) {
-            return new(CallResult.Unfriended, null);
+            return new(Errors.NoAcceptedFriendRequest(), null);
         }
         
         await Clients.User(calleeUserId.ToString()).IncomingDirectCall(new(profiles.Sender.Id == calleeUserId ? profiles.Receiver : profiles.Sender));
 
-        return new(CallResult.Success, profiles.Sender.Id == calleeUserId ? profiles.Sender : profiles.Receiver);
+        return new(Result.Success(), profiles.Sender.Id == calleeUserId ? profiles.Sender : profiles.Receiver);
+    }
+
+    public async Task CancelDirectCall(Guid otherUserId) {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var cancelerUserId)) {
+            return;
+        }
+
+        if (!await callingService.CancelActiveCall(cancelerUserId, otherUserId)) {
+            return;
+        }
+
+        await Clients.User(otherUserId.ToString()).DirectCallCanceled(new(cancelerUserId));
     }
 
     public override async Task OnConnectedAsync() {
