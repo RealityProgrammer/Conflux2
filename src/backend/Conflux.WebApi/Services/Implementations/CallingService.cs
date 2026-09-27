@@ -33,10 +33,19 @@ internal sealed class CallingService(
         return Result.Success();
     }
 
-    public async Task<Result> CancelCall(Guid callUser1, Guid callUser2) {
+    public async Task<Result> CancelCall(Guid callerId, Guid calleeId) {
         await _database.KeyDeleteAsync([
-            GetStateKey(callUser1),
-            GetStateKey(callUser2),
+            GetStateKey(callerId),
+            GetStateKey(calleeId),
+        ]);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> DenyCall(Guid callerId, Guid calleeId) {
+        await _database.KeyDeleteAsync([
+            GetStateKey(callerId),
+            GetStateKey(calleeId),
         ]);
 
         return Result.Success();

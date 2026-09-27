@@ -4,8 +4,9 @@ import OutgoingCallWindowContent from "./OutgoingCallWindowContent.tsx";
 import IncomingCallWindowContent from "./IncomingCallWindowContent.tsx";
 
 export default function CallWindowContent({callSessionId}: {callSessionId: string}) {
-  const calls = useCallStore((state) => state.calls);
-  const call = calls.find((c) => c.sessionId === callSessionId)!;
+  const call = useCallStore((state) => state.call);
+
+  if (!call || call.sessionId !== callSessionId) return null;
 
   if (call.type === "outgoing_direct") {
     return <OutgoingCallWindowContent call={call}/>

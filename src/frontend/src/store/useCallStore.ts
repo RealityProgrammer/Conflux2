@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import type {UserIdentityProfileDto} from "../api/types.ts";
+import type { UserIdentityProfileDto } from "../api/types.ts";
 
 type BaseCall = {
-  sessionId: string;
+  sessionId: string;  // keep sessionId just to prevent potential asynchronous issue
 }
 
 export type OutgoingDirectCallState = "dialing" | "connected";
@@ -24,40 +24,39 @@ export type IncomingDirectCall = BaseCall & {
 export type Call = OutgoingDirectCall | IncomingDirectCall;
 
 interface CallStoreType {
-  calls: Call[];
+  call: Call | null;
   startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => void;
   startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => void;
   markCallAsConnected: (callSessionId: string) => void;
   endCall: (callSessionId: string) => void;
+  forceEndCall: () => void;
 }
 
 export const useCallStore = create<CallStoreType>((set) => ({
-  calls: [],
-  startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => set((state) => {
-    return {
-      calls: [
-        ...state.calls,
-        { type: "outgoing_direct", state: "dialing", sessionId: crypto.randomUUID(), calleeProfile, },
-      ],
-    };
-  }),
-  startIncomingDirectCall: (callerProfile: UserIdentityProfileDto)  => set((state) => {
-    return {
-      calls: [
-        ...state.calls,
-        { type: "incoming_direct", state: "incoming", sessionId: crypto.randomUUID(), callerProfile, }
-      ]
-    }
-  }),
+  call: null,
+
+  startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => set(() => ({
+    call: { type: "outgoing_direct", state: "dialing", sessionId: crypto.randomUUID(), calleeProfile },
+  })),
+
+  startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => set(() => ({
+    call: { type: "incoming_direct", state: "incoming", sessionId: crypto.randomUUID(), callerProfile }
+  })),
+
   markCallAsConnected: (callSessionId: string) => set((state) => {
-    return {
-      calls: state.calls.map((call) => call.sessionId === callSessionId ?
-        { ...call, state: "connected" } :
-        call
-      ),
-    };
+    if (state.call?.sessionId === callSessionId) {
+      return { call: { ...state.call, state: "connected" } };
+    }
+    return state;
   }),
+
   endCall: (callSessionId: string) => set((state) => {
-    return { calls: state.calls.filter(call => call.sessionId !== callSessionId) };
+    if (state.call?.sessionId === callSessionId) {
+      return { call: null };
+    }
+
+    return state;
   }),
+
+  forceEndCall: () => set({ call: null }),
 }));

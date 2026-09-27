@@ -14,7 +14,7 @@ export default function CallWindowHeader({
     <header
       className="drag-handle bg-gray-775 px-3 py-2 flex flex-row justify-between items-center select-none border-b-2 border-gray-600"
     >
-      <span className="flex-1 text-gray-200 text-sm font-semibold truncate pointer-events-none animate-pulse">
+      <span className="flex-1 text-gray-200 text-sm font-semibold truncate pointer-events-none">
         {title}
       </span>
 

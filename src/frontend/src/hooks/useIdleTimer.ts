@@ -28,7 +28,6 @@ export default function useIdleTimer() {
     }
 
     idleTimerRef.current = setTimeout(() => {
-      console.log("invoke idle");
       setIdleState(true); // User went AFK
     }, IDLE_TIMEOUT_MS);
   };

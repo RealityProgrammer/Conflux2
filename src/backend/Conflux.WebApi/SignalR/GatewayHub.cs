@@ -198,23 +198,43 @@ public sealed class GatewayHub(
         return new(Result.Success(), profiles.Sender.Id == calleeUserId ? profiles.Sender : profiles.Receiver);
     }
 
-    public async Task<DirectCallContext> CancelDirectCall(Guid otherUserId) {
+    // invoked by frontend only
+    public async Task<DirectCallContext> CancelDirectCall(Guid calleeUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var cancelerUserId)) {
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
             return new(Errors.InvalidIdentifier(), null);
         }
 
-        Result result = await callingService.CancelCall(cancelerUserId, otherUserId);
+        Result result = await callingService.CancelCall(callerId, calleeUserId);
 
         if (!result.IsSuccess) {
             return new(result, null);
         }
 
-        await Clients.User(otherUserId.ToString()).DirectCallCanceled(new(cancelerUserId));
+        await Clients.User(calleeUserId.ToString()).DirectCallCanceled(new(callerId));
         return new(Result.Success(), null);
     }
 
+    // invoked by frontend only
+    public async Task<DirectCallContext> DenyDirectCall(Guid callerUserId) {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var calleeId)) {
+            return new(Errors.InvalidIdentifier(), null);
+        }
+        
+        Result result = await callingService.DenyCall(callerUserId, calleeId);
+
+        if (!result.IsSuccess) {
+            return new(result, null);
+        }
+
+        await Clients.User(callerUserId.ToString()).DirectCallDenied(new(calleeId));
+        return new(Result.Success(), null);
+    }
+
+    // invoked by frontend only
     public async Task<DirectCallContext> AcceptDirectCall(Guid callerUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -268,6 +288,6 @@ public sealed class GatewayHub(
         var result = await callingService.DropCall(userId, Context.ConnectionId);
         if (!result.IsSuccess) return;
 
-        await Clients.User(result.Value.ToString()).DirectCallEnded(new(userId));
+        await Clients.User(result.Value.ToString()).DirectCallDropped(new(userId));
     }
 }

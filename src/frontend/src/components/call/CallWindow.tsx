@@ -6,9 +6,7 @@ import CallWindowContent from "./CallWindowContent.tsx";
 
 let highestZIndex = 1;
 
-export default function CallWindow({
-  callSessionId
-}: {callSessionId: string}) {
+export default function CallWindow({callSessionId}: {callSessionId: string}) {
   const windowRef = useRef<HTMLDivElement>(null);
 
   const bringToFront = () => {

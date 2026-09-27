@@ -119,14 +119,18 @@ export type IncomingDirectCallEvent = {
   callerProfile: UserIdentityProfileDto;
 }
 
-export type CancelDirectCallEvent = {
-  cancelerUserId: string;
+export type DirectCallCanceledEvent = {
+  callerUserId: string;
 }
 
-export type AcceptDirectCallEvent = {
+export type DirectCallDeniedEvent = {
   calleeUserId: string;
 }
 
-export type DirectCallEndedEvent = {
-  enderUserId: string;
+export type DirectCallAcceptedEvent = {
+  calleeUserId: string;
+}
+
+export type DirectCallDroppedEvent = {
+  droppedUserId: string;
 }
