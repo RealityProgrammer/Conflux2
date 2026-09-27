@@ -31,13 +31,34 @@ internal sealed class CallingService(
         return Result.Success();
     }
 
-    public async Task<bool> CancelActiveCall(Guid callUser1, Guid callUser2) {
+    public async Task<Result> CancelCall(Guid callUser1, Guid callUser2) {
         long deletedCount = await _database.KeyDeleteAsync([
             GetStateKey(callUser1),
             GetStateKey(callUser2),
         ]);
         
-        return deletedCount > 0;
+        return deletedCount == 2 ? Result.Success() : Errors.InvalidCallStates();
+    }
+
+    public async Task<Result> AcceptCall(Guid callerId, Guid calleeId) {
+        var callerKey = GetStateKey(callerId);
+        var calleeKey = GetStateKey(calleeId);
+
+        RedisValue[] states = await _database.StringGetAsync([callerKey, calleeKey]);
+
+        if (states.Length != 2 || states[0] != (int)CallState.Ringing || states[1] != (int)CallState.Ringing) {
+            return Errors.InvalidCallStates();
+        }
+
+        RedisValue newState = (int)CallState.Active;
+        var activeTimeout = TimeSpan.FromHours(12);
+
+        await _database.StringSetAsync([
+            new(callerKey, newState),
+            new(calleeKey, newState),
+        ]);
+
+        return Result.Success();
     }
 
     private static string GetStateKey(Guid userId) {

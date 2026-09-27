@@ -125,4 +125,7 @@ public static class Errors {
     
     public static Error CalleeBusy() =>
         new(nameof(CalleeBusy), "User is busy.");
+
+    public static Error InvalidCallStates() =>
+        new(nameof(InvalidCallStates), "Invalid call states.");
 }

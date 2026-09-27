@@ -27,6 +27,7 @@ interface CallStoreType {
   calls: Call[];
   startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => void;
   startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => void;
+  markCallAsConnected: (callSessionId: string) => void;
   endCall: (callSessionId: string) => void;
 }
 
@@ -47,6 +48,14 @@ export const useCallStore = create<CallStoreType>((set) => ({
         { type: "incoming_direct", state: "incoming", sessionId: crypto.randomUUID(), callerProfile, }
       ]
     }
+  }),
+  markCallAsConnected: (callSessionId: string) => set((state) => {
+    return {
+      calls: state.calls.map((call) => call.sessionId === callSessionId ?
+        { ...call, state: "connected" } :
+        call
+      ),
+    };
   }),
   endCall: (callSessionId: string) => set((state) => {
     return { calls: state.calls.filter(call => call.sessionId !== callSessionId) };

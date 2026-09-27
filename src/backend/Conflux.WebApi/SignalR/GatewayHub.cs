@@ -180,18 +180,38 @@ public sealed class GatewayHub(
         return new(Result.Success(), profiles.Sender.Id == calleeUserId ? profiles.Sender : profiles.Receiver);
     }
 
-    public async Task CancelDirectCall(Guid otherUserId) {
+    public async Task<DirectCallContext> CancelDirectCall(Guid otherUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var cancelerUserId)) {
-            return;
+            return new(Errors.InvalidIdentifier(), null);
         }
 
-        if (!await callingService.CancelActiveCall(cancelerUserId, otherUserId)) {
-            return;
+        Result result = await callingService.CancelCall(cancelerUserId, otherUserId);
+
+        if (!result.IsSuccess) {
+            return new(result, null);
         }
 
         await Clients.User(otherUserId.ToString()).DirectCallCanceled(new(cancelerUserId));
+        return new(Result.Success(), null);
+    }
+
+    public async Task<DirectCallContext> AcceptDirectCall(Guid callerUserId) {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var calleeUserId)) {
+            return new(Errors.InvalidIdentifier(), null);
+        }
+
+        Result result = await callingService.AcceptCall(callerUserId, calleeUserId);
+        
+        if (!result.IsSuccess) {
+            return new(result, null);
+        }
+        
+        await Clients.User(callerUserId.ToString()).DirectCallAccepted(new(calleeUserId));
+        return new(Result.Success(), null);
     }
 
     public override async Task OnConnectedAsync() {

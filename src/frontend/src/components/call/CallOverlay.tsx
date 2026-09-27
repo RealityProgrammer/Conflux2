@@ -1,11 +1,12 @@
 import {useCallStore} from "../../store/useCallStore.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {CancelDirectCallEvent, IncomingDirectCallEvent} from "../../api/events.ts";
+import type {AcceptDirectCallEvent, CancelDirectCallEvent, IncomingDirectCallEvent} from "../../api/events.ts";
 import CallWindow from "./CallWindow.tsx";
 
 export default function CallOverlay() {
   const calls = useCallStore((state) => state.calls);
   const startIncomingDirectCall = useCallStore((state) => state.startIncomingDirectCall);
+  const markCallAsConnected = useCallStore((state) => state.markCallAsConnected);
   const endCall = useCallStore((state) => state.endCall);
 
   useSignalREvent("IncomingDirectCall", (event: IncomingDirectCallEvent) => {
@@ -31,6 +32,18 @@ export default function CallOverlay() {
     if (callToCancel) {
       endCall(callToCancel.sessionId);
       return;
+    }
+  });
+
+  useSignalREvent("DirectCallAccepted", (event: AcceptDirectCallEvent) => {
+    let callToUpdate = useCallStore.getState().calls.find(
+      c => c.type === "outgoing_direct" && c.calleeProfile.id === event.calleeUserId
+    );
+
+    console.log("callee:", event.calleeUserId, "call:", JSON.stringify(callToUpdate));
+
+    if (callToUpdate) {
+      markCallAsConnected(callToUpdate.sessionId);
     }
   });
 
