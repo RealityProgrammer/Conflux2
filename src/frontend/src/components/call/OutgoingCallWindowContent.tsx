@@ -24,7 +24,7 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
 
 function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
-  const markCallAsConnected = useCallStore((state) => state.markCallAsConnected);
+  const markCallAsActive = useCallStore((state) => state.markCallAsActive);
   const endCall = useCallStore((state) => state.endCall);
   const { invokeSafely } = useSignalR();
 
@@ -100,7 +100,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
     if (call.calleeProfile.id === event.calleeUserId) {
-      markCallAsConnected(call.sessionId);
+      markCallAsActive(call.sessionId);
     }
   });
 

@@ -19,7 +19,7 @@ export default function IncomingCallWindowContent({call}: {call: IncomingDirectC
 }
 
 function IncomingPhase({call}: {call: IncomingDirectCall}) {
-  const markCallAsConnected = useCallStore((state) => state.markCallAsConnected);
+  const markCallAsActive = useCallStore((state) => state.markCallAsActive);
   const endCall = useCallStore((state) => state.endCall);
   const { invokeSafely } = useSignalR();
   const [status, setStatus] = useState<"none" | "canceled" | "denied">("none");
@@ -39,7 +39,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
     if (status !== "none") return;
     try {
       await invokeSafely("AcceptDirectCall", call.callerProfile.id);
-      markCallAsConnected(call.sessionId);
+      markCallAsActive(call.sessionId);
     } catch (err) {
       console.error("Failed to accept call:", err);
     }
