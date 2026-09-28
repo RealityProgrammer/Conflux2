@@ -55,5 +55,5 @@ export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
 
 export type DirectCallContext = {
   result: BackendResult;
-  calleeProfile: UserIdentityProfileDto;
+  peerProfile: UserIdentityProfileDto | null;
 }

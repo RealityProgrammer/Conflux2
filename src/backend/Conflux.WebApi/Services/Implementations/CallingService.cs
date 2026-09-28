@@ -100,13 +100,23 @@ internal sealed class CallingService(
         if (!serializedStates.HasValue) return Errors.ResourceNotFound();
 
         var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
-        if (state == null || state.ConnectionId != userConnectionId) {
-            return Errors.ResourceNotFound();   // ???
-        }
+        if (state == null || state.ConnectionId != userConnectionId) return Errors.ResourceNotFound();  // ???
         
         var peerKey = GetStateKey(state.PeerId);
         await _database.KeyDeleteAsync([stateKey, peerKey]);
 
+        return Domain.Result<Guid>.Success(state.PeerId);
+    }
+
+    public async Task<Domain.Result<Guid>> GetCurrentRingingCall(Guid userId) {
+        var stateKey = GetStateKey(userId);
+        var serializedState = await _database.StringGetAsync(stateKey);
+
+        if (!serializedState.HasValue) return Errors.ResourceNotFound();
+
+        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
+        if (state == null || state.State != CallState.Ringing) return Errors.ResourceNotFound();    // ???
+        
         return Domain.Result<Guid>.Success(state.PeerId);
     }
 

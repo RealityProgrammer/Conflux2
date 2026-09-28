@@ -251,6 +251,30 @@ public sealed class GatewayHub(
         await Clients.User(callerUserId.ToString()).DirectCallAccepted(new(calleeUserId));
         return new(Result.Success(), null);
     }
+    
+    // invoked by frontend only
+    public async Task<DirectCallContext> GetCurrentRingingCall() {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return new(Errors.InvalidIdentifier(), null);
+        }
+
+        var peerIdResult = await callingService.GetCurrentRingingCall(userId);
+
+        if (!peerIdResult.IsSuccess) {
+            return new(peerIdResult, null);
+        }
+
+        // Fetch the peer's profile from your database so the UI can render their name/avatar
+        var peerProfileResult = await userRepository.GetIdentityProfile(peerIdResult.Value);
+        
+        if (!peerProfileResult.IsSuccess) {
+            return new(peerProfileResult, null);
+        }
+
+        return new(peerProfileResult, peerProfileResult.Value);
+    }
 
     public override async Task OnConnectedAsync() {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;

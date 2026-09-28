@@ -32,7 +32,7 @@ export default function DirectMessagePage() {
       const context: DirectCallContext = await invokeSafely("StartDirectCall", channelSummary.otherUser.id);
 
       if (context.result.isSuccess) {
-        startOutgoingDirectCall(context.calleeProfile);
+        startOutgoingDirectCall(context.peerProfile);
       } else {
         console.error("Failed to start call:", context.result.error.message);
       }

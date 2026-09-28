@@ -3,4 +3,4 @@ using Conflux.Domain.Dto;
 
 namespace Conflux.WebApi.Dto;
 
-public sealed record DirectCallContext(Result Result, UserIdentityProfileDto? CalleeProfile);
+public sealed record DirectCallContext(Result Result, UserIdentityProfileDto? PeerProfile);

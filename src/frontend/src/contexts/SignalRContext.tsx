@@ -1,4 +1,4 @@
-import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState} from "react";
 import {
   HttpTransportType,
   type HubConnection,
@@ -112,8 +112,19 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // const invokeSafely = useCallback(async (methodName: string, ...args: unknown[]) => {
+  //   if (connection && connection.state === HubConnectionState.Connected) {
+  //     try {
+  //       return await connection.invoke(methodName, ...args);
+  //     } catch (err) {
+  //       console.error(`SignalR invocation failed for [${methodName}]:`, err);
+  //       throw err;
+  //     }
+  //   }
+  // }, [connection, isConnected]);
+
   const invokeSafely = async (methodName: string, ...args: unknown[]) => {
-    if (connection && connection.state === HubConnectionState.Connected) {
+    if (connection && connection.state === HubConnectionState.Connected && isConnected) {
       try {
         return await connection.invoke(methodName, ...args);
       } catch (err) {
