@@ -19,6 +19,8 @@ import type {
 import type {DirectCallContext} from "../../api/types.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
+import useWebRTC from "../../hooks/useWebRTC.ts";
+import RemoteVideo from "./RemoteVideo.tsx";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -208,16 +210,38 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const { invokeSafely } = useSignalR();
   const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
   const [isEndingCall, setIsEndingCall] = useState(false);
+
   const {
     stream,
     isAcquiringMedia,
   } = useUserMedia({});
 
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
+  const calleeId = call.calleeProfile.id;
+
+  const { remoteStreams, connectToPeer } = useWebRTC({ localStream: stream });
+  const remoteStream = remoteStreams[calleeId];
+
+  // attach local media streams to local video elements
+  useEffect(() => {
+    if (!isAcquiringMedia && stream && localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+  }, [stream, isAcquiringMedia]);
+
+  // initialize webrtc offer when stream
+  useEffect(() => {
+    if (stream && calleeId) {
+      connectToPeer(calleeId);
+    }
+  }, [stream, calleeId, connectToPeer]);
+
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
     try {
-      const result: DirectCallContext = await invokeSafely("EndDirectCall", call.calleeProfile.id);
+      const result: DirectCallContext = await invokeSafely("EndDirectCall", calleeId);
 
       if (result && result.result.isSuccess) {
         markCallAsEnded(call.sessionId);
@@ -230,13 +254,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     }
   };
 
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (!isAcquiringMedia && stream && localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-  }, [stream, isAcquiringMedia]);
+  // ???
 
   return (
     <>
@@ -267,10 +285,14 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
           )}
         </div>
 
-        <img
-          src="https://placehold.co/1280x720"
-          className="object-contain size-full"
-        />
+        {remoteStream ? (
+          <RemoteVideo stream={remoteStream} className="object-contain size-full" />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
+            <Spinner className="size-8 fill-white" />
+            <p className="text-sm font-medium">Connecting video...</p>
+          </div>
+        )}
 
         <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
           <IconButton isLoading={false} theme="danger" disabled={isEndingCall} onClick={handleCallEnd}>

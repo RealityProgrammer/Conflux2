@@ -14,6 +14,8 @@ import type {DirectCallContext} from "../../api/types.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
+import useWebRTC from "../../hooks/useWebRTC.ts";
+import RemoteVideo from "./RemoteVideo.tsx";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -208,10 +210,25 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
   const { invokeSafely } = useSignalR();
   const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
   const [isEndingCall, setIsEndingCall] = useState(false);
+
   const {
     stream,
     isAcquiringMedia,
   } = useUserMedia({});
+
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
+  const callerId = call.callerProfile.id;
+
+  const { remoteStreams } = useWebRTC({ localStream: stream });
+  const remoteStream = remoteStreams[callerId];
+
+  // attach local media streams to local video elements
+  useEffect(() => {
+    if (!isAcquiringMedia && stream && localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+  }, [stream, isAcquiringMedia]);
 
   const handleCallEnd = async () => {
     setIsEndingCall(true);
@@ -229,14 +246,6 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
       setIsEndingCall(false);
     }
   };
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (!isAcquiringMedia && stream && localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-  }, [stream, isAcquiringMedia]);
 
   return (
     <>
@@ -267,23 +276,14 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
           )}
         </div>
 
-        <img
-          src="https://placehold.co/1280x720"
-          className="object-contain size-full"
-        />
-
-        {/*<Webcam*/}
-        {/*  ref={webcamRef}*/}
-        {/*  audio={true}*/}
-        {/*  width={1280}*/}
-        {/*  height={720}*/}
-        {/*  className="object-contain size-full -scale-x-100"*/}
-        {/*  videoConstraints={{*/}
-        {/*    width: 1280,*/}
-        {/*    height: 720,*/}
-        {/*    facingMode: "user"*/}
-        {/*  }}*/}
-        {/*/>*/}
+        {remoteStream ? (
+          <RemoteVideo stream={remoteStream} className="object-contain size-full" />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
+            <Spinner className="size-8 fill-white" />
+            <p className="text-sm font-medium">Connecting video...</p>
+          </div>
+        )}
 
         <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
           <IconButton isLoading={false} theme="danger" onClick={handleCallEnd} disabled={isEndingCall}>
