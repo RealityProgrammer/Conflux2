@@ -112,17 +112,6 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // const invokeSafely = useCallback(async (methodName: string, ...args: unknown[]) => {
-  //   if (connection && connection.state === HubConnectionState.Connected) {
-  //     try {
-  //       return await connection.invoke(methodName, ...args);
-  //     } catch (err) {
-  //       console.error(`SignalR invocation failed for [${methodName}]:`, err);
-  //       throw err;
-  //     }
-  //   }
-  // }, [connection, isConnected]);
-
   const invokeSafely = async (methodName: string, ...args: unknown[]) => {
     if (connection && connection.state === HubConnectionState.Connected && isConnected) {
       try {
@@ -143,7 +132,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
 
 export function useSignalR(): SignalRContextType {
   const context = useContext(SignalRContext);
-  if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
+  if (!context) throw new Error("useSignalR must be used within an SignalRConnectionProvider.");
 
   return context;
 }

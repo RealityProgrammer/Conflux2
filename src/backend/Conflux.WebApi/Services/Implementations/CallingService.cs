@@ -115,7 +115,7 @@ internal sealed class CallingService(
         if (!serializedState.HasValue) return Errors.ResourceNotFound();
 
         var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
-        if (state == null || state.State != CallState.Ringing) return Errors.ResourceNotFound();    // ???
+        if (state is not { State: CallState.Ringing }) return Errors.ResourceNotFound();    // ???
         
         return Domain.Result<Guid>.Success(state.PeerId);
     }
