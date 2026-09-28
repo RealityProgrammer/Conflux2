@@ -49,5 +49,6 @@ public interface IConfluxClient {
     Task DirectCallCanceled(DirectCallCanceledEvent data, CancellationToken cancellationToken = default);
     Task DirectCallDenied(DirectCallDeniedEvent data, CancellationToken cancellationToken = default);
     Task DirectCallAccepted(DirectCallAcceptedEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallEnded(DirectCallEndedEvent data, CancellationToken cancellationToken = default);
     Task DirectCallDropped(DirectCallDroppedEvent data, CancellationToken cancellationToken = default);
 }

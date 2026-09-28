@@ -208,6 +208,12 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
             facingMode: "user"
           }}
         />
+
+        <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
+          <IconButton isLoading={false} theme="danger">
+            <BsTelephoneXFill className="size-8"/>
+          </IconButton>
+        </div>
       </div>
     </>
   );

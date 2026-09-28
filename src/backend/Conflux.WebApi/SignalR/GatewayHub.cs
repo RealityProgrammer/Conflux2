@@ -253,6 +253,24 @@ public sealed class GatewayHub(
     }
     
     // invoked by frontend only
+    public async Task<DirectCallContext> EndDirectCall(Guid peerUserId) {
+        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return new(Errors.InvalidIdentifier(), null);
+        }
+        
+        Domain.Result<Guid> peerIdResult = await callingService.EndCall(userId, peerUserId);
+        
+        if (!peerIdResult.IsSuccess) {
+            return new(peerIdResult, null);
+        }
+        
+        await Clients.User(peerIdResult.Value.ToString()).DirectCallEnded(new(userId));
+        return new(Result.Success(), null);
+    }
+    
+    // invoked by frontend only
     public async Task<DirectCallContext> GetCurrentRingingCall() {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 

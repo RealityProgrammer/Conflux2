@@ -34,21 +34,11 @@ internal sealed class CallingService(
     }
 
     public async Task<Result> CancelCall(Guid callerId, Guid calleeId) {
-        await _database.KeyDeleteAsync([
-            GetStateKey(callerId),
-            GetStateKey(calleeId),
-        ]);
-
-        return Result.Success();
+        return await SafeDeleteRingingCall(callerId, calleeId);
     }
 
     public async Task<Result> DenyCall(Guid callerId, Guid calleeId) {
-        await _database.KeyDeleteAsync([
-            GetStateKey(callerId),
-            GetStateKey(calleeId),
-        ]);
-
-        return Result.Success();
+        return await SafeDeleteRingingCall(callerId, calleeId);
     }
 
     public async Task<Result> AcceptCall(Guid callerId, Guid calleeId, string calleeConnectionId) {
@@ -71,6 +61,10 @@ internal sealed class CallingService(
             return Errors.InvalidCallStates();
         }
 
+        if (callerState.PeerId != calleeId || calleeState.PeerId != callerId) {
+            return Errors.InvalidCallStates();
+        }
+
         callerState = callerState with { State = CallState.Active };
         calleeState = calleeState with { State = CallState.Active, ConnectionId = calleeConnectionId };
         var activeTimeout = TimeSpan.FromHours(12);
@@ -80,7 +74,7 @@ internal sealed class CallingService(
         transaction.AddCondition(Condition.KeyExists(callerKey));
         transaction.AddCondition(Condition.KeyExists(calleeKey));
         
-        _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(callerState), activeTimeout);
+        _ = transaction.StringSetAsync(calleeKey, MemoryPackSerializer.Serialize(callerState), activeTimeout);
         _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(calleeState), activeTimeout);
         
         bool committed = await transaction.ExecuteAsync();
@@ -100,7 +94,23 @@ internal sealed class CallingService(
         if (!serializedStates.HasValue) return Errors.ResourceNotFound();
 
         var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
-        if (state == null || state.ConnectionId != userConnectionId) return Errors.ResourceNotFound();  // ???
+        if (state == null || state.ConnectionId != userConnectionId) return Errors.ResourceNotFound();
+        
+        var peerKey = GetStateKey(state.PeerId);
+        await _database.KeyDeleteAsync([stateKey, peerKey]);
+
+        return Domain.Result<Guid>.Success(state.PeerId);
+    }
+
+    public async Task<Domain.Result<Guid>> EndCall(Guid enderId, Guid peerId) {
+        var stateKey = GetStateKey(enderId);
+        RedisValue serializedStates = await _database.StringGetAsync(stateKey);
+
+        if (!serializedStates.HasValue) return Errors.ResourceNotFound();
+
+        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
+        if (state == null) return Errors.ResourceNotFound();
+        if (state.State != CallState.Active || state.PeerId != peerId) return Errors.InvalidCallStates();
         
         var peerKey = GetStateKey(state.PeerId);
         await _database.KeyDeleteAsync([stateKey, peerKey]);
@@ -115,9 +125,31 @@ internal sealed class CallingService(
         if (!serializedState.HasValue) return Errors.ResourceNotFound();
 
         var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
-        if (state is not { State: CallState.Ringing }) return Errors.ResourceNotFound();    // ???
+        if (state is not { State: CallState.Ringing }) return Errors.ResourceNotFound();
         
         return Domain.Result<Guid>.Success(state.PeerId);
+    }
+
+    private async Task<Result> SafeDeleteRingingCall(Guid actionUserId, Guid peerId) {
+        var stateKey = GetStateKey(actionUserId);
+        var serializedState = await _database.StringGetAsync(stateKey);
+
+        // Idempotent: If already deleted (e.g. timeout), consider it a success
+        if (!serializedState.HasValue) return Result.Success(); 
+
+        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
+        
+        // Security check: Make sure this user is actually ringing with the specified peer
+        if (state == null || state.State != CallState.Ringing || state.PeerId != peerId) {
+            return Errors.InvalidCallStates();
+        }
+
+        await _database.KeyDeleteAsync([
+            GetStateKey(actionUserId),
+            GetStateKey(peerId),
+        ]);
+
+        return Result.Success();
     }
 
     private static string GetStateKey(Guid userId) {
