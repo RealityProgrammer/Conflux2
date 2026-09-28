@@ -8,11 +8,31 @@ import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import {useEffect, useRef, useState} from "react";
 import {createTimeline} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {DirectCallCanceledEvent} from "../../api/events.ts";
+import type {DirectCallCanceledEvent, DirectCallDroppedEvent} from "../../api/events.ts";
+import Webcam from "react-webcam";
+import {useTimeout} from "usehooks-ts";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
+  const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
+
+  useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
+    console.log("call dropped");
+
+    if (call.callerProfile.id === event.droppedUserId) {
+      markCallAsDropped(call.sessionId);
+    }
+  });
+
   if (call.state === "incoming") {
     return <IncomingPhase call={call}/>
+  }
+
+  if (call.state === "dropped") {
+    return <DroppedPhase call={call}/>
+  }
+
+  if (call.state === "active") {
+    return <ActivePhase call={call}/>
   }
 
   return null;
@@ -147,4 +167,52 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
       </section>
     </>
   )
+}
+
+function DroppedPhase({call}: {call: IncomingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.sessionId);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call dropped"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <UserAvatar
+          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+          alt="Caller avatar"
+          className="w-[min(25cqw,25cqh)]"
+          style={{ transform: "scale(1)"}}
+        />
+      </div>
+    </>
+  )
+}
+
+function ActivePhase({call}: {call: IncomingDirectCall}) {
+  const webcamRef = useRef<Webcam>(null);
+
+  return (
+    <>
+      <CallWindowHeader title={`On call with ${call.callerProfile!.displayName}`}/>
+
+      <div className="flex-1 bg-black @container-size relative flex flex-col justify-center items-center">
+        <Webcam
+          ref={webcamRef}
+          audio={true}
+          width={1280}
+          height={720}
+          className="object-contain size-full -scale-x-100"
+          videoConstraints={{
+            width: 1280,
+            height: 720,
+            facingMode: "user"
+          }}
+        />
+      </div>
+    </>
+  );
 }

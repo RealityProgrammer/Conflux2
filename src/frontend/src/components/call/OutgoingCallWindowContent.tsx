@@ -11,12 +11,31 @@ import {useEffect, useRef, useState} from "react";
 import {animate} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {DirectCallAcceptedEvent, DirectCallDeniedEvent, DirectCallDroppedEvent} from "../../api/events.ts";
+import Webcam from "react-webcam";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
+  const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
+
+  useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
+    console.log("call dropped");
+
+    if (call.calleeProfile.id === event.droppedUserId) {
+      markCallAsDropped(call.sessionId);
+    }
+  });
+
   if (!call) return null;
 
   if (call.state === "dialing") {
     return <DialingPhase call={call}/>;
+  }
+
+  if (call.state === "dropped") {
+    return <DroppedPhase call={call}/>
+  }
+
+  if (call.state === "active") {
+    return <ActivePhase call={call}/>
   }
 
   return null;
@@ -28,7 +47,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
   const { invokeSafely } = useSignalR();
 
-  const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied" | "dropped">("none");
+  const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied">("none");
 
   const handleCancelCall = async () => {
     try {
@@ -92,12 +111,6 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
     }
   });
 
-  useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
-    if (call.calleeProfile.id === event.droppedUserId) {
-      setStatus("dropped");
-    }
-  });
-
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
     if (call.calleeProfile.id === event.calleeUserId) {
       markCallAsActive(call.sessionId);
@@ -147,6 +160,54 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
             </IconButton>
           </div>
         )}
+      </div>
+    </>
+  );
+}
+
+function DroppedPhase({call}: {call: OutgoingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.sessionId);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call dropped"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <UserAvatar
+          src={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(call.calleeProfile.id, call.calleeProfile.avatarRevision) : undefined}
+          alt="Caller avatar"
+          className="w-[min(25cqw,25cqh)]"
+          style={{ transform: "scale(1)"}}
+        />
+      </div>
+    </>
+  )
+}
+
+function ActivePhase({call}: {call: OutgoingDirectCall}) {
+  const webcamRef = useRef<Webcam>(null);
+
+  return (
+    <>
+      <CallWindowHeader title={`On call with ${call.calleeProfile!.displayName}`}/>
+
+      <div className="flex-1 bg-black @container-size relative flex flex-col justify-center items-center">
+        <Webcam
+          ref={webcamRef}
+          audio={true}
+          width={1280}
+          height={720}
+          className="object-contain size-full -scale-x-100"
+          videoConstraints={{
+            width: 1280,
+            height: 720,
+            facingMode: "user"
+          }}
+        />
       </div>
     </>
   );

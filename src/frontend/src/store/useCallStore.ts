@@ -5,7 +5,7 @@ type BaseCall = {
   sessionId: string;  // keep sessionId just to prevent potential asynchronous issue
 }
 
-export type OutgoingDirectCallState = "dialing" | "active";
+export type OutgoingDirectCallState = "dialing" | "active" | "dropped";
 
 export type OutgoingDirectCall = BaseCall & {
   type: "outgoing_direct";
@@ -13,7 +13,7 @@ export type OutgoingDirectCall = BaseCall & {
   calleeProfile: UserIdentityProfileDto;
 }
 
-export type IncomingDirectCallState = "incoming" | "active";
+export type IncomingDirectCallState = "incoming" | "active" | "dropped";
 
 export type IncomingDirectCall = BaseCall & {
   type: "incoming_direct";
@@ -28,6 +28,7 @@ interface CallStoreType {
   startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => void;
   startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => void;
   markCallAsActive: (callSessionId: string) => void;
+  markCallAsDropped: (callSessionId: string) => void;
   endCall: (callSessionId: string) => void;
   forceEndCall: () => void;
 }
@@ -46,6 +47,13 @@ export const useCallStore = create<CallStoreType>((set) => ({
   markCallAsActive: (callSessionId: string) => set((state) => {
     if (state.call?.sessionId === callSessionId) {
       return { call: { ...state.call, state: "active" } };
+    }
+    return state;
+  }),
+
+  markCallAsDropped: (callSessionId: string) => set((state) => {
+    if (state.call?.sessionId === callSessionId) {
+      return { call: { ...state.call, state: "dropped" } };
     }
     return state;
   }),
