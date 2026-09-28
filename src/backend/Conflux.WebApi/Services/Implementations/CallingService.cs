@@ -134,13 +134,11 @@ internal sealed class CallingService(
         var stateKey = GetStateKey(actionUserId);
         var serializedState = await _database.StringGetAsync(stateKey);
 
-        // Idempotent: If already deleted (e.g. timeout), consider it a success
         if (!serializedState.HasValue) return Result.Success(); 
 
         var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
         
-        // Security check: Make sure this user is actually ringing with the specified peer
-        if (state == null || state.State != CallState.Ringing || state.PeerId != peerId) {
+        if (state is not { State: CallState.Ringing } || state.PeerId != peerId) {
             return Errors.InvalidCallStates();
         }
 

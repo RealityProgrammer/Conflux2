@@ -5,7 +5,7 @@ import UserAvatar from "../UserAvatar.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {userService} from "../../api/userService.ts";
 import IconButton from "../IconButton.tsx";
-import {BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
+import {BsCameraVideoOffFill, BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
 import {useTimeout} from "usehooks-ts";
 import {useEffect, useRef, useState} from "react";
 import {animate} from "animejs";
@@ -16,8 +16,9 @@ import type {
   DirectCallDroppedEvent,
   DirectCallEndedEvent
 } from "../../api/events.ts";
-import Webcam from "react-webcam";
 import type {DirectCallContext} from "../../api/types.ts";
+import useUserMedia from "../../hooks/useUserMedia.ts";
+import Spinner from "../Spinner.tsx";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -203,11 +204,14 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
 }
 
 function ActivePhase({call}: {call: OutgoingDirectCall}) {
-  const webcamRef = useRef<Webcam>(null);
+  const { userProfile } = useAuth();
   const { invokeSafely } = useSignalR();
   const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
-
   const [isEndingCall, setIsEndingCall] = useState(false);
+  const {
+    stream,
+    isAcquiringMedia,
+  } = useUserMedia({});
 
   const handleCallEnd = async () => {
     setIsEndingCall(true);
@@ -224,24 +228,48 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
       console.error("Failed to end call:", err);
       setIsEndingCall(false);
     }
-  }
+  };
+
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!isAcquiringMedia && stream && localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+  }, [stream, isAcquiringMedia]);
 
   return (
     <>
       <CallWindowHeader title={`On call with ${call.calleeProfile!.displayName}`}/>
 
       <div className="flex-1 bg-black @container-size relative flex flex-col justify-center items-center">
-        <Webcam
-          ref={webcamRef}
-          audio={true}
-          width={1280}
-          height={720}
-          className="object-contain size-full -scale-x-100"
-          videoConstraints={{
-            width: 1280,
-            height: 720,
-            facingMode: "user"
-          }}
+        <div className="absolute top-2 left-2 w-48 aspect-video ring-2 ring-gray-600 rounded-lg bg-gray-900 overflow-hidden flex flex-col justify-center items-center">
+          {isAcquiringMedia ? (
+            <Spinner className="size-8 fill-white"/>
+          ) : !!stream ? (
+            <video
+              ref={localVideoRef}
+              className="size-full object-contain -scale-x-100"
+              autoPlay
+              playsInline
+              muted
+            />
+          ) : (
+            <div className="flex flex-col justify-center items-center gap-2">
+              <UserAvatar
+                src={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
+                alt="Your avatar"
+                className="size-12 rounded-full overflow-hidden"
+              />
+
+              <BsCameraVideoOffFill className="size-5 fill-red-500"/>
+            </div>
+          )}
+        </div>
+
+        <img
+          src="https://placehold.co/1280x720"
+          className="object-contain size-full"
         />
 
         <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
