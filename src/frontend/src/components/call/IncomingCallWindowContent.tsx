@@ -8,18 +8,24 @@ import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import {useEffect, useRef, useState} from "react";
 import {createTimeline} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {DirectCallCanceledEvent, DirectCallDroppedEvent} from "../../api/events.ts";
+import type {DirectCallCanceledEvent, DirectCallDroppedEvent, DirectCallEndedEvent} from "../../api/events.ts";
 import Webcam from "react-webcam";
 import {useTimeout} from "usehooks-ts";
+import type {DirectCallContext} from "../../api/types.ts";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
+  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
 
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
-    console.log("call dropped");
-
     if (call.callerProfile.id === event.droppedUserId) {
       markCallAsDropped(call.sessionId);
+    }
+  });
+
+  useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
+    if (call.callerProfile.id === event.enderUserId) {
+      markCallAsEnded(call.sessionId);
     }
   });
 
@@ -33,6 +39,10 @@ export default function IncomingCallWindowContent({call}: {call: IncomingDirectC
 
   if (call.state === "active") {
     return <ActivePhase call={call}/>
+  }
+
+  if (call.state === "ended") {
+    return <EndedPhase call={call}/>
   }
 
   return null;
@@ -185,7 +195,6 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
           src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
           alt="Caller avatar"
           className="w-[min(25cqw,25cqh)]"
-          style={{ transform: "scale(1)"}}
         />
       </div>
     </>
@@ -194,6 +203,27 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
 
 function ActivePhase({call}: {call: IncomingDirectCall}) {
   const webcamRef = useRef<Webcam>(null);
+  const { invokeSafely } = useSignalR();
+  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
+
+  const [isEndingCall, setIsEndingCall] = useState(false);
+
+  const handleCallEnd = async () => {
+    setIsEndingCall(true);
+
+    try {
+      const result: DirectCallContext = await invokeSafely("EndDirectCall", call.callerProfile.id);
+
+      if (result && result.result.isSuccess) {
+        markCallAsEnded(call.sessionId);
+      } else {
+        setIsEndingCall(false);
+      }
+    } catch (err) {
+      console.error("Failed to end call:", err);
+      setIsEndingCall(false);
+    }
+  }
 
   return (
     <>
@@ -214,11 +244,33 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
         />
 
         <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
-          <IconButton isLoading={false} theme="danger">
+          <IconButton isLoading={false} theme="danger" onClick={handleCallEnd} disabled={isEndingCall}>
             <BsTelephoneXFill className="size-8"/>
           </IconButton>
         </div>
       </div>
     </>
   );
+}
+
+function EndedPhase({call}: {call: IncomingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.sessionId);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call ended"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <UserAvatar
+          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+          alt="Caller avatar"
+          className="w-[min(25cqw,25cqh)]"
+        />
+      </div>
+    </>
+  )
 }

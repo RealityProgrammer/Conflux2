@@ -74,8 +74,8 @@ internal sealed class CallingService(
         transaction.AddCondition(Condition.KeyExists(callerKey));
         transaction.AddCondition(Condition.KeyExists(calleeKey));
         
-        _ = transaction.StringSetAsync(calleeKey, MemoryPackSerializer.Serialize(callerState), activeTimeout);
-        _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(calleeState), activeTimeout);
+        _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(callerState), activeTimeout);
+        _ = transaction.StringSetAsync(calleeKey, MemoryPackSerializer.Serialize(calleeState), activeTimeout);
         
         bool committed = await transaction.ExecuteAsync();
         

@@ -134,3 +134,7 @@ export type DirectCallAcceptedEvent = {
 export type DirectCallDroppedEvent = {
   droppedUserId: string;
 }
+
+export type DirectCallEndedEvent = {
+  enderUserId: string;
+}
