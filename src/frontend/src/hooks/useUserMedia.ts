@@ -88,17 +88,16 @@ export default function useUserMedia({
 
   const startStream = async (audioDeviceId?: string, videoDeviceId?: string): Promise<MediaStream | null> => {
     const currentRequestId = ++requestIdRef.current;
+    const oldStream = streamRef.current;
 
-    // clean existing stream before getting a new one
-    stopStream();
     setError(null);
     setIsAcquiringMedia(true);
 
     const constraints: MediaStreamConstraints = {
       audio: audioDeviceId ? { deviceId: { exact: audioDeviceId } } : true,
-      video: videoDeviceId
-        ? { deviceId: { exact: videoDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-        : { width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: videoDeviceId ?
+        { deviceId: { exact: videoDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } :
+        { width: { ideal: 1280 }, height: { ideal: 720 } },
     };
 
     try {
@@ -110,11 +109,32 @@ export default function useUserMedia({
         return null;
       }
 
+      if (oldStream) {
+        oldStream.getTracks().forEach((track) => track.stop());
+      }
+
       streamRef.current = mediaStream;
-      setStream(mediaStream);
+
+      const activeAudioTrack = mediaStream.getAudioTracks()[0];
+      if (activeAudioTrack) {
+        const settings = activeAudioTrack.getSettings();
+        if (settings.deviceId) {
+          setSelectedAudioId(settings.deviceId);
+        }
+      }
+
+      const activeVideoTrack = mediaStream.getVideoTracks()[0];
+      if (activeVideoTrack) {
+        const settings = activeVideoTrack.getSettings();
+        if (settings.deviceId) {
+          setSelectedVideoId(settings.deviceId);
+        }
+      }
 
       mediaStream.getAudioTracks().forEach((t) => (t.enabled = !isAudioMuted));
       mediaStream.getVideoTracks().forEach((t) => (t.enabled = !isVideoDisabled));
+
+      setStream(mediaStream);
 
       await updateDeviceList();
 
@@ -147,21 +167,25 @@ export default function useUserMedia({
 
   const toggleAudio = () => {
     if (streamRef.current) {
-      const nextState = !isAudioMuted;
+      const nextIsMuted = !isAudioMuted;
+
       streamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = nextState; // false = mute, true = unmute
+        track.enabled = !nextIsMuted;
       });
-      setIsAudioMuted(nextState);
+
+      setIsAudioMuted(nextIsMuted);
     }
   };
 
   const toggleVideo = () => {
     if (streamRef.current) {
-      const nextState = !isVideoDisabled;
+      const nextIsDisabled = !isVideoDisabled;
+
       streamRef.current.getVideoTracks().forEach((track) => {
-        track.enabled = nextState; // false = camera off, true = camera on
+        track.enabled = !nextIsDisabled;
       });
-      setIsVideoDisabled(nextState);
+
+      setIsVideoDisabled(nextIsDisabled);
     }
   };
 

@@ -34,7 +34,7 @@ export default function CallOverlay() {
   });
 
   return (
-    <section className="fixed inset-0 z-100000 pointer-events-none overflow-hidden text-white">
+    <section className="fixed inset-0 z-2000 pointer-events-none overflow-hidden text-white">
       {call && (
         <CallWindow key={call.sessionId} callSessionId={call.sessionId}/>
       )}

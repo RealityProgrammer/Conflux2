@@ -32,20 +32,45 @@ export default function useWebRTC({
   const iceQueuesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
 
   const localStreamRef = useRef<MediaStream | null>(null);
+
   useEffect(() => {
     localStreamRef.current = localStream;
 
-    if (localStream) {
-      peersRef.current.forEach((pc) => {
-        localStream.getTracks().forEach((track) => {
-          const senders = pc.getSenders();
-          const hasTrack = senders.some((s) => s.track?.id === track.id);
-          if (!hasTrack) {
-            pc.addTrack(track, localStream);
+    if (!localStream) return;
+
+    peersRef.current.forEach(async (pc, peerId) => {
+      const senders = pc.getSenders();
+      let needsRenegotiation = false;
+
+      localStream.getTracks().forEach((newTrack) => {
+        const existingSender = senders.find(
+          (sender) => sender.track && sender.track.kind === newTrack.kind
+        );
+
+        if (existingSender) {
+          if (existingSender.track?.id !== newTrack.id) {
+            existingSender.replaceTrack(newTrack).catch((err) => {
+              console.error(`Failed to replace ${newTrack.kind} track for peer ${peerId}:`, err);
+            });
           }
-        });
+        } else {
+          // new media type added (requires initial negotiation)
+          pc.addTrack(newTrack, localStream);
+          needsRenegotiation = true;
+        }
       });
-    }
+
+      if (needsRenegotiation && pc.signalingState === "stable") {
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+
+          await invokeSafely("SendOffer", peerId, offer.sdp);
+        } catch (err) {
+          console.error(`Failed to send renegotiation offer to ${peerId}:`, err);
+        }
+      }
+    });
   }, [localStream]);
 
   const disconnectFromPeer = (peerId: string) => {

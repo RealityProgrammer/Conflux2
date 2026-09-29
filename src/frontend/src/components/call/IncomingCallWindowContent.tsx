@@ -16,6 +16,7 @@ import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
+import CallControl from "./CallControl.tsx";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -214,7 +215,19 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
   const {
     stream,
     isAcquiringMedia,
+    isAudioMuted,
+    toggleAudio,
+    isVideoDisabled,
+    toggleVideo,
+    selectedVideoId,
+    videoDevices,
+    changeVideoDevice,
+    selectedAudioId,
+    audioDevices,
+    changeAudioDevice,
   } = useUserMedia({});
+
+  console.log("isAudioMuted:", isAudioMuted, " isVideoDisabled:", isVideoDisabled);
 
   const callerId = call.callerProfile.id;
 
@@ -264,11 +277,20 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
           className="object-contain size-full"
         />
 
-        <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
-          <IconButton isLoading={false} theme="danger" onClick={handleCallEnd} disabled={isEndingCall}>
-            <BsTelephoneXFill className="size-7"/>
-          </IconButton>
-        </div>
+        <CallControl
+          isEndingCall={isEndingCall}
+          handleCallEnd={handleCallEnd}
+          isAudioMuted={isAudioMuted}
+          toggleAudio={toggleAudio}
+          isVideoDisabled={isVideoDisabled}
+          toggleVideo={toggleVideo}
+          selectedVideoDeviceId={selectedVideoId}
+          videoDevices={videoDevices}
+          handleVideoDeviceChange={changeVideoDevice}
+          selectedAudioDeviceId={selectedAudioId}
+          audioDevices={audioDevices}
+          handleAudioDeviceChange={changeAudioDevice}
+        />
       </div>
     </>
   );

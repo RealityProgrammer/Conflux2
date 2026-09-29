@@ -22,6 +22,8 @@ export default function MediaFeed({
   const [hasAudio, setHasAudio] = useState(false);
 
   useEffect(() => {
+    console.log("steam changed");
+
     if (!stream) {
       setHasVideo(false);
       setHasAudio(false);
@@ -57,6 +59,10 @@ export default function MediaFeed({
   useEffect(() => {
     if (videoRef.current && stream && hasVideo) {
       videoRef.current.srcObject = stream;
+
+      videoRef.current.play().catch((err) => {
+        console.warn("Autoplay deferred until tab interaction:", err);
+      });
     }
   }, [stream, hasVideo]);
 
