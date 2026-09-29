@@ -51,13 +51,27 @@ internal sealed class CallingService(
             return Errors.InvalidCallStates();
         }
 
-        var callerState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[0]);
-        if (callerState is not { State: CallState.Ringing }) {
+        CallSessionState? callerState, calleeState;
+
+        try {
+            callerState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[0]);
+            if (callerState is not { State: CallState.Ringing }) {
+                return Errors.InvalidCallStates();
+            }
+        } catch {
+            // potentially corrupted state, delete it
+            await _database.KeyDeleteAsync(callerKey);
             return Errors.InvalidCallStates();
         }
-        
-        var calleeState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[1]);
-        if (calleeState is not { State: CallState.Ringing }) {
+
+        try {
+            calleeState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[1]);
+            if (calleeState is not { State: CallState.Ringing }) {
+                return Errors.InvalidCallStates();
+            }
+        } catch {
+            // potentially corrupted state, delete it
+            await _database.KeyDeleteAsync(calleeKey);
             return Errors.InvalidCallStates();
         }
 
@@ -93,8 +107,18 @@ internal sealed class CallingService(
 
         if (!serializedStates.HasValue) return Errors.ResourceNotFound();
 
-        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
-        if (state == null || state.ConnectionId != userConnectionId) return Errors.ResourceNotFound();
+        CallSessionState? state;
+
+        try {
+            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
+        } catch {
+            await _database.KeyDeleteAsync(stateKey);
+            return Errors.InvalidCallStates();
+        }
+        
+        if (state == null || state.ConnectionId != userConnectionId) {
+            return Errors.ResourceNotFound();
+        }
         
         var peerKey = GetStateKey(state.PeerId);
         await _database.KeyDeleteAsync([stateKey, peerKey]);
@@ -108,9 +132,16 @@ internal sealed class CallingService(
 
         if (!serializedStates.HasValue) return Errors.ResourceNotFound();
 
-        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
-        if (state == null) return Errors.ResourceNotFound();
-        if (state.State != CallState.Active || state.PeerId != peerId) return Errors.InvalidCallStates();
+        CallSessionState? state;
+
+        try {
+            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
+        } catch {
+            await _database.KeyDeleteAsync(stateKey);
+            return Errors.InvalidCallStates();
+        }
+        
+        if (state is not { State: CallState.Active } || state.PeerId != peerId) return Errors.InvalidCallStates();
         
         var peerKey = GetStateKey(state.PeerId);
         await _database.KeyDeleteAsync([stateKey, peerKey]);
@@ -124,7 +155,15 @@ internal sealed class CallingService(
 
         if (!serializedState.HasValue) return Errors.ResourceNotFound();
 
-        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
+        CallSessionState? state;
+
+        try {
+            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
+        } catch {
+            await _database.KeyDeleteAsync(stateKey);
+            return Errors.InvalidCallStates();
+        }
+        
         if (state is not { State: CallState.Ringing }) return Errors.ResourceNotFound();
         
         return Domain.Result<Guid>.Success(state.PeerId);
@@ -136,14 +175,21 @@ internal sealed class CallingService(
 
         if (!serializedState.HasValue) return Result.Success(); 
 
-        var state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
+        CallSessionState? state;
+
+        try {
+            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
+        } catch {
+            await _database.KeyDeleteAsync(stateKey);
+            return Errors.InvalidCallStates();
+        }
         
         if (state is not { State: CallState.Ringing } || state.PeerId != peerId) {
             return Errors.InvalidCallStates();
         }
 
         await _database.KeyDeleteAsync([
-            GetStateKey(actionUserId),
+            stateKey,
             GetStateKey(peerId),
         ]);
 
