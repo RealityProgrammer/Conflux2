@@ -17,6 +17,7 @@ import {useAuth} from "../../contexts/AuthContext.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
+import {toast} from "react-toastify";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -64,19 +65,36 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
     setStatus("denied");
 
     try {
-      await invokeSafely("DenyDirectCall", call.callerProfile.id);
+      const context: DirectCallContext = await invokeSafely("DenyDirectCall", call.callerProfile.id);
+
+      if (!context) {
+        toast.error(`Failed to deny call.`);
+      } else if (!context.result.isSuccess) {
+        toast.error(`Failed to deny call (${context.result.error.code}).`);
+      }
     } catch (err) {
       console.error("Failed to deny call:", err);
+      toast.error(`Failed to deny call.`);
     }
   };
 
   const handleAcceptCall = async () => {
     if (status !== "none") return;
     try {
-      await invokeSafely("AcceptDirectCall", call.callerProfile.id);
-      markCallAsActive(call.sessionId);
+      const context: DirectCallContext =  await invokeSafely("AcceptDirectCall", call.callerProfile.id);
+
+      if (context) {
+        if (context.result.isSuccess) {
+          markCallAsActive(call.sessionId);
+        } else {
+          toast.error(`Failed to accept call (${context.result.error.code}).`);
+        }
+      } else {
+        toast.error(`Failed to accept call.`);
+      }
     } catch (err) {
       console.error("Failed to accept call:", err);
+      toast.error(`Failed to accept call.`);
     }
   }
 
@@ -227,8 +245,6 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     changeAudioDevice,
   } = useUserMedia({});
 
-  console.log("isAudioMuted:", isAudioMuted, " isVideoDisabled:", isVideoDisabled);
-
   const callerId = call.callerProfile.id;
 
   const { remoteStreams } = useWebRTC({ localStream: stream });
@@ -238,15 +254,21 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     setIsEndingCall(true);
 
     try {
-      const result: DirectCallContext = await invokeSafely("EndDirectCall", call.callerProfile.id);
+      const context: DirectCallContext = await invokeSafely("EndDirectCall", callerId);
 
-      if (result && result.result.isSuccess) {
-        markCallAsEnded(call.sessionId);
+      if (context) {
+        if (context.result.isSuccess) {
+          markCallAsEnded(call.sessionId);
+        } else {
+          toast.error(`Failed to end call. Reason: ${context.result.error.code}.`);
+        }
       } else {
         setIsEndingCall(false);
+        toast.error(`Failed to end call.`);
       }
     } catch (err) {
       console.error("Failed to end call:", err);
+      toast.error("Failed to end call.");
       setIsEndingCall(false);
     }
   };
@@ -272,7 +294,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
         {/* Remote video */}
         <MediaFeed
           stream={remoteStream}
-          avatarUrl={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+          avatarUrl={call.callerProfile.avatarRevision ? userService.getAvatarUrl(callerId, call.callerProfile.avatarRevision) : undefined}
           displayName={call.callerProfile.displayName ?? "???"}
           className="object-contain size-full"
         />

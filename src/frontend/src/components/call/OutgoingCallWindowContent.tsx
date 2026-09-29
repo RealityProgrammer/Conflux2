@@ -157,13 +157,13 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
           <UserAvatar
             src={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
             alt="Caller avatar"
-            className="w-[min(calc(50cqw-0.75rem),50cqh)] border-2 border-gray-600"
+            className="w-[min(calc(50cqw-0.75rem),50cqh)] border-2 border-gray-600 select-none"
           />
 
           {status === "none" ? (
             <BsTelephoneFill className="size-[min(calc(25cqw),25cqh)]"/>
           ) : (
-            <BsTelephoneXFill className="size-[min(calc(25cqw),25cqh)] fill-red-400"/>
+            <BsTelephoneXFill className="size-[min(calc(25cqw),25cqh)] fill-red-400 select-none"/>
           )}
 
           <UserAvatar
@@ -245,13 +245,17 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     setIsEndingCall(true);
 
     try {
-      const result: DirectCallContext = await invokeSafely("EndDirectCall", calleeId);
+      const context: DirectCallContext = await invokeSafely("EndDirectCall", calleeId);
 
-      if (result && result.result.isSuccess) {
-        markCallAsEnded(call.sessionId);
+      if (context) {
+        if (context.result.isSuccess) {
+          markCallAsEnded(call.sessionId);
+        } else {
+          toast.error(`Failed to end call. Reason: ${context.result.error.code}.`);
+        }
       } else {
         setIsEndingCall(false);
-        toast.error(`Failed to end call. Reason: ${result.result.error.code}.`);
+        toast.error(`Failed to end call.`);
       }
     } catch (err) {
       console.error("Failed to end call:", err);
@@ -282,7 +286,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
         {/* Remote video */}
         <MediaFeed
           stream={remoteStream}
-          avatarUrl={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(call.calleeProfile.id, call.calleeProfile.avatarRevision) : undefined}
+          avatarUrl={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(calleeId, call.calleeProfile.avatarRevision) : undefined}
           displayName={call.calleeProfile.displayName ?? "???"}
           className="object-contain size-full"
         />

@@ -22,6 +22,7 @@ export default function UserAvatar({
           className="size-full object-cover"
           src={src}
           alt={alt}
+          draggable={false}
         />
 
         <Avatar.Fallback className="flex size-full items-center justify-center bg-gray-100">

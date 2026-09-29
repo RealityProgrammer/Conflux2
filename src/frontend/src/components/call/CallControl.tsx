@@ -44,8 +44,6 @@ export default function CallControl({
   audioDevices,
   handleAudioDeviceChange,
 }: CallControlProps) {
-  console.log("selected video device:", selectedVideoDeviceId, "selected audio device:", selectedAudioDeviceId);
-
   return (
     <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
       <Popover.Root>

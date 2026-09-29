@@ -25,6 +25,16 @@ export default function CallWindow({callSessionId}: {callSessionId: string}) {
     const interactable = interact(element)
       .resizable({
         edges: { left: true, right: true, bottom: true, top: false },
+        modifiers: [
+          interact.modifiers.restrictEdges({
+            outer: 'parent',
+          }),
+
+          interact.modifiers.restrictSize({
+            min: { width: 320, height: 180 },
+          }),
+        ],
+        inertia: true,
 
         listeners: {
           move: (event: ResizeEvent) => {
@@ -82,7 +92,7 @@ export default function CallWindow({callSessionId}: {callSessionId: string}) {
     <div
       ref={windowRef}
       onPointerDown={bringToFront}
-      className="pointer-events-auto absolute bg-gray-750 shadow-md border-2 border-gray-600 rounded-lg overflow-hidden flex flex-col"
+      className="select-none pointer-events-auto absolute bg-gray-750 shadow-md border-2 border-gray-600 rounded-lg overflow-hidden flex flex-col"
       style={{
         width: "400px",
         height: "225px",

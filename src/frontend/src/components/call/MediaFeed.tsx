@@ -81,7 +81,7 @@ export default function MediaFeed({
           <UserAvatar
             src={avatarUrl}
             alt={`${displayName}'s avatar`}
-            className="size-20 rounded-full ring-2 ring-gray-700 overflow-hidden shadow-lg"
+            className="size-20 rounded-full ring-2 ring-gray-700 overflow-hidden shadow-lg select-none"
           />
 
           {displayName && (
