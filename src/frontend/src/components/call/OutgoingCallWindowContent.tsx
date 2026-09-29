@@ -20,7 +20,7 @@ import type {DirectCallContext} from "../../api/types.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
-import RemoteVideo from "./RemoteVideo.tsx";
+import MediaFeed from "./MediaFeed.tsx";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -70,6 +70,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const handleCancelCall = async () => {
     try {
       await invokeSafely("CancelDirectCall", call.calleeProfile.id);
+
       setStatus("cancel");
     } catch (err) {
       console.error("Failed to cancel call:", err);
@@ -174,7 +175,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
         {status === "none" && (
           <div className="absolute bottom-2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
             <IconButton isLoading={false} theme="danger" onClick={handleCancelCall}>
-              <BsTelephoneXFill className="size-8"/>
+              <BsTelephoneXFill className="size-7"/>
             </IconButton>
           </div>
         )}
@@ -216,19 +217,10 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     isAcquiringMedia,
   } = useUserMedia({});
 
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-
   const calleeId = call.calleeProfile.id;
 
   const { remoteStreams, connectToPeer } = useWebRTC({ localStream: stream });
   const remoteStream = remoteStreams[calleeId];
-
-  // attach local media streams to local video elements
-  useEffect(() => {
-    if (!isAcquiringMedia && stream && localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-  }, [stream, isAcquiringMedia]);
 
   // initialize webrtc offer when stream
   useEffect(() => {
@@ -254,49 +246,36 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     }
   };
 
-  // ???
-
   return (
     <>
       <CallWindowHeader title={`On call with ${call.calleeProfile!.displayName}`}/>
 
       <div className="flex-1 bg-black @container-size relative flex flex-col justify-center items-center">
-        <div className="absolute top-2 left-2 w-48 aspect-video ring-2 ring-gray-600 rounded-lg bg-gray-900 overflow-hidden flex flex-col justify-center items-center">
+        {/* Local video */}
+        <div className="z-10 absolute top-2 left-2 w-48 aspect-video ring-2 ring-gray-600 rounded-lg bg-gray-900 overflow-hidden flex flex-col justify-center items-center">
           {isAcquiringMedia ? (
             <Spinner className="size-8 fill-white"/>
-          ) : !!stream ? (
-            <video
-              ref={localVideoRef}
-              className="size-full object-contain -scale-x-100"
-              autoPlay
-              playsInline
-              muted
-            />
           ) : (
-            <div className="flex flex-col justify-center items-center gap-2">
-              <UserAvatar
-                src={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
-                alt="Your avatar"
-                className="size-12 rounded-full overflow-hidden"
-              />
-
-              <BsCameraVideoOffFill className="size-5 fill-red-500"/>
-            </div>
+            <MediaFeed
+              stream={stream}
+              isLocal
+              avatarUrl={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
+              className="size-full"
+            />
           )}
         </div>
 
-        {remoteStream ? (
-          <RemoteVideo stream={remoteStream} className="object-contain size-full" />
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
-            <Spinner className="size-8 fill-white" />
-            <p className="text-sm font-medium">Connecting video...</p>
-          </div>
-        )}
+        {/* Remote video */}
+        <MediaFeed
+          stream={remoteStream}
+          avatarUrl={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(call.calleeProfile.id, call.calleeProfile.avatarRevision) : undefined}
+          displayName={call.calleeProfile.displayName ?? "???"}
+          className="object-contain size-full"
+        />
 
         <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
           <IconButton isLoading={false} theme="danger" disabled={isEndingCall} onClick={handleCallEnd}>
-            <BsTelephoneXFill className="size-8"/>
+            <BsTelephoneXFill className="size-7"/>
           </IconButton>
         </div>
       </div>

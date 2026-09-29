@@ -49,6 +49,10 @@ export default function useUserMedia({
 
   const streamRef = useRef<MediaStream | null>(null);
 
+  // track component mount status and request sequencing to prevent async race conditions
+  const isMountedRef = useRef<boolean>(true);
+  const requestIdRef = useRef<number>(0);
+
   const stopStream = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -83,6 +87,8 @@ export default function useUserMedia({
   };
 
   const startStream = async (audioDeviceId?: string, videoDeviceId?: string): Promise<MediaStream | null> => {
+    const currentRequestId = ++requestIdRef.current;
+
     // clean existing stream before getting a new one
     stopStream();
     setError(null);
@@ -98,6 +104,12 @@ export default function useUserMedia({
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
+      // if component unmounted or a newer startStream call was made, stop tracks immediately
+      if (!isMountedRef.current || currentRequestId !== requestIdRef.current) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        return null;
+      }
+
       streamRef.current = mediaStream;
       setStream(mediaStream);
 
@@ -108,12 +120,18 @@ export default function useUserMedia({
 
       return mediaStream;
     } catch (err) {
+      if (!isMountedRef.current || currentRequestId !== requestIdRef.current) {
+        return null;
+      }
+
       const mediaError = err instanceof Error ? err : new Error("Failed to acquire user media");
       setError(mediaError);
       console.error("getUserMedia error:", err);
       return null;
     } finally {
-      setIsAcquiringMedia(false);
+      if (isMountedRef.current && currentRequestId === requestIdRef.current) {
+        setIsAcquiringMedia(false);
+      }
     }
   };
 
@@ -160,11 +178,14 @@ export default function useUserMedia({
   }, [updateDeviceList]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (autoStart) {
       startStream(selectedAudioId, selectedVideoId);
     }
 
     return () => {
+      isMountedRef.current = false;
       stopStream();
     };
   }, []);

@@ -4,8 +4,8 @@ import useSignalREvent from "./useSignalREvent.ts";
 
 const RTC_CONFIGURATION: RTCConfiguration = {
   iceServers: [
-    { urls: "stun:stun.l.google.com:19020" },
-    { urls: "stun:stun1.l.google.com:19020" },
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
   ],
 };
 
@@ -28,6 +28,7 @@ export default function useWebRTC({
   const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
 
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const connectingPeersRef = useRef<Set<string>>(new Set());
   const iceQueuesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
 
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -55,6 +56,8 @@ export default function useWebRTC({
       iceQueuesRef.current.delete(peerId);
     }
 
+    connectingPeersRef.current.delete(peerId);
+
     setRemoteStreams((prev) => {
       const updated = { ...prev };
       delete updated[peerId];
@@ -67,7 +70,10 @@ export default function useWebRTC({
 
     const pc = new RTCPeerConnection(RTC_CONFIGURATION);
     peersRef.current.set(peerId, pc);
-    iceQueuesRef.current.set(peerId, []);
+
+    if (!iceQueuesRef.current.has(peerId)) {
+      iceQueuesRef.current.set(peerId, []);
+    }
 
     // attach local media to the current peer connection
     if (localStreamRef.current) {
@@ -76,12 +82,22 @@ export default function useWebRTC({
       });
     }
 
-    // listen to peer's media tracks
+    // accumulate tracks onto peer's remote media stream
     pc.ontrack = (event) => {
-      setRemoteStreams((prev) => ({
-        ...prev,
-        [peerId]: event.streams[0] || new MediaStream([event.track]),
-      }));
+      setRemoteStreams((prev) => {
+        const existingStream = prev[peerId];
+
+        if (existingStream) {
+          if (!existingStream.getTracks().some((t) => t.id === event.track.id)) {
+            existingStream.addTrack(event.track);
+          }
+
+          return { ...prev, [peerId]: new MediaStream(existingStream.getTracks()) };
+        }
+
+        const stream = event.streams[0] || new MediaStream([event.track]);
+        return { ...prev, [peerId]: stream };
+      });
     };
 
     // send ice candidate to peer
@@ -112,18 +128,41 @@ export default function useWebRTC({
 
   // connect when user connects to the call
   const connectToPeer = async (targetPeerId: string): Promise<void> => {
+    if (connectingPeersRef.current.has(targetPeerId)) {
+      console.warn(`Skipping duplicate offer negotiating with ${targetPeerId}.`);
+      return;
+    }
+    connectingPeersRef.current.add(targetPeerId);
+
     const pc = createPeerConnection(targetPeerId);
+
+    if (pc.signalingState !== "stable") {
+      console.warn(`Connection to ${targetPeerId} is not stable.`);
+      return;
+    }
+
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await invokeSafely("SendOffer", targetPeerId, offer.sdp);
     } catch (err) {
       console.error(`Error connecting to ${targetPeerId}:`, err);
+      connectingPeersRef.current.delete(targetPeerId);
     }
   };
 
   useSignalREvent("ReceiveCallOffer", async (senderId: string, sdp: string): Promise<void> => {
-    const pc = createPeerConnection(senderId); // Creates receiver PC
+    const pc = createPeerConnection(senderId);
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        const senders = pc.getSenders();
+        if (!senders.some((s) => s.track?.id === track.id)) {
+          pc.addTrack(track, localStreamRef.current!);
+        }
+      });
+    }
+
     try {
       await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp }));
       await processIceQueue(senderId, pc);
@@ -132,7 +171,7 @@ export default function useWebRTC({
       await pc.setLocalDescription(answer);
       await invokeSafely("SendAnswer", senderId, answer.sdp);
     } catch (err) {
-      console.error(`Error handling offer from ${senderId}:`, err);
+      console.error(`Error handling WebRTC offer from ${senderId}:`, err);
     }
   });
 
@@ -143,7 +182,7 @@ export default function useWebRTC({
       await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
       await processIceQueue(senderId, pc);
     } catch (err) {
-      console.error(`Error handling answer from ${senderId}:`, err);
+      console.error(`Error handling WebRTC answer from ${senderId}:`, err);
     }
   });
 

@@ -13,6 +13,7 @@ import {userService} from "../../api/userService.ts";
 import {useCallStore} from "../../store/useCallStore.ts";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import type {DirectCallContext} from "../../api/types.ts";
+import {toast} from "react-toastify";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -31,14 +32,34 @@ export default function DirectMessagePage() {
     try {
       const context: DirectCallContext = await invokeSafely("StartDirectCall", channelSummary.otherUser.id);
 
-      if (context.result.isSuccess) {
-        startOutgoingDirectCall(context.peerProfile);
-      } else {
-        console.error("Failed to start call:", context.result.error.message);
-      }
+      if (context) {
+        if (context.result.isSuccess) {
+          startOutgoingDirectCall(context.peerProfile!);
+        } else {
+          switch (context.result.error.code) {
+            case "AlreadyInCall":
+              toast.error("You are already in a call.");
+              break;
 
+            case "CalleeBusy":
+              toast.error("User is busy with another call.");
+              break;
+
+            case "NoAcceptedFriendRequest":
+              toast.error("An accepted friend request is required to make a call to this person.");
+              break;
+
+            default:
+              toast.error("Failed to start call.");
+              break;
+          }
+        }
+      } else {
+        toast.error("Failed to start call.");
+      }
     } catch (err) {
       console.error("Failed to start call:", err);
+      toast.error("Failed to start call.");
     }
   }
 
