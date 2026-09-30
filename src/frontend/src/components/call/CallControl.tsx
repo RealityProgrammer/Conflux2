@@ -25,9 +25,13 @@ interface CallControlProps {
   videoDevices: MediaDeviceOption[];
   handleVideoDeviceChange: (deviceId: string) => void;
 
-  selectedAudioDeviceId?: string;
-  audioDevices: MediaDeviceOption[];
-  handleAudioDeviceChange: (deviceId: string) => void;
+  selectedAudioInputDeviceId?: string;
+  audioInputDevices: MediaDeviceOption[];
+  handleAudioInputDeviceChange: (deviceId: string) => void;
+
+  selectedAudioOutputDeviceId?: string;
+  audioOutputDevices: MediaDeviceOption[];
+  handleAudioOutputDeviceChange: (deviceId: string) => void;
 }
 
 export default function CallControl({
@@ -40,9 +44,12 @@ export default function CallControl({
   selectedVideoDeviceId,
   videoDevices,
   handleVideoDeviceChange,
-  selectedAudioDeviceId,
-  audioDevices,
-  handleAudioDeviceChange,
+  selectedAudioInputDeviceId,
+  audioInputDevices,
+  handleAudioInputDeviceChange,
+  selectedAudioOutputDeviceId,
+  audioOutputDevices,
+  handleAudioOutputDeviceChange,
 }: CallControlProps) {
   return (
     <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
@@ -169,8 +176,8 @@ export default function CallControl({
 
             <Label.Root className="label mb-1 block">Input Device</Label.Root>
 
-            <Select.Root value={selectedAudioDeviceId} onValueChange={handleAudioDeviceChange}>
-              <Select.Trigger className="w-full input-field h-8 inline-flex flex-row items-center gap-2 ">
+            <Select.Root value={selectedAudioInputDeviceId} onValueChange={handleAudioInputDeviceChange}>
+              <Select.Trigger className="w-full input-field h-8 inline-flex flex-row items-center gap-2">
                 <Select.Value placeholder="Select device..."/>
                 <Select.Icon className="fill-white flex-none ml-auto">
                   <BsChevronDown className="size-4"/>
@@ -185,7 +192,37 @@ export default function CallControl({
                   sideOffset={4}
                 >
                   <Select.Viewport>
-                    {audioDevices.map(audioDevice => (
+                    {audioInputDevices.map(audioDevice => (
+                      <SelectItem
+                        key={audioDevice.deviceId}
+                        text={audioDevice.label}
+                        value={audioDevice.deviceId}
+                      />
+                    ))}
+                  </Select.Viewport>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
+
+            <Label.Root className="label mb-1 block">Output Device</Label.Root>
+
+            <Select.Root value={selectedAudioOutputDeviceId} onValueChange={handleAudioOutputDeviceChange}>
+              <Select.Trigger className="w-full input-field h-8 inline-flex flex-row items-center gap-2">
+                <Select.Value placeholder="Select device..."/>
+                <Select.Icon className="fill-white flex-none ml-auto">
+                  <BsChevronDown className="size-4"/>
+                </Select.Icon>
+              </Select.Trigger>
+
+              <Select.Portal>
+                <Select.Content
+                  className="z-2001 overflow-hidden bg-gray-650 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                  position="popper"
+                  side="bottom"
+                  sideOffset={4}
+                >
+                  <Select.Viewport>
+                    {audioOutputDevices.map(audioDevice => (
                       <SelectItem
                         key={audioDevice.deviceId}
                         text={audioDevice.label}

@@ -64,4 +64,11 @@ public interface ICallingService {
     /// Result containing the ID of the call peer user (in this case, the caller).
     /// </returns>
     Task<Domain.Result<Guid>> GetCurrentRingingCall(Guid userId);
+
+    /// <summary>
+    /// Clean up all call states.
+    /// </summary>
+    /// <returns>Task</returns>
+    /// <remarks>Only call once on application start.</remarks>
+    Task CleanCallStates();
 }

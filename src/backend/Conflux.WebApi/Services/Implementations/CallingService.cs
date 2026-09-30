@@ -6,8 +6,9 @@ using StackExchange.Redis;
 
 namespace Conflux.WebApi.Services.Implementations;
 
-internal sealed class CallingService(
-    IConnectionMultiplexer connectionMultiplexer
+internal sealed partial class CallingService(
+    IConnectionMultiplexer connectionMultiplexer,
+    ILogger<CallingService> logger
 ) : ICallingService {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
@@ -196,7 +197,26 @@ internal sealed class CallingService(
         return Result.Success();
     }
 
+    public async Task CleanCallStates() {
+        // https://github.com/StackExchange/StackExchange.Redis/blob/main/docs/KeysScan.md
+        var endpoint = connectionMultiplexer.GetEndPoints().First();
+        var server = connectionMultiplexer.GetServer(endpoint);
+        var db = connectionMultiplexer.GetDatabase();
+        
+        var keys = server.Keys(pattern: "call:state:*").ToArray();
+        
+        if (keys.Length > 0)
+        {
+            LogFoundCallStates(logger, keys.Length);
+            await db.KeyDeleteAsync(keys);
+            logger.LogInformation("Successfully wiped call states.");
+        }
+    }
+
     private static string GetStateKey(Guid userId) {
         return $"call:state:{userId}";
     }
+    
+    [LoggerMessage(LogLevel.Information, "Found {c} call states in Redis. Wiping...")]
+    private static partial void LogFoundCallStates(ILogger logger, int c);
 }

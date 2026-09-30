@@ -237,18 +237,35 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     toggleAudio,
     isVideoDisabled,
     toggleVideo,
-    selectedVideoId,
+    selectedVideoInputId,
     videoDevices,
-    changeVideoDevice,
-    selectedAudioId,
-    audioDevices,
-    changeAudioDevice,
+    changeVideoInputDevice,
+    selectedAudioInputId,
+    audioInputDevices,
+    changeAudioInputDevice,
+    audioOutputDevices,
   } = useUserMedia({});
+
+  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!selectedAudioDeviceOutputId && audioOutputDevices.length > 0) {
+      const defaultDevice = audioOutputDevices.find(d => d.deviceId === "default");
+      const initialId = defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
+
+      setSelectedAudioDeviceOutputId(initialId);
+    }
+  }, [audioOutputDevices, selectedAudioDeviceOutputId]);
 
   const callerId = call.callerProfile.id;
 
-  const { remoteStreams } = useWebRTC({ localStream: stream });
+  const { remoteStreams, remoteMediaStates } = useWebRTC({
+    localStream: stream,
+    isAudioMuted,
+    isVideoDisabled,
+  });
   const remoteStream = remoteStreams[callerId];
+  const remoteState = remoteMediaStates[callerId] || { videoDisabled: false, audioMuted: false };
 
   const handleCallEnd = async () => {
     setIsEndingCall(true);
@@ -278,7 +295,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
       <CallWindowHeader title={`On call with ${call.callerProfile!.displayName}`}/>
 
       <div className="flex-1 bg-black @container-size relative flex flex-col justify-center items-center">
-        {/* Local video */}
+        {/*Local video */}
         <div className="z-10 absolute top-2 left-2 w-48 aspect-video ring-2 ring-gray-600 rounded-lg bg-gray-900 overflow-hidden flex flex-col justify-center items-center">
           {isAcquiringMedia ? (
             <Spinner className="size-8 fill-white"/>
@@ -287,6 +304,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
               stream={stream}
               isLocal
               avatarUrl={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
+              isVideoEnabled={!isVideoDisabled}
             />
           )}
         </div>
@@ -297,6 +315,9 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
           avatarUrl={call.callerProfile.avatarRevision ? userService.getAvatarUrl(callerId, call.callerProfile.avatarRevision) : undefined}
           displayName={call.callerProfile.displayName ?? "???"}
           className="object-contain size-full"
+          audioOutputDeviceId={selectedAudioDeviceOutputId}
+          isVideoEnabled={!remoteState.videoDisabled}
+          isAudioEnabled={!remoteState.audioMuted}
         />
 
         <CallControl
@@ -306,12 +327,15 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
           toggleAudio={toggleAudio}
           isVideoDisabled={isVideoDisabled}
           toggleVideo={toggleVideo}
-          selectedVideoDeviceId={selectedVideoId}
+          selectedVideoDeviceId={selectedVideoInputId}
           videoDevices={videoDevices}
-          handleVideoDeviceChange={changeVideoDevice}
-          selectedAudioDeviceId={selectedAudioId}
-          audioDevices={audioDevices}
-          handleAudioDeviceChange={changeAudioDevice}
+          handleVideoDeviceChange={changeVideoInputDevice}
+          selectedAudioInputDeviceId={selectedAudioInputId}
+          audioInputDevices={audioInputDevices}
+          handleAudioInputDeviceChange={changeAudioInputDevice}
+          audioOutputDevices={audioOutputDevices}
+          selectedAudioOutputDeviceId={selectedAudioDeviceOutputId}
+          handleAudioOutputDeviceChange={setSelectedAudioDeviceOutputId}
         />
       </div>
     </>

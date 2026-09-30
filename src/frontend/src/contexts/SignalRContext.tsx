@@ -32,7 +32,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
         withCredentials: true,
         transport: HttpTransportType.WebSockets,
       })
-      .configureLogging(LogLevel.Trace)
+      // .configureLogging(LogLevel.Debug)
       .withAutomaticReconnect()
       .build();
 

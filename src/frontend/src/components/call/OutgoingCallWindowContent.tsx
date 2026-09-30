@@ -221,20 +221,36 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     toggleAudio,
     isVideoDisabled,
     toggleVideo,
-    selectedVideoId,
+    selectedVideoInputId,
     videoDevices,
-    changeVideoDevice,
-    selectedAudioId,
-    audioDevices,
-    changeAudioDevice,
+    changeVideoInputDevice,
+    selectedAudioInputId,
+    audioInputDevices,
+    changeAudioInputDevice,
+    audioOutputDevices
   } = useUserMedia({});
+
+  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!selectedAudioDeviceOutputId && audioOutputDevices.length > 0) {
+      const defaultDevice = audioOutputDevices.find(d => d.deviceId === "default");
+      const initialId = defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
+
+      setSelectedAudioDeviceOutputId(initialId);
+    }
+  }, [audioOutputDevices, selectedAudioDeviceOutputId]);
 
   const calleeId = call.calleeProfile.id;
 
-  const { remoteStreams, connectToPeer } = useWebRTC({ localStream: stream });
+  const { remoteStreams, remoteMediaStates, connectToPeer } = useWebRTC({
+    localStream: stream,
+    isAudioMuted,
+    isVideoDisabled,
+  });
   const remoteStream = remoteStreams[calleeId];
+  const remoteState = remoteMediaStates[calleeId] || { videoDisabled: false, audioMuted: false };
 
-  // initialize webrtc offer when stream
   useEffect(() => {
     if (stream && calleeId) {
       connectToPeer(calleeId);
@@ -278,6 +294,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
               stream={stream}
               isLocal
               avatarUrl={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
+              isVideoEnabled={!isVideoDisabled}
               className="size-full"
             />
           )}
@@ -289,6 +306,9 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
           avatarUrl={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(calleeId, call.calleeProfile.avatarRevision) : undefined}
           displayName={call.calleeProfile.displayName ?? "???"}
           className="object-contain size-full"
+          audioOutputDeviceId={selectedAudioDeviceOutputId}
+          isVideoEnabled={!remoteState.videoDisabled}
+          isAudioEnabled={!remoteState.audioMuted}
         />
 
         <CallControl
@@ -298,12 +318,15 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
           toggleAudio={toggleAudio}
           isVideoDisabled={isVideoDisabled}
           toggleVideo={toggleVideo}
-          selectedVideoDeviceId={selectedVideoId}
+          selectedVideoDeviceId={selectedVideoInputId}
           videoDevices={videoDevices}
-          handleVideoDeviceChange={changeVideoDevice}
-          selectedAudioDeviceId={selectedAudioId}
-          audioDevices={audioDevices}
-          handleAudioDeviceChange={changeAudioDevice}
+          handleVideoDeviceChange={changeVideoInputDevice}
+          selectedAudioInputDeviceId={selectedAudioInputId}
+          audioInputDevices={audioInputDevices}
+          handleAudioInputDeviceChange={changeAudioInputDevice}
+          audioOutputDevices={audioOutputDevices}
+          selectedAudioOutputDeviceId={selectedAudioDeviceOutputId}
+          handleAudioOutputDeviceChange={setSelectedAudioDeviceOutputId}
         />
       </div>
     </>

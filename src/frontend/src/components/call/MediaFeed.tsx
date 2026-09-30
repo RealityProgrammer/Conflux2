@@ -1,13 +1,17 @@
 import {type HTMLAttributes, useEffect, useRef, useState} from "react";
 import UserAvatar from "../UserAvatar.tsx";
 import {BsCameraVideoOffFill, BsMicMuteFill} from "react-icons/bs";
+import type {MediaDeviceOption} from "../../hooks/useUserMedia.ts";
 
 interface StreamVideoProps {
   stream: MediaStream | null;
   avatarUrl?: string;
   displayName?: string;
-  className?: string;
   isLocal?: boolean;
+  className?: string;
+  audioOutputDeviceId?: string;
+  isVideoEnabled?: boolean;
+  isAudioEnabled?: boolean;
 }
 
 export default function MediaFeed({
@@ -15,15 +19,30 @@ export default function MediaFeed({
   avatarUrl,
   displayName,
   className = '',
+  audioOutputDeviceId,
   isLocal,
+  isVideoEnabled = true,
+  isAudioEnabled = true,
 }: StreamVideoProps) {
+  useEffect(() => {
+    console.log('[MediaFeed] stream prop', {
+      streamId: stream?.id,
+      tracks: stream?.getTracks().map(t => ({
+        kind: t.kind, enabled: t.enabled, muted: t.muted, readyState: t.readyState,
+      })),
+      isLocal, isVideoEnabled, isAudioEnabled,
+    });
+  }, [stream, isLocal, isVideoEnabled, isAudioEnabled]);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
 
   useEffect(() => {
-    console.log("steam changed");
+    console.log('[MediaFeed] hasVideo/hasAudio', { hasVideo, hasAudio });
+  }, [hasVideo, hasAudio]);
 
+  useEffect(() => {
     if (!stream) {
       setHasVideo(false);
       setHasAudio(false);
@@ -31,80 +50,110 @@ export default function MediaFeed({
     }
 
     const updateTrackState = () => {
-      const vTracks = stream.getVideoTracks();
-      const aTracks = stream.getAudioTracks();
-
-      setHasVideo(vTracks.some((t) => t.enabled && t.readyState === "live"));
-      setHasAudio(aTracks.some((t) => t.enabled && t.readyState === "live"));
+      setHasVideo(stream.getVideoTracks().some((t) => t.enabled && !t.muted && t.readyState === "live") && isVideoEnabled);
+      setHasAudio(stream.getAudioTracks().some((t) => t.enabled && !t.muted && t.readyState === "live") && isAudioEnabled);
     };
 
-    updateTrackState();
+    const attached = new Set<MediaStreamTrack>();
 
-    const tracks = stream.getTracks();
-    tracks.forEach((track) => {
+    const attach = (track: MediaStreamTrack) => {
+      if (attached.has(track)) return;
       track.addEventListener("mute", updateTrackState);
       track.addEventListener("unmute", updateTrackState);
       track.addEventListener("ended", updateTrackState);
-    });
+      attached.add(track);
+    };
+
+    const detach = (track: MediaStreamTrack) => {
+      if (!attached.has(track)) return;
+      track.removeEventListener("mute", updateTrackState);
+      track.removeEventListener("unmute", updateTrackState);
+      track.removeEventListener("ended", updateTrackState);
+      attached.delete(track);
+    };
+
+    stream.getTracks().forEach(attach);
+    updateTrackState();
+
+    const onAddTrack = (e: MediaStreamTrackEvent) => {
+      attach(e.track);
+      updateTrackState();
+    };
+    const onRemoveTrack = (e: MediaStreamTrackEvent) => {
+      detach(e.track);
+      updateTrackState();
+    };
+
+    stream.addEventListener("addtrack", onAddTrack);
+    stream.addEventListener("removetrack", onRemoveTrack);
 
     return () => {
-      tracks.forEach((track) => {
-        track.removeEventListener("mute", updateTrackState);
-        track.removeEventListener("unmute", updateTrackState);
-        track.removeEventListener("ended", updateTrackState);
-      });
+      stream.removeEventListener("addtrack", onAddTrack);
+      stream.removeEventListener("removetrack", onRemoveTrack);
+      attached.forEach(detach);
     };
-  }, [stream]);
+  }, [stream, isVideoEnabled, isAudioEnabled]);
 
   useEffect(() => {
-    if (videoRef.current && stream && hasVideo) {
-      videoRef.current.srcObject = stream;
-
-      videoRef.current.play().catch((err) => {
-        console.warn("Autoplay deferred until tab interaction:", err);
+    if (videoRef.current && audioOutputDeviceId) {
+      videoRef.current.setSinkId(audioOutputDeviceId).catch((err) => {
+        console.error("Failed to set audio output device:", err);
       });
     }
-  }, [stream, hasVideo]);
+  }, [audioOutputDeviceId]);
+
+  useEffect(() => {
+    if (!videoRef.current || !stream) return;
+
+    if (videoRef.current.srcObject !== stream) {
+      videoRef.current.srcObject = stream;
+    }
+
+    const tryPlay = () => {
+      videoRef.current!.play().catch(() => {
+        const resume = () => {
+          videoRef.current!.play().catch(() => {});
+          window.removeEventListener("pointerdown", resume);
+          window.removeEventListener("keydown", resume);
+        };
+        window.addEventListener("pointerdown", resume, { once: true });
+        window.addEventListener("keydown", resume, { once: true });
+      });
+    };
+
+    tryPlay();
+  }, [stream]);
 
   return (
     <div className={`relative flex items-center justify-center bg-gray-900 overflow-hidden ${className}`}>
-      {hasVideo ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted={isLocal}
-          className={`size-full object-contain ${isLocal ? "-scale-x-100" : ""}`}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center gap-3 p-4">
+      {/* always mounted so that audio be playing */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={isLocal}
+        className={`size-full object-contain ${isLocal ? "-scale-x-100" : ""} ${hasVideo ? "block" : "hidden"}`}
+      />
+
+      {!hasVideo && (
+        <div className="flex flex-col items-center justify-center gap-2 p-2 max-w-full max-h-full">
           <UserAvatar
             src={avatarUrl}
             alt={`${displayName}'s avatar`}
-            className="size-20 rounded-full ring-2 ring-gray-700 overflow-hidden shadow-lg select-none"
+            className="size-12 shrink-0 aspect-square rounded-full ring-2 ring-gray-700 overflow-hidden shadow-lg select-none object-cover"
           />
 
           {displayName && (
-            <span className="text-sm font-medium text-gray-200 select-none">{displayName}</span>
+            <span className="text-sm font-medium text-gray-200 select-none truncate">
+              {displayName}
+            </span>
           )}
 
-          <div className="flex items-center gap-2 mt-1">
-            {!hasVideo && (
-              <div
-                title="Camera Off"
-                className="flex items-center justify-center size-8 rounded-full bg-red-500/20 border border-red-500/40 text-red-500"
-              >
-                <BsCameraVideoOffFill className="size-4" />
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <BsCameraVideoOffFill className="size-4 fill-red-500"/>
 
             {!hasAudio && (
-              <div
-                title="Microphone Off"
-                className="flex items-center justify-center size-8 rounded-full bg-red-500/20 border border-red-500/40 text-red-500"
-              >
-                <BsMicMuteFill className="size-4" />
-              </div>
+              <BsMicMuteFill className="size-4 fill-red-500"/>
             )}
           </div>
         </div>
