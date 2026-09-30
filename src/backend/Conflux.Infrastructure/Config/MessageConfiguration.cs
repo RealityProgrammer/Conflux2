@@ -15,27 +15,13 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
         builder.Property(m => m.Id).HasValueGenerator<GuidV7ValueGenerator>();
 
         builder.Property(m => m.Body).HasMaxLength(4000);
-
-        builder.Property(m => m.Attachments)
-            .HasColumnType("jsonb")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<Attachment[]>(v, (JsonSerializerOptions?)null) ?? Array.Empty<Attachment>()
-            );
             
-        builder.HasIndex(m => m.Attachments).HasMethod("gin");
-        
         // relationship
         builder.HasOne(m => m.Sender)
             .WithMany()
             .HasForeignKey(m => m.SenderUserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);  // delete messages when user is deleted
-
-        builder.HasOne(m => m.ReplyTo)
-            .WithMany(m => m.Replies)
-            .HasForeignKey(m => m.ReplyToId)
-            .OnDelete(DeleteBehavior.Restrict);
         
         // constraints
         builder.ToTable(tableBuilder => tableBuilder.HasCheckConstraint(

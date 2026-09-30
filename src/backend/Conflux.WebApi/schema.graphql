@@ -559,9 +559,11 @@ input ApplicationUserSortInput {
 input AttachmentFilterInput {
   and: [AttachmentFilterInput!]
   or: [AttachmentFilterInput!]
-  name: StringOperationFilterInput
   id: UuidOperationFilterInput
+  name: StringOperationFilterInput
   type: StringOperationFilterInput
+  messageId: UuidOperationFilterInput
+  message: MessageFilterInput
 }
 
 input BanCommunityServerMemberInput {
@@ -922,6 +924,7 @@ input MessageFilterInput {
   and: [MessageFilterInput!]
   or: [MessageFilterInput!]
   id: UuidOperationFilterInput
+  type: MessageTypeOperationFilterInput
   body: StringOperationFilterInput
   attachments: ListFilterInputTypeOfAttachmentFilterInput
   senderUserId: UuidOperationFilterInput
@@ -933,7 +936,13 @@ input MessageFilterInput {
   deletedAt: DateTimeOperationFilterInput
   replyToId: UuidOperationFilterInput
   replyTo: MessageFilterInput
-  replies: ListFilterInputTypeOfMessageFilterInput
+}
+
+input MessageTypeOperationFilterInput {
+  eq: MessageType @cost(weight: "10")
+  neq: MessageType @cost(weight: "10")
+  in: [MessageType!] @cost(weight: "10")
+  nin: [MessageType!] @cost(weight: "10")
 }
 
 input PermissionStateOperationFilterInput {
@@ -1097,6 +1106,11 @@ enum MembershipStatus {
   Active
   Left
   Kicked
+}
+
+enum MessageType {
+  Message
+  Call
 }
 
 enum PermissionState {

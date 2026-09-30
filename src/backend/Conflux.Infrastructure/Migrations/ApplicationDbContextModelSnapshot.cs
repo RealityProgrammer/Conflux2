@@ -117,6 +117,32 @@ namespace Conflux.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Attachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("Attachments");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.Channel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -384,10 +410,6 @@ namespace Conflux.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Attachments")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
                     b.Property<string>("Body")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
@@ -407,14 +429,13 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<Guid>("SenderUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Attachments");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Attachments"), "gin");
 
                     b.HasIndex("ConversationId");
 
@@ -613,6 +634,17 @@ namespace Conflux.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Attachment", b =>
+                {
+                    b.HasOne("Conflux.Domain.Entities.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.Channel", b =>
                 {
                     b.HasOne("Conflux.Domain.Entities.ChannelCategory", "ChannelCategory")
@@ -770,9 +802,8 @@ namespace Conflux.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Conflux.Domain.Entities.Message", "ReplyTo")
-                        .WithMany("Replies")
-                        .HasForeignKey("ReplyToId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .WithMany()
+                        .HasForeignKey("ReplyToId");
 
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Sender")
                         .WithMany()
@@ -930,7 +961,7 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>
                 {
-                    b.Navigation("Replies");
+                    b.Navigation("Attachments");
                 });
 #pragma warning restore 612, 618
         }

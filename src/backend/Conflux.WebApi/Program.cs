@@ -274,6 +274,7 @@ builder.Services
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
+    .AddScoped<IAttachmentRepository, AttachmentRepository>()
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()

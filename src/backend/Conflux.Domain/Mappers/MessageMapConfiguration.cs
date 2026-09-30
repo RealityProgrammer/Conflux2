@@ -16,13 +16,13 @@ public class MessageMapConfiguration :
         target.BodySnippet = snippet;
         target.HasMoreBody = hasMore;
         target.SenderUserId = source.SenderUserId;
-        target.AttachmentCount = source.Attachments.Length;
+        target.AttachmentCount = source.Attachments.Count;
     }
 
     public static void ConfigureProjection(IFacetProjectionBuilder<Message, TimelineMessageReplyDto> builder) {
         builder.Map(target => target.MessageId, source => source.Id);
         builder.Map(target => target.SenderUserId, source => source.SenderUserId);
-        builder.Map(target => target.AttachmentCount, source => source.Attachments.Length);
+        builder.Map(target => target.AttachmentCount, source => source.Attachments.Count);
         builder.Map(
             target => target.BodySnippet,
             source => source.ReplyTo == null || source.ReplyTo.Body == null ?

@@ -12,6 +12,4 @@ public interface IMessageRepository : IWriteRepository<Message> {
         int limit,
         CancellationToken cancellationToken = default
     );
-
-    Task<Attachment?> GetAttachmentById(Guid id, CancellationToken cancellationToken = default);
 }
