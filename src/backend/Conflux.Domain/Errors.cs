@@ -119,4 +119,13 @@ public static class Errors {
     
     public static Error FileNotExists(string file) =>
         new(nameof(FileNotExists), $"File {file} does not exist.");
+    
+    public static Error AlreadyInCall() =>
+        new(nameof(AlreadyInCall), "Caller is already in call.");
+    
+    public static Error CalleeBusy() =>
+        new(nameof(CalleeBusy), "User is busy.");
+
+    public static Error InvalidCallStates() =>
+        new(nameof(InvalidCallStates), "Invalid call states.");
 }

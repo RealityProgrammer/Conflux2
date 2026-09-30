@@ -1,3 +1,4 @@
+using Conflux.WebApi.Notifications.Calling;
 using Conflux.WebApi.Notifications.Friend;
 using Conflux.WebApi.Notifications.Messaging;
 using Conflux.WebApi.Notifications.Server;
@@ -43,4 +44,15 @@ public interface IConfluxClient {
     
     Task UserTyping(UserTypingEvent data, CancellationToken cancellationToken = default);
     Task PresenceUpdated(UserPresenceChangedEvent data, CancellationToken cancellationToken = default);
+
+    Task IncomingDirectCall(IncomingDirectCallEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallCanceled(DirectCallCanceledEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallDenied(DirectCallDeniedEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallAccepted(DirectCallAcceptedEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallEnded(DirectCallEndedEvent data, CancellationToken cancellationToken = default);
+    Task DirectCallDropped(DirectCallDroppedEvent data, CancellationToken cancellationToken = default);
+
+    Task ReceiveCallOffer(string userIdentifier, string sdp);
+    Task ReceiveCallAnswer(string userIdentifier, string sdp);
+    Task ReceiveIceCandidate(string userIdentifier, string sdp);
 }

@@ -1,5 +1,5 @@
 import type {
-  ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto,
+  ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
 } from "./types.ts";
 import type {PresenceStatus} from "../graphql/types.ts";
 
@@ -113,4 +113,28 @@ export type TypingUserEvent = {
 export type UserPresenceChangedEvent = {
   userId: string;
   status: PresenceStatus;
+}
+
+export type IncomingDirectCallEvent = {
+  callerProfile: UserIdentityProfileDto;
+}
+
+export type DirectCallCanceledEvent = {
+  callerUserId: string;
+}
+
+export type DirectCallDeniedEvent = {
+  calleeUserId: string;
+}
+
+export type DirectCallAcceptedEvent = {
+  calleeUserId: string;
+}
+
+export type DirectCallDroppedEvent = {
+  droppedUserId: string;
+}
+
+export type DirectCallEndedEvent = {
+  enderUserId: string;
 }

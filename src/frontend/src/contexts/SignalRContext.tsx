@@ -1,4 +1,4 @@
-import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState} from "react";
 import {
   HttpTransportType,
   type HubConnection,
@@ -32,7 +32,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
         withCredentials: true,
         transport: HttpTransportType.WebSockets,
       })
-      .configureLogging(LogLevel.Trace)
+      // .configureLogging(LogLevel.Debug)
       .withAutomaticReconnect()
       .build();
 
@@ -113,11 +113,12 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const invokeSafely = async (methodName: string, ...args: unknown[]) => {
-    if (connection && connection.state === HubConnectionState.Connected) {
+    if (connection && connection.state === HubConnectionState.Connected && isConnected) {
       try {
-        await connection.invoke(methodName, ...args);
+        return await connection.invoke(methodName, ...args);
       } catch (err) {
         console.error(`SignalR invocation failed for [${methodName}]:`, err);
+        throw err;
       }
     }
   };
@@ -131,7 +132,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
 
 export function useSignalR(): SignalRContextType {
   const context = useContext(SignalRContext);
-  if (!context) throw new Error("useSignalRConnection must be used within an SignalRConnectionProvider.");
+  if (!context) throw new Error("useSignalR must be used within an SignalRConnectionProvider.");
 
   return context;
 }

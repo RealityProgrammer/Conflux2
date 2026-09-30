@@ -3,13 +3,17 @@ import {useDocumentTitle} from "usehooks-ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useState} from "react";
-import {BsPerson} from "react-icons/bs";
+import {BsPersonFill, BsTelephoneFill} from "react-icons/bs";
 import ChatContainer from "../../components/chat/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 import useChannelConnection from "../../hooks/useChannelConnection.ts";
 import {userService} from "../../api/userService.ts";
+import {useCallStore} from "../../store/useCallStore.ts";
+import {useSignalR} from "../../contexts/SignalRContext.tsx";
+import type {DirectCallContext} from "../../api/types.ts";
+import {toast} from "react-toastify";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -18,6 +22,46 @@ export default function DirectMessagePage() {
   const [showProfile, setShowProfile] = useState(false);
 
   useChannelConnection(channelId);
+  const { invokeSafely } = useSignalR();
+
+  const startOutgoingDirectCall = useCallStore((state) => state.startOutgoingDirectCall);
+
+  const handleCall = async () => {
+    if (!channelSummary) return;
+
+    try {
+      const context: DirectCallContext = await invokeSafely("StartDirectCall", channelSummary.otherUser.id);
+
+      if (context) {
+        if (context.result.isSuccess) {
+          startOutgoingDirectCall(context.peerProfile!);
+        } else {
+          switch (context.result.error.code) {
+            case "AlreadyInCall":
+              toast.error("You are already in a call.");
+              break;
+
+            case "CalleeBusy":
+              toast.error("User is busy with another call.");
+              break;
+
+            case "NoAcceptedFriendRequest":
+              toast.error("An accepted friend request is required to make a call to this person.");
+              break;
+
+            default:
+              toast.error("Failed to start call.");
+              break;
+          }
+        }
+      } else {
+        toast.error("Failed to start call.");
+      }
+    } catch (err) {
+      console.error("Failed to start call:", err);
+      toast.error("Failed to start call.");
+    }
+  }
 
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
@@ -27,19 +71,27 @@ export default function DirectMessagePage() {
           <>
             <UserAvatar
               src={channelSummary.otherUser.avatarRevision ? userService.getAvatarUrl(channelSummary.otherUser.id, channelSummary.otherUser.avatarRevision) : undefined}
-              className="size-8"
+              className="size-8 flex-none"
             />
 
-            <p>{channelSummary.otherUser.userName}</p>
+            <span className="flex-1">{channelSummary.otherUser.userName}</span>
 
-            <IconButton
-              isLoading={false}
-              onClick={() => setShowProfile(!showProfile)}
-              className="ml-auto"
-              theme="default"
-            >
-              <BsPerson className="size-6"/>
-            </IconButton>
+            <div className="flex-none flex flex-row items-center gap-2">
+              <IconButton
+                isLoading={false}
+                theme="default"
+                onClick={handleCall}
+              >
+                <BsTelephoneFill className="size-6"/>
+              </IconButton>
+
+              <IconButton
+                theme="default"
+                onClick={() => setShowProfile(!showProfile)}
+              >
+                <BsPersonFill className="size-6"/>
+              </IconButton>
+            </div>
           </>
         ) : (
           <p>But nobody came...</p>

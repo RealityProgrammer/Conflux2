@@ -401,7 +401,10 @@ export default function ServerSidebar() {
             control={formMethods.control}
             name="type"
             render={({field}) => (
-              <Select.Root value={ field.value ? { category: "category", text: "text_channel", voice: "voice_channel" }[field.value] : undefined } onValueChange={field.onChange}>
+              <Select.Root
+                value={ field.value ? { category: "category", text: "text_channel", voice: "voice_channel" }[field.value] : undefined }
+                onValueChange={field.onChange}
+              >
                 <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
                   <Select.Value placeholder="Select type to create..."/>
                   <Select.Icon className="fill-white flex-none ml-auto">

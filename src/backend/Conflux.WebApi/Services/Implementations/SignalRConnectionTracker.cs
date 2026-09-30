@@ -80,7 +80,7 @@ public sealed partial class SignalRConnectionTracker(
             }
         }
     }
-    
+
     private async Task PruneExpiredConnections(Guid userId) {
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         await _database.SortedSetRemoveRangeByScoreAsync(GetConnectionsKey(userId), 0, now - 1);

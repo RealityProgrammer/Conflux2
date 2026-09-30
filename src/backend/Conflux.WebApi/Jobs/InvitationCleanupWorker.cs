@@ -2,20 +2,12 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.WebApi.Jobs;
 
-internal sealed partial class InvitationCleanupWorker : BackgroundService {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<InvitationCleanupWorker> _logger;
-
-    public InvitationCleanupWorker(
-        IServiceScopeFactory scopeFactory,
-        ILogger<InvitationCleanupWorker> logger
-    ) {
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-    }
-
+internal sealed partial class InvitationCleanupWorker(
+    IServiceScopeFactory scopeFactory,
+    ILogger<InvitationCleanupWorker> logger
+) : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        _logger.LogInformation("Started.");
+        logger.LogInformation("Started.");
 
         // clean the database once every hour
         using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
@@ -25,17 +17,17 @@ internal sealed partial class InvitationCleanupWorker : BackgroundService {
                 await PerformCleanupAsync(stoppingToken);
             }
         } catch (OperationCanceledException) {
-            _logger.LogInformation("Stopping...");
+            logger.LogInformation("Stopping...");
         }
     }
 
     private async Task PerformCleanupAsync(CancellationToken stoppingToken) {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = scopeFactory.CreateScope();
 
         var invitationRepository = scope.ServiceProvider.GetRequiredService<IInvitationRepository>();
 
         try {
-            _logger.LogInformation("Starting invitation cleanup...");
+            logger.LogInformation("Starting invitation cleanup...");
 
             int deletedCount = await invitationRepository.DeleteInactive(stoppingToken);
 
@@ -44,7 +36,7 @@ internal sealed partial class InvitationCleanupWorker : BackgroundService {
             }
         } catch (Exception ex) {
             // Log the error but DO NOT throw, otherwise the entire BackgroundService will crash and stop running
-            _logger.LogError(ex, "Error occurred while cleaning up invitations.");
+            logger.LogError(ex, "Error occurred while cleaning up invitations.");
         }
     }
     

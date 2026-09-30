@@ -25,7 +25,7 @@ export default function AnimatedGearIcon({
     });
 
     return () => {
-      timeline.pause();
+      timeline.cancel();
     };
   }, []);
 
