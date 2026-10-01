@@ -694,7 +694,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/conversations/{conversationId}/message": {
+    "/api/conversations/{conversationId}/messages": {
         parameters: {
             query?: never;
             header?: never;
@@ -791,7 +791,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/conversations/{conversationId}/message/{messageId}": {
+    "/api/conversations/{conversationId}/messages/{messageId}": {
         parameters: {
             query?: never;
             header?: never;

@@ -5,7 +5,7 @@ import {apiClient} from "./client.ts";
 import type {MessageLoadDirection} from "./schema.ts";
 
 export const messageService = {
-  sendMessage: async (channelId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = body?.trim();
 
     if (!trimmedBody && !attachments) {
@@ -33,7 +33,7 @@ export const messageService = {
       }
 
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.postForm(`channels/${encodeURIComponent(channelId)}/messages`, formData, {
+        await apiClient.postForm(`conversations/${encodeURIComponent(conversationId)}/messages`, formData, {
           headers: {
             "Idempotency-Key": idempotencyKey,
           },
@@ -50,7 +50,7 @@ export const messageService = {
     }
   },
 
-  editMessage: async (messageId: string, newBody: string | null): Promise<ServiceResponse<TimelineMessageDto>> => {
+  editMessage: async (conversationId: string, messageId: string, newBody: string | null): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = newBody?.trim();
 
     try {
@@ -61,7 +61,7 @@ export const messageService = {
       }
 
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.patchForm(`/messages/${encodeURIComponent(messageId)}`, formData);
+        await apiClient.patchForm(`/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`, formData);
 
       return {
         success: true,
@@ -74,10 +74,10 @@ export const messageService = {
     }
   },
 
-  deleteMessage: async (messageId: string): Promise<ServiceResponse> => {
+  deleteMessage: async (conversationId: string, messageId: string): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.delete(`messages/${encodeURIComponent(messageId)}`);
+        await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
 
       return {
         success: true,
@@ -89,7 +89,7 @@ export const messageService = {
     }
   },
 
-  getMessages: async (channelId: string, direction: MessageLoadDirection | undefined, cursor: string | undefined, count: number): Promise<ServiceResponse<GetMessagesResponse>> => {
+  getMessages: async (conversationId: string, direction: MessageLoadDirection | undefined, cursor: string | undefined, count: number): Promise<ServiceResponse<GetMessagesResponse>> => {
     try {
       const searchParams = new URLSearchParams();
 
@@ -101,7 +101,7 @@ export const messageService = {
       searchParams.append("count", String(count));
 
       const response: AxiosResponse<BackendResponse<GetMessagesResponse>> =
-        await apiClient.get(`/channels/${encodeURIComponent(channelId)}/messages?${searchParams.toString()}`);
+        await apiClient.get(`/conversations/${encodeURIComponent(conversationId)}/messages?${searchParams.toString()}`);
 
       return {
         success: true,

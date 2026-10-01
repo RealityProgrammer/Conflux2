@@ -23,7 +23,7 @@ namespace Conflux.WebApi.Controllers;
 public sealed class ConversationController(
     IMediator mediator
 ) : ControllerBase {
-    [HttpPost("{conversationId:guid}/message")]
+    [HttpPost("{conversationId:guid}/messages")]
     [Idempotent(20)]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> SendMessage(
         Guid conversationId,
@@ -87,7 +87,7 @@ public sealed class ConversationController(
         }
     }
 
-    [HttpPatch("{conversationId:guid}/message/{messageId:guid}")]
+    [HttpPatch("{conversationId:guid}/messages/{messageId:guid}")]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> EditMessage(
         Guid conversationId,
         Guid messageId,
@@ -113,7 +113,7 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpDelete("{conversationId:guid}/message")]
+    [HttpDelete("{conversationId:guid}/messages")]
     public async Task<ActionResult> DeleteMessage(Guid conversationId, Guid messageId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
@@ -134,9 +134,9 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpGet("{conversationId:guid}/message")]
-    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetConversationMessages(
-        Guid channelId,
+    [HttpGet("{conversationId:guid}/messages")]
+    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetMessages(
+        Guid conversationId,
         [FromQuery] MessageLoadDirection? direction,
         [FromQuery] Guid? cursor,
         [FromQuery, Required] int count,
@@ -151,7 +151,7 @@ public sealed class ConversationController(
         // TODO: Check if user has permission to view messages at this channel at service.
 
         var result = await mediator.Send(new GetChatMessagesQuery(
-            userId, channelId, direction, cursor, count
+            userId, conversationId, direction, cursor, count
         ), cancellationToken);
 
         if (result.IsSuccess) {

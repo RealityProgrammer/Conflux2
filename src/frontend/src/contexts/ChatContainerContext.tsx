@@ -397,7 +397,7 @@ export default function ChatContainerContextProvider({
 
   const editMessageMutation = useMutation({
     mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
-      return await messageService.editMessage(payload.messageId, payload.newBody);
+      return await messageService.editMessage(conversationId, payload.messageId, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
       setEditingOperations((prev) => {
@@ -462,7 +462,7 @@ export default function ChatContainerContextProvider({
 
   const deleteMessageMutation = useMutation({
     mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
-      return await messageService.deleteMessage(payload.messageId);
+      return await messageService.deleteMessage(conversationId, payload.messageId);
     },
     onMutate: async (payload: DeleteMessagePayload) => {
       setDeletingMessageIds((prev) => new Set(prev).add(payload.messageId));

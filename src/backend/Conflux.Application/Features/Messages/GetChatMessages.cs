@@ -9,14 +9,14 @@ namespace Conflux.Application.Features.Messages;
 
 public sealed record GetChatMessagesQuery(
     Guid RequesterUserId,
-    Guid ChannelId,
+    Guid ConversationId,
     MessageLoadDirection? Direction,
     Guid? CursorMessageId,
     int Count
 ) : IQuery<Result<GetMessagesResponse>>;
 
 public sealed class GetChatMessagesHandler(
-    IChannelRepository channelRepository,
+    // IChannelRepository channelRepository,
     // IConversationAuthorizeService conversationAuthorizeService,
     IMessageRepository messageRepository,
     IUserRepository userRepository
@@ -25,17 +25,8 @@ public sealed class GetChatMessagesHandler(
         GetChatMessagesQuery query, 
         CancellationToken cancellationToken
     ) {
-        Result<ChannelMetadataDto> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromChannelId(query.ChannelId, cancellationToken);
-        
-        if (!getChannelMetadataResult.IsSuccess) {
-            return getChannelMetadataResult.Error;
-        }
-        
-        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
-        
         Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessages(
-            channelMetadata.ConversationId, 
+            query.ConversationId, 
             query.Direction, 
             query.CursorMessageId,
             query.Count,
