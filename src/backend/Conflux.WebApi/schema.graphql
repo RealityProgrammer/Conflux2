@@ -116,7 +116,7 @@ type Query
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
-  directMessageConversations(
+  directConversations(
     "Returns the first _n_ elements from the list."
     first: Int
     "Returns the elements in the list that come after the specified cursor."
@@ -366,7 +366,6 @@ type ConversationEdge {
 type FriendRequest {
   id: UUID!
   directConversation: Conversation
-  directConversationId: UUID
   createdAt: DateTime!
   receiver: ApplicationUser!
   receiverUserId: UUID!
@@ -728,6 +727,7 @@ input ConversationFilterInput {
   messages: ListFilterInputTypeOfMessageFilterInput
   channel: ChannelFilterInput
   participants: ListFilterInputTypeOfConversationParticipantFilterInput
+  friendRequestId: UuidOperationFilterInput
   friendRequest: FriendRequestFilterInput
 }
 
@@ -745,6 +745,7 @@ input ConversationSortInput {
   type: SortEnumType @cost(weight: "10")
   latestMessageAt: SortEnumType @cost(weight: "10")
   channel: ChannelSortInput @cost(weight: "10")
+  friendRequestId: SortEnumType @cost(weight: "10")
   friendRequest: FriendRequestSortInput @cost(weight: "10")
 }
 
@@ -796,7 +797,6 @@ input FriendRequestFilterInput {
   status: FriendRequestStatusOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   updatedAt: DateTimeOperationFilterInput
-  directConversationId: UuidOperationFilterInput
   directConversation: ConversationFilterInput
 }
 
@@ -809,7 +809,6 @@ input FriendRequestSortInput {
   status: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
   updatedAt: SortEnumType @cost(weight: "10")
-  directConversationId: SortEnumType @cost(weight: "10")
   directConversation: ConversationSortInput @cost(weight: "10")
 }
 

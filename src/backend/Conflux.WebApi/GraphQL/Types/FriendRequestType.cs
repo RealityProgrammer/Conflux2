@@ -14,7 +14,6 @@ public sealed class FriendRequestType : ObjectType<FriendRequest> {
         
         descriptor.Field(r => r.Id).IsProjected();
         descriptor.Field(r => r.DirectConversation);
-        descriptor.Field(r => r.DirectConversationId);
         descriptor.Field(r => r.CreatedAt);
         descriptor.Field(r => r.Receiver);
         descriptor.Field(r => r.ReceiverUserId);

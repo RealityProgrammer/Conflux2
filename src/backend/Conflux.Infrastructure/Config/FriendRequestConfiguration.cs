@@ -29,10 +29,10 @@ internal sealed class FriendRequestConfiguration : IEntityTypeConfiguration<Frie
             .HasForeignKey(r => r.ReceiverUserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);  // delete if receiver is deleted
-
+        
         builder.HasOne(r => r.DirectConversation)
             .WithOne(c => c.FriendRequest)
-            .HasForeignKey<FriendRequest>(r => r.DirectConversationId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey<Conversation>(c => c.FriendRequestId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -38,11 +38,13 @@ public sealed class ConversationType : ObjectType<Conversation> {
     public static async Task<IReadOnlyDictionary<Guid, ApplicationUser>> GetConversationPeerUsers(
         IReadOnlyList<Guid> conversationIds,
         QueryContext<ApplicationUser> queryContext,
-        ClaimsPrincipal claimsPrincipal,
+        [Service] IHttpContextAccessor httpContextAccessor,
         [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
         CancellationToken cancellationToken
     ) {
-        if (conversationIds.Count == 0 || !Guid.TryParse(claimsPrincipal.FindFirstValue(JwtRegisteredClaimNames.Sub), out var sessionUserId)) {
+        string? idClaim = httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        
+        if (conversationIds.Count == 0 || !Guid.TryParse(idClaim, out var sessionUserId)) {
             return FrozenDictionary<Guid, ApplicationUser>.Empty;
         }
         

@@ -13,5 +13,7 @@ public class Conversation {
     public Channel? Channel { get; set; }
 
     public virtual ICollection<ConversationParticipant> Participants { get; set; } = [];
+    
+    public Guid? FriendRequestId { get; set; }
     public FriendRequest? FriendRequest { get; set; }
 }

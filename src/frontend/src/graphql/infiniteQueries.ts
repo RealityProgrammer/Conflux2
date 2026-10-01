@@ -17,12 +17,12 @@ export type GetAssignableServerRolesQueryVariables = Exact<{
 
 export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } };
 
-export type GetDirectMessageChannelsQueryVariables = Exact<{
+export type GetDirectConversationsQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
 
-export type GetDirectMessageChannelsQuery = { directMessageConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, avatarRevision: number | null, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus } | null }> | null } };
+export type GetDirectConversationsQuery = { directConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, avatarRevision: number | null, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus } | null }> | null } };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
@@ -138,9 +138,9 @@ useInfiniteGetAssignableServerRolesQuery.getKey = (variables: GetAssignableServe
 
 useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, variables, options);
 
-export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
-    query GetDirectMessageChannels($after: String) {
-  directMessageConversations(after: $after, order: {latestMessageAt: DESC}) {
+export const GetDirectConversationsDocument = new TypedDocumentString(`
+    query GetDirectConversations($after: String) {
+  directConversations(after: $after, order: {latestMessageAt: DESC}) {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -160,47 +160,47 @@ export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
 }
     `);
 
-export const useGetDirectMessageChannelsQuery = <
-      TData = GetDirectMessageChannelsQuery,
+export const useGetDirectConversationsQuery = <
+      TData = GetDirectConversationsQuery,
       TError = unknown
     >(
-      variables?: GetDirectMessageChannelsQueryVariables,
-      options?: Omit<UseQueryOptions<GetDirectMessageChannelsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetDirectMessageChannelsQuery, TError, TData>['queryKey'] }
+      variables?: GetDirectConversationsQueryVariables,
+      options?: Omit<UseQueryOptions<GetDirectConversationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetDirectConversationsQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useQuery<GetDirectMessageChannelsQuery, TError, TData>(
+    return useQuery<GetDirectConversationsQuery, TError, TData>(
       {
-    queryKey: variables === undefined ? ['GetDirectMessageChannels'] : ['GetDirectMessageChannels', variables],
-    queryFn: graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, variables),
+    queryKey: variables === undefined ? ['GetDirectConversations'] : ['GetDirectConversations', variables],
+    queryFn: graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, variables),
     ...options
   }
     )};
 
-useGetDirectMessageChannelsQuery.getKey = (variables?: GetDirectMessageChannelsQueryVariables) => variables === undefined ? ['GetDirectMessageChannels'] : ['GetDirectMessageChannels', variables];
+useGetDirectConversationsQuery.getKey = (variables?: GetDirectConversationsQueryVariables) => variables === undefined ? ['GetDirectConversations'] : ['GetDirectConversations', variables];
 
-export const useInfiniteGetDirectMessageChannelsQuery = <
-      TData = InfiniteData<GetDirectMessageChannelsQuery>,
+export const useInfiniteGetDirectConversationsQuery = <
+      TData = InfiniteData<GetDirectConversationsQuery>,
       TError = unknown
     >(
-      variables: GetDirectMessageChannelsQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<GetDirectMessageChannelsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetDirectMessageChannelsQuery, TError, TData>['queryKey'] }
+      variables: GetDirectConversationsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetDirectConversationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetDirectConversationsQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useInfiniteQuery<GetDirectMessageChannelsQuery, TError, TData>(
+    return useInfiniteQuery<GetDirectConversationsQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? variables === undefined ? ['GetDirectMessageChannels.infinite'] : ['GetDirectMessageChannels.infinite', variables],
-      queryFn: (metaData) => graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      queryKey: optionsQueryKey ?? variables === undefined ? ['GetDirectConversations.infinite'] : ['GetDirectConversations.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteGetDirectMessageChannelsQuery.getKey = (variables?: GetDirectMessageChannelsQueryVariables) => variables === undefined ? ['GetDirectMessageChannels.infinite'] : ['GetDirectMessageChannels.infinite', variables];
+useInfiniteGetDirectConversationsQuery.getKey = (variables?: GetDirectConversationsQueryVariables) => variables === undefined ? ['GetDirectConversations.infinite'] : ['GetDirectConversations.infinite', variables];
 
 
-useGetDirectMessageChannelsQuery.fetcher = (variables?: GetDirectMessageChannelsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, variables, options);
+useGetDirectConversationsQuery.fetcher = (variables?: GetDirectConversationsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, variables, options);
 
 export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     query GetJoinedCommunityServer($after: String) {

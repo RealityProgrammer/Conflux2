@@ -1,5 +1,5 @@
-query GetDirectMessageChannels($after: String) {
-    directMessageConversations(
+query GetDirectConversations($after: String) {
+    directConversations(
         after: $after
         order: { latestMessageAt: DESC }
     ) {

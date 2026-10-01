@@ -434,6 +434,7 @@ export type ConversationFilterInput = {
   and?: InputMaybe<Array<ConversationFilterInput>>;
   channel?: InputMaybe<ChannelFilterInput>;
   friendRequest?: InputMaybe<FriendRequestFilterInput>;
+  friendRequestId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   latestMessageAt?: InputMaybe<DateTimeOperationFilterInput>;
   messages?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
@@ -454,6 +455,7 @@ export type ConversationParticipantFilterInput = {
 export type ConversationSortInput = {
   channel?: InputMaybe<ChannelSortInput>;
   friendRequest?: InputMaybe<FriendRequestSortInput>;
+  friendRequestId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   latestMessageAt?: InputMaybe<SortEnumType>;
   type?: InputMaybe<SortEnumType>;
@@ -505,7 +507,6 @@ export type FriendRequest = {
   __typename?: 'FriendRequest';
   createdAt: Scalars['DateTime']['output'];
   directConversation?: Maybe<Conversation>;
-  directConversationId?: Maybe<Scalars['UUID']['output']>;
   id: Scalars['UUID']['output'];
   otherUser?: Maybe<ApplicationUser>;
   receiver: ApplicationUser;
@@ -540,7 +541,6 @@ export type FriendRequestFilterInput = {
   and?: InputMaybe<Array<FriendRequestFilterInput>>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   directConversation?: InputMaybe<ConversationFilterInput>;
-  directConversationId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<FriendRequestFilterInput>>;
   receiver?: InputMaybe<ApplicationUserFilterInput>;
@@ -554,7 +554,6 @@ export type FriendRequestFilterInput = {
 export type FriendRequestSortInput = {
   createdAt?: InputMaybe<SortEnumType>;
   directConversation?: InputMaybe<ConversationSortInput>;
-  directConversationId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   receiver?: InputMaybe<ApplicationUserSortInput>;
   receiverUserId?: InputMaybe<SortEnumType>;
@@ -896,7 +895,7 @@ export type Query = {
   communityServerMembers: CommunityServerMemberConnection;
   communityServerRole?: Maybe<CommunityServerRole>;
   communityServerRoles: CommunityServerRoleConnection;
-  directMessageConversations: ConversationConnection;
+  directConversations: ConversationConnection;
   friendRequests: FriendRequestConnection;
   invitation?: Maybe<Invitation>;
   joinedServers: CommunityServerConnection;
@@ -953,7 +952,7 @@ export type QueryCommunityServerRolesArgs = {
 };
 
 
-export type QueryDirectMessageConversationsArgs = {
+export type QueryDirectConversationsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;

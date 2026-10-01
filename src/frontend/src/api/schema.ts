@@ -704,7 +704,6 @@ export interface paths {
         get: {
             parameters: {
                 query: {
-                    channelId?: string;
                     direction?: components["schemas"]["MessageLoadDirection"];
                     cursor?: string;
                     count: number;

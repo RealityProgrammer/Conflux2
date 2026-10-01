@@ -15,7 +15,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 [QueryType, Authorize]
 public static partial class ConversationQuery {
     [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
-    public static async Task<PageConnection<Conversation>> GetDirectMessageConversations(
+    public static async Task<PageConnection<Conversation>> GetDirectConversations(
         ClaimsPrincipal claimsPrincipal,
         QueryContext<Conversation> queryContext,
         PagingArguments pagingArgs,
@@ -30,7 +30,7 @@ public static partial class ConversationQuery {
 
         return await dbContext.Conversations
             .Where(c => c.Type == ConversationType.Direct)
-            .Where(c => c.Participants.Any(c => c.UserId == userId))
+            .Where(c => c.Participants.Any(p => p.UserId == userId))
             .With(queryContext)
             .ToPageAsync(pagingArgs, cancellationToken);
     }

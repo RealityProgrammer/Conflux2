@@ -6,11 +6,11 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {UpdateDmConversationListEvent, UserPresenceChangedEvent} from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
-import {
-  type GetDirectMessageChannelsQuery,
-  useInfiniteGetDirectMessageChannelsQuery
-} from "../../graphql/infiniteQueries.ts";
 import {userService} from "../../api/userService.ts";
+import {
+  type GetDirectConversationsQuery,
+  useInfiniteGetDirectConversationsQuery
+} from "../../graphql/infiniteQueries.ts";
 
 export default function UserLobbyLayout() {
   return (
@@ -67,12 +67,12 @@ function DirectMessagesList() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-  } = useInfiniteGetDirectMessageChannelsQuery(
+  } = useInfiniteGetDirectConversationsQuery(
     {},
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
-        const pageInfo = lastPage?.directMessageConversations?.pageInfo;
+        const pageInfo = lastPage?.directConversations?.pageInfo;
 
         if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
           return { after: pageInfo.endCursor };
@@ -84,21 +84,21 @@ function DirectMessagesList() {
     }
   );
 
-  const allElements = data?.pages.flatMap((page) => page?.directMessageConversations.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.directConversations.nodes ?? []) ?? [];
 
   useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
     if (!allElements || allElements.length == 0 || allElements[0].id === event.channelId) return;
 
     queryClient.invalidateQueries({
-      queryKey: useInfiniteGetDirectMessageChannelsQuery.getKey({}),
+      queryKey: useInfiniteGetDirectConversationsQuery.getKey({}),
     })
   });
 
   useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {
     if (allElements.findIndex(e => e.peerUser?.id === event.userId) === -1) return;
 
-    queryClient.setQueryData<InfiniteData<GetDirectMessageChannelsQuery, unknown>>(
-      useInfiniteGetDirectMessageChannelsQuery.getKey({}),
+    queryClient.setQueryData<InfiniteData<GetDirectConversationsQuery, unknown>>(
+      useInfiniteGetDirectConversationsQuery.getKey({}),
       (oldData) => {
         if (!oldData || !oldData.pages || oldData.pages.length == 0) return oldData;
 
@@ -107,10 +107,10 @@ function DirectMessagesList() {
           pages: oldData.pages.map(page => ({
             ...page,
             directMessageChannels: {
-              ...page.directMessageConversations,
-              nodes: !page.directMessageConversations.nodes ?
+              ...page.directConversations,
+              nodes: !page.directConversations.nodes ?
                 null :
-                page.directMessageConversations.nodes.map(node =>
+                page.directConversations.nodes.map(node =>
                   node.peerUser?.id !== event.userId ?
                     node :
                     {
