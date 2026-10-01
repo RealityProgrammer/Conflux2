@@ -1,6 +1,7 @@
 import {createContext, type ReactNode, useContext} from "react";
 import type {ServerChannelIdentityDto} from "../api/types.ts";
 import {useCommunityServerContext} from "./CommunityServerContext.tsx";
+import useConversationConnection from "../hooks/useConversationConnection.ts";
 
 interface CommunityServerChannelContextType {
   channelSummary: ServerChannelIdentityDto | undefined;
@@ -31,7 +32,7 @@ export default function CommunityServerChannelContextProvider({
     }
   }
 
-  // useConversationConnection(channelId);
+  useConversationConnection(channelSummary?.conversationId);
 
   return (
     <CommunityServerChannelContext.Provider value={{
