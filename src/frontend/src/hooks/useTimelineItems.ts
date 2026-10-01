@@ -31,6 +31,7 @@ export default function useTimelineItems(
   for (const group of messageClusters) {
     const activeMessages = group.messages.filter(m => !deletingMessageIds.has(m.id));
     if (!activeMessages.length) continue;
+    if (!group.senderUserId) continue;
 
     const sender = userProfiles[group.senderUserId];
 
@@ -54,7 +55,7 @@ export default function useTimelineItems(
       const showHeader = i === 0 || dateChanged;
 
       const replyToMessageSenderProfile = message.replyTo
-        ? userProfiles[message.replyTo.senderUserId]
+        ? userProfiles[message.replyTo.senderUserId!]
         : undefined;
 
       const isEditing = editingMessageId === message.id;

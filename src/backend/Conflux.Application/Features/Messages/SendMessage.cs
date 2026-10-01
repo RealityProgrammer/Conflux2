@@ -14,13 +14,13 @@ namespace Conflux.Application.Features.Messages;
 
 public sealed record SendMessageCommand(
     Guid SenderUserId,
-    Guid ChannelId,
+    Guid ConversationId,
     string? Body,
     IReadOnlyList<UploadFile> Attachments,
     Guid? ReplyToId
 ) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageReceivedNotification(Guid ChannelId, TimelineMessageDto Message) : INotification;
+public sealed record MessageReceivedNotification(Guid ConversationId, TimelineMessageDto Message) : INotification;
 
 public sealed record UpdateDmConversationListNotification(
     Guid SenderUserId,
@@ -29,40 +29,34 @@ public sealed record UpdateDmConversationListNotification(
 ) : INotification;
 
 public sealed class SendMessageHandler(
-    IChannelRepository channelRepository,
     IMessageRepository messageRepository,
-    IConversationAuthorizeService conversationAuthorizeService,
     IConversationRepository conversationRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     TimeProvider timeProvider,
     IMessageMediaService messageMediaService
 ) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
-    public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken) {
-        Guid channelId = request.ChannelId;
-        Guid senderUserId = request.SenderUserId;
-        
-        
+    public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand command, CancellationToken cancellationToken) {
+        Guid conversationId = command.ConversationId;
+        Guid senderUserId = command.SenderUserId;
 
-        if (!await conversationAuthorizeService.CanSendMessage(senderUserId, channelId, cancellationToken)) {
-            return Errors.Forbidden("You do not have permission to send message.");
-        }
+        ConversationType? conversationType = await conversationRepository
+            .AsQueryable()
+            .Where(c => c.Id == command.ConversationId)
+            .Select(c => c.Type)
+            .Cast<ConversationType?>()
+            .FirstOrDefaultAsync(cancellationToken);
 
-        Result<ChannelMetadataDto> getChannelMetadataResult = 
-            await channelRepository.GetChannelMetadataFromChannelId(channelId, cancellationToken);
-        
-        if (!getChannelMetadataResult.IsSuccess) {
-            return getChannelMetadataResult.Error;
+        if (conversationType == null) {
+            return Errors.ResourceNotFound("Conversation", [new("Id", conversationId.ToString())]);
         }
-        
-        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
 
         var utcNow = timeProvider.GetUtcNow();
         
         // upload attachments
         Attachment[] attachments = [];
-        if (request.Attachments.Count > 0) {
-            Result<Attachment[]> attachmentResults = await UploadAttachments(request.Attachments, cancellationToken);
+        if (command.Attachments.Count > 0) {
+            Result<Attachment[]> attachmentResults = await UploadAttachments(command.Attachments, cancellationToken);
 
             if (!attachmentResults.IsSuccess) {
                 return attachmentResults.Error;
@@ -72,11 +66,11 @@ public sealed class SendMessageHandler(
         }
 
         Message message = new() {
-            Body = request.Body,
+            Body = command.Body,
             Attachments = attachments,
             SenderUserId = senderUserId,
-            ConversationId = channelMetadata.ConversationId,
-            ReplyToId = request.ReplyToId,
+            ConversationId = conversationId,
+            ReplyToId = command.ReplyToId,
             CreatedAt = utcNow,
         };
         
@@ -86,13 +80,13 @@ public sealed class SendMessageHandler(
             messageRepository.Add(message);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
-            await conversationRepository.UpdateLatestMessageTime(channelMetadata.ConversationId, utcNow);
+            await conversationRepository.UpdateLatestMessageTime(conversationId, utcNow);
             
             // load the reply message into memory so that dto the message got the reply to convert to dto
-            if (request.ReplyToId.HasValue) {
+            if (command.ReplyToId.HasValue) {
                 await messageRepository
                     .AsQueryable()
-                    .FirstOrDefaultAsync(m => m.Id == request.ReplyToId.Value, cancellationToken);
+                    .FirstOrDefaultAsync(m => m.Id == command.ReplyToId.Value, cancellationToken);
             }
 
             await unitOfWork.CommitAsync(cancellationToken);
@@ -107,19 +101,19 @@ public sealed class SendMessageHandler(
         }
         
         TimelineMessageDto dto = new(message);
-        await mediator.Publish(new MessageReceivedNotification(channelId, dto), CancellationToken.None);
+        await mediator.Publish(new MessageReceivedNotification(conversationId, dto), CancellationToken.None);
         
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar
-        if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
-            var dmSummary = 
-                (await channelRepository.GetDmChannelSummary(senderUserId, channelId)).Value!;
-            
-            await mediator.Publish(new UpdateDmConversationListNotification(
-                senderUserId,
-                channelMetadata.ChannelId,
-                dmSummary.OtherUser.Id
-            ), CancellationToken.None);
-        }
+        // if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
+        //     var dmSummary = 
+        //         (await channelRepository.GetDmChannelSummary(senderUserId, channelId)).Value!;
+        //     
+        //     await mediator.Publish(new UpdateDmConversationListNotification(
+        //         senderUserId,
+        //         channelMetadata.ChannelId,
+        //         dmSummary.PeerProfile.Id
+        //     ), CancellationToken.None);
+        // }
 
         return Result<TimelineMessageDto>.Success(dto);
     }
@@ -133,7 +127,6 @@ public sealed class SendMessageHandler(
         for (int i = 0; i < attachments.Count; i++) {
             var attachment = attachments[i];
             
-
             try {
                 Result<Attachment> uploaded = 
                     await messageMediaService.UploadAttachment(attachment.Stream, attachment.FileName, cancellationToken);

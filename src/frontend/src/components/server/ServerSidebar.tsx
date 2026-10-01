@@ -33,7 +33,8 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   ServerChannelCategoryCreatedEvent,
   ServerChannelCategoryDeletedEvent,
-  ServerChannelCreatedEvent, ServerChannelDeletedEvent
+  ServerChannelCreatedEvent,
+  ServerChannelDeletedEvent
 } from "../../api/events.ts";
 import {ChannelType} from "../../api/schema.ts";
 import {toast} from "react-toastify";
@@ -73,7 +74,7 @@ export default function ServerSidebar() {
     serverSummary,
     memberAuthorizeInfo,
     appendChannelCategory,
-    appendChannel,
+    invalidateSummary,
     removeChannelCategory,
     removeChannel,
   } = useCommunityServerContext();
@@ -151,10 +152,8 @@ export default function ServerSidebar() {
         );
 
         if (response.success && response.data) {
-          const channelDto: ServerChannelIdentityDto = response.data;
-
           setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
-          appendChannel(channelDto.id, channelDto.name, channelDto.channelType === ChannelType.CommunityServerText ? "text" : "voice", action.targetCategoryId);
+          invalidateSummary();
         } else {
           setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
             ...s,
@@ -220,7 +219,7 @@ export default function ServerSidebar() {
       return;
     }
 
-    appendChannel(event.channel.id, event.channel.name, event.channel.channelType === ChannelType.CommunityServerText ? "text" : "voice", event.channel.categoryId);
+    invalidateSummary();
   });
 
   useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
@@ -574,7 +573,7 @@ function ChannelButton({
         navigate(`/lobby/servers/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(channel.id)}`);
       }}
     >
-      {channel.channelType === "CommunityServerText" ? (
+      {channel.channelType === ChannelType.Text ? (
         <BsChatText className="size-6 fill-gray-500 stroke-gray-500 inline mr-1"/>
       ) : (
         <BsVolumeUp className="size-6 fill-gray-500 stroke-gray-500 inline mr-1"/>

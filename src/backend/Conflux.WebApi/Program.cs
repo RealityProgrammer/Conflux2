@@ -256,10 +256,10 @@ builder.Services.AddSignalR()
 
 // Conflux services.
 builder.Services
-    .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
-    .AddScoped<IChannelAuthorizationStrategy, ServerTextChannelAuthorizationStrategy>()
-    .AddScoped<IChannelAuthorizationStrategy, ServerVoiceChannelAuthorizationStrategy>()
-    .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
+    // .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
+    // .AddScoped<IChannelAuthorizationStrategy, ServerTextChannelAuthorizationStrategy>()
+    // .AddScoped<IChannelAuthorizationStrategy, ServerVoiceChannelAuthorizationStrategy>()
+    // .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()

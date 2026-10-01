@@ -4,8 +4,8 @@ namespace Conflux.WebApi.SignalR;
 
 partial class GatewayHub {
     // invoked by the frontend only
-    public async Task NotifyTyping(string channelId) {
-        if (!Guid.TryParse(channelId, out var channelIdGuid)) return;
+    public async Task NotifyTyping(string conversationId) {
+        if (!Guid.TryParse(conversationId, out var channelIdGuid)) return;
         
         var userId = Context.UserIdentifier;
         if (userId == null) return;
@@ -14,7 +14,7 @@ partial class GatewayHub {
         if (dto == null) return;
         
         await Clients
-            .OthersInGroup(NameProvider.GetChannelGroupName(channelIdGuid))
+            .OthersInGroup(NameProvider.GetConversationGroupName(channelIdGuid))
             .UserTyping(new(dto.UserId, dto.DisplayName, dto.AvatarRevision), Context.ConnectionAborted);
     }
 }

@@ -18,16 +18,15 @@ using TimelineMessageDto = Conflux.Domain.Dto.TimelineMessageDto;
 namespace Conflux.WebApi.Controllers;
 
 [ApiController]
-[Route("api")]
+[Route("api/conversations")]
 [Authorize]
 public sealed class ConversationController(
-    IMediator mediator,
-    IMessageMediaService messageMediaService
+    IMediator mediator
 ) : ControllerBase {
-    [HttpPost("channels/{channelId:guid}/messages")]
+    [HttpPost("{conversationId:guid}/message")]
     [Idempotent(20)]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> SendMessage(
-        Guid channelId,
+        Guid conversationId,
         [FromForm] SendMessageRequest request,
         CancellationToken cancellationToken
     ) {
@@ -66,7 +65,7 @@ public sealed class ConversationController(
         try {
             var result = await mediator.Send(new SendMessageCommand(
                 userId, 
-                channelId, 
+                conversationId, 
                 request.Body, 
                 attachments, 
                 request.ReplyToId
@@ -88,8 +87,9 @@ public sealed class ConversationController(
         }
     }
 
-    [HttpPatch("messages/{messageId:guid}")]
+    [HttpPatch("{conversationId:guid}/message/{messageId:guid}")]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> EditMessage(
+        Guid conversationId,
         Guid messageId,
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
@@ -100,7 +100,7 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.InvalidIdentifier()));
         }
 
-        var result = await mediator.Send(new EditMessageCommand(userId, messageId, request.Body), cancellationToken);
+        var result = await mediator.Send(new EditMessageCommand(conversationId, userId, messageId, request.Body), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
@@ -113,15 +113,15 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpDelete("messages/{messageId:guid}")]
-    public async Task<ActionResult> DeleteMessage(Guid messageId) {
+    [HttpDelete("{conversationId:guid}/message")]
+    public async Task<ActionResult> DeleteMessage(Guid conversationId, Guid messageId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await mediator.Send(new DeleteMessageCommand(userId, messageId));
+        Result result = await mediator.Send(new DeleteMessageCommand(conversationId, userId, messageId));
 
         if (result.IsSuccess) {
             return NoContent();
@@ -134,8 +134,8 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpGet("channels/{channelId:guid}/messages")]
-    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetTimelineMessages(
+    [HttpGet("{conversationId:guid}/message")]
+    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetConversationMessages(
         Guid channelId,
         [FromQuery] MessageLoadDirection? direction,
         [FromQuery] Guid? cursor,
@@ -162,21 +162,6 @@ public sealed class ConversationController(
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<GetMessagesResponse>(null, result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<GetMessagesResponse>(null, result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error)),
-        };
-    }
-    
-    [HttpGet("attachments/{attachmentId:guid}")]
-    [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAttachmentUrl(Guid attachmentId, [FromQuery] bool download = false) {
-        var result = await messageMediaService.GetAttachmentUrl(attachmentId, TimeSpan.FromHours(1), download: download);
-
-        if (result.IsSuccess) {
-            return Redirect(result.Value!);
-        }
-
-        return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NotFound(),
-            _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
 

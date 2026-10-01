@@ -38,9 +38,8 @@ export type RefreshResponse = components["schemas"]["RefreshResponse"];
 
 export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
 export type PendingFriendRequestDto = components["schemas"]["PendingFriendRequestDto"];
-export type DirectMessageResolutionResponse = components["schemas"]["DirectMessageResolutionResponse"];
-export type DmChannelSummary = components["schemas"]["DmChannelSummary"];
-export type Attachment = components["schemas"]["Attachment"];
+export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
+export type AttachmentDto = components["schemas"]["AttachmentDto"];
 export type TimelineMessageClusterDto = components["schemas"]["TimelineMessageClusterDto"];
 export type TimelineMessageClusterItemDto = components["schemas"]["TimelineMessageClusterItemDto"];
 export type TimelineMessageReplyDto = components["schemas"]["TimelineMessageReplyDto"];

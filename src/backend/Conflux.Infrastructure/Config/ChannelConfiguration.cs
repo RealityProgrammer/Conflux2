@@ -15,11 +15,6 @@ internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel> {
             .HasForeignKey<Channel>(c => c.ConversationId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasOne(c => c.FriendRequest)
-            .WithOne(r => r.ConversationChannel)
-            .HasForeignKey<Channel>(c => c.FriendRequestId)
-            .OnDelete(DeleteBehavior.SetNull);  // keep chat history even if friend request is gone somehow
-        
         builder.HasOne(c => c.CommunityServer)
             .WithMany(s => s.Channels)
             .HasForeignKey(c => c.CommunityServerId)

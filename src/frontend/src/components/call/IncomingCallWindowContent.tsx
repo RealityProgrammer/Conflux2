@@ -2,7 +2,7 @@ import {type IncomingDirectCall, useCallStore} from "../../store/useCallStore.ts
 import CallWindowHeader from "./CallWindowHeader.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import IconButton from "../IconButton.tsx";
-import {BsCameraVideoOffFill, BsTelephoneInboundFill, BsTelephoneXFill} from "react-icons/bs";
+import {BsTelephoneInboundFill, BsTelephoneXFill} from "react-icons/bs";
 import {userService} from "../../api/userService.ts";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import {useEffect, useRef, useState} from "react";

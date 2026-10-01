@@ -7,14 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Messages;
 
-public sealed record DeleteMessageCommand(Guid RequesterUserId, Guid MessageId) : ICommand<Result>;
+public sealed record DeleteMessageCommand(Guid ConversationId, Guid RequesterUserId, Guid MessageId) : ICommand<Result>;
 
-public sealed record MessageDeletedNotification(Guid ChannelId, Guid MessageId) : INotification;
+public sealed record MessageDeletedNotification(Guid ConversationId, Guid MessageId) : INotification;
 
 public sealed class DeleteMessageHandler(
     IMessageRepository messageRepository,
-    IConversationRepository conversationRepository,
-    IConversationAuthorizeService conversationAuthorizeService,
+    // IConversationRepository conversationRepository,
+    // IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
@@ -32,15 +32,6 @@ public sealed class DeleteMessageHandler(
         if (message.SenderUserId != command.RequesterUserId) {
             return Errors.Forbidden("You do not have permission to delete this message.");
         }
-       
-        Result<ChannelMetadataDto> getChannelMetadataResult = 
-            await conversationRepository.GetChannelMetadata(message.ConversationId, cancellationToken);
-        
-        if (!getChannelMetadataResult.IsSuccess) {
-            return getChannelMetadataResult.Error;
-        }
-        
-        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
         if (message.DeletedAt != null) {
             return Result.Success();
@@ -50,7 +41,7 @@ public sealed class DeleteMessageHandler(
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
-        await mediator.Publish(new MessageDeletedNotification(channelMetadata.ChannelId, message.Id), CancellationToken.None);
+        await mediator.Publish(new MessageDeletedNotification(command.ConversationId, message.Id), CancellationToken.None);
         
         return Result.Success();
     }

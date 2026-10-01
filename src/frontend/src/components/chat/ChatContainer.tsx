@@ -3,13 +3,13 @@ import ChatInput from "./ChatInput.tsx";
 import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 
 export interface ChatContainerProps {
-  channelId: string;
+  conversationId: string;
 }
 
-export default function ChatContainer({channelId}: ChatContainerProps) {
+export default function ChatContainer({conversationId}: ChatContainerProps) {
   return (
     <ChatContainerContextProvider
-      channelId={channelId}
+      conversationId={conversationId}
     >
       <div className="flex flex-col flex-1">
         <ChatView/>

@@ -8,17 +8,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Messages;
 
 public sealed record EditMessageCommand(
+    Guid ConversationId,
     Guid SenderUserId, 
     Guid MessageId, 
     string? Body
 ) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageEditedNotification(Guid ChannelId, TimelineMessageDto Message) : INotification;
+public sealed record MessageEditedNotification(Guid ConversationId, TimelineMessageDto Message) : INotification;
 
 public sealed class EditMessageHandler(
     IMessageRepository messageRepository,
-    IConversationRepository conversationRepository,
-    IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
@@ -31,7 +30,7 @@ public sealed class EditMessageHandler(
         
         var newBody = command.Body;
         
-        if (message == null) {
+        if (message == null || message.ConversationId != command.ConversationId) {
             return Errors.ResourceNotFound("Message");
         }
         
@@ -39,15 +38,6 @@ public sealed class EditMessageHandler(
             return Errors.Forbidden("You do not have permission to edit this message.");
         }
        
-        Result<ChannelMetadataDto> getChannelMetadataResult = 
-            await conversationRepository.GetChannelMetadata(message.ConversationId, cancellationToken);
-        
-        if (!getChannelMetadataResult.IsSuccess) {
-            return getChannelMetadataResult.Error;
-        }
-        
-        ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
-        
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {
             return Result<TimelineMessageDto>.Success(new(message));
@@ -60,7 +50,7 @@ public sealed class EditMessageHandler(
 
         TimelineMessageDto dto = new(message);  // GetById should include the ReplyTo, so no need to load it into memory automatically
         
-        await mediator.Publish(new MessageEditedNotification(channelMetadata.ChannelId, dto), CancellationToken.None);
+        await mediator.Publish(new MessageEditedNotification(command.ConversationId, dto), CancellationToken.None);
         
         return Result<TimelineMessageDto>.Success(dto);
     }

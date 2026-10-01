@@ -16,7 +16,7 @@ internal sealed class ConversationParticipantConfiguration : IEntityTypeConfigur
             .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasOne(p => p.User)
-            .WithMany()
+            .WithMany(u => u.ConversationParticipants)
             .HasForeignKey(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }

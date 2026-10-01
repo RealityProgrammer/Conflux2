@@ -2,13 +2,13 @@ import {useSignalR} from "../contexts/SignalRContext.tsx";
 import {useEffect, useRef} from "react";
 import {HubConnectionState} from "@microsoft/signalr";
 
-export default function useChannelConnection(channelId: string | undefined) {
+export default function useConversationConnection(conversationId: string | undefined) {
   const { connection, isConnected, invokeSafely } = useSignalR();
 
   const operationPromiseRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    if (!channelId || !isConnected || !connection) {
+    if (!conversationId || !isConnected || !connection) {
       return;
     }
 
@@ -32,22 +32,22 @@ export default function useChannelConnection(channelId: string | undefined) {
       }
 
       try {
-        await invokeSafely("JoinChannel", channelId);
+        await invokeSafely("JoinConversation", conversationId);
 
         // race-condition preventing
         if (!isMounted) {
           if (connection.state === HubConnectionState.Connected) {
-            invokeSafely("LeaveChannel", channelId)
-              .catch(err => console.error(`Failed to leave channel ${channelId}:`, err));
+            invokeSafely("LeaveConversation", conversationId)
+              .catch(err => console.error(`Failed to leave conversation ${conversationId}:`, err));
           }
 
           return;
         }
 
         hasJoined = true;
-        console.log("Joined channel", channelId);
+        console.log("Joined conversation", conversationId);
       } catch (err) {
-        console.error(`Failed to join channel ${channelId}:`, err);
+        console.error(`Failed to join conversation ${conversationId}:`, err);
       } finally {
         resolveOperation!();
       }
@@ -57,14 +57,14 @@ export default function useChannelConnection(channelId: string | undefined) {
       isMounted = false;
 
       if (hasJoined && connection.state === HubConnectionState.Connected) {
-        const leavePromise = invokeSafely("LeaveChannel", channelId)
-          .then(() => console.log(`Left channel: ${channelId}`))
-          .catch(err => console.error(`Failed to leave channel ${channelId}:`, err));
+        const leavePromise = invokeSafely("LeaveConversation", conversationId)
+          .then(() => console.log(`Left conversation: ${conversationId}`))
+          .catch(err => console.error(`Failed to leave conversation ${conversationId}:`, err));
 
         operationPromiseRef.current = operationPromiseRef.current.then(
           () => leavePromise
         );
       }
     };
-  }, [channelId, isConnected, connection]);
+  }, [conversationId, isConnected, connection]);
 }

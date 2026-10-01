@@ -17,7 +17,7 @@ public sealed record GetChatMessagesQuery(
 
 public sealed class GetChatMessagesHandler(
     IChannelRepository channelRepository,
-    IConversationAuthorizeService conversationAuthorizeService,
+    // IConversationAuthorizeService conversationAuthorizeService,
     IMessageRepository messageRepository,
     IUserRepository userRepository
 ) : IQueryHandler<GetChatMessagesQuery, Result<GetMessagesResponse>> {

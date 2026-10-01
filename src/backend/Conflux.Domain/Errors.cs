@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Conflux.Domain;
 
 public static class Errors {
@@ -14,7 +16,10 @@ public static class Errors {
         new(nameof(EmailAttachedToAccount), "Email attached to an existing account.");
     
     public static Error NoUserFoundFromId() => 
-        new(nameof(NoUserFoundFromId), "No user found from the provided ID.");
+        new(nameof(NoUserFoundFromId), "User not found.");
+    
+    public static Error NoUserFoundFromId(Guid id) => 
+        new(nameof(NoUserFoundFromId), $"User (Id = {id}) not found.");
 
     public static Error InvalidRefreshToken() =>
         new(nameof(InvalidRefreshToken), "Invalid refresh token.");
@@ -53,6 +58,23 @@ public static class Errors {
     
     public static Error ResourceNotFound(string typeOfResource) =>
         new(nameof(ResourceNotFound), $"{typeOfResource} not found.");
+
+    public static Error ResourceNotFound(string typeOfResource, IReadOnlyCollection<KeyValuePair<string, string>> properties) {
+        if (properties.Count == 0) {
+            return new(nameof(ResourceNotFound), $"{typeOfResource} not found.");
+        }
+
+        var sb = new StringBuilder().Append(typeOfResource).Append(" (");
+
+        foreach ((var key, var value) in properties) {
+            sb.Append(key).Append(" = ").Append(value).Append(", ");
+        }
+
+        sb.Length -= 2;
+        string message =  sb.Append(") not found.").ToString();
+        
+        return new(nameof(ResourceNotFound), message);
+    }
     
     public static Error ResourceExpired(string typeOfResource) =>
         new(nameof(ResourceExpired), $"{typeOfResource} expired.");

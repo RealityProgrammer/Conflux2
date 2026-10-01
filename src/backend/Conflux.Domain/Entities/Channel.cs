@@ -12,11 +12,6 @@ public class Channel : IHasCreatedAt {
     public Guid ConversationId { get; set; }
     public Conversation Conversation { get; set; } = null!;
     
-    // TODO: Add community id or channel category property in the future once we got community implemented
-    
-    public Guid? FriendRequestId { get; set; }
-    public FriendRequest? FriendRequest { get; set; }
-    
     public Guid? CommunityServerId { get; set; }
     public CommunityServer? CommunityServer { get; set; }
     

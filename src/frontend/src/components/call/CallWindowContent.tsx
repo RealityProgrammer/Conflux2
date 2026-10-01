@@ -1,5 +1,4 @@
 import {useCallStore} from "../../store/useCallStore.ts";
-import CallWindowHeader from "./CallWindowHeader.tsx";
 import OutgoingCallWindowContent from "./OutgoingCallWindowContent.tsx";
 import IncomingCallWindowContent from "./IncomingCallWindowContent.tsx";
 

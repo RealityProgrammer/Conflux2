@@ -17,7 +17,7 @@ internal sealed class DeletedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
         
-        string groupName = NameProvider.GetChannelGroupName(notification.ChannelId);
+        string groupName = NameProvider.GetConversationGroupName(notification.ConversationId);
         
         var target = string.IsNullOrEmpty(connectionId)
             ? hubContext.Clients.Group(groupName)

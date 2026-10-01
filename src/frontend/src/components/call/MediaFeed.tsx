@@ -1,7 +1,6 @@
-import {type HTMLAttributes, useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import UserAvatar from "../UserAvatar.tsx";
 import {BsCameraVideoOffFill, BsMicMuteFill} from "react-icons/bs";
-import type {MediaDeviceOption} from "../../hooks/useUserMedia.ts";
 
 interface StreamVideoProps {
   stream: MediaStream | null;

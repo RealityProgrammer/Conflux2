@@ -5,7 +5,7 @@ import UserAvatar from "../UserAvatar.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {userService} from "../../api/userService.ts";
 import IconButton from "../IconButton.tsx";
-import {BsCameraVideoOffFill, BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
+import {BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
 import {useTimeout} from "usehooks-ts";
 import {useEffect, useRef, useState} from "react";
 import {animate} from "animejs";

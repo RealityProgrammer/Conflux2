@@ -72,7 +72,7 @@ function DirectMessagesList() {
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
-        const pageInfo = lastPage?.directMessageChannels?.pageInfo;
+        const pageInfo = lastPage?.directMessageConversations?.pageInfo;
 
         if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
           return { after: pageInfo.endCursor };
@@ -84,7 +84,7 @@ function DirectMessagesList() {
     }
   );
 
-  const allElements = data?.pages.flatMap((page) => page?.directMessageChannels.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.directMessageConversations.nodes ?? []) ?? [];
 
   useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
     if (!allElements || allElements.length == 0 || allElements[0].id === event.channelId) return;
@@ -95,7 +95,7 @@ function DirectMessagesList() {
   });
 
   useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {
-    if (allElements.findIndex(e => e.friendRequest!.otherUser!.id) === -1) return;
+    if (allElements.findIndex(e => e.peerUser?.id === event.userId) === -1) return;
 
     queryClient.setQueryData<InfiniteData<GetDirectMessageChannelsQuery, unknown>>(
       useInfiniteGetDirectMessageChannelsQuery.getKey({}),
@@ -107,20 +107,17 @@ function DirectMessagesList() {
           pages: oldData.pages.map(page => ({
             ...page,
             directMessageChannels: {
-              ...page.directMessageChannels,
-              nodes: !page.directMessageChannels.nodes ?
+              ...page.directMessageConversations,
+              nodes: !page.directMessageConversations.nodes ?
                 null :
-                page.directMessageChannels.nodes.map(node =>
-                  node.friendRequest?.otherUser?.id !== event.userId ?
+                page.directMessageConversations.nodes.map(node =>
+                  node.peerUser?.id !== event.userId ?
                     node :
                     {
                       ...node,
-                      friendRequest: {
-                        ...node.friendRequest,
-                        otherUser: {
-                          ...node.friendRequest.otherUser,
-                          effectivePresenceStatus: event.status,
-                        }
+                      peerUser: {
+                        ...node.peerUser,
+                        effectivePresenceStatus: event.status,
                       },
                     },
                 ),
@@ -148,13 +145,13 @@ function DirectMessagesList() {
 
         return (
           <UserNameplate.Root
-            avatarSrc={item.friendRequest?.otherUser?.avatarRevision ? userService.getAvatarUrl(item.friendRequest.otherUser.id, item.friendRequest.otherUser.avatarRevision) : undefined}
-            displayName={item.friendRequest?.otherUser?.displayName ?? "???"}
+            avatarSrc={item.peerUser?.avatarRevision ? userService.getAvatarUrl(item.peerUser.id, item.peerUser.avatarRevision) : undefined}
+            displayName={item.peerUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
-            presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
+            presenceStatus={item.peerUser?.effectivePresenceStatus}
             presenceStatusClassName="size-3 ring-2 ring-gray-725 bg-gray-725"
             onClick={() => {
-              const otherUserId = item.friendRequest?.otherUser?.id;
+              const otherUserId = item.peerUser?.id;
               if (!otherUserId) return;
 
               navigate(`/lobby/me/dm/${encodeURIComponent(otherUserId)}`);

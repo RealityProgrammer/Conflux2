@@ -1,7 +1,6 @@
 import {BsCheck} from "react-icons/bs";
 import {Select} from "radix-ui";
 import type {HTMLAttributes, ReactNode} from "react";
-import {TruncatedText} from "./TruncatedText.tsx";
 
 export interface SelectItemProps extends HTMLAttributes<HTMLDivElement> {
   text: string;

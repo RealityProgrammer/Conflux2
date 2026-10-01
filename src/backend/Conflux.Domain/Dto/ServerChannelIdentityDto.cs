@@ -10,10 +10,12 @@ namespace Conflux.Domain.Dto;
     nameof(Channel.Name),
     nameof(Channel.Type),
     nameof(Channel.ChannelCategoryId),
+    nameof(Channel.ConversationId),
 ])]
 public sealed partial record ServerChannelIdentityDto {
     [Required] public Guid Id { get; set; } = Id;
     [Required, MapFrom(nameof(Channel.Name))] public string Name { get; set; } = Name;
     [Required, MapFrom(nameof(Channel.Type))] public ChannelType ChannelType { get; set; } = ChannelType;
     [Required, MapFrom(nameof(Channel.ChannelCategoryId))] public Guid? CategoryId { get; set; } = CategoryId;
+    [Required] public Guid ConversationId { get; set; } = ConversationId;
 }

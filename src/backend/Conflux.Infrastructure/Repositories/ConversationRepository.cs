@@ -1,33 +1,18 @@
 using Conflux.Domain;
-using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
-using Facet.Extensions;
 
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class ConversationRepository(
     ApplicationDbContext dbContext
 ) : IConversationRepository {
-    public IQueryable<Conversation> AsQueryable() {
-        return dbContext.Conversations;
+    public void Add(Conversation conversation) {
+        dbContext.Conversations.Add(conversation);
     }
     
-    public async Task<Result<ChannelMetadataDto>> GetChannelMetadata(
-        Guid conversationId,
-        CancellationToken cancellationToken = default
-    ) {
-        ChannelMetadataDto? context = await dbContext.Channels
-            .Where(c => c.ConversationId == conversationId && c.Type == ChannelType.DirectMessage)
-            .SelectFacet<ChannelMetadataDto>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (context == null) {
-            return Errors.ResourceNotFound("Channel");
-        }
-
-        return Result<ChannelMetadataDto>.Success(context);
+    public IQueryable<Conversation> AsQueryable() {
+        return dbContext.Conversations;
     }
     
     public async Task<Result> UpdateLatestMessageTime(Guid conversationId, DateTimeOffset time) {

@@ -1,7 +1,6 @@
 import {useCallStore} from "../../store/useCallStore.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
-  DirectCallDroppedEvent,
   IncomingDirectCallEvent
 } from "../../api/events.ts";
 import CallWindow from "./CallWindow.tsx";

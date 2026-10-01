@@ -22,7 +22,7 @@ export type GetDirectMessageChannelsQueryVariables = Exact<{
 }>;
 
 
-export type GetDirectMessageChannelsQuery = { directMessageChannels: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, friendRequest: { otherUser: { id: string, displayName: string | null, avatarRevision: number | null, effectivePresenceStatus: Types.PresenceStatus } | null } | null }> | null } };
+export type GetDirectMessageChannelsQuery = { directMessageConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, avatarRevision: number | null, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus } | null }> | null } };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
@@ -140,10 +140,7 @@ useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQ
 
 export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
     query GetDirectMessageChannels($after: String) {
-  directMessageChannels(
-    after: $after
-    order: {conversation: {latestMessageAt: DESC}}
-  ) {
+  directMessageConversations(after: $after, order: {latestMessageAt: DESC}) {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -151,13 +148,12 @@ export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
     }
     nodes {
       id
-      friendRequest {
-        otherUser {
-          id
-          displayName
-          avatarRevision
-          effectivePresenceStatus
-        }
+      peerUser {
+        id
+        avatarRevision
+        displayName
+        userName
+        effectivePresenceStatus
       }
     }
   }

@@ -56,7 +56,7 @@ public sealed class CreateServerChannelHandler(
                 return await CreateServerChannel(
                     request.ServerId, 
                     request.Name, 
-                    ChannelType.CommunityServerText, 
+                    ChannelType.Text, 
                     request.ChannelCategoryId,
                     cancellationToken
                 );
@@ -65,7 +65,7 @@ public sealed class CreateServerChannelHandler(
                 return await CreateServerChannel(
                     request.ServerId, 
                     request.Name, 
-                    ChannelType.CommunityServerVoice, 
+                    ChannelType.Voice, 
                     request.ChannelCategoryId,
                     cancellationToken
                 );

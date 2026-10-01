@@ -16,5 +16,6 @@ public class FriendRequest : IHasCreatedAt {
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     
-    public Channel? ConversationChannel { get; set; }
+    public Guid? DirectConversationId { get; set; }
+    public Conversation? DirectConversation { get; set; }
 }

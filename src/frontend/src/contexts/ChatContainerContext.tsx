@@ -37,7 +37,7 @@ type EditMessagePayload = { messageId: string, newBody: string | null };
 type DeleteMessagePayload = { operationId: string, messageId: string };
 
 interface ChatContainerContextType {
-  channelId: string;
+  conversationId: string;
   replyingMessage: TimelineMessageDto | null;
 
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
@@ -68,12 +68,12 @@ interface ChatContainerContextType {
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
 
 interface ChatContainerContextProviderProps {
-  channelId: string;
+  conversationId: string;
   children: ReactNode;
 }
 
 export default function ChatContainerContextProvider({
-  channelId,
+  conversationId,
   children,
 }: ChatContainerContextProviderProps) {
   type PageParams = {
@@ -85,14 +85,14 @@ export default function ChatContainerContextProvider({
 
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
 
-  const queryKey: QueryKey = ["channelConversation", channelId];
+  const queryKey: QueryKey = ["conversation", conversationId];
 
   const messageQueryResult = useInfiniteQuery({
-    enabled: !!channelId,
+    enabled: !!conversationId,
     queryKey,
     queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
       const response = await messageService.getMessages(
-        channelId!,
+        conversationId!,
         pageParam.direction,
         pageParam.cursorId,
         LOAD_COUNT,
@@ -332,7 +332,7 @@ export default function ChatContainerContextProvider({
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
       return await messageService.sendMessage(
-        channelId!,
+        conversationId!,
         payload.idempotencyKey,
         payload.input.messageBody,
         payload.input.attachments,
@@ -489,7 +489,7 @@ export default function ChatContainerContextProvider({
 
   // messaging operation
   const handleSendMessage = async (state: MessageInput) => {
-    if (!channelId) return;
+    if (!conversationId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
     const idempotencyKey = crypto.randomUUID();
@@ -499,7 +499,7 @@ export default function ChatContainerContextProvider({
   };
 
   const handleEditMessage = async (originalMessage: TimelineMessageDto, newBody: string | null) => {
-    if (!channelId) return;
+    if (!conversationId) return;
 
     editMessageMutation.mutate({
       messageId: originalMessage.id,
@@ -508,7 +508,7 @@ export default function ChatContainerContextProvider({
   };
 
   const handleDeleteMessage = async (message: TimelineMessageDto) => {
-    if (!channelId) return;
+    if (!conversationId) return;
 
     const operationId = `__queue_message-${crypto.randomUUID()}`;
     deleteMessageMutation.mutate({
@@ -519,7 +519,7 @@ export default function ChatContainerContextProvider({
 
   return (
     <ChatContainerContext.Provider value={{
-      channelId,
+      conversationId,
       replyingMessage,
       setReplyingMessage,
       messageQueryResult,

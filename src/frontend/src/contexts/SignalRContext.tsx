@@ -1,10 +1,9 @@
-import {createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from "react";
 import {
   HttpTransportType,
   type HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
-  LogLevel
 } from "@microsoft/signalr";
 import {apiClient, graphqlClient} from "../api/client.ts";
 

@@ -31,7 +31,7 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
-  const {channelId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
+  const {conversationId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
 
   const [messageBody, setMessageBody] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -41,7 +41,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
-  const notifyTyping = useTypingEmitter(channelId);
+  const notifyTyping = useTypingEmitter(conversationId);
 
   const handleAttachmentButtonClick = () => {
     if (!fileInputRef.current) {

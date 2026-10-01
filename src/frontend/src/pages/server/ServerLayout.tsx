@@ -5,7 +5,6 @@ import type {ServerDetailDto} from "../../api/types.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
-import {ChannelType} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
 import {useAuth} from "../../contexts/AuthContext.tsx";
@@ -201,56 +200,9 @@ function SuccessfullyLoadedLayout({
     });
   };
 
-  const appendChannel = (
-    id: string,
-    name: string,
-    type: "text" | "voice",
-    categoryId: string | null
-  ) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData: NoInfer<ServerDetailDto> | undefined): ServerDetailDto | undefined => {
-      if (!oldData) return oldData;
-
-      if (!oldData.channelCategories || oldData.channelCategories.length === 0) {
-        return {
-          ...oldData,
-          channelCategories: [
-            {
-              id: null,
-              name: null,
-              channels: [
-                {
-                  id,
-                  name,
-                  channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
-                  categoryId,
-                }
-              ]
-            }
-          ]
-        };
-      }
-
-      return {
-        ...oldData,
-        channelCategories: oldData.channelCategories.map((category) => {
-          if (category.id === categoryId) {
-            return {
-              ...category,
-              channels: [
-                ...category.channels,
-                {
-                  id,
-                  name,
-                  channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
-                  categoryId,
-                },
-              ],
-            };
-          }
-
-          return category;
-        }),
-      };
+  const invalidateSummary = () => {
+    queryClient.invalidateQueries({
+      queryKey: serverSummaryQueryKey,
     });
   };
 
@@ -325,9 +277,9 @@ function SuccessfullyLoadedLayout({
       serverId={serverId}
       serverSummary={serverSummary}
       appendChannelCategory={appendChannelCategory}
-      appendChannel={appendChannel}
       removeChannelCategory={removeChannelCategory}
       removeChannel={removeChannel}
+      invalidateSummary={invalidateSummary}
       memberAuthorizeInfo={memberAuthorizeInfo}
     >
       <div className="size-full flex flex-row">

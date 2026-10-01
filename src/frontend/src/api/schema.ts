@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/api/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    download?: boolean;
+                };
+                header?: never;
+                path: {
+                    attachmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -217,84 +254,6 @@ export interface paths {
                         "text/plain": components["schemas"]["ApiResponse"];
                         "application/json": components["schemas"]["ApiResponse"];
                         "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/channels/dm/{channelId}/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfDmChannelSummary"];
-                        "application/json": components["schemas"]["ApiResponseOfDmChannelSummary"];
-                        "text/json": components["schemas"]["ApiResponseOfDmChannelSummary"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/channels/dm/{toUserId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    toUserId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfDirectMessageResolutionResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfDirectMessageResolutionResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfDirectMessageResolutionResponse"];
                     };
                 };
             };
@@ -735,7 +694,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/channels/{channelId}/messages": {
+    "/api/conversations/{conversationId}/message": {
         parameters: {
             query?: never;
             header?: never;
@@ -745,13 +704,14 @@ export interface paths {
         get: {
             parameters: {
                 query: {
+                    channelId?: string;
                     direction?: components["schemas"]["MessageLoadDirection"];
                     cursor?: string;
                     count: number;
                 };
                 header?: never;
                 path: {
-                    channelId: string;
+                    conversationId: string;
                 };
                 cookie?: never;
             };
@@ -776,7 +736,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    channelId: string;
+                    conversationId: string;
                 };
                 cookie?: never;
             };
@@ -804,28 +764,14 @@ export interface paths {
                 };
             };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/{messageId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
         delete: {
             parameters: {
-                query?: never;
+                query?: {
+                    messageId?: string;
+                };
                 header?: never;
                 path: {
-                    messageId: string;
+                    conversationId: string;
                 };
                 cookie?: never;
             };
@@ -842,11 +788,28 @@ export interface paths {
         };
         options?: never;
         head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/message/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
+                    conversationId: string;
                     messageId: string;
                 };
                 cookie?: never;
@@ -872,43 +835,6 @@ export interface paths {
                 };
             };
         };
-        trace?: never;
-    };
-    "/api/attachments/{attachmentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    download?: boolean;
-                };
-                header?: never;
-                path: {
-                    attachmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/csrf/token": {
@@ -971,6 +897,45 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dm/{peerId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    peerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfDirectConversationSummary"];
+                        "application/json": components["schemas"]["ApiResponseOfDirectConversationSummary"];
+                        "text/json": components["schemas"]["ApiResponseOfDirectConversationSummary"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1656,12 +1621,8 @@ export interface components {
             data: null | components["schemas"]["ChannelCategoryIdentityDto"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfDirectMessageResolutionResponse: {
-            data: null | components["schemas"]["DirectMessageResolutionResponse"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfDmChannelSummary: {
-            data: null | components["schemas"]["DmChannelSummary"];
+        ApiResponseOfDirectConversationSummary: {
+            data: null | components["schemas"]["DirectConversationSummary"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfGetMessagesResponse: {
@@ -1720,10 +1681,10 @@ export interface components {
             data: components["schemas"]["UserRelationshipStatus"];
             error: components["schemas"]["Error"];
         };
-        Attachment: {
-            name: string;
+        AttachmentDto: {
             /** Format: uuid */
             id: string;
+            name: string;
             type: string;
         };
         ChannelCategoryCreateRequest: {
@@ -1764,9 +1725,11 @@ export interface components {
         CreateRoleRequest: {
             name: string;
         };
-        DirectMessageResolutionResponse: {
+        DirectConversationSummary: {
             /** Format: uuid */
-            channelId: string;
+            conversationId: string;
+            peerProfile: components["schemas"]["UserIdentityProfileDto"];
+            friendRequestStatus: components["schemas"]["FriendRequestStatus"];
         };
         DiscoverFriendSummary: {
             /** Format: uuid */
@@ -1776,12 +1739,6 @@ export interface components {
             /** Format: int32 */
             avatarRevision: null | number;
             status: components["schemas"]["UserRelationshipStatus"];
-        };
-        DmChannelSummary: {
-            /** Format: uuid */
-            channelId: string;
-            otherUser: components["schemas"]["UserIdentityProfileDto"];
-            friendRequestStatus: components["schemas"]["FriendRequestStatus"];
         };
         Error: {
             code?: null | string;
@@ -1879,6 +1836,8 @@ export interface components {
             channelType: components["schemas"]["ChannelType"];
             /** Format: uuid */
             categoryId: null | string;
+            /** Format: uuid */
+            conversationId: string;
         };
         ServerDetailDto: {
             name: string;
@@ -1922,14 +1881,14 @@ export interface components {
         };
         TimelineMessageClusterDto: {
             /** Format: uuid */
-            senderUserId: string;
+            senderUserId: null | string;
             messages: components["schemas"]["TimelineMessageClusterItemDto"][];
         };
         TimelineMessageClusterItemDto: {
             /** Format: uuid */
             id: string;
             body: null | string;
-            attachments: components["schemas"]["Attachment"][];
+            attachments: components["schemas"]["AttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
@@ -1938,9 +1897,9 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            senderUserId: string;
+            senderUserId: null | string;
             body: null | string;
-            attachments: components["schemas"]["Attachment"][];
+            attachments: components["schemas"]["AttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
@@ -1949,7 +1908,7 @@ export interface components {
             /** Format: uuid */
             messageId: string;
             /** Format: uuid */
-            senderUserId: string;
+            senderUserId: null | string;
             bodySnippet: null | string;
             hasMoreBody: boolean;
             /** Format: int32 */
@@ -1970,8 +1929,6 @@ export interface components {
             displayName: null | string;
             /** Format: int32 */
             avatarRevision: null | number;
-            /** Format: int32 */
-            bannerRevision: null | number;
         };
         /** @enum {string} */
         UserRelationshipStatus: UserRelationshipStatus;
@@ -2042,9 +1999,8 @@ export interface operations {
     };
 }
 export enum ChannelType {
-    DirectMessage = "DirectMessage",
-    CommunityServerText = "CommunityServerText",
-    CommunityServerVoice = "CommunityServerVoice"
+    Text = "Text",
+    Voice = "Voice"
 }
 export enum CommunityServerChannelType {
     Text = "Text",

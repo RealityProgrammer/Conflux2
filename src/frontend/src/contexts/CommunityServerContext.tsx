@@ -8,9 +8,9 @@ interface CommunityServerContextType {
   serverSummary: ServerDetailDto;
 
   appendChannelCategory: (id: string, name: string) => void;
-  appendChannel: (id: string, name: string, type: "text" | "voice", categoryId: string | null) => void;
   removeChannelCategory: (id: string) => void;
   removeChannel: (id: string) => void;
+  invalidateSummary: () => void;
 
   memberAuthorizeInfo: ServerMemberAuthorizeInfo;
 }
@@ -26,9 +26,9 @@ export default function CommunityServerContextProvider({
   serverId,
   serverSummary,
   appendChannelCategory,
-  appendChannel,
   removeChannelCategory,
   removeChannel,
+  invalidateSummary,
   memberAuthorizeInfo,
 }: CommunityServerContextProviderProps) {
   useServerConnection(serverId);
@@ -38,9 +38,9 @@ export default function CommunityServerContextProvider({
       serverId,
       serverSummary,
       appendChannelCategory,
-      appendChannel,
       removeChannelCategory,
       removeChannel,
+      invalidateSummary,
       memberAuthorizeInfo,
     }}>
       {children}

@@ -13,11 +13,11 @@ using System.Security.Claims;
 namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
-public static partial class ChannelQuery {
+public static partial class ConversationQuery {
     [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
-    public static async Task<PageConnection<Channel>> GetDirectMessageChannels(
+    public static async Task<PageConnection<Conversation>> GetDirectMessageConversations(
         ClaimsPrincipal claimsPrincipal,
-        QueryContext<Channel> queryContext,
+        QueryContext<Conversation> queryContext,
         PagingArguments pagingArgs,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
@@ -28,12 +28,9 @@ public static partial class ChannelQuery {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        return await dbContext.Channels
-            .Where(c => c.Type == ChannelType.DirectMessage)
-            .Include(c => c.FriendRequest)
-            .Include(c => c.Conversation)
-            .Where(c => c.FriendRequest!.SenderUserId == userId || c.FriendRequest.ReceiverUserId == userId)
-            .OrderBy(c => c.Conversation.LatestMessageAt)
+        return await dbContext.Conversations
+            .Where(c => c.Type == ConversationType.Direct)
+            .Where(c => c.Participants.Any(c => c.UserId == userId))
             .With(queryContext)
             .ToPageAsync(pagingArgs, cancellationToken);
     }

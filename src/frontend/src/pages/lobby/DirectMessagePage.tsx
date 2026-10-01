@@ -8,29 +8,61 @@ import ChatContainer from "../../components/chat/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
-import useChannelConnection from "../../hooks/useChannelConnection.ts";
+import useConversationConnection from "../../hooks/useConversationConnection.ts";
 import {userService} from "../../api/userService.ts";
 import {useCallStore} from "../../store/useCallStore.ts";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
-import type {DirectCallContext} from "../../api/types.ts";
+import type {DirectCallContext, UserIdentityProfileDto} from "../../api/types.ts";
 import {toast} from "react-toastify";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
 
-  const {channelId, channelSummary}: DirectMessagePageLoaderProps = useLoaderData();
+  const loaderData: DirectMessagePageLoaderProps | undefined = useLoaderData();
+
+  if (!loaderData) {
+    return <FailurePage/>
+  }
+
+  return <SuccessPage conversationId={loaderData.conversationId} peerProfile={loaderData.peerProfile}/>
+}
+
+function FailurePage() {
+  const [isEgg] = useState(() => Math.random() < 0.02);
+
+  return (
+    <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
+      <header
+        className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2"
+      >
+        <span>But nobody came...</span>
+      </header>
+
+      {isEgg ? (
+        <Egg/>
+      ) : (
+        <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">
+          <p className="text-transparent">The room between... there is a room between...</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SuccessPage({
+  conversationId,
+  peerProfile,
+}: { conversationId: string, peerProfile: UserIdentityProfileDto }) {
   const [showProfile, setShowProfile] = useState(false);
 
-  useChannelConnection(channelId);
+  useConversationConnection(conversationId);
   const { invokeSafely } = useSignalR();
 
   const startOutgoingDirectCall = useCallStore((state) => state.startOutgoingDirectCall);
 
   const handleCall = async () => {
-    if (!channelSummary) return;
-
     try {
-      const context: DirectCallContext = await invokeSafely("StartDirectCall", channelSummary.otherUser.id);
+      const context: DirectCallContext = await invokeSafely("StartDirectCall", peerProfile.id);
 
       if (context) {
         if (context.result.isSuccess) {
@@ -61,69 +93,48 @@ export default function DirectMessagePage() {
       console.error("Failed to start call:", err);
       toast.error("Failed to start call.");
     }
-  }
+  };
 
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
       <header
-        className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2">
-        {!!channelId && !!channelSummary ? (
-          <>
-            <UserAvatar
-              src={channelSummary.otherUser.avatarRevision ? userService.getAvatarUrl(channelSummary.otherUser.id, channelSummary.otherUser.avatarRevision) : undefined}
-              className="size-8 flex-none"
-            />
+        className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2"
+      >
+        <UserAvatar
+          src={peerProfile.avatarRevision ? userService.getAvatarUrl(peerProfile.id, peerProfile.avatarRevision) : undefined}
+          className="size-8 flex-none"
+        />
 
-            <span className="flex-1">{channelSummary.otherUser.userName}</span>
+        <span className="flex-1">{peerProfile.userName}</span>
 
-            <div className="flex-none flex flex-row items-center gap-2">
-              <IconButton
-                isLoading={false}
-                theme="default"
-                onClick={handleCall}
-              >
-                <BsTelephoneFill className="size-6"/>
-              </IconButton>
+        <div className="flex-none flex flex-row items-center gap-2">
+          <IconButton
+            isLoading={false}
+            theme="default"
+            onClick={handleCall}
+          >
+            <BsTelephoneFill className="size-6"/>
+          </IconButton>
 
-              <IconButton
-                theme="default"
-                onClick={() => setShowProfile(!showProfile)}
-              >
-                <BsPersonFill className="size-6"/>
-              </IconButton>
-            </div>
-          </>
-        ) : (
-          <p>But nobody came...</p>
-        )}
+          <IconButton
+            theme="default"
+            onClick={() => setShowProfile(!showProfile)}
+          >
+            <BsPersonFill className="size-6"/>
+          </IconButton>
+        </div>
       </header>
 
-      {channelId && channelSummary ? (
-        <div className="flex-1 min-h-0 flex flex-row relative gap-0">
-          <ChatContainer channelId={channelId!}/>
+      <div className="flex-1 min-h-0 flex flex-row relative gap-0">
+        <ChatContainer conversationId={conversationId!}/>
 
-          {showProfile && (
-            <UserProfilePanel
-              className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
-              userId={channelSummary.otherUser.id}
-            />
-          )}
-        </div>
-      ) : (<ShowAccessFailure/>)}
-    </div>
-  );
-}
-
-function ShowAccessFailure() {
-  const [isEgg] = useState(() => Math.random() < 0.02);
-
-  if (isEgg) {
-    return <Egg/>;
-  }
-
-  return (
-    <div className="flex-1 min-h-0 flex flex-col justify-center items-center relative">
-      <p className="text-transparent">The room between... there is a room between...</p>
+        {showProfile && (
+          <UserProfilePanel
+            className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
+            userId={peerProfile.id}
+          />
+        )}
+      </div>
     </div>
   );
 }

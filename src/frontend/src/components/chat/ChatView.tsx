@@ -1,5 +1,5 @@
 import type {
-  Attachment,
+  AttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
@@ -11,7 +11,6 @@ import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
-import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 import Dialog from "../Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
@@ -20,6 +19,7 @@ import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
+import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 
 const START_INDEX = 10000000;
 
@@ -70,7 +70,7 @@ export function ChatView({}: ChatViewProps) {
     currentIndex: 0,
   });
 
-  const handleAttachmentClick = (messageAttachments: Attachment[], clickedIndex: number) => {
+  const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
     setGalleryState({
       items: messageAttachments.map(att => ({id: att.id, type: att.type})),
       currentIndex: clickedIndex
@@ -98,6 +98,8 @@ export function ChatView({}: ChatViewProps) {
   // change the cache pages when message received
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
     const senderId = event.message.senderUserId;
+
+    if (!senderId) return;
 
     if (userProfiles[senderId]) {
       appendMessage(event.message, userProfiles[senderId]);

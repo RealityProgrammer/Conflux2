@@ -161,9 +161,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("FriendRequestId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Name")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
@@ -178,9 +175,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasIndex("CommunityServerId");
 
                     b.HasIndex("ConversationId")
-                        .IsUnique();
-
-                    b.HasIndex("FriendRequestId")
                         .IsUnique();
 
                     b.ToTable("Channels");
@@ -335,6 +329,9 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("LatestMessageAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("Conversations");
@@ -364,6 +361,9 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("DirectConversationId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ReceiverUserId")
                         .HasColumnType("uuid");
 
@@ -377,6 +377,9 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DirectConversationId")
+                        .IsUnique();
 
                     b.HasIndex("ReceiverUserId");
 
@@ -681,18 +684,11 @@ namespace Conflux.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Conflux.Domain.Entities.FriendRequest", "FriendRequest")
-                        .WithOne("ConversationChannel")
-                        .HasForeignKey("Conflux.Domain.Entities.Channel", "FriendRequestId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("ChannelCategory");
 
                     b.Navigation("CommunityServer");
 
                     b.Navigation("Conversation");
-
-                    b.Navigation("FriendRequest");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.ChannelCategory", b =>
@@ -790,7 +786,7 @@ namespace Conflux.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "User")
-                        .WithMany()
+                        .WithMany("ConversationParticipants")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -802,6 +798,11 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
+                    b.HasOne("Conflux.Domain.Entities.Conversation", "DirectConversation")
+                        .WithOne("FriendRequest")
+                        .HasForeignKey("Conflux.Domain.Entities.FriendRequest", "DirectConversationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Receiver")
                         .WithMany("ReceivedFriendRequests")
                         .HasForeignKey("ReceiverUserId")
@@ -813,6 +814,8 @@ namespace Conflux.Infrastructure.Migrations
                         .HasForeignKey("SenderUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DirectConversation");
 
                     b.Navigation("Receiver");
 
@@ -945,6 +948,8 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("ConversationParticipants");
+
                     b.Navigation("JoinedCommunityServers");
 
                     b.Navigation("ReceivedFriendRequests");
@@ -986,17 +991,13 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.Conversation", b =>
                 {
-                    b.Navigation("Channel")
-                        .IsRequired();
+                    b.Navigation("Channel");
+
+                    b.Navigation("FriendRequest");
 
                     b.Navigation("Messages");
 
                     b.Navigation("Participants");
-                });
-
-            modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
-                {
-                    b.Navigation("ConversationChannel");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>
