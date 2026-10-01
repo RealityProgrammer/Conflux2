@@ -35,6 +35,7 @@ internal sealed class StartCallHandler(
             .Include(r => r.Sender)
             .Include(r => r.Receiver)
             .Select(r => new {
+                Id = r.Id,
                 Sender = new UserIdentityProfileDto {
                     Id = r.Sender.Id,
                     UserName = r.Sender.UserName,
@@ -54,6 +55,9 @@ internal sealed class StartCallHandler(
             await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
             return Errors.NoAcceptedFriendRequest();
         }
+        
+        // append the start call message to conversation
+        
 
         UserIdentityProfileDto callerProfile = profiles.Sender.Id == command.CallerId ? profiles.Sender : profiles.Receiver;
         UserIdentityProfileDto calleeProfile = profiles.Sender.Id == command.CallerId ? profiles.Receiver : profiles.Sender;

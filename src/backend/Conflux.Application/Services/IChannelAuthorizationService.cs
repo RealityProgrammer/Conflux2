@@ -1,8 +1,0 @@
-using Conflux.Domain;
-using Conflux.Domain.Enums;
-
-namespace Conflux.Application.Services;
-
-public interface IChannelAuthorizationService {
-    Task<Result<MessagingPermissions>> GetMessagingPermissions(Guid userId, Guid channelId, ChannelType channelType);
-}

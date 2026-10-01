@@ -17,7 +17,7 @@ public sealed record GetChatMessagesQuery(
 
 public sealed class GetChatMessagesHandler(
     IChannelRepository channelRepository,
-    IChannelAuthorizationService channelAuthorizationService,
+    IConversationAuthorizeService conversationAuthorizeService,
     IMessageRepository messageRepository,
     IUserRepository userRepository
 ) : IQueryHandler<GetChatMessagesQuery, Result<GetMessagesResponse>> {
@@ -33,22 +33,6 @@ public sealed class GetChatMessagesHandler(
         }
         
         ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
-        
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            query.RequesterUserId, 
-            channelMetadata.ChannelId, 
-            channelMetadata.ChannelType
-        );
-
-        if (!authResult.IsSuccess) {
-            return authResult.Error;
-        }
-
-        MessagingPermissions permissions = authResult.Value;
-
-        if (!permissions.HasFlag(MessagingPermissions.ViewMessage)) {
-            return Errors.Forbidden("You do not have permission to view this channel.");
-        }
         
         Result<PagedTimelineMessageResult> getMessagesResult = await messageRepository.GetTimelineMessages(
             channelMetadata.ConversationId, 

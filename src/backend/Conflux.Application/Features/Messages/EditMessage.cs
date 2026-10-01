@@ -18,7 +18,7 @@ public sealed record MessageEditedNotification(Guid ChannelId, TimelineMessageDt
 public sealed class EditMessageHandler(
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
-    IChannelAuthorizationService channelAuthorizationService,
+    IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
@@ -47,22 +47,6 @@ public sealed class EditMessageHandler(
         }
         
         ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
-        
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            command.SenderUserId, 
-            channelMetadata.ChannelId, 
-            channelMetadata.ChannelType
-        );
-
-        if (!authResult.IsSuccess) {
-            return authResult.Error;
-        }
-
-        MessagingPermissions permissions = authResult.Value;
-
-        if (!permissions.HasFlag(MessagingPermissions.EditMessage)) {
-            return Errors.Forbidden("You do not have permission to edit this message.");
-        }
         
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {

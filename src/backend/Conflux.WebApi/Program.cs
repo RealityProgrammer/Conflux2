@@ -259,7 +259,7 @@ builder.Services
     .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
     .AddScoped<IChannelAuthorizationStrategy, ServerTextChannelAuthorizationStrategy>()
     .AddScoped<IChannelAuthorizationStrategy, ServerVoiceChannelAuthorizationStrategy>()
-    .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
+    .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()

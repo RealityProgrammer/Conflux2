@@ -14,7 +14,7 @@ public sealed record MessageDeletedNotification(Guid ChannelId, Guid MessageId) 
 public sealed class DeleteMessageHandler(
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
-    IChannelAuthorizationService channelAuthorizationService,
+    IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IMediator mediator
@@ -42,22 +42,6 @@ public sealed class DeleteMessageHandler(
         
         ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
         
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            command.RequesterUserId, 
-            channelMetadata.ChannelId, 
-            channelMetadata.ChannelType
-        );
-
-        if (!authResult.IsSuccess) {
-            return authResult.Error;
-        }
-
-        MessagingPermissions permissions = authResult.Value;
-
-        if (!permissions.HasFlag(MessagingPermissions.DeleteMessage)) {
-            return Errors.Forbidden("You do not have permission to delete this message.");
-        }
-
         if (message.DeletedAt != null) {
             return Result.Success();
         }

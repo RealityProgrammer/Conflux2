@@ -31,7 +31,7 @@ public sealed record UpdateDmConversationListNotification(
 public sealed class SendMessageHandler(
     IChannelRepository channelRepository,
     IMessageRepository messageRepository,
-    IChannelAuthorizationService channelAuthorizationService,
+    IConversationAuthorizeService conversationAuthorizeService,
     IConversationRepository conversationRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
@@ -41,6 +41,12 @@ public sealed class SendMessageHandler(
     public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken) {
         Guid channelId = request.ChannelId;
         Guid senderUserId = request.SenderUserId;
+        
+        
+
+        if (!await conversationAuthorizeService.CanSendMessage(senderUserId, channelId, cancellationToken)) {
+            return Errors.Forbidden("You do not have permission to send message.");
+        }
 
         Result<ChannelMetadataDto> getChannelMetadataResult = 
             await channelRepository.GetChannelMetadataFromChannelId(channelId, cancellationToken);
@@ -50,22 +56,6 @@ public sealed class SendMessageHandler(
         }
         
         ChannelMetadataDto channelMetadata = getChannelMetadataResult.Value!;
-
-        Result<MessagingPermissions> authResult = await channelAuthorizationService.GetMessagingPermissions(
-            senderUserId, 
-            channelId, 
-            channelMetadata.ChannelType
-        );
-
-        if (!authResult.IsSuccess) {
-            return authResult.Error;
-        }
-
-        MessagingPermissions permissions = authResult.Value;
-
-        if (!permissions.HasFlag(MessagingPermissions.SendMessage)) {
-            return Errors.Forbidden("You do not have permission to send message.");
-        }
 
         var utcNow = timeProvider.GetUtcNow();
         
