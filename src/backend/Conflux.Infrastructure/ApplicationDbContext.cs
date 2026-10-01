@@ -17,6 +17,7 @@ public class ApplicationDbContext(
     public DbSet<Channel> Channels { get; set; }
     public DbSet<CommunityServer> CommunityServers { get; set; }
     public DbSet<CommunityServerMember> CommunityServerMembers { get; set; }
+    public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<ChannelCategory> ChannelCategories { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<CommunityServerRole> CommunityServerRoles { get; set; }
@@ -40,5 +41,6 @@ public class ApplicationDbContext(
         new RolePermissionConfiguration().Configure(builder.Entity<RolePermission>());
         new ServerModerationLogConfiguration().Configure(builder.Entity<ServerModerationLog>());
         new ChannelCategoryConfiguration().Configure(builder.Entity<ChannelCategory>());
+        new ConversationParticipantConfiguration().Configure(builder.Entity<ConversationParticipant>());
     }
 }

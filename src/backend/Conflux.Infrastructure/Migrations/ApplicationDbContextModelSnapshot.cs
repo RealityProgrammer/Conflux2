@@ -340,6 +340,21 @@ namespace Conflux.Infrastructure.Migrations
                     b.ToTable("Conversations");
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.ConversationParticipant", b =>
+                {
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ConversationId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ConversationParticipants");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -766,6 +781,25 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("CreatorUser");
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.ConversationParticipant", b =>
+                {
+                    b.HasOne("Conflux.Domain.Entities.Conversation", "Conversation")
+                        .WithMany("Participants")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Conflux.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Receiver")
@@ -956,6 +990,8 @@ namespace Conflux.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Messages");
+
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
