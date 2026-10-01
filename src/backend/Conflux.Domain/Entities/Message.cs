@@ -9,8 +9,10 @@ public class Message : IHasCreatedAt {
     public string? Body { get; set; }
     public virtual ICollection<Attachment> Attachments { get; set; } = null!;
     
-    public Guid SenderUserId { get; set; }
-    public ApplicationUser Sender { get; set; } = null!;
+    public MessageProperties? Properties { get; set; }
+    
+    public Guid? SenderUserId { get; set; }
+    public ApplicationUser? Sender { get; set; }
     
     public Guid ConversationId { get; set; }
     public Conversation Conversation { get; set; } = null!;
@@ -21,4 +23,5 @@ public class Message : IHasCreatedAt {
     
     public Guid? ReplyToId { get; set; }
     public Message? ReplyTo { get; set; }
+    public virtual ICollection<Message> Replies { get; set; } = null!;
 }

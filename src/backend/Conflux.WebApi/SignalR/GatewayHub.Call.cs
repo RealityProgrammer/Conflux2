@@ -16,7 +16,7 @@ partial class GatewayHub {
             return new(Errors.InvalidIdentifier(), null);
         }
 
-        Result lockResult = await callingService.TryLockCallerAndCallee(callerId, Context.ConnectionId, calleeUserId);
+        Result lockResult = await callingService.LockCallerAndCallee(callerId, Context.ConnectionId, calleeUserId);
 
         if (!lockResult.IsSuccess) {
             return new(lockResult, null);

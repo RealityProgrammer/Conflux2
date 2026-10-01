@@ -1,10 +1,10 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Enums;
 using Conflux.Domain;
-using Conflux.WebApi.Dto;
 using MemoryPack;
 using StackExchange.Redis;
 
-namespace Conflux.WebApi.Services.Implementations;
+namespace Conflux.Application.Services.Implementations;
 
 internal sealed partial class CallingService(
     IConnectionMultiplexer connectionMultiplexer,
@@ -12,7 +12,7 @@ internal sealed partial class CallingService(
 ) : ICallingService {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
-    public async Task<Result> TryLockCallerAndCallee(Guid callerId, string callerConnectionId, Guid calleeId) {
+    public async Task<Result> LockCallerAndCallee(Guid callerId, string callerConnectionId, Guid calleeId) {
         var callerKey = GetStateKey(callerId);
         var calleeKey = GetStateKey(calleeId);
         
@@ -31,6 +31,47 @@ internal sealed partial class CallingService(
             return Errors.CalleeBusy();
         }
 
+        return Result.Success();
+    }
+
+    public async Task<Result> UnlockCallerAndCallee(Guid callerId, Guid calleeId) {
+        var callerKey = GetStateKey(callerId);
+        var calleeKey = GetStateKey(calleeId);
+
+        RedisValue[] serializedStates = await _database.StringGetAsync([callerKey, calleeKey]);
+
+        if (!serializedStates[0].HasValue || !serializedStates[1].HasValue) {
+            return Errors.InvalidCallStates();
+        }
+        
+        CallSessionState? callerState, calleeState;
+
+        try {
+            callerState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[0]);
+            if (callerState is not { State: CallState.Ringing }) {
+                return Errors.InvalidCallStates();
+            }
+        } catch {
+            // potentially corrupted state, delete it
+            await _database.KeyDeleteAsync(callerKey);
+            return Errors.InvalidCallStates();
+        }
+
+        try {
+            calleeState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[1]);
+            if (calleeState is not { State: CallState.Ringing }) {
+                return Errors.InvalidCallStates();
+            }
+        } catch {
+            // potentially corrupted state, delete it
+            await _database.KeyDeleteAsync(calleeKey);
+            return Errors.InvalidCallStates();
+        }
+
+        if (callerState.PeerId != calleeId || calleeState.PeerId != callerId) {
+            return Errors.InvalidCallStates();
+        }
+        
         return Result.Success();
     }
 
@@ -102,7 +143,7 @@ internal sealed partial class CallingService(
         return Result.Success();
     }
 
-    public async Task<Domain.Result<Guid>> DropCall(Guid userId, string userConnectionId) {
+    public async Task<Result<Guid>> DropCall(Guid userId, string userConnectionId) {
         var stateKey = GetStateKey(userId);
         RedisValue serializedStates = await _database.StringGetAsync(stateKey);
 
@@ -124,10 +165,10 @@ internal sealed partial class CallingService(
         var peerKey = GetStateKey(state.PeerId);
         await _database.KeyDeleteAsync([stateKey, peerKey]);
 
-        return Domain.Result<Guid>.Success(state.PeerId);
+        return Result<Guid>.Success(state.PeerId);
     }
 
-    public async Task<Domain.Result<Guid>> EndCall(Guid enderId, Guid peerId) {
+    public async Task<Result<Guid>> EndCall(Guid enderId, Guid peerId) {
         var stateKey = GetStateKey(enderId);
         RedisValue serializedStates = await _database.StringGetAsync(stateKey);
 
@@ -147,10 +188,10 @@ internal sealed partial class CallingService(
         var peerKey = GetStateKey(state.PeerId);
         await _database.KeyDeleteAsync([stateKey, peerKey]);
 
-        return Domain.Result<Guid>.Success(state.PeerId);
+        return Result<Guid>.Success(state.PeerId);
     }
 
-    public async Task<Domain.Result<Guid>> GetCurrentRingingCall(Guid userId) {
+    public async Task<Result<Guid>> GetCurrentRingingCall(Guid userId) {
         var stateKey = GetStateKey(userId);
         var serializedState = await _database.StringGetAsync(stateKey);
 
@@ -167,7 +208,7 @@ internal sealed partial class CallingService(
         
         if (state is not { State: CallState.Ringing }) return Errors.ResourceNotFound();
         
-        return Domain.Result<Guid>.Success(state.PeerId);
+        return Result<Guid>.Success(state.PeerId);
     }
 
     private async Task<Result> SafeDeleteRingingCall(Guid actionUserId, Guid peerId) {

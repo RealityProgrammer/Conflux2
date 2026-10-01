@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Conflux.Application.Dto;
 
 public sealed record TimelineMessageClusterDto(
-    Guid SenderUserId,
+    Guid? SenderUserId,
     List<TimelineMessageClusterItemDto> Messages
 );
 

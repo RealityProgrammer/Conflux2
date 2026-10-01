@@ -1,13 +1,14 @@
-using Conflux.Domain;
 using Conflux.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System.Text.Json;
 
 namespace Conflux.Infrastructure.Config;
 
 internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.General) {
+        AllowOutOfOrderMetadataProperties = true,
+    };
+    
     public void Configure(EntityTypeBuilder<Message> builder) {
         builder.HasKey(m => m.Id);
         
@@ -15,6 +16,13 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
         builder.Property(m => m.Id).HasValueGenerator<GuidV7ValueGenerator>();
 
         builder.Property(m => m.Body).HasMaxLength(4000);
+
+        builder.Property(m => m.Properties)
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonOptions),
+                v => JsonSerializer.Deserialize<MessageProperties>(v, JsonOptions)!
+            );
             
         // relationship
         builder.HasOne(m => m.Sender)
@@ -22,6 +30,11 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
             .HasForeignKey(m => m.SenderUserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);  // delete messages when user is deleted
+
+        builder.HasOne(m => m.ReplyTo)
+            .WithMany(m => m.Replies)
+            .HasForeignKey(m => m.ReplyToId)
+            .OnDelete(DeleteBehavior.Restrict);
         
         // constraints
         builder.ToTable(tableBuilder => tableBuilder.HasCheckConstraint(

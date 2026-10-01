@@ -1,10 +1,30 @@
 using Conflux.Application.Enums;
 using Conflux.Domain;
 
-namespace Conflux.WebApi.Services;
+namespace Conflux.Application.Services;
 
 public interface ICallingService {
-    Task<Result> TryLockCallerAndCallee(Guid callerId, string callerConnectionId, Guid calleeId);
+    /// <summary>
+    /// Lock caller and callee into the state of having incoming call.
+    /// </summary>
+    /// <param name="callerId">ID of caller user.</param>
+    /// <param name="callerConnectionId">Connection ID of caller user.</param>
+    /// <param name="calleeId">ID of callee user.</param>
+    /// <returns>
+    /// The result of locking 2 users into ringing state, fail if either of them is on call or being busy.
+    /// </returns>
+    Task<Result> LockCallerAndCallee(Guid callerId, string callerConnectionId, Guid calleeId);
+
+    /// <summary>
+    /// Unlock caller and callee if they are having call ringing state.
+    /// </summary>
+    /// <param name="callerId">ID of caller user.</param>
+    /// <param name="calleeId">ID of callee user.</param>
+    /// <returns>
+    /// The result of unlocking 2 users, fail if either one of them is not on ringing state or having invalid user IDs.
+    /// </returns>
+    Task<Result> UnlockCallerAndCallee(Guid callerId, Guid calleeId);
+    
     /// <summary>
     /// Mark the call as canceled by caller while call is ringing.
     /// </summary>
@@ -44,7 +64,7 @@ public interface ICallingService {
     /// <returns>
     /// The result of call dropping operation, containing the ID of the call peer user.
     /// </returns>
-    Task<Domain.Result<Guid>> DropCall(Guid userId, string userConnectionId);
+    Task<Result<Guid>> DropCall(Guid userId, string userConnectionId);
 
     /// <summary>
     /// Mark the call as ended.
@@ -54,7 +74,7 @@ public interface ICallingService {
     /// <returns>
     /// The result of call ending operation, containing the ID of the call peer user.
     /// </returns>
-    Task<Domain.Result<Guid>> EndCall(Guid enderId, Guid peerId);
+    Task<Result<Guid>> EndCall(Guid enderId, Guid peerId);
     
     /// <summary>
     /// Get the ongoing call with <see cref="CallState.Ringing"/> of user.
@@ -63,7 +83,7 @@ public interface ICallingService {
     /// <returns>
     /// Result containing the ID of the call peer user (in this case, the caller).
     /// </returns>
-    Task<Domain.Result<Guid>> GetCurrentRingingCall(Guid userId);
+    Task<Result<Guid>> GetCurrentRingingCall(Guid userId);
 
     /// <summary>
     /// Clean up all call states.

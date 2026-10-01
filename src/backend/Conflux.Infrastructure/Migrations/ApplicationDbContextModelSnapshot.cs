@@ -423,6 +423,9 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Properties")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid?>("ReplyToId")
                         .HasColumnType("uuid");
 
@@ -802,8 +805,9 @@ namespace Conflux.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("Conflux.Domain.Entities.Message", "ReplyTo")
-                        .WithMany()
-                        .HasForeignKey("ReplyToId");
+                        .WithMany("Replies")
+                        .HasForeignKey("ReplyToId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Sender")
                         .WithMany()
@@ -962,6 +966,8 @@ namespace Conflux.Infrastructure.Migrations
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("Replies");
                 });
 #pragma warning restore 612, 618
         }

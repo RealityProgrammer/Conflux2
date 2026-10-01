@@ -927,6 +927,7 @@ input MessageFilterInput {
   type: MessageTypeOperationFilterInput
   body: StringOperationFilterInput
   attachments: ListFilterInputTypeOfAttachmentFilterInput
+  properties: MessagePropertiesFilterInput
   senderUserId: UuidOperationFilterInput
   sender: ApplicationUserFilterInput
   conversationId: UuidOperationFilterInput
@@ -936,6 +937,12 @@ input MessageFilterInput {
   deletedAt: DateTimeOperationFilterInput
   replyToId: UuidOperationFilterInput
   replyTo: MessageFilterInput
+  replies: ListFilterInputTypeOfMessageFilterInput
+}
+
+input MessagePropertiesFilterInput {
+  and: [MessagePropertiesFilterInput!]
+  or: [MessagePropertiesFilterInput!]
 }
 
 input MessageTypeOperationFilterInput {

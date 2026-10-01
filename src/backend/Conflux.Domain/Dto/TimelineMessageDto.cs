@@ -17,7 +17,7 @@ namespace Conflux.Domain.Dto;
 ], PreserveRequiredProperties = true)]
 public sealed partial record TimelineMessageDto {
     [Required] public Guid Id { get; set; } = Id;
-    [Required] public Guid SenderUserId { get; set; } = SenderUserId;
+    [Required] public Guid? SenderUserId { get; set; } = SenderUserId;
     [Required] public string? Body { get; set; } = Body;
     [Required] public ICollection<AttachmentDto> Attachments { get; set; } = Attachments;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;

@@ -1,7 +1,7 @@
 using Conflux.Application.Enums;
 using MemoryPack;
 
-namespace Conflux.WebApi.Dto;
+namespace Conflux.Application.Dto;
 
 [MemoryPackable]
 public sealed partial record CallSessionState(CallState State, Guid PeerId, string? ConnectionId);

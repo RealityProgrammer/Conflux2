@@ -90,13 +90,14 @@ public sealed class GetChatMessagesHandler(
         List<UserIdentityProfileDto> userProfiles =
             await userRepository.GetIdentityProfiles(
                 [..groups
-                    .Select(g => g.SenderUserId)
+                    .Where(g => g.SenderUserId != null)
+                    .Select(g => g.SenderUserId!.Value)
                     .Concat(
                         // include the sender user ids from replying
                         groups
                             .SelectMany(g => g.Messages)
                             .Where(m => m.ReplyTo != null)
-                            .Select(m => m.ReplyTo!.SenderUserId)
+                            .Select(m => m.ReplyTo!.SenderUserId!.Value)
                         )
                     .Distinct(),
                 ],
