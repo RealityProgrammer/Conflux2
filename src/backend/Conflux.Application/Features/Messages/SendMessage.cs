@@ -104,16 +104,16 @@ public sealed class SendMessageHandler(
         await mediator.Publish(new MessageReceivedNotification(conversationId, dto), CancellationToken.None);
         
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar
-        // if (channelMetadata.ChannelType == ChannelType.DirectMessage) {
-        //     var dmSummary = 
-        //         (await channelRepository.GetDmChannelSummary(senderUserId, channelId)).Value!;
-        //     
-        //     await mediator.Publish(new UpdateDmConversationListNotification(
-        //         senderUserId,
-        //         channelMetadata.ChannelId,
-        //         dmSummary.PeerProfile.Id
-        //     ), CancellationToken.None);
-        // }
+        if (conversationType == ConversationType.Direct) {
+            // var dmSummary = 
+            //     (await channelRepository.GetDmChannelSummary(senderUserId, channelId)).Value!;
+            //
+            // await mediator.Publish(new UpdateDmConversationListNotification(
+            //     senderUserId,
+            //     channelMetadata.ChannelId,
+            //     dmSummary.PeerProfile.Id
+            // ), CancellationToken.None);
+        }
 
         return Result<TimelineMessageDto>.Success(dto);
     }

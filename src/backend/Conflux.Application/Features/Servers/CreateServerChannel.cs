@@ -91,7 +91,9 @@ public sealed class CreateServerChannelHandler(
             CommunityServerId = serverId,
             ChannelCategoryId = categoryId,
             Name = name,
-            Conversation = new(),
+            Conversation = new() {
+                Type = ConversationType.Server,
+            },
         };
 
         channelRepository.Add(channel);
