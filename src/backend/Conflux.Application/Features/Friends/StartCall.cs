@@ -40,14 +40,12 @@ internal sealed class StartCallHandler(
                     UserName = r.Sender.UserName,
                     DisplayName = r.Sender.DisplayName,
                     AvatarRevision = r.Sender.AvatarRevision,
-                    BannerRevision = r.Sender.BannerRevision,
                 },
                 Receiver = new UserIdentityProfileDto {
                     Id = r.Receiver.Id,
                     UserName = r.Receiver.UserName,
                     DisplayName = r.Receiver.DisplayName,
                     AvatarRevision = r.Receiver.AvatarRevision,
-                    BannerRevision = r.Receiver.BannerRevision,
                 },
             })
             .FirstOrDefaultAsync(cancellationToken);

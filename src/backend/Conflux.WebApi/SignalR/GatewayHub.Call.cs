@@ -1,3 +1,4 @@
+using Conflux.Application.Features.Friends;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
@@ -16,42 +17,13 @@ partial class GatewayHub {
             return new(Errors.InvalidIdentifier(), null);
         }
 
-        Result lockResult = await callingService.LockCallerAndCallee(callerId, Context.ConnectionId, calleeUserId);
+        Domain.Result<UserIdentityProfileDto> calleeProfile = await sender.Send(new StartCallCommand(callerId, Context.ConnectionId, calleeUserId));
 
-        if (!lockResult.IsSuccess) {
-            return new(lockResult, null);
-        }
-
-        var profiles = await friendRequestRepository.AsQueryable()
-            .Where(r => r.Status == FriendRequestStatus.Accepted)
-            .Where(r => r.SenderUserId == callerId && r.ReceiverUserId == calleeUserId || r.SenderUserId == calleeUserId && r.ReceiverUserId == callerId)
-            .Include(r => r.Sender)
-            .Include(r => r.Receiver)
-            .Select(r => new {
-                Sender = new UserIdentityProfileDto {
-                    Id = r.Sender.Id,
-                    UserName = r.Sender.UserName,
-                    DisplayName = r.Sender.DisplayName,
-                    AvatarRevision = r.Sender.AvatarRevision,
-                    BannerRevision = r.Sender.BannerRevision,
-                },
-                Receiver = new UserIdentityProfileDto {
-                    Id = r.Receiver.Id,
-                    UserName = r.Receiver.UserName,
-                    DisplayName = r.Receiver.DisplayName,
-                    AvatarRevision = r.Receiver.AvatarRevision,
-                    BannerRevision = r.Receiver.BannerRevision,
-                },
-            })
-            .FirstOrDefaultAsync();
-
-        if (profiles == null) {
-            return new(Errors.NoAcceptedFriendRequest(), null);
+        if (!calleeProfile.IsSuccess) {
+            return new(calleeProfile, calleeProfile.Value);
         }
         
-        await Clients.User(calleeUserId.ToString()).IncomingDirectCall(new(profiles.Sender.Id == calleeUserId ? profiles.Receiver : profiles.Sender));
-
-        return new(Result.Success(), profiles.Sender.Id == calleeUserId ? profiles.Sender : profiles.Receiver);
+        return new(Result.Success(), calleeProfile.Value);
     }
 
     // invoked by frontend only

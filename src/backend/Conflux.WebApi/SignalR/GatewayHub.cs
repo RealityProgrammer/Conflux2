@@ -2,6 +2,7 @@ using Conflux.Application.Services;
 using Conflux.Domain.Repositories;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -18,7 +19,8 @@ public sealed partial class GatewayHub(
     IFriendRequestRepository friendRequestRepository,
     IUserRepository userRepository,
     ICallingService callingService,
-    ILogger<GatewayHub> logger
+    ILogger<GatewayHub> logger,
+    ISender sender
 ) : Hub<IConfluxClient> {
     public override async Task OnConnectedAsync() {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
