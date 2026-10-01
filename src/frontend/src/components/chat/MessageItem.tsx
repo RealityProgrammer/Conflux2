@@ -7,14 +7,14 @@ import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsPencil, BsPencilFill, BsTrash} from "react-icons/bs";
+import {BsArrowReturnLeft, BsCopy, BsTrash} from "react-icons/bs";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import MessageContent from "./MessageContent.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
-import {FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
 
 type MessageItemProps = {
@@ -101,7 +101,7 @@ function MessageView({
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
-        className="relative w-full flex flex-col hover-highlight group"
+        className={`relative w-full flex flex-col hover-highlight group ${showHeader ? "mt-1" : ""}`}
       >
         <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
           {message.replyTo && replyToMessageSenderProfile && (
@@ -117,7 +117,7 @@ function MessageView({
               <>
                 <UserAvatar
                   src={senderProfile?.avatarRevision ? userService.getAvatarUrl(senderProfile.id, senderProfile.avatarRevision) : undefined}
-                  className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                  className="flex-none mt-1 size-10 self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
                 />
 
                 <div className="flex-1 min-w-0">
@@ -186,7 +186,7 @@ function MessageView({
               <>
                 {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
                   <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
-                    <BsPencilFill className="size-5 ml-auto"/>
+                    <FaPencil className="size-5 ml-auto"/>
                   </IconButton>
                 )}
 
@@ -217,7 +217,7 @@ function MessageView({
                 className="dropdown-item-default"
                 onSelect={handleEditTrigger}
               >
-                Edit message <BsPencil className="fill-white size-4 ml-auto"/>
+                Edit message <FaPencil className="fill-white size-4 ml-auto"/>
               </ContextMenu.Item>
 
               <ContextMenu.Item

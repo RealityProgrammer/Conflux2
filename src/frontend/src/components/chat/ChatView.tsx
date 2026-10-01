@@ -201,7 +201,7 @@ export function ChatView({}: ChatViewProps) {
         startReached={fetchOlderMessages}
         endReached={fetchNewerMessages}
         overscan={10}
-        className="flex-1 min-h-0"
+        className="flex-1 min-h-0 mb-2"
         components={{
           Header: () => (
             isFetchingPreviousPage ? (

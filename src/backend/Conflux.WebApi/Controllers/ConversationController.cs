@@ -113,7 +113,7 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpDelete("{conversationId:guid}/messages")]
+    [HttpDelete("{conversationId:guid}/messages/{messageId:guid}")]
     public async Task<ActionResult> DeleteMessage(Guid conversationId, Guid messageId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 

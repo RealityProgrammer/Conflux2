@@ -13,13 +13,13 @@ export default function MessageAttachments({
   onAttachmentClick,
 }: MessageAttachmentsProps) {
   return (
-    <ScrollArea.Root className={`h-32 w-full overflow-hidden group`}>
+    <ScrollArea.Root className={`h-32 w-full overflow-hidden group mt-1`}>
       <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
         <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
           {attachments.map((attachment, index) => (
             <div
               key={attachment.id}
-              className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
+              className="flex-none overflow-hidden relative group h-full aspect-square cursor-pointer"
             >
               {attachment.type.startsWith("image") ? (
                 <img
