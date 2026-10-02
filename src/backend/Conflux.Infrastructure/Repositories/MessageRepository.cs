@@ -18,7 +18,7 @@ internal sealed class MessageRepository(
         dbContext.Messages.Add(message);
     }
 
-    public async Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
+    public async Task<Result<TimelineMessagePage>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId, 
@@ -113,6 +113,6 @@ internal sealed class MessageRepository(
             }
         }
 
-        return Result<PagedTimelineMessageResult>.Success(new(messageProjections, hasMoreBefore, hasMoreAfter));
+        return Result<TimelineMessagePage>.Success(new(messageProjections, hasMoreBefore, hasMoreAfter));
     }
 }

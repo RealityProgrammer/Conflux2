@@ -1,8 +1,8 @@
 import {createContext, type ReactNode, useContext, useState} from "react";
 import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import type {
-  GetMessagesResponse, ServiceResponse,
-  TimelineMessageClusterDto,
+  ServiceResponse,
+  TimelineMessagePage,
   TimelineMessageDto,
   UserIdentityProfileDto
 } from "../api/types.ts";
@@ -13,7 +13,6 @@ import {
   type UseInfiniteQueryResult,
   useMutation, useQueryClient
 } from "@tanstack/react-query";
-import {useAuth} from "./AuthContext.tsx";
 import {messageService} from "../api/messageService.ts";
 import {MessageLoadDirection} from "../api/schema.ts";
 import {toast} from "react-toastify";
@@ -42,9 +41,7 @@ interface ChatContainerContextType {
 
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
 
-  messageQueryResult: UseInfiniteQueryResult<InfiniteData<GetMessagesResponse | null | undefined>>;
-  messageClusters: TimelineMessageClusterDto[];
-  userProfiles: Record<string, UserIdentityProfileDto>;
+  messageQueryResult: UseInfiniteQueryResult<InfiniteData<TimelineMessagePage | null | undefined>>;
 
   appendMessage: (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
   editMessage: (messageId: string, newBody: string | null) => void;
@@ -81,8 +78,6 @@ export default function ChatContainerContextProvider({
     direction: MessageLoadDirection;
   }
 
-  const authorization = useAuth();
-
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
 
   const queryKey: QueryKey = ["conversation", conversationId];
@@ -90,8 +85,8 @@ export default function ChatContainerContextProvider({
   const messageQueryResult = useInfiniteQuery({
     enabled: !!conversationId,
     queryKey,
-    queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<GetMessagesResponse | null | undefined> => {
-      const response = await messageService.getMessages(
+    queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<TimelineMessagePage | null | undefined> => {
+      const response = await messageService.getTimelineMessages(
         conversationId!,
         pageParam.direction,
         pageParam.cursorId,
@@ -105,68 +100,30 @@ export default function ChatContainerContextProvider({
       direction: MessageLoadDirection.Before,
     },
 
-    getPreviousPageParam: (firstPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
-      if (firstPage?.hasMoreBefore && firstPage.messageGroups.length > 0) {
-        const oldestMessage = firstPage.messageGroups[0];
-
-        return {
-          cursorId: oldestMessage.messages[0].id,
-          direction: MessageLoadDirection.Before,
-        };
-      }
-
-      return undefined;
+    getPreviousPageParam: (firstPage: TimelineMessagePage | null | undefined): PageParams | undefined => {
+      return firstPage?.hasMoreBefore && firstPage.messages.length > 0 ? {
+        cursorId: firstPage.messages[0].id,
+        direction: MessageLoadDirection.Before,
+      } : undefined;
     },
 
-    getNextPageParam: (lastPage: GetMessagesResponse | null | undefined): PageParams | undefined => {
-      if (lastPage?.hasMoreAfter && lastPage.messageGroups.length > 0) {
-        return {
-          cursorId: lastPage.messageGroups.at(-1)?.messages.at(-1)?.id,
-          direction: MessageLoadDirection.After,
-        };
-      }
-
-      return undefined;
+    getNextPageParam: (lastPage: TimelineMessagePage | null | undefined): PageParams | undefined => {
+      return lastPage?.hasMoreAfter && lastPage.messages.length > 0 ? {
+        cursorId: lastPage.messages.at(-1)?.id,
+        direction: MessageLoadDirection.After,
+      } : undefined;
     },
 
     staleTime: 60 * 30 * 1000,
     refetchOnWindowFocus: false,
   });
-  const allMessageClusters: TimelineMessageClusterDto[] = messageQueryResult.data?.pages.flatMap((page) => page?.messageGroups ?? []) ?? [];
-
-  // in allMessageClusters, if end of page N and start of page N+1 have same sender, it is still considered different cluster, so merge them.
-  const messageClusters = allMessageClusters.reduce<TimelineMessageClusterDto[]>((acc, currentGroup) => {
-    const lastGroup = acc.at(-1);
-
-    if (lastGroup && lastGroup.senderUserId === currentGroup.senderUserId) {
-      // replace the last group with a new object containing both element arrays
-      acc[acc.length - 1] = {
-        ...lastGroup,
-        messages: [...lastGroup.messages, ...currentGroup.messages],
-      };
-    } else {
-      // just push the group into the array
-      acc.push(currentGroup);
-    }
-
-    return acc;
-  }, []);
-
-  const userProfiles: Record<string, UserIdentityProfileDto> = {};
-  for (const page of messageQueryResult.data?.pages ?? []) {
-    if (page?.users) {
-      for (const user of page.users) {
-        userProfiles[user.id] = user;
-      }
-    }
-  }
 
   const queryClient = useQueryClient();
 
-  const modifyMessageData = (callback: (oldData: InfiniteData<GetMessagesResponse | null | undefined>) => InfiniteData<GetMessagesResponse | null | undefined>) => {
-    queryClient.setQueryData<InfiniteData<GetMessagesResponse | undefined | null>>(
+  const modifyMessageData = (callback: (oldData: InfiniteData<TimelineMessagePage | null | undefined>) => InfiniteData<TimelineMessagePage | null | undefined>) => {
+    queryClient.setQueryData<InfiniteData<TimelineMessagePage | undefined | null>>(
       queryKey,
-      (oldData: NoInfer<InfiniteData<GetMessagesResponse | null | undefined>> | undefined): NoInfer<InfiniteData<GetMessagesResponse | null | undefined>> | undefined => {
+      (oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) {
           return oldData;
         }
@@ -176,152 +133,85 @@ export default function ChatContainerContextProvider({
     );
   }
 
-  const appendMessage = (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => {
-    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
-      const lastPage: GetMessagesResponse = oldData.pages.at(-1)!;
-      const updatedLastPage: GetMessagesResponse = {...lastPage};
-
-      const existingUsers: UserIdentityProfileDto[] = updatedLastPage.users || [];
-
-      if (userProfile && !existingUsers.some((u: UserIdentityProfileDto) => u.id === userProfile.id)) {
-        // @ts-ignore
-        updatedLastPage.users = [...existingUsers, userProfile];
-      }
-
-      const currentGroups = updatedLastPage.messageGroups || [];
-
-      if (lastPage.messageGroups?.length > 0) {
-        const lastMessageGroup = lastPage.messageGroups.at(-1)!;
-
-        // was the new message sent by the same person on the last group of the last page?
-        const isSameUser =
-          lastMessageGroup.senderUserId == newMessage.senderUserId;
-
-        if (isSameUser) {
-          const updatedGroup: TimelineMessageClusterDto = {
-            ...lastMessageGroup,
-            messages: [...lastMessageGroup.messages, newMessage],
-          };
-
-          updatedLastPage.messageGroups = [
-            ...currentGroups.slice(0, -1),
-            updatedGroup,
-          ];
-        } else {
-          updatedLastPage.messageGroups = [
-            ...currentGroups,
-            {
-              senderUserId: newMessage.senderUserId,
-              messages: [newMessage],
-            },
-          ];
-        }
-      } else {
-        updatedLastPage.messageGroups = [
-          {
-            senderUserId: newMessage.senderUserId,
-            messages: [newMessage],
-          },
-        ];
-      }
+  const appendMessage = (newMessage: TimelineMessageDto) => {
+    modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
+      if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
 
       return {
         ...oldData,
-        pages: [...oldData.pages.slice(0, -1), updatedLastPage],
+        pages: [
+          ...oldData.pages.slice(0, -1),
+          {
+            ...oldData.pages[oldData.pages.length - 1]!,
+            messages: [
+              ...oldData.pages[oldData.pages.length - 1]!.messages,
+              newMessage,
+            ]
+          }
+        ]
       };
     });
   };
 
   const editMessage = (messageId: string, newBody: string | null) => {
-    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
+    modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
+      if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
+
       let isMessageFound = false;
+      for (const page of oldData.pages) {
+        if (!page) continue;
 
-      const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
-        if (!page) return page;
-
-        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageClusterDto): TimelineMessageClusterDto => {
-          const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
-
-          if (messageIndex !== -1) {
-            isMessageFound = true;
-
-            const updatedMessages = [...messageGroup.messages];
-
-            updatedMessages[messageIndex] = {...updatedMessages[messageIndex], body: newBody};
-
-            return {
-              ...messageGroup,
-              messages: updatedMessages,
-            };
-          }
-
-          return messageGroup;
-        });
-
-        if (!isMessageFound) {
-          return page;
-        }
-
-        return {
-          ...page,
-          messageGroups: updatedMessageGroups,
-        };
-      });
-
-      if (!isMessageFound) {
-        return oldData;
+        isMessageFound = page.messages.some(m => m.id === messageId);
+        if (isMessageFound) break;
       }
+
+      if (!isMessageFound) return oldData;
 
       return {
         ...oldData,
-        pages: updatedPages,
+        pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+          if (!page || !page.messages.some(m => m.id === messageId)) {
+            return page;
+          }
+
+          return {
+            ...page,
+            messages: page.messages.map(m => m.id === messageId ?
+              {...m, body: newBody} :
+              m
+            ),
+          };
+        }),
       };
     });
   };
 
   const deleteMessage = (messageId: string) => {
-    modifyMessageData((oldData: InfiniteData<GetMessagesResponse | null | undefined>): InfiniteData<GetMessagesResponse | null | undefined> => {
+    modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
+      if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
+
       let isMessageFound = false;
+      for (const page of oldData.pages) {
+        if (!page) continue;
 
-      const updatedPages = oldData.pages.map((page: GetMessagesResponse | null | undefined): GetMessagesResponse | null | undefined => {
-        if (!page) return page;
-
-        const updatedMessageGroups = page.messageGroups.map((messageGroup: TimelineMessageClusterDto): TimelineMessageClusterDto | null => {
-          const messageIndex = messageGroup.messages.findIndex((m) => m.id === messageId);
-
-          if (messageIndex === -1) {
-            return messageGroup;
-          }
-
-          isMessageFound = true;
-
-          const updatedMessages = [
-            ...messageGroup.messages.slice(0, messageIndex),
-            ...messageGroup.messages.slice(messageIndex + 1)
-          ]
-
-          return updatedMessages.length === 0
-            ? null
-            : {...messageGroup, messages: updatedMessages};
-        }).filter((group) => group !== null);
-
-        if (!isMessageFound) {
-          return page;
-        }
-
-        return {
-          ...page,
-          messageGroups: updatedMessageGroups,
-        };
-      });
-
-      if (!isMessageFound) {
-        return oldData;
+        isMessageFound = page.messages.some(m => m.id === messageId);
+        if (isMessageFound) break;
       }
+
+      if (!isMessageFound) return oldData;
 
       return {
         ...oldData,
-        pages: updatedPages,
+        pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+          if (!page || !page.messages.some(m => m.id === messageId)) {
+            return page;
+          }
+
+          return {
+            ...page,
+            messages: page.messages.filter(m => m.id !== messageId),
+          };
+        }),
       };
     });
   };
@@ -360,7 +250,7 @@ export default function ChatContainerContextProvider({
     },
     onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
       if (result.success) {
-        appendMessage(result.data!, authorization.userProfile ?? undefined);
+        appendMessage(result.data!);
         setSendingMessageOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
       } else {
         setSendingMessageOperations((prev) => prev.map(op =>
@@ -523,8 +413,6 @@ export default function ChatContainerContextProvider({
       replyingMessage,
       setReplyingMessage,
       messageQueryResult,
-      messageClusters,
-      userProfiles,
       appendMessage,
       editMessage,
       deleteMessage,

@@ -1,14 +1,13 @@
 import {type ChangeEvent, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
 import {TimelineItem} from "./TimelineItem.ts";
-import type {TimelineMessageClusterItemDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
+import type {TimelineMessageDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import {userService} from "../../api/userService.ts";
 
 export type MessageEditorItemProps = {
-  senderProfile: UserIdentityProfileDto;
-  message: TimelineMessageClusterItemDto;
+  message: TimelineMessageDto;
   showHeader: boolean;
 }
 
@@ -25,8 +24,7 @@ export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
     return (
       <MessageEditorView
         key={`editor-${this.data.message.id}`}
-        senderProfile={this.data.senderProfile}
-        message={{ ...this.data.message, senderUserId: this.data.senderProfile.id }}
+        message={this.data.message}
         showHeader={this.data.showHeader}
         context={context}
       />
@@ -36,14 +34,12 @@ export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
 
 export interface MessageEditorProps {
   message: TimelineMessageDto;
-  senderProfile: UserIdentityProfileDto;
   showHeader: boolean;
   context: TimelineContext;
 }
 
 function MessageEditorView({
   message,
-  senderProfile,
   showHeader,
   context,
 }: MessageEditorProps) {
@@ -95,12 +91,12 @@ function MessageEditorView({
       {showHeader ? (
         <div className="flex flex-row gap-3">
           <UserAvatar
-            src={senderProfile?.avatarRevision ? userService.getAvatarUrl(senderProfile.id, senderProfile?.avatarRevision) : undefined}
+            src={message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined}
             className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
           />
 
           <div className="flex-1 min-w-0">
-            <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
+            <p className="text-base text-white">{message.sender!.displayName ?? "???"}</p>
 
             <EditorContent
               textareaRef={textareaRef}

@@ -4,6 +4,7 @@ import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";
 import {DateSeparator} from "../components/chat/DateSeparator.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {SendingMessage} from "../components/chat/SendingMessage.tsx";
+import {MessageType} from "../api/schema.ts";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -17,61 +18,73 @@ export default function useTimelineItems(
   editingMessageId?: string,
 ): TimelineItem[] {
   const {
-    messageClusters,
-    userProfiles,
+    messageQueryResult: {
+      data: messageData,
+    },
     sendingMessageOperations,
     deletingMessageIds,
     editingOperations,
   } = useChatContainerContext();
 
   const items: TimelineItem[] = [];
-  let lastMessageDate: Date | null = null;
 
-  // foreach message cluster group from the backend
-  for (const group of messageClusters) {
-    const activeMessages = group.messages.filter(m => !deletingMessageIds.has(m.id));
-    if (!activeMessages.length) continue;
-    if (!group.senderUserId) continue;
+  if (messageData && messageData.pages.length > 0) {
+    let lastMessageDate: Date | null = null;
+    let lastMessageSenderId: string | null = null;
+    let messageHasHeader = true;
 
-    const sender = userProfiles[group.senderUserId];
+    for (const messagePages of messageData.pages.filter(p => !!p)) {
+      const activeMessages = messagePages.messages.filter(m => !deletingMessageIds.has(m.id));
+      if (!activeMessages.length) continue;
 
-    for (let i = 0; i < activeMessages.length; i++) {
-      const message = activeMessages[i];
-      const editingOperation = editingOperations.get(message.id);
+      for (const message of activeMessages) {
+        const messageDate = new Date(message.createdAt);
 
-      const messageDate = new Date(message.createdAt);
+        // insert DateSeparator if calendar day changed
+        const dateChanged = !lastMessageDate || !isSameDay(lastMessageDate, messageDate);
+        if (dateChanged) {
+          items.push(new DateSeparator({
+            date: messageDate,
+          }));
 
-      // insert DateSeparator if calendar day changed
-      const dateChanged = !lastMessageDate || !isSameDay(lastMessageDate, messageDate);
-      if (dateChanged) {
-        items.push(new DateSeparator({
-          date: messageDate,
-        }));
+          lastMessageDate = messageDate;
+          messageHasHeader = true;
+        }
 
-        lastMessageDate = messageDate;
+        if (message.type === MessageType.Message) {
+          if (!messageHasHeader && lastMessageSenderId !== message.sender!.id) {
+            messageHasHeader = true;
+          }
+
+          const editingOperation = editingOperations.get(message.id);
+          const displayingMessage = editingOperation ?
+            { ...message, body: editingOperation.newBody } :
+            message;
+
+          items.push(editingMessageId === message.id ?
+            new MessageEditorItem({
+              message: displayingMessage,
+              showHeader: messageHasHeader,
+            }) :
+            new MessageItem({
+              message: displayingMessage,
+              showHeader: messageHasHeader,
+              editingStatus: editingOperation ? editingOperation.error ? "error" : "saving" : "none",
+            })
+          );
+
+          messageHasHeader = false;
+          lastMessageSenderId = message.sender!.id;
+        } else {
+          messageHasHeader = true;
+
+          switch (message.type) {
+            case MessageType.Call:
+              // TODO: append call message
+              break;
+          }
+        }
       }
-
-      // show header for the first message in a cluster or if a date separator split the cluster
-      const showHeader = i === 0 || dateChanged;
-
-      const replyToMessageSenderProfile = message.replyTo
-        ? userProfiles[message.replyTo.senderUserId!]
-        : undefined;
-
-      const isEditing = editingMessageId === message.id;
-      const ItemClass = isEditing ? MessageEditorItem : MessageItem;
-
-      const displayingMessage = editingOperation ?
-        { ...message, body: editingOperation.newBody } :
-        message;
-
-      items.push(new ItemClass({
-        senderProfile: sender,
-        message: displayingMessage,
-        showHeader,
-        replyToMessageSenderProfile,
-        editingStatus: editingOperation ? editingOperation.error ? "error" : "saving" : "none",
-      }));
     }
   }
 

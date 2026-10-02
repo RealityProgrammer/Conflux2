@@ -5,7 +5,7 @@ using Conflux.Domain.Enums;
 namespace Conflux.Domain.Repositories;
 
 public interface IMessageRepository : IWriteRepository<Message> {
-    Task<Result<PagedTimelineMessageResult>> GetTimelineMessages(
+    Task<Result<TimelineMessagePage>> GetTimelineMessages(
         Guid conversationId, 
         MessageLoadDirection? direction, 
         Guid? cursorMessageId,

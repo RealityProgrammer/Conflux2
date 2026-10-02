@@ -5,7 +5,6 @@ import type {
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {messageService} from "../../api/messageService.ts";
-import {useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../../api/events.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
@@ -19,7 +18,6 @@ import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
-import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
 
 const START_INDEX = 10000000;
 
@@ -37,7 +35,6 @@ export function ChatView({}: ChatViewProps) {
       isFetchingNextPage, hasNextPage, fetchNextPage,
       isLoading,
     },
-    userProfiles,
     appendMessage,
     editMessage,
     deleteMessage,
@@ -49,8 +46,6 @@ export function ChatView({}: ChatViewProps) {
     retryEditingOperation,
     removeEditingOperation,
   } = useChatContainerContext();
-
-  const queryClient = useQueryClient();
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 
@@ -97,26 +92,11 @@ export function ChatView({}: ChatViewProps) {
   // signalr events
   // change the cache pages when message received
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
-    const senderId = event.message.senderUserId;
+    const senderId = event.message.sender!.id;
 
     if (!senderId) return;
 
-    if (userProfiles[senderId]) {
-      appendMessage(event.message, userProfiles[senderId]);
-    } else {
-      // if we don't know this user, fetch from api
-      try {
-        const userQuery = await queryClient.query({
-          queryKey: useGetUserIdentityProfileQuery.getKey({ id: senderId }),
-          queryFn: useGetUserIdentityProfileQuery.fetcher({ id: senderId }),
-          staleTime: 30 * 60 * 1000,
-        });
-
-        appendMessage(event.message, userQuery.user ?? undefined);
-      } catch (error) {
-        console.error("Failed to fetch user summary for new message", error);
-      }
-    }
+    appendMessage(event.message);
   });
 
   useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {

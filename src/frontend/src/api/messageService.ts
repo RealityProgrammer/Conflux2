@@ -1,5 +1,10 @@
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import type {BackendResponse, GetMessagesResponse, TimelineMessageDto, ServiceResponse} from "./types.ts";
+import type {
+  BackendResponse,
+  TimelineMessageDto,
+  ServiceResponse,
+  TimelineMessagePage
+} from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
 import type {MessageLoadDirection} from "./schema.ts";
@@ -89,7 +94,7 @@ export const messageService = {
     }
   },
 
-  getMessages: async (conversationId: string, direction: MessageLoadDirection | undefined, cursor: string | undefined, count: number): Promise<ServiceResponse<GetMessagesResponse>> => {
+  getTimelineMessages: async (conversationId: string, direction: MessageLoadDirection | undefined, cursor: string | undefined, count: number): Promise<ServiceResponse<TimelineMessagePage>> => {
     try {
       const searchParams = new URLSearchParams();
 
@@ -100,7 +105,7 @@ export const messageService = {
 
       searchParams.append("count", String(count));
 
-      const response: AxiosResponse<BackendResponse<GetMessagesResponse>> =
+      const response: AxiosResponse<BackendResponse<TimelineMessagePage>> =
         await apiClient.get(`/conversations/${encodeURIComponent(conversationId)}/messages?${searchParams.toString()}`);
 
       return {

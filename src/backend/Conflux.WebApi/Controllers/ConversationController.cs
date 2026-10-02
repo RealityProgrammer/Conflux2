@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Features.Messages;
 using Conflux.Application.Options;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
@@ -132,7 +133,7 @@ public sealed class ConversationController(
     }
 
     [HttpGet("{conversationId:guid}/messages")]
-    public async Task<ActionResult<ApiResponse<GetMessagesResponse>>> GetMessages(
+    public async Task<ActionResult<ApiResponse<TimelineMessagePage>>> GetMessages(
         Guid conversationId,
         [FromQuery] MessageLoadDirection? direction,
         [FromQuery] Guid? cursor,
@@ -147,23 +148,23 @@ public sealed class ConversationController(
 
         // TODO: Check if user has permission to view messages at this channel at service.
 
-        var result = await mediator.Send(new GetChatMessagesQuery(
+        var result = await mediator.Send(new ReadTimelineMessagesQuery(
             userId, conversationId, direction, cursor, count
         ), cancellationToken);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<GetMessagesResponse>(result.Value, Error.None));
+            return Ok(new ApiResponse<TimelineMessagePage>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<GetMessagesResponse>(null, result.Error)),
-            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<GetMessagesResponse>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<GetMessagesResponse>(null, result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<TimelineMessagePage>(null, result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<TimelineMessagePage>(null, result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessagePage>(null, result.Error)),
         };
     }
 
     public record SendMessageRequest(
-        [StringLength(1024, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
+        [StringLength(4000, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
         string? Body,
 
         [MaxLength(4, ErrorMessage = "Only 4 attachments allowed in a message.")]

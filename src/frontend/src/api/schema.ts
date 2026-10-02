@@ -722,9 +722,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfGetMessagesResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfGetMessagesResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfGetMessagesResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
                     };
                 };
             };
@@ -763,28 +763,7 @@ export interface paths {
                 };
             };
         };
-        delete: {
-            parameters: {
-                query?: {
-                    messageId?: string;
-                };
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -800,7 +779,27 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch: {
@@ -1624,10 +1623,6 @@ export interface components {
             data: null | components["schemas"]["DirectConversationSummary"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfGetMessagesResponse: {
-            data: null | components["schemas"]["GetMessagesResponse"];
-            error: components["schemas"]["Error"];
-        };
         ApiResponseOfLoginResponse: {
             data: null | components["schemas"]["LoginResponse"];
             error: components["schemas"]["Error"];
@@ -1672,6 +1667,10 @@ export interface components {
             data: null | components["schemas"]["TimelineMessageDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfTimelineMessagePage: {
+            data: null | components["schemas"]["TimelineMessagePage"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfUserAuthorizationInfo: {
             data: null | components["schemas"]["UserAuthorizationInfo"];
             error: components["schemas"]["Error"];
@@ -1686,6 +1685,8 @@ export interface components {
             name: string;
             type: string;
         };
+        /** @enum {string} */
+        CallEventType: CallEventType;
         ChannelCategoryCreateRequest: {
             name: string;
         };
@@ -1728,7 +1729,6 @@ export interface components {
             /** Format: uuid */
             conversationId: string;
             peerProfile: components["schemas"]["UserIdentityProfileDto"];
-            friendRequestStatus: components["schemas"]["FriendRequestStatus"];
         };
         DiscoverFriendSummary: {
             /** Format: uuid */
@@ -1746,14 +1746,6 @@ export interface components {
         };
         /** @enum {string} */
         FileOperationType: FileOperationType;
-        /** @enum {string} */
-        FriendRequestStatus: FriendRequestStatus;
-        GetMessagesResponse: {
-            messageGroups: components["schemas"]["TimelineMessageClusterDto"][];
-            users: components["schemas"]["UserIdentityProfileDto"][];
-            hasMoreBefore: null | boolean;
-            hasMoreAfter: null | boolean;
-        };
         /** Format: binary */
         IFormFile: string;
         /** @enum {string} */
@@ -1769,6 +1761,15 @@ export interface components {
         };
         /** @enum {string} */
         MessageLoadDirection: MessageLoadDirection;
+        MessageProperties: components["schemas"]["MessagePropertiesCallProperties"];
+        MessagePropertiesCallProperties: {
+            /** @enum {integer} */
+            $type?: MessagePropertiesCallProperties$type;
+            type: components["schemas"]["CallEventType"];
+            duration: null | string;
+        };
+        /** @enum {string} */
+        MessageType: MessageType;
         PaginatedResultOfDiscoverFriendSummary: {
             elements: components["schemas"]["DiscoverFriendSummary"][];
             /** Format: int32 */
@@ -1878,40 +1879,37 @@ export interface components {
             userName: string;
             displayName: string;
         };
-        TimelineMessageClusterDto: {
-            /** Format: uuid */
-            senderUserId: null | string;
-            messages: components["schemas"]["TimelineMessageClusterItemDto"][];
-        };
-        TimelineMessageClusterItemDto: {
-            /** Format: uuid */
-            id: string;
-            body: null | string;
-            attachments: components["schemas"]["AttachmentDto"][];
-            /** Format: date-time */
-            createdAt: string;
-            replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
-        };
         TimelineMessageDto: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            senderUserId: null | string;
+            type: components["schemas"]["MessageType"];
+            sender: null | components["schemas"]["TimelineMessageSenderDto"];
             body: null | string;
             attachments: components["schemas"]["AttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
+            properties: null | components["schemas"]["MessageProperties"];
+        };
+        TimelineMessagePage: {
+            messages: components["schemas"]["TimelineMessageDto"][];
+            hasMoreBefore: null | boolean;
+            hasMoreAfter: null | boolean;
         };
         TimelineMessageReplyDto: {
             /** Format: uuid */
-            messageId: string;
-            /** Format: uuid */
-            senderUserId: null | string;
-            bodySnippet: null | string;
-            hasMoreBody: boolean;
+            id: string;
+            sender: components["schemas"]["TimelineMessageSenderDto"];
+            body: null | string;
             /** Format: int32 */
             attachmentCount: number;
+        };
+        TimelineMessageSenderDto: {
+            /** Format: uuid */
+            id: string;
+            displayName: null | string;
+            /** Format: int32 */
+            avatarRevision?: null | number;
         };
         UserAuthorizationInfo: {
             /** Format: uuid */
@@ -1997,6 +1995,12 @@ export interface operations {
         };
     };
 }
+export enum CallEventType {
+    Start = "Start",
+    End = "End",
+    Canceled = "Canceled",
+    Denied = "Denied"
+}
 export enum ChannelType {
     Text = "Text",
     Voice = "Voice"
@@ -2009,13 +2013,6 @@ export enum FileOperationType {
     NoMod = "NoMod",
     Set = "Set",
     Delete = "Delete"
-}
-export enum FriendRequestStatus {
-    None = "None",
-    Pending = "Pending",
-    Canceled = "Canceled",
-    Accepted = "Accepted",
-    Rejected = "Rejected"
 }
 export enum InvitationExpireAfter {
     FiveMinutes = "FiveMinutes",
@@ -2036,6 +2033,13 @@ export enum MessageLoadDirection {
     Before = "Before",
     After = "After",
     Around = "Around"
+}
+export enum MessagePropertiesCallProperties$type {
+    Value1 = 1
+}
+export enum MessageType {
+    Message = "Message",
+    Call = "Call"
 }
 export enum PermissionState {
     Inherit = "Inherit",

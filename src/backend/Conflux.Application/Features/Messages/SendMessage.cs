@@ -6,6 +6,7 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using FileSignatures;
 using FileSignatures.Formats;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,7 @@ public sealed record UpdateDmConversationListNotification(
 ) : INotification;
 
 public sealed class SendMessageHandler(
+    IUserRepository userRepository,
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
     IUnitOfWork unitOfWork,
@@ -81,13 +83,6 @@ public sealed class SendMessageHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
             await conversationRepository.UpdateLatestMessageTime(conversationId, utcNow);
-            
-            // load the reply message into memory so that dto the message got the reply to convert to dto
-            if (command.ReplyToId.HasValue) {
-                await messageRepository
-                    .AsQueryable()
-                    .FirstOrDefaultAsync(m => m.Id == command.ReplyToId.Value, cancellationToken);
-            }
 
             await unitOfWork.CommitAsync(cancellationToken);
         } catch (OperationCanceledException) {
@@ -99,8 +94,20 @@ public sealed class SendMessageHandler(
             await DeleteUploadedAttachments(attachments);
             return Errors.OperationFailure("send message.");
         }
-        
-        TimelineMessageDto dto = new(message);
+
+        TimelineMessageDto dto = new(message) {
+            ReplyTo = await messageRepository
+                .AsQueryable()
+                .Where(m => m.Id == message.ReplyToId)
+                .SelectFacet<TimelineMessageReplyDto>()
+                .SingleOrDefaultAsync(CancellationToken.None),
+            
+            Sender = await userRepository
+                .AsQueryable()
+                .Where(u => u.Id == message.SenderUserId)
+                .SelectFacet<TimelineMessageSenderDto>()
+                .FirstOrDefaultAsync(CancellationToken.None),
+        };
         await mediator.Publish(new MessageReceivedNotification(conversationId, dto), CancellationToken.None);
         
         // if the channel type is DM, emit the notification to update the conversation list on the sidebar

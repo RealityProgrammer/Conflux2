@@ -1,7 +1,6 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {
-  TimelineMessageClusterItemDto,
-  UserIdentityProfileDto
+  TimelineMessageDto,
 } from "../../api/types.ts";
 import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
@@ -18,9 +17,7 @@ import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
 
 type MessageItemProps = {
-  senderProfile?: UserIdentityProfileDto;
-  replyToMessageSenderProfile?: UserIdentityProfileDto;
-  message: TimelineMessageClusterItemDto;
+  message: TimelineMessageDto;
   showHeader: boolean;
   editingStatus: "none" | "error" | "saving";
 }
@@ -38,8 +35,6 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
     return (
       <MessageView
         key={`message-${this.data.message.id}`}
-        senderProfile={this.data.senderProfile}
-        replyToMessageSenderProfile={this.data.replyToMessageSenderProfile}
         message={this.data.message}
         showHeader={this.data.showHeader}
         editingStatus={this.data.editingStatus}
@@ -50,36 +45,26 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 }
 
 interface MessageViewProps {
-  senderProfile?: UserIdentityProfileDto;
-  replyToMessageSenderProfile?: UserIdentityProfileDto;
-  message: TimelineMessageClusterItemDto;
+  message: TimelineMessageDto;
   showHeader: boolean;
   editingStatus: "none" | "error" | "saving"
   context: TimelineContext;
 }
 
 function MessageView({
-  senderProfile,
   message,
   showHeader,
-  replyToMessageSenderProfile,
   editingStatus,
   context,
 }: MessageViewProps) {
   const auth = useAuth();
 
   const handleReplyTrigger = () => {
-    context.actions.onMessageReplyTrigger({
-      ...message,
-      senderUserId: senderProfile?.id!,
-    });
+    context.actions.onMessageReplyTrigger(message);
   };
 
   const handleEditTrigger = () => {
-    context.actions.onMessageEditTrigger({
-      ...message,
-      senderUserId: senderProfile?.id!,
-    });
+    context.actions.onMessageEditTrigger(message);
   };
 
   const handleAttachmentClicked = (index: number) => {
@@ -104,10 +89,13 @@ function MessageView({
         className={`relative w-full flex flex-col hover-highlight group ${showHeader ? "mt-1" : ""}`}
       >
         <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
-          {message.replyTo && replyToMessageSenderProfile && (
+          {message.replyTo && (
             <div className="min-w-0">
-              <p className="text-xs ml-13">
-                {buildReplyText(replyToMessageSenderProfile.displayName ?? "???", message.replyTo.bodySnippet, message.replyTo.hasMoreBody, message.replyTo.attachmentCount)}
+              <p className="text-xs ml-13 line-clamp-2">
+                <em>// TODO: Insert reply message body here</em>
+                {/*@{message.replyTo.sender.displayName ?? "???"} sent {content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;*/}
+
+                {/*{buildReplyText(message.replyTo.sender.displayName ?? "???", message.replyTo.body, message.replyTo.attachmentCount)}*/}
               </p>
             </div>
           )}
@@ -116,13 +104,13 @@ function MessageView({
             {showHeader ? (
               <>
                 <UserAvatar
-                  src={senderProfile?.avatarRevision ? userService.getAvatarUrl(senderProfile.id, senderProfile.avatarRevision) : undefined}
+                  src={message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined}
                   className="flex-none mt-1 size-10 self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
                 />
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white">
-                    {senderProfile?.userName ?? "Unknown Sender"}
+                    {message.sender!.displayName ?? "???"}
                     {" "}
                     <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">
                       {formatDate(new Date(message.createdAt), "HH:mm")}
@@ -184,7 +172,7 @@ function MessageView({
 
             {editingStatus === "none" && (
               <>
-                {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
+                {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
                   <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
                     <FaPencil className="size-5 ml-auto"/>
                   </IconButton>
@@ -211,7 +199,7 @@ function MessageView({
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
 
-          {auth.userAuthorization?.id && auth.userAuthorization.id === senderProfile?.id && (
+          {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
             <>
               <ContextMenu.Item
                 className="dropdown-item-default"
@@ -223,10 +211,7 @@ function MessageView({
               <ContextMenu.Item
                 className="dropdown-item-danger"
                 onSelect={() => {
-                  context.actions.onMessageDeleteTrigger({
-                    ...message,
-                    senderUserId: senderProfile.id,
-                  })
+                  context.actions.onMessageDeleteTrigger(message)
                 }}
               >
                 Delete message <BsTrash className="fill-red-500 size-4 ml-auto"/>
@@ -254,10 +239,4 @@ function MessageView({
       </ContextMenu.Portal>
     </ContextMenu.Root>
   );
-}
-
-function buildReplyText(name: string, content: string | null, ellipsis: boolean, attachmentCount: number) {
-  const attachmentText = attachmentCount > 0 ? `${attachmentCount} attachment${attachmentCount > 1 ? 's' : ''}` : '';
-
-  return `@${name} sent${content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;
 }
