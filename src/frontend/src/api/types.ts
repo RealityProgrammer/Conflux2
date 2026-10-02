@@ -41,6 +41,7 @@ export type PendingFriendRequestDto = components["schemas"]["PendingFriendReques
 export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
 export type AttachmentDto = components["schemas"]["AttachmentDto"];
 export type TimelineMessageReplyDto = components["schemas"]["TimelineMessageReplyDto"];
+export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
 export type TimelineMessagePage = components["schemas"]["TimelineMessagePage"];
 export type ServerChannelIdentityDto = components["schemas"]["ServerChannelIdentityDto"];
@@ -49,6 +50,8 @@ export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryI
 export type ServerDetailDto = components["schemas"]["ServerDetailDto"];
 export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
+export type CallProperties = Omit<components["schemas"]["MessagePropertiesCallProperties"], "$type">;
+export type CallEventType = components["schemas"]["CallEventType"];
 
 export type DirectCallContext = {
   result: BackendResult;

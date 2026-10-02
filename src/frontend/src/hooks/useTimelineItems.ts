@@ -5,6 +5,8 @@ import {DateSeparator} from "../components/chat/DateSeparator.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {SendingMessage} from "../components/chat/SendingMessage.tsx";
 import {MessageType} from "../api/schema.ts";
+import {CallMessageItem} from "../components/chat/CallMessageItem.tsx";
+import type {CallProperties} from "../api/types.ts";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -80,7 +82,14 @@ export default function useTimelineItems(
 
           switch (message.type) {
             case MessageType.Call:
-              // TODO: append call message
+              const callProperties: CallProperties = message.properties as CallProperties;
+              items.push(new CallMessageItem({
+                id: message.id,
+                sender: message.sender!,
+                type: callProperties.type,
+                duration: callProperties.duration,
+                createdAt: new Date(message.createdAt),
+              }))
               break;
           }
         }

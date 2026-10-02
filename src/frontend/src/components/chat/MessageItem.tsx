@@ -15,6 +15,7 @@ import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
+import DateTimeText from "../DateTimeText.tsx";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -86,7 +87,7 @@ function MessageView({
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
-        className={`relative w-full flex flex-col hover-highlight group ${showHeader ? "mt-1" : ""}`}
+        className={`relative w-full flex flex-col hover-highlight group ${showHeader ? "mt-1.5" : ""}`}
       >
         <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
           {message.replyTo && (
@@ -94,8 +95,6 @@ function MessageView({
               <p className="text-xs ml-13 line-clamp-2">
                 <em>// TODO: Insert reply message body here</em>
                 {/*@{message.replyTo.sender.displayName ?? "???"} sent {content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;*/}
-
-                {/*{buildReplyText(message.replyTo.sender.displayName ?? "???", message.replyTo.body, message.replyTo.attachmentCount)}*/}
               </p>
             </div>
           )}
@@ -112,9 +111,7 @@ function MessageView({
                   <p className="text-sm font-semibold text-white">
                     {message.sender!.displayName ?? "???"}
                     {" "}
-                    <span className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible">
-                      {formatDate(new Date(message.createdAt), "HH:mm")}
-                    </span>
+                    <DateTimeText value={new Date(message.createdAt)} className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible"/>
                   </p>
 
                   <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
