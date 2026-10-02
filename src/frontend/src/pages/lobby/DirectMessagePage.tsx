@@ -131,6 +131,7 @@ function SuccessPage({
         {showProfile && (
           <UserProfilePanel
             className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
+            avatarClassName="border-gray-725 bg-gray-725"
             userId={peerProfile.id}
           />
         )}

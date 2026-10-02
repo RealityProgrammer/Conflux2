@@ -1,9 +1,7 @@
 using Conflux.Application.Features.Friends;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Enums;
 using Conflux.WebApi.Dto;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.SignalR;
@@ -20,7 +18,7 @@ partial class GatewayHub {
         Domain.Result<UserIdentityProfileDto> calleeProfile = await sender.Send(new StartCallCommand(callerId, Context.ConnectionId, calleeUserId));
 
         if (!calleeProfile.IsSuccess) {
-            return new(calleeProfile, calleeProfile.Value);
+            return new(calleeProfile, null);
         }
         
         return new(Result.Success(), calleeProfile.Value);
@@ -33,15 +31,9 @@ partial class GatewayHub {
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
             return new(Errors.InvalidIdentifier(), null);
         }
-
-        Result result = await callingService.CancelCall(callerId, calleeUserId);
-
-        if (!result.IsSuccess) {
-            return new(result, null);
-        }
-
-        await Clients.User(calleeUserId.ToString()).DirectCallCanceled(new(callerId));
-        return new(Result.Success(), null);
+        
+        Result result = await sender.Send(new CancelCallCommand(callerId, calleeUserId));
+        return new(result, null);
     }
 
     // invoked by frontend only
@@ -52,14 +44,8 @@ partial class GatewayHub {
             return new(Errors.InvalidIdentifier(), null);
         }
         
-        Result result = await callingService.DenyCall(callerUserId, calleeId);
-
-        if (!result.IsSuccess) {
-            return new(result, null);
-        }
-
-        await Clients.User(callerUserId.ToString()).DirectCallDenied(new(calleeId));
-        return new(Result.Success(), null);
+        Result result = await sender.Send(new DenyCallCommand(callerUserId, calleeId));
+        return new(result, null);
     }
 
     // invoked by frontend only
@@ -70,14 +56,8 @@ partial class GatewayHub {
             return new(Errors.InvalidIdentifier(), null);
         }
 
-        Result result = await callingService.AcceptCall(callerUserId, calleeUserId, Context.ConnectionId);
-        
-        if (!result.IsSuccess) {
-            return new(result, null);
-        }
-        
-        await Clients.User(callerUserId.ToString()).DirectCallAccepted(new(calleeUserId));
-        return new(Result.Success(), null);
+        Result result = await sender.Send(new AcceptCallCommand(callerUserId, calleeUserId, Context.ConnectionId));
+        return new(result, null);
     }
     
     // invoked by frontend only
@@ -87,15 +67,9 @@ partial class GatewayHub {
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
             return new(Errors.InvalidIdentifier(), null);
         }
-        
-        Domain.Result<Guid> peerIdResult = await callingService.EndCall(userId, peerUserId);
-        
-        if (!peerIdResult.IsSuccess) {
-            return new(peerIdResult, null);
-        }
-        
-        await Clients.User(peerIdResult.Value.ToString()).DirectCallEnded(new(userId));
-        return new(Result.Success(), null);
+
+        Result result = await sender.Send(new EndCallCommand(userId, peerUserId));
+        return new(result, null);
     }
     
     // invoked by frontend only

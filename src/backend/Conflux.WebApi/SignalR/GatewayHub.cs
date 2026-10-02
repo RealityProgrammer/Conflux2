@@ -1,3 +1,4 @@
+using Conflux.Application.Features.Friends;
 using Conflux.Application.Services;
 using Conflux.Domain.Repositories;
 using Conflux.WebApi.Services;
@@ -16,7 +17,6 @@ public sealed partial class GatewayHub(
     IServerPermissionsProvider serverPermissionsProvider,
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,
-    IFriendRequestRepository friendRequestRepository,
     IUserRepository userRepository,
     ICallingService callingService,
     ILogger<GatewayHub> logger,
@@ -48,16 +48,9 @@ public sealed partial class GatewayHub(
                 await presenceService.UserDisconnected(userId);
             }
 
-            await HandleDropCall(userId);
+            await sender.Send(new DropCallCommand(userId, Context.ConnectionId));
         }
         
         await base.OnDisconnectedAsync(exception);
-    }
-
-    private async Task HandleDropCall(Guid userId) {
-        var result = await callingService.DropCall(userId, Context.ConnectionId);
-        if (!result.IsSuccess) return;
-
-        await Clients.User(result.Value.ToString()).DirectCallDropped(new(userId));
     }
 }

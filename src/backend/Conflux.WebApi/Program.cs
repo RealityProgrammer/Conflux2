@@ -267,6 +267,7 @@ builder.Services
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
     .AddScoped<IUnitOfWork, UnitOfWork>()
+    .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
         (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
@@ -274,6 +275,7 @@ builder.Services
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
+    .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
     .AddScoped<IAttachmentRepository, AttachmentRepository>()
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()

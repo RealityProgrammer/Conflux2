@@ -14,82 +14,39 @@ public sealed record GetDirectConversationSummaryQuery(
 ) : IQuery<Result<DirectConversationSummary>>;
 
 public sealed class GetDirectConversationSummaryHandler(
-    IUserRepository userRepository,
-    IFriendRequestRepository friendRequestRepository,
-    IConversationRepository conversationRepository,
-    IUnitOfWork unitOfWork
+    IDirectConversationProvider directConversationProvider,
+    IConversationParticipantRepository conversationParticipantRepository
 ) : IQueryHandler<GetDirectConversationSummaryQuery, Result<DirectConversationSummary>> {
     public async ValueTask<Result<DirectConversationSummary>> Handle(GetDirectConversationSummaryQuery query, CancellationToken cancellationToken) {
-        // fetch peer profile
-        var peerProfile = await userRepository
+        var conversationResult = await directConversationProvider.GetOrCreate(query.UserId, query.PeerId, cancellationToken);
+
+        if (!conversationResult.IsSuccess) {
+            return conversationResult.Error;
+        }
+        
+        Conversation conversation = conversationResult.Value!;
+
+        UserIdentityProfileDto? peerProfile = await conversationParticipantRepository
             .AsQueryable()
-            .AsNoTracking()
-            .Where(u => u.Id == query.PeerId)
-            .Select(u => new UserIdentityProfileDto {
-                Id = u.Id,
-                UserName = u.UserName,
-                DisplayName = u.DisplayName,
-                AvatarRevision = u.AvatarRevision,
+            .Where(p => p.ConversationId == conversation.Id && p.UserId == query.PeerId)
+            .Include(p => p.User)
+            .Select(p => new UserIdentityProfileDto {
+                Id = p.User.Id,
+                DisplayName = p.User.DisplayName,
+                UserName = p.User.UserName,
+                AvatarRevision = p.User.AvatarRevision,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (peerProfile is null) {
-            return Errors.NoUserFoundFromId(query.PeerId);
-        }
-        
-        var friendRequest = await friendRequestRepository
-            .AsQueryable()
-            .Where(fr => 
-                fr.SenderUserId == query.UserId && fr.ReceiverUserId == query.PeerId ||
-                fr.SenderUserId == query.PeerId && fr.ReceiverUserId == query.UserId
-            )
-            .Include(r => r.DirectConversation)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (friendRequest == null) {
-            return Errors.NoAcceptedFriendRequest();
+        if (peerProfile == null) {
+            return Errors.ResourceNotFound("Conversation", [
+                new("Conversation", conversation.Id.ToString()),
+            ]);
         }
 
-        if (friendRequest.DirectConversation != null) {
-            return Result<DirectConversationSummary>.Success(new(
-                friendRequest.DirectConversation.Id,
-                peerProfile,
-                friendRequest.Status
-            ));
-        }
-
-        if (friendRequest.Status != FriendRequestStatus.Accepted) {
-            return Errors.NoAcceptedFriendRequest();
-        }
-
-        Conversation newConversation = friendRequest.DirectConversation = new() {
-            Type = ConversationType.Direct,
-            Participants = [
-                new() {
-                    UserId = query.UserId,
-                },
-                new() {
-                    UserId = query.PeerId,
-                },
-            ],
-        };
-        
-        try {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        } catch (DbUpdateException) {
-            newConversation = await conversationRepository
-                .AsQueryable()
-                .FirstAsync(c => 
-                    c.Type == ConversationType.Direct && 
-                    c.Participants.Any(p => p.UserId == query.UserId) && 
-                    c.Participants.Any(p => p.UserId == query.PeerId
-                ), cancellationToken);
-        }
-        
         return Result<DirectConversationSummary>.Success(new(
-            newConversation.Id,
-            peerProfile,
-            friendRequest.Status
+            conversation.Id,
+            peerProfile
         ));
     }
 }
