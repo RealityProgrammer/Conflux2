@@ -114,7 +114,7 @@ function MessageView({
                     <p className="text-sm font-semibold text-white">
                       {message.sender!.displayName ?? "???"}
                       {" "}
-                      <DateTimeText value={new Date(message.createdAt)} className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible"/>
+                      <DateTimeText value={new Date(message.createdAt)} relative={false} className="select-none font-normal text-xs text-gray-400 hidden group-hover:inline"/>
                     </p>
 
                     <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>

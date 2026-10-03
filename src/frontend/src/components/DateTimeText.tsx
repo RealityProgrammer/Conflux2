@@ -29,7 +29,9 @@ function subscribe(listener: () => void) {
   };
 }
 
-function formatRelative(value: Date, now: number): string {
+function formatTime(value: Date, now: number, relative: boolean): string {
+  if (!relative) return value.toLocaleString();
+
   // calculate the time difference, return the raw date time if the difference is >= 1 week
   const diffSec = Math.floor((now - value.getTime()) / 1000);
   const abs = Math.abs(diffSec);
@@ -54,15 +56,17 @@ function formatRelative(value: Date, now: number): string {
 
 export interface DateTimeTextProps extends HTMLAttributes<HTMLSpanElement> {
   value: Date;
+  relative?: boolean;
   tooltipClassName?: string;
 }
 
 export default function DateTimeText({
   value,
+  relative = true,
   tooltipClassName = "",
   ...props
 }: DateTimeTextProps) {
-  const getSnapshot = () => formatRelative(value, nowMs);
+  const getSnapshot = () => formatTime(value, nowMs, relative);
   const label = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return (

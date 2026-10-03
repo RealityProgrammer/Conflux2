@@ -93,19 +93,6 @@ export function ChatView({}: ChatViewProps) {
 
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
 
-  // signalr events
-  useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
-    appendMessage(event.message);
-  });
-
-  useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
-    editMessage(event.message.id, event.message.body);
-  });
-
-  useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
-    deleteMessage(event.messageId);
-  });
-
   // timeline entries
   const timelineItems = useTimelineItems(editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
@@ -161,6 +148,19 @@ export function ChatView({}: ChatViewProps) {
   const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
 
+  // signalr events
+  useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
+    appendMessage(event.message);
+  });
+
+  useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
+    editMessage(event.message.id, event.message.body);
+  });
+
+  useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
+    deleteMessage(event.messageId);
+  });
+
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center overflow-hidden h-full text-white bg-gray-700">
@@ -171,40 +171,46 @@ export function ChatView({}: ChatViewProps) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
-      <Virtuoso
-        data={timelineItems}
-        computeItemKey={(_index, item) => item.getKey()}
-        atBottomThreshold={60}
-        followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
-        alignToBottom={true}
-        initialTopMostItemIndex={{ index: "LAST", align: "end" }}
-        firstItemIndex={firstItemIndex}
-        startReached={fetchOlderMessages}
-        endReached={fetchNewerMessages}
-        overscan={10}
-        className="flex-1 min-h-0 mb-2"
-        components={{
-          Header: () => (
-            isFetchingPreviousPage ? (
-              <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                Loading older messages...
-              </div>
-            ) : null
-          ),
-          Footer: () => (
-            isFetchingNextPage ? (
-              <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                Loading newer messages...
-              </div>
-            ) : null
-          )
-        }}
-        itemContent={(_index, timelineItem) => {
-          if (!timelineItem) return null;
+      {isLoading ? (
+        <div className="size-full flex flex-row justify-center items-center">
+          <Spinner className="size-10 fill-white"/>
+        </div>
+      ) : (
+        <Virtuoso
+          data={timelineItems}
+          computeItemKey={(_index, item) => item.getKey()}
+          atBottomThreshold={60}
+          followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
+          alignToBottom={true}
+          initialTopMostItemIndex={{ index: "LAST", align: "end" }}
+          firstItemIndex={firstItemIndex}
+          startReached={fetchOlderMessages}
+          endReached={fetchNewerMessages}
+          overscan={10}
+          className="flex-1 min-h-0 mb-2"
+          components={{
+            Header: () => (
+              isFetchingPreviousPage ? (
+                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
+                  Loading older messages...
+                </div>
+              ) : null
+            ),
+            Footer: () => (
+              isFetchingNextPage ? (
+                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
+                  Loading newer messages...
+                </div>
+              ) : null
+            )
+          }}
+          itemContent={(_index, timelineItem) => {
+            if (!timelineItem) return null;
 
-          return timelineItem.render(timelineContext);
-        }}
-      />
+            return timelineItem.render(timelineContext);
+          }}
+        />
+      )}
 
       <TypingIndicator displayUsers={typingUsers.slice(0, 4)}/>
 
