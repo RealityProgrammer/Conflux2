@@ -280,9 +280,9 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
         toast.error(`Failed to end call.`);
 
         if (result) {
-          console.log("Failed to end call:", result.error);
+          console.error("Failed to end call:", result.error);
         } else {
-          console.log("Failed to end call.");
+          console.error("Failed to end call.");
         }
       }
     } catch (err) {

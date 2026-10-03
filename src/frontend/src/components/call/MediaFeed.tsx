@@ -23,23 +23,9 @@ export default function MediaFeed({
   isVideoEnabled = true,
   isAudioEnabled = true,
 }: StreamVideoProps) {
-  useEffect(() => {
-    console.log('[MediaFeed] stream prop', {
-      streamId: stream?.id,
-      tracks: stream?.getTracks().map(t => ({
-        kind: t.kind, enabled: t.enabled, muted: t.muted, readyState: t.readyState,
-      })),
-      isLocal, isVideoEnabled, isAudioEnabled,
-    });
-  }, [stream, isLocal, isVideoEnabled, isAudioEnabled]);
-
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
-
-  useEffect(() => {
-    console.log('[MediaFeed] hasVideo/hasAudio', { hasVideo, hasAudio });
-  }, [hasVideo, hasAudio]);
 
   useEffect(() => {
     if (!stream) {

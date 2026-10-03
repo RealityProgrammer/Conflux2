@@ -123,8 +123,6 @@ export default function useWebRTC({
   };
 
   const createPeerConnection = (peerId: string, isInitiator: boolean) => {
-    console.log(`[createPeerConnection] peerId=${peerId} isInitiator=${isInitiator}`);
-
     if (peersRef.current.has(peerId)) return peersRef.current.get(peerId)!;
 
     const pc = new RTCPeerConnection(RTC_CONFIGURATION);
@@ -237,8 +235,6 @@ export default function useWebRTC({
 
   // connect when user connects to the call
   const connectToPeer = async (targetPeerId: string): Promise<void> => {
-    console.log(`[connectToPeer] target=${targetPeerId} caller=${new Error().stack}`);
-
     if (connectingPeersRef.current.has(targetPeerId)) {
       console.warn(`Skipping duplicate offer negotiating with ${targetPeerId}.`);
       return;
@@ -301,10 +297,6 @@ export default function useWebRTC({
   useSignalREvent("ReceiveCallAnswer", async (senderId: string, sdp: string) => {
     const pc = peersRef.current.get(senderId);
     if (!pc) return;
-
-    pc.getTransceivers().map((t) => {
-      console.log("transceivers direction", t.direction);
-    });
 
     try {
       await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
