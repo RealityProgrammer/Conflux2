@@ -256,7 +256,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="Message body goes here"
           disabled={disabled}
-          maxLength={1024}
+          maxLength={4000}
           className="input-field min-h-10 max-h-36 w-full flex-1 text-sm resize-none py-2 px-3 overflow-y-auto leading-relaxed"
         />
 
