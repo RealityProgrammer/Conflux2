@@ -8,6 +8,7 @@ namespace Conflux.Domain.Dto;
 [Facet(typeof(Message), Include = [
     nameof(Message.Id),
     nameof(Message.Type),
+    nameof(Message.ConversationId),
     nameof(Message.Sender),
     nameof(Message.Body),
     nameof(Message.Attachments),
@@ -28,4 +29,5 @@ public sealed partial record TimelineMessageDto {
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
     [Required] public TimelineMessageReplyDto? ReplyTo { get; set; } = ReplyTo;
     [Required] public MessageProperties? Properties { get; set; } = Properties;
+    [Required] public Guid ConversationId { get; set; } = ConversationId;
 }

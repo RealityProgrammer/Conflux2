@@ -3,7 +3,7 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Application.Features.Messages;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record ReadTimelineMessagesQuery(
     Guid RequesterUserId,

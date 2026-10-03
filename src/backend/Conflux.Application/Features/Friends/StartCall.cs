@@ -1,5 +1,4 @@
-using Conflux.Application.Dto;
-using Conflux.Application.Features.Messages;
+using Conflux.Application.Features.Conversation;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -24,6 +23,7 @@ internal sealed class StartCallHandler(
     IUserRepository userRepository,
     IFriendRequestRepository friendRequestRepository,
     IDirectConversationProvider directConversationProvider,
+    IConversationParticipantsProvider conversationParticipantsProvider,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
     ILogger<StartCallHandler> logger
@@ -76,16 +76,16 @@ internal sealed class StartCallHandler(
                 return conversationResult.Error;
             }
 
-            Conversation directConversation = conversationResult.Value!;
+            Domain.Entities.Conversation conversation = conversationResult.Value!;
 
             Message createdMessage = new Message {
                 Type = MessageType.Call,
                 Properties = new CallProperties(CallEventType.Start, Duration: null),
-                Conversation = directConversation,
+                Conversation = conversation,
                 SenderUserId = command.CallerId,
             };
             
-            directConversation.Messages.Add(createdMessage);
+            conversation.Messages.Add(createdMessage);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
@@ -101,8 +101,23 @@ internal sealed class StartCallHandler(
                     .SelectFacet<TimelineMessageSenderDto>()
                     .FirstOrDefaultAsync(CancellationToken.None),
             };
+            
+            IReadOnlyCollection<Guid> conversationParticipants = [];
 
-            await publisher.Publish(new MessageReceivedNotification(directConversation.Id, messageDto), CancellationToken.None);
+            if (conversation.Type == ConversationType.Direct) {
+                conversationParticipants = 
+                    await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversation.Id, CancellationToken.None);
+            }
+
+            await publisher.Publish(
+                new MessageReceivedNotification(conversation.Id, conversation.Type, conversationParticipants, messageDto), 
+                CancellationToken.None
+            );
+            
+            await publisher.Publish(
+                new ConversationUpdatedNotification(conversation.Id, conversationParticipants),
+                CancellationToken.None
+            );
             
             return Result<UserIdentityProfileDto>.Success(calleeProfile);
         } catch (OperationCanceledException) {

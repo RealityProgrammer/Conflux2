@@ -1,8 +1,6 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +22,7 @@ public sealed class GetDirectConversationSummaryHandler(
             return conversationResult.Error;
         }
         
-        Conversation conversation = conversationResult.Value!;
+        Domain.Entities.Conversation conversation = conversationResult.Value!;
 
         UserIdentityProfileDto? peerProfile = await conversationParticipantRepository
             .AsQueryable()

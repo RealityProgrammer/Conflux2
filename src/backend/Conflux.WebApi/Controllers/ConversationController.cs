@@ -1,5 +1,5 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Messages;
+using Conflux.Application.Features.Conversation;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;

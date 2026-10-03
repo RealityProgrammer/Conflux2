@@ -14,7 +14,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 public static partial class ConversationQuery {
-    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
+    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
     public static async Task<PageConnection<Conversation>> GetDirectConversations(
         ClaimsPrincipal claimsPrincipal,
         QueryContext<Conversation> queryContext,

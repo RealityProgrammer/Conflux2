@@ -27,7 +27,7 @@ internal sealed class DirectConversationProvider(
         }
         
         // check for having accepted friend request before creating conversation
-        bool hasAcceptedFriendRequest = await friendRequestRepository
+        Guid? friendRequestId = await friendRequestRepository
             .AsQueryable()
             .Where(fr => 
                 fr.Status == FriendRequestStatus.Accepted && (
@@ -35,9 +35,11 @@ internal sealed class DirectConversationProvider(
                     fr.SenderUserId == user2Id && fr.ReceiverUserId == user1Id
                 )
             )
-            .AnyAsync(cancellationToken);
+            .Select(fr => fr.Id)
+            .Cast<Guid?>()
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!hasAcceptedFriendRequest) {
+        if (friendRequestId == null) {
             return Errors.NoAcceptedFriendRequest();
         }
         
@@ -48,6 +50,7 @@ internal sealed class DirectConversationProvider(
                 new() { UserId = user1Id },
                 new() { UserId = user2Id },
             ],
+            FriendRequestId = friendRequestId.Value,
         };
 
         conversationRepository.Add(conversation);

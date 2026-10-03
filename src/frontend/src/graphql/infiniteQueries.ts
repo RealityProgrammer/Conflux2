@@ -140,7 +140,11 @@ useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQ
 
 export const GetDirectConversationsDocument = new TypedDocumentString(`
     query GetDirectConversations($after: String) {
-  directConversations(after: $after, order: {latestMessageAt: DESC}) {
+  directConversations(
+    after: $after
+    where: {latestMessageAt: {neq: null}}
+    order: {latestMessageAt: DESC}
+  ) {
     pageInfo {
       hasNextPage
       hasPreviousPage

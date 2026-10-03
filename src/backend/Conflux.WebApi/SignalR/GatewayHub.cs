@@ -26,6 +26,8 @@ public sealed partial class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
+            await Groups.AddToGroupAsync(Context.ConnectionId, NameProvider.GetUserGroupName(userId));
+            
             bool isFirstConnection = await connectionTracker.TrackConnection(userId, Context.ConnectionId);
             
             if (isFirstConnection) {
@@ -42,6 +44,8 @@ public sealed partial class GatewayHub(
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (!string.IsNullOrEmpty(idClaim) && Guid.TryParse(idClaim, out var userId)) {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, NameProvider.GetUserGroupName(userId));
+            
             bool isLastConnection = await connectionTracker.UntrackConnection(userId, Context.ConnectionId);
 
             if (isLastConnection) {

@@ -3,7 +3,12 @@ import {BsMegaphone, BsPeople} from "react-icons/bs";
 import {Separator} from "radix-ui";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {UpdateDmConversationListEvent, UserPresenceChangedEvent} from "../../api/events.ts";
+import type {
+  ConversationUpdatedEvent,
+  MessageReceivedEvent,
+  UpdateDmConversationListEvent,
+  UserPresenceChangedEvent
+} from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import {userService} from "../../api/userService.ts";
@@ -86,12 +91,52 @@ function DirectMessagesList() {
 
   const allElements = data?.pages.flatMap((page) => page?.directConversations.nodes ?? []) ?? [];
 
-  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
-    if (!allElements || allElements.length == 0 || allElements[0].id === event.channelId) return;
+  useSignalREvent("ConversationUpdated", async (event: ConversationUpdatedEvent) => {
+    const hasConversation = data && data.pages.some(page => {
+      return page.directConversations.nodes?.some(node => node.id === event.conversationId) ?? false;
+    });
 
-    queryClient.invalidateQueries({
-      queryKey: useInfiniteGetDirectConversationsQuery.getKey({}),
-    })
+    if (hasConversation) {
+      queryClient.setQueryData<InfiniteData<GetDirectConversationsQuery, unknown> | undefined>(
+        useInfiniteGetDirectConversationsQuery.getKey({}),
+        (oldData) => {
+          if (!oldData || oldData.pages.length === 0) return oldData;
+
+          const newPages = oldData.pages.map(page => ({
+            ...page,
+            directConversations: {
+              ...page.directConversations,
+              nodes: page.directConversations.nodes ? [...page.directConversations.nodes] : [],
+            },
+          }));
+
+          let conversation: NonNullable<GetDirectConversationsQuery["directConversations"]["nodes"]>[number] | undefined = undefined;
+
+          // extract element
+          for (const page of newPages) {
+            if (!page.directConversations.nodes) continue;
+
+            const index = page.directConversations.nodes.findIndex(node => node.id === event.conversationId) ?? -1;
+            if (index === -1) continue;
+
+            conversation = page.directConversations.nodes.splice(index, 1)[0];
+            break;
+          }
+
+          if (!conversation) return oldData;
+          newPages[0].directConversations.nodes!.unshift(conversation);
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        },
+      );
+    } else {
+      queryClient.invalidateQueries({
+        queryKey: useInfiniteGetDirectConversationsQuery.getKey({}),
+      });
+    }
   });
 
   useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {

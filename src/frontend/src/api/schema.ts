@@ -1890,6 +1890,8 @@ export interface components {
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
             properties: null | components["schemas"]["MessageProperties"];
+            /** Format: uuid */
+            conversationId: string;
         };
         TimelineMessagePage: {
             messages: components["schemas"]["TimelineMessageDto"][];

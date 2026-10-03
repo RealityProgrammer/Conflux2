@@ -1,4 +1,3 @@
-using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 
@@ -13,15 +12,5 @@ internal sealed class ConversationRepository(
     
     public IQueryable<Conversation> AsQueryable() {
         return dbContext.Conversations;
-    }
-    
-    public async Task<Result> UpdateLatestMessageTime(Guid conversationId, DateTimeOffset time) {
-        int changed = await dbContext.Conversations
-            .Where(c => c.Id == conversationId)
-            .ExecuteUpdateAsync(setter => {
-                setter.SetProperty(c => c.LatestMessageAt, time);
-            });
-
-        return changed == 1 ? Result.Success() : Errors.ResourceNotFound("Conversation");
     }
 }

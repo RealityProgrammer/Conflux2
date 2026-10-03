@@ -49,6 +49,7 @@ export function ChatView({}: ChatViewProps) {
     retrySendOperation,
     retryEditOperation,
     removeEditOperation,
+    conversationId,
   } = useChatContainerContext();
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
@@ -150,10 +151,14 @@ export function ChatView({}: ChatViewProps) {
 
   // signalr events
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
+    if (event.message.conversationId !== conversationId) return;
+
     appendMessage(event.message);
   });
 
   useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
+    if (event.message.conversationId !== conversationId) return;
+
     editMessage(event.message.id, event.message.body);
   });
 

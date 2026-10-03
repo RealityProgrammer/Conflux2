@@ -1,6 +1,7 @@
 query GetDirectConversations($after: String) {
     directConversations(
         after: $after
+        where: { latestMessageAt: { neq: null } }
         order: { latestMessageAt: DESC }
     ) {
         pageInfo {

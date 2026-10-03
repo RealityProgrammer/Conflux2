@@ -1,11 +1,10 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Conflux.Application.Features.Messages;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record EditMessageCommand(
     Guid ConversationId,

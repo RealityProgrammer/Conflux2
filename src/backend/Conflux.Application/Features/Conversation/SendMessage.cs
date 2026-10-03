@@ -1,5 +1,4 @@
 using Conflux.Application.Dto;
-using Conflux.Application.FileFormats;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -7,11 +6,9 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
-using FileSignatures;
-using FileSignatures.Formats;
 using Microsoft.EntityFrameworkCore;
 
-namespace Conflux.Application.Features.Messages;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record SendMessageCommand(
     Guid SenderUserId,
@@ -21,35 +18,33 @@ public sealed record SendMessageCommand(
     Guid? ReplyToId
 ) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record MessageReceivedNotification(Guid ConversationId, TimelineMessageDto Message) : INotification;
-
-public sealed record UpdateDmConversationListNotification(
-    Guid SenderUserId,
-    Guid ChannelId, 
-    Guid ReceiverUserId
+public sealed record MessageReceivedNotification(
+    Guid ConversationId, 
+    ConversationType ConversationType,
+    IReadOnlyCollection<Guid> DirectConversationParticipantUserIds,
+    TimelineMessageDto Message
 ) : INotification;
 
 public sealed class SendMessageHandler(
     IUserRepository userRepository,
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
+    IConversationParticipantsProvider conversationParticipantsProvider,
     IUnitOfWork unitOfWork,
-    IMediator mediator,
+    IPublisher publisher,
     TimeProvider timeProvider,
     IMessageMediaService messageMediaService
 ) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand command, CancellationToken cancellationToken) {
         Guid conversationId = command.ConversationId;
         Guid senderUserId = command.SenderUserId;
-
-        ConversationType? conversationType = await conversationRepository
+        
+        Domain.Entities.Conversation? conversation = await conversationRepository
             .AsQueryable()
             .Where(c => c.Id == command.ConversationId)
-            .Select(c => c.Type)
-            .Cast<ConversationType?>()
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (conversationType == null) {
+        if (conversation == null) {
             return Errors.ResourceNotFound("Conversation", [new("Id", conversationId.ToString())]);
         }
 
@@ -80,10 +75,9 @@ public sealed class SendMessageHandler(
 
         try {
             messageRepository.Add(message);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            conversation.LatestMessageAt = utcNow;
             
-            await conversationRepository.UpdateLatestMessageTime(conversationId, utcNow);
-
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
         } catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(CancellationToken.None);
@@ -108,19 +102,23 @@ public sealed class SendMessageHandler(
                 .SelectFacet<TimelineMessageSenderDto>()
                 .FirstOrDefaultAsync(CancellationToken.None),
         };
-        await mediator.Publish(new MessageReceivedNotification(conversationId, dto), CancellationToken.None);
-        
-        // if the channel type is DM, emit the notification to update the conversation list on the sidebar
-        if (conversationType == ConversationType.Direct) {
-            // var dmSummary = 
-            //     (await channelRepository.GetDmChannelSummary(senderUserId, channelId)).Value!;
-            //
-            // await mediator.Publish(new UpdateDmConversationListNotification(
-            //     senderUserId,
-            //     channelMetadata.ChannelId,
-            //     dmSummary.PeerProfile.Id
-            // ), CancellationToken.None);
+
+        IReadOnlyCollection<Guid> directConversationParticipantIds = [];
+
+        if (conversation.Type == ConversationType.Direct) {
+            directConversationParticipantIds = 
+                await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
         }
+        
+        await publisher.Publish(
+            new MessageReceivedNotification(conversationId, conversation.Type, directConversationParticipantIds, dto), 
+            CancellationToken.None
+        );
+
+        await publisher.Publish(
+            new ConversationUpdatedNotification(conversationId, directConversationParticipantIds), 
+            CancellationToken.None
+        );
 
         return Result<TimelineMessageDto>.Success(dto);
     }

@@ -31,6 +31,7 @@ using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.Notifications;
+using Conflux.WebApi.Notifications.Conversation;
 using Conflux.WebApi.Notifications.Users;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
@@ -230,7 +231,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator(options => {
     options.Assemblies = [
         typeof(CreateServerCommand),
-        typeof(UpdateDmConversationListNotificationHandler),
+        typeof(MessageReceivedNotificationHandler),
     ];
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),
@@ -268,6 +269,7 @@ builder.Services
     .AddScoped<IPresenceService, PresenceService>()
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
+    .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
         (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()

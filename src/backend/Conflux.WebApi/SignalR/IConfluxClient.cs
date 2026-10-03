@@ -1,6 +1,6 @@
 using Conflux.WebApi.Notifications.Calling;
 using Conflux.WebApi.Notifications.Friend;
-using Conflux.WebApi.Notifications.Messaging;
+using Conflux.WebApi.Notifications.Conversation;
 using Conflux.WebApi.Notifications.Server;
 using Conflux.WebApi.Notifications.Users;
 
@@ -17,8 +17,8 @@ public interface IConfluxClient {
     Task MessageEdited(MessageEditedEvent data, CancellationToken cancellationToken = default);
     Task MessageDeleted(MessageDeletedEvent data, CancellationToken cancellationToken = default);
     
-    Task UpdateDmConversationList(UpdateDmConversationListEvent data, CancellationToken cancellationToken = default);
-
+    Task ConversationUpdated(ConversationUpdatedEvent data, CancellationToken cancellationToken = default);
+    
     Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleDeleted(ServerRoleDeletedEvent data, CancellationToken cancellationToken = default);
