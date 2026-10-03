@@ -78,45 +78,67 @@ function MessageView({
     context.actions.onExternalLinkClicked(url);
   };
 
-  const handleRetryEditingOperation = () => {
-    context.actions.retryEditingOperation(message.id);
+  const handleretryEditOperation = () => {
+    context.actions.retryEditOperation(message.id);
   };
 
-  const handleRemoveEditingOperation = () => {
-    context.actions.removeEditingOperation(message.id);
+  const handleremoveEditOperation = () => {
+    context.actions.removeEditOperation(message.id);
   };
 
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
-        className={`relative w-full flex flex-col hover-highlight group ${showHeader ? "mt-1.5" : ""}`}
+        className={`relative w-full group block ${showHeader ? "pt-1" : ""}`}
       >
-        <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
-          {message.replyTo && (
-            <div className="min-w-0">
-              <p className="text-xs ml-13 line-clamp-2">
-                <em>// TODO: Insert reply message body here</em>
-                {/*@{message.replyTo.sender.displayName ?? "???"} sent {content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;*/}
-              </p>
-            </div>
-          )}
+        <div className="hover-highlight flex flex-col">
+          <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
+            {message.replyTo && (
+              <div className="min-w-0">
+                <p className="text-xs ml-13 line-clamp-2">
+                  <em>// TODO: Insert reply message body here</em>
+                  {/*@{message.replyTo.sender.displayName ?? "???"} sent {content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;*/}
+                </p>
+              </div>
+            )}
 
-          <div className="flex flex-row gap-3">
-            {showHeader ? (
-              <>
-                <UserAvatar
-                  src={message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined}
-                  className="flex-none mt-1 size-10 self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-                />
+            <div className="flex flex-row gap-3">
+              {showHeader ? (
+                <>
+                  <UserAvatar
+                    src={message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined}
+                    className="flex-none mt-1 size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+                  />
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">
-                    {message.sender!.displayName ?? "???"}
-                    {" "}
-                    <DateTimeText value={new Date(message.createdAt)} className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible"/>
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white">
+                      {message.sender!.displayName ?? "???"}
+                      {" "}
+                      <DateTimeText value={new Date(message.createdAt)} className="select-none font-normal text-xs text-gray-400 invisible group-hover:visible"/>
+                    </p>
 
-                  <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
+                    <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
+                      <MessageContent
+                        content={message.body}
+                        onLinkClicked={handleExternalLinkClicked}
+                      />
+
+                      {message.attachments && message.attachments.length > 0 && (
+                        <MessageAttachments
+                          attachments={message.attachments}
+                          onAttachmentClick={handleAttachmentClicked}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
+                    {formatDate(new Date(message.createdAt), "HH:mm")}
+                  </span>
+
+                  <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
                     <MessageContent
                       content={message.body}
                       onLinkClicked={handleExternalLinkClicked}
@@ -129,61 +151,41 @@ function MessageView({
                       />
                     )}
                   </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
-                  {formatDate(new Date(message.createdAt), "HH:mm")}
-                </span>
-
-                <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
-                  <MessageContent
-                    content={message.body}
-                    onLinkClicked={handleExternalLinkClicked}
-                  />
-
-                  {message.attachments && message.attachments.length > 0 && (
-                    <MessageAttachments
-                      attachments={message.attachments}
-                      onAttachmentClick={handleAttachmentClicked}
-                    />
-                  )}
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {editingStatus !== "saving" && (
-          <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
-            {editingStatus === "error" && (
-              <>
-                <IconButton theme="default" className="size-5" onClick={handleRetryEditingOperation}>
-                  <FaRepeat className=" size-5 ml-auto"/>
-                </IconButton>
-
-                <IconButton theme="danger" className="size-5" onClick={handleRemoveEditingOperation}>
-                  <FaTrashCan className="size-5 ml-auto"/>
-                </IconButton>
-              </>
-            )}
-
-            {editingStatus === "none" && (
-              <>
-                {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
-                  <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
-                    <FaPencil className="size-5 ml-auto"/>
+          {editingStatus !== "saving" && (
+            <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
+              {editingStatus === "error" && (
+                <>
+                  <IconButton theme="default" className="size-5" onClick={handleretryEditOperation}>
+                    <FaRepeat className=" size-5 ml-auto"/>
                   </IconButton>
-                )}
 
-                <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
-                  <BsArrowReturnLeft className="size-5 ml-auto"/>
-                </IconButton>
-              </>
-            )}
-          </section>
-        )}
+                  <IconButton theme="danger" className="size-5" onClick={handleremoveEditOperation}>
+                    <FaTrashCan className="size-5 ml-auto"/>
+                  </IconButton>
+                </>
+              )}
+
+              {editingStatus === "none" && (
+                <>
+                  {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
+                    <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
+                      <FaPencil className="size-5 ml-auto"/>
+                    </IconButton>
+                  )}
+
+                  <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
+                    <BsArrowReturnLeft className="size-5 ml-auto"/>
+                  </IconButton>
+                </>
+              )}
+            </section>
+          )}
+        </div>
       </ContextMenu.Trigger>
 
       <ContextMenu.Portal>

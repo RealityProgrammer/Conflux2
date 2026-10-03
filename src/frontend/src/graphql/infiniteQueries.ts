@@ -82,11 +82,7 @@ export const GetAssignableServerRolesDocument = new TypedDocumentString(`
   communityServerRoles(
     serverId: $serverId
     after: $after
-    where: {
-      name: { ilike: $nameFilter }
-      specialRoleType: { eq: None }
-      authorizeLevel: { lte: $authorizeLevel }
-    }
+    where: {name: {ilike: $nameFilter}, specialRoleType: {eq: None}, authorizeLevel: {lte: $authorizeLevel}}
   ) {
     pageInfo {
       endCursor
@@ -144,7 +140,7 @@ useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQ
 
 export const GetDirectConversationsDocument = new TypedDocumentString(`
     query GetDirectConversations($after: String) {
-  directConversations(after: $after, order: { latestMessageAt: DESC }) {
+  directConversations(after: $after, order: {latestMessageAt: DESC}) {
     pageInfo {
       hasNextPage
       hasPreviousPage
@@ -271,7 +267,7 @@ export const GetServerModerationLogsDocument = new TypedDocumentString(`
   serverModerationLogs(
     serverId: $serverId
     after: $after
-    order: { createdAt: DESC }
+    order: {createdAt: DESC}
   ) {
     pageInfo {
       endCursor
@@ -349,7 +345,7 @@ export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
   communityServerRoles(
     serverId: $serverId
     after: $after
-    where: { name: { ilike: $nameFilter } }
+    where: {name: {ilike: $nameFilter}}
   ) {
     pageInfo {
       endCursor

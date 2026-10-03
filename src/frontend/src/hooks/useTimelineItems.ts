@@ -7,6 +7,7 @@ import {SendingMessage} from "../components/chat/SendingMessage.tsx";
 import {MessageType} from "../api/schema.ts";
 import {CallMessageItem} from "../components/chat/CallMessageItem.tsx";
 import type {CallProperties} from "../api/types.ts";
+import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -23,10 +24,12 @@ export default function useTimelineItems(
     messageQueryResult: {
       data: messageData,
     },
-    sendingMessageOperations,
-    deletingMessageIds,
-    editingOperations,
+    conversationId,
   } = useChatContainerContext();
+
+  const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
+  const deletingMessageIds = useMessageOperationsStore((state) => state.deletingMessageIds);
+  const editOperations = useMessageOperationsStore((state) => state.editOperations);
 
   const items: TimelineItem[] = [];
 
@@ -36,7 +39,7 @@ export default function useTimelineItems(
     let messageHasHeader = true;
 
     for (const messagePages of messageData.pages.filter(p => !!p)) {
-      const activeMessages = messagePages.messages.filter(m => !deletingMessageIds.has(m.id));
+      const activeMessages = messagePages.messages.filter(m => !deletingMessageIds.includes(m.id));
       if (!activeMessages.length) continue;
 
       for (const message of activeMessages) {
@@ -58,7 +61,7 @@ export default function useTimelineItems(
             messageHasHeader = true;
           }
 
-          const editingOperation = editingOperations.get(message.id);
+          const editingOperation = editOperations[message.id];
           const displayingMessage = editingOperation ?
             { ...message, body: editingOperation.newBody } :
             message;
@@ -98,9 +101,11 @@ export default function useTimelineItems(
   }
 
   // sending messages appending
-  for (const operation of sendingMessageOperations) {
+  for (const operation of sendOperations) {
+    if (operation.conversationId !== conversationId) continue;
+
     items.push(new SendingMessage({
-      operationId: operation.operationId,
+      operationId: operation.id,
       input: operation.input,
       error: operation.error,
     }));

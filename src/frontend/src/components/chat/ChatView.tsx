@@ -45,10 +45,10 @@ export function ChatView({}: ChatViewProps) {
     handleEditMessage,
     handleDeleteMessage,
     setReplyingMessage,
-    removeSendingOperation,
-    retrySendingOperation,
-    retryEditingOperation,
-    removeEditingOperation,
+    removeSendOperation,
+    retrySendOperation,
+    retryEditOperation,
+    removeEditOperation,
   } = useChatContainerContext();
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
@@ -122,10 +122,10 @@ export function ChatView({}: ChatViewProps) {
       onAttachmentClick: handleAttachmentClick,
       onExternalLinkClicked: setAccessingExternalUrl,
 
-      removeSendingOperation,
-      retrySendingOperation,
-      retryEditingOperation,
-      removeEditingOperation,
+      removeSendingOperation: removeSendOperation,
+      retrySendingOperation: retrySendOperation,
+      retryEditOperation,
+      removeEditOperation,
     },
     states: {
       editingMessageDraft: editingMessageDraft,
@@ -173,8 +173,10 @@ export function ChatView({}: ChatViewProps) {
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
       <Virtuoso
         data={timelineItems}
+        computeItemKey={(_index, item) => item.getKey()}
+        atBottomThreshold={60}
+        followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
         alignToBottom={true}
-        followOutput={(isAtBottom) => (isAtBottom ? 'smooth' : false)}
         initialTopMostItemIndex={{ index: "LAST", align: "end" }}
         firstItemIndex={firstItemIndex}
         startReached={fetchOlderMessages}

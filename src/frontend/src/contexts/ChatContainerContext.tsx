@@ -16,22 +16,11 @@ import {
 import {messageService} from "../api/messageService.ts";
 import {MessageLoadDirection} from "../api/schema.ts";
 import {toast} from "react-toastify";
+import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 
 const LOAD_COUNT = 50;
 
-type SendingMessageOperation = {
-  operationId: string;
-  input: MessageInput;
-  idempotencyKey: string;
-  error: boolean;
-};
-
-type EditingMessageOperation = {
-  newBody: string | null;
-  error: boolean;
-}
-
-type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string };
+type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
 type EditMessagePayload = { messageId: string, newBody: string | null };
 type DeleteMessagePayload = { operationId: string, messageId: string };
 
@@ -51,15 +40,11 @@ interface ChatContainerContextType {
   handleEditMessage: (originalMessage: TimelineMessageDto, newBody: string | null) => void;
   handleDeleteMessage: (originalMessage: TimelineMessageDto) => void;
 
-  sendingMessageOperations: SendingMessageOperation[];
-  retrySendingOperation: (operationId: string) => void;
-  removeSendingOperation: (operationId: string) => void;
+  retrySendOperation: (operationId: string) => void;
+  removeSendOperation: (operationId: string) => void;
 
-  deletingMessageIds: Set<string>;
-
-  editingOperations: Map<string, EditingMessageOperation>;
-  retryEditingOperation: (messageId: string) => void;
-  removeEditingOperation: (messageId: string) => void;
+  retryEditOperation: (messageId: string) => void;
+  removeEditOperation: (messageId: string) => void;
 }
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
@@ -216,7 +201,10 @@ export default function ChatContainerContextProvider({
     });
   };
 
-  const [sendingMessageOperations, setSendingMessageOperations] = useState<SendingMessageOperation[]>([]);
+  const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
+  const addSendOperation = useMessageOperationsStore((state) => state.addSendOperation);
+  const updateSendOperation = useMessageOperationsStore((state) => state.updateSendOperation);
+  const removeSendOperation = useMessageOperationsStore((state) => state.removeSendOperation);
 
   // message mutations
   const sendMessageMutation = useMutation({
@@ -230,45 +218,29 @@ export default function ChatContainerContextProvider({
       );
     },
     onMutate: async (payload: SendMessagePayload) => {
-      setSendingMessageOperations((prev) => {
-        // check if this is a retry
-        const isRetry = prev.some(op => op.operationId === payload.operationId && op.error);
-
-        if (isRetry) {
-          return prev.map(op =>
-            op.operationId === payload.operationId ? { ...op, error: false } : op
-          );
-        }
-
-        return [...prev, {
-          operationId: payload.operationId,
-          input: payload.input,
-          idempotencyKey: payload.idempotencyKey,
-          error: false,
-        }];
+      addSendOperation({
+        id: payload.operationId,
+        idempotencyKey: payload.idempotencyKey,
+        input: payload.input,
+        conversationId,
+        error: false,
       });
     },
     onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
       if (result.success) {
         appendMessage(result.data!);
-        setSendingMessageOperations((prev) => prev.filter(m => m.operationId !== payload.operationId));
+        removeSendOperation(payload.operationId);
       } else {
-        setSendingMessageOperations((prev) => prev.map(op =>
-          op.operationId === payload.operationId ? { ...op, error: true } : op
-        ));
+        updateSendOperation(payload.operationId, true);
       }
     },
     onError: (_error, payload) => {
-      setSendingMessageOperations((prev) =>
-        prev.map(op =>
-          op.operationId === payload.operationId ? { ...op, error: true } : op
-        )
-      );
+      updateSendOperation(payload.operationId, true);
     },
   });
 
   const retrySendingOperation = (operationId: string) => {
-    const operation = sendingMessageOperations.find(o => o.operationId === operationId && o.error);
+    const operation = sendOperations.find(o => o.id === operationId && o.error);
     if (!operation) return;
 
     sendMessageMutation.mutate({
@@ -278,102 +250,65 @@ export default function ChatContainerContextProvider({
     });
   };
 
-  const removeSendingOperation = (operationId: string) => {
-    setSendingMessageOperations((prev) => prev.filter(o => o.operationId !== operationId));
-  };
-
   // TODO: switch value to MessageInput once we have attachments editing
-  const [editingOperations, setEditingOperations] = useState<Map<string, EditingMessageOperation>>(new Map());
+  const editOperations = useMessageOperationsStore((state) => state.editOperations);
+  const addEditOperation = useMessageOperationsStore((state) => state.addEditOperation);
+  const updateEditOperation = useMessageOperationsStore((state) => state.updateEditOperation);
+  const removeEditOperation = useMessageOperationsStore((state) => state.removeEditOperation);
 
   const editMessageMutation = useMutation({
     mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
       return await messageService.editMessage(conversationId, payload.messageId, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
-      setEditingOperations((prev) => {
-        return new Map(prev).set(payload.messageId, {newBody: payload.newBody, error: false});
-      });
+      addEditOperation(payload.messageId, payload.newBody);
     },
     onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
       if (!result.success) {
-        setEditingOperations((prev) => {
-          const op = prev.get(payload.messageId);
-          if (!op) return prev;
-
-          const next = new Map(prev);
-          next.delete(payload.messageId);
-          return next.set(payload.messageId, { ...op, error: true });
-        });
-
+        updateEditOperation(payload.messageId, true);
         toast.error("Failed to edit message.");
         return;
       }
 
       editMessage(payload.messageId, payload.newBody);
-      setEditingOperations((prev) => {
-        const next = new Map(prev);
-        next.delete(payload.messageId);
-        return next;
-      });
+      removeEditOperation(payload.messageId);
     },
     onError: (_error, payload) => {
-      setEditingOperations((prev) => {
-        const op = prev.get(payload.messageId);
-        if (!op) return prev;
-
-        const next = new Map(prev);
-        next.delete(payload.messageId);
-        return next.set(payload.messageId, { ...op, error: true });
-      });
-
+      updateEditOperation(payload.messageId, true);
       toast.error("Failed to edit message.");
     },
   });
 
-  const retryEditingOperation = (messageId: string) => {
-    const op = editingOperations.get(messageId);
+  const retryEditOperation = (messageId: string) => {
+    const op = editOperations[messageId];
     if (!op) return;
 
-    editMessageMutation.mutate({
-      messageId,
-      newBody: op.newBody,
-    });
+    editMessageMutation.mutate({messageId, newBody: op.newBody});
   };
 
-  const removeEditingOperation = (messageId: string) => {
-    setEditingOperations((prev) => {
-      const next = new Map(prev);
-      next.delete(messageId);
-      return next;
-    });
-  };
-
-  const [deletingMessageIds, setDeletingMessageIds] = useState<Set<string>>(new Set());
+  const addDeletingMessage = useMessageOperationsStore((state) => state.addDeletingMessage);
+  const removeDeletingMessage = useMessageOperationsStore((state) => state.removeDeletingMessage);
 
   const deleteMessageMutation = useMutation({
     mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
       return await messageService.deleteMessage(conversationId, payload.messageId);
     },
     onMutate: async (payload: DeleteMessagePayload) => {
-      setDeletingMessageIds((prev) => new Set(prev).add(payload.messageId));
+      addDeletingMessage(payload.messageId);
     },
     onSuccess: async (result: ServiceResponse, payload: DeleteMessagePayload) => {
-      if (!result.success) {
+      if (result.success) {
+        deleteMessage(payload.messageId);
+      } else {
         // TODO: Jump to the message when click on the toast.
         toast.error("Failed to delete message.");
-      } else {
-        deleteMessage(payload.messageId);
       }
     },
     onError: (_error, _payload) => {
       toast.error("Failed to delete message.");
     },
     onSettled: (_data, _error, payload) => {
-      setDeletingMessageIds((prev) => {
-        const next = new Set(prev);
-        next.delete(payload.messageId);
-        return next;
-      });
+      removeDeletingMessage(payload.messageId);
     },
   });
 
@@ -419,13 +354,10 @@ export default function ChatContainerContextProvider({
       handleSendMessage,
       handleEditMessage,
       handleDeleteMessage,
-      sendingMessageOperations,
-      removeSendingOperation,
-      retrySendingOperation,
-      deletingMessageIds,
-      editingOperations,
-      retryEditingOperation,
-      removeEditingOperation,
+      removeSendOperation,
+      retrySendOperation: retrySendingOperation,
+      retryEditOperation,
+      removeEditOperation,
     }}>
       {children}
     </ChatContainerContext.Provider>
