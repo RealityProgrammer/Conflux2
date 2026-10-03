@@ -1,99 +1,75 @@
 using Conflux.Application.Features.Friends;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.WebApi.Dto;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.SignalR;
 
 partial class GatewayHub {
     // invoked by frontend only
-    public async Task<DirectCallContext> StartDirectCall(Guid calleeUserId) {
+    public async Task<Domain.Result<UserIdentityProfileDto>> StartDirectCall(Guid calleeUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
-            return new(Errors.InvalidIdentifier(), null);
+            return Errors.InvalidIdentifier();
         }
 
-        Domain.Result<UserIdentityProfileDto> calleeProfile = await sender.Send(new StartCallCommand(callerId, Context.ConnectionId, calleeUserId));
-
-        if (!calleeProfile.IsSuccess) {
-            return new(calleeProfile, null);
-        }
-        
-        return new(Result.Success(), calleeProfile.Value);
+        return await sender.Send(new StartCallCommand(callerId, Context.ConnectionId, calleeUserId));
     }
 
     // invoked by frontend only
-    public async Task<DirectCallContext> CancelDirectCall(Guid calleeUserId) {
+    public async Task<Result> CancelDirectCall(Guid calleeUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
-            return new(Errors.InvalidIdentifier(), null);
+            return Errors.InvalidIdentifier();
         }
         
-        Result result = await sender.Send(new CancelCallCommand(callerId, calleeUserId));
-        return new(result, null);
+        return await sender.Send(new CancelCallCommand(callerId, calleeUserId));
     }
 
     // invoked by frontend only
-    public async Task<DirectCallContext> DenyDirectCall(Guid callerUserId) {
+    public async Task<Result> DenyDirectCall(Guid callerUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var calleeId)) {
-            return new(Errors.InvalidIdentifier(), null);
+            return Errors.InvalidIdentifier();
         }
         
-        Result result = await sender.Send(new DenyCallCommand(callerUserId, calleeId));
-        return new(result, null);
+        return await sender.Send(new DenyCallCommand(callerUserId, calleeId));
     }
 
     // invoked by frontend only
-    public async Task<DirectCallContext> AcceptDirectCall(Guid callerUserId) {
+    public async Task<Result> AcceptDirectCall(Guid callerUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var calleeUserId)) {
-            return new(Errors.InvalidIdentifier(), null);
+            return Errors.InvalidIdentifier();
         }
 
-        Result result = await sender.Send(new AcceptCallCommand(callerUserId, calleeUserId, Context.ConnectionId));
-        return new(result, null);
+        return await sender.Send(new AcceptCallCommand(callerUserId, calleeUserId, Context.ConnectionId));
     }
     
     // invoked by frontend only
-    public async Task<DirectCallContext> EndDirectCall(Guid peerUserId) {
+    public async Task<Result> EndDirectCall(Guid peerUserId) {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return new(Errors.InvalidIdentifier(), null);
+            return Errors.InvalidIdentifier();
         }
 
-        Result result = await sender.Send(new EndCallCommand(userId, peerUserId));
-        return new(result, null);
+        return await sender.Send(new EndCallCommand(userId, peerUserId));
     }
     
     // invoked by frontend only
-    public async Task<DirectCallContext> GetCurrentRingingCall() {
+    public async Task<Domain.Result<UserIdentityProfileDto>> GetCurrentRingingCall() {
         var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return new(Errors.InvalidIdentifier(), null);
+            return Errors.InvalidIdentifier();
         }
 
-        var peerIdResult = await callingService.GetCurrentRingingCall(userId);
-
-        if (!peerIdResult.IsSuccess) {
-            return new(peerIdResult, null);
-        }
-
-        // Fetch the peer's profile from your database so the UI can render their name/avatar
-        var peerProfileResult = await userRepository.GetIdentityProfile(peerIdResult.Value);
-        
-        if (!peerProfileResult.IsSuccess) {
-            return new(peerProfileResult, null);
-        }
-
-        return new(peerProfileResult, peerProfileResult.Value);
+        return await sender.Send(new IncomingCallQuery(userId));
     }
     
     public async Task SendOffer(Guid targetUserId, string sdp) {

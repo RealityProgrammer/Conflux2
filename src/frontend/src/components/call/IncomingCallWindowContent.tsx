@@ -10,7 +10,6 @@ import {createTimeline} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {DirectCallCanceledEvent, DirectCallDroppedEvent, DirectCallEndedEvent} from "../../api/events.ts";
 import {useTimeout} from "usehooks-ts";
-import type {DirectCallContext} from "../../api/types.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
@@ -18,6 +17,7 @@ import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
+import type {BackendResult} from "../../api/types.ts";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -65,12 +65,14 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
     setStatus("denied");
 
     try {
-      const context: DirectCallContext = await invokeSafely("DenyDirectCall", call.callerProfile.id);
+      const result: BackendResult = await invokeSafely("DenyDirectCall", call.callerProfile.id);
 
-      if (!context) {
+      if (!result || !result.isSuccess) {
         toast.error(`Failed to deny call.`);
-      } else if (!context.result.isSuccess) {
-        toast.error(`Failed to deny call (${context.result.error.code}).`);
+
+        if (result) {
+          console.error("Failed to deny call:", result.error);
+        }
       }
     } catch (err) {
       console.error("Failed to deny call:", err);
@@ -81,16 +83,16 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   const handleAcceptCall = async () => {
     if (status !== "none") return;
     try {
-      const context: DirectCallContext =  await invokeSafely("AcceptDirectCall", call.callerProfile.id);
+      const result: BackendResult = await invokeSafely("AcceptDirectCall", call.callerProfile.id);
 
-      if (context) {
-        if (context.result.isSuccess) {
-          markCallAsActive(call.sessionId);
-        } else {
-          toast.error(`Failed to accept call (${context.result.error.code}).`);
-        }
+      if (result && result.isSuccess) {
+        markCallAsActive(call.sessionId);
       } else {
         toast.error(`Failed to accept call.`);
+
+        if (result) {
+          console.error("Failed to accept call:", result.error);
+        }
       }
     } catch (err) {
       console.error("Failed to accept call:", err);
@@ -271,17 +273,16 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     setIsEndingCall(true);
 
     try {
-      const context: DirectCallContext = await invokeSafely("EndDirectCall", callerId);
+      const result: BackendResult = await invokeSafely("EndDirectCall", callerId);
 
-      if (context) {
-        if (context.result.isSuccess) {
-          markCallAsEnded(call.sessionId);
-        } else {
-          toast.error(`Failed to end call. Reason: ${context.result.error.code}.`);
-        }
+      if (result && result.isSuccess) {
+        markCallAsEnded(call.sessionId);
       } else {
-        setIsEndingCall(false);
         toast.error(`Failed to end call.`);
+
+        if (result) {
+          console.error("Failed to end call:", result.error);
+        }
       }
     } catch (err) {
       console.error("Failed to end call:", err);

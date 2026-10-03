@@ -7,7 +7,7 @@ public class Message : IHasCreatedAt {
     public MessageType Type { get; set; }
     
     public string? Body { get; set; }
-    public virtual ICollection<Attachment> Attachments { get; set; } = null!;
+    public virtual ICollection<Attachment> Attachments { get; set; } = [];
     
     public MessageProperties? Properties { get; set; }
     

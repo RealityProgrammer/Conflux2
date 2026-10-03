@@ -1,23 +1,32 @@
+using Conflux.Application.Dto;
+using Conflux.Application.Features.Messages;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Friends;
 
-public sealed record StartCallCommand(Guid CallerId, string CallerConnectionId, Guid CalleeId) : ICommand<Result<UserIdentityProfileDto>>;
+public sealed record StartCallCommand(
+    Guid CallerId, 
+    string CallerConnectionId, 
+    Guid CalleeId
+) : ICommand<Result<UserIdentityProfileDto>>;
 
 public sealed record IncomingCallNotification(Guid CalleeId, UserIdentityProfileDto CallerProfile) : INotification;
 
 internal sealed class StartCallHandler(
     ICallingService callingService,
+    IUserRepository userRepository,
     IFriendRequestRepository friendRequestRepository,
     IDirectConversationProvider directConversationProvider,
     IUnitOfWork unitOfWork,
-    IPublisher publisher
+    IPublisher publisher,
+    ILogger<StartCallHandler> logger
 ) : ICommandHandler<StartCallCommand, Result<UserIdentityProfileDto>> {
     public async ValueTask<Result<UserIdentityProfileDto>> Handle(
         StartCallCommand command, 
@@ -26,7 +35,7 @@ internal sealed class StartCallHandler(
         Result lockResult = await callingService.LockCallerAndCallee(command.CallerId, command.CallerConnectionId, command.CalleeId);
 
         if (!lockResult.IsSuccess) {
-            return Result<UserIdentityProfileDto>.Failure(lockResult.Error);
+            return lockResult.Error;
         }
 
         try {
@@ -68,13 +77,15 @@ internal sealed class StartCallHandler(
             }
 
             Conversation directConversation = conversationResult.Value!;
-            
-            directConversation.Messages.Add(new() {
+
+            Message createdMessage = new Message {
                 Type = MessageType.Call,
                 Properties = new CallProperties(CallEventType.Start, Duration: null),
                 Conversation = directConversation,
                 SenderUserId = command.CallerId,
-            });
+            };
+            
+            directConversation.Messages.Add(createdMessage);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
@@ -83,13 +94,25 @@ internal sealed class StartCallHandler(
 
             await publisher.Publish(new IncomingCallNotification(calleeProfile.Id, callerProfile), CancellationToken.None);
 
+            TimelineMessageDto messageDto = new(createdMessage) {
+                Sender = await userRepository
+                    .AsQueryable()
+                    .Where(s => s.Id == command.CallerId)
+                    .SelectFacet<TimelineMessageSenderDto>()
+                    .FirstOrDefaultAsync(CancellationToken.None),
+            };
+
+            await publisher.Publish(new MessageReceivedNotification(directConversation.Id, messageDto), CancellationToken.None);
+            
             return Result<UserIdentityProfileDto>.Success(calleeProfile);
         } catch (OperationCanceledException) {
             await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
             throw;
-        } catch {
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while starting direct call.");
+            
             await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
-            return Result<UserIdentityProfileDto>.Failure(Errors.UnexpectedError());
+            return Errors.UnexpectedError();
         }
     }
 }

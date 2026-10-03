@@ -16,13 +16,13 @@ import type {
   DirectCallDroppedEvent,
   DirectCallEndedEvent
 } from "../../api/events.ts";
-import type {DirectCallContext} from "../../api/types.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
+import type {BackendResult} from "../../api/types.ts";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -71,9 +71,19 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
   const handleCancelCall = async () => {
     try {
-      await invokeSafely("CancelDirectCall", call.calleeProfile.id);
+      const result: BackendResult = await invokeSafely("CancelDirectCall", call.calleeProfile.id);
 
-      setStatus("cancel");
+      if (result && result.isSuccess) {
+        setStatus("cancel");
+      } else {
+        toast.error("Failed to cancel call.");
+
+        if (result) {
+          console.error("Failed to cancel call:", result.error);
+        } else {
+          console.error("Failed to cancel call.");
+        }
+      }
     } catch (err) {
       console.error("Failed to cancel call:", err);
     }
@@ -261,17 +271,19 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     setIsEndingCall(true);
 
     try {
-      const context: DirectCallContext = await invokeSafely("EndDirectCall", calleeId);
+      const result: BackendResult = await invokeSafely("EndDirectCall", calleeId);
 
-      if (context) {
-        if (context.result.isSuccess) {
-          markCallAsEnded(call.sessionId);
-        } else {
-          toast.error(`Failed to end call. Reason: ${context.result.error.code}.`);
-        }
+      if (result && result.isSuccess) {
+        markCallAsEnded(call.sessionId);
       } else {
         setIsEndingCall(false);
         toast.error(`Failed to end call.`);
+
+        if (result) {
+          console.log("Failed to end call:", result.error);
+        } else {
+          console.log("Failed to end call.");
+        }
       }
     } catch (err) {
       console.error("Failed to end call:", err);

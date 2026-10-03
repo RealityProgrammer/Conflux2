@@ -24,7 +24,7 @@ public sealed partial record TimelineMessageDto {
     [Required] public MessageType Type { get; set; } = Type;
     [Required] public TimelineMessageSenderDto? Sender { get; set; } = Sender;
     [Required] public string? Body { get; set; } = Body;
-    [Required] public ICollection<AttachmentDto> Attachments { get; set; } = Attachments;
+    public ICollection<AttachmentDto> Attachments { get; set; } = Attachments;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
     [Required] public TimelineMessageReplyDto? ReplyTo { get; set; } = ReplyTo;
     [Required] public MessageProperties? Properties { get; set; } = Properties;

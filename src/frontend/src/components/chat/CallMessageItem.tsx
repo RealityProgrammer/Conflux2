@@ -62,9 +62,9 @@ export class CallMessageItem extends TimelineItem<CallMessageItemProps> {
     return `call-message_${this.data.id}`;
   }
 
-  render(context: TimelineContext): ReactNode {
+  render(_context: TimelineContext): ReactNode {
     return (
-      <div className="my-1.5 py-1.5 px-4 text-sm hover-highlight">
+      <div className="my-1.5 py-1 px-4 text-sm hover-highlight">
         {ELEMENT_FACTORIES[this.data.type](this.data.sender.displayName ?? "???")}
 
         <DateTimeText value={this.data.createdAt} className="ml-2 select-none font-normal text-xs text-gray-400"/>

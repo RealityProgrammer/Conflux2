@@ -6,7 +6,11 @@ import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {messageService} from "../../api/messageService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../../api/events.ts";
+import type {
+  MessageDeletedEvent,
+  MessageEditedEvent,
+  MessageReceivedEvent
+} from "../../api/events.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
@@ -90,12 +94,7 @@ export function ChatView({}: ChatViewProps) {
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
 
   // signalr events
-  // change the cache pages when message received
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
-    const senderId = event.message.sender!.id;
-
-    if (!senderId) return;
-
     appendMessage(event.message);
   });
 

@@ -12,7 +12,7 @@ import useConversationConnection from "../../hooks/useConversationConnection.ts"
 import {userService} from "../../api/userService.ts";
 import {useCallStore} from "../../store/useCallStore.ts";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
-import type {DirectCallContext, UserIdentityProfileDto} from "../../api/types.ts";
+import type {UserIdentityProfileDto, BackendResult} from "../../api/types.ts";
 import {toast} from "react-toastify";
 
 export default function DirectMessagePage() {
@@ -62,13 +62,13 @@ function SuccessPage({
 
   const handleCall = async () => {
     try {
-      const context: DirectCallContext = await invokeSafely("StartDirectCall", peerProfile.id);
+      const result: BackendResult<UserIdentityProfileDto> = await invokeSafely("StartDirectCall", peerProfile.id);
 
-      if (context) {
-        if (context.result.isSuccess) {
-          startOutgoingDirectCall(context.peerProfile!);
+      if (result) {
+        if (result.isSuccess) {
+          startOutgoingDirectCall(result.value!);
         } else {
-          switch (context.result.error.code) {
+          switch (result.error.code) {
             case "AlreadyInCall":
               toast.error("You are already in a call.");
               break;
@@ -83,6 +83,7 @@ function SuccessPage({
 
             default:
               toast.error("Failed to start call.");
+              console.error("Failed to start call:", result.error);
               break;
           }
         }

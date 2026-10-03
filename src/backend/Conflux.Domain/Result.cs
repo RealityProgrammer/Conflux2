@@ -1,7 +1,10 @@
+using Conflux.Domain.Converters;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace Conflux.Domain;
 
+[JsonConverter(typeof(ResultJsonConverterFactory))]
 public readonly record struct Result : IResult<Result> {
     public bool IsSuccess { get; }
     public Error Error { get; }
@@ -26,6 +29,7 @@ public readonly record struct Result : IResult<Result> {
     public static implicit operator Result(Error error) => Failure(error);
 }
 
+[JsonConverter(typeof(ResultJsonConverterFactory))]
 public readonly record struct Result<T> : IResult<Result<T>> {
     public bool IsSuccess { get; }
     public Error Error { get; }

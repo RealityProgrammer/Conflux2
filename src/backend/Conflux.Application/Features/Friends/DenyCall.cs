@@ -1,7 +1,12 @@
+using Conflux.Application.Features.Messages;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
+using Facet.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Friends;
 
@@ -11,36 +16,62 @@ public sealed record CallDeniedNotification(Guid CallerId, Guid CalleeId) : INot
 
 internal sealed class DenyCallHandler(
     ICallingService callingService,
+    IUserRepository userRepository,
     IDirectConversationProvider directConversationProvider,
     IUnitOfWork unitOfWork,
-    IPublisher publisher
+    IPublisher publisher,
+    ILogger<DenyCallHandler> logger
 ) : ICommandHandler<DenyCallCommand, Result> {
     public async ValueTask<Result> Handle(DenyCallCommand command, CancellationToken cancellationToken) {
         Guid callerId = command.CallerId;
         Guid calleeId = command.CalleeId;
+        
+        var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, CancellationToken.None);
+
+        if (!conversationResult.IsSuccess) {
+            return conversationResult.Error;
+        }
 
         Result result = await callingService.DenyCall(callerId, calleeId);
 
         if (!result.IsSuccess) {
-            return result;
+            return result.Error;
         }
         
         await publisher.Publish(new CallDeniedNotification(callerId, calleeId), CancellationToken.None);
         
         // append call denied message to conversation
-        var conversationResult = await directConversationProvider.GetOrCreate(command.CallerId, command.CalleeId, CancellationToken.None);
+        Conversation directConversation = conversationResult.Value!;
 
-        if (conversationResult.IsSuccess) {
-            Conversation directConversation = conversationResult.Value!;
-            
-            directConversation.Messages.Add(new() {
-                Type = MessageType.Call,
-                Properties = new CallProperties(CallEventType.Denied, Duration: null),
-                Conversation = directConversation,
-                SenderUserId = command.CallerId,
-            });
+        Message message = new() {
+            Type = MessageType.Call,
+            Properties = new CallProperties(CallEventType.Denied, Duration: null),
+            Conversation = directConversation,
+            SenderUserId = command.CallerId,
+        };
+        
+        directConversation.Messages.Add(message);
 
+        try {
             await unitOfWork.SaveChangesAsync(CancellationToken.None);
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while saving call denied message.");
+            return Errors.UnexpectedError();
+        }
+        
+        try {
+            TimelineMessageDto messageDto = new(message) {
+                Sender = await userRepository
+                    .AsQueryable()
+                    .Where(s => s.Id == command.CallerId)
+                    .SelectFacet<TimelineMessageSenderDto>()
+                    .FirstOrDefaultAsync(CancellationToken.None),
+            };
+            
+            await publisher.Publish(new MessageReceivedNotification(directConversation.Id, messageDto), CancellationToken.None);
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while publishing message received event.");
+            return Errors.UnexpectedError();
         }
 
         return Result.Success();

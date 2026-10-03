@@ -6,7 +6,7 @@ import type {
 import CallWindow from "./CallWindow.tsx";
 import {useEffect} from "react";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
-import type {DirectCallContext} from "../../api/types.ts";
+import type {BackendResult, UserIdentityProfileDto} from "../../api/types.ts";
 
 export default function CallOverlay() {
   const { invokeSafely } = useSignalR();
@@ -17,10 +17,10 @@ export default function CallOverlay() {
   useEffect(() => {
     (async () => {
       try {
-        const result: DirectCallContext = await invokeSafely("GetCurrentRingingCall");
+        const result: BackendResult<UserIdentityProfileDto> = await invokeSafely("GetCurrentRingingCall");
 
-        if (result && result.result.isSuccess) {
-          startIncomingDirectCall(result.peerProfile!);
+        if (result && result.isSuccess) {
+          startIncomingDirectCall(result.value!);
         }
       } catch (err) {
         console.log("Failed to get current call:", err);

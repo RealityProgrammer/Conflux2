@@ -1,7 +1,12 @@
+using Conflux.Application.Features.Messages;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
+using Facet.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Friends;
 
@@ -11,35 +16,62 @@ public sealed record CallEndedNotification(Guid PeerId, Guid EnderId) : INotific
 
 internal sealed class EndCallHandler(
     ICallingService callingService,
+    IUserRepository userRepository,
     IDirectConversationProvider directConversationProvider,
     IUnitOfWork unitOfWork,
-    IPublisher publisher
+    IPublisher publisher,
+    ILogger<EndCallHandler> logger
 ) : ICommandHandler<EndCallCommand, Result> {
     public async ValueTask<Result> Handle(EndCallCommand command, CancellationToken cancellationToken) {
         Guid enderId = command.EnderId;
         Guid peerId = command.PeerId;
         
+        var conversationResult = await directConversationProvider.GetOrCreate(enderId, peerId, CancellationToken.None);
+
+        if (!conversationResult.IsSuccess) {
+            return conversationResult.Error;
+        }
+        
         Result result = await callingService.EndCall(enderId, peerId);
 
         if (!result.IsSuccess) {
-            return result;
+            return result.Error;
         }
 
         await publisher.Publish(new CallEndedNotification(peerId, enderId), CancellationToken.None);
         
-        var conversationResult = await directConversationProvider.GetOrCreate(enderId, peerId, CancellationToken.None);
+        // append call ended message to conversation
+        Conversation directConversation = conversationResult.Value!;
 
-        if (conversationResult.IsSuccess) {
-            Conversation directConversation = conversationResult.Value!;
+        Message message = new() {
+            Type = MessageType.Call,
+            Properties = new CallProperties(CallEventType.End, Duration: null),
+            Conversation = directConversation,
+            SenderUserId = command.EnderId,
+        };
 
-            directConversation.Messages.Add(new() {
-                Type = MessageType.Call,
-                Properties = new CallProperties(CallEventType.End, Duration: null),
-                Conversation = directConversation,
-                SenderUserId = command.EnderId,
-            });
-
+        directConversation.Messages.Add(message);
+        
+        try {
             await unitOfWork.SaveChangesAsync(CancellationToken.None);
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while saving call ended message.");
+            return Errors.UnexpectedError();
+        }
+
+        try {
+            TimelineMessageDto messageDto = new(message) {
+                Sender = await userRepository
+                    .AsQueryable()
+                    .Where(s => s.Id == command.EnderId)
+                    .SelectFacet<TimelineMessageSenderDto>()
+                    .FirstOrDefaultAsync(CancellationToken.None),
+            };
+            
+            await publisher.Publish(new MessageReceivedNotification(directConversation.Id, messageDto), CancellationToken.None);
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while returning {type}.", nameof(TimelineMessageDto));
+            return Errors.UnexpectedError();
         }
 
         return Result.Success();
