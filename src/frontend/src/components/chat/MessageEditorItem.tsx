@@ -72,6 +72,12 @@ function MessageEditorView({
     context.actions.onEditCancel();
   };
 
+  const handleAttachmentClicked = (index: number) => {
+    if (!message.attachments || message.attachments.length === 0) return;
+
+    context.actions.onAttachmentClick(message.attachments, index);
+  };
+
   const submitEdit = () => {
     const trimmedBody = textareaRef.current!.value.trim();
     if (trimmedBody.length === 0) return;
@@ -105,7 +111,7 @@ function MessageEditorView({
               handleKeyDown={handleKeyDown}
               handleCancelEdit={handleCancelEdit}
               submitEdit={submitEdit}
-              onAttachmentClick={(index) => context.actions.onAttachmentClick(message.attachments, index)}
+              onAttachmentClick={handleAttachmentClicked}
             />
           </div>
         </div>
@@ -118,7 +124,7 @@ function MessageEditorView({
             handleKeyDown={handleKeyDown}
             handleCancelEdit={handleCancelEdit}
             submitEdit={submitEdit}
-            onAttachmentClick={(index) => context.actions.onAttachmentClick(message.attachments, index)}
+            onAttachmentClick={handleAttachmentClicked}
           />
         </div>
       )}

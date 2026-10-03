@@ -69,6 +69,8 @@ function MessageView({
   };
 
   const handleAttachmentClicked = (index: number) => {
+    if (!message.attachments || message.attachments.length === 0) return;
+
     context.actions.onAttachmentClick(message.attachments, index);
   };
 

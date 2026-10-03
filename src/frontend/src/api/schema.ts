@@ -1885,7 +1885,7 @@ export interface components {
             type: components["schemas"]["MessageType"];
             sender: null | components["schemas"]["TimelineMessageSenderDto"];
             body: null | string;
-            attachments: components["schemas"]["AttachmentDto"][];
+            attachments?: components["schemas"]["AttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];

@@ -128,7 +128,12 @@ export class TypedDocumentString<TResult, TVariables>
 export const BanServerMemberDocument = new TypedDocumentString(`
     mutation BanServerMember($serverId: UUID!, $memberId: UUID!, $reason: String, $duration: Duration) {
   banCommunityServerMember(
-    input: {serverId: $serverId, memberId: $memberId, reason: $reason, duration: $duration}
+    input: {
+      serverId: $serverId
+      memberId: $memberId
+      reason: $reason
+      duration: $duration
+    }
   ) {
     memberId
   }
@@ -412,7 +417,7 @@ useInspectMemberQuery.fetcher = (variables: InspectMemberQueryVariables, options
 export const KickServerMemberDocument = new TypedDocumentString(`
     mutation KickServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
   kickCommunityServerMember(
-    input: {serverId: $serverId, memberId: $memberId, reason: $reason}
+    input: { serverId: $serverId, memberId: $memberId, reason: $reason }
   ) {
     memberId
   }
@@ -437,7 +442,7 @@ useKickServerMemberMutation.fetcher = (variables: KickServerMemberMutationVariab
 
 export const UnbanServerMemberDocument = new TypedDocumentString(`
     mutation UnbanServerMember($serverId: UUID!, $memberId: UUID!) {
-  unbanCommunityServerMember(input: {serverId: $serverId, memberId: $memberId}) {
+  unbanCommunityServerMember(input: { serverId: $serverId, memberId: $memberId }) {
     memberId
   }
 }
@@ -461,7 +466,7 @@ useUnbanServerMemberMutation.fetcher = (variables: UnbanServerMemberMutationVari
 
 export const UpdateManualPresenceStatusDocument = new TypedDocumentString(`
     mutation UpdateManualPresenceStatus($value: PresenceStatus!) {
-  updateManualPresenceStatus(input: {status: $value}) {
+  updateManualPresenceStatus(input: { status: $value }) {
     userId
   }
 }
@@ -486,7 +491,7 @@ useUpdateManualPresenceStatusMutation.fetcher = (variables: UpdateManualPresence
 export const UpdateMemberRolesDocument = new TypedDocumentString(`
     mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {
   updateCommunityServerMemberRoles(
-    input: {serverId: $serverId, memberId: $memberId, roleIds: $roleIds}
+    input: { serverId: $serverId, memberId: $memberId, roleIds: $roleIds }
   ) {
     memberId
   }
@@ -512,7 +517,7 @@ useUpdateMemberRolesMutation.fetcher = (variables: UpdateMemberRolesMutationVari
 export const WarnServerMemberDocument = new TypedDocumentString(`
     mutation WarnServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
   warnCommunityServerMember(
-    input: {serverId: $serverId, memberId: $memberId, reason: $reason}
+    input: { serverId: $serverId, memberId: $memberId, reason: $reason }
   ) {
     memberId
   }
