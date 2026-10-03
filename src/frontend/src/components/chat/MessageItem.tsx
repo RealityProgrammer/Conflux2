@@ -6,7 +6,7 @@ import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsTrash} from "react-icons/bs";
+import {BsArrowReturnLeft, BsCopy, BsPaperclip, BsTrash} from "react-icons/bs";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
@@ -94,10 +94,20 @@ function MessageView({
         <div className="hover-highlight flex flex-col">
           <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
             {message.replyTo && (
-              <div className="min-w-0">
-                <p className="text-xs ml-13 line-clamp-2">
-                  <em>// TODO: Insert reply message body here</em>
-                  {/*@{message.replyTo.sender.displayName ?? "???"} sent {content ? `: ${content}${ellipsis ? '...' : ''}${attachmentCount ? ` (with ${attachmentText})` : ''}` : ` ${attachmentText}`}`;*/}
+              <div className="text-xs ml-13">
+                <p className="line-clamp-2 wrap-break-word">
+                  <span className="font-semibold">{message.replyTo.sender.displayName ?? "???"}</span>
+                  {" "}sent:{" "}
+                  {message.replyTo.attachmentCount > 0 && (
+                    <>
+                      <span className="inline-flex items-center align-text-bottom mx-1 text-gray-300">
+                        <BsPaperclip className="size-3.5 fill-white mr-0.5" />
+                        <span className="leading-none text-[10px]">4</span>
+                      </span>
+                      {" "}
+                    </>
+                  )}
+                  {message.replyTo.body}
                 </p>
               </div>
             )}
