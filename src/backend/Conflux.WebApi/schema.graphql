@@ -966,6 +966,7 @@ input MessageFilterInput {
   replyToId: UuidOperationFilterInput
   replyTo: MessageFilterInput
   replies: ListFilterInputTypeOfMessageFilterInput
+  pinnedAt: DateTimeOperationFilterInput
 }
 
 input MessagePropertiesFilterInput {
@@ -1150,6 +1151,8 @@ enum MembershipStatus {
 enum MessageType {
   Message
   Call
+  Pin
+  Unpin
 }
 
 enum PermissionState {

@@ -163,6 +163,56 @@ public sealed class ConversationController(
         };
     }
 
+    [HttpPost("{conversationId:guid}/messages/{messageId:guid}/pin")]
+    [Idempotent(15)]
+    public async Task<ActionResult<ApiResponse>> PinMessage(
+        Guid conversationId,
+        Guid messageId
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result = await mediator.Send(new PinMessageCommand(userId, conversationId, messageId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse(Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+    
+    [HttpPost("{conversationId:guid}/messages/{messageId:guid}/unpin")]
+    [Idempotent(15)]
+    public async Task<ActionResult<ApiResponse>> UnpinMessage(
+        Guid conversationId,
+        Guid messageId
+    ) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result = await mediator.Send(new UnpinMessageCommand(userId, conversationId, messageId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse(Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
     public record SendMessageRequest(
         [StringLength(4000, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
         string? Body,

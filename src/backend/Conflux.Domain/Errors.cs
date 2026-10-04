@@ -49,7 +49,7 @@ public static class Errors {
         new(nameof(ConnectionFailure), $"Failed to establish connection to {toWhere}.");
     
     public static Error OperationFailure(string doWhat) =>
-        new(nameof(ConnectionFailure), $"Failed to {doWhat}.");
+        new(nameof(OperationFailure), $"Failed to {doWhat}.");
 
     public static Error Discontinued(string description) => new(nameof(Discontinued), description);
 
