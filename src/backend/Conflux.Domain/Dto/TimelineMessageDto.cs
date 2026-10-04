@@ -30,4 +30,5 @@ public sealed partial record TimelineMessageDto {
     [Required] public TimelineMessageReplyDto? ReplyTo { get; set; } = ReplyTo;
     [Required] public MessageProperties? Properties { get; set; } = Properties;
     [Required] public Guid ConversationId { get; set; } = ConversationId;
+    [Required, MapFrom("PinnedAt != null")] public bool IsPinned { get; set; }
 }

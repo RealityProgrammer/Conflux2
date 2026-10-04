@@ -4,7 +4,7 @@ import type {
 } from "../../api/types.ts";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
-import {messageService} from "../../api/messageService.ts";
+import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   MessageDeletedEvent,
@@ -17,11 +17,12 @@ import type {TimelineContext} from "./TimelineContext.ts";
 import Dialog from "../Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
-import {BsBoxArrowUpRight} from "react-icons/bs";
+import {BsBoxArrowUpRight, BsTrashFill} from "react-icons/bs";
 import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
+import usePinMessage from "../../hooks/usePinMessage.ts";
 
 const START_INDEX = 10000000;
 
@@ -40,7 +41,7 @@ export function ChatView({}: ChatViewProps) {
       isLoading,
     },
     appendMessage,
-    editMessage,
+    updateMessage,
     deleteMessage,
     handleEditMessage,
     handleDeleteMessage,
@@ -94,6 +95,8 @@ export function ChatView({}: ChatViewProps) {
 
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
 
+  // pinning
+
   // timeline entries
   const timelineItems = useTimelineItems(editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
@@ -114,6 +117,7 @@ export function ChatView({}: ChatViewProps) {
       retrySendingOperation: retrySendOperation,
       retryEditOperation,
       removeEditOperation,
+      updateMessagePin: (messageId: string, isPinned: boolean) => updateMessage(messageId, { isPinned }),
     },
     states: {
       editingMessageDraft: editingMessageDraft,
@@ -159,7 +163,7 @@ export function ChatView({}: ChatViewProps) {
   useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
     if (event.message.conversationId !== conversationId) return;
 
-    editMessage(event.message.id, event.message.body);
+    updateMessage(event.message.id, { body: event.message.body });
   });
 
   useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
@@ -231,7 +235,7 @@ export function ChatView({}: ChatViewProps) {
             }
           }}
           currentItem={{
-            source: messageService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false),
+            source: conversationService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false),
             type: galleryState.items[galleryState.currentIndex].type
           }}
           hasPreviousItem={galleryState.currentIndex > 0}
@@ -249,7 +253,7 @@ export function ChatView({}: ChatViewProps) {
             }));
           }}
           onDownloadRequested={() => {
-            const downloadUrl = messageService.getAttachmentDownloadUrl(galleryState.items[galleryState.currentIndex].id);
+            const downloadUrl = conversationService.getAttachmentDownloadUrl(galleryState.items[galleryState.currentIndex].id);
 
             const link = document.createElement("a");
             link.href = downloadUrl.toString();
@@ -297,6 +301,7 @@ function DeleteMessageConfirmationDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
+      headerIcon={<BsTrashFill className="size-10 fill-white"/>}
       title="Delete Message"
       subtitle="Nothing happened here, folk..."
       contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"

@@ -835,6 +835,86 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/conversations/{conversationId}/messages/{messageId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/{messageId}/unpin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/csrf/token": {
         parameters: {
             query?: never;
@@ -1892,6 +1972,7 @@ export interface components {
             properties: null | components["schemas"]["MessageProperties"];
             /** Format: uuid */
             conversationId: string;
+            isPinned: boolean;
         };
         TimelineMessagePage: {
             messages: components["schemas"]["TimelineMessageDto"][];
@@ -2041,7 +2122,9 @@ export enum MessagePropertiesCallProperties$type {
 }
 export enum MessageType {
     Message = "Message",
-    Call = "Call"
+    Call = "Call",
+    Pin = "Pin",
+    Unpin = "Unpin"
 }
 export enum PermissionState {
     Inherit = "Inherit",

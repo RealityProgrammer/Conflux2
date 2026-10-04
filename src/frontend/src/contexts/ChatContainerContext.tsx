@@ -13,7 +13,7 @@ import {
   type UseInfiniteQueryResult,
   useMutation, useQueryClient
 } from "@tanstack/react-query";
-import {messageService} from "../api/messageService.ts";
+import {conversationService} from "../api/conversationService.ts";
 import {MessageLoadDirection} from "../api/schema.ts";
 import {toast} from "react-toastify";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
@@ -33,7 +33,7 @@ interface ChatContainerContextType {
   messageQueryResult: UseInfiniteQueryResult<InfiniteData<TimelineMessagePage | null | undefined>>;
 
   appendMessage: (newMessage: TimelineMessageDto, userProfile?: UserIdentityProfileDto) => void;
-  editMessage: (messageId: string, newBody: string | null) => void;
+  updateMessage: (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId">>) => void;
   deleteMessage: (messageId: string) => void;
 
   handleSendMessage: (messageInput: MessageInput) => void;
@@ -71,7 +71,7 @@ export default function ChatContainerContextProvider({
     enabled: !!conversationId,
     queryKey,
     queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<TimelineMessagePage | null | undefined> => {
-      const response = await messageService.getTimelineMessages(
+      const response = await conversationService.getTimelineMessages(
         conversationId!,
         pageParam.direction,
         pageParam.cursorId,
@@ -138,19 +138,17 @@ export default function ChatContainerContextProvider({
     });
   };
 
-  const editMessage = (messageId: string, newBody: string | null) => {
+  const updateMessage = (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId">>) => {
     modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
-      if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
-
-      let isMessageFound = false;
+      let hasMessage = false;
       for (const page of oldData.pages) {
         if (!page) continue;
 
-        isMessageFound = page.messages.some(m => m.id === messageId);
-        if (isMessageFound) break;
+        hasMessage = page.messages.some(m => m.id === messageId);
+        if (hasMessage) break;
       }
 
-      if (!isMessageFound) return oldData;
+      if (!hasMessage) return oldData;
 
       return {
         ...oldData,
@@ -162,7 +160,7 @@ export default function ChatContainerContextProvider({
           return {
             ...page,
             messages: page.messages.map(m => m.id === messageId ?
-              {...m, body: newBody} :
+              {...m, ...properties} :
               m
             ),
           };
@@ -173,8 +171,6 @@ export default function ChatContainerContextProvider({
 
   const deleteMessage = (messageId: string) => {
     modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
-      if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
-
       let isMessageFound = false;
       for (const page of oldData.pages) {
         if (!page) continue;
@@ -209,7 +205,7 @@ export default function ChatContainerContextProvider({
   // message mutations
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
-      return await messageService.sendMessage(
+      return await conversationService.sendMessage(
         conversationId!,
         payload.idempotencyKey,
         payload.input.messageBody,
@@ -258,7 +254,7 @@ export default function ChatContainerContextProvider({
 
   const editMessageMutation = useMutation({
     mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
-      return await messageService.editMessage(conversationId, payload.messageId, payload.newBody);
+      return await conversationService.editMessage(conversationId, payload.messageId, payload.newBody);
     },
     onMutate: async (payload: EditMessagePayload) => {
       addEditOperation(payload.messageId, payload.newBody);
@@ -270,7 +266,7 @@ export default function ChatContainerContextProvider({
         return;
       }
 
-      editMessage(payload.messageId, payload.newBody);
+      updateMessage(payload.messageId, { body: payload.newBody });
       removeEditOperation(payload.messageId);
     },
     onError: (_error, payload) => {
@@ -291,7 +287,7 @@ export default function ChatContainerContextProvider({
 
   const deleteMessageMutation = useMutation({
     mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
-      return await messageService.deleteMessage(conversationId, payload.messageId);
+      return await conversationService.deleteMessage(conversationId, payload.messageId);
     },
     onMutate: async (payload: DeleteMessagePayload) => {
       addDeletingMessage(payload.messageId);
@@ -349,7 +345,7 @@ export default function ChatContainerContextProvider({
       setReplyingMessage,
       messageQueryResult,
       appendMessage,
-      editMessage,
+      updateMessage,
       deleteMessage,
       handleSendMessage,
       handleEditMessage,

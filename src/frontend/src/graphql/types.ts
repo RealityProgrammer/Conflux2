@@ -759,6 +759,7 @@ export type MessageFilterInput = {
   deletedAt?: InputMaybe<DateTimeOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<MessageFilterInput>>;
+  pinnedAt?: InputMaybe<DateTimeOperationFilterInput>;
   properties?: InputMaybe<MessagePropertiesFilterInput>;
   replies?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
   replyTo?: InputMaybe<MessageFilterInput>;
@@ -776,7 +777,9 @@ export type MessagePropertiesFilterInput = {
 
 export enum MessageType {
   Call = 'Call',
-  Message = 'Message'
+  Message = 'Message',
+  Pin = 'Pin',
+  Unpin = 'Unpin'
 }
 
 export type MessageTypeOperationFilterInput = {

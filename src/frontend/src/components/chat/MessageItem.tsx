@@ -1,21 +1,29 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {
+  ServiceResponse,
   TimelineMessageDto,
 } from "../../api/types.ts";
 import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
 import UserAvatar from "../UserAvatar.tsx";
-import {BsArrowReturnLeft, BsCopy, BsPaperclip, BsTrash} from "react-icons/bs";
+import {
+  BsArrowReturnLeft,
+  BsCopy,
+  BsPaperclip,
+  BsPencilFill,
+  BsTrashFill
+} from "react-icons/bs";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
 import MessageContent from "./MessageContent.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
-import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {FaPencil, FaRepeat, FaThumbtack, FaThumbtackSlash, FaTrashCan} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
 import DateTimeText from "../DateTimeText.tsx";
+import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -78,12 +86,33 @@ function MessageView({
     context.actions.onExternalLinkClicked(url);
   };
 
-  const handleretryEditOperation = () => {
-    context.actions.retryEditOperation(message.id);
+  const pinMessageMutation = usePinMessage({
+    onSuccess: (data: ServiceResponse, variables: PinMessageVariables) => {
+      if (data.success) {
+        context.actions.updateMessagePin(variables.messageId, variables.action === "pin");
+      } else {
+        toast.error(`Failed to ${variables.action} message`);
+      }
+    },
+  });
+  const { isPending: isPinning } = pinMessageMutation;
+
+  const handlePinMessage = () => {
+    pinMessageMutation.mutate({
+      idempotencyKey: crypto.randomUUID(),
+      conversationId: message.conversationId,
+      messageId: message.id,
+      action: "pin"
+    });
   };
 
-  const handleremoveEditOperation = () => {
-    context.actions.removeEditOperation(message.id);
+  const handleUnpinMessage = () => {
+    pinMessageMutation.mutate({
+      idempotencyKey: crypto.randomUUID(),
+      conversationId: message.conversationId,
+      messageId: message.id,
+      action: "unpin"
+    });
   };
 
   return (
@@ -170,11 +199,11 @@ function MessageView({
             <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
               {editingStatus === "error" && (
                 <>
-                  <IconButton theme="default" className="size-5" onClick={handleretryEditOperation}>
+                  <IconButton theme="default" className="size-5" onClick={() => context.actions.retryEditOperation(message.id)}>
                     <FaRepeat className=" size-5 ml-auto"/>
                   </IconButton>
 
-                  <IconButton theme="danger" className="size-5" onClick={handleremoveEditOperation}>
+                  <IconButton theme="danger" className="size-5" onClick={() => context.actions.removeEditOperation(message.id)}>
                     <FaTrashCan className="size-5 ml-auto"/>
                   </IconButton>
                 </>
@@ -200,7 +229,7 @@ function MessageView({
 
       <ContextMenu.Portal>
         <ContextMenu.Content
-          className="min-w-60 overflow-hidden rounded-md bg-gray-725 shadow-lg p-1 text-white text-sm border border-gray-500"
+          className="w-64 overflow-hidden rounded-md bg-gray-725 shadow-lg p-1 text-white text-sm border border-gray-500 space-y-1"
           alignOffset={5}
         >
           <ContextMenu.Item
@@ -210,24 +239,40 @@ function MessageView({
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
 
-          {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
-            <>
-              <ContextMenu.Item
-                className="dropdown-item-default"
-                onSelect={handleEditTrigger}
-              >
-                Edit message <FaPencil className="fill-white size-4 ml-auto"/>
-              </ContextMenu.Item>
+          {auth.userAuthorization?.id === message.sender!.id && (
+            <ContextMenu.Item
+              className="dropdown-item-default"
+              onSelect={handleEditTrigger}
+            >
+              Edit message <BsPencilFill className="fill-white size-4 ml-auto"/>
+            </ContextMenu.Item>
+          )}
 
-              <ContextMenu.Item
-                className="dropdown-item-danger"
-                onSelect={() => {
-                  context.actions.onMessageDeleteTrigger(message)
-                }}
-              >
-                Delete message <BsTrash className="fill-red-500 size-4 ml-auto"/>
-              </ContextMenu.Item>
-            </>
+          {message.isPinned ? (
+            <ContextMenu.Item
+              className="dropdown-item-default"
+              disabled={isPinning}
+              onSelect={handleUnpinMessage}
+            >
+              Unpin Message <FaThumbtackSlash className="fill-red-500 size-4 ml-auto"/>
+            </ContextMenu.Item>
+          ) : (
+            <ContextMenu.Item
+              className="dropdown-item-default"
+              disabled={isPinning}
+              onSelect={handlePinMessage}
+            >
+              Pin Message <FaThumbtack className="fill-white size-4 ml-auto"/>
+            </ContextMenu.Item>
+          )}
+
+          {auth.userAuthorization?.id === message.sender!.id && (
+            <ContextMenu.Item
+              className="dropdown-item-danger"
+              onSelect={() => context.actions.onMessageDeleteTrigger(message)}
+            >
+              Delete message <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
+            </ContextMenu.Item>
           )}
 
           <ContextMenu.Separator className="horizontal-separator my-1.5"/>

@@ -1,5 +1,5 @@
 import {ScrollArea} from "radix-ui";
-import {messageService} from "../../api/messageService.ts";
+import {conversationService} from "../../api/conversationService.ts";
 import {BsMusicNote} from "react-icons/bs";
 import type {AttachmentDto} from "../../api/types.ts";
 
@@ -23,7 +23,7 @@ export default function MessageAttachments({
             >
               {attachment.type.startsWith("image") ? (
                 <img
-                  src={messageService.getAttachmentUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentUrl(attachment.id, false)}
                   alt="attachment"
                   className="object-cover size-full"
                   loading="lazy"
@@ -31,7 +31,7 @@ export default function MessageAttachments({
                 />
               ) : attachment.type.startsWith("video") ? (
                 <video
-                  src={messageService.getAttachmentUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentUrl(attachment.id, false)}
                   className="object-cover size-full"
                   autoPlay={false}
                   onClick={() => onAttachmentClick(index)}

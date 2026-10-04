@@ -18,6 +18,8 @@ export interface TimelineContext {
 
     retryEditOperation: (messageId: string) => void;
     removeEditOperation: (messageId: string) => void;
+
+    updateMessagePin: (messageId: string, isPinned: boolean) => void;
   };
 
   states: {

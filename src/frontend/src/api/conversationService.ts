@@ -9,7 +9,7 @@ import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
 import type {MessageLoadDirection} from "./schema.ts";
 
-export const messageService = {
+export const conversationService = {
   sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = body?.trim();
 
@@ -37,12 +37,11 @@ export const messageService = {
         formData.append("replyToId", replyToId);
       }
 
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.postForm(`conversations/${encodeURIComponent(conversationId)}/messages`, formData, {
-          headers: {
-            "Idempotency-Key": idempotencyKey,
-          },
-        });
+      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.postForm(
+        `conversations/${encodeURIComponent(conversationId)}/messages`,
+        formData,
+        { headers: { "Idempotency-Key": idempotencyKey } }
+      );
 
       return {
         success: true,
@@ -138,5 +137,23 @@ export const messageService = {
     searchParams.append("download", "true");
 
     return `/api/attachments/${encodeURIComponent(attachmentId)}?${searchParams.toString()}`;
+  },
+
+  pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.post(
+        `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/${encodeURIComponent(action)}`,
+        {},
+        { headers: { "Idempotency-Key": idempotencyKey } }
+      );
+
+      return {
+        success: true,
+        statusCode: response.status,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
   },
 }

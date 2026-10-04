@@ -34,7 +34,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
         IDistributedCache cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
         IDistributedLockFactory lockFactory = context.HttpContext.RequestServices.GetRequiredService<IDistributedLockFactory>();
 
-        string cacheKey = $"Idempotent:{idempotenceKeyValue}";
+        string cacheKey = $"idempotent:{idempotenceKeyValue}";
 
         string? cached = await cache.GetStringAsync(cacheKey);
         if (cached is not null) {
@@ -43,7 +43,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
             return;
         }
         
-        string lockResource = $"IdempotentLock:{idempotenceKeyValue}";
+        string lockResource = $"idempotent_lock:{idempotenceKeyValue}";
         
         await using var redLock = await lockFactory.CreateLockAsync(
             lockResource,
