@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import Dialog from "./Dialog.tsx";
 import {BsBoxArrowUpRight} from "react-icons/bs";
 import {Dialog as RadixDialog} from "radix-ui";
-import {useExternalLinkDialog} from "../store/useExternalLinkDialog.tsx";
+import {useExternalLinkDialog} from "../store/useExternalLinkDialog.ts";
 
 const CONFIRMATION_DELAY = 5000;
 

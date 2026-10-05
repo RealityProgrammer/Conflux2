@@ -8,12 +8,11 @@ public interface ICallingService {
     /// Lock caller and callee into the state of having incoming call.
     /// </summary>
     /// <param name="callerId">ID of caller user.</param>
-    /// <param name="callerConnectionId">Connection ID of caller user.</param>
     /// <param name="calleeId">ID of callee user.</param>
     /// <returns>
     /// The result of locking 2 users into ringing state, fail if either of them is on call or being busy.
     /// </returns>
-    Task<Result> LockCallerAndCallee(Guid callerId, string callerConnectionId, Guid calleeId);
+    Task<Result> LockCallerAndCallee(Guid callerId, Guid calleeId);
 
     /// <summary>
     /// Unlock caller and callee if they are having call ringing state.

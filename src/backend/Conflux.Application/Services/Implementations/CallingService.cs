@@ -12,19 +12,19 @@ internal sealed partial class CallingService(
 ) : ICallingService {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
-    public async Task<Result> LockCallerAndCallee(Guid callerId, string callerConnectionId, Guid calleeId) {
+    public async Task<Result> LockCallerAndCallee(Guid callerId, Guid calleeId) {
         var callerKey = GetStateKey(callerId);
         var calleeKey = GetStateKey(calleeId);
         
         var callTimeout = TimeSpan.FromSeconds(60);
 
-        CallSessionState callerState = new(CallState.Ringing, calleeId, callerConnectionId);
+        CallSessionState callerState = new(CallState.Ringing, calleeId);
         bool callerLocked = await _database.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(callerState), callTimeout, When.NotExists);
         if (!callerLocked) {
             return Errors.AlreadyInCall();
         }
 
-        CallSessionState calleeState = new(CallState.Ringing, callerId, null);
+        CallSessionState calleeState = new(CallState.Ringing, callerId);
         bool calleeLocked = await _database.StringSetAsync(calleeKey, MemoryPackSerializer.Serialize(calleeState), callTimeout, When.NotExists);
         if (!calleeLocked) {
             await _database.KeyDeleteAsync(callerKey);
@@ -122,7 +122,7 @@ internal sealed partial class CallingService(
         }
 
         callerState = callerState with { State = CallState.Active };
-        calleeState = calleeState with { State = CallState.Active, ConnectionId = calleeConnectionId };
+        calleeState = calleeState with { State = CallState.Active };
         var activeTimeout = TimeSpan.FromHours(12);
         
         ITransaction transaction = _database.CreateTransaction();
@@ -158,7 +158,7 @@ internal sealed partial class CallingService(
             return Errors.InvalidCallStates();
         }
         
-        if (state == null || state.ConnectionId != userConnectionId) {
+        if (state == null) {
             return Errors.ResourceNotFound();
         }
         

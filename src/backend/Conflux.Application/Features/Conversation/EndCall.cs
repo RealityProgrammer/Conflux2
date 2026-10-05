@@ -1,4 +1,3 @@
-using Conflux.Application.Features.Conversation;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -8,7 +7,7 @@ using Conflux.Domain.Repositories;
 using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Conflux.Application.Features.Friends;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record EndCallCommand(Guid EnderId, Guid PeerId) : ICommand<Result>;
 

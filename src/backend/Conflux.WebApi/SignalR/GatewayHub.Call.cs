@@ -1,3 +1,4 @@
+using Conflux.Application.Features.Conversation;
 using Conflux.Application.Features.Friends;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -7,15 +8,15 @@ namespace Conflux.WebApi.SignalR;
 
 partial class GatewayHub {
     // invoked by frontend only
-    public async Task<Domain.Result<UserIdentityProfileDto>> StartDirectCall(Guid calleeUserId) {
-        var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
-            return Errors.InvalidIdentifier();
-        }
-
-        return await sender.Send(new StartCallCommand(callerId, Context.ConnectionId, calleeUserId));
-    }
+    // public async Task<Domain.Result<UserIdentityProfileDto>> StartDirectCall(Guid calleeUserId) {
+    //     var idClaim = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+    //
+    //     if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
+    //         return Errors.InvalidIdentifier();
+    //     }
+    //
+    //     return await sender.Send(new StartCallCommand(callerId, Context.ConnectionId, calleeUserId));
+    // }
 
     // invoked by frontend only
     public async Task<Result> CancelDirectCall(Guid calleeUserId) {

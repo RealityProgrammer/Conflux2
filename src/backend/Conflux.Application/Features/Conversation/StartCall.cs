@@ -1,4 +1,4 @@
-using Conflux.Application.Features.Conversation;
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -8,13 +8,12 @@ using Conflux.Domain.Repositories;
 using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Conflux.Application.Features.Friends;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record StartCallCommand(
     Guid CallerId, 
-    string CallerConnectionId, 
     Guid CalleeId
-) : ICommand<Result<UserIdentityProfileDto>>;
+) : ICommand<Result<StartCallResult>>;
 
 public sealed record IncomingCallNotification(Guid CalleeId, UserIdentityProfileDto CallerProfile) : INotification;
 
@@ -27,12 +26,12 @@ internal sealed class StartCallHandler(
     IUnitOfWork unitOfWork,
     IPublisher publisher,
     ILogger<StartCallHandler> logger
-) : ICommandHandler<StartCallCommand, Result<UserIdentityProfileDto>> {
-    public async ValueTask<Result<UserIdentityProfileDto>> Handle(
+) : ICommandHandler<StartCallCommand, Result<StartCallResult>> {
+    public async ValueTask<Result<StartCallResult>> Handle(
         StartCallCommand command, 
         CancellationToken cancellationToken
     ) {
-        Result lockResult = await callingService.LockCallerAndCallee(command.CallerId, command.CallerConnectionId, command.CalleeId);
+        Result lockResult = await callingService.LockCallerAndCallee(command.CallerId, command.CalleeId);
 
         if (!lockResult.IsSuccess) {
             return lockResult.Error;
@@ -101,25 +100,23 @@ internal sealed class StartCallHandler(
                     .SelectFacet<TimelineMessageSenderDto>()
                     .FirstOrDefaultAsync(CancellationToken.None),
             };
-            
-            IReadOnlyCollection<Guid> conversationParticipants = [];
-
-            if (conversation.Type == ConversationType.Direct) {
-                conversationParticipants = 
-                    await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversation.Id, CancellationToken.None);
-            }
 
             await publisher.Publish(
                 new MessageReceivedNotification(conversation.Id, messageDto), 
                 CancellationToken.None
             );
-            
-            await publisher.Publish(
-                new DirectConversationUpdatedNotification(conversation.Id, conversationParticipants),
-                CancellationToken.None
-            );
-            
-            return Result<UserIdentityProfileDto>.Success(calleeProfile);
+
+            if (conversation.Type == ConversationType.Direct) {
+                var conversationParticipants =
+                    await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversation.Id, CancellationToken.None);
+
+                await publisher.Publish(
+                    new DirectConversationUpdatedNotification(conversation.Id, conversationParticipants),
+                    CancellationToken.None
+                );
+            }
+
+            return Result<StartCallResult>.Success(new(calleeProfile, messageDto));
         } catch (OperationCanceledException) {
             await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
             throw;

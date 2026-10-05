@@ -1,87 +1,8 @@
 import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
-import MessageBody from "./MessageBody.tsx";
-import MessageAttachments from "./MessageAttachments.tsx";
 import {formatDate} from "date-fns";
-import type {AttachmentDto} from "../../api/types.ts";
 import {BsPaperclip} from "react-icons/bs";
 import type {ReactNode} from "react";
-import {userService} from "../../api/userService.ts";
-
-// interface MessageRowProps {
-//   header: {
-//     avatarSrc?: string;
-//     avatarAlt?: string;
-//     senderDisplayName: string;
-//   } | undefined;
-//
-//   sendDate: Date;
-//   body: string | null;
-//   attachments?: AttachmentDto[];
-//   onAttachmentsClicked: (index: number) => void;
-// }
-//
-// export default function MessageRow({
-//   header,
-//   sendDate,
-//   body,
-//   attachments,
-//   onAttachmentsClicked,
-// }: MessageRowProps) {
-//   return (
-//     <div className="flex flex-row gap-3">
-//       {!!header ? (
-//         <>
-//           <UserAvatar
-//             src={header.avatarSrc}
-//             alt={header.avatarAlt}
-//             className="flex-none mt-1 size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-//           />
-//
-//           <div className="flex-1 min-w-0">
-//             <p className="text-sm font-semibold text-white">
-//               {header.senderDisplayName}
-//               {" "}
-//               <DateTimeText value={sendDate} relative={false} className="select-none font-normal text-xs text-gray-400 hidden group-hover:inline"/>
-//             </p>
-//
-//             <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
-//               <MessageBody
-//                 content={body}
-//               />
-//
-//               {attachments && attachments.length > 0 && (
-//                 <MessageAttachments
-//                   attachments={attachments}
-//                   onAttachmentClick={onAttachmentsClicked}
-//                 />
-//               )}
-//             </div>
-//           </div>
-//         </>
-//       ) : (
-//         <>
-//           <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
-//             {formatDate(sendDate, "HH:mm")}
-//           </span>
-//
-//           <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
-//             <MessageBody
-//               content={body}
-//             />
-//
-//             {attachments && attachments.length > 0 && (
-//               <MessageAttachments
-//                 attachments={attachments}
-//                 onAttachmentClick={onAttachmentsClicked}
-//               />
-//             )}
-//           </div>
-//         </>
-//       )}
-//     </div>
-//   );
-// }
 
 interface ReplyProps {
   senderDisplayName: string;

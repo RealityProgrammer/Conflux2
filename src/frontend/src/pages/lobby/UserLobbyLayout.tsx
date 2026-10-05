@@ -5,8 +5,6 @@ import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   DirectConversationUpdatedEvent,
-  MessageReceivedEvent,
-  UpdateDmConversationListEvent,
   UserPresenceChangedEvent
 } from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";

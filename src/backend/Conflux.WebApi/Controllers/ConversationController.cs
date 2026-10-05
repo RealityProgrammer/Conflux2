@@ -21,25 +21,6 @@ namespace Conflux.WebApi.Controllers;
 public sealed class ConversationController(
     IMediator mediator
 ) : ControllerBase {
-    [HttpPost("direct/{peerId:guid}")]
-    public async Task<ActionResult<ApiResponse<DirectConversationSummary>>> GetDirectConversationSummary(Guid peerId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<DirectConversationSummary>(null, Errors.InvalidIdentifier()));
-        }
-        
-        var result = await mediator.Send(new GetDirectConversationSummaryCommand(userId, peerId));
-        
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse<DirectConversationSummary>(result.Value, Error.None));
-        }
-        
-        return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
-        };
-    }
-    
     [HttpPost("{conversationId:guid}/messages")]
     [Idempotent(20)]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> SendMessage(

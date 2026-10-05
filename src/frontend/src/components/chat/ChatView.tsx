@@ -22,6 +22,7 @@ import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
+import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 
 const START_INDEX = 10000000;
 
@@ -34,14 +35,6 @@ export interface ChatViewProps {}
 
 export function ChatView({}: ChatViewProps) {
   const {
-    messageQueryResult: {
-      isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
-      isFetchingNextPage, hasNextPage, fetchNextPage,
-      isLoading,
-    },
-    appendMessage,
-    updateMessage,
-    deleteMessage,
     handleEditMessage,
     handleDeleteMessage,
     setReplyingMessage,
@@ -51,6 +44,17 @@ export function ChatView({}: ChatViewProps) {
     removeEditOperation,
     conversationId,
   } = useChatContainerContext();
+
+  const {
+    queryResult: {
+      isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
+      isFetchingNextPage, hasNextPage, fetchNextPage,
+      isLoading,
+    },
+    appendMessage,
+    updateMessage,
+    deleteMessage,
+  } = useTimelineMessages(conversationId);
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 

@@ -10,6 +10,7 @@ import type {CallProperties} from "../api/types.ts";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 import {PinMessageItem} from "../components/chat/PinMessageItem.tsx";
 import {userService} from "../api/userService.ts";
+import useTimelineMessages from "./useTimelineMessages.ts";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -22,12 +23,8 @@ function isSameDay(d1: Date, d2: Date): boolean {
 export default function useTimelineItems(
   editingMessageId?: string,
 ): TimelineItem[] {
-  const {
-    messageQueryResult: {
-      data: messageData,
-    },
-    conversationId,
-  } = useChatContainerContext();
+  const { conversationId } = useChatContainerContext();
+  const { queryResult: { data: messageData } } = useTimelineMessages(conversationId);
 
   const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
   const deletingMessageIds = useMessageOperationsStore((state) => state.deletingMessageIds);

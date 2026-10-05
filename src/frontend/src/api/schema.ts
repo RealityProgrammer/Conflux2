@@ -981,14 +981,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dm/{peerId}/summary": {
+    "/api/conversations/direct/{peerId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: {
+        get?: never;
+        put?: never;
+        post: {
             parameters: {
                 query?: never;
                 header?: never;
@@ -1012,8 +1014,45 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/direct/{peerId}/call": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
-        post?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    peerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfStartCallResult"];
+                        "application/json": components["schemas"]["ApiResponseOfStartCallResult"];
+                        "text/json": components["schemas"]["ApiResponseOfStartCallResult"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1739,6 +1778,10 @@ export interface components {
             data: null | components["schemas"]["ServerRoleDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfStartCallResult: {
+            data: null | components["schemas"]["StartCallResult"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfstring: {
             data: null | string;
             error: components["schemas"]["Error"];
@@ -1958,6 +2001,10 @@ export interface components {
         SetNamesRequest: {
             userName: string;
             displayName: string;
+        };
+        StartCallResult: {
+            calleeProfile: components["schemas"]["UserIdentityProfileDto"];
+            message: components["schemas"]["TimelineMessageDto"];
         };
         TimelineMessageDto: {
             /** Format: uuid */

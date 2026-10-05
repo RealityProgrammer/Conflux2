@@ -1,7 +1,7 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 
-namespace Conflux.Application.Features.Friends;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record DropCallCommand(Guid DropperId, string DropperConnectionId) : ICommand<Result>;
 

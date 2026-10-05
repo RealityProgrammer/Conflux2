@@ -11,10 +11,11 @@ import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 import useConversationConnection from "../../hooks/useConversationConnection.ts";
 import {userService} from "../../api/userService.ts";
 import {useCallStore} from "../../store/useCallStore.ts";
-import {useSignalR} from "../../contexts/SignalRContext.tsx";
-import type {UserIdentityProfileDto, BackendResult} from "../../api/types.ts";
+import type {UserIdentityProfileDto, ServiceResponse, StartCallResult} from "../../api/types.ts";
 import {toast} from "react-toastify";
 import ShowPinnedMessagesButton from "../../components/ShowPinnedMessagesButton.tsx";
+import {directConversationService} from "../../api/directConversationService.ts";
+import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -55,41 +56,38 @@ function SuccessPage({
   peerProfile,
 }: { conversationId: string, peerProfile: UserIdentityProfileDto }) {
   const [showProfile, setShowProfile] = useState(false);
+  const { appendMessage } = useTimelineMessages(conversationId);
 
   useConversationConnection(conversationId);
-  const { invokeSafely } = useSignalR();
 
   const startOutgoingDirectCall = useCallStore((state) => state.startOutgoingDirectCall);
 
   const handleCall = async () => {
     try {
-      const result: BackendResult<UserIdentityProfileDto> = await invokeSafely("StartDirectCall", peerProfile.id);
+      const response: ServiceResponse<StartCallResult> = await directConversationService.startCall(peerProfile.id);
 
-      if (result) {
-        if (result.isSuccess) {
-          startOutgoingDirectCall(result.value!);
-        } else {
-          switch (result.error.code) {
-            case "AlreadyInCall":
-              toast.error("You are already in a call.");
-              break;
-
-            case "CalleeBusy":
-              toast.error("User is busy with another call.");
-              break;
-
-            case "NoAcceptedFriendRequest":
-              toast.error("An accepted friend request is required to make a call to this person.");
-              break;
-
-            default:
-              toast.error("Failed to start call.");
-              console.error("Failed to start call:", result.error);
-              break;
-          }
-        }
+      if (response.success) {
+        startOutgoingDirectCall(response.data!.calleeProfile);
+        appendMessage(response.data!.message);
       } else {
-        toast.error("Failed to start call.");
+        switch (response.error?.code) {
+          case "AlreadyInCall":
+            toast.error("You are already in a call.");
+            break;
+
+          case "CalleeBusy":
+            toast.error("User is busy with another call.");
+            break;
+
+          case "NoAcceptedFriendRequest":
+            toast.error("An accepted friend request is required to make a call to this person.");
+            break;
+
+          default:
+            toast.error("Failed to start call.");
+            console.error("Failed to start call:", response.error);
+            break;
+        }
       }
     } catch (err) {
       console.error("Failed to start call:", err);

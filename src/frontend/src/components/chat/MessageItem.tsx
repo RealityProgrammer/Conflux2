@@ -6,26 +6,23 @@ import type {
 import {type ReactNode} from "react";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {ContextMenu} from "radix-ui";
-import UserAvatar from "../UserAvatar.tsx";
 import {
   BsArrowReturnLeft,
   BsCopy,
-  BsPaperclip,
   BsPencilFill,
   BsTrashFill
 } from "react-icons/bs";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
-import {formatDate} from "date-fns";
 import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaThumbtack, FaThumbtackSlash, FaTrashCan} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
-import DateTimeText from "../DateTimeText.tsx";
 import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
 import {MessageRow} from "./MessageRow.tsx";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -69,7 +66,8 @@ function MessageView({
   context,
 }: MessageViewProps) {
   const auth = useAuth();
-  const { appendMessage } = useChatContainerContext();
+  const { conversationId } = useChatContainerContext();
+  const { appendMessage } = useTimelineMessages(conversationId);
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger(message);

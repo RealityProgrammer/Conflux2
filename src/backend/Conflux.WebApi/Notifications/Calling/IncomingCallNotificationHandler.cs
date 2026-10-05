@@ -1,3 +1,4 @@
+using Conflux.Application.Features.Conversation;
 using Conflux.Application.Features.Friends;
 using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;

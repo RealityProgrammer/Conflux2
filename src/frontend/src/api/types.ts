@@ -41,6 +41,7 @@ export type PendingFriendRequestDto = components["schemas"]["PendingFriendReques
 export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
 export type AttachmentDto = components["schemas"]["AttachmentDto"];
 export type TimelineMessageReplyDto = components["schemas"]["TimelineMessageReplyDto"];
+export type StartCallResult = components["schemas"]["StartCallResult"];
 export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
 export type TimelineMessagePage = components["schemas"]["TimelineMessagePage"];
