@@ -31,6 +31,14 @@ internal sealed class StartCallHandler(
         StartCallCommand command, 
         CancellationToken cancellationToken
     ) {
+        var conversationResult = await directConversationProvider.GetOrCreate(command.CallerId, command.CalleeId, cancellationToken);
+
+        if (!conversationResult.IsSuccess) {
+            return conversationResult.Error;
+        }
+
+        Domain.Entities.Conversation conversation = conversationResult.Value!;
+        
         Result lockResult = await callingService.LockCallerAndCallee(command.CallerId, command.CalleeId);
 
         if (!lockResult.IsSuccess) {
@@ -66,17 +74,13 @@ internal sealed class StartCallHandler(
                 await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
                 return Errors.NoAcceptedFriendRequest();
             }
-
+            
+            UserIdentityProfileDto callerProfile = profiles.Sender.Id == command.CallerId ? profiles.Sender : profiles.Receiver;
+            UserIdentityProfileDto calleeProfile = profiles.Sender.Id == command.CallerId ? profiles.Receiver : profiles.Sender;
+            
+            await publisher.Publish(new IncomingCallNotification(calleeProfile.Id, callerProfile), CancellationToken.None);
+            
             // append the start call message to conversation
-            var conversationResult = await directConversationProvider.GetOrCreate(command.CallerId, command.CalleeId, cancellationToken);
-
-            if (!conversationResult.IsSuccess) {
-                await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
-                return conversationResult.Error;
-            }
-
-            Domain.Entities.Conversation conversation = conversationResult.Value!;
-
             Message createdMessage = new Message {
                 Type = MessageType.Call,
                 Properties = new CallProperties(CallEventType.Start, Duration: null),
@@ -88,11 +92,6 @@ internal sealed class StartCallHandler(
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
-            UserIdentityProfileDto callerProfile = profiles.Sender.Id == command.CallerId ? profiles.Sender : profiles.Receiver;
-            UserIdentityProfileDto calleeProfile = profiles.Sender.Id == command.CallerId ? profiles.Receiver : profiles.Sender;
-
-            await publisher.Publish(new IncomingCallNotification(calleeProfile.Id, callerProfile), CancellationToken.None);
-
             TimelineMessageDto messageDto = new(createdMessage) {
                 Sender = await userRepository
                     .AsQueryable()

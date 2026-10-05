@@ -3,7 +3,7 @@ using Conflux.Domain;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record AcceptCallCommand(Guid CallerId, Guid CalleeId, string CalleeConnectionId) : ICommand<Result>;
+public sealed record AcceptCallCommand(Guid CallerId, Guid CalleeId) : ICommand<Result>;
 
 public sealed record CallAcceptedNotification(Guid CalleeId, Guid CallerId) : INotification;
 
@@ -15,7 +15,7 @@ internal sealed class AcceptCallHandler(
         Guid callerId = command.CallerId;
         Guid calleeId = command.CalleeId;
         
-        Result result = await callingService.AcceptCall(callerId, calleeId, command.CalleeConnectionId);
+        Result result = await callingService.AcceptCall(callerId, calleeId);
 
         if (!result.IsSuccess) {
             return result;

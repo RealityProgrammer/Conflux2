@@ -101,6 +101,7 @@ export default function MediaFeed({
           window.removeEventListener("pointerdown", resume);
           window.removeEventListener("keydown", resume);
         };
+
         window.addEventListener("pointerdown", resume, { once: true });
         window.addEventListener("keydown", resume, { once: true });
       });

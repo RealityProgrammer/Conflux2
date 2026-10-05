@@ -83,7 +83,7 @@ internal sealed partial class CallingService(
         return await SafeDeleteRingingCall(callerId, calleeId);
     }
 
-    public async Task<Result> AcceptCall(Guid callerId, Guid calleeId, string calleeConnectionId) {
+    public async Task<Result> AcceptCall(Guid callerId, Guid calleeId) {
         var callerKey = GetStateKey(callerId);
         var calleeKey = GetStateKey(calleeId);
 

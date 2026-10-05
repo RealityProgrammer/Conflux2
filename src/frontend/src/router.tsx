@@ -200,6 +200,7 @@ export const router = createBrowserRouter([
                     element: <FriendsPage/>
                   },
                   {
+                    id: "dm",
                     path: "dm/:userId?",
                     element: <DirectMessagePage/>,
                     loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps | undefined> => {

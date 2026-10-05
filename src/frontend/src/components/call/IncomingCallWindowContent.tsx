@@ -17,7 +17,10 @@ import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
-import type {BackendResult} from "../../api/types.ts";
+import type {BackendResult, ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
+import {directConversationService} from "../../api/directConversationService.ts";
+import {useRouteLoaderData} from "react-router";
+import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -57,46 +60,35 @@ export default function IncomingCallWindowContent({call}: {call: IncomingDirectC
 function IncomingPhase({call}: {call: IncomingDirectCall}) {
   const markCallAsActive = useCallStore((state) => state.markCallAsActive);
   const endCall = useCallStore((state) => state.endCall);
-  const { invokeSafely } = useSignalR();
   const [status, setStatus] = useState<"none" | "canceled" | "denied">("none");
+
+  const { conversationId } = useRouteLoaderData("dm");
+  const { appendMessage } = useTimelineMessages(conversationId);
 
   const handleDeclineCall = async () => {
     if (status !== "none") return;
-    setStatus("denied");
 
-    try {
-      const result: BackendResult = await invokeSafely("DenyDirectCall", call.callerProfile.id);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectCall(call.callerProfile.id);
 
-      if (!result || !result.isSuccess) {
-        toast.error(`Failed to deny call.`);
-
-        if (result) {
-          console.error("Failed to deny call:", result.error);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to deny call:", err);
+    if (response.success) {
+      setStatus("denied");
+      appendMessage(response.data!);
+    } else {
       toast.error(`Failed to deny call.`);
+      console.error("Failed to deny call:", response.error);
     }
   };
 
   const handleAcceptCall = async () => {
     if (status !== "none") return;
-    try {
-      const result: BackendResult = await invokeSafely("AcceptDirectCall", call.callerProfile.id);
 
-      if (result && result.isSuccess) {
-        markCallAsActive(call.sessionId);
-      } else {
-        toast.error(`Failed to accept call.`);
+    const response: ServiceResponse = await directConversationService.acceptCall(call.callerProfile.id);
 
-        if (result) {
-          console.error("Failed to accept call:", result.error);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to accept call:", err);
+    if (response.success) {
+      markCallAsActive(call.sessionId);
+    } else {
       toast.error(`Failed to accept call.`);
+      console.error("Failed to accept call:", response.error);
     }
   }
 
@@ -228,9 +220,11 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
 
 function ActivePhase({call}: {call: IncomingDirectCall}) {
   const { userProfile } = useAuth();
-  const { invokeSafely } = useSignalR();
   const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
   const [isEndingCall, setIsEndingCall] = useState(false);
+
+  const { conversationId } = useRouteLoaderData("dm");
+  const { appendMessage } = useTimelineMessages(conversationId);
 
   const {
     stream,
@@ -272,22 +266,15 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    try {
-      const result: BackendResult = await invokeSafely("EndDirectCall", callerId);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endCall(callerId);
 
-      if (result && result.isSuccess) {
-        markCallAsEnded(call.sessionId);
-      } else {
-        toast.error(`Failed to end call.`);
-
-        if (result) {
-          console.error("Failed to end call:", result.error);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to end call:", err);
-      toast.error("Failed to end call.");
+    if (response.success) {
+      markCallAsEnded(call.sessionId);
+      appendMessage(response.data!);
+    } else {
       setIsEndingCall(false);
+      toast.error(`Failed to end call.`);
+      console.error("Failed to end call:", response.error);
     }
   };
 

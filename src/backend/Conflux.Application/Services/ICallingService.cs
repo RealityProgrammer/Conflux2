@@ -49,11 +49,10 @@ public interface ICallingService {
     /// </summary>
     /// <param name="callerId">ID of caller user.</param>
     /// <param name="calleeId">ID of callee user.</param>
-    /// <param name="calleeConnectionId">Connection ID of callee.</param>
     /// <returns>
     /// The result of call accepting operation.
     /// </returns>
-    Task<Result> AcceptCall(Guid callerId, Guid calleeId, string calleeConnectionId);
+    Task<Result> AcceptCall(Guid callerId, Guid calleeId);
     
     /// <summary>
     /// Mark the call as dropped.

@@ -1,6 +1,5 @@
 import {type OutgoingDirectCall, useCallStore} from "../../store/useCallStore.ts";
 import CallWindowHeader from "./CallWindowHeader.tsx";
-import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {userService} from "../../api/userService.ts";
@@ -22,7 +21,10 @@ import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
-import type {BackendResult} from "../../api/types.ts";
+import type {BackendResult, ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
+import {directConversationService} from "../../api/directConversationService.ts";
+import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
+import {useRouteLoaderData} from "react-router";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -65,27 +67,26 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
   const markCallAsActive = useCallStore((state) => state.markCallAsActive);
   const endCall = useCallStore((state) => state.endCall);
-  const { invokeSafely } = useSignalR();
+
+  const { conversationId } = useRouteLoaderData("dm");
+  const { appendMessage } = useTimelineMessages(conversationId);
 
   const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied">("none");
 
   const handleCancelCall = async () => {
-    try {
-      const result: BackendResult = await invokeSafely("CancelDirectCall", call.calleeProfile.id);
+    const result: ServiceResponse<TimelineMessageDto> = await directConversationService.cancelCall(call.calleeProfile.id);
 
-      if (result && result.isSuccess) {
-        setStatus("cancel");
+    if (result.success) {
+      setStatus("cancel");
+      appendMessage(result.data!);
+    } else {
+      toast.error("Failed to cancel call.");
+
+      if (result) {
+        console.error("Failed to cancel call:", result.error);
       } else {
-        toast.error("Failed to cancel call.");
-
-        if (result) {
-          console.error("Failed to cancel call:", result.error);
-        } else {
-          console.error("Failed to cancel call.");
-        }
+        console.error("Failed to cancel call.");
       }
-    } catch (err) {
-      console.error("Failed to cancel call:", err);
     }
   };
 
@@ -107,7 +108,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
       (async () => {
         try {
-          await invokeSafely("CancelDirectCall", call.calleeProfile.id);
+          await directConversationService.cancelCall(call.calleeProfile.id);
         } catch (err) {
           console.error("Failed to cancel call:", err);
         }
@@ -220,9 +221,11 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
 
 function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
-  const { invokeSafely } = useSignalR();
   const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
   const [isEndingCall, setIsEndingCall] = useState(false);
+
+  const { conversationId } = useRouteLoaderData("dm");
+  const { appendMessage } = useTimelineMessages(conversationId);
 
   const {
     stream,
@@ -270,25 +273,15 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    try {
-      const result: BackendResult = await invokeSafely("EndDirectCall", calleeId);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endCall(calleeId);
 
-      if (result && result.isSuccess) {
-        markCallAsEnded(call.sessionId);
-      } else {
-        setIsEndingCall(false);
-        toast.error(`Failed to end call.`);
-
-        if (result) {
-          console.error("Failed to end call:", result.error);
-        } else {
-          console.error("Failed to end call.");
-        }
-      }
-    } catch (err) {
-      console.error("Failed to end call:", err);
-      toast.error("Failed to end call.");
+    if (response.success) {
+      markCallAsEnded(call.sessionId);
+      appendMessage(response.data!);
+    } else {
       setIsEndingCall(false);
+      toast.error(`Failed to end call.`);
+      console.error("Failed to end call:", response.error);
     }
   };
 

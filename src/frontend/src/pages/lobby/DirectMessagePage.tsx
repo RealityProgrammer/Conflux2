@@ -63,35 +63,30 @@ function SuccessPage({
   const startOutgoingDirectCall = useCallStore((state) => state.startOutgoingDirectCall);
 
   const handleCall = async () => {
-    try {
-      const response: ServiceResponse<StartCallResult> = await directConversationService.startCall(peerProfile.id);
+    const response: ServiceResponse<StartCallResult> = await directConversationService.startCall(peerProfile.id);
 
-      if (response.success) {
-        startOutgoingDirectCall(response.data!.calleeProfile);
-        appendMessage(response.data!.message);
-      } else {
-        switch (response.error?.code) {
-          case "AlreadyInCall":
-            toast.error("You are already in a call.");
-            break;
+    if (response.success) {
+      startOutgoingDirectCall(response.data!.calleeProfile);
+      appendMessage(response.data!.message);
+    } else {
+      switch (response.error?.code) {
+        case "AlreadyInCall":
+          toast.error("You are already in a call.");
+          break;
 
-          case "CalleeBusy":
-            toast.error("User is busy with another call.");
-            break;
+        case "CalleeBusy":
+          toast.error("User is busy with another call.");
+          break;
 
-          case "NoAcceptedFriendRequest":
-            toast.error("An accepted friend request is required to make a call to this person.");
-            break;
+        case "NoAcceptedFriendRequest":
+          toast.error("An accepted friend request is required to make a call to this person.");
+          break;
 
-          default:
-            toast.error("Failed to start call.");
-            console.error("Failed to start call:", response.error);
-            break;
-        }
+        default:
+          toast.error("Failed to start call.");
+          console.error("Failed to start call:", response.error);
+          break;
       }
-    } catch (err) {
-      console.error("Failed to start call:", err);
-      toast.error("Failed to start call.");
     }
   };
 

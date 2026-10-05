@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record DenyCallCommand(Guid CallerId, Guid CalleeId) : ICommand<Result>;
+public sealed record DenyCallCommand(Guid CallerId, Guid CalleeId) : ICommand<Result<TimelineMessageDto>>;
 
 public sealed record CallDeniedNotification(Guid CallerId, Guid CalleeId) : INotification;
 
@@ -21,16 +21,18 @@ internal sealed class DenyCallHandler(
     IUnitOfWork unitOfWork,
     IPublisher publisher,
     ILogger<DenyCallHandler> logger
-) : ICommandHandler<DenyCallCommand, Result> {
-    public async ValueTask<Result> Handle(DenyCallCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<DenyCallCommand, Result<TimelineMessageDto>> {
+    public async ValueTask<Result<TimelineMessageDto>> Handle(DenyCallCommand command, CancellationToken cancellationToken) {
         Guid callerId = command.CallerId;
         Guid calleeId = command.CalleeId;
         
-        var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, CancellationToken.None);
+        var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, cancellationToken);
 
         if (!conversationResult.IsSuccess) {
             return conversationResult.Error;
         }
+
+        Domain.Entities.Conversation conversation = conversationResult.Value!;
 
         Result result = await callingService.DenyCall(callerId, calleeId);
 
@@ -41,8 +43,6 @@ internal sealed class DenyCallHandler(
         await publisher.Publish(new CallDeniedNotification(callerId, calleeId), CancellationToken.None);
         
         // append call denied message to conversation
-        Domain.Entities.Conversation conversation = conversationResult.Value!;
-
         Message message = new() {
             Type = MessageType.Call,
             Properties = new CallProperties(CallEventType.Denied, Duration: null),
@@ -68,27 +68,25 @@ internal sealed class DenyCallHandler(
                     .FirstOrDefaultAsync(CancellationToken.None),
             };
             
-            IReadOnlyCollection<Guid> conversationParticipants = [];
-
-            if (conversation.Type == ConversationType.Direct) {
-                conversationParticipants = 
-                    await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversation.Id, CancellationToken.None);
-            }
-            
             await publisher.Publish(
                 new MessageReceivedNotification(conversation.Id, messageDto), 
                 CancellationToken.None
             );
             
-            await publisher.Publish(
-                new DirectConversationUpdatedNotification(conversation.Id, conversationParticipants),
-                CancellationToken.None
-            );
+            if (conversation.Type == ConversationType.Direct) {
+                var conversationParticipants = 
+                    await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversation.Id, CancellationToken.None);
+                
+                await publisher.Publish(
+                    new DirectConversationUpdatedNotification(conversation.Id, conversationParticipants),
+                    CancellationToken.None
+                );
+            }
+            
+            return Result<TimelineMessageDto>.Success(messageDto);
         } catch (Exception e) {
             logger.LogError(e, "Exception thrown while publishing message received event.");
             return Errors.UnexpectedError();
         }
-
-        return Result.Success();
     }
 }

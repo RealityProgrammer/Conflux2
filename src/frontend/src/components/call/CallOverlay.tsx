@@ -1,15 +1,13 @@
 import {useCallStore} from "../../store/useCallStore.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {
-  IncomingDirectCallEvent
-} from "../../api/events.ts";
+import type {IncomingDirectCallEvent} from "../../api/events.ts";
 import CallWindow from "./CallWindow.tsx";
 import {useEffect} from "react";
-import {useSignalR} from "../../contexts/SignalRContext.tsx";
-import type {BackendResult, UserIdentityProfileDto} from "../../api/types.ts";
+import type {ServiceResponse, UserIdentityProfileDto} from "../../api/types.ts";
+import {directConversationService} from "../../api/directConversationService.ts";
+import {HttpStatusCode} from "axios";
 
 export default function CallOverlay() {
-  const { invokeSafely } = useSignalR();
   const call = useCallStore((state) => state.call);
   const startIncomingDirectCall = useCallStore((state) => state.startIncomingDirectCall);
 
@@ -17,16 +15,16 @@ export default function CallOverlay() {
   useEffect(() => {
     (async () => {
       try {
-        const result: BackendResult<UserIdentityProfileDto> = await invokeSafely("GetCurrentRingingCall");
+        const response: ServiceResponse<UserIdentityProfileDto> = await directConversationService.getCurrentRingingCall();
 
-        if (result && result.isSuccess) {
-          startIncomingDirectCall(result.value!);
+        if (response.success && response.data) {
+          startIncomingDirectCall(response.data!);
         }
       } catch (err) {
         console.log("Failed to get current call:", err);
       }
     })();
-  }, [invokeSafely]);
+  }, []);
 
   useSignalREvent("IncomingDirectCall", (event: IncomingDirectCallEvent) => {
     startIncomingDirectCall(event.callerProfile);
