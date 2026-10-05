@@ -130,7 +130,7 @@ function MessageView({
             <MessageRow.Row
               header={showHeader ? {
                 avatarSrc: message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined,
-                avatarAlt: `Avatar of ${message.sender?.displayName ?? "???"}`,
+                avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
                 senderDisplayName: message.sender?.displayName ?? "???",
               } : undefined}
               date={new Date(message.createdAt)}

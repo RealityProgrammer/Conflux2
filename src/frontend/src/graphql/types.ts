@@ -101,6 +101,13 @@ export enum ApplyPolicy {
   Validation = 'VALIDATION'
 }
 
+export type AttachmentDto = {
+  __typename?: 'AttachmentDto';
+  id: Scalars['UUID']['output'];
+  name: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type AttachmentFilterInput = {
   and?: InputMaybe<Array<AttachmentFilterInput>>;
   id?: InputMaybe<UuidOperationFilterInput>;
@@ -874,6 +881,49 @@ export type PermissionStateOperationFilterInput = {
   nin?: InputMaybe<Array<PermissionState>>;
 };
 
+export type PinnedMessageDto = {
+  __typename?: 'PinnedMessageDto';
+  attachments: Array<AttachmentDto>;
+  body?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  pinnedAt?: Maybe<Scalars['DateTime']['output']>;
+  sender?: Maybe<TimelineMessageSenderDto>;
+  senderUserId?: Maybe<Scalars['UUID']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+/** A connection to a list of items. */
+export type PinnedMessageDtoConnection = {
+  __typename?: 'PinnedMessageDtoConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<PinnedMessageDtoEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<PinnedMessageDto>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type PinnedMessageDtoEdge = {
+  __typename?: 'PinnedMessageDtoEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: PinnedMessageDto;
+};
+
+export type PinnedMessageDtoSortInput = {
+  body?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  pinnedAt?: InputMaybe<SortEnumType>;
+  sender?: InputMaybe<TimelineMessageSenderDtoSortInput>;
+  senderUserId?: InputMaybe<SortEnumType>;
+  updatedAt?: InputMaybe<SortEnumType>;
+};
+
 export enum PresenceStatus {
   DoNotDisturb = 'DoNotDisturb',
   Idle = 'Idle',
@@ -902,6 +952,7 @@ export type Query = {
   friendRequests: FriendRequestConnection;
   invitation?: Maybe<Invitation>;
   joinedServers: CommunityServerConnection;
+  pinnedMessages: PinnedMessageDtoConnection;
   serverMemberSearch: CommunityServerMemberConnection;
   serverMemberSearchForAdmin: CommunityServerMemberConnection;
   serverModerationLogs: ServerModerationLogConnection;
@@ -984,6 +1035,16 @@ export type QueryJoinedServersArgs = {
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryPinnedMessagesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  conversationId: Scalars['UUID']['input'];
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<PinnedMessageDtoSortInput>>;
 };
 
 
@@ -1172,6 +1233,19 @@ export type StringOperationFilterInput = {
   nstartsWith?: InputMaybe<Scalars['String']['input']>;
   or?: InputMaybe<Array<StringOperationFilterInput>>;
   startsWith?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type TimelineMessageSenderDto = {
+  __typename?: 'TimelineMessageSenderDto';
+  avatarRevision?: Maybe<Scalars['Int']['output']>;
+  displayName: Scalars['String']['output'];
+  id: Scalars['UUID']['output'];
+};
+
+export type TimelineMessageSenderDtoSortInput = {
+  avatarRevision?: InputMaybe<SortEnumType>;
+  displayName?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
 };
 
 export type UnbanCommunityServerMemberInput = {

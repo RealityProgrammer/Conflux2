@@ -11,6 +11,7 @@ type Query
   @authorize
   @authorize
   @authorize
+  @authorize
   @authorize {
   communityServerMembers(
     "Returns the first _n_ elements from the list."
@@ -156,6 +157,26 @@ type Query
     )
     @cost(weight: "10")
   invitation(id: String!): Invitation @cost(weight: "10")
+  pinnedMessages(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    conversationId: UUID!
+    order: [PinnedMessageDtoSortInput!] @cost(weight: "10")
+  ): PinnedMessageDtoConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
   user(id: UUID!): ApplicationUser @cost(weight: "10")
   sessionUser: ApplicationUser @cost(weight: "10")
   serverModerationLogs(
@@ -212,6 +233,12 @@ type ApplicationUser {
   manualPresenceStatus: PresenceStatus @cost(weight: "10")
   effectivePresenceStatus: PresenceStatus! @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
+}
+
+type AttachmentDto {
+  id: UUID!
+  name: String!
+  type: String!
 }
 
 type BanCommunityServerMemberPayload {
@@ -443,6 +470,36 @@ type PageInfo {
   backwardCursors: [PageCursor!]!
 }
 
+type PinnedMessageDto {
+  id: UUID!
+  body: String
+  attachments: [AttachmentDto!]!
+  senderUserId: UUID
+  sender: TimelineMessageSenderDto
+  createdAt: DateTime!
+  updatedAt: DateTime
+  pinnedAt: DateTime
+}
+
+"A connection to a list of items."
+type PinnedMessageDtoConnection {
+  "A list of edges."
+  edges: [PinnedMessageDtoEdge!]
+  "A flattened list of the nodes"
+  nodes: [PinnedMessageDto!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type PinnedMessageDtoEdge {
+  "The item at the end of the edge."
+  node: PinnedMessageDto!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
 type RolePermission {
   roleId: UUID!
   role: CommunityServerRole!
@@ -479,6 +536,12 @@ type ServerModerationLogEdge {
   node: ServerModerationLog!
   "A cursor for use in pagination."
   cursor: String!
+}
+
+type TimelineMessageSenderDto {
+  id: UUID!
+  displayName: String!
+  avatarRevision: Int
 }
 
 type UnbanCommunityServerMemberPayload {
@@ -988,6 +1051,16 @@ input PermissionStateOperationFilterInput {
   nin: [PermissionState!] @cost(weight: "10")
 }
 
+input PinnedMessageDtoSortInput {
+  id: SortEnumType @cost(weight: "10")
+  body: SortEnumType @cost(weight: "10")
+  senderUserId: SortEnumType @cost(weight: "10")
+  sender: TimelineMessageSenderDtoSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  updatedAt: SortEnumType @cost(weight: "10")
+  pinnedAt: SortEnumType @cost(weight: "10")
+}
+
 input PresenceStatusOperationFilterInput {
   eq: PresenceStatus @cost(weight: "10")
   neq: PresenceStatus @cost(weight: "10")
@@ -1069,6 +1142,12 @@ input StringOperationFilterInput {
   endsWith: String @cost(weight: "20")
   nendsWith: String @cost(weight: "20")
   ilike: String @cost(weight: "10")
+}
+
+input TimelineMessageSenderDtoSortInput {
+  id: SortEnumType @cost(weight: "10")
+  displayName: SortEnumType @cost(weight: "10")
+  avatarRevision: SortEnumType @cost(weight: "10")
 }
 
 input UnbanCommunityServerMemberInput {

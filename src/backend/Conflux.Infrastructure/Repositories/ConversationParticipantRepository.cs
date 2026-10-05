@@ -13,4 +13,14 @@ internal sealed class ConversationParticipantRepository(
     public void Add(ConversationParticipant value) {
         dbContext.ConversationParticipants.Add(value);
     }
+
+    public async Task<bool> IsUserJoinedConversation(
+        Guid userId, 
+        Guid conversationId,
+        CancellationToken cancellationToken = default
+    ) {
+        return await dbContext
+            .ConversationParticipants
+            .AnyAsync(c => c.UserId == userId && c.ConversationId == conversationId, cancellationToken);
+    }
 }

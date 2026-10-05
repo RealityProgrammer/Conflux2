@@ -1,0 +1,29 @@
+query GetConversationPinnedMessages($conversationId: UUID!, $after: String) {
+    pinnedMessages(
+        after: $after
+        conversationId: $conversationId
+        order: { pinnedAt: DESC }
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            endCursor
+        }
+
+        nodes {
+            id
+            body
+            attachments {
+                id
+                name
+                type
+            }
+            createdAt
+            sender {
+                id
+                displayName
+                avatarRevision
+            }
+        }
+    }
+}
