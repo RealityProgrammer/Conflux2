@@ -10,7 +10,7 @@ using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class UserType : ObjectType<ApplicationUser> {
+public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
     protected override void Configure(IObjectTypeDescriptor<ApplicationUser> descriptor) {
         descriptor.BindFieldsExplicitly();
 

@@ -2,7 +2,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class CommunityServerType : ObjectType<CommunityServer> {
+public sealed class CommunityServerObjectType : ObjectType<CommunityServer> {
     protected override void Configure(IObjectTypeDescriptor<CommunityServer> descriptor) {
         descriptor.BindFieldsExplicitly();
 
@@ -12,13 +12,13 @@ public sealed class CommunityServerType : ObjectType<CommunityServer> {
         descriptor.Field(s => s.HasAvatar);
         descriptor.Field(s => s.CreatedAt);
         descriptor.Field(s => s.CreatorUserId);
-        descriptor.Field(s => s.CreatorUser).Type<UserType>();
+        descriptor.Field(s => s.CreatorUser).Type<ApplicationUserObjectType>();
         descriptor.Field(s => s.OwnerUserId);
-        descriptor.Field(s => s.OwnerUser).Type<UserType>();
+        descriptor.Field(s => s.OwnerUser).Type<ApplicationUserObjectType>();
         descriptor.Field(s => s.ChannelCategories)
-            .Type<ListType<ChannelCategoryType>>();
+            .Type<ListType<ChannelCategoryObjectType>>();
         descriptor.Field(s => s.Channels)
-            .Type<ListType<ChannelType>>();
+            .Type<ListType<ChannelObjectType>>();
         descriptor.Field("numMembers")
             .Type<NonNullType<IntType>>()
             .Resolve(async context => {

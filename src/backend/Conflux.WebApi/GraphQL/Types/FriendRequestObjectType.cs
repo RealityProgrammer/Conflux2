@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class FriendRequestType : ObjectType<FriendRequest> {
+public sealed class FriendRequestObjectType : ObjectType<FriendRequest> {
     protected override void Configure(IObjectTypeDescriptor<FriendRequest> descriptor) {
         descriptor.BindFieldsExplicitly();
         
@@ -21,7 +21,7 @@ public sealed class FriendRequestType : ObjectType<FriendRequest> {
         descriptor.Field(r => r.SenderUserId);
         descriptor.Field(r => r.Status);
         descriptor.Field("otherUser")
-            .Type<UserType>()
+            .Type<ApplicationUserObjectType>()
             .ParentRequires<FriendRequest>(r => new { r.ReceiverUserId, r.SenderUserId })
             .ResolveWith(ResolveOtherUser);
         

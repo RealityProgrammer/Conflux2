@@ -7,12 +7,12 @@ using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class RolePermissionType : ObjectType<RolePermission> {
+public sealed class RolePermissionObjectType : ObjectType<RolePermission> {
     protected override void Configure(IObjectTypeDescriptor<RolePermission> descriptor) {
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(r => r.RoleId);
-        descriptor.Field(r => r.Role).Type<NonNullType<CommunityServerRoleType>>();
+        descriptor.Field(r => r.Role).Type<NonNullType<CommunityServerRoleObjectType>>();
         descriptor.Field(r => r.Permission).Type<NonNullType<EnumType<ServerPermission>>>();
         descriptor.Field(r => r.State).Type<NonNullType<EnumType<PermissionState>>>();
     }

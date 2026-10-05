@@ -6,13 +6,13 @@ using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class InvitationType : ObjectType<Invitation> {
+public sealed class InvitationObjectType : ObjectType<Invitation> {
     protected override void Configure(IObjectTypeDescriptor<Invitation> descriptor) {
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(i => i.Id);
         descriptor.Field(i => i.CommunityServerId);
-        descriptor.Field(i => i.CommunityServer).Type<CommunityServerType>();
+        descriptor.Field(i => i.CommunityServer).Type<CommunityServerObjectType>();
         descriptor.Field(i => i.MaxUses);
         descriptor.Field(i => i.CurrentUses);
         descriptor.Field(i => i.CreatedAt);

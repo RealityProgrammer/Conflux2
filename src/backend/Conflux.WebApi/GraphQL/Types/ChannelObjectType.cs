@@ -2,7 +2,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class ChannelType : ObjectType<Channel> {
+public sealed class ChannelObjectType : ObjectType<Channel> {
     protected override void Configure(IObjectTypeDescriptor<Channel> descriptor) {
         descriptor.BindFieldsExplicitly();
 

@@ -5,20 +5,20 @@ using System.Collections.Frozen;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class CommunityServerRoleType : ObjectType<CommunityServerRole> {
+public sealed class CommunityServerRoleObjectType : ObjectType<CommunityServerRole> {
     protected override void Configure(IObjectTypeDescriptor<CommunityServerRole> descriptor) {
         descriptor.BindFieldsExplicitly();
 
         descriptor.Field(r => r.Id).IsProjected();
         descriptor.Field(r => r.Name);
         descriptor.Field(r => r.CommunityServerId);
-        descriptor.Field(r => r.CommunityServer).Type<NonNullType<CommunityServerType>>();
+        descriptor.Field(r => r.CommunityServer).Type<NonNullType<CommunityServerObjectType>>();
         descriptor.Field(r => r.CreatedAt);
         descriptor.Field(r => r.AuthorizeLevel);
         descriptor.Field(r => r.SpecialRoleType);
-        descriptor.Field(r => r.Permissions).Type<NonNullType<ListType<NonNullType<RolePermissionType>>>>();
+        descriptor.Field(r => r.Permissions).Type<NonNullType<ListType<NonNullType<RolePermissionObjectType>>>>();
         descriptor.Field(r => r.CreatorUserId);
-        descriptor.Field(r => r.CreatorUser).Type<UserType>();
+        descriptor.Field(r => r.CreatorUser).Type<ApplicationUserObjectType>();
         descriptor.Field("numMembers")
             .Type<NonNullType<IntType>>()
             .Resolve(async context => {

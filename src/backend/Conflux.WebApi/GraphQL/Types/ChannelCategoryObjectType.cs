@@ -2,7 +2,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class ChannelCategoryType : ObjectType<ChannelCategory> {
+public sealed class ChannelCategoryObjectType : ObjectType<ChannelCategory> {
     protected override void Configure(IObjectTypeDescriptor<ChannelCategory> descriptor) {
         descriptor.BindFieldsExplicitly();
 
@@ -12,6 +12,6 @@ public sealed class ChannelCategoryType : ObjectType<ChannelCategory> {
         descriptor.Field(c => c.CommunityServerId);
         descriptor.Field(c => c.CreatedAt);
         descriptor.Field(s => s.Channels)
-            .Type<ListType<ChannelType>>();
+            .Type<ListType<ChannelObjectType>>();
     }
 }

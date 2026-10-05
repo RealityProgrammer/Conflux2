@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-public sealed class ConversationType : ObjectType<Conversation> {
+public sealed class ConversationObjectType : ObjectType<Conversation> {
     protected override void Configure(IObjectTypeDescriptor<Conversation> descriptor) {
         descriptor.BindFieldsExplicitly();
         
@@ -17,7 +17,7 @@ public sealed class ConversationType : ObjectType<Conversation> {
         descriptor.Field(c => c.LatestMessageAt);
         descriptor.Field(c => c.Channel);
         descriptor.Field("peerUser")
-            .Type<UserType>()
+            .Type<ApplicationUserObjectType>()
             .ResolveWith(ResolvePeerUser);
 
         return;

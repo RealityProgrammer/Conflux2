@@ -2,7 +2,7 @@ using Conflux.WebApi.GraphQL.Dto;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
-internal sealed class MemberAuthorizeInfoType : ObjectType<MemberAuthorizeInfoDto> {
+internal sealed class MemberAuthorizeInfoObjectType : ObjectType<MemberAuthorizeInfoDto> {
     protected override void Configure(IObjectTypeDescriptor<MemberAuthorizeInfoDto> descriptor) {
         descriptor.Name("MemberAuthorizeInfo");
 
