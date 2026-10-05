@@ -18,7 +18,7 @@ const ELEMENT_FACTORIES = {
   [CallEventType.Start]: (displayName: string) => {
     return (
       <>
-        <BsTelephoneOutboundFill className="size-6 fill-green-500 inline mr-5"/>
+        <BsTelephoneOutboundFill className="size-6 fill-green-500 inline mr-4"/>
         <span className="font-semibold">{displayName}</span>
         <span>{" "} started a call.</span>
       </>
@@ -27,27 +27,27 @@ const ELEMENT_FACTORIES = {
   [CallEventType.Canceled]: (displayName: string) => {
     return (
       <>
-        <BsTelephoneMinusFill className="size-6 fill-red-400 inline mr-5"/>
+        <BsTelephoneMinusFill className="size-6 fill-red-400 inline mr-4"/>
         <span className="font-semibold">{displayName}</span>
-        <span>{" "} canceled a call.</span>
+        <span>{" "}canceled a call.</span>
       </>
     );
   },
   [CallEventType.Denied]: (displayName: string) => {
     return (
       <>
-        <BsTelephoneXFill className="size-6 fill-red-600 inline mr-5"/>
+        <BsTelephoneXFill className="size-6 fill-red-600 inline mr-4"/>
         <span className="font-semibold">{displayName}</span>
-        <span>{" "} denied a call.</span>
+        <span>{" "}denied a call.</span>
       </>
     );
   },
   [CallEventType.End]: (displayName: string) => {
     return (
       <>
-        <BsTelephoneMinusFill className="size-6 fill-red-600 inline mr-5"/>
+        <BsTelephoneMinusFill className="size-6 fill-red-600 inline mr-4"/>
         <span className="font-semibold">{displayName}</span>
-        <span>{" "} ended a call.</span>
+        <span>{" "}ended a call.</span>
       </>
     );
   },

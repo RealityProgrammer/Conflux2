@@ -8,6 +8,8 @@ import {MessageType} from "../api/schema.ts";
 import {CallMessageItem} from "../components/chat/CallMessageItem.tsx";
 import type {CallProperties} from "../api/types.ts";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
+import {PinMessageItem} from "../components/chat/PinMessageItem.tsx";
+import {userService} from "../api/userService.ts";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -93,6 +95,16 @@ export default function useTimelineItems(
                 duration: callProperties.duration,
                 createdAt: new Date(message.createdAt),
               }))
+              break;
+
+            case MessageType.Pin:
+            case MessageType.Unpin:
+              items.push(new PinMessageItem({
+                id: message.id,
+                senderDisplayName: message.sender?.displayName ?? "???",
+                senderAvatarSrc: message.sender?.avatarRevision ? userService.getAvatarUrl(message.sender.id, message.sender.avatarRevision) : undefined,
+                action: message.type === MessageType.Pin ? "pin" : "unpin",
+              }));
               break;
           }
         }
