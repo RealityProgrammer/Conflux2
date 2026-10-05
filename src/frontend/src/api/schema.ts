@@ -862,9 +862,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
                     };
                 };
             };
@@ -902,9 +902,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
                     };
                 };
             };

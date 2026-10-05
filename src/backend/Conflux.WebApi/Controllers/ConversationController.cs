@@ -165,7 +165,7 @@ public sealed class ConversationController(
 
     [HttpPost("{conversationId:guid}/messages/{messageId:guid}/pin")]
     [Idempotent(15)]
-    public async Task<ActionResult<ApiResponse>> PinMessage(
+    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> PinMessage(
         Guid conversationId,
         Guid messageId
     ) {
@@ -175,10 +175,10 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await mediator.Send(new PinMessageCommand(userId, conversationId, messageId));
+        var result = await mediator.Send(new PinMessageCommand(userId, conversationId, messageId));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
@@ -190,7 +190,7 @@ public sealed class ConversationController(
     
     [HttpPost("{conversationId:guid}/messages/{messageId:guid}/unpin")]
     [Idempotent(15)]
-    public async Task<ActionResult<ApiResponse>> UnpinMessage(
+    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> UnpinMessage(
         Guid conversationId,
         Guid messageId
     ) {
@@ -200,10 +200,10 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        Result result = await mediator.Send(new UnpinMessageCommand(userId, conversationId, messageId));
+        var result = await mediator.Send(new UnpinMessageCommand(userId, conversationId, messageId));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {

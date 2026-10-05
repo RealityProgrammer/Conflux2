@@ -77,12 +77,12 @@ internal sealed class CancelCallHandler(
             }
 
             await publisher.Publish(
-                new MessageReceivedNotification(conversation.Id, conversation.Type, conversationParticipants, messageDto), 
+                new MessageReceivedNotification(conversation.Id, messageDto), 
                 CancellationToken.None
             );
 
             await publisher.Publish(
-                new ConversationUpdatedNotification(conversation.Id, conversationParticipants),
+                new DirectConversationUpdatedNotification(conversation.Id, conversationParticipants),
                 CancellationToken.None
             );
         } catch (Exception e) {

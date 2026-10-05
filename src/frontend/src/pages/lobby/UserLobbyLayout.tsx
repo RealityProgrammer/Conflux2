@@ -4,7 +4,7 @@ import {Separator} from "radix-ui";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
-  ConversationUpdatedEvent,
+  DirectConversationUpdatedEvent,
   MessageReceivedEvent,
   UpdateDmConversationListEvent,
   UserPresenceChangedEvent
@@ -91,7 +91,7 @@ function DirectMessagesList() {
 
   const allElements = data?.pages.flatMap((page) => page?.directConversations.nodes ?? []) ?? [];
 
-  useSignalREvent("ConversationUpdated", async (event: ConversationUpdatedEvent) => {
+  useSignalREvent("DirectConversationUpdated", async (event: DirectConversationUpdatedEvent) => {
     const hasConversation = data && data.pages.some(page => {
       return page.directConversations.nodes?.some(node => node.id === event.conversationId) ?? false;
     });

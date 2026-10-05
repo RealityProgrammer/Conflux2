@@ -25,6 +25,7 @@ import {userService} from "../../api/userService.ts";
 import DateTimeText from "../DateTimeText.tsx";
 import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
 import {MessageRow} from "./MessageRow.tsx";
+import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -68,6 +69,7 @@ function MessageView({
   context,
 }: MessageViewProps) {
   const auth = useAuth();
+  const { appendMessage } = useChatContainerContext();
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger(message);
@@ -84,7 +86,7 @@ function MessageView({
   };
 
   const pinMessageMutation = usePinMessage({
-    onSuccess: (data: ServiceResponse, variables: PinMessageVariables) => {
+    onSuccess: (data: ServiceResponse<TimelineMessageDto>, variables: PinMessageVariables) => {
       if (data.success) {
         context.actions.updateMessagePin(variables.messageId, variables.action === "pin");
       } else {
@@ -94,22 +96,30 @@ function MessageView({
   });
   const { isPending: isPinning } = pinMessageMutation;
 
-  const handlePinMessage = () => {
-    pinMessageMutation.mutate({
+  const handlePinMessage = async () => {
+    const response: ServiceResponse<TimelineMessageDto> = await pinMessageMutation.mutateAsync({
       idempotencyKey: crypto.randomUUID(),
       conversationId: message.conversationId,
       messageId: message.id,
       action: "pin"
     });
+
+    if (response.success) {
+      appendMessage(response.data!);
+    }
   };
 
-  const handleUnpinMessage = () => {
-    pinMessageMutation.mutate({
+  const handleUnpinMessage = async () => {
+    const response: ServiceResponse<TimelineMessageDto> = await pinMessageMutation.mutateAsync({
       idempotencyKey: crypto.randomUUID(),
       conversationId: message.conversationId,
       messageId: message.id,
       action: "unpin"
     });
+
+    if (response.success) {
+      appendMessage(response.data!);
+    }
   };
 
   return (

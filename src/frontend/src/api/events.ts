@@ -139,6 +139,6 @@ export type DirectCallEndedEvent = {
   enderUserId: string;
 }
 
-export type ConversationUpdatedEvent = {
+export type DirectConversationUpdatedEvent = {
   conversationId: string;
 }

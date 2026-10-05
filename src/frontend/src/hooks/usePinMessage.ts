@@ -1,6 +1,6 @@
 import {type MutationFunctionContext, useMutation, type UseMutationOptions} from "@tanstack/react-query";
 import {conversationService} from "../api/conversationService.ts";
-import type {ServiceResponse} from "../api/types.ts";
+import type {ServiceResponse, TimelineMessageDto} from "../api/types.ts";
 
 export interface PinMessageVariables {
   idempotencyKey: string;
@@ -10,9 +10,9 @@ export interface PinMessageVariables {
 }
 
 export default function usePinMessage(
-  options: Omit<UseMutationOptions<ServiceResponse, Error, PinMessageVariables, unknown>, "mutationFn">
+  options: Omit<UseMutationOptions<ServiceResponse<TimelineMessageDto>, Error, PinMessageVariables, unknown>, "mutationFn">
 ) {
-  return useMutation<ServiceResponse, Error, PinMessageVariables, unknown>({
+  return useMutation<ServiceResponse<TimelineMessageDto>, Error, PinMessageVariables, unknown>({
     ...options,
     mutationFn: async (variables: PinMessageVariables, _context: MutationFunctionContext) => {
       return conversationService.pinMessage(

@@ -1,21 +1,30 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record PinMessageCommand(Guid UserId, Guid ConversationId, Guid MessageId) : ICommand<Result>;
+public sealed record PinMessageCommand(
+    Guid UserId, 
+    Guid ConversationId, 
+    Guid MessageId
+) : ICommand<Result<TimelineMessageDto>>;
 
 internal sealed class PinMessageHandler(
     IMessageRepository messageRepository,
+    IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
-    ILogger<PinMessageHandler> logger
-) : ICommandHandler<PinMessageCommand, Result> {
-    public async ValueTask<Result> Handle(PinMessageCommand command, CancellationToken cancellationToken) {
+    ILogger<PinMessageHandler> logger,
+    IPublisher publisher
+) : ICommandHandler<PinMessageCommand, Result<TimelineMessageDto>> {
+    public async ValueTask<Result<TimelineMessageDto>> Handle(PinMessageCommand command, CancellationToken cancellationToken) {
+        Message publishingMessage;
         DateTimeOffset utcNow = timeProvider.GetUtcNow();
 
         await unitOfWork.BeginTransactionAsync(cancellationToken);
@@ -47,9 +56,9 @@ internal sealed class PinMessageHandler(
             messageRepository.Add(message);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
-
             await unitOfWork.CommitAsync(cancellationToken);
-            return Result.Success();
+
+            publishingMessage = message;
         } catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(cancellationToken);
             throw;
@@ -58,5 +67,17 @@ internal sealed class PinMessageHandler(
             await unitOfWork.RollbackAsync(cancellationToken);
             return Errors.OperationFailure("pin message");
         }
+        
+        // publish notification
+        TimelineMessageDto messageDto = new(publishingMessage) {
+            Sender = await userRepository
+                .AsQueryable()
+                .Where(s => s.Id == command.UserId)
+                .SelectFacet<TimelineMessageSenderDto>()
+                .FirstOrDefaultAsync(CancellationToken.None),
+        };
+
+        await publisher.Publish(new MessageReceivedNotification(command.ConversationId, messageDto), CancellationToken.None);
+        return Result<TimelineMessageDto>.Success(messageDto);
     }
 }

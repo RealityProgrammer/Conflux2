@@ -20,8 +20,8 @@ public sealed record SendMessageCommand(
 
 public sealed record MessageReceivedNotification(
     Guid ConversationId, 
-    ConversationType ConversationType,
-    IReadOnlyCollection<Guid> DirectConversationParticipantUserIds,
+    // ConversationType ConversationType,
+    // IReadOnlyCollection<Guid> DirectConversationParticipantUserIds,
     TimelineMessageDto Message
 ) : INotification;
 
@@ -106,19 +106,21 @@ public sealed class SendMessageHandler(
         IReadOnlyCollection<Guid> directConversationParticipantIds = [];
 
         if (conversation.Type == ConversationType.Direct) {
-            directConversationParticipantIds = 
-                await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
+            // directConversationParticipantIds = 
+            //     await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
         }
         
         await publisher.Publish(
-            new MessageReceivedNotification(conversationId, conversation.Type, directConversationParticipantIds, dto), 
+            new MessageReceivedNotification(conversationId, dto), 
             CancellationToken.None
         );
 
-        await publisher.Publish(
-            new ConversationUpdatedNotification(conversationId, directConversationParticipantIds), 
-            CancellationToken.None
-        );
+        if (conversation.Type == ConversationType.Direct) {
+            await publisher.Publish(
+                new DirectConversationUpdatedNotification(conversationId, directConversationParticipantIds), 
+                CancellationToken.None
+            );
+        }
 
         return Result<TimelineMessageDto>.Success(dto);
     }

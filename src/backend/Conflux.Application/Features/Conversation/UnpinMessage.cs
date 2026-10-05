@@ -1,20 +1,29 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record UnpinMessageCommand(Guid UserId, Guid ConversationId, Guid MessageId) : ICommand<Result>;
+public sealed record UnpinMessageCommand(
+    Guid UserId, 
+    Guid ConversationId, 
+    Guid MessageId
+) : ICommand<Result<TimelineMessageDto>>;
 
 internal sealed class UnpinMessageHandler(
     IMessageRepository messageRepository,
+    IUserRepository userRepository,
     IUnitOfWork unitOfWork,
+    IPublisher publisher,
     ILogger<UnpinMessageHandler> logger
-) : ICommandHandler<UnpinMessageCommand, Result> {
-    public async ValueTask<Result> Handle(UnpinMessageCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<UnpinMessageCommand, Result<TimelineMessageDto>> {
+    public async ValueTask<Result<TimelineMessageDto>> Handle(UnpinMessageCommand command, CancellationToken cancellationToken) {
+        Message publishingMessage;
         await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try {
@@ -43,7 +52,8 @@ internal sealed class UnpinMessageHandler(
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
-            return Result.Success();
+
+            publishingMessage = message;
         } catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(cancellationToken);
             throw;
@@ -53,5 +63,16 @@ internal sealed class UnpinMessageHandler(
             await unitOfWork.RollbackAsync(cancellationToken);
             return Errors.OperationFailure("unpin message");
         }
+
+        TimelineMessageDto messageDto = new(publishingMessage) {
+            Sender = await userRepository
+                .AsQueryable()
+                .Where(s => s.Id == command.UserId)
+                .SelectFacet<TimelineMessageSenderDto>()
+                .FirstOrDefaultAsync(CancellationToken.None),
+        };
+
+        await publisher.Publish(new MessageReceivedNotification(command.ConversationId, messageDto), CancellationToken.None);
+        return Result<TimelineMessageDto>.Success(messageDto);
     }
 }

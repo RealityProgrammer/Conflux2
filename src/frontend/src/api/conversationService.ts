@@ -139,7 +139,7 @@ export const conversationService = {
     return `/api/attachments/${encodeURIComponent(attachmentId)}?${searchParams.toString()}`;
   },
 
-  pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<ServiceResponse> => {
+  pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.post(
         `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/${encodeURIComponent(action)}`,
@@ -150,6 +150,7 @@ export const conversationService = {
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
