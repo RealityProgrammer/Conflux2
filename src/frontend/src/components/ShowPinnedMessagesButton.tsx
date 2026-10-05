@@ -70,6 +70,10 @@ export default function ShowPinnedMessagesButton({
                 <BsExclamationTriangle className="size-10 fill-white"/>
                 <p>Failed to load pinned messages</p>
               </div>
+            ) : allElements.length == 0 ? (
+              <div className="size-full flex flex-col gap-1 justify-center items-center">
+                <p className="text-gray-500 select-none">Nothing here... It is so empty...</p>
+              </div>
             ) : (
               <Virtuoso
                 data={allElements}

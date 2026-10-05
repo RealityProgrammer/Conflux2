@@ -41,6 +41,7 @@ internal sealed class UnpinMessageHandler(
 
             messageRepository.Add(message);
 
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
             return Result.Success();
         } catch (OperationCanceledException) {
