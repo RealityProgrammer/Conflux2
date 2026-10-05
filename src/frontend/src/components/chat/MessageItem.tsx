@@ -135,7 +135,7 @@ function MessageView({
               } : undefined}
               date={new Date(message.createdAt)}
             >
-              <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
+              <div className={`flex-1 space-y-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
                 <MessageBody
                   content={message.body}
                 />

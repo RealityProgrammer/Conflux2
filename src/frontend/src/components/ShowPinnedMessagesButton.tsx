@@ -4,6 +4,9 @@ import {FaThumbtack} from "react-icons/fa6";
 import {BsPinAngleFill} from "react-icons/bs";
 import MessageBody from "./chat/MessageBody.tsx";
 import {Virtuoso} from "react-virtuoso";
+import {MessageRow} from "./chat/MessageRow.tsx";
+import MessageAttachments from "./chat/MessageAttachments.tsx";
+import {userService} from "../api/userService.ts";
 
 interface ShowPinnedMessagesButtonProps {
 
@@ -67,12 +70,34 @@ export default function ShowPinnedMessagesButton({}) {
           <section className="flex-1 min-h-0 overflow-y-auto p-2">
             <Virtuoso
               data={pinnedMessages}
-              computeItemKey={(index, item) => item.id}
+              computeItemKey={(_index, item) => item.id}
               firstItemIndex={0}
               overscan={5}
-              itemContent={(_index, item) => (
-                <div className="border-2 border-gray-600 rounded-md p-2">
-                  <MessageBody content={item.body}/>
+              itemContent={(_index, message) => (
+                <div className="pb-1">
+                  <div className="p-2 border-2 border-gray-600 rounded-md group bg-black/8">
+                    <MessageRow.Row
+                      header={{
+                        senderDisplayName: message.sender.displayName,
+                        avatarSrc: message.sender.avatarRevision ? userService.getAvatarUrl(message.sender.id, message.sender.avatarRevision) : undefined,
+                        avatarAlt: `Avatar of ${message.sender.displayName}`,
+                      }}
+                      date={new Date()}
+                    >
+                      <div className="flex-1 space-y-1">
+                        <MessageBody
+                          content={message.body}
+                        />
+
+                        {/*{message.attachments && message.attachments.length > 0 && (*/}
+                        {/*  <MessageAttachments*/}
+                        {/*    attachments={message.attachments}*/}
+                        {/*    onAttachmentClick={handleAttachmentClicked}*/}
+                        {/*  />*/}
+                        {/*)}*/}
+                      </div>
+                    </MessageRow.Row>
+                  </div>
                 </div>
               )}
             />

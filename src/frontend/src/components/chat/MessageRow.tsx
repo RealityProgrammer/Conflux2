@@ -135,7 +135,7 @@ function Row({
   children,
 }: RowProps) {
   return (
-    <div className="flex flex-row gap-3">
+    <div className="flex flex-row gap-3 w-full">
       {!!header ? (
         <>
           <UserAvatar
