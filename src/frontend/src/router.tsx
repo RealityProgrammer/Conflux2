@@ -33,6 +33,7 @@ import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
 import ProfilePage from "./pages/settings/ProfilePage.tsx";
 import CallOverlay from "./components/call/CallOverlay.tsx";
 import {directConversationService} from "./api/directConversationService.ts";
+import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
@@ -170,6 +171,8 @@ export const router = createBrowserRouter([
                 <CallOverlay/>
               </PresenceProvider>
             </SignalRProvider>
+
+            <ExternalLinkDialog/>
           </>
         ),
         children: [

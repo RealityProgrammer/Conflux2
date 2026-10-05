@@ -14,6 +14,7 @@ import {useCallStore} from "../../store/useCallStore.ts";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import type {UserIdentityProfileDto, BackendResult} from "../../api/types.ts";
 import {toast} from "react-toastify";
+import ShowPinnedMessagesButton from "../../components/ShowPinnedMessagesButton.tsx";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -109,6 +110,8 @@ function SuccessPage({
         <span className="flex-1">{peerProfile.userName}</span>
 
         <div className="flex-none flex flex-row items-center gap-2">
+          <ShowPinnedMessagesButton/>
+
           <IconButton
             isLoading={false}
             theme="default"

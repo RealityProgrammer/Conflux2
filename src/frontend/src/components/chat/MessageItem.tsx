@@ -17,13 +17,14 @@ import {
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {toast} from "react-toastify";
 import {formatDate} from "date-fns";
-import MessageContent from "./MessageContent.tsx";
+import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaThumbtack, FaThumbtackSlash, FaTrashCan} from "react-icons/fa6";
 import {userService} from "../../api/userService.ts";
 import DateTimeText from "../DateTimeText.tsx";
 import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
+import {MessageRow} from "./MessageRow.tsx";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -82,10 +83,6 @@ function MessageView({
     context.actions.onAttachmentClick(message.attachments, index);
   };
 
-  const handleExternalLinkClicked = (url?: string)=> {
-    context.actions.onExternalLinkClicked(url);
-  };
-
   const pinMessageMutation = usePinMessage({
     onSuccess: (data: ServiceResponse, variables: PinMessageVariables) => {
       if (data.success) {
@@ -123,76 +120,34 @@ function MessageView({
         <div className="hover-highlight flex flex-col">
           <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
             {message.replyTo && (
-              <div className="text-xs ml-13">
-                <p className="line-clamp-2 wrap-break-word">
-                  <span className="font-semibold">{message.replyTo.sender.displayName ?? "???"}</span>
-                  {" "}sent:{" "}
-                  {message.replyTo.attachmentCount > 0 && (
-                    <>
-                      <span className="inline-flex items-center align-text-bottom mx-1 text-gray-300">
-                        <BsPaperclip className="size-3.5 fill-white mr-0.5" />
-                        <span className="leading-none text-[10px]">4</span>
-                      </span>
-                      {" "}
-                    </>
-                  )}
-                  {message.replyTo.body}
-                </p>
-              </div>
+              <MessageRow.Reply
+                senderDisplayName={message.replyTo.sender?.displayName ?? "???"}
+                attachmentCount={message.replyTo.attachmentCount}
+                body={message.replyTo.body}
+              />
             )}
 
-            <div className="flex flex-row gap-3">
-              {showHeader ? (
-                <>
-                  <UserAvatar
-                    src={message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined}
-                    className="flex-none mt-1 size-10 select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
+            <MessageRow.Row
+              header={showHeader ? {
+                avatarSrc: message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined,
+                avatarAlt: `Avatar of ${message.sender?.displayName ?? "???"}`,
+                senderDisplayName: message.sender?.displayName ?? "???",
+              } : undefined}
+              date={new Date(message.createdAt)}
+            >
+              <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
+                <MessageBody
+                  content={message.body}
+                />
+
+                {message.attachments && message.attachments.length > 0 && (
+                  <MessageAttachments
+                    attachments={message.attachments}
+                    onAttachmentClick={handleAttachmentClicked}
                   />
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">
-                      {message.sender!.displayName ?? "???"}
-                      {" "}
-                      <DateTimeText value={new Date(message.createdAt)} relative={false} className="select-none font-normal text-xs text-gray-400 hidden group-hover:inline"/>
-                    </p>
-
-                    <div className={`${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
-                      <MessageContent
-                        content={message.body}
-                        onLinkClicked={handleExternalLinkClicked}
-                      />
-
-                      {message.attachments && message.attachments.length > 0 && (
-                        <MessageAttachments
-                          attachments={message.attachments}
-                          onAttachmentClick={handleAttachmentClicked}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className="select-none flex-none w-10 self-start mt-1 inline-flex justify-center items-center font-normal text-xs text-gray-400 invisible group-hover:visible">
-                    {formatDate(new Date(message.createdAt), "HH:mm")}
-                  </span>
-
-                  <div className={`flex-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
-                    <MessageContent
-                      content={message.body}
-                      onLinkClicked={handleExternalLinkClicked}
-                    />
-
-                    {message.attachments && message.attachments.length > 0 && (
-                      <MessageAttachments
-                        attachments={message.attachments}
-                        onAttachmentClick={handleAttachmentClicked}
-                      />
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            </MessageRow.Row>
           </div>
 
           {editingStatus !== "saving" && (

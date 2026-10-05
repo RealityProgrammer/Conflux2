@@ -11,7 +11,6 @@ export interface TimelineContext {
     onEditSaved: (newBody: string | null) => void;
 
     onAttachmentClick: (attachments: AttachmentDto[], index: number) => void;
-    onExternalLinkClicked: (url?: string) => void;
 
     retrySendingOperation: (operationId: string) => void;
     removeSendingOperation: (operationId: string) => void;

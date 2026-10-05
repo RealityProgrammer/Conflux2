@@ -57,7 +57,7 @@ export default function useTimelineItems(
         }
 
         if (message.type === MessageType.Message) {
-          if (!messageHasHeader && lastMessageSenderId !== message.sender!.id) {
+          if (!messageHasHeader && (lastMessageSenderId !== message.sender!.id || !!message.replyTo)) {
             messageHasHeader = true;
           }
 

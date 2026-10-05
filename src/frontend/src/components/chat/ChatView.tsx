@@ -2,7 +2,7 @@ import type {
   AttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -17,12 +17,11 @@ import type {TimelineContext} from "./TimelineContext.ts";
 import Dialog from "../Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
-import {BsBoxArrowUpRight, BsTrashFill} from "react-icons/bs";
+import {BsTrashFill} from "react-icons/bs";
 import Spinner from "../Spinner.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
-import usePinMessage from "../../hooks/usePinMessage.ts";
 
 const START_INDEX = 10000000;
 
@@ -78,8 +77,6 @@ export function ChatView({}: ChatViewProps) {
     });
   };
 
-  const [accessingExternalUrl, setAccessingExternalUrl] = useState<string | undefined>(undefined);
-
   // message editing
   const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
@@ -111,7 +108,6 @@ export function ChatView({}: ChatViewProps) {
       },
       onEditSaved: (newBody) => handleSaveEdit(newBody),
       onAttachmentClick: handleAttachmentClick,
-      onExternalLinkClicked: setAccessingExternalUrl,
 
       removeSendingOperation: removeSendOperation,
       retrySendingOperation: retrySendOperation,
@@ -213,11 +209,7 @@ export function ChatView({}: ChatViewProps) {
               ) : null
             )
           }}
-          itemContent={(_index, timelineItem) => {
-            if (!timelineItem) return null;
-
-            return timelineItem.render(timelineContext);
-          }}
+          itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
         />
       )}
 
@@ -278,16 +270,6 @@ export function ChatView({}: ChatViewProps) {
           }
         }}
       />
-
-      <ExternalLinkConfirmationDialog
-        externalUrl={accessingExternalUrl}
-        open={!!accessingExternalUrl}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAccessingExternalUrl(undefined);
-          }
-        }}
-      />
     </div>
   );
 }
@@ -326,113 +308,6 @@ function DeleteMessageConfirmationDialog({
       <div className="p-3">
         Are you sure you want to delete this message?<br/>
         This action cannot be undone. You will never see this message and its attachments ever again.
-      </div>
-    </Dialog>
-  )
-}
-
-const CONFIRMATION_DELAY = 5000;
-
-function ExternalLinkConfirmationDialog({
-  externalUrl,
-  open,
-  onOpenChange,
-}: { externalUrl: string | undefined, open: boolean, onOpenChange: (open: boolean) => void}) {
-  const [canConfirm, setCanConfirm] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    if (open) {
-      // reset states when the dialog opens
-      setCanConfirm(false);
-      setProgress(0);
-
-      // start the visual CSS transition (added a bit delay at the start)
-      const startAnimTimer = setTimeout(() => {
-        setProgress(100);
-      }, 50);
-
-      // unlock button
-      const enableTimer = setTimeout(() => {
-        setCanConfirm(true);
-      }, CONFIRMATION_DELAY + 50);
-
-      return () => {
-        clearTimeout(startAnimTimer);
-        clearTimeout(enableTimer);
-      };
-    } else {
-      setProgress(0);
-      setCanConfirm(false);
-    }
-  }, [open]);
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Prepare to be in the barren land"
-      subtitle="It is dangerous out there..."
-      contentClassName="centered-dialog w-160 rounded-xl text-white bg-gray-650 outline-none"
-      headerIcon={(
-        <BsBoxArrowUpRight className="fill-white size-10"/>
-      )}
-      footerContent={(
-        <div className="w-full flex flex-row justify-end p-3 gap-3">
-          <RadixDialog.Close
-            type="button"
-            className="cursor-pointer basis-20 outline-none"
-          >
-            Cancel
-          </RadixDialog.Close>
-
-          <button
-            disabled={!canConfirm}
-            className={`relative overflow-hidden outline-none w-40 py-2 rounded-md ${canConfirm ? "cursor-pointer" : "cursor-not-allowed"}`}
-            onClick={() => {
-              onOpenChange(false);
-
-              if (!externalUrl) return;
-
-              const link = document.createElement("a");
-              link.href = externalUrl;
-              link.target = "_blank";
-              link.rel = "noopener noreferrer";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-          >
-            <div className="absolute inset-0 bg-red-600" />
-            <div
-              className="absolute left-0 top-0 bottom-0 bg-green-600 ease-linear"
-              style={{
-                width: `${progress}%`,
-                transitionProperty: "width",
-                transitionDuration: progress === 100 ? `${CONFIRMATION_DELAY}ms` : "0ms",
-              }}
-            />
-
-            <span className="relative z-10 text-white font-medium select-none flex items-center justify-center">
-              {canConfirm ? "Confirm Redirect" : "Wait..."}
-            </span>
-          </button>
-        </div>
-      )}
-    >
-      <div className="p-3 space-y-3">
-        <p>
-          Are you sure you want to access this external URL?<br/>
-          Look closely, it can be a trap...<br/>
-        </p>
-
-        <span className="mt-3">
-          External URL:
-
-          <pre className="mt-1 p-2 bg-black/8 border-2 border-gray-500 rounded-md text-wrap text-sm">
-            {externalUrl}
-          </pre>
-        </span>
       </div>
     </Dialog>
   )

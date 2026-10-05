@@ -7,16 +7,15 @@ import IconButton from "../IconButton.tsx";
 import {BsCopy} from "react-icons/bs";
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {a11yDark} from "react-syntax-highlighter/dist/esm/styles/prism";
+import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.tsx";
 
 interface MessageContentProps {
   content: string | null;
-  onLinkClicked?: (url: string) => void;
   className?: string;
 }
 
-export default function MessageContent({
+export default function MessageBody({
   content,
-  onLinkClicked,
   className,
 }: MessageContentProps) {
   return (
@@ -154,12 +153,11 @@ export default function MessageContent({
                   return (
                     <a
                       target="_blank"
-                      className={`${className ?? ""} text-blue-400 ${onLinkClicked ? "cursor-pointer" : ""}`}
+                      className={`${className ?? ""} text-blue-400 cursor-pointer`}
                       onClick={(e) => {
                         e.preventDefault();
-
-                        if (!href || !onLinkClicked) return;
-                        onLinkClicked(href);
+                        if (!href) return;
+                        requestExternalLinkNavigate(href);
                       }}
                       {...props}
                     >
