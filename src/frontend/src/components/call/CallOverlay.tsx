@@ -5,7 +5,6 @@ import CallWindow from "./CallWindow.tsx";
 import {useEffect} from "react";
 import type {ServiceResponse, UserIdentityProfileDto} from "../../api/types.ts";
 import {directConversationService} from "../../api/directConversationService.ts";
-import {HttpStatusCode} from "axios";
 
 export default function CallOverlay() {
   const call = useCallStore((state) => state.call);

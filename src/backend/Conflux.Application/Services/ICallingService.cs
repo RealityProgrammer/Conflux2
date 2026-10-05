@@ -55,7 +55,7 @@ public interface ICallingService {
     Task<Result> AcceptCall(Guid callerId, Guid calleeId);
     
     /// <summary>
-    /// Mark the call as dropped.
+    /// Mark the call as dropped if it currently active.
     /// </summary>
     /// <param name="userId">ID of user who trigger the call dropping procedure.</param>
     /// <param name="userConnectionId">Connection ID of user who trigger the call dropping.</param>

@@ -44,7 +44,7 @@ public sealed class DirectConversationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await sender.Send(new IncomingCallQuery(userId));
+        var result = await sender.Send(new GetRingingCallQuery(userId));
         
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));
