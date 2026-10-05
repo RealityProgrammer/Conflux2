@@ -3,13 +3,31 @@ import type {
   BackendResponse,
   TimelineMessageDto,
   ServiceResponse,
-  TimelineMessagePage
+  TimelineMessagePage, DirectConversationSummary
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
 import type {MessageLoadDirection} from "./schema.ts";
 
 export const conversationService = {
+  getDirectConversationSummary: async (peerId: string): Promise<ServiceResponse<DirectConversationSummary>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<DirectConversationSummary>> =
+        await apiClient.post<BackendResponse<DirectConversationSummary>>(
+          `/conversations/direct/${encodeURIComponent(peerId)}`
+        );
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<DirectConversationSummary>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
   sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = body?.trim();
 

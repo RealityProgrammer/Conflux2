@@ -20,8 +20,6 @@ public sealed record SendMessageCommand(
 
 public sealed record MessageReceivedNotification(
     Guid ConversationId, 
-    // ConversationType ConversationType,
-    // IReadOnlyCollection<Guid> DirectConversationParticipantUserIds,
     TimelineMessageDto Message
 ) : INotification;
 
@@ -66,7 +64,7 @@ public sealed class SendMessageHandler(
             Body = command.Body,
             Attachments = attachments,
             SenderUserId = senderUserId,
-            ConversationId = conversationId,
+            Conversation = conversation,
             ReplyToId = command.ReplyToId,
             CreatedAt = utcNow,
         };
@@ -103,19 +101,15 @@ public sealed class SendMessageHandler(
                 .FirstOrDefaultAsync(CancellationToken.None),
         };
 
-        IReadOnlyCollection<Guid> directConversationParticipantIds = [];
-
-        if (conversation.Type == ConversationType.Direct) {
-            // directConversationParticipantIds = 
-            //     await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
-        }
-        
         await publisher.Publish(
             new MessageReceivedNotification(conversationId, dto), 
             CancellationToken.None
         );
 
         if (conversation.Type == ConversationType.Direct) {
+            IReadOnlyCollection<Guid> directConversationParticipantIds = 
+                await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
+            
             await publisher.Publish(
                 new DirectConversationUpdatedNotification(conversationId, directConversationParticipantIds), 
                 CancellationToken.None

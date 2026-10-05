@@ -16,23 +16,36 @@ public sealed record PinMessageCommand(
 ) : ICommand<Result<TimelineMessageDto>>;
 
 internal sealed class PinMessageHandler(
+    IConversationRepository conversationRepository,
     IMessageRepository messageRepository,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
+    IConversationParticipantsProvider conversationParticipantsProvider,
     TimeProvider timeProvider,
     ILogger<PinMessageHandler> logger,
     IPublisher publisher
 ) : ICommandHandler<PinMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(PinMessageCommand command, CancellationToken cancellationToken) {
+        Guid conversationId = command.ConversationId;
+        
         Message publishingMessage;
-        DateTimeOffset utcNow = timeProvider.GetUtcNow();
+        
+        Domain.Entities.Conversation? conversation = await conversationRepository
+            .AsQueryable()
+            .Where(c => c.Id == conversationId)
+            .FirstOrDefaultAsync(cancellationToken);
 
+        if (conversation == null) {
+            return Errors.ResourceNotFound("Conversation", [new("Id", conversationId.ToString())]);
+        }
+
+        DateTimeOffset utcNow = timeProvider.GetUtcNow();
         await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try {
             int changed = await messageRepository
                 .AsQueryable()
-                .Where(m => m.Type == MessageType.Message && m.Id == command.MessageId && m.ConversationId == command.ConversationId && m.PinnedAt == null)
+                .Where(m => m.Type == MessageType.Message && m.Id == command.MessageId && m.ConversationId == conversationId && m.PinnedAt == null)
                 .ExecuteUpdateAsync(builder => {
                     builder.SetProperty(m => m.PinnedAt, utcNow);
                 }, cancellationToken);
@@ -41,7 +54,7 @@ internal sealed class PinMessageHandler(
                 await unitOfWork.RollbackAsync(cancellationToken);
                 
                 return Errors.ResourceNotFound("Message", [
-                    new(nameof(Message.ConversationId), command.ConversationId.ToString()),
+                    new(nameof(Message.ConversationId), conversationId.ToString()),
                     new(nameof(Message.Id), command.MessageId.ToString()),
                     new(nameof(Message.Type), nameof(MessageType.Message)),
                 ]);
@@ -50,10 +63,12 @@ internal sealed class PinMessageHandler(
             Message message = new() {
                 SenderUserId = command.UserId,
                 Type = MessageType.Pin,
-                ConversationId = command.ConversationId,
+                Conversation = conversation,
             };
 
             messageRepository.Add(message);
+
+            conversation.LatestMessageAt = utcNow;
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
@@ -77,7 +92,16 @@ internal sealed class PinMessageHandler(
                 .FirstOrDefaultAsync(CancellationToken.None),
         };
 
-        await publisher.Publish(new MessageReceivedNotification(command.ConversationId, messageDto), CancellationToken.None);
+        await publisher.Publish(new MessageReceivedNotification(conversationId, messageDto), CancellationToken.None);
+        
+        // publish a conversation updated if conversation is type Direct
+        if (conversation.Type == ConversationType.Direct) {
+            IReadOnlyCollection<Guid> directConversationParticipantIds = 
+                await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
+
+            await publisher.Publish(new DirectConversationUpdatedNotification(conversationId, directConversationParticipantIds), CancellationToken.None);
+        }
+        
         return Result<TimelineMessageDto>.Success(messageDto);
     }
 }

@@ -16,15 +16,29 @@ public sealed record UnpinMessageCommand(
 ) : ICommand<Result<TimelineMessageDto>>;
 
 internal sealed class UnpinMessageHandler(
+    IConversationRepository conversationRepository,
     IMessageRepository messageRepository,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
+    IConversationParticipantsProvider conversationParticipantsProvider,
     IPublisher publisher,
+    TimeProvider timeProvider,
     ILogger<UnpinMessageHandler> logger
 ) : ICommandHandler<UnpinMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(UnpinMessageCommand command, CancellationToken cancellationToken) {
+        Guid conversationId = command.ConversationId;
+        
         Message publishingMessage;
-        await unitOfWork.BeginTransactionAsync(cancellationToken);
+        DateTimeOffset utcNow = timeProvider.GetUtcNow();
+        
+        Domain.Entities.Conversation? conversation = await conversationRepository
+            .AsQueryable()
+            .Where(c => c.Id == conversationId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (conversation == null) {
+            return Errors.ResourceNotFound("Conversation", [new("Id", conversationId.ToString())]);
+        }
 
         try {
             int changed = await messageRepository
@@ -49,6 +63,8 @@ internal sealed class UnpinMessageHandler(
             };
 
             messageRepository.Add(message);
+            
+            conversation.LatestMessageAt = utcNow;
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
@@ -73,6 +89,14 @@ internal sealed class UnpinMessageHandler(
         };
 
         await publisher.Publish(new MessageReceivedNotification(command.ConversationId, messageDto), CancellationToken.None);
+        
+        if (conversation.Type == ConversationType.Direct) {
+            IReadOnlyCollection<Guid> directConversationParticipantIds = 
+                await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
+
+            await publisher.Publish(new DirectConversationUpdatedNotification(conversationId, directConversationParticipantIds), CancellationToken.None);
+        }
+        
         return Result<TimelineMessageDto>.Success(messageDto);
     }
 }
