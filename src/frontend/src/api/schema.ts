@@ -264,6 +264,205 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/calls/direct/{peerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-SignalR-Connection-Id": string;
+                };
+                path: {
+                    peerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfStartCallResult"];
+                        "application/json": components["schemas"]["ApiResponseOfStartCallResult"];
+                        "text/json": components["schemas"]["ApiResponseOfStartCallResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calls/{callId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    callId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/calls/{callId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    "X-SignalR-Connection-Id": string;
+                };
+                path: {
+                    callId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/calls/{callId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    callId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/calls/{callId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    callId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/communities": {
         parameters: {
             query?: never;
@@ -1010,45 +1209,6 @@ export interface paths {
                         "text/plain": components["schemas"]["ApiResponseOfDirectConversationSummary"];
                         "application/json": components["schemas"]["ApiResponseOfDirectConversationSummary"];
                         "text/json": components["schemas"]["ApiResponseOfDirectConversationSummary"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/direct/{peerId}/call": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    peerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfStartCallResult"];
-                        "application/json": components["schemas"]["ApiResponseOfStartCallResult"];
-                        "text/json": components["schemas"]["ApiResponseOfStartCallResult"];
                     };
                 };
             };
@@ -2003,6 +2163,8 @@ export interface components {
             displayName: string;
         };
         StartCallResult: {
+            /** Format: uuid */
+            callId: string;
             calleeProfile: components["schemas"]["UserIdentityProfileDto"];
             message: components["schemas"]["TimelineMessageDto"];
         };

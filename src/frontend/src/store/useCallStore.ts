@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { UserIdentityProfileDto } from "../api/types.ts";
 
 type BaseCall = {
-  sessionId: string;  // keep sessionId just to prevent potential asynchronous issue
+  callId: string;
 }
 
 export type OutgoingDirectCallState = "dialing" | "active" | "dropped" | "ended";
@@ -25,54 +25,52 @@ export type Call = OutgoingDirectCall | IncomingDirectCall;
 
 interface CallStoreType {
   call: Call | null;
-  startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => void;
-  startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => void;
-  markCallAsActive: (callSessionId: string) => void;
+  startOutgoingDirectCall: (callId: string, calleeProfile: UserIdentityProfileDto) => void;
+  startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) => void;
+  markCallAsActive: (callId: string) => void;
   markCallAsDropped: (callSessionId: string) => void;
   markCallAsEnded: (callSessionId: string) => void;
   endCall: (callSessionId: string) => void;
-  forceEndCall: () => void;
 }
 
 export const useCallStore = create<CallStoreType>((set) => ({
   call: null,
 
-  startOutgoingDirectCall: (calleeProfile: UserIdentityProfileDto) => set(() => ({
-    call: { type: "outgoing_direct", state: "dialing", sessionId: crypto.randomUUID(), calleeProfile },
+  startOutgoingDirectCall: (callId: string, calleeProfile: UserIdentityProfileDto) => set(() => ({
+    call: { type: "outgoing_direct", state: "dialing", callId, calleeProfile },
   })),
 
-  startIncomingDirectCall: (callerProfile: UserIdentityProfileDto) => set(() => ({
-    call: { type: "incoming_direct", state: "incoming", sessionId: crypto.randomUUID(), callerProfile }
+  startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) => set(() => ({
+    call: { type: "incoming_direct", state: "incoming", callId, callerProfile }
   })),
 
-  markCallAsActive: (callSessionId: string) => set((state) => {
-    if (state.call?.sessionId === callSessionId) {
+  markCallAsActive: (callId: string) => set((state) => {
+    if (state.call?.callId === callId) {
       return { call: { ...state.call, state: "active" } };
     }
+
     return state;
   }),
 
-  markCallAsDropped: (callSessionId: string) => set((state) => {
-    if (state.call?.sessionId === callSessionId) {
+  markCallAsDropped: (callId: string) => set((state) => {
+    if (state.call?.callId === callId) {
       return { call: { ...state.call, state: "dropped" } };
     }
     return state;
   }),
 
-  markCallAsEnded: (callSessionId: string) => set((state) => {
-    if (state.call?.sessionId === callSessionId) {
+  markCallAsEnded: (callId: string) => set((state) => {
+    if (state.call?.callId === callId) {
       return { call: { ...state.call, state: "ended" } };
     }
     return state;
   }),
 
-  endCall: (callSessionId: string) => set((state) => {
-    if (state.call?.sessionId === callSessionId) {
+  endCall: (callId: string) => set((state) => {
+    if (state.call?.callId === callId) {
       return { call: null };
     }
 
     return state;
   }),
-
-  forceEndCall: () => set({ call: null }),
 }));

@@ -63,10 +63,10 @@ function SuccessPage({
   const startOutgoingDirectCall = useCallStore((state) => state.startOutgoingDirectCall);
 
   const handleCall = async () => {
-    const response: ServiceResponse<StartCallResult> = await directConversationService.startCall(peerProfile.id);
+    const response: ServiceResponse<StartCallResult> = await directConversationService.startDirectCall(peerProfile.id);
 
     if (response.success) {
-      startOutgoingDirectCall(response.data!.calleeProfile);
+      startOutgoingDirectCall(response.data!.callId, response.data!.calleeProfile);
       appendMessage(response.data!.message);
     } else {
       switch (response.error?.code) {

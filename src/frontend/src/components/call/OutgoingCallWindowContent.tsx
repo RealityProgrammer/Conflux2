@@ -21,10 +21,11 @@ import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
-import type {BackendResult, ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
+import type {ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
 import {directConversationService} from "../../api/directConversationService.ts";
 import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 import {useRouteLoaderData} from "react-router";
+import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
@@ -32,13 +33,13 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
 
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
     if (call.calleeProfile.id === event.droppedUserId) {
-      markCallAsDropped(call.sessionId);
+      markCallAsDropped(call.callId);
     }
   });
 
   useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
     if (call.calleeProfile.id === event.enderUserId) {
-      markCallAsEnded(call.sessionId);
+      markCallAsEnded(call.callId);
     }
   });
 
@@ -68,8 +69,8 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const markCallAsActive = useCallStore((state) => state.markCallAsActive);
   const endCall = useCallStore((state) => state.endCall);
 
-  const { conversationId } = useRouteLoaderData("dm");
-  const { appendMessage } = useTimelineMessages(conversationId);
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessages(loaderData?.conversationId ?? "");
 
   const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied">("none");
 
@@ -93,7 +94,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   useEffect(() => {
     if (status !== "none") {
       const timeoutId = setTimeout(() => {
-        endCall(call.sessionId);
+        endCall(call.callId);
       }, 3000);
 
       return () => {
@@ -145,7 +146,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
     if (call.calleeProfile.id === event.calleeUserId) {
-      markCallAsActive(call.sessionId);
+      markCallAsActive(call.callId);
     }
   });
 
@@ -201,7 +202,7 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.sessionId);
+    endCall(call.callId);
   }, 5000);
 
   return (
@@ -224,8 +225,8 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
   const [isEndingCall, setIsEndingCall] = useState(false);
 
-  const { conversationId } = useRouteLoaderData("dm");
-  const { appendMessage } = useTimelineMessages(conversationId);
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessages(loaderData?.conversationId ?? "");
 
   const {
     stream,
@@ -276,7 +277,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endCall(calleeId);
 
     if (response.success) {
-      markCallAsEnded(call.sessionId);
+      markCallAsEnded(call.callId);
       appendMessage(response.data!);
     } else {
       setIsEndingCall(false);
@@ -342,7 +343,7 @@ function EndedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.sessionId);
+    endCall(call.callId);
   }, 5000);
 
   return (

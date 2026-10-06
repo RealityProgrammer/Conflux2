@@ -115,7 +115,8 @@ export type UserPresenceChangedEvent = {
   status: PresenceStatus;
 }
 
-export type IncomingDirectCallEvent = {
+export type IncomingCallEvent = {
+  callId: string;
   callerProfile: UserIdentityProfileDto;
 }
 

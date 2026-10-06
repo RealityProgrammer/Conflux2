@@ -43,8 +43,13 @@ internal sealed partial class CallingService(
         AcceptDirectCallScript = LuaScript.Prepare(
             """
             local status = redis.call("HGET", @callSessionKey, "status")
+            if not status or status ~= "Ringing" then return { "INVALID_STATE" } end
+            
             local type = redis.call("HGET", @callSessionKey, "type")
-            if status ~= "Ringing" or type ~= "Direct" then return { "INVALID_STATE" } end
+            if not type or type ~= "Direct" then return { "INVALID_CALL_TYPE" } end
+            
+            local callerId = redis.call("HGET", @callSessionKey, "initiator")
+            if not callerId then return { "INVALID_STATE" } end
             
             redis.call("HSET", @callSessionKey, "status", "Active", "at", @activeTime)
             redis.call("EXPIRE", @callSessionKey, @activeTtl)
@@ -55,10 +60,9 @@ internal sealed partial class CallingService(
             redis.call("SET", @calleeCallStateKey, @callId .. "#" .. @calleeConnectionId, "EX", @activeTtl)
             redis.call("EXPIRE", @calleeCallStateKey, @activeTtl)
             
-            local callerId = redis.call("HGET", @callSessionKey, "initiator")
-            redis.call("EXPIRE", "user:" .. initiator .. ":call", @activeTtl)
+            redis.call("EXPIRE", "user:{" .. callerId .. "}:call", @activeTtl)
             
-            return { "SUCCESS", initiator }
+            return { "SUCCESS", callerId }
             """
         );
 
@@ -144,6 +148,7 @@ internal sealed partial class CallingService(
             callSessionKey = GetCallSessionKey(callId),
             participantsKey = GetCallParticipantsKey(callId),
             callId = callId.ToString(),
+            calleeId = calleeId.ToString(),
             calleeCallStateKey = GetUserCallStateKey(calleeId),
             calleeConnectionId,
             activeTtl = ActiveCallTimeoutSec,
@@ -195,8 +200,14 @@ internal sealed partial class CallingService(
     }
 
     public async Task<Guid?> GetUserActiveCallId(Guid userId) {
-        var callIdStr = await _database.StringGetAsync(GetUserCallStateKey(userId));
-        return callIdStr.HasValue && Guid.TryParse((string?)callIdStr, out Guid callId) ? callId : null;
+        return null;
+
+        // var stateString = (string?)await _database.StringGetAsync(GetUserCallStateKey(userId));
+        //
+        // if (string.IsNullOrEmpty(stateString)) return null;
+        //
+        // int hashIndex = stateString.IndexOf('#');
+        // return Guid.TryParse(hashIndex == -1 ? );
     }
 
     public async Task CleanCallStates() {
@@ -215,7 +226,7 @@ internal sealed partial class CallingService(
     }
 
     private static string GetUserCallStateKey(Guid userId) {
-        return $"user:{userId}:call";
+        return $"user:{{{userId}}}:call";
     }
 
     private static string GetCallSessionKey(Guid callId) {

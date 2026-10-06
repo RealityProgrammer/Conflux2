@@ -3,10 +3,11 @@ import interact from "interactjs";
 import type {ResizeEvent} from "@interactjs/actions/resize/plugin";
 import type {InteractEvent} from "@interactjs/core/InteractEvent";
 import CallWindowContent from "./CallWindowContent.tsx";
+import type {Call} from "../../store/useCallStore.ts";
 
 let highestZIndex = 1;
 
-export default function CallWindow({callSessionId}: {callSessionId: string}) {
+export default function CallWindow({call}: {call: Call}) {
   const windowRef = useRef<HTMLDivElement>(null);
 
   const bringToFront = () => {
@@ -98,7 +99,7 @@ export default function CallWindow({callSessionId}: {callSessionId: string}) {
         height: "225px",
       }}
     >
-      <CallWindowContent callSessionId={callSessionId}/>
+      <CallWindowContent call={call}/>
     </div>
   )
 }

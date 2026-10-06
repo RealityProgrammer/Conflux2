@@ -44,11 +44,11 @@ export const directConversationService = {
     }
   },
 
-  startCall: async (peerId: string): Promise<ServiceResponse<StartCallResult>> => {
+  startDirectCall: async (peerId: string): Promise<ServiceResponse<StartCallResult>> => {
     try {
       const response: AxiosResponse<BackendResponse<StartCallResult>> =
         await apiClient.post<BackendResponse<StartCallResult>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}/call`
+          `/calls/direct/${encodeURIComponent(peerId)}`
         );
 
       return {
@@ -80,20 +80,19 @@ export const directConversationService = {
     }
   },
 
-  acceptCall: async (peerId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  acceptDirectCall: async (callId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
-        await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}/call/accept`
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.patch<BackendResponse>(
+          `/calls/${encodeURIComponent(callId)}/accept`
         );
 
       return {
         success: true,
         statusCode: response.status,
-        data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<TimelineMessageDto>>;
+      const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
