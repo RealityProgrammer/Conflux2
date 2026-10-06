@@ -38,14 +38,14 @@ public sealed class CallController(
     }
     
     [HttpPatch("{callId:guid}/cancel")]
-    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> CancelCall(Guid callId) {
+    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> CancelDirectCall(Guid callId) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await sender.Send(new CancelCallCommand(callId, callerId));
+        var result = await sender.Send(new CancelDirectCallCommand(callId, callerId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
@@ -108,7 +108,7 @@ public sealed class CallController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        var result = await sender.Send(new EndCallCommand(callId, enderId));
+        var result = await sender.Send(new EndDirectCallCommand(callId, enderId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));

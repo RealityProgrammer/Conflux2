@@ -33,13 +33,13 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
 
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
     if (call.calleeProfile.id === event.droppedUserId) {
-      markCallAsDropped(call.callId);
+      markCallAsDropped(call.id);
     }
   });
 
   useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
     if (call.calleeProfile.id === event.enderUserId) {
-      markCallAsEnded(call.callId);
+      markCallAsEnded(call.id);
     }
   });
 
@@ -75,7 +75,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied">("none");
 
   const handleCancelCall = async () => {
-    const result: ServiceResponse<TimelineMessageDto> = await directConversationService.cancelCall(call.calleeProfile.id);
+    const result: ServiceResponse<TimelineMessageDto> = await directConversationService.cancelDirectCall(call.id);
 
     if (result.success) {
       setStatus("cancel");
@@ -94,7 +94,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   useEffect(() => {
     if (status !== "none") {
       const timeoutId = setTimeout(() => {
-        endCall(call.callId);
+        endCall(call.id);
       }, 3000);
 
       return () => {
@@ -109,7 +109,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
       (async () => {
         try {
-          await directConversationService.cancelCall(call.calleeProfile.id);
+          await directConversationService.cancelDirectCall(call.id);
         } catch (err) {
           console.error("Failed to cancel call:", err);
         }
@@ -146,7 +146,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
     if (call.calleeProfile.id === event.calleeUserId) {
-      markCallAsActive(call.callId);
+      markCallAsActive(call.id);
     }
   });
 
@@ -202,7 +202,7 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.callId);
+    endCall(call.id);
   }, 5000);
 
   return (
@@ -274,10 +274,10 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endCall(calleeId);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(call.id);
 
     if (response.success) {
-      markCallAsEnded(call.callId);
+      markCallAsEnded(call.id);
       appendMessage(response.data!);
     } else {
       setIsEndingCall(false);
@@ -343,7 +343,7 @@ function EndedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.callId);
+    endCall(call.id);
   }, 5000);
 
   return (

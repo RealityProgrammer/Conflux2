@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { UserIdentityProfileDto } from "../api/types.ts";
 
 type BaseCall = {
-  callId: string;
+  id: string;
 }
 
 export type OutgoingDirectCallState = "dialing" | "active" | "dropped" | "ended";
@@ -37,15 +37,15 @@ export const useCallStore = create<CallStoreType>((set) => ({
   call: null,
 
   startOutgoingDirectCall: (callId: string, calleeProfile: UserIdentityProfileDto) => set(() => ({
-    call: { type: "outgoing_direct", state: "dialing", callId, calleeProfile },
+    call: { type: "outgoing_direct", state: "dialing", id: callId, calleeProfile },
   })),
 
   startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) => set(() => ({
-    call: { type: "incoming_direct", state: "incoming", callId, callerProfile }
+    call: { type: "incoming_direct", state: "incoming", id: callId, callerProfile }
   })),
 
   markCallAsActive: (callId: string) => set((state) => {
-    if (state.call?.callId === callId) {
+    if (state.call?.id === callId) {
       return { call: { ...state.call, state: "active" } };
     }
 
@@ -53,21 +53,21 @@ export const useCallStore = create<CallStoreType>((set) => ({
   }),
 
   markCallAsDropped: (callId: string) => set((state) => {
-    if (state.call?.callId === callId) {
+    if (state.call?.id === callId) {
       return { call: { ...state.call, state: "dropped" } };
     }
     return state;
   }),
 
   markCallAsEnded: (callId: string) => set((state) => {
-    if (state.call?.callId === callId) {
+    if (state.call?.id === callId) {
       return { call: { ...state.call, state: "ended" } };
     }
     return state;
   }),
 
   endCall: (callId: string) => set((state) => {
-    if (state.call?.callId === callId) {
+    if (state.call?.id === callId) {
       return { call: null };
     }
 

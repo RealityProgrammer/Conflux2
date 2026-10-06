@@ -77,7 +77,7 @@ internal sealed class StartDirectCallHandler(
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (profiles == null) {
-                await callingService.LeaveOrEndCall(callId, callerId);
+                await callingService.DeleteDirectCall(callId);
                 return Errors.NoAcceptedFriendRequest();
             }
             
@@ -123,12 +123,12 @@ internal sealed class StartDirectCallHandler(
 
             return Result<StartCallResult>.Success(new(callId, calleeProfile, messageDto));
         } catch (OperationCanceledException) {
-            await callingService.LeaveOrEndCall(callId, callerId);
+            await callingService.DeleteDirectCall(callId);
             throw;
         } catch (Exception e) {
             logger.LogError(e, "Exception thrown while starting direct call.");
             
-            await callingService.LeaveOrEndCall(callId, callerId);
+            await callingService.DeleteDirectCall(callId);
             return Errors.UnexpectedError();
         }
     }

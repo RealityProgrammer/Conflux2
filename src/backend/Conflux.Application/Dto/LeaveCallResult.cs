@@ -1,3 +1,3 @@
 namespace Conflux.Application.Dto;
 
-public sealed record LeaveCallResult(List<Guid> ParticipantIds);
+public sealed record LeaveCallResult(List<Guid> RemainingParticipantIds);

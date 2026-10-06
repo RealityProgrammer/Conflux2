@@ -8,7 +8,13 @@ public interface ICallingService {
 
     Task<Result<AcceptCallResult>> AcceptDirectCall(Guid callId, Guid calleeId, string calleeConnectionId);
 
-    Task<Result> LeaveOrEndCall(Guid callId, Guid userId);
+    Task<Result> DeleteDirectCall(Guid callId);
+    
+    Task<Result<CancelDirectCallResult>> CancelDirectCall(Guid callId, Guid callerId);
+    
+    Task<Result<RejectDirectCallResult>> RejectDirectCall(Guid callId, Guid calleeId);
+
+    Task<Result<EndDirectCallResult>> EndDirectCall(Guid callId, Guid enderId);
     
     Task<Result<DropCallResult>> DropUserCall(Guid userId, string connectionId, bool isLastConnection);
 

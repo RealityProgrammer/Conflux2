@@ -12,12 +12,15 @@ internal sealed partial class CallingService(
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
     private const int RingingTimeoutSec = 60;
-    private const int ActiveCallTimeoutSec = 43200; // 12 hours
+    private const int ActiveCallTimeoutSec = 12 * 60 * 60; // 12 hours
     
     private static readonly LuaScript 
         InitializeDirectCallScript, 
-        AcceptDirectCallScript, 
-        LeaveOrEndCallScript, 
+        AcceptDirectCallScript,
+        CancelDirectCallScript,
+        RejectDirectCallScript,
+        DeleteDirectCallScript,
+        EndDirectCallScript, 
         DropUserCallScript;
 
     static CallingService() {
@@ -26,15 +29,11 @@ internal sealed partial class CallingService(
             if redis.call("EXISTS", @callerCallStateKey) == 1 then return "CALLER_BUSY" end
             if redis.call("EXISTS", @calleeCallStateKey) == 1 then return "CALLEE_BUSY" end
             
-            -- bound caller to the call
             redis.call("SET", @callerCallStateKey, @callId .. "#" .. @callerConnectionId, "EX", @ttl)
             redis.call("SET", @calleeCallStateKey, @callId, "EX", @ttl)
             
-            redis.call("HSET", @callSessionKey, "type", "Direct", "status", "Ringing", "initiator", @callerId)
+            redis.call("HSET", @callSessionKey, "type", "Direct", "status", "Ringing", "initiator", @callerId, "callee", @calleeId)
             redis.call("EXPIRE", @callSessionKey, @ttl)
-            
-            redis.call("HSET", @participantsKey, @callerId, "Joined", @calleeId, "Ringing")
-            redis.call("EXPIRE", @participantsKey, @ttl)
             
             return "SUCCESS"
             """
@@ -42,19 +41,20 @@ internal sealed partial class CallingService(
 
         AcceptDirectCallScript = LuaScript.Prepare(
             """
-            local status = redis.call("HGET", @callSessionKey, "status")
-            if not status or status ~= "Ringing" then return { "INVALID_STATE" } end
-            
             local type = redis.call("HGET", @callSessionKey, "type")
             if not type or type ~= "Direct" then return { "INVALID_CALL_TYPE" } end
+            
+            local status = redis.call("HGET", @callSessionKey, "status")
+            if not status or status ~= "Ringing" then return { "INVALID_STATE" } end
             
             local callerId = redis.call("HGET", @callSessionKey, "initiator")
             if not callerId then return { "INVALID_STATE" } end
             
-            redis.call("HSET", @callSessionKey, "status", "Active", "at", @activeTime)
+            local calleeId = redis.call("HGET", @callSessionKey, "callee")
+            if not calleeId or calleeId ~= @calleeId then return { "INVALID_STATE" } end
+            
+            redis.call("HSET", @callSessionKey, "status", "Active", "activeTime", @activeTime)
             redis.call("EXPIRE", @callSessionKey, @activeTtl)
-            redis.call("HSET", @participantsKey, @calleeId, "Joined")
-            redis.call("EXPIRE", @participantsKey, @activeTtl)
             
             -- bound callee to the call
             redis.call("SET", @calleeCallStateKey, @callId .. "#" .. @calleeConnectionId, "EX", @activeTtl)
@@ -65,13 +65,109 @@ internal sealed partial class CallingService(
             return { "SUCCESS", callerId }
             """
         );
-
-        LeaveOrEndCallScript = LuaScript.Prepare(
+        
+        CancelDirectCallScript = LuaScript.Prepare(
             """
-            redis.call("DEL", @userCallStateKey)
-            redis.call("HDEL", @participantsKey, @userId)
+            local type = redis.call("HGET", @callSessionKey, "type")
+            if not type or type ~= "Direct" then return { "INVALID_CALL_TYPE" } end
+
+            local status = redis.call("HGET", @callSessionKey, "status")
+            if not status or status ~= "Ringing" then return { "INVALID_STATE" } end
+
+            local callerId = redis.call("HGET", @callSessionKey, "initiator")
+            if not callerId or callerId ~= @callerId then return { "INVALID_STATE" } end
+
+            local calleeId = redis.call("HGET", @callSessionKey, "callee")
+
+            redis.call("DEL", @callSessionKey)
+            redis.call("DEL", "user:{" .. callerId .. "}:call")
+            redis.call("DEL", "user:{" .. calleeId .. "}:call")
+
+            return { "SUCCESS", calleeId }
             """
         );
+        
+        RejectDirectCallScript = LuaScript.Prepare(
+            """
+            local type = redis.call("HGET", @callSessionKey, "type")
+            if not type or type ~= "Direct" then return { "INVALID_CALL_TYPE" } end
+
+            local status = redis.call("HGET", @callSessionKey, "status")
+            if not status or status ~= "Ringing" then return { "INVALID_STATE" } end
+
+            local calleeId = redis.call("HGET", @callSessionKey, "callee")
+            if not calleeId or calleeId ~= @calleeId then return { "INVALID_STATE" } end
+
+            local callerId = redis.call("HGET", @callSessionKey, "initiator")
+
+            redis.call("DEL", @callSessionKey)
+            redis.call("DEL", "user:{" .. callerId .. "}:call")
+            redis.call("DEL", "user:{" .. calleeId .. "}:call")
+
+            return { "SUCCESS", callerId }
+            """
+        );
+
+        DeleteDirectCallScript = LuaScript.Prepare(
+            """
+            local type = redis.call("HGET", @callSessionKey, "type")
+            if not type or type ~= "Direct" then return "INVALID_CALL_TYPE" end
+            
+            local callerId = redis.call("HGET", @callSessionKey, "initiator")
+            local calleeId = redis.call("HGET", @callSessionKey, "callee")
+            
+            redis.call("DEL", @callSessionKey)
+            redis.call("DEL", "user:{" .. callerId .. "}:call")
+            redis.call("DEL", "user:{" .. calleeId .. "}:call")
+            
+            return "SUCCESS"
+            """
+        );
+
+        EndDirectCallScript = LuaScript.Prepare(
+            """
+            local type = redis.call("HGET", @callSessionKey, "type")
+            if not type or type ~= "Direct" then return { "INVALID_CALL_TYPE" } end
+            
+            local status = redis.call("HGET", @callSessionKey, "status")
+            if not status or status ~= "Active" then return { "INVALID_STATE" } end
+            
+            local callerId = redis.call("HGET", @callSessionKey, "initiator")
+            local calleeId = redis.call("HGET", @callSessionKey, "callee")
+            local startTime = redis.call("HGET", @callSessionKey, "activeTime")
+            
+            redis.call("DEL", @callSessionKey)
+            redis.call("DEL", "user:{" .. callerId .. "}:call")
+            redis.call("DEL", "user:{" .. calleeId .. "}:call")
+            
+            local peerId = callerId == @userId and calleeId or callerId;
+            return { "SUCCESS", peerId, @currentTime - startTime }
+            """
+        );
+
+        // LeaveCallScript = LuaScript.Prepare(
+        //     """
+        //     local callState = redis.call("GET", @userCallStateKey);
+        //     
+        //     if not callState then
+        //         return nil
+        //     end
+        //     
+        //     local callId, boundConnectionId = string.match(callState, "([^#]+)#?(.*)")
+        //     local callSessionKey = "call:{" .. callId .. "}:session"
+        //     
+        //     local callType = redis.call("HGET", callSessionKey, "type")
+        //     if not callType or callType ~= "Direct" then return "INVALID_STATE" end
+        //     
+        //     local caller = redis.call("HGET", callSessionKey, "initiator")
+        //     local callee = redis.call("HGET", callSessionKey, "callee")
+        //     
+        //     -- end call if anyone leave: delete caller and callee states and call session
+        //     redis.call("DEL", "user:{" .. caller .. "}:call");
+        //     redis.call("DEL", "user:{" .. callee .. "}:call");
+        //     redis.call("DEL", callSessionKey);
+        //     """
+        // );
 
         DropUserCallScript = LuaScript.Prepare(
             """
@@ -131,7 +227,6 @@ internal sealed partial class CallingService(
             calleeCallStateKey = GetUserCallStateKey(calleeId),
             callId = callId.ToString(),
             callSessionKey = GetCallSessionKey(callId),
-            participantsKey = GetCallParticipantsKey(callId),
             ttl = RingingTimeoutSec,
         });
         
@@ -146,7 +241,6 @@ internal sealed partial class CallingService(
     public async Task<Result<AcceptCallResult>> AcceptDirectCall(Guid callId, Guid calleeId, string calleeConnectionId) {
         var result = await _database.ScriptEvaluateAsync(AcceptDirectCallScript, new {
             callSessionKey = GetCallSessionKey(callId),
-            participantsKey = GetCallParticipantsKey(callId),
             callId = callId.ToString(),
             calleeId = calleeId.ToString(),
             calleeCallStateKey = GetUserCallStateKey(calleeId),
@@ -163,19 +257,69 @@ internal sealed partial class CallingService(
         }
 
         var callerId = Guid.Parse((string)resultValues[1]!);
-
         return Result<AcceptCallResult>.Success(new(callerId));
     }
 
-    public async Task<Result> LeaveOrEndCall(Guid callId, Guid userId) {
-        await _database.ScriptEvaluateAsync(LeaveOrEndCallScript, new {
-            userId = userId.ToString(),
-            userCallStateKey = GetUserCallStateKey(userId),
-            participantsKey = GetCallParticipantsKey(callId),
+    public async Task<Result> DeleteDirectCall(Guid callId) {
+        var result = (string?)await _database.ScriptEvaluateAsync(DeleteDirectCallScript, new {
             callSessionKey = GetCallSessionKey(callId),
         });
+
+        return result == "SUCCESS" ? Result.Success() : Errors.InvalidCallStates();
+    }
+
+    public async Task<Result<CancelDirectCallResult>> CancelDirectCall(Guid callId, Guid callerId) {
+        var result = await _database.ScriptEvaluateAsync(CancelDirectCallScript, new {
+            callSessionKey = GetCallSessionKey(callId),
+            callerId = callerId.ToString(),
+        });
         
-        return Result.Success();
+        var resultValues = (RedisResult[])result!;
+        var status = (string)resultValues[0]!;
+
+        if (status != "SUCCESS") {
+            return Errors.InvalidCallStates();
+        }
+        
+        var calleeId = Guid.Parse((string)resultValues[1]!);
+        return Result<CancelDirectCallResult>.Success(new(calleeId));
+    }
+    
+    public async Task<Result<RejectDirectCallResult>> RejectDirectCall(Guid callId, Guid calleeId) {
+        var result = await _database.ScriptEvaluateAsync(RejectDirectCallScript, new {
+            callSessionKey = GetCallSessionKey(callId),
+            calleeId = calleeId.ToString(),
+        });
+        
+        var resultValues = (RedisResult[])result!;
+        var status = (string)resultValues[0]!;
+
+        if (status != "SUCCESS") {
+            return Errors.InvalidCallStates();
+        }
+        
+        var callerId = Guid.Parse((string)resultValues[1]!);
+        return Result<RejectDirectCallResult>.Success(new(callerId));
+    }
+
+    public async Task<Result<EndDirectCallResult>> EndDirectCall(Guid callId, Guid enderId) {
+        var result = await _database.ScriptEvaluateAsync(EndDirectCallScript, new {
+            callSessionKey = GetCallSessionKey(callId),
+            userId = enderId.ToString(),
+            currentTime = timeProvider.GetUtcNow().ToUnixTimeSeconds(),
+        });
+        
+        var resultValues = (RedisResult[])result!;
+        var status = (string)resultValues[0]!;
+
+        if (status != "SUCCESS") {
+            return Errors.InvalidCallStates();
+        }
+        
+        var peerId = Guid.Parse((string)resultValues[1]!);
+        var callDuration = (int)resultValues[2];
+        
+        return Result<EndDirectCallResult>.Success(new(peerId, TimeSpan.FromSeconds(callDuration)));
     }
 
     public async Task<Result<DropCallResult>> DropUserCall(Guid userId, string connectionId, bool isLastConnection) {
@@ -231,10 +375,6 @@ internal sealed partial class CallingService(
 
     private static string GetCallSessionKey(Guid callId) {
         return $"call:{{{callId}}}:session";
-    }
-
-    private static string GetCallParticipantsKey(Guid callId) {
-        return $"call:{{{callId}}}:participants";
     }
     
     [LoggerMessage(LogLevel.Information, "Found {c} call states in Redis. Wiping...")]

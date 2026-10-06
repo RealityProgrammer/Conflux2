@@ -62,11 +62,11 @@ export const directConversationService = {
     }
   },
 
-  cancelCall: async (peerId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  cancelDirectCall: async (callId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}/call/cancel`
+          `/calls/${encodeURIComponent(callId)}/cancel`
         );
 
       return {
@@ -97,11 +97,11 @@ export const directConversationService = {
     }
   },
 
-  rejectCall: async (peerId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  rejectDirectCall: async (callId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}/call/reject`
+          `/calls/${encodeURIComponent(callId)}/reject`
         );
 
       return {
@@ -115,11 +115,11 @@ export const directConversationService = {
     }
   },
 
-  endCall: async (peerId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  endDirectCall: async (callId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}/call/end`
+          `/calls/${encodeURIComponent(callId)}/end`
         );
 
       return {

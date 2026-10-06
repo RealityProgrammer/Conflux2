@@ -28,13 +28,13 @@ export default function IncomingCallWindowContent({call}: {call: IncomingDirectC
 
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
     if (call.callerProfile.id === event.droppedUserId) {
-      markCallAsDropped(call.callId);
+      markCallAsDropped(call.id);
     }
   });
 
   useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
     if (call.callerProfile.id === event.enderUserId) {
-      markCallAsEnded(call.callId);
+      markCallAsEnded(call.id);
     }
   });
 
@@ -66,10 +66,10 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
   const { appendMessage } = useTimelineMessages(loaderData?.conversationId ?? "");
 
-  const handleDeclineCall = async () => {
+  const handleRejectCall = async () => {
     if (status !== "none") return;
 
-    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectCall(call.callerProfile.id);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectDirectCall(call.id);
 
     if (response.success) {
       setStatus("denied");
@@ -83,11 +83,11 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   const handleAcceptCall = async () => {
     if (status !== "none") return;
 
-    console.log("accept call id", call.callId);
-    const response: ServiceResponse = await directConversationService.acceptDirectCall(call.callId);
+    console.log("accept call id", call.id);
+    const response: ServiceResponse = await directConversationService.acceptDirectCall(call.id);
 
     if (response.success) {
-      markCallAsActive(call.callId);
+      markCallAsActive(call.id);
     } else {
       toast.error(`Failed to accept call.`);
       console.error("Failed to accept call:", response.error);
@@ -97,7 +97,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   useEffect(() => {
     if (status !== "none") {
       const timeoutId = setTimeout(() => {
-        endCall(call.callId);
+        endCall(call.id);
       }, 3000);
 
       return () => {
@@ -184,7 +184,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
 
         {status === "none" && (
           <div className="absolute bottom-2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
-            <IconButton className="size-8" theme="danger" onClick={handleDeclineCall} disabled={status !== "none"}>
+            <IconButton className="size-8" theme="danger" onClick={handleRejectCall} disabled={status !== "none"}>
               <BsTelephoneXFill className="size-7"/>
             </IconButton>
 
@@ -202,7 +202,7 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.callId);
+    endCall(call.id);
   }, 5000);
 
   return (
@@ -268,10 +268,10 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endCall(callerId);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(call.id);
 
     if (response.success) {
-      markCallAsEnded(call.callId);
+      markCallAsEnded(call.id);
       appendMessage(response.data!);
     } else {
       setIsEndingCall(false);
@@ -336,7 +336,7 @@ function EndedPhase({call}: {call: IncomingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.callId);
+    endCall(call.id);
   }, 5000);
 
   return (
