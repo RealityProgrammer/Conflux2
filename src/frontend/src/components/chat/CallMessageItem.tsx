@@ -5,6 +5,7 @@ import type {ReactNode} from "react";
 import {CallEventType} from "../../api/schema.ts";
 import {BsTelephoneMinusFill, BsTelephoneOutboundFill, BsTelephoneXFill} from "react-icons/bs";
 import DateTimeText from "../DateTimeText.tsx";
+import {formatReadableTimeSpan} from "../../utils/formatting.ts";
 
 type CallMessageItemProps = {
   id: string;
@@ -15,7 +16,7 @@ type CallMessageItemProps = {
 };
 
 const ELEMENT_FACTORIES = {
-  [CallEventType.Start]: (displayName: string) => {
+  [CallEventType.Start]: (displayName: string, duration: string | null | undefined) => {
     return (
       <>
         <BsTelephoneOutboundFill className="size-6 fill-green-500 inline mr-4"/>
@@ -24,7 +25,7 @@ const ELEMENT_FACTORIES = {
       </>
     );
   },
-  [CallEventType.Canceled]: (displayName: string) => {
+  [CallEventType.Canceled]: (displayName: string, duration: string | null | undefined) => {
     return (
       <>
         <BsTelephoneMinusFill className="size-6 fill-red-400 inline mr-4"/>
@@ -33,7 +34,7 @@ const ELEMENT_FACTORIES = {
       </>
     );
   },
-  [CallEventType.Denied]: (displayName: string) => {
+  [CallEventType.Denied]: (displayName: string, duration: string | null | undefined) => {
     return (
       <>
         <BsTelephoneXFill className="size-6 fill-red-600 inline mr-4"/>
@@ -42,12 +43,12 @@ const ELEMENT_FACTORIES = {
       </>
     );
   },
-  [CallEventType.End]: (displayName: string) => {
+  [CallEventType.End]: (displayName: string, duration: string | null | undefined) => {
     return (
       <>
         <BsTelephoneMinusFill className="size-6 fill-red-600 inline mr-4"/>
         <span className="font-semibold">{displayName}</span>
-        <span>{" "}ended a call.</span>
+        <span>{" "}ended a call lasted {formatReadableTimeSpan(duration as string)}.</span>
       </>
     );
   },
@@ -66,7 +67,7 @@ export class CallMessageItem extends TimelineItem<CallMessageItemProps> {
     return (
       <div className="pt-1 text-sm">
         <div className="py-1 px-4 hover-highlight">
-          {ELEMENT_FACTORIES[this.data.type](this.data.sender.displayName ?? "???")}
+          {ELEMENT_FACTORIES[this.data.type](this.data.sender.displayName ?? "???", this.data.duration)}
 
           <DateTimeText value={this.data.createdAt} className="ml-2 select-none font-normal text-xs text-gray-400"/>
         </div>
