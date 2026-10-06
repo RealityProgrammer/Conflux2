@@ -1229,7 +1229,10 @@ enum MembershipStatus {
 
 enum MessageType {
   Message
-  Call
+  CallStart
+  CallCancel
+  CallRejected
+  CallEnd
   Pin
   Unpin
 }

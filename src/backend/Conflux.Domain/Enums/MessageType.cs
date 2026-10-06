@@ -2,7 +2,10 @@ namespace Conflux.Domain.Enums;
 
 public enum MessageType {
     Message,
-    Call,
+    CallStart,
+    CallCancel,
+    CallRejected,
+    CallEnd,
     Pin,
     Unpin,
 }

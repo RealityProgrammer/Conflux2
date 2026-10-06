@@ -44,8 +44,8 @@ internal sealed class EndDirectCallHandler(
 
         // append call ended message to conversation
         Message message = new() {
-            Type = MessageType.Call,
-            Properties = new CallProperties(CallEventType.End, Duration: result.Value!.CallDuration),
+            Type = MessageType.CallEnd,
+            Properties = new CallEndProperties(result.Value!.CallDuration),
             Conversation = conversation,
             SenderUserId = command.EnderId,
         };

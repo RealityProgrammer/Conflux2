@@ -2,8 +2,8 @@ import type {
   BackendResponse,
   DirectConversationSummary, GetIncomingDirectCallQueryResult,
   ServiceResponse,
-  StartCallResult, TimelineMessageDto,
-  UserIdentityProfileDto
+  StartCallResult,
+  TimelineMessageDto,
 } from "./types.ts";
 import type {AxiosError, AxiosResponse} from "axios";
 import {apiClient} from "./client.ts";

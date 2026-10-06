@@ -783,7 +783,10 @@ export type MessagePropertiesFilterInput = {
 };
 
 export enum MessageType {
-  Call = 'Call',
+  CallCancel = 'CallCancel',
+  CallEnd = 'CallEnd',
+  CallRejected = 'CallRejected',
+  CallStart = 'CallStart',
   Message = 'Message',
   Pin = 'Pin',
   Unpin = 'Unpin'

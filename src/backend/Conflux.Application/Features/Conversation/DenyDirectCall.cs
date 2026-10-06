@@ -46,8 +46,7 @@ internal sealed class DenyCallHandler(
 
         // append call denied message to conversation
         Message message = new() {
-            Type = MessageType.Call,
-            Properties = new CallProperties(CallEventType.Denied, Duration: null),
+            Type = MessageType.CallRejected,
             Conversation = conversation,
             SenderUserId = calleeId,
         };

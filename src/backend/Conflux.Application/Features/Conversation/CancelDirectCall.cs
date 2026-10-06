@@ -46,8 +46,7 @@ internal sealed class CancelDirectCallHandler(
         
         // append call canceled message to conversation
         Message message = new() {
-            Type = MessageType.Call,
-            Properties = new CallProperties(CallEventType.Canceled, Duration: null),
+            Type = MessageType.CallCancel,
             Conversation = conversation,
             SenderUserId = callerId,
         };

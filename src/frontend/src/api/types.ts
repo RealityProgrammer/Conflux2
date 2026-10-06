@@ -51,6 +51,5 @@ export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryI
 export type ServerDetailDto = components["schemas"]["ServerDetailDto"];
 export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
-export type CallProperties = Omit<components["schemas"]["MessagePropertiesCallProperties"], "$type">;
-export type CallEventType = components["schemas"]["CallEventType"];
+export type CallEndProperties = Omit<components["schemas"]["MessagePropertiesCallEndProperties"], "$type">;
 export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomingDirectCallQueryResult"];

@@ -88,8 +88,7 @@ internal sealed class StartDirectCallHandler(
             
             // append the start call message to conversation
             Message createdMessage = new Message {
-                Type = MessageType.Call,
-                Properties = new CallProperties(CallEventType.Start, Duration: null),
+                Type = MessageType.CallStart,
                 Conversation = conversation,
                 SenderUserId = command.CallerId,
             };

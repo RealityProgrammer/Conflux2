@@ -5,12 +5,14 @@ import {DateSeparator} from "../components/chat/DateSeparator.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {SendingMessage} from "../components/chat/SendingMessage.tsx";
 import {MessageType} from "../api/schema.ts";
-import {CallMessageItem} from "../components/chat/CallMessageItem.tsx";
-import type {CallProperties} from "../api/types.ts";
+import {CallStartItem} from "../components/chat/CallStartItem.tsx";
+import type {CallEndProperties} from "../api/types.ts";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 import {PinMessageItem} from "../components/chat/PinMessageItem.tsx";
 import {userService} from "../api/userService.ts";
 import useTimelineMessages from "./useTimelineMessages.ts";
+import {CallCancelItem} from "../components/chat/CallCancelItem.tsx";
+import {CallEndItem} from "../components/chat/CallEndItem.tsx";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -83,14 +85,36 @@ export default function useTimelineItems(
           messageHasHeader = true;
 
           switch (message.type) {
-            case MessageType.Call:
-              const callProperties: CallProperties = message.properties as CallProperties;
-              items.push(new CallMessageItem({
+            case MessageType.CallStart:
+              items.push(new CallStartItem({
                 id: message.id,
                 sender: message.sender!,
-                type: callProperties.type,
-                duration: callProperties.duration,
                 createdAt: new Date(message.createdAt),
+              }))
+              break;
+
+            case MessageType.CallCancel:
+              items.push(new CallCancelItem({
+                id: message.id,
+                sender: message.sender!,
+                createdAt: new Date(message.createdAt),
+              }))
+              break;
+
+            case MessageType.CallRejected:
+              items.push(new CallCancelItem({
+                id: message.id,
+                sender: message.sender!,
+                createdAt: new Date(message.createdAt),
+              }))
+              break;
+
+            case MessageType.CallEnd:
+              items.push(new CallEndItem({
+                id: message.id,
+                sender: message.sender!,
+                createdAt: new Date(message.createdAt),
+                duration: (message.properties as CallEndProperties).duration,
               }))
               break;
 

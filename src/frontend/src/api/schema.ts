@@ -2009,8 +2009,6 @@ export interface components {
             name: string;
             type: string;
         };
-        /** @enum {string} */
-        CallEventType: CallEventType;
         ChannelCategoryCreateRequest: {
             name: string;
         };
@@ -2090,12 +2088,11 @@ export interface components {
         };
         /** @enum {string} */
         MessageLoadDirection: MessageLoadDirection;
-        MessageProperties: components["schemas"]["MessagePropertiesCallProperties"];
-        MessagePropertiesCallProperties: {
+        MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
+        MessagePropertiesCallEndProperties: {
             /** @enum {integer} */
-            $type?: MessagePropertiesCallProperties$type;
-            type: components["schemas"]["CallEventType"];
-            duration: null | string;
+            $type?: MessagePropertiesCallEndProperties$type;
+            duration: string;
         };
         /** @enum {string} */
         MessageType: MessageType;
@@ -2333,12 +2330,6 @@ export interface operations {
         };
     };
 }
-export enum CallEventType {
-    Start = "Start",
-    End = "End",
-    Canceled = "Canceled",
-    Denied = "Denied"
-}
 export enum ChannelType {
     Text = "Text",
     Voice = "Voice"
@@ -2372,12 +2363,15 @@ export enum MessageLoadDirection {
     After = "After",
     Around = "Around"
 }
-export enum MessagePropertiesCallProperties$type {
+export enum MessagePropertiesCallEndProperties$type {
     Value1 = 1
 }
 export enum MessageType {
     Message = "Message",
-    Call = "Call",
+    CallStart = "CallStart",
+    CallCancel = "CallCancel",
+    CallRejected = "CallRejected",
+    CallEnd = "CallEnd",
     Pin = "Pin",
     Unpin = "Unpin"
 }
