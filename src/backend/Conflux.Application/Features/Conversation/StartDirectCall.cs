@@ -10,14 +10,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record StartCallCommand(
-    Guid CallerId, 
+public sealed record StartDirectCallCommand(
+    Guid CallerId,
+    string CallerConnectionId,
     Guid CalleeId
 ) : ICommand<Result<StartCallResult>>;
 
-public sealed record IncomingCallNotification(Guid CalleeId, UserIdentityProfileDto CallerProfile) : INotification;
+public sealed record IncomingCallNotification(Guid CallId, Guid CalleeId, UserIdentityProfileDto CallerProfile) : INotification;
 
-internal sealed class StartCallHandler(
+internal sealed class StartDirectCallHandler(
     ICallingService callingService,
     IUserRepository userRepository,
     IFriendRequestRepository friendRequestRepository,
@@ -25,13 +26,16 @@ internal sealed class StartCallHandler(
     IConversationParticipantsProvider conversationParticipantsProvider,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
-    ILogger<StartCallHandler> logger
-) : ICommandHandler<StartCallCommand, Result<StartCallResult>> {
+    ILogger<StartDirectCallHandler> logger
+) : ICommandHandler<StartDirectCallCommand, Result<StartCallResult>> {
     public async ValueTask<Result<StartCallResult>> Handle(
-        StartCallCommand command, 
+        StartDirectCallCommand command, 
         CancellationToken cancellationToken
     ) {
-        var conversationResult = await directConversationProvider.GetOrCreate(command.CallerId, command.CalleeId, cancellationToken);
+        Guid callerId = command.CallerId;
+        Guid calleeId = command.CalleeId;
+        
+        var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, cancellationToken);
 
         if (!conversationResult.IsSuccess) {
             return conversationResult.Error;
@@ -39,11 +43,13 @@ internal sealed class StartCallHandler(
 
         Domain.Entities.Conversation conversation = conversationResult.Value!;
         
-        Result lockResult = await callingService.LockCallerAndCallee(command.CallerId, command.CalleeId);
-
-        if (!lockResult.IsSuccess) {
-            return lockResult.Error;
+        Result<Guid> callIdResult = await callingService.InitializeDirectCall(callerId, command.CallerConnectionId, calleeId);
+        
+        if (!callIdResult.IsSuccess) {
+            return callIdResult.Error;
         }
+
+        Guid callId = callIdResult.Value;
 
         try {
             var profiles = await friendRequestRepository.AsQueryable()
@@ -71,14 +77,14 @@ internal sealed class StartCallHandler(
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (profiles == null) {
-                await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
+                await callingService.LeaveOrEndCall(callId, callerId);
                 return Errors.NoAcceptedFriendRequest();
             }
             
             UserIdentityProfileDto callerProfile = profiles.Sender.Id == command.CallerId ? profiles.Sender : profiles.Receiver;
             UserIdentityProfileDto calleeProfile = profiles.Sender.Id == command.CallerId ? profiles.Receiver : profiles.Sender;
             
-            await publisher.Publish(new IncomingCallNotification(calleeProfile.Id, callerProfile), CancellationToken.None);
+            await publisher.Publish(new IncomingCallNotification(callId, calleeProfile.Id, callerProfile), CancellationToken.None);
             
             // append the start call message to conversation
             Message createdMessage = new Message {
@@ -115,14 +121,14 @@ internal sealed class StartCallHandler(
                 );
             }
 
-            return Result<StartCallResult>.Success(new(calleeProfile, messageDto));
+            return Result<StartCallResult>.Success(new(callId, calleeProfile, messageDto));
         } catch (OperationCanceledException) {
-            await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
+            await callingService.LeaveOrEndCall(callId, callerId);
             throw;
         } catch (Exception e) {
             logger.LogError(e, "Exception thrown while starting direct call.");
             
-            await callingService.UnlockCallerAndCallee(command.CallerId, command.CalleeId);
+            await callingService.LeaveOrEndCall(callId, callerId);
             return Errors.UnexpectedError();
         }
     }

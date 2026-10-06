@@ -12,8 +12,8 @@ internal sealed class CallDroppedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<CallDroppedNotification> {
     public async ValueTask Handle(CallDroppedNotification notification, CancellationToken cancellationToken) {
-        await hubContext.Clients
-            .User(notification.PeerId.ToString())
-            .DirectCallDropped(new(notification.DropperId), cancellationToken);
+        // await hubContext.Clients
+        //     .User(notification.PeerId.ToString())
+        //     .DirectCallDropped(new(notification.DropperId), cancellationToken);
     }
 }

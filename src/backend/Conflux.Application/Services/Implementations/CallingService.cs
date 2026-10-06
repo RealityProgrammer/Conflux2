@@ -1,241 +1,202 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Enums;
 using Conflux.Domain;
-using MemoryPack;
 using StackExchange.Redis;
 
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed partial class CallingService(
     IConnectionMultiplexer connectionMultiplexer,
+    TimeProvider timeProvider,
     ILogger<CallingService> logger
 ) : ICallingService {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
+
+    private const int RingingTimeoutSec = 60;
+    private const int ActiveCallTimeoutSec = 43200; // 12 hours
     
-    public async Task<Result> LockCallerAndCallee(Guid callerId, Guid calleeId) {
-        var callerKey = GetStateKey(callerId);
-        var calleeKey = GetStateKey(calleeId);
+    private static readonly LuaScript 
+        InitializeDirectCallScript, 
+        AcceptDirectCallScript, 
+        LeaveOrEndCallScript, 
+        DropUserCallScript;
+
+    static CallingService() {
+        InitializeDirectCallScript = LuaScript.Prepare(
+            """
+            if redis.call("EXISTS", @callerCallStateKey) == 1 then return "CALLER_BUSY" end
+            if redis.call("EXISTS", @calleeCallStateKey) == 1 then return "CALLEE_BUSY" end
+            
+            -- bound caller to the call
+            redis.call("SET", @callerCallStateKey, @callId .. "#" .. @callerConnectionId, "EX", @ttl)
+            redis.call("SET", @calleeCallStateKey, @callId, "EX", @ttl)
+            
+            redis.call("HSET", @callSessionKey, "type", "Direct", "status", "Ringing", "initiator", @callerId)
+            redis.call("EXPIRE", @callSessionKey, @ttl)
+            
+            redis.call("HSET", @participantsKey, @callerId, "Joined", @calleeId, "Ringing")
+            redis.call("EXPIRE", @participantsKey, @ttl)
+            
+            return "SUCCESS"
+            """
+        );
+
+        AcceptDirectCallScript = LuaScript.Prepare(
+            """
+            local status = redis.call("HGET", @callSessionKey, "status")
+            local type = redis.call("HGET", @callSessionKey, "type")
+            if status ~= "Ringing" or type ~= "Direct" then return { "INVALID_STATE" } end
+            
+            redis.call("HSET", @callSessionKey, "status", "Active", "at", @activeTime)
+            redis.call("EXPIRE", @callSessionKey, @activeTtl)
+            redis.call("HSET", @participantsKey, @calleeId, "Joined")
+            redis.call("EXPIRE", @participantsKey, @activeTtl)
+            
+            -- bound callee to the call
+            redis.call("SET", @calleeCallStateKey, @callId .. "#" .. @calleeConnectionId, "EX", @activeTtl)
+            redis.call("EXPIRE", @calleeCallStateKey, @activeTtl)
+            
+            local callerId = redis.call("HGET", @callSessionKey, "initiator")
+            redis.call("EXPIRE", "user:" .. initiator .. ":call", @activeTtl)
+            
+            return { "SUCCESS", initiator }
+            """
+        );
+
+        LeaveOrEndCallScript = LuaScript.Prepare(
+            """
+            redis.call("DEL", @userCallStateKey)
+            redis.call("HDEL", @participantsKey, @userId)
+            """
+        );
+
+        DropUserCallScript = LuaScript.Prepare(
+            """
+            local callState = redis.call("GET", @userCallStateKey);
+            
+            if not callState then
+                return nil
+            end
+            
+            local callId, boundConnectionId = string.match(callState, "([^#]+)#?(.*)")
+            
+            if boundConnectionId ~= nil and boundConnectionId ~= "" then
+                --[[
+                call state is bounded to specific connection instance, return instantly if disconnection
+                come from any instance other than bounded id
+                ]]
+                
+                if boundConnectionId ~= connectionId then
+                    return nil
+                end
+            else
+                -- call state is unbounded, only drop if all connection instances of the user is disconnected.
+            
+                if not @isLastConnection then
+                    return nil
+                end
+            end
+            
+            local callSessionKey = 'call:{' .. callId .. '}:session'
+            local participantsKey = 'call:{' .. callId .. '}:participants'
+            
+            local allParticipants = redis.call("HKEYS", participantsKey)
+            local remainingPeers = {}
+            
+            for _, participantId in pairs(allParticipants) do
+                if participantId ~= @userId then
+                    table.insert(remainingPeers, pId)
+                end
+            end
+            
+            redis.call("DEL", @userCallStateKey);
+            redis.call("HDEL", participantsKey, @userId);
+            
+            return { callId, remainingPeers }
+            """
+        );
+    }
+
+    public async Task<Result<Guid>> InitializeDirectCall(Guid callerId, string callerConnectionId, Guid calleeId) {
+        Guid callId = Guid.NewGuid();
+
+        var result = (string?)await _database.ScriptEvaluateAsync(InitializeDirectCallScript, new {
+            callerId,
+            calleeId,
+            callerCallStateKey = GetUserCallStateKey(callerId),
+            callerConnectionId,
+            calleeCallStateKey = GetUserCallStateKey(calleeId),
+            callId,
+            ttl = RingingTimeoutSec,
+            callSessionKey = GetCallSessionKey(callId),
+            participantsKey = GetCallParticipantsKey(callId),
+        });
         
-        var callTimeout = TimeSpan.FromSeconds(60);
+        return result switch {
+            "SUCCESS" => Result<Guid>.Success(callId),
+            "CALLER_BUSY" => Errors.AlreadyInCall(),
+            "CALLEE_BUSY" => Errors.CalleeBusy(),
+            _ => Errors.InvalidCallStates(),
+        };
+    }
 
-        CallSessionState callerState = new(CallState.Ringing, calleeId);
-        bool callerLocked = await _database.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(callerState), callTimeout, When.NotExists);
-        if (!callerLocked) {
-            return Errors.AlreadyInCall();
+    public async Task<Result<AcceptCallResult>> AcceptDirectCall(Guid callId, Guid calleeId, string calleeConnectionId) {
+        var result = await _database.ScriptEvaluateAsync(AcceptDirectCallScript, new {
+            callSessionKey = GetCallSessionKey(callId),
+            participantsKey = GetCallParticipantsKey(callId),
+            callId,
+            calleeCallStateKey = GetUserCallStateKey(calleeId),
+            calleeConnectionId,
+            activeTtl = ActiveCallTimeoutSec,
+            activeTime = timeProvider.GetUtcNow().ToUnixTimeSeconds(),
+        });
+        
+        var resultValues = (RedisResult[])result!;
+        var status = (string)resultValues[0]!;
+
+        if (status != "SUCCESS") {
+            return Errors.InvalidCallStates();
         }
 
-        CallSessionState calleeState = new(CallState.Ringing, callerId);
-        bool calleeLocked = await _database.StringSetAsync(calleeKey, MemoryPackSerializer.Serialize(calleeState), callTimeout, When.NotExists);
-        if (!calleeLocked) {
-            await _database.KeyDeleteAsync(callerKey);
-            return Errors.CalleeBusy();
-        }
+        var callerId = Guid.Parse((string)resultValues[1]!);
 
+        return Result<AcceptCallResult>.Success(new(callerId));
+    }
+
+    public async Task<Result> LeaveOrEndCall(Guid callId, Guid userId) {
+        await _database.ScriptEvaluateAsync(LeaveOrEndCallScript, new {
+            userId,
+            userCallStateKey = GetUserCallStateKey(userId),
+            participantsKey = GetCallParticipantsKey(callId),
+            callSessionKey = GetCallSessionKey(callId),
+        });
+        
         return Result.Success();
     }
 
-    public async Task<Result> UnlockCallerAndCallee(Guid callerId, Guid calleeId) {
-        var callerKey = GetStateKey(callerId);
-        var calleeKey = GetStateKey(calleeId);
-
-        RedisValue[] serializedStates = await _database.StringGetAsync([callerKey, calleeKey]);
-
-        if (!serializedStates[0].HasValue || !serializedStates[1].HasValue) {
-            return Errors.InvalidCallStates();
-        }
+    public async Task<Result<DropCallResult>> DropUserCall(Guid userId, string connectionId, bool isLastConnection) {
+        var result = await _database.ScriptEvaluateAsync(DropUserCallScript, new {
+            userCallStateKey = GetUserCallStateKey(userId),
+            userId,
+            connectionId,
+            isLastConnection
+        });
         
-        CallSessionState? callerState, calleeState;
-
-        try {
-            callerState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[0]);
-            if (callerState is not { State: CallState.Ringing }) {
-                return Errors.InvalidCallStates();
-            }
-        } catch {
-            // potentially corrupted state, delete it
-            await _database.KeyDeleteAsync(callerKey);
-            return Errors.InvalidCallStates();
-        }
-
-        try {
-            calleeState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[1]);
-            if (calleeState is not { State: CallState.Ringing }) {
-                return Errors.InvalidCallStates();
-            }
-        } catch {
-            // potentially corrupted state, delete it
-            await _database.KeyDeleteAsync(calleeKey);
-            return Errors.InvalidCallStates();
-        }
-
-        if (callerState.PeerId != calleeId || calleeState.PeerId != callerId) {
-            return Errors.InvalidCallStates();
-        }
-        
-        return Result.Success();
-    }
-
-    public async Task<Result> CancelCall(Guid callerId, Guid calleeId) {
-        return await SafeDeleteRingingCall(callerId, calleeId);
-    }
-
-    public async Task<Result> DenyCall(Guid callerId, Guid calleeId) {
-        return await SafeDeleteRingingCall(callerId, calleeId);
-    }
-
-    public async Task<Result> AcceptCall(Guid callerId, Guid calleeId) {
-        var callerKey = GetStateKey(callerId);
-        var calleeKey = GetStateKey(calleeId);
-
-        RedisValue[] serializedStates = await _database.StringGetAsync([callerKey, calleeKey]);
-
-        if (!serializedStates[0].HasValue || !serializedStates[1].HasValue) {
-            return Errors.InvalidCallStates();
-        }
-
-        CallSessionState? callerState, calleeState;
-
-        try {
-            callerState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[0]);
-            if (callerState is not { State: CallState.Ringing }) {
-                return Errors.InvalidCallStates();
-            }
-        } catch {
-            // potentially corrupted state, delete it
-            await _database.KeyDeleteAsync(callerKey);
-            return Errors.InvalidCallStates();
-        }
-
-        try {
-            calleeState = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates[1]);
-            if (calleeState is not { State: CallState.Ringing }) {
-                return Errors.InvalidCallStates();
-            }
-        } catch {
-            // potentially corrupted state, delete it
-            await _database.KeyDeleteAsync(calleeKey);
-            return Errors.InvalidCallStates();
-        }
-
-        if (callerState.PeerId != calleeId || calleeState.PeerId != callerId) {
-            return Errors.InvalidCallStates();
-        }
-
-        callerState = callerState with { State = CallState.Active };
-        calleeState = calleeState with { State = CallState.Active };
-        var activeTimeout = TimeSpan.FromHours(12);
-        
-        ITransaction transaction = _database.CreateTransaction();
-
-        transaction.AddCondition(Condition.KeyExists(callerKey));
-        transaction.AddCondition(Condition.KeyExists(calleeKey));
-        
-        _ = transaction.StringSetAsync(callerKey, MemoryPackSerializer.Serialize(callerState), activeTimeout);
-        _ = transaction.StringSetAsync(calleeKey, MemoryPackSerializer.Serialize(calleeState), activeTimeout);
-        
-        bool committed = await transaction.ExecuteAsync();
-        
-        if (!committed) {
-            // caller hung up (or timeout occurred) right as the callee clicked accept.
-            return Errors.InvalidCallStates(); 
-        }
-
-        return Result.Success();
-    }
-
-    public async Task<Result<Guid>> DropCall(Guid userId, string userConnectionId) {
-        var stateKey = GetStateKey(userId);
-        RedisValue serializedStates = await _database.StringGetAsync(stateKey);
-
-        if (!serializedStates.HasValue) return Errors.ResourceNotFound();
-
-        CallSessionState? state;
-
-        try {
-            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
-        } catch {
-            await _database.KeyDeleteAsync(stateKey);
-            return Errors.InvalidCallStates();
-        }
-        
-        if (state == null) {
+        if (result.IsNull) {
             return Errors.ResourceNotFound();
         }
         
-        var peerKey = GetStateKey(state.PeerId);
-        await _database.KeyDeleteAsync([stateKey, peerKey]);
-
-        return Result<Guid>.Success(state.PeerId);
+        var resultValues = (RedisResult[])result!;
+        var callId = Guid.Parse((string)resultValues[0]!);
+        var remainingPeerIds = ((RedisResult[])resultValues[1]!)
+            .Select(x => Guid.Parse((string)x!))
+            .ToList();
+        
+        return Result<DropCallResult>.Success(new(callId, remainingPeerIds));
     }
 
-    public async Task<Result<Guid>> EndCall(Guid enderId, Guid peerId) {
-        var stateKey = GetStateKey(enderId);
-        RedisValue serializedStates = await _database.StringGetAsync(stateKey);
-
-        if (!serializedStates.HasValue) return Errors.ResourceNotFound();
-
-        CallSessionState? state;
-
-        try {
-            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedStates);
-        } catch {
-            await _database.KeyDeleteAsync(stateKey);
-            return Errors.InvalidCallStates();
-        }
-        
-        if (state is not { State: CallState.Active } || state.PeerId != peerId) return Errors.InvalidCallStates();
-        
-        var peerKey = GetStateKey(state.PeerId);
-        await _database.KeyDeleteAsync([stateKey, peerKey]);
-
-        return Result<Guid>.Success(state.PeerId);
-    }
-
-    public async Task<Result<Guid>> GetCurrentRingingCall(Guid userId) {
-        var stateKey = GetStateKey(userId);
-        var serializedState = await _database.StringGetAsync(stateKey);
-
-        if (!serializedState.HasValue) return Errors.ResourceNotFound();
-
-        CallSessionState? state;
-
-        try {
-            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
-        } catch {
-            await _database.KeyDeleteAsync(stateKey);
-            return Errors.InvalidCallStates();
-        }
-        
-        if (state is not { State: CallState.Ringing }) return Errors.ResourceNotFound();
-        
-        return Result<Guid>.Success(state.PeerId);
-    }
-
-    private async Task<Result> SafeDeleteRingingCall(Guid actionUserId, Guid peerId) {
-        var stateKey = GetStateKey(actionUserId);
-        var serializedState = await _database.StringGetAsync(stateKey);
-
-        if (!serializedState.HasValue) return Result.Success(); 
-
-        CallSessionState? state;
-
-        try {
-            state = MemoryPackSerializer.Deserialize<CallSessionState>(serializedState);
-        } catch {
-            await _database.KeyDeleteAsync(stateKey);
-            return Errors.InvalidCallStates();
-        }
-        
-        if (state is not { State: CallState.Ringing } || state.PeerId != peerId) {
-            return Errors.InvalidCallStates();
-        }
-
-        await _database.KeyDeleteAsync([
-            stateKey,
-            GetStateKey(peerId),
-        ]);
-
-        return Result.Success();
+    public async Task<Guid?> GetUserActiveCallId(Guid userId) {
+        var callIdStr = await _database.StringGetAsync(GetUserCallStateKey(userId));
+        return callIdStr.HasValue && Guid.TryParse((string?)callIdStr, out Guid callId) ? callId : null;
     }
 
     public async Task CleanCallStates() {
@@ -246,16 +207,23 @@ internal sealed partial class CallingService(
         
         var keys = server.Keys(pattern: "call:state:*").ToArray();
         
-        if (keys.Length > 0)
-        {
+        if (keys.Length > 0) {
             LogFoundCallStates(logger, keys.Length);
             await db.KeyDeleteAsync(keys);
             logger.LogInformation("Successfully wiped call states.");
         }
     }
 
-    private static string GetStateKey(Guid userId) {
-        return $"call:state:{userId}";
+    private static string GetUserCallStateKey(Guid userId) {
+        return $"user:{userId}:call";
+    }
+
+    private static string GetCallSessionKey(Guid callId) {
+        return $"call:{{{callId}}}:session";
+    }
+
+    private static string GetCallParticipantsKey(Guid callId) {
+        return $"call:{{{callId}}}:participants";
     }
     
     [LoggerMessage(LogLevel.Information, "Found {c} call states in Redis. Wiping...")]

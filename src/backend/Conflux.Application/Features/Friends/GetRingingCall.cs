@@ -12,12 +12,16 @@ internal sealed class GetRingingCallHandler(
     IUserRepository userRepository
 ) : IQueryHandler<GetRingingCallQuery, Result<UserIdentityProfileDto>> {
     public async ValueTask<Result<UserIdentityProfileDto>> Handle(GetRingingCallQuery query, CancellationToken cancellationToken) {
-        var peerIdResult = await callingService.GetCurrentRingingCall(query.UserId);
-        
-        if (!peerIdResult.IsSuccess) {
-            return peerIdResult.Error;
-        }
-        
-        return await userRepository.GetIdentityProfile(peerIdResult.Value, cancellationToken);
+        return Errors.ResourceNotFound();
+
+        // Guid? callIdResult = await callingService.GetUserActiveCallId(query.UserId);
+        //
+        // if (callIdResult == null) {
+        //     return Errors.ResourceNotFound();
+        // }
+        //
+        // Guid callId = callIdResult.Value;
+        //
+        // return await userRepository.GetIdentityProfile(peerIdResult.Value, cancellationToken);
     }
 }

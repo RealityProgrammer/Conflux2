@@ -1,24 +1,27 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record DropCallCommand(Guid DropperId, string DropperConnectionId) : ICommand<Result>;
+public sealed record DropCallCommand(Guid UserId, string ConnectionId, bool IsLastConnection) : ICommand<Result>;
 
-public sealed record CallDroppedNotification(Guid PeerId, Guid DropperId) : INotification;
+public sealed record CallDroppedNotification(Guid CallId, Guid DropperId, IReadOnlyCollection<Guid> RemainingParticipants) : INotification;
 
 internal sealed class DropCallHandler(
     ICallingService callingService,
     IPublisher publisher
 ) : ICommandHandler<DropCallCommand, Result> {
     public async ValueTask<Result> Handle(DropCallCommand command, CancellationToken cancellationToken) {
-        Result<Guid> result = await callingService.DropCall(command.DropperId, command.DropperConnectionId);
+        Result<DropCallResult> result = await callingService.DropUserCall(command.UserId, command.ConnectionId, command.IsLastConnection);
 
         if (!result.IsSuccess) {
-            return result;
+            return Result.Success();
         }
+        
+        var dropResult = result.Value!;
 
-        await publisher.Publish(new CallDroppedNotification(result.Value, command.DropperId), CancellationToken.None);
+        await publisher.Publish(new CallDroppedNotification(dropResult.CallId, command.UserId, dropResult.RemainingParticipants), CancellationToken.None);
         return result;
     }
 }

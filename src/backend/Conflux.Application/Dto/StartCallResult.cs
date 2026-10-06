@@ -2,4 +2,4 @@ using Conflux.Domain.Dto;
 
 namespace Conflux.Application.Dto;
 
-public sealed record StartCallResult(UserIdentityProfileDto CalleeProfile, TimelineMessageDto Message);
+public sealed record StartCallResult(Guid CallId, UserIdentityProfileDto CalleeProfile, TimelineMessageDto Message);
