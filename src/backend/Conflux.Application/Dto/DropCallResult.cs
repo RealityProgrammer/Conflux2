@@ -1,3 +1,3 @@
 namespace Conflux.Application.Dto;
 
-public sealed record DropCallResult(Guid CallId, List<Guid> RemainingParticipants);
+public sealed record DropCallResult(Guid CallId, Guid PeerId);

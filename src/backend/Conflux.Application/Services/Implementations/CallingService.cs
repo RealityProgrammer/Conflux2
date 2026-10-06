@@ -134,6 +134,10 @@ internal sealed partial class CallingService(
             
             local callerId = redis.call("HGET", @callSessionKey, "initiator")
             local calleeId = redis.call("HGET", @callSessionKey, "callee")
+            
+            if not callerId or not calleeId then return { "INVALID_STATE" } end
+            if callerId ~= @userId and calleeId ~= @userId then return { "INVALID_STATE" } end
+            
             local startTime = redis.call("HGET", @callSessionKey, "activeTime")
             
             redis.call("DEL", @callSessionKey)
@@ -145,37 +149,10 @@ internal sealed partial class CallingService(
             """
         );
 
-        // LeaveCallScript = LuaScript.Prepare(
-        //     """
-        //     local callState = redis.call("GET", @userCallStateKey);
-        //     
-        //     if not callState then
-        //         return nil
-        //     end
-        //     
-        //     local callId, boundConnectionId = string.match(callState, "([^#]+)#?(.*)")
-        //     local callSessionKey = "call:{" .. callId .. "}:session"
-        //     
-        //     local callType = redis.call("HGET", callSessionKey, "type")
-        //     if not callType or callType ~= "Direct" then return "INVALID_STATE" end
-        //     
-        //     local caller = redis.call("HGET", callSessionKey, "initiator")
-        //     local callee = redis.call("HGET", callSessionKey, "callee")
-        //     
-        //     -- end call if anyone leave: delete caller and callee states and call session
-        //     redis.call("DEL", "user:{" .. caller .. "}:call");
-        //     redis.call("DEL", "user:{" .. callee .. "}:call");
-        //     redis.call("DEL", callSessionKey);
-        //     """
-        // );
-
         DropUserCallScript = LuaScript.Prepare(
             """
             local callState = redis.call("GET", @userCallStateKey);
-            
-            if not callState then
-                return nil
-            end
+            if not callState then return nil end
             
             local callId, boundConnectionId = string.match(callState, "([^#]+)#?(.*)")
             
@@ -185,11 +162,11 @@ internal sealed partial class CallingService(
                 come from any instance other than bounded id
                 ]]
                 
-                if boundConnectionId ~= connectionId then
+                if boundConnectionId ~= @connectionId then
                     return nil
                 end
             else
-                -- call state is unbounded, only drop if all connection instances of the user is disconnected.
+                -- call state is unbounded (ringing), only drop if all connection instances of the user is disconnected.
             
                 if not @isLastConnection then
                     return nil
@@ -197,21 +174,36 @@ internal sealed partial class CallingService(
             end
             
             local callSessionKey = 'call:{' .. callId .. '}:session'
-            local participantsKey = 'call:{' .. callId .. '}:participants'
+            local callType = redis.call("HGET", callSessionKey, "type")
             
-            local allParticipants = redis.call("HKEYS", participantsKey)
-            local remainingPeers = {}
-            
-            for _, participantId in pairs(allParticipants) do
-                if participantId ~= @userId then
-                    table.insert(remainingPeers, pId)
-                end
+            if not callType or callType ~= "Direct" then
+                redis.call("DEL", @userCallStateKey)
+                return nil
             end
             
-            redis.call("DEL", @userCallStateKey);
-            redis.call("HDEL", participantsKey, @userId);
+            local callerId = redis.call("HGET", callSessionKey, "initiator")
+            local calleeId = redis.call("HGET", callSessionKey, "callee")
             
-            return { callId, remainingPeers }
+            if not callerId or not calleeId then
+                redis.call("DEL", callSessionKey)
+                redis.call("DEL", @userCallStateKey)
+                return nil
+            end
+            
+            local peerId = nil
+            if @userId == callerId then
+                peerId = calleeId
+            elseif @userId == calleeId then
+                peerId = callerId
+            else
+                return nil
+            end
+            
+            redis.call("DEL", callSessionKey)
+            redis.call("DEL", "user:{" .. callerId .. "}:call")
+            redis.call("DEL", "user:{" .. calleeId .. "}:call")
+            
+            return { callId, peerId }
             """
         );
     }
@@ -257,7 +249,7 @@ internal sealed partial class CallingService(
         }
 
         var callerId = Guid.Parse((string)resultValues[1]!);
-        return Result<AcceptCallResult>.Success(new(callerId));
+        return Result<AcceptCallResult>.Success(new(callId, callerId));
     }
 
     public async Task<Result> DeleteDirectCall(Guid callId) {
@@ -282,7 +274,7 @@ internal sealed partial class CallingService(
         }
         
         var calleeId = Guid.Parse((string)resultValues[1]!);
-        return Result<CancelDirectCallResult>.Success(new(calleeId));
+        return Result<CancelDirectCallResult>.Success(new(callId, calleeId));
     }
     
     public async Task<Result<RejectDirectCallResult>> RejectDirectCall(Guid callId, Guid calleeId) {
@@ -299,7 +291,7 @@ internal sealed partial class CallingService(
         }
         
         var callerId = Guid.Parse((string)resultValues[1]!);
-        return Result<RejectDirectCallResult>.Success(new(callerId));
+        return Result<RejectDirectCallResult>.Success(new(callId, callerId));
     }
 
     public async Task<Result<EndDirectCallResult>> EndDirectCall(Guid callId, Guid enderId) {
@@ -319,7 +311,7 @@ internal sealed partial class CallingService(
         var peerId = Guid.Parse((string)resultValues[1]!);
         var callDuration = (int)resultValues[2];
         
-        return Result<EndDirectCallResult>.Success(new(peerId, TimeSpan.FromSeconds(callDuration)));
+        return Result<EndDirectCallResult>.Success(new(callId, peerId, TimeSpan.FromSeconds(callDuration)));
     }
 
     public async Task<Result<DropCallResult>> DropUserCall(Guid userId, string connectionId, bool isLastConnection) {
@@ -335,12 +327,11 @@ internal sealed partial class CallingService(
         }
         
         var resultValues = (RedisResult[])result!;
-        var callId = Guid.Parse((string)resultValues[0]!);
-        var remainingPeerIds = ((RedisResult[])resultValues[1]!)
-            .Select(x => Guid.Parse((string)x!))
-            .ToList();
         
-        return Result<DropCallResult>.Success(new(callId, remainingPeerIds));
+        var callId = Guid.Parse((string)resultValues[0]!);
+        var peerId = Guid.Parse((string)resultValues[1]!);
+        
+        return Result<DropCallResult>.Success(new(callId, peerId));
     }
 
     public async Task<Guid?> GetUserActiveCallId(Guid userId) {
@@ -360,7 +351,7 @@ internal sealed partial class CallingService(
         var server = connectionMultiplexer.GetServer(endpoint);
         var db = connectionMultiplexer.GetDatabase();
         
-        var keys = server.Keys(pattern: "call:state:*").ToArray();
+        var keys = server.Keys(pattern: "user:*:call").ToArray();
         
         if (keys.Length > 0) {
             LogFoundCallStates(logger, keys.Length);

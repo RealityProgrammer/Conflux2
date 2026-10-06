@@ -28,23 +28,6 @@ import {useRouteLoaderData} from "react-router";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
-  const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
-
-  useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
-    if (call.calleeProfile.id === event.droppedUserId) {
-      markCallAsDropped(call.id);
-    }
-  });
-
-  useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
-    if (call.calleeProfile.id === event.enderUserId) {
-      markCallAsEnded(call.id);
-    }
-  });
-
-  if (!call) return null;
-
   if (call.state === "dialing") {
     return <DialingPhase call={call}/>;
   }
@@ -103,20 +86,6 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
     }
   }, [status]);
 
-  useTimeout(() => {
-    if (status === "none") {
-      setStatus("no_answer");
-
-      (async () => {
-        try {
-          await directConversationService.cancelDirectCall(call.id);
-        } catch (err) {
-          console.error("Failed to cancel call:", err);
-        }
-      })();
-    }
-  }, 60000);
-
   const calleeAvatarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -139,13 +108,13 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   }, [status]);
 
   useSignalREvent("DirectCallDenied", (event: DirectCallDeniedEvent) => {
-    if (call.calleeProfile.id === event.calleeUserId) {
+    if (call.id === event.callId) {
       setStatus("denied");
     }
   });
 
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
-    if (call.calleeProfile.id === event.calleeUserId) {
+    if (call.id === event.callId) {
       markCallAsActive(call.id);
     }
   });

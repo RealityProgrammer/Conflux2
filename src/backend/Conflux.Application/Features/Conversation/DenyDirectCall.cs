@@ -12,7 +12,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record DenyCallCommand(Guid CallId, Guid CalleeId) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record CallDeniedNotification(Guid CallerId, Guid CalleeId) : INotification;
+public sealed record CallDeniedNotification(Guid CallId, Guid CallerId, Guid CalleeId) : INotification;
 
 internal sealed class DenyCallHandler(
     ICallingService callingService,
@@ -34,7 +34,7 @@ internal sealed class DenyCallHandler(
         }
 
         Guid callerId = result.Value!.CallerId;
-        await publisher.Publish(new CallDeniedNotification(callerId, calleeId), CancellationToken.None);
+        await publisher.Publish(new CallDeniedNotification(result.Value!.CallId, callerId, calleeId), CancellationToken.None);
 
         var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, cancellationToken);
         

@@ -121,23 +121,28 @@ export type IncomingCallEvent = {
 }
 
 export type DirectCallCanceledEvent = {
-  callerUserId: string;
+  callId: string;
+  callerId: string;
 }
 
 export type DirectCallDeniedEvent = {
-  calleeUserId: string;
+  callId: string;
+  calleeId: string;
 }
 
 export type DirectCallAcceptedEvent = {
-  calleeUserId: string;
+  callId: string;
+  calleeId: string;
 }
 
 export type DirectCallDroppedEvent = {
-  droppedUserId: string;
+  callId: string;
+  dropperId: string;
 }
 
 export type DirectCallEndedEvent = {
-  enderUserId: string;
+  enderId: string;
+  callId: string;
 }
 
 export type DirectConversationUpdatedEvent = {

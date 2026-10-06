@@ -12,7 +12,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record CancelDirectCallCommand(Guid CallId, Guid CallerId) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record DirectCallCanceledNotification(Guid CallerId, Guid CalleeId) : INotification;
+public sealed record DirectCallCanceledNotification(Guid CallId, Guid CallerId, Guid CalleeId) : INotification;
 
 internal sealed class CancelDirectCallHandler(
     ICallingService callingService,
@@ -34,7 +34,7 @@ internal sealed class CancelDirectCallHandler(
         }
 
         Guid calleeId = result.Value!.CalleeId;
-        await publisher.Publish(new DirectCallCanceledNotification(callerId, calleeId), CancellationToken.None);
+        await publisher.Publish(new DirectCallCanceledNotification(command.CallId, callerId, calleeId), CancellationToken.None);
         
         var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, cancellationToken);
         

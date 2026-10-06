@@ -23,21 +23,6 @@ import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
-  const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
-
-  useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
-    if (call.callerProfile.id === event.droppedUserId) {
-      markCallAsDropped(call.id);
-    }
-  });
-
-  useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
-    if (call.callerProfile.id === event.enderUserId) {
-      markCallAsEnded(call.id);
-    }
-  });
-
   if (call.state === "incoming") {
     return <IncomingPhase call={call}/>
   }
@@ -148,7 +133,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   }, [status]);
 
   useSignalREvent("DirectCallCanceled", (event: DirectCallCanceledEvent) => {
-    if (call.callerProfile.id === event.callerUserId) {
+    if (call.id === event.callerId) {
       setStatus("canceled");
     }
   });

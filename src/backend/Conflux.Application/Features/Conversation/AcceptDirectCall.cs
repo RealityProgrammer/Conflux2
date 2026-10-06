@@ -6,7 +6,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record AcceptDirectCallCommand(Guid CallId, Guid CalleeId, string CalleeConnectionId) : ICommand<Result>;
 
-public sealed record CallAcceptedNotification(Guid CalleeId, Guid CallerId) : INotification;
+public sealed record CallAcceptedNotification(Guid CallId, Guid CalleeId, Guid CallerId) : INotification;
 
 internal sealed class AcceptDirectCallHandler(
     ICallingService callingService,
@@ -21,7 +21,7 @@ internal sealed class AcceptDirectCallHandler(
             return result;
         }
 
-        await publisher.Publish(new CallAcceptedNotification(calleeId, result.Value!.CallerId), CancellationToken.None);
+        await publisher.Publish(new CallAcceptedNotification(result.Value!.CallId, calleeId, result.Value!.CallerId), CancellationToken.None);
         return Result.Success();
     }
 }

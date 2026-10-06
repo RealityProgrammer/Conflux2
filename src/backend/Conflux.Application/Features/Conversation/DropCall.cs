@@ -6,7 +6,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record DropCallCommand(Guid UserId, string ConnectionId, bool IsLastConnection) : ICommand<Result>;
 
-public sealed record CallDroppedNotification(Guid CallId, Guid DropperId, IReadOnlyCollection<Guid> RemainingParticipants) : INotification;
+public sealed record CallDroppedNotification(Guid CallId, Guid DropperId, Guid PeerId) : INotification;
 
 internal sealed class DropCallHandler(
     ICallingService callingService,
@@ -19,9 +19,7 @@ internal sealed class DropCallHandler(
             return Result.Success();
         }
         
-        var dropResult = result.Value!;
-
-        await publisher.Publish(new CallDroppedNotification(dropResult.CallId, command.UserId, dropResult.RemainingParticipants), CancellationToken.None);
+        await publisher.Publish(new CallDroppedNotification(result.Value!.CallId, command.UserId, result.Value!.PeerId), CancellationToken.None);
         return result;
     }
 }

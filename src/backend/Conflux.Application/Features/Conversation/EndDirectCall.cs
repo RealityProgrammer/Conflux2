@@ -12,7 +12,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record EndDirectCallCommand(Guid CallId, Guid EnderId) : ICommand<Result<TimelineMessageDto>>;
 
-public sealed record CallEndedNotification(Guid PeerId, Guid EnderId) : INotification;
+public sealed record CallEndedNotification(Guid CallId, Guid PeerId, Guid EnderId) : INotification;
 
 internal sealed class EndDirectCallHandler(
     ICallingService callingService,
@@ -32,8 +32,7 @@ internal sealed class EndDirectCallHandler(
         }
 
         Guid peerId = result.Value!.PeerId;
-        
-        await publisher.Publish(new CallEndedNotification(peerId, enderId), CancellationToken.None);
+        await publisher.Publish(new CallEndedNotification(result.Value!.CallId, peerId, enderId), CancellationToken.None);
         
         var conversationResult = await directConversationProvider.GetOrCreate(enderId, peerId, CancellationToken.None);
         
