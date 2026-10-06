@@ -120,15 +120,15 @@ internal sealed partial class CallingService(
         Guid callId = Guid.NewGuid();
 
         var result = (string?)await _database.ScriptEvaluateAsync(InitializeDirectCallScript, new {
-            callerId,
-            calleeId,
+            callerId = callerId.ToString(),
             callerCallStateKey = GetUserCallStateKey(callerId),
             callerConnectionId,
+            calleeId = calleeId.ToString(),
             calleeCallStateKey = GetUserCallStateKey(calleeId),
-            callId,
-            ttl = RingingTimeoutSec,
+            callId = callId.ToString(),
             callSessionKey = GetCallSessionKey(callId),
             participantsKey = GetCallParticipantsKey(callId),
+            ttl = RingingTimeoutSec,
         });
         
         return result switch {
@@ -143,7 +143,7 @@ internal sealed partial class CallingService(
         var result = await _database.ScriptEvaluateAsync(AcceptDirectCallScript, new {
             callSessionKey = GetCallSessionKey(callId),
             participantsKey = GetCallParticipantsKey(callId),
-            callId,
+            callId = callId.ToString(),
             calleeCallStateKey = GetUserCallStateKey(calleeId),
             calleeConnectionId,
             activeTtl = ActiveCallTimeoutSec,
@@ -164,7 +164,7 @@ internal sealed partial class CallingService(
 
     public async Task<Result> LeaveOrEndCall(Guid callId, Guid userId) {
         await _database.ScriptEvaluateAsync(LeaveOrEndCallScript, new {
-            userId,
+            userId = userId.ToString(),
             userCallStateKey = GetUserCallStateKey(userId),
             participantsKey = GetCallParticipantsKey(callId),
             callSessionKey = GetCallSessionKey(callId),
@@ -176,9 +176,9 @@ internal sealed partial class CallingService(
     public async Task<Result<DropCallResult>> DropUserCall(Guid userId, string connectionId, bool isLastConnection) {
         var result = await _database.ScriptEvaluateAsync(DropUserCallScript, new {
             userCallStateKey = GetUserCallStateKey(userId),
-            userId,
+            userId = userId.ToString(),
             connectionId,
-            isLastConnection
+            isLastConnection,
         });
         
         if (result.IsNull) {
