@@ -53,3 +53,4 @@ export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
 export type CallProperties = Omit<components["schemas"]["MessagePropertiesCallProperties"], "$type">;
 export type CallEventType = components["schemas"]["CallEventType"];
+export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomingDirectCallQueryResult"];

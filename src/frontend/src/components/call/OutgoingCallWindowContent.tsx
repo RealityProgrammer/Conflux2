@@ -12,8 +12,6 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   DirectCallAcceptedEvent,
   DirectCallDeniedEvent,
-  DirectCallDroppedEvent,
-  DirectCallEndedEvent
 } from "../../api/events.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";

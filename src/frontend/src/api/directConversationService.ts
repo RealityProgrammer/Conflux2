@@ -1,6 +1,6 @@
 import type {
   BackendResponse,
-  DirectConversationSummary,
+  DirectConversationSummary, GetIncomingDirectCallQueryResult,
   ServiceResponse,
   StartCallResult, TimelineMessageDto,
   UserIdentityProfileDto
@@ -28,10 +28,10 @@ export const directConversationService = {
     }
   },
 
-  getCurrentRingingCall: async (): Promise<ServiceResponse<UserIdentityProfileDto>> => {
+  getIncomingCall: async (): Promise<ServiceResponse<GetIncomingDirectCallQueryResult>> => {
     try {
-      const response: AxiosResponse<BackendResponse<UserIdentityProfileDto>> =
-        await apiClient.get<BackendResponse<UserIdentityProfileDto>>(`/conversations/direct/call`);
+      const response: AxiosResponse<BackendResponse<GetIncomingDirectCallQueryResult>> =
+        await apiClient.get<BackendResponse<GetIncomingDirectCallQueryResult>>(`calls/direct`);
 
       return {
         success: true,
@@ -39,7 +39,7 @@ export const directConversationService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<UserIdentityProfileDto>>;
+      const axiosError = error as AxiosError<BackendResponse<GetIncomingDirectCallQueryResult>>;
       return handleAxiosError(axiosError);
     }
   },

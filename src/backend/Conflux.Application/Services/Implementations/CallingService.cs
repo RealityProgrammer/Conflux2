@@ -21,7 +21,8 @@ internal sealed partial class CallingService(
         RejectDirectCallScript,
         DeleteDirectCallScript,
         EndDirectCallScript, 
-        DropUserCallScript;
+        DropUserCallScript,
+        GetIncomingDirectCallScript;
 
     static CallingService() {
         InitializeDirectCallScript = LuaScript.Prepare(
@@ -151,7 +152,7 @@ internal sealed partial class CallingService(
 
         DropUserCallScript = LuaScript.Prepare(
             """
-            local callState = redis.call("GET", @userCallStateKey);
+            local callState = redis.call("GET", @userCallStateKey)
             if not callState then return nil end
             
             local callId, boundConnectionId = string.match(callState, "([^#]+)#?(.*)")
@@ -204,6 +205,27 @@ internal sealed partial class CallingService(
             redis.call("DEL", "user:{" .. calleeId .. "}:call")
             
             return { callId, peerId }
+            """
+        );
+
+        GetIncomingDirectCallScript = LuaScript.Prepare(
+            """
+            local callState = redis.call("GET", @userCallStateKey)
+            if not callState then return nil end
+            
+            local callId = string.match(callState, "([^#]+)#?.*")
+            local callSessionKey = 'call:{' .. callId .. '}:session'
+            
+            local callType = redis.call("HGET", callSessionKey, "type")
+            if callType ~= "Direct" then return nil end
+            
+            local callee = redis.call("HGET", callSessionKey, "callee")
+            if not callee or callee ~= @userId then return nil end
+            
+            local callerId = redis.call("HGET", callSessionKey, "initiator")
+            if not caller then return nil end
+            
+            return { callId, callerId }
             """
         );
     }
@@ -334,15 +356,20 @@ internal sealed partial class CallingService(
         return Result<DropCallResult>.Success(new(callId, peerId));
     }
 
-    public async Task<Guid?> GetUserActiveCallId(Guid userId) {
-        return null;
-
-        // var stateString = (string?)await _database.StringGetAsync(GetUserCallStateKey(userId));
-        //
-        // if (string.IsNullOrEmpty(stateString)) return null;
-        //
-        // int hashIndex = stateString.IndexOf('#');
-        // return Guid.TryParse(hashIndex == -1 ? );
+    public async Task<GetIncomingDirectCallResult?> GetIncomingDirectCall(Guid userId) {
+        var result = await _database.ScriptEvaluateAsync(GetIncomingDirectCallScript, new {
+            userId = userId.ToString(),
+            userCallStateKey = GetUserCallStateKey(userId),
+        });
+        
+        if (result.IsNull) return null;
+        
+        var resultValues = (RedisResult[])result!;
+        
+        var callId = Guid.Parse((string)resultValues[0]!);
+        var callerId = Guid.Parse((string)resultValues[1]!);
+        
+        return new(callId, callerId);
     }
 
     public async Task CleanCallStates() {
@@ -351,12 +378,20 @@ internal sealed partial class CallingService(
         var server = connectionMultiplexer.GetServer(endpoint);
         var db = connectionMultiplexer.GetDatabase();
         
-        var keys = server.Keys(pattern: "user:*:call").ToArray();
+        RedisKey[] keys = [..server.Keys(pattern: "user:*:call")];
         
         if (keys.Length > 0) {
             LogFoundCallStates(logger, keys.Length);
             await db.KeyDeleteAsync(keys);
-            logger.LogInformation("Successfully wiped call states.");
+            logger.LogInformation("Successfully wiped user calls.");
+        }
+        
+        keys = [..server.Keys(pattern: "call:*:session")];
+        
+        if (keys.Length > 0) {
+            LogFoundCallStates(logger, keys.Length);
+            await db.KeyDeleteAsync(keys);
+            logger.LogInformation("Successfully wiped call sessions.");
         }
     }
 

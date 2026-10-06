@@ -7,7 +7,7 @@ import {userService} from "../../api/userService.ts";
 import {useEffect, useRef, useState} from "react";
 import {createTimeline} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {DirectCallCanceledEvent, DirectCallDroppedEvent, DirectCallEndedEvent} from "../../api/events.ts";
+import type {DirectCallCanceledEvent} from "../../api/events.ts";
 import {useTimeout} from "usehooks-ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";

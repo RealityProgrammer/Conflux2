@@ -18,7 +18,7 @@ public interface ICallingService {
     
     Task<Result<DropCallResult>> DropUserCall(Guid userId, string connectionId, bool isLastConnection);
 
-    Task<Guid?> GetUserActiveCallId(Guid userId);
+    Task<GetIncomingDirectCallResult?> GetIncomingDirectCall(Guid userId);
 
     /// <summary>
     /// Clean up all call states.

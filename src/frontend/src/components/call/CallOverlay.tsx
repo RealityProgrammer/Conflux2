@@ -3,6 +3,8 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {IncomingCallEvent} from "../../api/events.ts";
 import CallWindow from "./CallWindow.tsx";
 import {useEffect} from "react";
+import type {GetIncomingDirectCallQueryResult, ServiceResponse} from "../../api/types.ts";
+import {directConversationService} from "../../api/directConversationService.ts";
 
 export default function CallOverlay() {
   const call = useCallStore((state) => state.call);
@@ -12,11 +14,11 @@ export default function CallOverlay() {
   useEffect(() => {
     (async () => {
       try {
-        // const response: ServiceResponse<UserIdentityProfileDto> = await directConversationService.getCurrentRingingCall();
-        //
-        // if (response.success && response.data) {
-        //   startIncomingDirectCall(response.response.data!);
-        // }
+        const response: ServiceResponse<GetIncomingDirectCallQueryResult> = await directConversationService.getIncomingCall();
+
+        if (response.success && response.data) {
+          startIncomingDirectCall(response.data.callId, response.data.callerProfile);
+        }
       } catch (err) {
         console.log("Failed to get current call:", err);
       }

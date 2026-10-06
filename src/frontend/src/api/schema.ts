@@ -463,6 +463,43 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/calls/direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+                        "application/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+                        "text/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/communities": {
         parameters: {
             query?: never;
@@ -1902,6 +1939,10 @@ export interface components {
             data: null | components["schemas"]["DirectConversationSummary"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfGetIncomingDirectCallQueryResult: {
+            data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfLoginResponse: {
             data: null | components["schemas"]["LoginResponse"];
             error: components["schemas"]["Error"];
@@ -2029,6 +2070,11 @@ export interface components {
         };
         /** @enum {string} */
         FileOperationType: FileOperationType;
+        GetIncomingDirectCallQueryResult: {
+            /** Format: uuid */
+            callId: string;
+            callerProfile: components["schemas"]["UserIdentityProfileDto"];
+        };
         /** Format: binary */
         IFormFile: string;
         /** @enum {string} */
