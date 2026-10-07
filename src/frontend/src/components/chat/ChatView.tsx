@@ -23,8 +23,9 @@ import {MessageRow} from "./MessageRow.tsx";
 import {MessageItem} from "./MessageItem.tsx";
 import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
+import {DateSeparator} from "./DateSeparator.tsx";
 
-const START_INDEX = 10000000;
+const START_INDEX = 100_000_000;
 
 type MediaGalleryState = {
   items: { id: string; type: string }[];
@@ -36,10 +37,16 @@ export interface ChatViewProps {}
 export function ChatView({}: ChatViewProps) {
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
+  // local states
   const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
-
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+
+  // TODO: move to zustand state
+  const [galleryState, setGalleryState] = useState<MediaGalleryState>({
+    items: [],
+    currentIndex: 0,
+  });
 
   const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
     setGalleryState({
@@ -47,6 +54,8 @@ export function ChatView({}: ChatViewProps) {
       currentIndex: clickedIndex
     });
   };
+
+  // messaging context and stuffs
 
   const {
     handleEditMessage,
@@ -61,54 +70,106 @@ export function ChatView({}: ChatViewProps) {
     clearJump,
   } = useChatContainerContext();
 
+  // if null, follow latest message, else around a message
   const [anchorId, setAnchorId] = useState<string | null>(null);
+
+  const hasUserScrolledRef = useRef(false);
+
+  const virtualKey = anchorId ?? "latest";
 
   const {
     data: messagePages,
-    isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
-    isFetchingNextPage, hasNextPage, fetchNextPage,
+    isFetchingPreviousPage,
+    hasPreviousPage,
+    fetchPreviousPage,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
     isLoading,
   } = useTimelineMessagesQuery(conversationId, anchorId);
 
   const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 
-  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
-
-  // timeline entries
-  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
-  const timelineContext: TimelineContext = {
-    actions: {
-      onMessageDeleteTrigger: setDeletingMessage,
-      onMessageEditTrigger: setEditingMessage,
-      onMessageReplyTrigger: setReplyingMessage,
-      onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
-      onEditCancel: () => {
-        setEditingMessage(undefined);
-        setEditingMessageDraft(null);
-      },
-      onEditSaved: (newBody) => handleSaveEdit(newBody),
-      onAttachmentClick: handleAttachmentClick,
-
-      removeSendingOperation: removeSendOperation,
-      retrySendingOperation: retrySendOperation,
-      retryEditOperation,
-      removeEditOperation,
-      updateMessagePin: (messageId: string, isPinned: boolean) => updateMessage(messageId, { isPinned }),
-    },
-    states: {
-      editingMessageDraft: editingMessageDraft,
-    }
-  };
-
-  // logic to calculate the jump when older messages are loaded
-  const firstStableIndex = timelineItems.findIndex(item => !item.getKey().includes('date'));
-  const firstStableKey = firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
-  const prevStableRef = useRef({ key: firstStableKey, index: firstStableIndex });
+  // virtualization
+  const [followEnabled, setFollowEnabled] = useState(!anchorId);
 
   useEffect(() => {
+    if (!anchorId) {
+      // latest mode: always allow following
+      setFollowEnabled(true);
+      return;
+    }
+    if (hasNextPage) {
+      // anchored, still walking forward: keep it off
+      setFollowEnabled(false);
+      return;
+    }
+
+    // Anchored and caught up to the live edge. Defer enabling by one frame so
+    // the scrollTop restore + Virtuoso's at-bottom recomputation settle first.
+    // Enabling on the same commit that hasNextPage flips is what causes the
+    // teleport: Virtuoso evaluates followOutput with a stale isAtBottom=true.
+    const id = requestAnimationFrame(() => setFollowEnabled(true));
+    return () => cancelAnimationFrame(id);
+  }, [anchorId, hasNextPage]);
+
+  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
+
+  const prevKeyRef = useRef(virtualKey);
+  if (prevKeyRef.current !== virtualKey) {
+    prevKeyRef.current = virtualKey;
     setFirstItemIndex(START_INDEX);
-    prevStableRef.current = { key: null, index: -1 };
-  }, [conversationId, anchorId]);
+    hasUserScrolledRef.current = false;
+  }
+
+  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
+
+  const isAtBottomRef = useRef(true);
+  const scrollTopBeforeFetchRef = useRef<number | null>(null);
+
+  const handleAtBottomStateChange = (atBottom: boolean) => {
+    const wasAtBottom = isAtBottomRef.current;
+    isAtBottomRef.current = atBottom;
+
+    if (isFetchingNextPage || !hasNextPage) return;
+    if (!atBottom || wasAtBottom) return;
+    if (!hasUserScrolledRef.current) return;
+
+    if (anchorId && virtuosoRef.current) {
+      virtuosoRef.current.getState((state) => {
+        console.log("save scrolltop", state.scrollTop);
+        scrollTopBeforeFetchRef.current = state.scrollTop;
+      });
+    }
+
+    console.log('fetch next page')
+    fetchNextPage().then(() => {
+      console.log("finish fetch next page");
+    });
+  };
+
+  useLayoutEffect(() => {
+    const saved = scrollTopBeforeFetchRef.current;
+    if (saved == null) return;
+    scrollTopBeforeFetchRef.current = null;
+
+    console.log("reapply scrollto top", saved);
+    virtuosoRef.current?.scrollTo({ top: saved });
+  }, [timelineItems]);
+
+  // if we're anchored and the target item is already in the list, make Virtuoso centred on it, else start at the bottom.
+  const anchorArrayIndex = anchorId && !isLoading ? timelineItems.findIndex(
+    item => item instanceof MessageItem && item.data.message.id === anchorId,
+  ) : -1;
+
+  const initialTopMostItemIndex = anchorArrayIndex >= 0 ?
+    { index: anchorArrayIndex, align: "center" as const } :
+    { index: "LAST" as const, align: "end" as const };
+
+  // when older messages are loaded, shift the amount
+  const firstStableIndex = timelineItems.findIndex(item => !(item instanceof DateSeparator));
+  const firstStableKey = firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
+  const prevStableRef = useRef({ key: firstStableKey, index: firstStableIndex });
 
   useLayoutEffect(() => {
     const prev = prevStableRef.current;
@@ -135,27 +196,29 @@ export function ChatView({}: ChatViewProps) {
       item instanceof MessageItem && item.data.message.id === jumpMessageId
     );
 
-    if (arrayIndex === -1) {
-      // message hasn't been loaded in memory
-      if (anchorId !== jumpMessageId) {
-        setAnchorId(jumpMessageId);
-      } else if (!isLoading) {
-        // if query finished, but message still isn't there, probably deleted or inaccessible.
-        clearJump();
-      }
-
+    // message already loaded, jump to it immediately
+    if (arrayIndex >= 0 && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex({
+        index: arrayIndex,
+        align: "center",
+        behavior: "auto",
+      });
+      clearJump();
       return;
     }
 
-    if (!virtuosoRef.current) return;
+    // not loaded, set anchor to it
+    if (anchorId !== jumpMessageId) {
+      setAnchorId(jumpMessageId);
+      return;
+    }
 
-    virtuosoRef.current.scrollToIndex({
-      index: arrayIndex,
-      align: "center",
-      behavior: "auto",
-    });
-
-    clearJump();
+    // if message isn't appear after anchor loading, it must be deleted or can't be accessed, return to latest
+    if (!isLoading) {
+      // around query resolved but message isn't there
+      clearJump();
+      setAnchorId(null);
+    }
   }, [jumpMessageId, timelineItems, firstItemIndex, anchorId, clearJump, isLoading]);
 
   const fetchOlderMessages = async () => {
@@ -163,17 +226,7 @@ export function ChatView({}: ChatViewProps) {
     await fetchPreviousPage();
   }
 
-  const fetchNewerMessages = async () => {
-    if (isFetchingNextPage || !hasNextPage) return;
-    await fetchNextPage();
-  };
-
-  // gallery
-  const [galleryState, setGalleryState] = useState<MediaGalleryState>({
-    items: [],
-    currentIndex: 0,
-  });
-
+  // edit handling
   const handleSaveEdit = async (newBody: string | null) => {
     if (editingMessage === undefined) return;
 
@@ -183,6 +236,7 @@ export function ChatView({}: ChatViewProps) {
     handleEditMessage(editingMessage, newBody?.trim() ?? null);
   };
 
+  // typing indicator
   const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
 
@@ -203,48 +257,85 @@ export function ChatView({}: ChatViewProps) {
     deleteMessage(event.messageId);
   });
 
+  const timelineContext: TimelineContext = {
+    actions: {
+      onMessageDeleteTrigger: setDeletingMessage,
+      onMessageEditTrigger: setEditingMessage,
+      onMessageReplyTrigger: setReplyingMessage,
+      onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
+      onEditCancel: () => {
+        setEditingMessage(undefined);
+        setEditingMessageDraft(null);
+      },
+      onEditSaved: (newBody) => handleSaveEdit(newBody),
+      onAttachmentClick: handleAttachmentClick,
+
+      removeSendingOperation: removeSendOperation,
+      retrySendingOperation: retrySendOperation,
+      retryEditOperation,
+      removeEditOperation,
+      updateMessagePin: (messageId: string, isPinned: boolean) => updateMessage(messageId, { isPinned }),
+    },
+    states: {
+      editingMessageDraft: editingMessageDraft,
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
       {isLoading ? (
-        <div className="space-y-1">
-          {[...new Array(20).keys()].map((_, index) => (
-            <div key={index} className="px-2">
-              <MessageRow.HeaderSkeleton>
-                <MessageRow.BodySkeleton/>
-              </MessageRow.HeaderSkeleton>
-            </div>
-          ))}
+        <div className="flex-1 min-h-0 mb-2 overflow-hidden">
+          <div className="space-y-1">
+            {[...new Array(20).keys()].map((_, index) => (
+              <div key={index} className="px-2">
+                <MessageRow.HeaderSkeleton>
+                  <MessageRow.BodySkeleton/>
+                </MessageRow.HeaderSkeleton>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <Virtuoso
           ref={virtuosoRef}
+          key={virtualKey}  // so that initialTopMostItemIndex is re-evaluated
           data={timelineItems}
-          computeItemKey={(_index, item) => item.getKey()}
-          atBottomThreshold={60}
-          followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
+          computeItemKey={(_, item) => item.getKey()}
+          atBottomThreshold={40}
+          followOutput={
+            !anchorId || (followEnabled && !hasNextPage) ?
+              (isAtBottom) => { console.log("is at bottom:", isAtBottom); return (isAtBottom ? "auto" : false); } :
+              false
+          }
           alignToBottom={!anchorId}
-          initialTopMostItemIndex={anchorId ? undefined : { index: "LAST", align: "end" }}
+          initialTopMostItemIndex={initialTopMostItemIndex}
           firstItemIndex={firstItemIndex}
           startReached={fetchOlderMessages}
-          endReached={fetchNewerMessages}
+          atBottomStateChange={handleAtBottomStateChange}
+          // endReached={fetchNewerMessages}
+          isScrolling={(scrolling) => {
+            if (scrolling && !hasUserScrolledRef.current) {
+              hasUserScrolledRef.current = true;
+            }
+          }}
           overscan={10}
           className="flex-1 min-h-0 mb-2"
-          components={{
-            Header: () => (
-              isFetchingPreviousPage ? (
-                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                  Loading older messages...
-                </div>
-              ) : null
-            ),
-            Footer: () => (
-              isFetchingNextPage ? (
-                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                  Loading newer messages...
-                </div>
-              ) : null
-            )
-          }}
+          // components={{
+          //   Header: () => (
+          //     isFetchingPreviousPage ? (
+          //       <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
+          //         Loading older messages...
+          //       </div>
+          //     ) : null
+          //   ),
+          //   Footer: () => (
+          //     isFetchingNextPage ? (
+          //       <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
+          //         Loading newer messages...
+          //       </div>
+          //     ) : null
+          //   )
+          // }}
           itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
         />
       )}

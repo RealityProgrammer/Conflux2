@@ -12,7 +12,7 @@ import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
 type EditMessagePayload = { messageId: string, newBody: string | null };
-type DeleteMessagePayload = { operationId: string, messageId: string };
+type DeleteMessagePayload = { messageId: string };
 
 interface ChatContainerContextType {
   conversationId: string;
@@ -186,9 +186,7 @@ export default function ChatContainerContextProvider({
   const handleDeleteMessage = async (message: TimelineMessageDto) => {
     if (!conversationId) return;
 
-    const operationId = `__queue_message-${crypto.randomUUID()}`;
     deleteMessageMutation.mutate({
-      operationId,
       messageId: message.id
     });
   };
