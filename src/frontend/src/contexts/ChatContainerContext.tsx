@@ -8,7 +8,7 @@ import {useMutation} from "@tanstack/react-query";
 import {conversationService} from "../api/conversationService.ts";
 import {toast} from "react-toastify";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
-import useTimelineMessages from "../hooks/useTimelineMessages.ts";
+import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
 type EditMessagePayload = { messageId: string, newBody: string | null };
@@ -16,9 +16,12 @@ type DeleteMessagePayload = { operationId: string, messageId: string };
 
 interface ChatContainerContextType {
   conversationId: string;
-  anchorMessageId: string | null;
-  replyingMessage: TimelineMessageDto | null;
 
+  jumpMessageId: string | null;
+  requestJump: (messageId: string) => void;
+  clearJump: () => void;
+
+  replyingMessage: TimelineMessageDto | null;
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
 
   handleSendMessage: (messageInput: MessageInput) => void;
@@ -36,23 +39,25 @@ const ChatContainerContext = createContext<ChatContainerContextType | null>(null
 
 interface ChatContainerContextProviderProps {
   conversationId: string;
-  anchorMessageId: string | null;
   children: ReactNode;
 }
 
 export default function ChatContainerContextProvider({
   conversationId,
-  anchorMessageId,
   children,
 }: ChatContainerContextProviderProps) {
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
+  const [jumpMessageId, setJumpMessageId] = useState<string | null>(null);
 
-  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessages(conversationId);
+  const requestJump = (messageId: string) => setJumpMessageId(messageId);
+  const clearJump = () => setJumpMessageId(null);
 
   const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
   const addSendOperation = useMessageOperationsStore((state) => state.addSendOperation);
   const updateSendOperation = useMessageOperationsStore((state) => state.updateSendOperation);
   const removeSendOperation = useMessageOperationsStore((state) => state.removeSendOperation);
+
+  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 
   // message mutations
   const sendMessageMutation = useMutation({
@@ -76,8 +81,8 @@ export default function ChatContainerContextProvider({
     },
     onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
       if (result.success) {
-        appendMessage(result.data!);
         removeSendOperation(payload.operationId);
+        appendMessage(result.data!);
       } else {
         updateSendOperation(payload.operationId, true);
       }
@@ -112,14 +117,13 @@ export default function ChatContainerContextProvider({
       addEditOperation(payload.messageId, payload.newBody);
     },
     onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
-      if (!result.success) {
+      if (result.success) {
+        removeEditOperation(payload.messageId);
+        updateMessage(payload.messageId, result.data!);
+      } else {
         updateEditOperation(payload.messageId, true);
         toast.error("Failed to edit message.");
-        return;
       }
-
-      updateMessage(payload.messageId, { body: payload.newBody });
-      removeEditOperation(payload.messageId);
     },
     onError: (_error, payload) => {
       updateEditOperation(payload.messageId, true);
@@ -148,7 +152,6 @@ export default function ChatContainerContextProvider({
       if (result.success) {
         deleteMessage(payload.messageId);
       } else {
-        // TODO: Jump to the message when click on the toast.
         toast.error("Failed to delete message.");
       }
     },
@@ -193,7 +196,9 @@ export default function ChatContainerContextProvider({
   return (
     <ChatContainerContext.Provider value={{
       conversationId,
-      anchorMessageId,
+      jumpMessageId,
+      requestJump,
+      clearJump,
       replyingMessage,
       setReplyingMessage,
       handleSendMessage,

@@ -21,9 +21,9 @@ import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
 import type {ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
 import {directConversationService} from "../../api/directConversationService.ts";
-import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 import {useRouteLoaderData} from "react-router";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
+import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
   if (call.state === "dialing") {
@@ -55,7 +55,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessages(loaderData?.conversationId ?? "");
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied">("none");
 
@@ -219,7 +219,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const [isEndingCall, setIsEndingCall] = useState(false);
 
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessages(loaderData?.conversationId ?? "");
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const {
     stream,

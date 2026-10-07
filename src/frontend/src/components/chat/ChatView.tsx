@@ -2,7 +2,7 @@ import type {
   AttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {useLayoutEffect, useRef, useState} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -14,16 +14,15 @@ import type {
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
-import Dialog from "../Dialog.tsx";
-import {Dialog as RadixDialog} from "radix-ui";
-import {Virtuoso} from "react-virtuoso";
-import {BsTrashFill} from "react-icons/bs";
-import Spinner from "../Spinner.tsx";
+import {Virtuoso, type VirtuosoHandle} from "react-virtuoso";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
-import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
+import useTimelineMessagesQuery from "../../hooks/useTimelineMessagesQuery.ts";
 import {MessageRow} from "./MessageRow.tsx";
+import {MessageItem} from "./MessageItem.tsx";
+import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.tsx";
+import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 
 const START_INDEX = 10000000;
 
@@ -35,6 +34,20 @@ type MediaGalleryState = {
 export interface ChatViewProps {}
 
 export function ChatView({}: ChatViewProps) {
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
+
+  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+
+  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+
+  const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
+    setGalleryState({
+      items: messageAttachments.map(att => ({id: att.id, type: att.type})),
+      currentIndex: clickedIndex
+    });
+  };
+
   const {
     handleEditMessage,
     handleDeleteMessage,
@@ -44,63 +57,25 @@ export function ChatView({}: ChatViewProps) {
     retryEditOperation,
     removeEditOperation,
     conversationId,
+    jumpMessageId,
+    clearJump,
   } = useChatContainerContext();
 
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+
   const {
-    queryResult: {
-      isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
-      isFetchingNextPage, hasNextPage, fetchNextPage,
-      isLoading,
-    },
-    appendMessage,
-    updateMessage,
-    deleteMessage,
-  } = useTimelineMessages(conversationId);
+    data: messagePages,
+    isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
+    isFetchingNextPage, hasNextPage, fetchNextPage,
+    isLoading,
+  } = useTimelineMessagesQuery(conversationId, anchorId);
+
+  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 
-  const fetchOlderMessages = async () => {
-    if (isFetchingPreviousPage || !hasPreviousPage) return;
-    await fetchPreviousPage();
-  }
-
-  const fetchNewerMessages = async () => {
-    if (isFetchingNextPage || !hasNextPage) return;
-    await fetchNextPage();
-  };
-
-  // gallery
-  const [galleryState, setGalleryState] = useState<MediaGalleryState>({
-    items: [],
-    currentIndex: 0,
-  });
-
-  const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
-    setGalleryState({
-      items: messageAttachments.map(att => ({id: att.id, type: att.type})),
-      currentIndex: clickedIndex
-    });
-  };
-
-  // message editing
-  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
-  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
-
-  const handleSaveEdit = async (newBody: string | null) => {
-    if (editingMessage === undefined) return;
-
-    setEditingMessage(undefined);
-    setEditingMessageDraft(null);
-
-    handleEditMessage(editingMessage, newBody?.trim() ?? null);
-  };
-
-  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
-
-  // pinning
-
   // timeline entries
-  const timelineItems = useTimelineItems(editingMessage?.id ?? undefined);
+  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
   const timelineContext: TimelineContext = {
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
@@ -126,12 +101,14 @@ export function ChatView({}: ChatViewProps) {
   };
 
   // logic to calculate the jump when older messages are loaded
-  const firstStableIndex = timelineItems.findIndex(item => {
-    const key = item.getKey();
-    return !key.includes('date');
-  });
+  const firstStableIndex = timelineItems.findIndex(item => !item.getKey().includes('date'));
   const firstStableKey = firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
   const prevStableRef = useRef({ key: firstStableKey, index: firstStableIndex });
+
+  useEffect(() => {
+    setFirstItemIndex(START_INDEX);
+    prevStableRef.current = { key: null, index: -1 };
+  }, [conversationId, anchorId]);
 
   useLayoutEffect(() => {
     const prev = prevStableRef.current;
@@ -150,6 +127,61 @@ export function ChatView({}: ChatViewProps) {
 
     prevStableRef.current = { key: firstStableKey, index: firstStableIndex };
   }, [timelineItems, firstStableKey, firstStableIndex]);
+
+  useEffect(() => {
+    if (!jumpMessageId) return;
+
+    const arrayIndex = timelineItems.findIndex(item =>
+      item instanceof MessageItem && item.data.message.id === jumpMessageId
+    );
+
+    if (arrayIndex === -1) {
+      // message hasn't been loaded in memory
+      if (anchorId !== jumpMessageId) {
+        setAnchorId(jumpMessageId);
+      } else if (!isLoading) {
+        // if query finished, but message still isn't there, probably deleted or inaccessible.
+        clearJump();
+      }
+
+      return;
+    }
+
+    if (!virtuosoRef.current) return;
+
+    virtuosoRef.current.scrollToIndex({
+      index: arrayIndex,
+      align: "center",
+      behavior: "auto",
+    });
+
+    clearJump();
+  }, [jumpMessageId, timelineItems, firstItemIndex, anchorId, clearJump, isLoading]);
+
+  const fetchOlderMessages = async () => {
+    if (isFetchingPreviousPage || !hasPreviousPage) return;
+    await fetchPreviousPage();
+  }
+
+  const fetchNewerMessages = async () => {
+    if (isFetchingNextPage || !hasNextPage) return;
+    await fetchNextPage();
+  };
+
+  // gallery
+  const [galleryState, setGalleryState] = useState<MediaGalleryState>({
+    items: [],
+    currentIndex: 0,
+  });
+
+  const handleSaveEdit = async (newBody: string | null) => {
+    if (editingMessage === undefined) return;
+
+    setEditingMessage(undefined);
+    setEditingMessageDraft(null);
+
+    handleEditMessage(editingMessage, newBody?.trim() ?? null);
+  };
 
   const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
@@ -170,7 +202,7 @@ export function ChatView({}: ChatViewProps) {
   useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
     deleteMessage(event.messageId);
   });
-  
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
       {isLoading ? (
@@ -185,12 +217,13 @@ export function ChatView({}: ChatViewProps) {
         </div>
       ) : (
         <Virtuoso
+          ref={virtuosoRef}
           data={timelineItems}
           computeItemKey={(_index, item) => item.getKey()}
           atBottomThreshold={60}
           followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
-          alignToBottom={true}
-          initialTopMostItemIndex={{ index: "LAST", align: "end" }}
+          alignToBottom={!anchorId}
+          initialTopMostItemIndex={anchorId ? undefined : { index: "LAST", align: "end" }}
           firstItemIndex={firstItemIndex}
           startReached={fetchOlderMessages}
           endReached={fetchNewerMessages}
@@ -275,43 +308,4 @@ export function ChatView({}: ChatViewProps) {
       />
     </div>
   );
-}
-
-function DeleteMessageConfirmationDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-}: { open: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void }) {
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      headerIcon={<BsTrashFill className="size-10 fill-white"/>}
-      title="Delete Message"
-      subtitle="Nothing happened here, folk..."
-      contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"
-      footerContent={(
-        <div className="w-full flex flex-row justify-end p-3 gap-3">
-          <RadixDialog.Close
-            type="button"
-            className="cursor-pointer basis-20 outline-none"
-          >
-            Cancel
-          </RadixDialog.Close>
-
-          <button
-            className="button-theme-danger cursor-pointer px-3 py-2 rounded-md"
-            onClick={onConfirm}
-          >
-            Delete message
-          </button>
-        </div>
-      )}
-    >
-      <div className="p-3">
-        Are you sure you want to delete this message?<br/>
-        This action cannot be undone. You will never see this message and its attachments ever again.
-      </div>
-    </Dialog>
-  )
 }

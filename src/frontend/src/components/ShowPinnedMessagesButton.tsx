@@ -12,20 +12,21 @@ import {
 } from "../graphql/infiniteQueries.ts";
 import usePinnedMessages from "../hooks/usePinnedMessages.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {MessagePinnedEvent, MessageUnpinnedEvent} from "../api/events.ts";
+import type {MessageDeletedEvent, MessagePinnedEvent, MessageUnpinnedEvent} from "../api/events.ts";
 import {useState} from "react";
+import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 
 interface ShowPinnedMessagesButtonProps {
   conversationId: string;
-  onPinnedMessageClick: (messageId: string) => void;
 }
 
 export default function ShowPinnedMessagesButton({
   conversationId,
-  onPinnedMessageClick,
 }: ShowPinnedMessagesButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
+
+  const { requestJump } = useChatContainerContext();
 
   const {
     queryResult: { data, isLoading, isError },
@@ -45,7 +46,7 @@ export default function ShowPinnedMessagesButton({
 
   const handleClickOnPinnedMessage = (messageId: string) => {
     setIsOpen(false);
-    onPinnedMessageClick(messageId);
+    requestJump(messageId);
   }
 
   useSignalREvent("MessagePinned", (event: MessagePinnedEvent) => {
@@ -54,6 +55,11 @@ export default function ShowPinnedMessagesButton({
   });
 
   useSignalREvent("MessageUnpinned", (event: MessageUnpinnedEvent) => {
+    if (!hasBeenOpened) return;
+    removePinnedMessage(event.messageId);
+  });
+
+  useSignalREvent("MessageDeleted", (event: MessageDeletedEvent) => {
     if (!hasBeenOpened) return;
     removePinnedMessage(event.messageId);
   });
@@ -126,7 +132,11 @@ function ContentDisplay({
       ) : isError ? (
         <div className="size-full flex flex-col gap-1 justify-center items-center">
           <BsExclamationTriangle className="size-10 fill-white"/>
-          <p>Failed to load pinned messages</p>
+          <p className="select-none">Failed to load pinned messages</p>
+        </div>
+      ) : allElements.length == 0 ? (
+        <div className="size-full flex flex-col gap-1 justify-center items-center">
+          <span className="text-sm text-gray-500 select-none">It is so very empty here</span>
         </div>
       ) : (
         <Virtuoso

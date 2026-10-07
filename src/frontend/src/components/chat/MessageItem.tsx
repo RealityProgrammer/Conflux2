@@ -22,7 +22,7 @@ import {userService} from "../../api/userService.ts";
 import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
 import {MessageRow} from "./MessageRow.tsx";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
+import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -67,7 +67,7 @@ function MessageView({
 }: MessageViewProps) {
   const auth = useAuth();
   const { conversationId } = useChatContainerContext();
-  const { appendMessage } = useTimelineMessages(conversationId);
+  const { appendMessage } = useTimelineMessageMutations(conversationId);
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger(message);

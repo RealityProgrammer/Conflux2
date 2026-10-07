@@ -1,77 +1,15 @@
-import {
-  type InfiniteData,
-  type QueryKey,
-  useInfiniteQuery,
-  type UseInfiniteQueryResult,
-  useQueryClient
-} from "@tanstack/react-query";
-import type {MessageReadStrategy, TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
-import {conversationService} from "../api/conversationService.ts";
-import {
-  MessageReadStrategyAfterType,
-  MessageReadStrategyAroundType,
-  MessageReadStrategyBeforeType,
-  MessageReadStrategyLatestType
-} from "../api/schema.ts";
-
-type PageParams = {
-  readStrategy: MessageReadStrategy;
-};
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import type {TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
 
 interface UseTimelineMessagesResult {
-  queryResult: UseInfiniteQueryResult<InfiniteData<TimelineMessagePage | null | undefined, unknown>, Error>;
   appendMessage: (message: TimelineMessageDto) => void;
   updateMessage: (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId">>) => void;
   deleteMessage: (messageId: string) => void;
 }
 
-export default function useTimelineMessages(
-  conversationId: string,
-  anchorId: string | null = null
+export default function useTimelineMessageMutations(
+  conversationId: string
 ): UseTimelineMessagesResult {
-  const queryKey: QueryKey = ["conversation", conversationId, anchorId ?? "latest"];
-
-  const messageQueryResult = useInfiniteQuery({
-    enabled: !!conversationId,
-    queryKey,
-    queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<TimelineMessagePage | null | undefined> => {
-      const response = await conversationService.readTimelineMessages(
-        conversationId!,
-        pageParam.readStrategy
-      );
-
-      return response.data;
-    },
-    initialPageParam: {
-      readStrategy: anchorId ? { type: MessageReadStrategyAroundType.around, anchorId } : { type: MessageReadStrategyLatestType.latest }
-    } as PageParams,
-
-    getPreviousPageParam: (firstPage: TimelineMessagePage | null | undefined): PageParams | undefined => {
-      if (!firstPage?.hasMoreBefore || firstPage.messages.length === 0) return undefined;
-
-      return {
-        readStrategy: {
-          type: MessageReadStrategyBeforeType.before,
-          cursorId: firstPage.messages[0].id
-        },
-      };
-    },
-
-    getNextPageParam: (lastPage: TimelineMessagePage | null | undefined): PageParams | undefined => {
-      if (!lastPage?.hasMoreAfter || lastPage.messages.length === 0) return undefined;
-
-      return {
-        readStrategy: {
-          type: MessageReadStrategyAfterType.after,
-          cursorId: lastPage.messages[lastPage.messages.length - 1].id
-        },
-      };
-    },
-
-    staleTime: 60 * 30 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
   const queryClient = useQueryClient();
 
   const modifyMessageData = (callback: (oldData: InfiniteData<TimelineMessagePage | null | undefined>) => InfiniteData<TimelineMessagePage | null | undefined>) => {
@@ -90,6 +28,12 @@ export default function useTimelineMessages(
   const appendMessage = (newMessage: TimelineMessageDto) => {
     modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
       if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
+
+      const lastPage = oldData.pages[oldData.pages.length - 1];
+      if (!lastPage) return oldData;
+
+      // only append if the loading zone is at the bottom
+      if (lastPage.hasMoreAfter === true) return oldData;
 
       return {
         ...oldData,
@@ -167,9 +111,8 @@ export default function useTimelineMessages(
   };
 
   return {
-    queryResult: messageQueryResult,
     appendMessage,
     updateMessage,
     deleteMessage,
-  }
+  };
 }

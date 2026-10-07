@@ -14,10 +14,10 @@ import type {UserIdentityProfileDto, ServiceResponse, StartCallResult} from "../
 import {toast} from "react-toastify";
 import ShowPinnedMessagesButton from "../../components/ShowPinnedMessagesButton.tsx";
 import {directConversationService} from "../../api/directConversationService.ts";
-import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 import {ChatView} from "../../components/chat/ChatView.tsx";
 import ChatInput from "../../components/chat/ChatInput.tsx";
 import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
+import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -58,7 +58,7 @@ function SuccessPage({
   peerProfile,
 }: { conversationId: string, peerProfile: UserIdentityProfileDto }) {
   const [showProfile, setShowProfile] = useState(false);
-  const { appendMessage } = useTimelineMessages(conversationId);
+  const { appendMessage } = useTimelineMessageMutations(conversationId);
 
   useConversationConnection(conversationId);
 
@@ -92,63 +92,56 @@ function SuccessPage({
     }
   };
 
-  const [jumpTargetId, setJumpTargetId] = useState<string | null>(null);
-
-  const handleJumpToPinnedMessage = (messageId: string) => {
-    console.log("jump to message", messageId);
-  };
-
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
-      <header
-        className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2"
+      <ChatContainerContextProvider
+        conversationId={conversationId}
       >
-        <UserAvatar
-          src={peerProfile.avatarRevision ? userService.getAvatarUrl(peerProfile.id, peerProfile.avatarRevision) : undefined}
-          className="size-8 flex-none"
-        />
-
-        <span className="flex-1">{peerProfile.userName}</span>
-
-        <div className="flex-none flex flex-row items-center gap-2">
-          <ShowPinnedMessagesButton conversationId={conversationId} onPinnedMessageClick={handleJumpToPinnedMessage}/>
-
-          <IconButton
-            isLoading={false}
-            theme="default"
-            onClick={handleCall}
-          >
-            <BsTelephoneFill className="size-6"/>
-          </IconButton>
-
-          <IconButton
-            theme="default"
-            onClick={() => setShowProfile(!showProfile)}
-          >
-            <BsPersonFill className="size-6"/>
-          </IconButton>
-        </div>
-      </header>
-
-      <div className="flex-1 min-h-0 flex flex-row relative gap-0">
-        <ChatContainerContextProvider
-          conversationId={conversationId}
-          anchorMessageId={jumpTargetId}
+        <header
+          className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2"
         >
-          <div className="flex flex-col flex-1">
-            <ChatView/>
-            <ChatInput/>
-          </div>
-        </ChatContainerContextProvider>
-
-        {showProfile && (
-          <UserProfilePanel
-            className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
-            avatarClassName="border-gray-725 bg-gray-725"
-            userId={peerProfile.id}
+          <UserAvatar
+            src={peerProfile.avatarRevision ? userService.getAvatarUrl(peerProfile.id, peerProfile.avatarRevision) : undefined}
+            className="size-8 flex-none"
           />
-        )}
-      </div>
+
+          <span className="flex-1">{peerProfile.userName}</span>
+
+          <div className="flex-none flex flex-row items-center gap-2">
+            <ShowPinnedMessagesButton conversationId={conversationId}/>
+
+            <IconButton
+              isLoading={false}
+              theme="default"
+              onClick={handleCall}
+            >
+              <BsTelephoneFill className="size-6"/>
+            </IconButton>
+
+            <IconButton
+              theme="default"
+              onClick={() => setShowProfile(!showProfile)}
+            >
+              <BsPersonFill className="size-6"/>
+            </IconButton>
+          </div>
+        </header>
+
+        <div className="flex-1 min-h-0 flex flex-row relative gap-0">
+            <div className="flex flex-col flex-1">
+              <ChatView/>
+              <ChatInput/>
+            </div>
+
+          {showProfile && (
+            <UserProfilePanel
+              className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
+              avatarClassName="border-gray-725 bg-gray-725"
+              userId={peerProfile.id}
+            />
+          )}
+        </div>
+      </ChatContainerContextProvider>
     </div>
   );
 }
