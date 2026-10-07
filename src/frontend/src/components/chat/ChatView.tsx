@@ -3,7 +3,6 @@ import type {
   TimelineMessageDto,
 } from "../../api/types.ts";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
-import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
@@ -24,17 +23,15 @@ import {MessageItem} from "./MessageItem.tsx";
 import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 import {DateSeparator} from "./DateSeparator.tsx";
+import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 
 const START_INDEX = 100_000_000;
-
-type MediaGalleryState = {
-  items: { id: string; type: string }[];
-  currentIndex: number;
-};
 
 export interface ChatViewProps {}
 
 export function ChatView({}: ChatViewProps) {
+  const setMediaElements = useMediaGalleryStore((state) => state.setElements);
+
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
   // local states
@@ -42,21 +39,18 @@ export function ChatView({}: ChatViewProps) {
   const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
 
-  // TODO: move to zustand state
-  const [galleryState, setGalleryState] = useState<MediaGalleryState>({
-    items: [],
-    currentIndex: 0,
-  });
-
   const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
-    setGalleryState({
-      items: messageAttachments.map(att => ({id: att.id, type: att.type})),
-      currentIndex: clickedIndex
+    setMediaElements(messageAttachments.map(attachment => ({
+      id: attachment.id,
+      src: conversationService.getAttachmentUrl(attachment.id, false),
+      fileName: attachment.name,
+      mediaType: attachment.type,
+    })), clickedIndex, {
+      downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
     });
   };
 
   // messaging context and stuffs
-
   const {
     handleEditMessage,
     handleDeleteMessage,
@@ -137,15 +131,11 @@ export function ChatView({}: ChatViewProps) {
 
     if (anchorId && virtuosoRef.current) {
       virtuosoRef.current.getState((state) => {
-        console.log("save scrolltop", state.scrollTop);
         scrollTopBeforeFetchRef.current = state.scrollTop;
       });
     }
 
-    console.log('fetch next page')
-    fetchNextPage().then(() => {
-      console.log("finish fetch next page");
-    });
+    fetchNextPage();
   };
 
   useLayoutEffect(() => {
@@ -153,7 +143,6 @@ export function ChatView({}: ChatViewProps) {
     if (saved == null) return;
     scrollTopBeforeFetchRef.current = null;
 
-    console.log("reapply scrollto top", saved);
     virtuosoRef.current?.scrollTo({ top: saved });
   }, [timelineItems]);
 
@@ -301,10 +290,10 @@ export function ChatView({}: ChatViewProps) {
           key={virtualKey}  // so that initialTopMostItemIndex is re-evaluated
           data={timelineItems}
           computeItemKey={(_, item) => item.getKey()}
-          atBottomThreshold={40}
+          atBottomThreshold={150}
           followOutput={
             !anchorId || (followEnabled && !hasNextPage) ?
-              (isAtBottom) => { console.log("is at bottom:", isAtBottom); return (isAtBottom ? "auto" : false); } :
+              (isAtBottom) => (isAtBottom ? "auto" : false) :
               false
           }
           alignToBottom={!anchorId}
@@ -341,47 +330,6 @@ export function ChatView({}: ChatViewProps) {
       )}
 
       <TypingIndicator displayUsers={typingUsers.slice(0, 4)}/>
-
-      {galleryState.items && galleryState.items.length > 0 && (
-        <MediaPreviewGallery
-          open={!!galleryState.items}
-          onOpenChange={(state) => {
-            if (!state) {
-              setGalleryState((prev) => ({
-                ...prev,
-                items: [],
-              }));
-            }
-          }}
-          currentItem={{
-            source: conversationService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false),
-            type: galleryState.items[galleryState.currentIndex].type
-          }}
-          hasPreviousItem={galleryState.currentIndex > 0}
-          onPrevious={() => {
-            setGalleryState((prev) => ({
-              ...prev,
-              currentIndex: prev.currentIndex - 1,
-            }));
-          }}
-          hasNextItem={galleryState.currentIndex < galleryState.items.length - 1}
-          onNext={() => {
-            setGalleryState((prev) => ({
-              ...prev,
-              currentIndex: prev.currentIndex + 1,
-            }));
-          }}
-          onDownloadRequested={() => {
-            const downloadUrl = conversationService.getAttachmentDownloadUrl(galleryState.items[galleryState.currentIndex].id);
-
-            const link = document.createElement("a");
-            link.href = downloadUrl.toString();
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
-        />
-      )}
 
       <DeleteMessageConfirmationDialog
         open={!!deletingMessage}

@@ -6,6 +6,7 @@ import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
+import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -136,14 +137,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
     }
   };
 
-  // gallery states
-  const [previewGalleryState, setPreviewGalleryState] = useState({open: false, index: 0});
-
-  const safeIndex = Math.min(
-    Math.max(0, previewGalleryState.index),
-    Math.max(0, attachments.length - 1)
-  );
-  const activeAttachment = attachments[safeIndex];
+  const setGalleryElements = useMediaGalleryStore(state => state.setElements);
 
   return (
     <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
@@ -182,10 +176,12 @@ export default function ChatInput({disabled}: ChatInputProps) {
                     onRemove={() => handleRemoveAttachment(item.id)}
                     previewUrl={item.previewUrl}
                     onClick={() => {
-                      setPreviewGalleryState({
-                        open: true,
-                        index,
-                      });
+                      setGalleryElements(attachments.map(attachment => ({
+                        id: attachment.id,
+                        fileName: attachment.file.name,
+                        mediaType: attachment.file.type,
+                        src: attachment.previewUrl!,
+                      })), index);
                     }}
                   />
                 ))}
@@ -200,33 +196,6 @@ export default function ChatInput({disabled}: ChatInputProps) {
                 className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
             </ScrollArea.Scrollbar>
           </ScrollArea.Root>
-
-          <MediaPreviewGallery
-            open={previewGalleryState.open}
-            onOpenChange={(state) => {
-              if (!state) {
-                setPreviewGalleryState((prev) => ({...prev, open: false,}));
-              }
-            }}
-            currentItem={{
-              source: activeAttachment.previewUrl!,
-              type: activeAttachment.file.type,
-            }}
-            hasPreviousItem={previewGalleryState.index > 0}
-            onPrevious={() => {
-              setPreviewGalleryState((prev) => ({
-                ...prev,
-                index: prev.index - 1
-              }));
-            }}
-            hasNextItem={previewGalleryState.index < attachments.length - 1}
-            onNext={() => {
-              setPreviewGalleryState((prev) => ({
-                ...prev,
-                index: prev.index + 1
-              }));
-            }}
-          />
         </section>
       )}
 
