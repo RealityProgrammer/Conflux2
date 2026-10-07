@@ -1,5 +1,7 @@
 import {useCommunityServerChannelContext} from "../../contexts/CommunityServerChannelContext.tsx";
-import ChatContainer from "../../components/chat/ChatContainer.tsx";
+import {ChatView} from "../../components/chat/ChatView.tsx";
+import ChatInput from "../../components/chat/ChatInput.tsx";
+import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 
 export default function ChannelPage() {
   const { channelSummary } = useCommunityServerChannelContext();
@@ -33,7 +35,14 @@ function SuccessLayout() {
       </header>
 
       <main className="flex-1 min-h-0 flex flex-row relative gap-0">
-        <ChatContainer conversationId={channelSummary!.conversationId}/>
+        <ChatContainerContextProvider
+          conversationId={channelSummary!.conversationId}
+        >
+          <div className="flex flex-col flex-1">
+            <ChatView/>
+            <ChatInput/>
+          </div>
+        </ChatContainerContextProvider>
       </main>
     </section>
   );

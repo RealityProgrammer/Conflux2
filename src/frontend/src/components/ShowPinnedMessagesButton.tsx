@@ -17,10 +17,12 @@ import {useState} from "react";
 
 interface ShowPinnedMessagesButtonProps {
   conversationId: string;
+  onPinnedMessageClick: (messageId: string) => void;
 }
 
 export default function ShowPinnedMessagesButton({
   conversationId,
+  onPinnedMessageClick,
 }: ShowPinnedMessagesButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
@@ -40,6 +42,11 @@ export default function ShowPinnedMessagesButton({
       setHasBeenOpened(true);
     }
   };
+
+  const handleClickOnPinnedMessage = (messageId: string) => {
+    setIsOpen(false);
+    onPinnedMessageClick(messageId);
+  }
 
   useSignalREvent("MessagePinned", (event: MessagePinnedEvent) => {
     if (!hasBeenOpened) return;
@@ -76,7 +83,12 @@ export default function ShowPinnedMessagesButton({
           </header>
 
           <section className="flex-1 min-h-0 overflow-y-auto p-2">
-            <ContentDisplay allElements={allElements} isLoading={isLoading} isError={isError}/>
+            <ContentDisplay
+              allElements={allElements}
+              isLoading={isLoading}
+              isError={isError}
+              onPinnedMessageClick={handleClickOnPinnedMessage}
+            />
           </section>
         </Popover.Content>
       </Popover.Portal>
@@ -84,11 +96,19 @@ export default function ShowPinnedMessagesButton({
   );
 }
 
+interface ContentDisplayProps {
+  allElements: NonNullable<GetConversationPinnedMessagesQuery["pinnedMessages"]["nodes"]>;
+  isLoading: boolean;
+  isError: boolean;
+  onPinnedMessageClick: (messageId: string) => void;
+}
+
 function ContentDisplay({
   allElements,
   isLoading,
   isError,
-}: { allElements: NonNullable<GetConversationPinnedMessagesQuery["pinnedMessages"]["nodes"]>, isLoading: boolean, isError: boolean }) {
+  onPinnedMessageClick
+}: ContentDisplayProps) {
   return (
     <>
       {isLoading ? (
@@ -116,7 +136,7 @@ function ContentDisplay({
           overscan={5}
           itemContent={(_index, message) => (
             <div className="pb-1">
-              <div className="p-2 border-2 border-gray-600 rounded-md group bg-black/8">
+              <div className="p-2 border-2 border-gray-600 rounded-md group bg-black/8 cursor-pointer" onClick={() => onPinnedMessageClick(message.id)}>
                 <MessageRow.Row
                   header={{
                     senderDisplayName: message.sender?.displayName ?? "???",

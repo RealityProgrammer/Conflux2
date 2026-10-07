@@ -16,6 +16,7 @@ type DeleteMessagePayload = { operationId: string, messageId: string };
 
 interface ChatContainerContextType {
   conversationId: string;
+  anchorMessageId: string | null;
   replyingMessage: TimelineMessageDto | null;
 
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
@@ -35,11 +36,13 @@ const ChatContainerContext = createContext<ChatContainerContextType | null>(null
 
 interface ChatContainerContextProviderProps {
   conversationId: string;
+  anchorMessageId: string | null;
   children: ReactNode;
 }
 
 export default function ChatContainerContextProvider({
   conversationId,
+  anchorMessageId,
   children,
 }: ChatContainerContextProviderProps) {
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
@@ -190,6 +193,7 @@ export default function ChatContainerContextProvider({
   return (
     <ChatContainerContext.Provider value={{
       conversationId,
+      anchorMessageId,
       replyingMessage,
       setReplyingMessage,
       handleSendMessage,

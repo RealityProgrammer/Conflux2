@@ -23,6 +23,7 @@ import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
 import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
+import {MessageRow} from "./MessageRow.tsx";
 
 const START_INDEX = 10000000;
 
@@ -169,20 +170,18 @@ export function ChatView({}: ChatViewProps) {
   useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
     deleteMessage(event.messageId);
   });
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col justify-center items-center overflow-hidden h-full text-white bg-gray-700">
-        <Spinner className="size-10 fill-white"/>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
       {isLoading ? (
-        <div className="size-full flex flex-row justify-center items-center">
-          <Spinner className="size-10 fill-white"/>
+        <div className="space-y-1">
+          {[...new Array(20).keys()].map((_, index) => (
+            <div key={index} className="px-2">
+              <MessageRow.HeaderSkeleton>
+                <MessageRow.BodySkeleton/>
+              </MessageRow.HeaderSkeleton>
+            </div>
+          ))}
         </div>
       ) : (
         <Virtuoso

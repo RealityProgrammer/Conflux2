@@ -75,8 +75,8 @@ export default function useTimelineMessages(
   const queryClient = useQueryClient();
 
   const modifyMessageData = (callback: (oldData: InfiniteData<TimelineMessagePage | null | undefined>) => InfiniteData<TimelineMessagePage | null | undefined>) => {
-    queryClient.setQueryData<InfiniteData<TimelineMessagePage | undefined | null>>(
-      queryKey,
+    queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
+      { queryKey: ["conversation", conversationId] },
       (oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) {
           return oldData;

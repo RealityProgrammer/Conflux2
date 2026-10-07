@@ -4,7 +4,6 @@ import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import UserAvatar from "../../components/UserAvatar.tsx";
 import {useState} from "react";
 import {BsPersonFill, BsTelephoneFill} from "react-icons/bs";
-import ChatContainer from "../../components/chat/ChatContainer.tsx";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
@@ -16,6 +15,9 @@ import {toast} from "react-toastify";
 import ShowPinnedMessagesButton from "../../components/ShowPinnedMessagesButton.tsx";
 import {directConversationService} from "../../api/directConversationService.ts";
 import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
+import {ChatView} from "../../components/chat/ChatView.tsx";
+import ChatInput from "../../components/chat/ChatInput.tsx";
+import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -90,6 +92,12 @@ function SuccessPage({
     }
   };
 
+  const [jumpTargetId, setJumpTargetId] = useState<string | null>(null);
+
+  const handleJumpToPinnedMessage = (messageId: string) => {
+    console.log("jump to message", messageId);
+  };
+
   return (
     <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
       <header
@@ -103,7 +111,7 @@ function SuccessPage({
         <span className="flex-1">{peerProfile.userName}</span>
 
         <div className="flex-none flex flex-row items-center gap-2">
-          <ShowPinnedMessagesButton conversationId={conversationId}/>
+          <ShowPinnedMessagesButton conversationId={conversationId} onPinnedMessageClick={handleJumpToPinnedMessage}/>
 
           <IconButton
             isLoading={false}
@@ -123,7 +131,15 @@ function SuccessPage({
       </header>
 
       <div className="flex-1 min-h-0 flex flex-row relative gap-0">
-        <ChatContainer conversationId={conversationId!}/>
+        <ChatContainerContextProvider
+          conversationId={conversationId}
+          anchorMessageId={jumpTargetId}
+        >
+          <div className="flex flex-col flex-1">
+            <ChatView/>
+            <ChatInput/>
+          </div>
+        </ChatContainerContextProvider>
 
         {showProfile && (
           <UserProfilePanel
