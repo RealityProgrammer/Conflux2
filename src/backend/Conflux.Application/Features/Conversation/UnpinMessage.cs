@@ -15,6 +15,8 @@ public sealed record UnpinMessageCommand(
     Guid MessageId
 ) : ICommand<Result<TimelineMessageDto>>;
 
+public sealed record MessageUnpinnedNotification(Guid ConversationId, Guid MessageId) : INotification;
+
 internal sealed class UnpinMessageHandler(
     IConversationRepository conversationRepository,
     IMessageRepository messageRepository,
@@ -89,6 +91,7 @@ internal sealed class UnpinMessageHandler(
         };
 
         await publisher.Publish(new MessageReceivedNotification(command.ConversationId, messageDto), CancellationToken.None);
+        await publisher.Publish(new MessageUnpinnedNotification(command.ConversationId, command.MessageId), CancellationToken.None);
         
         if (conversation.Type == ConversationType.Direct) {
             IReadOnlyCollection<Guid> directConversationParticipantIds = 

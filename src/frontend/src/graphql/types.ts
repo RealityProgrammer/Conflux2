@@ -892,7 +892,7 @@ export type PinnedMessageDto = {
   id: Scalars['UUID']['output'];
   pinnedAt?: Maybe<Scalars['DateTime']['output']>;
   sender?: Maybe<TimelineMessageSenderDto>;
-  senderUserId?: Maybe<Scalars['UUID']['output']>;
+  senderUserId: Scalars['UUID']['output'];
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 

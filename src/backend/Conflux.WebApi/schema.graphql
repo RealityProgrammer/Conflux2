@@ -474,7 +474,7 @@ type PinnedMessageDto {
   id: UUID!
   body: String
   attachments: [AttachmentDto!]!
-  senderUserId: UUID
+  senderUserId: UUID!
   sender: TimelineMessageSenderDto
   createdAt: DateTime!
   updatedAt: DateTime

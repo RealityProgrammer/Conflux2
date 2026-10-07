@@ -1,7 +1,7 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
 } from "./types.ts";
-import type {PresenceStatus} from "../graphql/types.ts";
+import type {PinnedMessageDto, PresenceStatus} from "../graphql/types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -147,4 +147,12 @@ export type DirectCallEndedEvent = {
 
 export type DirectConversationUpdatedEvent = {
   conversationId: string;
+}
+
+export type MessagePinnedEvent = {
+  message: PinnedMessageDto;
+}
+
+export type MessageUnpinnedEvent = {
+  messageId: string;
 }

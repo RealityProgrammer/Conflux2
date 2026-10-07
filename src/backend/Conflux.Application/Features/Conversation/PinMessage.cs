@@ -15,6 +15,8 @@ public sealed record PinMessageCommand(
     Guid MessageId
 ) : ICommand<Result<TimelineMessageDto>>;
 
+public sealed record MessagePinnedNotification(Guid ConversationId, PinnedMessageDto Message) : INotification;
+
 internal sealed class PinMessageHandler(
     IConversationRepository conversationRepository,
     IMessageRepository messageRepository,
@@ -49,7 +51,7 @@ internal sealed class PinMessageHandler(
                 .ExecuteUpdateAsync(builder => {
                     builder.SetProperty(m => m.PinnedAt, utcNow);
                 }, cancellationToken);
-
+            
             if (changed == 0) {
                 await unitOfWork.RollbackAsync(cancellationToken);
                 
@@ -83,7 +85,7 @@ internal sealed class PinMessageHandler(
             return Errors.OperationFailure("pin message");
         }
         
-        // publish notification
+        // publish notifications
         TimelineMessageDto messageDto = new(publishingMessage) {
             Sender = await userRepository
                 .AsQueryable()
@@ -93,6 +95,14 @@ internal sealed class PinMessageHandler(
         };
 
         await publisher.Publish(new MessageReceivedNotification(conversationId, messageDto), CancellationToken.None);
+
+        PinnedMessageDto pinnedMessage = await messageRepository
+            .AsQueryable()
+            .Where(m => m.Id == command.MessageId)
+            .SelectFacet<PinnedMessageDto>()
+            .SingleAsync(CancellationToken.None);
+        
+        await publisher.Publish(new MessagePinnedNotification(conversationId, pinnedMessage), CancellationToken.None);
         
         // publish a conversation updated if conversation is type Direct
         if (conversation.Type == ConversationType.Direct) {
