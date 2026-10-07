@@ -937,34 +937,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query: {
-                    direction?: components["schemas"]["MessageLoadDirection"];
-                    cursor?: string;
-                    count: number;
-                };
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                    };
-                };
-            };
-        };
+        get?: never;
         put?: never;
         post: {
             parameters: {
@@ -1069,6 +1042,51 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReadMessageRequest"];
+                    "text/json": components["schemas"]["ReadMessageRequest"];
+                    "application/*+json": components["schemas"]["ReadMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/conversations/{conversationId}/messages/{messageId}/pin": {
@@ -2086,13 +2104,34 @@ export interface components {
             tokenType: string;
             accessToken: string;
         };
-        /** @enum {string} */
-        MessageLoadDirection: MessageLoadDirection;
         MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
         MessagePropertiesCallEndProperties: {
             /** @enum {integer} */
             $type?: MessagePropertiesCallEndProperties$type;
             duration: string;
+        };
+        MessageReadStrategy: components["schemas"]["MessageReadStrategyLatest"] | components["schemas"]["MessageReadStrategyAround"] | components["schemas"]["MessageReadStrategyBefore"] | components["schemas"]["MessageReadStrategyAfter"];
+        MessageReadStrategyAfter: {
+            /** @enum {string} */
+            type?: MessageReadStrategyAfterType;
+            /** Format: uuid */
+            cursorId: string;
+        };
+        MessageReadStrategyAround: {
+            /** @enum {string} */
+            type?: MessageReadStrategyAroundType;
+            /** Format: uuid */
+            anchorId: string;
+        };
+        MessageReadStrategyBefore: {
+            /** @enum {string} */
+            type?: MessageReadStrategyBeforeType;
+            /** Format: uuid */
+            cursorId: string;
+        };
+        MessageReadStrategyLatest: {
+            /** @enum {string} */
+            type?: MessageReadStrategyLatestType;
         };
         /** @enum {string} */
         MessageType: MessageType;
@@ -2145,6 +2184,9 @@ export interface components {
         PermissionState: PermissionState;
         /** @enum {string} */
         PresenceStatus: PresenceStatus;
+        ReadMessageRequest: {
+            readStrategy: components["schemas"]["MessageReadStrategy"];
+        };
         RefreshResponse: {
             authorizationInfo: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
@@ -2358,13 +2400,20 @@ export enum InvitationExpireAfter {
     FourWeeks = "FourWeeks",
     Infinite = "Infinite"
 }
-export enum MessageLoadDirection {
-    Before = "Before",
-    After = "After",
-    Around = "Around"
-}
 export enum MessagePropertiesCallEndProperties$type {
     Value1 = 1
+}
+export enum MessageReadStrategyAfterType {
+    after = "after"
+}
+export enum MessageReadStrategyAroundType {
+    around = "around"
+}
+export enum MessageReadStrategyBeforeType {
+    before = "before"
+}
+export enum MessageReadStrategyLatestType {
+    latest = "latest"
 }
 export enum MessageType {
     Message = "Message",

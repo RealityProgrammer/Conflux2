@@ -5,15 +5,17 @@ import {
   type UseInfiniteQueryResult,
   useQueryClient
 } from "@tanstack/react-query";
-import type {TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
+import type {MessageReadStrategy, TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
 import {conversationService} from "../api/conversationService.ts";
-import {MessageLoadDirection} from "../api/schema.ts";
-
-const LOAD_COUNT = 50;
+import {
+  MessageReadStrategyAfterType,
+  MessageReadStrategyAroundType,
+  MessageReadStrategyBeforeType,
+  MessageReadStrategyLatestType
+} from "../api/schema.ts";
 
 type PageParams = {
-  cursorId?: string;
-  direction: MessageLoadDirection;
+  readStrategy: MessageReadStrategy;
 };
 
 interface UseTimelineMessagesResult {
@@ -23,39 +25,47 @@ interface UseTimelineMessagesResult {
   deleteMessage: (messageId: string) => void;
 }
 
-export default function useTimelineMessages(conversationId: string): UseTimelineMessagesResult {
-  const queryKey: QueryKey = ["conversation", conversationId];
+export default function useTimelineMessages(
+  conversationId: string,
+  anchorId: string | null = null
+): UseTimelineMessagesResult {
+  const queryKey: QueryKey = ["conversation", conversationId, anchorId ?? "latest"];
 
   const messageQueryResult = useInfiniteQuery({
     enabled: !!conversationId,
     queryKey,
     queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<TimelineMessagePage | null | undefined> => {
-      const response = await conversationService.getTimelineMessages(
+      const response = await conversationService.readTimelineMessages(
         conversationId!,
-        pageParam.direction,
-        pageParam.cursorId,
-        LOAD_COUNT,
+        pageParam.readStrategy
       );
 
       return response.data;
     },
     initialPageParam: {
-      cursorId: undefined,
-      direction: MessageLoadDirection.Before,
-    },
+      readStrategy: anchorId ? { type: MessageReadStrategyAroundType.around, anchorId } : { type: MessageReadStrategyLatestType.latest }
+    } as PageParams,
 
     getPreviousPageParam: (firstPage: TimelineMessagePage | null | undefined): PageParams | undefined => {
-      return firstPage?.hasMoreBefore && firstPage.messages.length > 0 ? {
-        cursorId: firstPage.messages[0].id,
-        direction: MessageLoadDirection.Before,
-      } : undefined;
+      if (!firstPage?.hasMoreBefore || firstPage.messages.length === 0) return undefined;
+
+      return {
+        readStrategy: {
+          type: MessageReadStrategyBeforeType.before,
+          cursorId: firstPage.messages[0].id
+        },
+      };
     },
 
     getNextPageParam: (lastPage: TimelineMessagePage | null | undefined): PageParams | undefined => {
-      return lastPage?.hasMoreAfter && lastPage.messages.length > 0 ? {
-        cursorId: lastPage.messages.at(-1)?.id,
-        direction: MessageLoadDirection.After,
-      } : undefined;
+      if (!lastPage?.hasMoreAfter || lastPage.messages.length === 0) return undefined;
+
+      return {
+        readStrategy: {
+          type: MessageReadStrategyAfterType.after,
+          cursorId: lastPage.messages[lastPage.messages.length - 1].id
+        },
+      };
     },
 
     staleTime: 60 * 30 * 1000,

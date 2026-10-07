@@ -3,11 +3,10 @@ import type {
   BackendResponse,
   TimelineMessageDto,
   ServiceResponse,
-  TimelineMessagePage
+  TimelineMessagePage, MessageReadStrategy
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
-import type {MessageLoadDirection} from "./schema.ts";
 
 export const conversationService = {
   sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
@@ -93,19 +92,12 @@ export const conversationService = {
     }
   },
 
-  getTimelineMessages: async (conversationId: string, direction: MessageLoadDirection | undefined, cursor: string | undefined, count: number): Promise<ServiceResponse<TimelineMessagePage>> => {
+  readTimelineMessages: async (conversationId: string, readStrategy: MessageReadStrategy): Promise<ServiceResponse<TimelineMessagePage>> => {
     try {
-      const searchParams = new URLSearchParams();
-
-      if (cursor && direction) {
-        searchParams.append("cursor", cursor);
-        searchParams.append("direction", direction);
-      }
-
-      searchParams.append("count", String(count));
-
       const response: AxiosResponse<BackendResponse<TimelineMessagePage>> =
-        await apiClient.get(`/conversations/${encodeURIComponent(conversationId)}/messages?${searchParams.toString()}`);
+        await apiClient.post(`/conversations/${encodeURIComponent(conversationId)}/messages/read`, {
+          readStrategy,
+        });
 
       return {
         success: true,

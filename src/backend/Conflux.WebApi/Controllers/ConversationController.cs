@@ -132,12 +132,10 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpGet("{conversationId:guid}/messages")]
+    [HttpPost("{conversationId:guid}/messages/read")]
     public async Task<ActionResult<ApiResponse<TimelineMessagePage>>> GetMessages(
         Guid conversationId,
-        [FromQuery] MessageLoadDirection? direction,
-        [FromQuery] Guid? cursor,
-        [FromQuery, Required] int count,
+        [FromBody] ReadMessageRequest request,
         CancellationToken cancellationToken
     ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
@@ -146,10 +144,8 @@ public sealed class ConversationController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
-        // TODO: Check if user has permission to view messages at this channel at service.
-
         var result = await mediator.Send(new ReadTimelineMessagesQuery(
-            userId, conversationId, direction, cursor, count
+            userId, conversationId, request.ReadStrategy, 50
         ), cancellationToken);
 
         if (result.IsSuccess) {
@@ -258,6 +254,10 @@ public sealed class ConversationController(
         }
     }
 
+    public record ReadMessageRequest(
+        [Required] MessageReadStrategy ReadStrategy
+    );
+    
     public record PatchMessageRequest(
         [StringLength(1024, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
         string? Body

@@ -1,7 +1,6 @@
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
 
@@ -20,99 +19,87 @@ internal sealed class MessageRepository(
 
     public async Task<Result<TimelineMessagePage>> GetTimelineMessages(
         Guid conversationId, 
-        MessageLoadDirection? direction, 
-        Guid? cursorMessageId, 
+        MessageReadStrategy readStrategy,
         int limit,
         CancellationToken cancellationToken = default
     ) {
+        List<TimelineMessageDto> messages;
+        bool? hasMoreBefore, hasMoreAfter;
+        
         var baseQuery = dbContext.Messages
             .AsNoTracking()
             .Where(m => m.ConversationId == conversationId)
             .Include(m => m.ReplyTo);
 
-        List<TimelineMessageDto> messageProjections;
-        bool? hasMoreBefore, hasMoreAfter;
-        
-        // if no cursor message is provided, mean load latest messages, ignore the direction parameter
-        if (cursorMessageId is not { } cursorId) {
-            messageProjections = await baseQuery
-                .OrderByDescending(m => m.Id)   // uuidv7 btw
-                .SelectFacet<TimelineMessageDto>()
-                .Take(limit)
-                .Reverse()  // return the messages in chronological order
-                .ToListAsync(cancellationToken);
-
-            hasMoreBefore = messageProjections.Count == limit;
-            hasMoreAfter = false;
-        } else {
-            switch (direction) {
-                case MessageLoadDirection.Before: {
-                    messageProjections = await baseQuery
-                        .Where(m => m.Id.CompareTo(cursorId) < 0)
-                        .OrderByDescending(m => m.Id)
-                        .SelectFacet<TimelineMessageDto>()
-                        .Take(limit)
-                        .Reverse()
-                        .ToListAsync(cancellationToken);
-
-                    hasMoreBefore = messageProjections.Count == limit;
-                    hasMoreAfter = null;
-                    break;
-                }
-
-                case MessageLoadDirection.After: {
-                    messageProjections = await baseQuery
-                        .Where(m => m.Id.CompareTo(cursorId) > 0)
-                        .OrderBy(m => m.Id)
-                        .SelectFacet<TimelineMessageDto>()
-                        .Take(limit)
-                        .ToListAsync(cancellationToken);
-
-                    hasMoreBefore = null;
-                    hasMoreAfter = messageProjections.Count == limit;
-                    break;
-                }
-
-                case MessageLoadDirection.Around: {
-                    int halfLimit = limit / 2;
-
-                    var before = await baseQuery
-                        .Where(m => m.Id.CompareTo(cursorId) < 0)
-                        .OrderByDescending(m => m.Id)
-                        .SelectFacet<TimelineMessageDto>()
-                        .Take(halfLimit)
-                        .Reverse()
-                        .ToListAsync(cancellationToken);
-
-                    var after = await baseQuery
-                        .Where(m => m.Id.CompareTo(cursorId) >= 0) // can't forget the cursor message too lmao
-                        .OrderBy(m => m.Id)
-                        .SelectFacet<TimelineMessageDto>()
-                        .Take(halfLimit + 1)
-                        .ToListAsync(cancellationToken);
-
-                    messageProjections = [..before, ..after];
-                    hasMoreBefore = before.Count == halfLimit;
-                    hasMoreAfter = after.Count == halfLimit + 1;
-                    break;
-                }
+        switch (readStrategy) {
+            case MessageReadStrategy.Latest:
+                messages = await baseQuery
+                    .OrderByDescending(m => m.Id)
+                    .SelectFacet<TimelineMessageDto>()
+                    .Take(limit)
+                    .Reverse()  // return the messages in chronological order
+                    .ToListAsync(cancellationToken);
                 
-                case null:
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(direction)] = [
-                            "Value must be specified when cursor isn't null.",
-                        ],
-                    });
+                hasMoreBefore = messages.Count == limit;
+                hasMoreAfter = false;
+                break;
+            
+            case MessageReadStrategy.Before before:
+                messages = await baseQuery
+                    .Where(m => m.Id.CompareTo(before.CursorId) < 0)
+                    .OrderByDescending(m => m.Id)
+                    .SelectFacet<TimelineMessageDto>()
+                    .Take(limit)
+                    .Reverse()
+                    .ToListAsync(cancellationToken);
                 
-                default:
-                    return Errors.ValidationErrorsOccurred(new() {
-                        [nameof(direction)] = [
-                            "Unexpected enumeration value.",
-                        ],
-                    });
-            }
+                hasMoreBefore = messages.Count == limit;
+                hasMoreAfter = null;
+                break;
+            
+            case MessageReadStrategy.After after:
+                messages = await baseQuery
+                    .Where(m => m.Id.CompareTo(after.CursorId) > 0)
+                    .OrderBy(m => m.Id)
+                    .SelectFacet<TimelineMessageDto>()
+                    .Take(limit)
+                    .ToListAsync(cancellationToken);
+                
+                hasMoreBefore = null;
+                hasMoreAfter = messages.Count == limit;
+                break;
+            
+            case MessageReadStrategy.Around around:
+                int halfLimit = limit / 2;
+                
+                List<TimelineMessageDto> beforeAnchor = await baseQuery
+                    .Where(m => m.Id.CompareTo(around.AnchorId) < 0)
+                    .OrderByDescending(m => m.Id)
+                    .SelectFacet<TimelineMessageDto>()
+                    .Take(halfLimit)
+                    .Reverse()
+                    .ToListAsync(cancellationToken);
+                
+                List<TimelineMessageDto> afterAnchor = await baseQuery
+                    .Where(m => m.Id.CompareTo(around.AnchorId) >= 0) // can't forget the cursor message too lmao
+                    .OrderBy(m => m.Id)
+                    .SelectFacet<TimelineMessageDto>()
+                    .Take(halfLimit + 1)
+                    .ToListAsync(cancellationToken);
+                
+                messages = [..beforeAnchor, ..afterAnchor];
+                hasMoreBefore = beforeAnchor.Count == halfLimit;
+                hasMoreAfter = afterAnchor.Count == halfLimit + 1;
+                break;
+            
+            default:
+                return Errors.ValidationErrorsOccurred(new() {
+                    [nameof(readStrategy)] = [
+                        "Unknown message read strategy.",
+                    ],
+                });
         }
-
-        return Result<TimelineMessagePage>.Success(new(messageProjections, hasMoreBefore, hasMoreAfter));
+        
+        return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
 }

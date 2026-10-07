@@ -6,10 +6,9 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record ReadTimelineMessagesQuery(
-    Guid RequesterUserId,
+    Guid ReaderUserId,
     Guid ConversationId,
-    MessageLoadDirection? Direction,
-    Guid? CursorMessageId,
+    MessageReadStrategy ReadStrategy,
     int Count
 ) : IQuery<Result<TimelineMessagePage>>;
 
@@ -22,8 +21,7 @@ public sealed class ReadTimelineMessagesHandler(
     ) {
         return await messageRepository.GetTimelineMessages(
             query.ConversationId, 
-            query.Direction, 
-            query.CursorMessageId,
+            query.ReadStrategy,
             query.Count,
             cancellationToken
         );

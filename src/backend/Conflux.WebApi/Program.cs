@@ -18,6 +18,7 @@ using Conflux.Application.Options;
 using Conflux.Application.Pipelines;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -509,7 +510,6 @@ builder.Services.AddOpenApi(options => {
 
         var extraEnums = new[] {
             typeof(ServerPermission),
-            typeof(MessageLoadDirection),
             typeof(InvitationController.InvitationExpireAfter),
             typeof(CommunityServerChannelType),
             typeof(PermissionState),

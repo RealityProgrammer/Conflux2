@@ -53,3 +53,4 @@ export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
 export type CallEndProperties = Omit<components["schemas"]["MessagePropertiesCallEndProperties"], "$type">;
 export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomingDirectCallQueryResult"];
+export type MessageReadStrategy = components["schemas"]["MessageReadStrategy"];
