@@ -30,6 +30,10 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
     return <DialingPhase call={call}/>;
   }
 
+  if (call.state === "canceled") {
+    return <CanceledPhase call={call}/>
+  }
+
   if (call.state === "dropped") {
     return <DroppedPhase call={call}/>
   }
@@ -47,7 +51,7 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
 
 function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
-  const markCallAsActive = useCallStore((state) => state.markCallAsActive);
+  const updateCallState = useCallStore((state) => state.updateCallState);
   const endCall = useCallStore((state) => state.endCall);
 
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
@@ -113,7 +117,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
 
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
     if (call.id === event.callId) {
-      markCallAsActive(call.id);
+      updateCallState(call.id, "active");
     }
   });
 
@@ -165,6 +169,28 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   );
 }
 
+function CanceledPhase({call}: {call: OutgoingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.id);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call canceled"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <UserAvatar
+          src={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(call.calleeProfile.id, call.calleeProfile.avatarRevision) : undefined}
+          alt="Callee avatar"
+          className="w-[min(25cqw,25cqh)]"
+        />
+      </div>
+    </>
+  )
+}
+
 function DroppedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
@@ -189,7 +215,7 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
 
 function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
+  const updateCallState = useCallStore((state) => state.updateCallState);
   const [isEndingCall, setIsEndingCall] = useState(false);
 
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
@@ -244,7 +270,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
     const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(call.id);
 
     if (response.success) {
-      markCallAsEnded(call.id);
+      updateCallState(call.id, "ended");
       appendMessage(response.data!);
     } else {
       setIsEndingCall(false);

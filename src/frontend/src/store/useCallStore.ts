@@ -3,21 +3,16 @@ import type { UserIdentityProfileDto } from "../api/types.ts";
 
 type BaseCall = {
   id: string;
+  state: "dialing" | "canceled" | "active" | "dropped" | "ended";
 }
-
-export type OutgoingDirectCallState = "dialing" | "active" | "dropped" | "ended";
 
 export type OutgoingDirectCall = BaseCall & {
   type: "outgoing_direct";
-  state: OutgoingDirectCallState;
   calleeProfile: UserIdentityProfileDto;
 }
 
-export type IncomingDirectCallState = "incoming" | "active" | "dropped" | "ended";
-
 export type IncomingDirectCall = BaseCall & {
   type: "incoming_direct";
-  state: IncomingDirectCallState;
   callerProfile: UserIdentityProfileDto;
 }
 
@@ -27,10 +22,8 @@ interface CallStoreType {
   call: Call | null;
   startOutgoingDirectCall: (callId: string, calleeProfile: UserIdentityProfileDto) => void;
   startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) => void;
-  markCallAsActive: (callId: string) => void;
-  markCallAsDropped: (callSessionId: string) => void;
-  markCallAsEnded: (callSessionId: string) => void;
-  endCall: (callSessionId: string) => void;
+  updateCallState: (callId: string, state: BaseCall["state"]) => void;
+  endCall: (callId: string) => void;
 }
 
 export const useCallStore = create<CallStoreType>((set) => ({
@@ -41,28 +34,14 @@ export const useCallStore = create<CallStoreType>((set) => ({
   })),
 
   startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) => set(() => ({
-    call: { type: "incoming_direct", state: "incoming", id: callId, callerProfile }
+    call: { type: "incoming_direct", state: "dialing", id: callId, callerProfile }
   })),
 
-  markCallAsActive: (callId: string) => set((state) => {
+  updateCallState: (callId: string, newState: BaseCall["state"]) => set((state) => {
     if (state.call?.id === callId) {
-      return { call: { ...state.call, state: "active" } };
+      return { call: { ...state.call, state: newState, } };
     }
 
-    return state;
-  }),
-
-  markCallAsDropped: (callId: string) => set((state) => {
-    if (state.call?.id === callId) {
-      return { call: { ...state.call, state: "dropped" } };
-    }
-    return state;
-  }),
-
-  markCallAsEnded: (callId: string) => set((state) => {
-    if (state.call?.id === callId) {
-      return { call: { ...state.call, state: "ended" } };
-    }
     return state;
   }),
 

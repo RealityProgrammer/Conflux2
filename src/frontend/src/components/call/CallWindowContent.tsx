@@ -5,18 +5,17 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {DirectCallDroppedEvent, DirectCallEndedEvent} from "../../api/events.ts";
 
 export default function CallWindowContent({call}: {call: Call}) {
-  const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
+  const updateCallState = useCallStore((state) => state.updateCallState);
 
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
     if (call.id === event.callId) {
-      markCallAsDropped(call.id);
+      updateCallState(call.id, "dropped");
     }
   });
 
   useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
     if (call.id === event.callId) {
-      markCallAsEnded(call.id);
+      updateCallState(call.id, "ended");
     }
   });
 

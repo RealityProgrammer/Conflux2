@@ -23,8 +23,12 @@ import useTimelineMessages from "../../hooks/useTimelineMessages.ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
-  if (call.state === "incoming") {
+  if (call.state === "dialing") {
     return <IncomingPhase call={call}/>
+  }
+
+  if (call.state === "canceled") {
+    return <CanceledPhase call={call}/>
   }
 
   if (call.state === "dropped") {
@@ -43,21 +47,17 @@ export default function IncomingCallWindowContent({call}: {call: IncomingDirectC
 }
 
 function IncomingPhase({call}: {call: IncomingDirectCall}) {
-  const markCallAsActive = useCallStore((state) => state.markCallAsActive);
-  const endCall = useCallStore((state) => state.endCall);
-  const [status, setStatus] = useState<"none" | "canceled" | "denied">("none");
+  const updateCallState = useCallStore((state) => state.updateCallState);
 
   // TODO: not do this shit
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
   const { appendMessage } = useTimelineMessages(loaderData?.conversationId ?? "");
 
   const handleRejectCall = async () => {
-    if (status !== "none") return;
-
     const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectDirectCall(call.id);
 
     if (response.success) {
-      setStatus("denied");
+      updateCallState(call.id, "ended")
       appendMessage(response.data!);
     } else {
       toast.error(`Failed to deny call.`);
@@ -66,36 +66,21 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   };
 
   const handleAcceptCall = async () => {
-    if (status !== "none") return;
-
-    console.log("accept call id", call.id);
     const response: ServiceResponse = await directConversationService.acceptDirectCall(call.id);
 
     if (response.success) {
-      markCallAsActive(call.id);
+      updateCallState(call.id, "active");
     } else {
       toast.error(`Failed to accept call.`);
       console.error("Failed to accept call:", response.error);
     }
   }
 
-  useEffect(() => {
-    if (status !== "none") {
-      const timeoutId = setTimeout(() => {
-        endCall(call.id);
-      }, 3000);
-
-      return () => {
-        clearTimeout(timeoutId);
-      }
-    }
-  }, [status]);
-
   const callerAvatarRef = useRef<HTMLDivElement | null>(null);
   const rippleRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!callerAvatarRef.current || !rippleRef.current || status !== "none") return;
+    if (!callerAvatarRef.current || !rippleRef.current) return;
 
     const timeline = createTimeline({
       loop: true,
@@ -130,23 +115,17 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
     return () => {
       timeline.cancel();
     }
-  }, [status]);
+  }, []);
 
   useSignalREvent("DirectCallCanceled", (event: DirectCallCanceledEvent) => {
-    if (call.id === event.callerId) {
-      setStatus("canceled");
+    if (call.id === event.callId) {
+      updateCallState(call.id, "canceled");
     }
   });
 
   return (
     <>
-      <CallWindowHeader title={status === "none" ? (
-        `Incoming call from ${call.callerProfile.displayName}`
-      ) : status === "canceled" ? (
-        "Call canceled"
-      ) : status === "denied" ? (
-        "Call denied"
-      ) : null}/>
+      <CallWindowHeader title={`Incoming call from ${call.callerProfile.displayName}`}/>
 
       <section className="flex-1 bg-black flex flex-col justify-center items-center gap-2 @container-size relative overflow-hidden">
         <UserAvatar
@@ -156,29 +135,46 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
           className="w-[min(25cqw,25cqh)]"
           style={{ transform: "scale(1)"}}
         />
-
-        {status === "none" && (
-          <div
-            ref={rippleRef}
-            className="absolute size-64 bg-none border-white/45 rounded-full"
-            style={{ transform: "scale(0)", opacity: 1, borderWidth: 0 }}
-          ></div>
-        )}
+        <div
+          ref={rippleRef}
+          className="absolute size-64 bg-none border-white/45 rounded-full"
+          style={{ transform: "scale(0)", opacity: 1, borderWidth: 0 }}
+        ></div>
 
         <p className="text-sm select-none">{call.callerProfile.displayName}</p>
 
-        {status === "none" && (
-          <div className="absolute bottom-2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
-            <IconButton className="size-8" theme="danger" onClick={handleRejectCall} disabled={status !== "none"}>
-              <BsTelephoneXFill className="size-7"/>
-            </IconButton>
+        <div className="absolute bottom-2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
+          <IconButton className="size-8" theme="danger" onClick={handleRejectCall}>
+            <BsTelephoneXFill className="size-7"/>
+          </IconButton>
 
-            <IconButton className="size-8" theme="success" onClick={handleAcceptCall} disabled={status !== "none"}>
-              <BsTelephoneInboundFill className="size-7"/>
-            </IconButton>
-          </div>
-        )}
+          <IconButton className="size-8" theme="success" onClick={handleAcceptCall}>
+            <BsTelephoneInboundFill className="size-7"/>
+          </IconButton>
+        </div>
       </section>
+    </>
+  )
+}
+
+function CanceledPhase({call}: {call: IncomingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.id);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call canceled"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <UserAvatar
+          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+          alt="Caller avatar"
+          className="w-[min(25cqw,25cqh)]"
+        />
+      </div>
     </>
   )
 }
@@ -207,7 +203,7 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
 
 function ActivePhase({call}: {call: IncomingDirectCall}) {
   const { userProfile } = useAuth();
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
+  const updateCallState = useCallStore((state) => state.updateCallState);
   const [isEndingCall, setIsEndingCall] = useState(false);
 
   const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
@@ -256,7 +252,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(call.id);
 
     if (response.success) {
-      markCallAsEnded(call.id);
+      updateCallState(call.id, "ended");
       appendMessage(response.data!);
     } else {
       setIsEndingCall(false);
