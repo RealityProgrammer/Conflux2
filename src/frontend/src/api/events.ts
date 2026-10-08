@@ -1,5 +1,6 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
+  EditedMessageDto,
 } from "./types.ts";
 import type {PinnedMessageDto, PresenceStatus} from "../graphql/types.ts";
 
@@ -28,7 +29,7 @@ export type MessageReceivedEvent = {
 }
 
 export type MessageEditedEvent = {
-  message: TimelineMessageDto;
+  message: EditedMessageDto;
 }
 
 export type MessageDeletedEvent = {

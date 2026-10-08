@@ -87,7 +87,7 @@ public sealed class ConversationController(
     }
 
     [HttpPatch("{conversationId:guid}/messages/{messageId:guid}")]
-    public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> EditMessage(
+    public async Task<ActionResult<ApiResponse>> EditMessage(
         Guid conversationId,
         Guid messageId,
         [FromForm] PatchMessageRequest request,
@@ -102,7 +102,7 @@ public sealed class ConversationController(
         var result = await mediator.Send(new EditMessageCommand(conversationId, userId, messageId, request.Body), cancellationToken);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
+            return Ok(new ApiResponse(Error.None));
         }
 
         return result.Error.Code switch {

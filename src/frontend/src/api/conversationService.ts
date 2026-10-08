@@ -53,7 +53,7 @@ export const conversationService = {
     }
   },
 
-  editMessage: async (conversationId: string, messageId: string, newBody: string | null): Promise<ServiceResponse<TimelineMessageDto>> => {
+  editMessage: async (conversationId: string, messageId: string, newBody: string | null): Promise<ServiceResponse> => {
     const trimmedBody = newBody?.trim();
 
     try {
@@ -63,13 +63,12 @@ export const conversationService = {
         formData.append("body", trimmedBody);
       }
 
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
+      const response: AxiosResponse<BackendResponse> =
         await apiClient.patchForm(`/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`, formData);
 
       return {
         success: true,
         statusCode: response.status,
-        data: response.data.data,
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
@@ -79,7 +78,7 @@ export const conversationService = {
 
   deleteMessage: async (conversationId: string, messageId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
+      const response: AxiosResponse<BackendResponse> =
         await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
 
       return {

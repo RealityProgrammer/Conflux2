@@ -310,9 +310,7 @@ export function ChatView() {
   });
 
   useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
-    if (event.message.conversationId !== conversationId) return;
-
-    updateMessage(event.message.id, { body: event.message.body });
+    updateMessage(event.message.id, { body: event.message.newBody });
   });
 
   useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {

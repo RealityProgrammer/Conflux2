@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -11,9 +12,9 @@ public sealed record EditMessageCommand(
     Guid SenderUserId, 
     Guid MessageId, 
     string? Body
-) : ICommand<Result<TimelineMessageDto>>;
+) : ICommand<Result>;
 
-public sealed record MessageEditedNotification(Guid ConversationId, TimelineMessageDto Message) : INotification;
+public sealed record MessageEditedNotification(Guid ConversationId, EditedMessageDto Message) : INotification;
 
 public sealed class EditMessageHandler(
     IMessageRepository messageRepository,
@@ -22,8 +23,8 @@ public sealed class EditMessageHandler(
     IConversationAuthorizeService conversationAuthorizeService,
     IPublisher publisher,
     ILogger<EditMessageHandler> logger
-) : ICommandHandler<EditMessageCommand, Result<TimelineMessageDto>> {
-    public async ValueTask<Result<TimelineMessageDto>> Handle(EditMessageCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<EditMessageCommand, Result> {
+    public async ValueTask<Result> Handle(EditMessageCommand command, CancellationToken cancellationToken) {
         var message = await messageRepository
             .AsQueryable()
             .Where(m => m.Id == command.MessageId)
@@ -46,7 +47,7 @@ public sealed class EditMessageHandler(
        
         // if body is not changed, return success instantly.
         if (message.Body == newBody) {
-            return Result<TimelineMessageDto>.Success(new(message));
+            return Result.Success();
         }
         
         message.Body = newBody;
@@ -61,10 +62,13 @@ public sealed class EditMessageHandler(
             return Errors.UnexpectedError();
         }
 
-        TimelineMessageDto dto = new(message);  // GetById should include the ReplyTo, so no need to load it into memory automatically
+        TimelineMessageDto dto = new(message);
         
-        await publisher.Publish(new MessageEditedNotification(command.ConversationId, dto), CancellationToken.None);
+        await publisher.Publish(
+            new MessageEditedNotification(command.ConversationId, new(message.Id, message.Body)), 
+            CancellationToken.None
+        );
         
-        return Result<TimelineMessageDto>.Success(dto);
+        return Result.Success();
     }
 }

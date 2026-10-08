@@ -51,7 +51,7 @@ export default function useTimelineMessageMutations(
     });
   };
 
-  const updateMessage = (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId">>) => {
+  const updateMessage = (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId" | "replyTo" | "sender">>) => {
     modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
       let hasMessage = false;
       for (const page of oldData.pages) {

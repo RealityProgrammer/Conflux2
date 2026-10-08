@@ -116,10 +116,10 @@ export default function ChatContainerContextProvider({
     onMutate: async (payload: EditMessagePayload) => {
       addEditOperation(payload.messageId, payload.newBody);
     },
-    onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: EditMessagePayload) => {
+    onSuccess: async (result: ServiceResponse, payload: EditMessagePayload) => {
       if (result.success) {
         removeEditOperation(payload.messageId);
-        updateMessage(payload.messageId, result.data!);
+        updateMessage(payload.messageId, { body: payload.newBody });
       } else {
         updateEditOperation(payload.messageId, true);
         toast.error("Failed to edit message.");
