@@ -176,7 +176,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
 builder.Services
     .AddStackExchangeRedisCache(options => {
         options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
-        options.InstanceName = "Conflux";
     });
 
 using var redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> {

@@ -1,3 +1,6 @@
+using MemoryPack;
+
 namespace Conflux.WebApi;
 
-public sealed record IdempotentResponse(string JsonBody, int StatusCode);
+[MemoryPackable]
+public sealed partial record IdempotentResponse(string JsonBody, int StatusCode);
