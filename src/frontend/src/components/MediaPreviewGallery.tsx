@@ -61,7 +61,7 @@ export default function MediaPreviewGallery() {
 
         <Dialog.Overlay className="backdrop-overlay"/>
 
-        <div className="absolute top-4 right-4 z-10 flex flex-row items-center gap-4 p-2 bg-gray-600 rounded-lg">
+        <div className="z-100 absolute top-4 right-4 flex flex-row items-center gap-4 p-2 bg-gray-600 rounded-lg">
           {options?.downloadUrlProvider && (
             <IconButton
               theme="default"

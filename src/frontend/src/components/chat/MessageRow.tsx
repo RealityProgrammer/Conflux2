@@ -5,26 +5,34 @@ import {BsPaperclip} from "react-icons/bs";
 import type {ReactNode} from "react";
 import usePositionBasedRandom from "../../hooks/usePositionBasedRandom.ts";
 import {distribute} from "../../utils/random.ts";
+import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 
 interface ReplyProps {
+  messageId: string;
   senderDisplayName: string;
   attachmentCount: number;
   body: string | null;
 }
 
 function Reply({
+  messageId,
   senderDisplayName,
   attachmentCount,
   body
 }: ReplyProps) {
+  const { requestJump } = useChatContainerContext();
+
   return (
     <div className="text-xs ml-13">
-      <p className="line-clamp-2 wrap-break-word">
+      <p
+        className="line-clamp-2 wrap-break-word w-fit max-w-full cursor-pointer"
+        onClick={() => requestJump(messageId)}
+      >
         <span className="font-semibold">{senderDisplayName ?? "???"}</span>
         {" "}sent:{" "}
         {attachmentCount > 0 && (
           <>
-            <span className="inline-flex items-center align-text-bottom mx-1 text-gray-300">
+            <span className="inline-flex items-center align-text-bottom mx-1 text-gray-400">
               <BsPaperclip className="size-3.5 fill-white mr-0.5" />
               <span className="leading-none text-[10px]">4</span>
             </span>

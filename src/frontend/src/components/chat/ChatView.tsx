@@ -24,6 +24,7 @@ import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.t
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 import {DateSeparator} from "./DateSeparator.tsx";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
+import Spinner from "../Spinner.tsx";
 
 const START_INDEX = 100_000_000;
 
@@ -270,6 +271,49 @@ export function ChatView({}: ChatViewProps) {
     }
   };
 
+  // hacky way to make the top loader not disappear instantly when older messages are loaded
+  const pendingOlderHideRef = useRef(false);
+  const topLoaderRef = useRef<HTMLDivElement>(null);
+
+  const showTopLoader = () => {
+    const el = topLoaderRef.current;
+    if (!el) return;
+    el.classList.remove("opacity-0", "-translate-y-2");
+    el.classList.add("opacity-100", "translate-y-0");
+  };
+
+  const hideTopLoader = () => {
+    const el = topLoaderRef.current;
+    if (!el) return;
+    el.classList.add("opacity-0", "-translate-y-2");
+    el.classList.remove("opacity-100", "translate-y-0");
+  };
+
+  useEffect(() => {
+    if (isFetchingPreviousPage) showTopLoader();
+  }, [isFetchingPreviousPage]);
+
+  useLayoutEffect(() => {
+    if (isFetchingPreviousPage) return;        // still loading
+    if (!pendingOlderHideRef.current) return;  // nothing to hide
+    pendingOlderHideRef.current = false;
+
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(hideTopLoader);
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [isFetchingPreviousPage, messagePages]);
+
+  useEffect(() => {
+    if (isFetchingPreviousPage) {
+      pendingOlderHideRef.current = true;
+    }
+  }, [isFetchingPreviousPage]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
       {isLoading ? (
@@ -285,48 +329,46 @@ export function ChatView({}: ChatViewProps) {
           </div>
         </div>
       ) : (
-        <Virtuoso
-          ref={virtuosoRef}
-          key={virtualKey}  // so that initialTopMostItemIndex is re-evaluated
-          data={timelineItems}
-          computeItemKey={(_, item) => item.getKey()}
-          atBottomThreshold={150}
-          followOutput={
-            !anchorId || (followEnabled && !hasNextPage) ?
-              (isAtBottom) => (isAtBottom ? "auto" : false) :
-              false
-          }
-          alignToBottom={!anchorId}
-          initialTopMostItemIndex={initialTopMostItemIndex}
-          firstItemIndex={firstItemIndex}
-          startReached={fetchOlderMessages}
-          atBottomStateChange={handleAtBottomStateChange}
-          // endReached={fetchNewerMessages}
-          isScrolling={(scrolling) => {
-            if (scrolling && !hasUserScrolledRef.current) {
-              hasUserScrolledRef.current = true;
+        <div className="relative flex-1 min-h-0 mb-2">
+          <div
+            ref={topLoaderRef}
+            className="pointer-events-none z-10 absolute top-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out opacity-0 -translate-y-2"
+          >
+            <Spinner className="size-6 fill-white" />
+          </div>
+
+          <div className={`pointer-events-none z-10 absolute bottom-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
+            isFetchingNextPage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+          }`}>
+            <Spinner className="size-6 fill-white"/>
+          </div>
+
+          <Virtuoso
+            ref={virtuosoRef}
+            key={virtualKey}  // so that initialTopMostItemIndex is re-evaluated
+            data={timelineItems}
+            computeItemKey={(_, item) => item.getKey()}
+            atBottomThreshold={150}
+            followOutput={
+              !anchorId || (followEnabled && !hasNextPage) ?
+                (isAtBottom) => (isAtBottom ? "auto" : false) :
+                false
             }
-          }}
-          overscan={10}
-          className="flex-1 min-h-0 mb-2"
-          // components={{
-          //   Header: () => (
-          //     isFetchingPreviousPage ? (
-          //       <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-          //         Loading older messages...
-          //       </div>
-          //     ) : null
-          //   ),
-          //   Footer: () => (
-          //     isFetchingNextPage ? (
-          //       <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-          //         Loading newer messages...
-          //       </div>
-          //     ) : null
-          //   )
-          // }}
-          itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
-        />
+            alignToBottom={!anchorId}
+            initialTopMostItemIndex={initialTopMostItemIndex}
+            firstItemIndex={firstItemIndex}
+            startReached={fetchOlderMessages}
+            atBottomStateChange={handleAtBottomStateChange}
+            isScrolling={(scrolling) => {
+              if (scrolling && !hasUserScrolledRef.current) {
+                hasUserScrolledRef.current = true;
+              }
+            }}
+            overscan={10}
+            className="h-full"
+            itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
+          />
+        </div>
       )}
 
       <TypingIndicator displayUsers={typingUsers.slice(0, 4)}/>

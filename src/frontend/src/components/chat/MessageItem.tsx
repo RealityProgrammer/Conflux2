@@ -129,6 +129,7 @@ function MessageView({
           <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
             {message.replyTo && (
               <MessageRow.Reply
+                messageId={message.replyTo.id}
                 senderDisplayName={message.replyTo.sender?.displayName ?? "???"}
                 attachmentCount={message.replyTo.attachmentCount}
                 body={message.replyTo.body}
