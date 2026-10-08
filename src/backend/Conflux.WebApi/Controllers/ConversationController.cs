@@ -96,7 +96,7 @@ public sealed class ConversationController(
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<TimelineMessageDto>(null, Errors.InvalidIdentifier()));
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
 
         var result = await mediator.Send(new EditMessageCommand(conversationId, userId, messageId, request.Body), cancellationToken);
@@ -106,9 +106,9 @@ public sealed class ConversationController(
         }
 
         return result.Error.Code switch {
-            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<TimelineMessageDto>(null, result.Error)),
-            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<TimelineMessageDto>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
 

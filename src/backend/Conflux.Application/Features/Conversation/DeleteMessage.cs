@@ -11,35 +11,49 @@ public sealed record MessageDeletedNotification(Guid ConversationId, Guid Messag
 
 public sealed class DeleteMessageHandler(
     IMessageRepository messageRepository,
-    // IConversationRepository conversationRepository,
-    // IConversationAuthorizeService conversationAuthorizeService,
-    IUnitOfWork unitOfWork,
+    IConversationAuthorizeService conversationAuthorizeService,
     TimeProvider timeProvider,
-    IMediator mediator
+    IPublisher publisher,
+    ILogger<DeleteMessageHandler> logger
 ) : ICommandHandler<DeleteMessageCommand, Result> {
     public async ValueTask<Result> Handle(DeleteMessageCommand command, CancellationToken cancellationToken) {
-        var message = await messageRepository
+        var messageInfo = await messageRepository
             .AsQueryable()
-            .Where(m => m.Id == command.MessageId)
+            .Where(m => m.Id == command.MessageId && m.ConversationId == command.ConversationId)
+            .Select(m => new { m.Id, m.ConversationId, m.DeletedAt })
             .FirstOrDefaultAsync(cancellationToken);
         
-        if (message == null) {
+        if (messageInfo == null || messageInfo.ConversationId != command.ConversationId) {
             return Errors.ResourceNotFound("Message");
         }
         
-        if (message.SenderUserId != command.RequesterUserId) {
-            return Errors.Forbidden("You do not have permission to delete this message.");
+        if (!await conversationAuthorizeService.CanDeleteMessage(command.RequesterUserId, messageInfo.ConversationId, cancellationToken)) {
+            return Errors.Forbidden("User is not allowed to delete message in this conversation.");
         }
         
-        if (message.DeletedAt != null) {
+        if (messageInfo.DeletedAt != null) {
             return Result.Success();
         }
 
-        message.DeletedAt = timeProvider.GetUtcNow();
-        
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        await mediator.Publish(new MessageDeletedNotification(command.ConversationId, message.Id), CancellationToken.None);
+        try {
+            int changed = await messageRepository
+                .AsQueryable()
+                .Where(m => m.Id == command.MessageId)
+                .ExecuteUpdateAsync(builder => {
+                    builder.SetProperty(m => m.DeletedAt, timeProvider.GetUtcNow());
+                }, cancellationToken);
+
+            if (changed == 0) {
+                return Errors.OperationFailure("delete message.");
+            }
+        } catch (OperationCanceledException) {
+            throw;
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while deleting message.");
+            return Errors.UnexpectedError();
+        }
+
+        await publisher.Publish(new MessageDeletedNotification(command.ConversationId, messageInfo.Id), CancellationToken.None);
         
         return Result.Success();
     }

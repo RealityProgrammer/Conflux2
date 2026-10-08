@@ -10,8 +10,23 @@ public class ServerConversationAuthorizeStrategy(
 ) : IConversationAuthorizeStrategy {
     public ConversationType ConversationType => ConversationType.Server;
 
+    public async Task<bool> CanReadMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
+        return await HasActiveServerMembership(userId, conversationId, cancellationToken);
+    }
+
     public async Task<bool> CanSendMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
-        // if user joined the server, allow them to send message
+        return await HasActiveServerMembership(userId, conversationId, cancellationToken);
+    }
+
+    public async Task<bool> CanEditMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
+        return await HasActiveServerMembership(userId, conversationId, cancellationToken);
+    }
+
+    public async Task<bool> CanDeleteMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
+        return await HasActiveServerMembership(userId, conversationId, cancellationToken);
+    }
+
+    private async Task<bool> HasActiveServerMembership(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
         return await conversationRepository
             .AsQueryable()
             .Where(c => c.Id == conversationId && c.Channel != null)
@@ -20,5 +35,6 @@ public class ServerConversationAuthorizeStrategy(
                 m.UserId == userId &&
                 m.Status == MembershipStatus.Active
             ), cancellationToken);
+        
     }
 }

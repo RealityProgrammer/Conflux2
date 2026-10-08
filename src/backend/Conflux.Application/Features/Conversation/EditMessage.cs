@@ -19,12 +19,15 @@ public sealed class EditMessageHandler(
     IMessageRepository messageRepository,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
-    IMediator mediator
+    IConversationAuthorizeService conversationAuthorizeService,
+    IPublisher publisher,
+    ILogger<EditMessageHandler> logger
 ) : ICommandHandler<EditMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(EditMessageCommand command, CancellationToken cancellationToken) {
         var message = await messageRepository
             .AsQueryable()
             .Where(m => m.Id == command.MessageId)
+            .Include(m => m.Sender)
             .FirstOrDefaultAsync(cancellationToken);
         
         var newBody = command.Body;
@@ -33,8 +36,12 @@ public sealed class EditMessageHandler(
             return Errors.ResourceNotFound("Message");
         }
         
+        if (!await conversationAuthorizeService.CanEditMessage(command.SenderUserId, message.ConversationId, cancellationToken)) {
+            return Errors.Forbidden("User is not allowed to edit message in this conversation.");
+        }
+        
         if (message.SenderUserId != command.SenderUserId) {
-            return Errors.Forbidden("You do not have permission to edit this message.");
+            return Errors.Forbidden("User is not allowed to edit other user message.");
         }
        
         // if body is not changed, return success instantly.
@@ -44,12 +51,19 @@ public sealed class EditMessageHandler(
         
         message.Body = newBody;
         message.UpdatedAt = timeProvider.GetUtcNow();
-        
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        } catch (OperationCanceledException) {
+            throw;
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while editing message.");
+            return Errors.UnexpectedError();
+        }
 
         TimelineMessageDto dto = new(message);  // GetById should include the ReplyTo, so no need to load it into memory automatically
         
-        await mediator.Publish(new MessageEditedNotification(command.ConversationId, dto), CancellationToken.None);
+        await publisher.Publish(new MessageEditedNotification(command.ConversationId, dto), CancellationToken.None);
         
         return Result<TimelineMessageDto>.Success(dto);
     }

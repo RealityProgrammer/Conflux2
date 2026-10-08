@@ -48,7 +48,7 @@ public sealed class SendMessageHandler(
         }
 
         if (!await conversationAuthorizeService.CanSendMessage(command.SenderUserId, conversationId, cancellationToken)) {
-            return Errors.Forbidden("User is not allowed to access the conversation.");
+            return Errors.Forbidden("User is not allowed to send message in this conversation.");
         }
 
         var utcNow = timeProvider.GetUtcNow();
