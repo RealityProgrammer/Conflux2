@@ -112,7 +112,10 @@ export function ChatView() {
 
     scrollRafRef.current = requestAnimationFrame(() => {
       const scroller = scrollerRef.current;
+      
       if (scroller) {
+        console.log(scroller.scrollHeight, scroller.clientHeight)
+        
         const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
         userAtBottomRef.current = distance <= BOTTOM_THRESHOLD;
       }
@@ -199,30 +202,29 @@ export function ChatView() {
   const scrollTopBeforeFetchRef = useRef<number | null>(null);
 
   const prevKeyRef = useRef(virtualKey);
+  const isAtBottomRef = useRef(false);
+  
   if (prevKeyRef.current !== virtualKey) {
     prevKeyRef.current = virtualKey;
     setFirstItemIndex(START_INDEX);
     hasUserScrolledRef.current = false;
+    isAtBottomRef.current = false;
   }
 
   const handleAtBottomStateChange = (atBottom: boolean) => {
-    console.log("atBottom:", atBottom);
+    if (!hasUserScrolledRef.current || !virtuosoRef.current) return;
 
-    if (!atBottom) return;
+    const wasAtBottom = isAtBottomRef.current;
+    isAtBottomRef.current = atBottom;
 
-    console.log("isFetchingNextPage", isFetchingNextPage, "hasNextPage", hasNextPage);
-
+    if (!atBottom) return;              // rising edge only
+    if (wasAtBottom) return;
+    if (!anchorId) return;              // anchored mode only
     if (isFetchingNextPage || !hasNextPage) return;
 
-    console.log("hasUserScrolledRef", hasUserScrolledRef.current);
-
-    if (!hasUserScrolledRef.current) return;
-
-    if (anchorId && virtuosoRef.current) {
-      virtuosoRef.current.getState((state) => {
-        scrollTopBeforeFetchRef.current = state.scrollTop;
-      });
-    }
+    virtuosoRef.current.getState((state) => {
+      scrollTopBeforeFetchRef.current = state.scrollTop;
+    });
 
     fetchNextPage();
   };
@@ -300,6 +302,21 @@ export function ChatView() {
       setAnchorId(null);
     }
   }, [jumpMessageId, timelineItems, firstItemIndex, anchorId, clearJump, isLoading]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!anchorId) return;
+    if (!hasNextPage) return;
+    if (isFetchingNextPage) return;
+
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    // +1 for sub-pixel rounding.
+    if (scroller.scrollHeight > scroller.clientHeight + 1) return;
+
+    fetchNextPage();
+  }, [timelineItems, hasNextPage, isFetchingNextPage, isLoading, anchorId, fetchNextPage]);
 
   const fetchOlderMessages = async () => {
     if (isFetchingPreviousPage || !hasPreviousPage) return;
