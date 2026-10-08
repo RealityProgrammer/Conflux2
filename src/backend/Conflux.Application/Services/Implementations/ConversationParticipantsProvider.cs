@@ -43,6 +43,6 @@ internal sealed class ConversationParticipantsProvider(
     }
 
     private static string GetCacheKey(Guid conversationId) {
-        return $"conversation:participants:{conversationId}";
+        return $"conversation:{conversationId}:participants";
     }
 }

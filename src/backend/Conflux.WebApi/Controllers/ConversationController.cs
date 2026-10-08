@@ -74,9 +74,10 @@ public sealed class ConversationController(
             }
         
             return result.Error.Code switch {
-                nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse<TimelineMessageDto>(null, result.Error)),
-                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse<TimelineMessageDto>(null, result.Error)),
-                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, Errors.UnexpectedError())),
+                nameof(Errors.Forbidden) => NotFound(new ApiResponse(Errors.ResourceNotFound("Conversation"))),
+                nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
+                nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(result.Error)),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),
             };
         } finally {
             foreach (var stream in attachments) {

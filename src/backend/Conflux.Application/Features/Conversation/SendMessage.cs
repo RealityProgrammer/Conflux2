@@ -28,6 +28,7 @@ public sealed class SendMessageHandler(
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
     IConversationParticipantsProvider conversationParticipantsProvider,
+    IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
     TimeProvider timeProvider,
@@ -44,6 +45,10 @@ public sealed class SendMessageHandler(
 
         if (conversation == null) {
             return Errors.ResourceNotFound("Conversation", [new("Id", conversationId.ToString())]);
+        }
+
+        if (!await conversationAuthorizeService.CanSendMessage(command.SenderUserId, conversationId, cancellationToken)) {
+            return Errors.Forbidden("User is not allowed to access the conversation.");
         }
 
         var utcNow = timeProvider.GetUtcNow();
@@ -146,7 +151,7 @@ public sealed class SendMessageHandler(
 
         return Result<Attachment[]>.Success(finalAttachments!);
     }
-    
+
     private async ValueTask DeleteUploadedAttachments(IEnumerable<Attachment?> attachments) {
         foreach (var attachment in attachments) {
             if (attachment != null && attachment.Id != Guid.Empty) {
