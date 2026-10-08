@@ -27,6 +27,7 @@ import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import Spinner from "../Spinner.tsx";
 import {FaArrowDown} from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
+import {useTimeout} from "usehooks-ts";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -78,6 +79,15 @@ export function ChatView() {
   const scrollRafRef = useRef(0);
   const suppressScrollRef = useRef(false);
 
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!highlightedMessageId) return;
+
+    const t = setTimeout(() => setHighlightedMessageId(null), 1500);
+    return () => clearTimeout(t);
+  }, [highlightedMessageId]);
+
   const updateScrollBottomVisibility = () => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -121,6 +131,10 @@ export function ChatView() {
   const hasUserScrolledRef = useRef(false);
 
   const virtualKey = anchorId ?? "latest";
+
+  useEffect(() => {
+    updateScrollBottomVisibility();
+  }, [anchorId, hasNextPage]);
 
   const handleScrollToBottom = () => {
     if (anchorId && hasNextPage) {
@@ -237,6 +251,8 @@ export function ChatView() {
         align: "center",
         behavior: "auto",
       });
+
+      setHighlightedMessageId(jumpMessageId);
       clearJump();
       return;
     }
@@ -324,6 +340,7 @@ export function ChatView() {
     },
     states: {
       editingMessageDraft: editingMessageDraft,
+      highlightedMessageId,
     }
   };
 

@@ -25,15 +25,15 @@ function Reply({
   return (
     <div className="text-xs ml-13">
       <p
-        className="line-clamp-2 wrap-break-word w-fit max-w-full cursor-pointer"
+        className="line-clamp-2 wrap-break-word w-fit max-w-full cursor-pointer text-gray-300 hover:text-white"
         onClick={() => requestJump(messageId)}
       >
         <span className="font-semibold">{senderDisplayName ?? "???"}</span>
         {" "}sent:{" "}
         {attachmentCount > 0 && (
           <>
-            <span className="inline-flex items-center align-text-bottom mx-1 text-gray-400">
-              <BsPaperclip className="size-3.5 fill-white mr-0.5" />
+            <span className="inline-flex items-center align-text-bottom mx-1">
+              <BsPaperclip className="size-3.5 mr-0.5" />
               <span className="leading-none text-[10px]">{attachmentCount}</span>
             </span>
           </>

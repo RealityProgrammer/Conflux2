@@ -120,12 +120,14 @@ function MessageView({
     }
   };
 
+  const isHighlighted = context.states.highlightedMessageId === message.id;
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
         className={`relative w-full group block ${showHeader ? "pt-1" : ""}`}
       >
-        <div className="hover-highlight flex flex-col">
+        <div className={`hover-highlight flex flex-col ${isHighlighted ? "animate-messageHighlight" : ""}`}>
           <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
             {message.replyTo && (
               <MessageRow.Reply
