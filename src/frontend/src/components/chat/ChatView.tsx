@@ -2,7 +2,7 @@ import type {
   AttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import {useEffect, useLayoutEffect, useRef, useState, type UIEvent} from "react";
 import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
@@ -25,33 +25,16 @@ import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations
 import {DateSeparator} from "./DateSeparator.tsx";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import Spinner from "../Spinner.tsx";
+import {FaArrowDown} from "react-icons/fa6";
+import IconButton from "../IconButton.tsx";
 
+const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
 
-export interface ChatViewProps {}
-
-export function ChatView({}: ChatViewProps) {
+export function ChatView() {
   const setMediaElements = useMediaGalleryStore((state) => state.setElements);
 
-  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
-
-  // local states
-  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
-  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
-  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
-
-  const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
-    setMediaElements(messageAttachments.map(attachment => ({
-      id: attachment.id,
-      src: conversationService.getAttachmentUrl(attachment.id, false),
-      fileName: attachment.name,
-      mediaType: attachment.type,
-    })), clickedIndex, {
-      downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
-    });
-  };
-
-  // messaging context and stuffs
+  // messaging context and hooks
   const {
     handleEditMessage,
     handleDeleteMessage,
@@ -65,12 +48,7 @@ export function ChatView({}: ChatViewProps) {
     clearJump,
   } = useChatContainerContext();
 
-  // if null, follow latest message, else around a message
   const [anchorId, setAnchorId] = useState<string | null>(null);
-
-  const hasUserScrolledRef = useRef(false);
-
-  const virtualKey = anchorId ?? "latest";
 
   const {
     data: messagePages,
@@ -84,6 +62,78 @@ export function ChatView({}: ChatViewProps) {
   } = useTimelineMessagesQuery(conversationId, anchorId);
 
   const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
+
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
+
+  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+
+  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
+
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const showScrollBottomRef = useRef(false);
+
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const scrollRafRef = useRef(0);
+  const suppressScrollRef = useRef(false);
+
+  const updateScrollBottomVisibility = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const anchorViewNotLatest = !!anchorId && hasNextPage;
+
+    const shouldShow = distance >= LATEST_BUTTON_THRESHOLD || anchorViewNotLatest;
+
+    if (showScrollBottomRef.current !== shouldShow) {
+      showScrollBottomRef.current = shouldShow;
+      setShowScrollBottom(shouldShow);
+    }
+  };
+
+  const handleScroll = () => {
+    if (suppressScrollRef.current) return;
+    cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(updateScrollBottomVisibility);
+  };
+
+  useLayoutEffect(() => {
+    suppressScrollRef.current = true;
+
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        updateScrollBottomVisibility();
+        suppressScrollRef.current = false;
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      cancelAnimationFrame(scrollRafRef.current);
+      suppressScrollRef.current = false;
+    };
+  }, [timelineItems, updateScrollBottomVisibility]);
+
+  const hasUserScrolledRef = useRef(false);
+
+  const virtualKey = anchorId ?? "latest";
+
+  const handleScrollToBottom = () => {
+    if (anchorId && hasNextPage) {
+      setAnchorId(null);
+      clearJump();
+    } else {
+      virtuosoRef.current?.scrollToIndex({
+        index: "LAST",
+        align: "end",
+        behavior: "auto"
+      });
+    }
+  };
 
   // virtualization
   const [followEnabled, setFollowEnabled] = useState(!anchorId);
@@ -100,10 +150,6 @@ export function ChatView({}: ChatViewProps) {
       return;
     }
 
-    // Anchored and caught up to the live edge. Defer enabling by one frame so
-    // the scrollTop restore + Virtuoso's at-bottom recomputation settle first.
-    // Enabling on the same commit that hasNextPage flips is what causes the
-    // teleport: Virtuoso evaluates followOutput with a stale isAtBottom=true.
     const id = requestAnimationFrame(() => setFollowEnabled(true));
     return () => cancelAnimationFrame(id);
   }, [anchorId, hasNextPage]);
@@ -116,8 +162,6 @@ export function ChatView({}: ChatViewProps) {
     setFirstItemIndex(START_INDEX);
     hasUserScrolledRef.current = false;
   }
-
-  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
 
   const isAtBottomRef = useRef(true);
   const scrollTopBeforeFetchRef = useRef<number | null>(null);
@@ -229,6 +273,18 @@ export function ChatView({}: ChatViewProps) {
   // typing indicator
   const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
+
+  // gallery handler
+  const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
+    setMediaElements(messageAttachments.map(attachment => ({
+      id: attachment.id,
+      src: conversationService.getAttachmentUrl(attachment.id, false),
+      fileName: attachment.name,
+      mediaType: attachment.type,
+    })), clickedIndex, {
+      downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
+    });
+  };
 
   // signalr events
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
@@ -366,8 +422,22 @@ export function ChatView({}: ChatViewProps) {
             }}
             overscan={10}
             className="h-full"
+            scrollerRef={(ref) => {
+              if (ref instanceof HTMLDivElement) scrollerRef.current = ref;
+            }}
+            onScroll={handleScroll}
             itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
           />
+
+          <IconButton
+            theme="default"
+            className={`z-10 absolute bottom-2 right-2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
+              showScrollBottom ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
+            }`}
+            onClick={handleScrollToBottom}
+          >
+            <FaArrowDown className="size-6"/>
+          </IconButton>
         </div>
       )}
 
