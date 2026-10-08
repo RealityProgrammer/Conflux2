@@ -34,7 +34,7 @@ function Reply({
           <>
             <span className="inline-flex items-center align-text-bottom mx-1 text-gray-400">
               <BsPaperclip className="size-3.5 fill-white mr-0.5" />
-              <span className="leading-none text-[10px]">4</span>
+              <span className="leading-none text-[10px]">{attachmentCount}</span>
             </span>
           </>
         )}
