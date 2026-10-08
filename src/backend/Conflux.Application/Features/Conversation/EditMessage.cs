@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,43 +19,44 @@ public sealed record MessageEditedNotification(Guid ConversationId, EditedMessag
 
 public sealed class EditMessageHandler(
     IMessageRepository messageRepository,
-    IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     IConversationAuthorizeService conversationAuthorizeService,
     IPublisher publisher,
     ILogger<EditMessageHandler> logger
 ) : ICommandHandler<EditMessageCommand, Result> {
     public async ValueTask<Result> Handle(EditMessageCommand command, CancellationToken cancellationToken) {
-        var message = await messageRepository
+        var messageInfo = await messageRepository
             .AsQueryable()
-            .Where(m => m.Id == command.MessageId)
-            .Include(m => m.Sender)
+            .Where(m => m.Id == command.MessageId && m.ConversationId == command.ConversationId && m.SenderUserId == command.SenderUserId)
+            .Select(m => new { m.SenderUserId })
             .FirstOrDefaultAsync(cancellationToken);
         
-        var newBody = command.Body;
-        
-        if (message == null || message.ConversationId != command.ConversationId) {
-            return Errors.ResourceNotFound("Message");
+        if (messageInfo == null) {
+            return Errors.ResourceNotFound("Message", [
+                new(nameof(Message.Id), command.MessageId.ToString()),
+            ]);
         }
         
-        if (!await conversationAuthorizeService.CanEditMessage(command.SenderUserId, message.ConversationId, cancellationToken)) {
+        if (!await conversationAuthorizeService.CanEditMessage(command.SenderUserId, command.ConversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to edit message in this conversation.");
         }
         
-        if (message.SenderUserId != command.SenderUserId) {
+        if (messageInfo.SenderUserId != command.SenderUserId) {
             return Errors.Forbidden("User is not allowed to edit other user message.");
         }
-       
-        // if body is not changed, return success instantly.
-        if (message.Body == newBody) {
-            return Result.Success();
-        }
-        
-        message.Body = newBody;
-        message.UpdatedAt = timeProvider.GetUtcNow();
 
         try {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            int changed = await messageRepository
+                .AsQueryable()
+                .Where(m => m.Id == command.MessageId && m.ConversationId == command.ConversationId && m.SenderUserId == command.SenderUserId)
+                .ExecuteUpdateAsync(builder => {
+                    builder.SetProperty(m => m.Body, command.Body);
+                    builder.SetProperty(m => m.UpdatedAt, timeProvider.GetUtcNow());
+                }, cancellationToken);
+
+            if (changed == 0) {
+                return Errors.OperationFailure("edit message");
+            }
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
@@ -62,10 +64,8 @@ public sealed class EditMessageHandler(
             return Errors.UnexpectedError();
         }
 
-        TimelineMessageDto dto = new(message);
-        
         await publisher.Publish(
-            new MessageEditedNotification(command.ConversationId, new(message.Id, message.Body)), 
+            new MessageEditedNotification(command.ConversationId, new(command.MessageId, command.Body)), 
             CancellationToken.None
         );
         

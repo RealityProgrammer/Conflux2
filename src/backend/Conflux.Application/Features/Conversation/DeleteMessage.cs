@@ -20,7 +20,7 @@ public sealed class DeleteMessageHandler(
         var messageInfo = await messageRepository
             .AsQueryable()
             .Where(m => m.Id == command.MessageId && m.ConversationId == command.ConversationId)
-            .Select(m => new { m.Id, m.ConversationId, m.DeletedAt })
+            .Select(m => new { m.Id, m.ConversationId, m.SenderUserId, m.DeletedAt })
             .FirstOrDefaultAsync(cancellationToken);
         
         if (messageInfo == null || messageInfo.ConversationId != command.ConversationId) {
@@ -29,6 +29,10 @@ public sealed class DeleteMessageHandler(
         
         if (!await conversationAuthorizeService.CanDeleteMessage(command.RequesterUserId, messageInfo.ConversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to delete message in this conversation.");
+        }
+        
+        if (messageInfo.SenderUserId != command.RequesterUserId) {
+            return Errors.Forbidden("User is not allowed to delete other user message.");
         }
         
         if (messageInfo.DeletedAt != null) {
