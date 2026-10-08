@@ -2,7 +2,7 @@ import type {
   AttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {useEffect, useLayoutEffect, useRef, useState, type UIEvent} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
@@ -27,10 +27,10 @@ import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import Spinner from "../Spinner.tsx";
 import {FaArrowDown} from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
-import {useTimeout} from "usehooks-ts";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
+const BOTTOM_THRESHOLD = 150;
 
 export function ChatView() {
   const setMediaElements = useMediaGalleryStore((state) => state.setElements);
@@ -81,6 +81,9 @@ export function ChatView() {
 
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
+  const userAtBottomRef = useRef(true);
+  const prevListHeightRef = useRef(0);
+
   useEffect(() => {
     if (!highlightedMessageId) return;
 
@@ -89,10 +92,10 @@ export function ChatView() {
   }, [highlightedMessageId]);
 
   const updateScrollBottomVisibility = () => {
-    const el = scrollerRef.current;
-    if (!el) return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
 
-    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
     const anchorViewNotLatest = !!anchorId && hasNextPage;
 
     const shouldShow = distance >= LATEST_BUTTON_THRESHOLD || anchorViewNotLatest;
@@ -106,7 +109,30 @@ export function ChatView() {
   const handleScroll = () => {
     if (suppressScrollRef.current) return;
     cancelAnimationFrame(scrollRafRef.current);
-    scrollRafRef.current = requestAnimationFrame(updateScrollBottomVisibility);
+
+    scrollRafRef.current = requestAnimationFrame(() => {
+      const scroller = scrollerRef.current;
+      if (scroller) {
+        const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+        userAtBottomRef.current = distance <= BOTTOM_THRESHOLD;
+      }
+
+      updateScrollBottomVisibility();
+    });
+  };
+
+  const handleTotalListHeightChanged = (height: number) => {
+    const prev = prevListHeightRef.current;
+    prevListHeightRef.current = height;
+
+    if (height <= prev) return;
+    if (!userAtBottomRef.current) return;
+
+    virtuosoRef.current?.scrollToIndex({
+      index: "LAST",
+      align: "end",
+      behavior: "auto",
+    });
   };
 
   useLayoutEffect(() => {
@@ -170,6 +196,8 @@ export function ChatView() {
 
   const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
 
+  const scrollTopBeforeFetchRef = useRef<number | null>(null);
+
   const prevKeyRef = useRef(virtualKey);
   if (prevKeyRef.current !== virtualKey) {
     prevKeyRef.current = virtualKey;
@@ -177,15 +205,17 @@ export function ChatView() {
     hasUserScrolledRef.current = false;
   }
 
-  const isAtBottomRef = useRef(true);
-  const scrollTopBeforeFetchRef = useRef<number | null>(null);
-
   const handleAtBottomStateChange = (atBottom: boolean) => {
-    const wasAtBottom = isAtBottomRef.current;
-    isAtBottomRef.current = atBottom;
+    console.log("atBottom:", atBottom);
+
+    if (!atBottom) return;
+
+    console.log("isFetchingNextPage", isFetchingNextPage, "hasNextPage", hasNextPage);
 
     if (isFetchingNextPage || !hasNextPage) return;
-    if (!atBottom || wasAtBottom) return;
+
+    console.log("hasUserScrolledRef", hasUserScrolledRef.current);
+
     if (!hasUserScrolledRef.current) return;
 
     if (anchorId && virtuosoRef.current) {
@@ -290,18 +320,6 @@ export function ChatView() {
   const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
 
-  // gallery handler
-  const handleAttachmentClick = (messageAttachments: AttachmentDto[], clickedIndex: number) => {
-    setMediaElements(messageAttachments.map(attachment => ({
-      id: attachment.id,
-      src: conversationService.getAttachmentUrl(attachment.id, false),
-      fileName: attachment.name,
-      mediaType: attachment.type,
-    })), clickedIndex, {
-      downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
-    });
-  };
-
   // signalr events
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
     if (event.message.conversationId !== conversationId) return;
@@ -328,7 +346,16 @@ export function ChatView() {
         setEditingMessageDraft(null);
       },
       onEditSaved: (newBody) => handleSaveEdit(newBody),
-      onAttachmentClick: handleAttachmentClick,
+      onAttachmentClick: (messageAttachments: AttachmentDto[], clickedIndex: number) => {
+        setMediaElements(messageAttachments.map(attachment => ({
+          id: attachment.id,
+          src: conversationService.getAttachmentUrl(attachment.id, false),
+          fileName: attachment.name,
+          mediaType: attachment.type,
+        })), clickedIndex, {
+          downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
+        });
+      },
 
       removeSendingOperation: removeSendOperation,
       retrySendingOperation: retrySendOperation,
@@ -347,17 +374,17 @@ export function ChatView() {
   const topLoaderRef = useRef<HTMLDivElement>(null);
 
   const showTopLoader = () => {
-    const el = topLoaderRef.current;
-    if (!el) return;
-    el.classList.remove("opacity-0", "-translate-y-2");
-    el.classList.add("opacity-100", "translate-y-0");
+    const topLoader = topLoaderRef.current;
+    if (!topLoader) return;
+    topLoader.classList.remove("opacity-0", "-translate-y-2");
+    topLoader.classList.add("opacity-100", "translate-y-0");
   };
 
   const hideTopLoader = () => {
-    const el = topLoaderRef.current;
-    if (!el) return;
-    el.classList.add("opacity-0", "-translate-y-2");
-    el.classList.remove("opacity-100", "translate-y-0");
+    const topLoader = topLoaderRef.current;
+    if (!topLoader) return;
+    topLoader.classList.add("opacity-0", "-translate-y-2");
+    topLoader.classList.remove("opacity-100", "translate-y-0");
   };
 
   useEffect(() => {
@@ -419,7 +446,7 @@ export function ChatView() {
             key={virtualKey}  // so that initialTopMostItemIndex is re-evaluated
             data={timelineItems}
             computeItemKey={(_, item) => item.getKey()}
-            atBottomThreshold={150}
+            atBottomThreshold={BOTTOM_THRESHOLD}
             followOutput={
               !anchorId || (followEnabled && !hasNextPage) ?
                 (isAtBottom) => (isAtBottom ? "auto" : false) :
@@ -431,10 +458,14 @@ export function ChatView() {
             startReached={fetchOlderMessages}
             atBottomStateChange={handleAtBottomStateChange}
             isScrolling={(scrolling) => {
+              console.log(`isScrolling(${scrolling})`, hasUserScrolledRef.current);
+
               if (scrolling && !hasUserScrolledRef.current) {
+                console.log("hasUserScrolledRef.current to true");
                 hasUserScrolledRef.current = true;
               }
             }}
+            totalListHeightChanged={handleTotalListHeightChanged}
             overscan={10}
             className="h-full"
             scrollerRef={(ref) => {

@@ -153,7 +153,7 @@ function ContentDisplay({
                     avatarSrc: message.sender?.avatarRevision ? userService.getAvatarUrl(message.sender.id, message.sender.avatarRevision) : undefined,
                     avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
                   }}
-                  date={new Date()}
+                  date={new Date(message.createdAt)}
                 >
                   <div className="flex-1 space-y-1">
                     <MessageBody
