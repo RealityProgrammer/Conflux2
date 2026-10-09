@@ -260,12 +260,18 @@ builder.Services
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
+    
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
+    
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
+    .AddScoped<IServerDefaultRoleAuthorizeProvider, ServerDefaultRoleAuthorizeProvider>()
+    .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
+    
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
+    
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()

@@ -23,9 +23,11 @@ public sealed record ServerRoleUpdatedNotification(Guid ServerId, Guid RoleId) :
 public sealed class UpdateServerRoleHandler(
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork,
-    IServerPermissionsCacheService serverPermissionsCacheService,
     IServerPermissionsProvider permissionsProvider,
-    IMediator mediator
+    IPublisher publisher,
+    IServerRoleVersioningService serverRoleVersioningService,
+    IServerDefaultRoleAuthorizeProvider defaultRoleAuthorizeProvider,
+    ILogger<UpdateServerRoleHandler> logger
 ) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
         CommunityServerRole? role = await repository.FindById(command.RoleId, true, cancellationToken);
@@ -80,30 +82,35 @@ public sealed class UpdateServerRoleHandler(
                         role.Permissions.Add(new() {
                             RoleId = role.Id,
                             Permission = targetPermission,
-                            State = newState
+                            State = newState,
                         });
                     }
                 }
             }
         }
-        
+
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            await serverPermissionsCacheService.IncrementServerPermissionVersion(command.ServerId, CancellationToken.None);
-
-            await mediator.Publish(new ServerRoleUpdatedNotification(command.ServerId, command.RoleId), CancellationToken.None);
-            
-            return Result<ServerRoleDto>.Success(new(
-                role.Id,
-                role.Name,
-                role.Permissions.ToDictionary(p => p.Permission, p => p.State),
-                role.AuthorizeLevel
-            ));
         } catch (OperationCanceledException) {
             throw;
-        } catch (Exception) {
+        } catch (Exception e) {
+            logger.LogInformation(e, "Exception thrown while updating server role.");
             return Errors.UnexpectedError();
         }
+        
+        await serverRoleVersioningService.Increment(command.ServerId);
+
+        if (role.SpecialRoleType == SpecialRoleType.Default) {
+            await defaultRoleAuthorizeProvider.Remove(command.ServerId);
+        }
+
+        await publisher.Publish(new ServerRoleUpdatedNotification(command.ServerId, command.RoleId), CancellationToken.None);
+        
+        return Result<ServerRoleDto>.Success(new(
+            role.Id,
+            role.Name,
+            role.Permissions.ToDictionary(p => p.Permission, p => p.State),
+            role.AuthorizeLevel
+        ));
     }
 }

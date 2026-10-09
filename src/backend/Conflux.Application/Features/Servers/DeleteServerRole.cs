@@ -20,14 +20,14 @@ public sealed record ServerRoleDeletedNotification(
 
 public sealed class DeleteServerRoleHandler(
     ICommunityServerRoleRepository repository,
-    IServerPermissionsCacheService permissionsCacheService,
+    IServerRoleVersioningService serverRoleVersioningService,
     IMediator mediator
 ) : ICommandHandler<DeleteServerRoleCommand, Result> {
     public async ValueTask<Result> Handle(DeleteServerRoleCommand command, CancellationToken cancellationToken) {
         bool deleted = await repository.Delete(command.RoleId, command.ServerId);
 
         if (deleted) {
-            await permissionsCacheService.IncrementServerPermissionVersion(command.ServerId, CancellationToken.None);
+            await serverRoleVersioningService.Increment(command.ServerId);
             
             await mediator.Publish(
                 new ServerRoleDeletedNotification(command.ServerId, command.RoleId),
