@@ -1272,6 +1272,9 @@ enum ServerPermission {
   UnbanMembers
   ReadModerationLogs
   CreateInvitation
+  SendMessage
+  EditMessages
+  DeleteMessages
 }
 
 enum SortEnumType {

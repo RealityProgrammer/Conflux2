@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet;
@@ -48,10 +49,7 @@ internal sealed partial class ServerPermissionsCacheService(
         }
 
         try {
-            var deserialized = MemoryPackSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
-            
-            // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
-            return deserialized?.ToSource<MemberAuthorizeInfoCacheDto, ServerMemberAuthorizeInfoDto>();
+            return MemoryPackSerializer.Deserialize<ServerMemberAuthorizeInfoDto>(cached);
         } catch (Exception e) {
             logger.LogError(e, "Failed to deserialize cached member authorize info. Null will be returned.");
             return null;
@@ -66,12 +64,10 @@ internal sealed partial class ServerPermissionsCacheService(
     ) {
         int version = await GetPermissionVersion(serverId);
         string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
-
-        MemberAuthorizeInfoCacheDto converted = value.ToFacet<ServerMemberAuthorizeInfoDto, MemberAuthorizeInfoCacheDto>();
         
         await _database.StringSetAsync(
             cacheKey, 
-            MemoryPackSerializer.Serialize(converted), 
+            MemoryPackSerializer.Serialize(value), 
             TimeSpan.FromHours(1)
         );
     }
@@ -191,21 +187,5 @@ internal sealed partial class ServerPermissionsCacheService(
         $"server:{serverId}:perms:versions";
     
     private static string GetRedisKeyForPermissionVersions() =>
-        $"server:perms:versions";
-
-    [MemoryPackable]
-    [Facet(typeof(ServerMemberAuthorizeInfoDto), Include = [
-        nameof(ServerMemberAuthorizeInfoDto.MemberId),
-        nameof(ServerMemberAuthorizeInfoDto.AuthorizeLevel),
-        nameof(ServerMemberAuthorizeInfoDto.EffectivePermissions),
-        nameof(ServerMemberAuthorizeInfoDto.Roles),
-        nameof(ServerMemberAuthorizeInfoDto.IsBanned),
-    ], GenerateToSource = true)]
-    public sealed partial record MemberAuthorizeInfoCacheDto {
-        public Guid MemberId { get; set; } = MemberId;
-        public int AuthorizeLevel { get; set; } = AuthorizeLevel;
-        public IReadOnlySet<ServerPermission> EffectivePermissions { get; set; } = EffectivePermissions;
-        public MemberRoleDto[] Roles { get; set; } = Roles;
-        public bool IsBanned { get; set; } = IsBanned;
-    }
+        "server:perms:versions";
 }

@@ -25,7 +25,6 @@ import SignalRProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
 import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
-import ChannelLayout from "./pages/server/ChannelLayout.tsx";
 import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 import {Slide, ToastContainer} from "react-toastify";
 import PresenceProvider from "./contexts/PresenceContext.tsx";
@@ -236,13 +235,7 @@ export const router = createBrowserRouter([
                   {
                     id: "channel",
                     path: "channels/:channelId?",
-                    element: <ChannelLayout/>,
-                    children: [
-                      {
-                        index: true,
-                        element: <ChannelPage/>
-                      }
-                    ]
+                    element: <ChannelPage/>
                   }
                 ]
               }

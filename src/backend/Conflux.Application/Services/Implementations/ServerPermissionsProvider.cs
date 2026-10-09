@@ -1,5 +1,6 @@
 using Conflux.Application.Dto;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -29,14 +30,17 @@ internal sealed class ServerPermissionsProvider(
 
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
             .AsNoTracking()
-            .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.MemberRoles)
             .ThenInclude(m => m.Role)
             .ThenInclude(r => r.Permissions)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (member == null) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, UserId = {userId})");
+            return Errors.ResourceNotFound("Community server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), userId.ToString()),
+            ]);
         }
 
         if (member.MemberRoles.Any(mr => mr.Role.SpecialRoleType == SpecialRoleType.Owner)) {
@@ -79,7 +83,10 @@ internal sealed class ServerPermissionsProvider(
             .FirstOrDefaultAsync(cancellationToken);
 
         if (ids == null) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, Id = {memberId})");
+            return Errors.ResourceNotFound("Community server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.Id), memberId.ToString()),
+            ]);
         }
 
         return await GetUserAuthorizeInfo(ids.CommunityServerId, ids.UserId, cancellationToken);
@@ -161,8 +168,11 @@ internal sealed class ServerPermissionsProvider(
             await cacheService.GetServerDefaultRoleAuthorizationInfo(serverId, cancellationToken);
 
         if (defaultRoleAuthorizationInfo == null) {
-            CommunityServerRole? defaultRole = 
-                await roleRepository.GetDefaultRole(serverId, false, cancellationToken);
+            CommunityServerRole? defaultRole = await roleRepository
+                .AsQueryable()
+                .Where(r => r.CommunityServerId == serverId && r.SpecialRoleType == SpecialRoleType.Default)
+                .Include(r => r.Permissions)
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (defaultRole == null) {
                 return Errors.ResourceNotFound("Default role");

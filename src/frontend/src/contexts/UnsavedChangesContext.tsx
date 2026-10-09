@@ -71,9 +71,15 @@ export const UnsavedChangesProvider = ({ children }: { children: React.ReactNode
   );
 };
 
-export const useUnsavedChanges = () => {
+export function useUnsavedChanges() {
   const context = useContext(UnsavedChangesContext);
   if (!context) throw new Error("useUnsavedChanges must be used within an UnsavedChangesProvider.");
   
   return context;
-};
+}
+
+export function useUnsavedChangesOnBlock(fn: () => void) {
+  const { onBlocked } = useUnsavedChanges();
+
+  useEffect(() => onBlocked(fn), [onBlocked, fn]);
+}

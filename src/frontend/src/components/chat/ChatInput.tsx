@@ -4,7 +4,6 @@ import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from 
 import {ScrollArea} from "radix-ui";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 
@@ -98,7 +97,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
   }, []);
 
   const handleRemoveAttachment = (id: string): void => {
-    setAttachments((prev) => {
+    setAttachments((prev: AttachmentItem[]) => {
       const toRemove = prev.find(item => item.id === id);
 
       if (toRemove?.previewUrl) {

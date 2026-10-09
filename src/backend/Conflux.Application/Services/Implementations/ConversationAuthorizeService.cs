@@ -10,7 +10,7 @@ internal sealed class ConversationAuthorizeService(
     IConversationRepository conversationRepository,
     IConnectionMultiplexer connectionMultiplexer
 ) : IConversationAuthorizeService {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+    private static readonly int CacheTtl = (int)TimeSpan.FromMinutes(10).TotalSeconds;
     
     private readonly Dictionary<ConversationType, IConversationAuthorizeStrategy> _strategies = 
         strategies.ToDictionary(x => x.ConversationType);
@@ -42,7 +42,7 @@ internal sealed class ConversationAuthorizeService(
 
         RedisResult value = await _database.ScriptEvaluateAsync(
             _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "read", CacheTtl.Seconds)
+            new GetOperationAuthorizeInfoParameters(key, "read", CacheTtl)
         );
 
         if (!value.IsNull) {
@@ -63,7 +63,7 @@ internal sealed class ConversationAuthorizeService(
 
         await _database.ScriptEvaluateAsync(
             _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "read", allow, CacheTtl.Seconds)
+            new SetOperationAuthorizeInfoParameters(key, "read", allow, CacheTtl)
         );
         
         return allow;
@@ -74,7 +74,7 @@ internal sealed class ConversationAuthorizeService(
 
         RedisResult value = await _database.ScriptEvaluateAsync(
             _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "send", CacheTtl.Seconds)
+            new GetOperationAuthorizeInfoParameters(key, "send", CacheTtl)
         );
 
         if (!value.IsNull) {
@@ -95,7 +95,7 @@ internal sealed class ConversationAuthorizeService(
 
         await _database.ScriptEvaluateAsync(
             _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "send", allow, CacheTtl.Seconds)
+            new SetOperationAuthorizeInfoParameters(key, "send", allow, CacheTtl)
         );
         
         return allow;
@@ -106,7 +106,7 @@ internal sealed class ConversationAuthorizeService(
 
         RedisResult value = await _database.ScriptEvaluateAsync(
             _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "edit", CacheTtl.Seconds)
+            new GetOperationAuthorizeInfoParameters(key, "edit", CacheTtl)
         );
         if (!value.IsNull) {
             return (bool)value;
@@ -126,7 +126,7 @@ internal sealed class ConversationAuthorizeService(
 
         await _database.ScriptEvaluateAsync(
             _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "edit", allow, CacheTtl.Seconds)
+            new SetOperationAuthorizeInfoParameters(key, "edit", allow, CacheTtl)
         );
         
         return allow;
@@ -137,7 +137,7 @@ internal sealed class ConversationAuthorizeService(
 
         RedisResult value = await _database.ScriptEvaluateAsync(
             _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "delete", CacheTtl.Seconds)
+            new GetOperationAuthorizeInfoParameters(key, "delete", CacheTtl)
         );
 
         if (!value.IsNull) {
@@ -158,14 +158,14 @@ internal sealed class ConversationAuthorizeService(
 
         await _database.ScriptEvaluateAsync(
             _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "delete", allow, CacheTtl.Seconds)
+            new SetOperationAuthorizeInfoParameters(key, "delete", allow, CacheTtl)
         );
         
         return allow;
     }
 
     private static string GetConversationParticipantAuthorizationCacheKey(Guid conversationId, Guid userId) {
-        return $"conversation:{conversationId}:auth:{userId}";
+        return $"conversation:{conversationId}:authorize:{userId}";
     }
 
     private sealed record GetOperationAuthorizeInfoParameters(string UserAuthorizationKey, string Operation, int Ttl);

@@ -4,12 +4,12 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record GetServerSummaryQuery(Guid ServerId) : IQuery<Result<ServerDetailDto>>;
+public sealed record GetServerSummaryQuery(Guid ServerId) : IQuery<Result<ServerSummaryDto>>;
 
 public sealed class GetServerSummaryHandler(
     ICommunityServerRepository repository
-) : IQueryHandler<GetServerSummaryQuery, Result<ServerDetailDto>> {
-    public async ValueTask<Result<ServerDetailDto>> Handle(
+) : IQueryHandler<GetServerSummaryQuery, Result<ServerSummaryDto>> {
+    public async ValueTask<Result<ServerSummaryDto>> Handle(
         GetServerSummaryQuery query, 
         CancellationToken cancellationToken
     ) {
@@ -23,7 +23,7 @@ public sealed class GetServerSummaryHandler(
         var profile = profileResult.Value!;
         List<ChannelCategoryDetailDto> categories = await GetChannelCategorySummaries(query.ServerId, cancellationToken);
 
-        return Result<ServerDetailDto>.Success(
+        return Result<ServerSummaryDto>.Success(
             new(profile.Name, profile.Description, profile.HasAvatar, categories)
         );
     }

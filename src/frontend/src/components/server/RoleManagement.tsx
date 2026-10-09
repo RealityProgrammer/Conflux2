@@ -29,7 +29,7 @@ import {useDebounceValue} from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
 import {userService} from "../../api/userService.ts";
-import {useUnsavedChanges} from "../../contexts/UnsavedChangesContext.tsx";
+import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
@@ -387,7 +387,7 @@ function RoleDetails({
   deleteRoleData,
 }: RoleDetailsProps) {
   const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
-  const { setDirty, onBlocked } = useUnsavedChanges();
+  const { setDirty } = useUnsavedChanges();
 
   const isEditable = memberAuthorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
   
@@ -399,7 +399,7 @@ function RoleDetails({
     setError,
     reset,
     control,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<UpdateRoleFormValues>({
     resolver: zodResolver(updateRoleSchema),
     mode: "onSubmit",
@@ -423,22 +423,32 @@ function RoleDetails({
 
   const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
     if (!isEditable) return;
+    
+    let updatedPermissionStates: Record<ServerPermission, PermissionState> | undefined = undefined;
+    if (dirtyFields.permissions) {
+      updatedPermissionStates = {} as Record<ServerPermission, PermissionState>;
+      
+      for (const [key, isDirty] of Object.entries(dirtyFields.permissions)) {
+        if (!isDirty) continue;
 
+        updatedPermissionStates[key as ServerPermission] = data.permissions[key as ServerPermission];
+      }
+    }
+    
     const response = await communityServerService.updateRole(
       serverId,
       role.id,
       {
-        name: data.name,
-        authorizeLevel: data.authorizeLevel,
-        permissionStates: data.permissions,
+        name: dirtyFields.name ? data.name : undefined,
+        authorizeLevel: dirtyFields.authorizeLevel ? data.authorizeLevel : undefined,
+        permissionStates: updatedPermissionStates,
       }
     );
-
-    setIsEditingRole(false);
-
+  
     if (response.success && response.data) {
       updateRoleData(response.data);
       reset(data);
+      setIsEditingRole(false);
     } else {
       setError("root", {message: response.error?.message ?? "Unknown error."});
     }
@@ -454,17 +464,13 @@ function RoleDetails({
     }
   };
   
-  const unsavedChangeShake = () => {
+  useUnsavedChangesOnBlock(() => {
     const element = formRef.current;
     if (!element) return;
 
     element.classList.add("animate-horizontalShake");
     toast.warning("You have unsaved role changes.");
-  };
-
-  useEffect(() => {
-    onBlocked(unsavedChangeShake)
-  }, [onBlocked, unsavedChangeShake]);
+  });
 
   return (
     <form 
@@ -694,6 +700,75 @@ function RoleDetails({
                     <ErrorPopover
                       open={!!errors.permissions?.DeleteChannel}
                       content={errors.permissions?.DeleteChannel?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </ul>
+          </PermissionGroupAccordion>
+          
+          <PermissionGroupAccordion 
+            header="Conversation"
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Send Messages</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.SendMessage"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.SendMessage}
+                      content={errors.permissions?.SendMessage?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Edit Messages</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.EditMessages"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.EditMessages}
+                      content={errors.permissions?.EditMessages?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Delete Messages</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.DeleteMessages"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.DeleteMessages}
+                      content={errors.permissions?.DeleteMessages?.message}
                     >
                       <PermissionStatesPill
                         value={field.value}

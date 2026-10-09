@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
-namespace Conflux.WebApi.Controllers;
+namespace Conflux.WebApi.Controllers.Conversation;
 
 [ApiController]
 [Route("api/conversations/direct")]

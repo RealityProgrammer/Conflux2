@@ -109,13 +109,13 @@ export default function useWebRTC({
 
     connectingPeersRef.current.delete(peerId);
 
-    setRemoteStreams((prev) => {
+    setRemoteStreams((prev: Record<string, MediaStream>) => {
       const updated = { ...prev };
       delete updated[peerId];
       return updated;
     });
 
-    setRemoteMediaStates((prev) => {
+    setRemoteMediaStates((prev: Record<string, MediaStream>) => {
       const updated = { ...prev };
       delete updated[peerId];
       return updated;
@@ -148,7 +148,7 @@ export default function useWebRTC({
       dc.onmessage = (e) => {
         try {
           const state = JSON.parse(e.data);
-          setRemoteMediaStates((prev) => ({...prev, [peerId]: state}));
+          setRemoteMediaStates((prev: Record<string, RemoteMediaStates>) => ({...prev, [peerId]: state}));
         } catch (err) {
         }
       };
@@ -163,7 +163,7 @@ export default function useWebRTC({
         incomingDc.onmessage = (e) => {
           try {
             const state = JSON.parse(e.data);
-            setRemoteMediaStates((prev) => ({ ...prev, [peerId]: state }));
+            setRemoteMediaStates((prev: Record<string, RemoteMediaStates>) => ({ ...prev, [peerId]: state }));
           } catch (err) {}
         };
 
@@ -190,11 +190,11 @@ export default function useWebRTC({
 
     // accumulate tracks onto peer's remote media stream
     pc.ontrack = (event) => {
-      setRemoteStreams((prev) => {
+      setRemoteStreams((prev: Record<string, MediaStream>) => {
         const existingStream = prev[peerId];
 
         if (existingStream) {
-          if (!existingStream.getTracks().some((t) => t.id === event.track.id)) {
+          if (!existingStream.getTracks().some((t: MediaStreamTrack) => t.id === event.track.id)) {
             return {
               ...prev,
               [peerId]: new MediaStream([...existingStream.getTracks(), event.track]),

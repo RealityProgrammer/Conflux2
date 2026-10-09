@@ -3,7 +3,6 @@ import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
-import UserAvatar from "../UserAvatar.tsx";
 import {userService} from "../../api/userService.ts";
 import {MessageRow} from "./MessageRow.tsx";
 

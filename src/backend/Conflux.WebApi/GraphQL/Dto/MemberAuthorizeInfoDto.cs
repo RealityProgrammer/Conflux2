@@ -1,7 +1,6 @@
-using Conflux.Application.Dto;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Facet;
-using System.Collections.Frozen;
 
 namespace Conflux.WebApi.GraphQL.Dto;
 

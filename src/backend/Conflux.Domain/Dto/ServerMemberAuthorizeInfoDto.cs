@@ -1,9 +1,10 @@
 using Conflux.Domain.Enums;
 using MemoryPack;
 
-namespace Conflux.Application.Dto;
+namespace Conflux.Domain.Dto;
 
-public sealed record ServerMemberAuthorizeInfoDto(
+[MemoryPackable]
+public sealed partial record ServerMemberAuthorizeInfoDto(
     Guid MemberId,
     int AuthorizeLevel,
     IReadOnlySet<ServerPermission> EffectivePermissions,

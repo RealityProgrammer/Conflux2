@@ -1,7 +1,7 @@
 import {Outlet, useNavigate, useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import Spinner from "../../components/Spinner.tsx";
-import type {ServerDetailDto} from "../../api/types.ts";
+import type {ServerSummaryDto} from "../../api/types.ts";
 import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
 import ServerSidebar from "../../components/server/ServerSidebar.tsx";
 import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
@@ -169,7 +169,7 @@ export default function ServerLayout() {
 
 interface SuccessfullyLoadedLayoutProps {
   serverId: string;
-  serverSummary: ServerDetailDto;
+  serverSummary: ServerSummaryDto;
   serverSummaryQueryKey: QueryKey
   memberAuthorizeInfo: ServerMemberAuthorizeInfo;
 }
@@ -183,7 +183,7 @@ function SuccessfullyLoadedLayout({
   const queryClient = useQueryClient();
 
   const appendChannelCategory = (id: string, name: string) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<ServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       return {
@@ -207,7 +207,7 @@ function SuccessfullyLoadedLayout({
   };
 
   const removeChannelCategory = (id: string) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<ServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       const removingCategory = oldData.channelCategories.find(c => c.id === id);
@@ -246,7 +246,7 @@ function SuccessfullyLoadedLayout({
   };
 
   const removeChannel = (id: string) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
+    queryClient.setQueryData<ServerSummaryDto>(serverSummaryQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
       return {

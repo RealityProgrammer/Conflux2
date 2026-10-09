@@ -13,7 +13,6 @@ import {useQueryClient} from "@tanstack/react-query";
 import {useInfiniteGetServerModerationLogsQuery} from "../../graphql/infiniteQueries.ts";
 import AnimatedGearIcon from "../AnimatedGearIcon.tsx";
 import {UnsavedChangesProvider, useUnsavedChanges} from "../../contexts/UnsavedChangesContext.tsx";
-import {toast} from "react-toastify";
 
 export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   return (

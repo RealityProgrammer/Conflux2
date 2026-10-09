@@ -261,7 +261,7 @@ export function ChatView() {
         const itemsAdded = newIndexOfPrevStable - prev.index;
 
         if (itemsAdded > 0) {
-          setFirstItemIndex(curr => curr - itemsAdded);
+          setFirstItemIndex((curr: number) => curr - itemsAdded);
         }
       }
     }

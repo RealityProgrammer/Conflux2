@@ -13,7 +13,7 @@ public sealed record UpdateServerRoleCommand(
     Guid RoleId,
     PatchField<string> Name,
     PatchField<int> AuthorizeLevel,
-    Dictionary<ServerPermission, PermissionState>? PermissionStates
+    PatchField<Dictionary<ServerPermission, PermissionState>>? PermissionStates
 ) : ICommand<Result<ServerRoleDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateRole];
 }
@@ -61,8 +61,8 @@ public sealed class UpdateServerRoleHandler(
             role.AuthorizeLevel = command.AuthorizeLevel.Value;
         }
         
-        if (command.PermissionStates is { Count: > 0} permissionStates) {
-            foreach ((var targetPermission, var newState) in permissionStates) {
+        if (command.PermissionStates is { IsSet: true, Value.Count: > 0} permissionStates) {
+            foreach ((var targetPermission, var newState) in permissionStates.Value) {
                 var existingRecord = role.Permissions.FirstOrDefault(p => p.Permission == targetPermission);
                 
                 if (newState == PermissionState.Inherit) {

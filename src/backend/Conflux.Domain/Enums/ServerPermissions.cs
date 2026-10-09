@@ -17,4 +17,8 @@ public enum ServerPermission {
     
     ReadModerationLogs,
     CreateInvitation,
+    
+    SendMessage,
+    EditMessages,
+    DeleteMessages,
 }

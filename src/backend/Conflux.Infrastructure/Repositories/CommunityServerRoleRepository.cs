@@ -47,17 +47,4 @@ internal sealed class CommunityServerRoleRepository(
             .Include(role => role.MemberRoles.Where(member => member.Member.UserId == userId))
             .ToListAsync(cancellationToken);
     }
-    
-    public async Task<CommunityServerRole?> GetDefaultRole(
-        Guid serverId, 
-        bool tracking = true, 
-        CancellationToken cancellationToken = default
-    ) {
-        IQueryable<CommunityServerRole> query = dbContext.CommunityServerRoles;
-        query = tracking ? query.AsTracking() : query.AsNoTracking();
-
-        return await query
-            .Where(r => r.CommunityServerId == serverId && r.SpecialRoleType == SpecialRoleType.Default)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
 }

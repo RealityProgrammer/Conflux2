@@ -105,7 +105,11 @@ function SuccessPage({
             className="size-8 flex-none"
           />
 
-          <span className="flex-1">{peerProfile.userName}</span>
+          <span className="flex-1 select-none">
+            {peerProfile.displayName}
+            {" "}
+            <span className="text-slate-300 text-sm">(@{peerProfile.userName})</span>
+          </span>
 
           <div className="flex-none flex flex-row items-center gap-2">
             <ShowPinnedMessagesButton conversationId={conversationId}/>

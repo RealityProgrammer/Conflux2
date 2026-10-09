@@ -3,7 +3,6 @@ using Conflux.Application.Features.Conversation;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
 using Mediator;
@@ -13,7 +12,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 using TimelineMessageDto = Conflux.Domain.Dto.TimelineMessageDto;
 
-namespace Conflux.WebApi.Controllers;
+namespace Conflux.WebApi.Controllers.Conversation;
 
 [ApiController]
 [Route("api/conversations")]

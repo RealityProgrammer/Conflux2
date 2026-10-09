@@ -12,7 +12,7 @@ namespace Conflux.Domain.Dto;
 ], NestedFacets = [
     typeof(ChannelCategoryDetailDto),
 ])]
-public sealed partial record ServerDetailDto {
+public sealed partial record ServerSummaryDto {
     [Required] public string Name { get; set; } = Name;
     [Required] public string? Description { get; set; } = Description;
     [Required] public bool HasAvatar { get; set; } = HasAvatar;

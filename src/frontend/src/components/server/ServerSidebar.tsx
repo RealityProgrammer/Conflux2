@@ -105,7 +105,7 @@ export default function ServerSidebar() {
     switch (action.type) {
       case "create_category": {
         const operationId = crypto.randomUUID();
-        setCreateStatus(prev => [...prev, {
+        setCreateStatus((prev: CreateStatus[]) => [...prev, {
           id: operationId,
           status: "creating",
           name: action.name,
@@ -121,10 +121,10 @@ export default function ServerSidebar() {
         );
 
         if (response.success) {
-          setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
+          setCreateStatus((prev: CreateStatus[]) => [...prev.filter(s => s.id !== operationId)]);
           appendChannelCategory(response.data!.id, response.data!.name);
         } else {
-          setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
+          setCreateStatus((prev: CreateStatus[]) => prev.map(s => s.id === operationId ? {
             ...s,
             status: "error",
           } : s));
@@ -134,7 +134,7 @@ export default function ServerSidebar() {
 
       case "create_channel": {
         const operationId = crypto.randomUUID();
-        setCreateStatus(prev => [...prev, {
+        setCreateStatus((prev: CreateStatus[]) => [...prev, {
           id: operationId,
           status: "creating",
           name: action.name,
@@ -152,10 +152,10 @@ export default function ServerSidebar() {
         );
 
         if (response.success && response.data) {
-          setCreateStatus((prev) => [...prev.filter(s => s.id !== operationId)]);
+          setCreateStatus((prev: CreateStatus[]) => [...prev.filter(s => s.id !== operationId)]);
           invalidateSummary();
         } else {
-          setCreateStatus((prev) => prev.map(s => s.id === operationId ? {
+          setCreateStatus((prev: CreateStatus[]) => prev.map(s => s.id === operationId ? {
             ...s,
             status: "error",
           } : s));
