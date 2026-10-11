@@ -142,8 +142,6 @@ export function ChatView({
       const scroller = scrollerRef.current;
       
       if (scroller) {
-        console.log(scroller.scrollHeight, scroller.clientHeight)
-        
         const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
         userAtBottomRef.current = distance <= BOTTOM_THRESHOLD;
       }
@@ -505,10 +503,7 @@ export function ChatView({
             startReached={fetchOlderMessages}
             atBottomStateChange={handleAtBottomStateChange}
             isScrolling={(scrolling) => {
-              console.log(`isScrolling(${scrolling})`, hasUserScrolledRef.current);
-
               if (scrolling && !hasUserScrolledRef.current) {
-                console.log("hasUserScrolledRef.current to true");
                 hasUserScrolledRef.current = true;
               }
             }}

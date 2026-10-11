@@ -20,15 +20,11 @@ internal sealed class ChannelCategoryDeletedNotificationHandler(
         ServerChannelCategoryDeletedNotification notification, 
         CancellationToken cancellationToken
     ) {
-        string? connectionId = 
-            httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
-
         string groupName = NameProvider.GetServerGroupName(notification.ServerId);
 
-        var target = string.IsNullOrEmpty(connectionId)
-            ? hubContext.Clients.Group(groupName)
-            : hubContext.Clients.GroupExcept(groupName, connectionId);
-
-        await target.ServerChannelCategoryDeleted(new(notification), cancellationToken);
+        await hubContext
+            .Clients
+            .Group(groupName)
+            .ServerChannelCategoryDeleted(new(notification), cancellationToken);
     }
 }

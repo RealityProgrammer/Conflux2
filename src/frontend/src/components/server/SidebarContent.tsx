@@ -343,9 +343,7 @@ function SuccessfulBody({
                     categoryId: deleteModalState.id,
                   }, {
                     onSuccess: (data: ServiceResponse) => {
-                      if (data.success) {
-                        removeChannelCategory(deleteModalState.id);
-                      } else {
+                      if (!data.success) {
                         toast.error("Failed to delete channel category.")
                       }
                     },
@@ -359,9 +357,7 @@ function SuccessfulBody({
                     channelId: deleteModalState.id,
                   }, {
                     onSuccess: (data: ServiceResponse) => {
-                      if (data.success) {
-                        removeChannel(deleteModalState.id);
-                      } else {
+                      if (!data.success) {
                         toast.error("Failed to delete channel.");
                       }
                     },
