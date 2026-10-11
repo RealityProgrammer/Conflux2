@@ -268,6 +268,7 @@ builder.Services
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
     .AddScoped<IServerDefaultRoleAuthorizeProvider, ServerDefaultRoleAuthorizeProvider>()
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
+    .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
     
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()

@@ -131,7 +131,7 @@ internal sealed partial class ServerPermissionsCacheService(
     }
 
     private static string GetRedisKeyForUserPermissions(Guid serverId, Guid userId, int version) =>
-        $"server:{serverId}:user_perms:{userId}:version:{version}";
+        $"server:{serverId}:authorize:{userId}:v{version}";
 
     private static string GetRedisKeyForDefaultRoleAuthInfo(Guid serverId) =>
         $"server:{serverId}:default_role";

@@ -2,12 +2,15 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
+// ReSharper disable VariableHidesOuterVariable
 
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ConversationAuthorizeService(
     IEnumerable<IConversationAuthorizeStrategy> strategies,
     IConversationRepository conversationRepository,
+    IConversationMetadataProvider conversationMetadataProvider,
+    IServerRoleVersioningService serverRoleVersioningService,
     IConnectionMultiplexer connectionMultiplexer
 ) : IConversationAuthorizeService {
     private static readonly int CacheTtl = (int)TimeSpan.FromMinutes(10).TotalSeconds;
@@ -16,8 +19,7 @@ internal sealed class ConversationAuthorizeService(
         strategies.ToDictionary(x => x.ConversationType);
 
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
-
-
+    
     private readonly LuaScript _getOperationAuthorizeInfoScript = LuaScript.Prepare(
         """
         local allow = redis.call("HGET", @UserAuthorizationKey, @Operation)
@@ -38,29 +40,81 @@ internal sealed class ConversationAuthorizeService(
     );
     
     public async Task<bool> CanReadMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
-        string key = GetConversationParticipantAuthorizationCacheKey(conversationId, userId);
+        return await AuthorizeAsync(
+            userId, 
+            conversationId, 
+            "read", 
+            (strategy, userId, conversationId, cancellationToken) => 
+                strategy.CanReadMessage(userId, conversationId, cancellationToken), 
+            cancellationToken
+        );
+    }
+    
+    public async Task<bool> CanSendMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
+        return await AuthorizeAsync(
+            userId, 
+            conversationId, 
+            "send", 
+            (strategy, userId, conversationId, cancellationToken) => 
+                strategy.CanSendMessage(userId, conversationId, cancellationToken), 
+            cancellationToken
+        );
+    }
+
+    public async Task<bool> CanEditMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
+        return await AuthorizeAsync(
+            userId, 
+            conversationId, 
+            "edit", 
+            (strategy, userId, conversationId, cancellationToken) => 
+                strategy.CanEditMessage(userId, conversationId, cancellationToken), 
+            cancellationToken
+        );
+    }
+    
+    public async Task<bool> CanDeleteMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
+        return await AuthorizeAsync(
+            userId, 
+            conversationId, 
+            "edit", 
+            (strategy, userId, conversationId, cancellationToken) => 
+                strategy.CanDeleteMessage(userId, conversationId, cancellationToken), 
+            cancellationToken
+        );
+    }
+
+    private async Task<bool> AuthorizeAsync(
+        Guid userId,
+        Guid conversationId,
+        string operation,
+        Func<IConversationAuthorizeStrategy, Guid, Guid, CancellationToken, Task<bool>> strategyCall,
+        CancellationToken cancellationToken
+    ) {
+        if (await conversationMetadataProvider.Get(conversationId, cancellationToken) is not { } conversationMetadata) {
+            return false;
+        }
+
+        string key;
+        if (conversationMetadata.Type == ConversationType.Server) {
+            key = await GetServerConversationAuthorizeKey(conversationMetadata.ServerId!.Value, conversationId, userId);
+        } else {
+            key = GetDirectConversationAuthorizeKey(conversationId, userId);
+        }
 
         RedisResult value = await _database.ScriptEvaluateAsync(
             _getOperationAuthorizeInfoScript, 
             new GetOperationAuthorizeInfoParameters(key, "read", CacheTtl)
         );
-
+        
         if (!value.IsNull) {
             return (bool)value;
         }
         
         // cache miss
-        ConversationType? conversationType = await conversationRepository.AsQueryable()
-            .Where(c => c.Id == conversationId)
-            .Select(c => c.Type)
-            .Cast<ConversationType?>()
-            .FirstOrDefaultAsync(cancellationToken);
+        if (!_strategies.TryGetValue(conversationMetadata.Type, out var strategy)) return false;
 
-        if (conversationType == null) return false;
-        if (!_strategies.TryGetValue(conversationType.Value, out var strategy)) return false;
-
-        bool allow = await strategy.CanReadMessage(userId, conversationId, cancellationToken);
-
+        bool allow = await strategyCall(strategy, userId, conversationId, cancellationToken);
+        
         await _database.ScriptEvaluateAsync(
             _setOperationAuthorizeInfoScript, 
             new SetOperationAuthorizeInfoParameters(key, "read", allow, CacheTtl)
@@ -69,103 +123,13 @@ internal sealed class ConversationAuthorizeService(
         return allow;
     }
     
-    public async Task<bool> CanSendMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
-        string key = GetConversationParticipantAuthorizationCacheKey(conversationId, userId);
-
-        RedisResult value = await _database.ScriptEvaluateAsync(
-            _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "send", CacheTtl)
-        );
-
-        if (!value.IsNull) {
-            return (bool)value;
-        }
-        
-        // cache miss
-        ConversationType? conversationType = await conversationRepository.AsQueryable()
-            .Where(c => c.Id == conversationId)
-            .Select(c => c.Type)
-            .Cast<ConversationType?>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (conversationType == null) return false;
-        if (!_strategies.TryGetValue(conversationType.Value, out var strategy)) return false;
-
-        bool allow = await strategy.CanSendMessage(userId, conversationId, cancellationToken);
-
-        await _database.ScriptEvaluateAsync(
-            _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "send", allow, CacheTtl)
-        );
-        
-        return allow;
+    private static string GetDirectConversationAuthorizeKey(Guid conversationId, Guid userId) {
+        return $"direct_conversation:{conversationId}:authorize:{userId}";
     }
 
-    public async Task<bool> CanEditMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
-        string key = GetConversationParticipantAuthorizationCacheKey(conversationId, userId);
-
-        RedisResult value = await _database.ScriptEvaluateAsync(
-            _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "edit", CacheTtl)
-        );
-        if (!value.IsNull) {
-            return (bool)value;
-        }
-        
-        // cache miss
-        ConversationType? conversationType = await conversationRepository.AsQueryable()
-            .Where(c => c.Id == conversationId)
-            .Select(c => c.Type)
-            .Cast<ConversationType?>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (conversationType == null) return false;
-        if (!_strategies.TryGetValue(conversationType.Value, out var strategy)) return false;
-
-        bool allow = await strategy.CanEditMessage(userId, conversationId, cancellationToken);
-
-        await _database.ScriptEvaluateAsync(
-            _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "edit", allow, CacheTtl)
-        );
-        
-        return allow;
-    }
-    
-    public async Task<bool> CanDeleteMessage(Guid userId, Guid conversationId, CancellationToken cancellationToken = default) {
-        string key = GetConversationParticipantAuthorizationCacheKey(conversationId, userId);
-
-        RedisResult value = await _database.ScriptEvaluateAsync(
-            _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "delete", CacheTtl)
-        );
-
-        if (!value.IsNull) {
-            return (bool)value;
-        }
-        
-        // cache miss
-        ConversationType? conversationType = await conversationRepository.AsQueryable()
-            .Where(c => c.Id == conversationId)
-            .Select(c => c.Type)
-            .Cast<ConversationType?>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (conversationType == null) return false;
-        if (!_strategies.TryGetValue(conversationType.Value, out var strategy)) return false;
-
-        bool allow = await strategy.CanDeleteMessage(userId, conversationId, cancellationToken);
-
-        await _database.ScriptEvaluateAsync(
-            _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "delete", allow, CacheTtl)
-        );
-        
-        return allow;
-    }
-
-    private static string GetConversationParticipantAuthorizationCacheKey(Guid conversationId, Guid userId) {
-        return $"conversation:{conversationId}:authorize:{userId}";
+    private async Task<string> GetServerConversationAuthorizeKey(Guid serverId, Guid conversationId, Guid userId) {
+        int version = await serverRoleVersioningService.Get(serverId);
+        return $"server:{serverId}:conversation:{conversationId}:authorize:{userId}:v{version}";
     }
 
     private sealed record GetOperationAuthorizeInfoParameters(string UserAuthorizationKey, string Operation, int Ttl);

@@ -78,8 +78,7 @@ public sealed class UpdateServerRoleHandler(
                     // overwrite or add new record depend on the existing record exist
                     if (existingRecord != null) {
                         existingRecord.State = newState;
-                    } 
-                    else {
+                    } else {
                         role.Permissions.Add(new() {
                             RoleId = role.Id,
                             Permission = targetPermission,
@@ -107,7 +106,6 @@ public sealed class UpdateServerRoleHandler(
         } else {
             await publisher.Publish(new ServerRoleUpdatedNotification(command.ServerId, command.RoleId), CancellationToken.None);
         }
-
         
         return Result<ServerRoleDto>.Success(new(
             role.Id,

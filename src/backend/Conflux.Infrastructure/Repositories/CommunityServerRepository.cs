@@ -31,7 +31,7 @@ internal sealed class CommunityServerRepository(
 
         var channels = await dbContext.Channels
             .AsNoTracking()
-            .Where(c => (c.Type == ChannelType.Text || c.Type == ChannelType.Voice) && c.CommunityServerId == serverId)
+            .Where(c => c.CommunityServerId == serverId)
             .SelectFacet<ServerChannelIdentityDto>()
             .ToListAsync(cancellationToken);
 
