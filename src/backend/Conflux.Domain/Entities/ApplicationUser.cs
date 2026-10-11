@@ -10,7 +10,7 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public int? AvatarRevision { get; set; }
     public int? BannerRevision { get; set; }
     
-    [MaxLength(32)] public string? DisplayName { get; set; }
+    [MaxLength(48)] public string? DisplayName { get; set; }
     [MaxLength(255)] public string? Biography { get; set; }
     [MaxLength(32)] public string? Pronouns { get; set; }
 

@@ -1,6 +1,7 @@
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace Conflux.Application.Features.Identity;
 
@@ -10,7 +11,7 @@ public sealed class RegisterHandler(
     UserManager<ApplicationUser> userManager
 ) : ICommandHandler<RegisterCommand, Result<ApplicationUser>> {
     public async ValueTask<Result<ApplicationUser>> Handle(RegisterCommand request, CancellationToken cancellationToken) {
-        var generatedUserName = $"user-{Guid.NewGuid():N}";
+        var generatedUserName = $"user-{RandomNumberGenerator.GetString("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 16)}";
         
         ApplicationUser user = new ApplicationUser {
             Email = request.Email,

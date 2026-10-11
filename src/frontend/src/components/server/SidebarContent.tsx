@@ -274,8 +274,6 @@ function SuccessfulBody({
 }: SuccessfulBodyProps) {
   const {
     detailsQueryResult: { data: serverDetails },
-    removeChannelCategory,
-    removeChannel,
   } = useCommunityServerContext();
   
   const deleteChannelMutation = useChannelDeleteMutation();

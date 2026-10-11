@@ -329,7 +329,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
         </form>
 
         {errors.root && (
-          <ErrorText className="mt-1">{errors.root.message}</ErrorText>
+          <ErrorText className="block text-center mt-1">{errors.root.message}</ErrorText>
         )}
 
         <p className="text-center text-gray-400 text-sm mt-2">
