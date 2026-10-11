@@ -426,6 +426,14 @@ function RoleDetails({
 
   useEffect(() => () => setDirty(false), [setDirty]);
 
+  useUnsavedChangesOnBlock(() => {
+    const element = formRef.current;
+    if (!element) return;
+
+    element.classList.add("animate-horizontalShake");
+    toast.warning("You have unsaved role changes.");
+  });
+
   const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
     if (!isEditable) return;
     
@@ -468,14 +476,6 @@ function RoleDetails({
       toast.error("Failed to delete role.");
     }
   };
-  
-  useUnsavedChangesOnBlock(() => {
-    const element = formRef.current;
-    if (!element) return;
-
-    element.classList.add("animate-horizontalShake");
-    toast.warning("You have unsaved role changes.");
-  });
 
   return (
     <form 

@@ -1,5 +1,5 @@
 import {useDebounceValue} from "usehooks-ts";
-import {createContext, useContext, useRef, useState} from "react";
+import {createContext, useContext, useEffect, useRef, useState} from "react";
 import {Dialog as RadixDialog, Label, Popover, Separator} from "radix-ui";
 import {
   type SearchServerMemberForAdminQuery,
@@ -44,6 +44,7 @@ import ErrorText from "../ErrorText.tsx";
 import DurationInput, {type DurationValue} from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
 import {userService} from "../../api/userService.ts";
+import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
 
 type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
@@ -57,6 +58,7 @@ const InspectingMemberContext = createContext<InspectingMemberContextResult | un
 
 export default function MemberManagement() {
   const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const { guard } = useUnsavedChanges();
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -89,6 +91,11 @@ export default function MemberManagement() {
   const allMembers = data?.pages.flatMap((page) => page?.serverMemberSearchForAdmin?.nodes ?? []) ?? [];
 
   const [inspectingMemberId, setInspectingMemberId] = useState<string | undefined>(undefined);
+  
+  const handleSwitchInspectingMember = guard((memberId: string) => {
+    setIsShowingSearchResults(false);
+    setInspectingMemberId(memberId);
+  });
 
   return (
     <>
@@ -164,8 +171,7 @@ export default function MemberManagement() {
                       userName={member.user.userName ?? "???"}
                       className="p-1 hover-highlight cursor-pointer w-full"
                       onClick={() => {
-                        setIsShowingSearchResults(false);
-                        setInspectingMemberId(member.id);
+                        handleSwitchInspectingMember(member.id);
                       }}
                     />
                   );
@@ -285,6 +291,8 @@ function MemberInformationContent() {
   const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
   const serverId = serverDetails!.id;
   
+  const { setDirty } = useUnsavedChanges();
+  
   const {
     inspectingMemberInfo,
     refreshInspectingMemberInfo,
@@ -292,7 +300,9 @@ function MemberInformationContent() {
     setWarnCount,
     setBanExpiredAt,
   } = useContext(InspectingMemberContext)!;
-
+  
+  const formRef = useRef<HTMLFormElement | null>(null);
+  
   const {
     handleSubmit,
     control,
@@ -305,6 +315,20 @@ function MemberInformationContent() {
     defaultValues: {
       roleIds: inspectingMemberInfo.roles.filter(r => r.specialRoleType === SpecialRoleType.None).map(r => r.id),
     }
+  });
+  
+  useEffect(() => {
+    setDirty(isDirty);
+  }, [setDirty, isDirty]);
+
+  useEffect(() => () => setDirty(false), [setDirty]);
+
+  useUnsavedChangesOnBlock(() => {
+    const element = formRef.current;
+    if (!element) return;
+
+    element.classList.add("animate-horizontalShake");
+    toast.warning("You have unsaved changes.");
   });
 
   const updateMemberRolesMutation = useUpdateMemberRolesMutation({
@@ -363,7 +387,14 @@ function MemberInformationContent() {
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmitModification)} className="relative overflow-y-hidden">
+      <form 
+        ref={formRef} 
+        onSubmit={handleSubmit(onSubmitModification)}
+        className="relative overflow-y-hidden"
+        onAnimationEnd={() => {
+          formRef.current?.classList.remove("animate-horizontalShake");
+        }}
+      >
         <section className={`absolute ${isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
           <IconButton type="button" theme="danger" onClick={() => {
             reset();
@@ -568,7 +599,6 @@ function KickMemberButton() {
       toast.error("Failed to kick member.");
     },
   });
-
 
   const handleSubmit: SubmitHandler<KickMemberFormValues> = async (data: KickMemberFormValues) => {
     kickMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason });

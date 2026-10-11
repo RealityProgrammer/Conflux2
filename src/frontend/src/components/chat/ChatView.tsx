@@ -32,7 +32,15 @@ const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
 const BOTTOM_THRESHOLD = 150;
 
-export function ChatView() {
+interface ChatViewProps {
+  allowDeleteMessage?: boolean;
+  allowEditMessage?: boolean;
+}
+
+export function ChatView({
+  allowEditMessage = true,
+  allowDeleteMessage = true,
+}: ChatViewProps) {
   const setMediaElements = useMediaGalleryStore((state) => state.setElements);
 
   // messaging context and hooks
@@ -68,7 +76,27 @@ export function ChatView() {
 
   const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+  const prevAllowEditRef = useRef(allowEditMessage);
+
+  useEffect(() => {
+    if (prevAllowEditRef.current && !allowEditMessage) {
+      setEditingMessage(undefined);
+      setEditingMessageDraft(null);
+    }
+
+    prevAllowEditRef.current = allowEditMessage;
+  }, [allowEditMessage]);
+  
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+  const prevAllowDeleteRef = useRef(allowDeleteMessage);
+  
+  useEffect(() => {
+    if (prevAllowDeleteRef.current && !allowDeleteMessage) {
+      setDeletingMessage(undefined);
+    }
+    
+    prevAllowDeleteRef.current = allowDeleteMessage;
+  }, [allowDeleteMessage]);
 
   const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
 
@@ -383,6 +411,8 @@ export function ChatView() {
     states: {
       editingMessageDraft: editingMessageDraft,
       highlightedMessageId,
+      allowEditMessage,
+      allowDeleteMessage,
     }
   };
 

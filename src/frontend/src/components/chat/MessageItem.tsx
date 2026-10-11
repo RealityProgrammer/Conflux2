@@ -205,7 +205,7 @@ function MessageView({
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
 
-          {auth.userAuthorization?.id === message.sender!.id && (
+          {auth.userAuthorization?.id === message.sender!.id && context.states.allowEditMessage && (
             <ContextMenu.Item
               className="dropdown-item-default"
               onSelect={handleEditTrigger}
@@ -232,7 +232,7 @@ function MessageView({
             </ContextMenu.Item>
           )}
 
-          {auth.userAuthorization?.id === message.sender!.id && (
+          {auth.userAuthorization?.id === message.sender!.id && context.states.allowDeleteMessage && (
             <ContextMenu.Item
               className="dropdown-item-danger"
               onSelect={() => context.actions.onMessageDeleteTrigger(message)}

@@ -6,9 +6,10 @@ import {useQuery} from "@tanstack/react-query";
 import {useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {BsExclamationTriangle} from "react-icons/bs";
+import {BsChatText, BsExclamationTriangle, BsVolumeUp} from "react-icons/bs";
 import ServerChannelContextProvider, {useServerChannelContext} from "../../contexts/ServerChannelContext.tsx";
 import useConversationConnection from "../../hooks/useConversationConnection.ts";
+import {ChannelType, ServerPermission} from "../../api/schema.ts";
 
 export default function ChannelPage() {
   const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
@@ -49,13 +50,20 @@ export default function ChannelPage() {
 }
 
 function SuccessLayout() {
+  const { hasPermission } = useCommunityServerContext();
   const { channelDetails } = useServerChannelContext();
   
   useConversationConnection(channelDetails?.conversationId);
   
   return (
     <section className="size-full flex flex-col">
-      <header className="flex-none basis-10 bg-gray-750 border-b-2 border-b-gray-600 flex flex-row items-center px-2 select-none">
+      <header className="flex-none basis-10 bg-gray-750 border-b-2 border-b-gray-600 flex flex-row items-center gap-2 px-2 select-none">
+        { channelDetails.type === ChannelType.Text ? (
+          <BsChatText className="size-6 fill-white"/>
+        ) : (
+          <BsVolumeUp className="size-6 fill-white"/>
+        )}
+        
         <span className="text-white">{channelDetails!.name}</span>
       </header>
 
@@ -64,8 +72,14 @@ function SuccessLayout() {
           conversationId={channelDetails!.conversationId}
         >
           <div className="flex flex-col flex-1">
-            <ChatView/>
-            <ChatInput/>
+            <ChatView
+              allowEditMessage={hasPermission(ServerPermission.EditMessages)}
+              allowDeleteMessage={hasPermission(ServerPermission.DeleteMessages)}
+            />
+
+            {hasPermission(ServerPermission.SendMessage) && (
+              <ChatInput/>
+            )}
           </div>
         </ChatContainerContextProvider>
       </main>

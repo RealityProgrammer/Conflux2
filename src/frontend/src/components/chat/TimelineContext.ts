@@ -24,5 +24,7 @@ export interface TimelineContext {
   states: {
     editingMessageDraft: string | null;
     highlightedMessageId: string | null;
+    allowEditMessage: boolean;
+    allowDeleteMessage: boolean;
   }
 }
