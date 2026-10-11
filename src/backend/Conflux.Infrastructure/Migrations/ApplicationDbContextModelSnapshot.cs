@@ -152,7 +152,7 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<Guid?>("ChannelCategoryId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CommunityServerId")
+                    b.Property<Guid>("CommunityServerId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ConversationId")
@@ -414,6 +414,12 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.Property<int?>("MaxUses")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -679,7 +685,8 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasOne("Conflux.Domain.Entities.CommunityServer", "CommunityServer")
                         .WithMany("Channels")
                         .HasForeignKey("CommunityServerId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Conflux.Domain.Entities.Conversation", "Conversation")
                         .WithOne("Channel")

@@ -20,12 +20,8 @@ internal sealed class ServerMemberRepository(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
-        MembershipStatus? status = await dbContext.CommunityServerMembers
-            .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
-            .Select(m => m.Status)
-            .Cast<MembershipStatus?>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return status != null && status.Value != MembershipStatus.Left;
+        return await dbContext.CommunityServerMembers
+            .Where(m => m.CommunityServerId == serverId && m.UserId == userId && m.Status == MembershipStatus.Active)
+            .AnyAsync(cancellationToken);
     }
 }

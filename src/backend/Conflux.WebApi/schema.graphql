@@ -908,6 +908,7 @@ input InvitationFilterInput {
   expiresAt: DateTimeOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   lastUsedAt: DateTimeOperationFilterInput
+  version: UnsignedIntOperationFilterInput
 }
 
 input KickCommunityServerMemberInput {
@@ -1155,6 +1156,21 @@ input UnbanCommunityServerMemberInput {
   memberId: UUID!
 }
 
+input UnsignedIntOperationFilterInput {
+  eq: UnsignedInt @cost(weight: "10")
+  neq: UnsignedInt @cost(weight: "10")
+  in: [UnsignedInt] @cost(weight: "10")
+  nin: [UnsignedInt] @cost(weight: "10")
+  gt: UnsignedInt @cost(weight: "10")
+  ngt: UnsignedInt @cost(weight: "10")
+  gte: UnsignedInt @cost(weight: "10")
+  ngte: UnsignedInt @cost(weight: "10")
+  lt: UnsignedInt @cost(weight: "10")
+  nlt: UnsignedInt @cost(weight: "10")
+  lte: UnsignedInt @cost(weight: "10")
+  nlte: UnsignedInt @cost(weight: "10")
+}
+
 input UpdateCommunityServerMemberRolesInput {
   serverId: UUID!
   memberId: UUID!
@@ -1295,6 +1311,10 @@ scalar DateTime
 "The `Duration` scalar type represents a duration of time."
 scalar Duration
   @specifiedBy(url: "https://scalars.graphql.org/chillicream/duration.html")
+
+"The `UnsignedInt` scalar type represents an unsigned 32-bit integer."
+scalar UnsignedInt
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/unsigned-int.html")
 
 "The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562."
 scalar UUID

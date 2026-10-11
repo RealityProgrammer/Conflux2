@@ -21,54 +21,6 @@ internal sealed class InvitationRepository(
         dbContext.Invitations.Add(invitation);
     }
 
-    public async Task<Invitation?> GetFromId(string invitationId, CancellationToken cancellationToken = default) {
-        return await dbContext.Invitations
-            .Where(i => i.Id == invitationId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<Result> AcceptInvitation(
-        Guid userId,
-        string invitationId,
-        CancellationToken cancellationToken = default
-    ) {
-        var utcNow = timeProvider.GetUtcNow();
-
-        int rowsUpdated = await dbContext.Invitations
-            .Where(i => i.Id == invitationId)
-            .Where(i => (i.MaxUses == null || i.CurrentUses < i.MaxUses) && (i.ExpiresAt == null || i.ExpiresAt > utcNow))
-            .ExecuteUpdateAsync(s => {
-                s.SetProperty(i => i.CurrentUses, i => i.CurrentUses + 1);
-                s.SetProperty(i => i.LastUsedAt, utcNow);
-            }, cancellationToken);
-
-        // happy path: invitation is valid
-        if (rowsUpdated > 0) {
-            return Result.Success();
-        }
-
-        // life is sad
-        var invite = await dbContext.Invitations
-            .AsNoTracking()
-            .Where(i => i.Id == invitationId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (invite == null) {
-            return Errors.ResourceNotFound("Invitation");
-        }
-
-        if (invite.ExpiresAt.HasValue && invite.ExpiresAt.Value <= DateTime.UtcNow) {
-            return Errors.ResourceExpired("Invitation");
-        }
-
-        if (invite.MaxUses.HasValue && invite.CurrentUses >= invite.MaxUses.Value) {
-            return Errors.ResourceMaxUsed("Invitation");
-        }
-
-        // general fallback
-        return Errors.ResourceNoLongerValid("Invitation");
-    }
-
     public async Task<Invitation?> GetPermanentInvite(Guid serverId, CancellationToken cancellationToken = default) {
         return await dbContext.Invitations
             .Where(i => i.MaxUses == null && i.ExpiresAt == null && i.CommunityServerId == serverId)
