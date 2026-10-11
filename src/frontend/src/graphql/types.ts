@@ -13,6 +13,8 @@ export type Scalars = {
   Duration: { input: string; output: string; }
   /** The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562. */
   UUID: { input: string; output: string; }
+  /** The `UnsignedInt` scalar type represents an unsigned 32-bit integer. */
+  UnsignedInt: { input: unknown; output: unknown; }
 };
 
 export type ApplicationUser = {
@@ -623,6 +625,7 @@ export type InvitationFilterInput = {
   lastUsedAt?: InputMaybe<DateTimeOperationFilterInput>;
   maxUses?: InputMaybe<IntOperationFilterInput>;
   or?: InputMaybe<Array<InvitationFilterInput>>;
+  version?: InputMaybe<UnsignedIntOperationFilterInput>;
 };
 
 export enum InvitationStatus {
@@ -1262,6 +1265,21 @@ export type UnbanCommunityServerMemberInput = {
 export type UnbanCommunityServerMemberPayload = {
   __typename?: 'UnbanCommunityServerMemberPayload';
   memberId: Scalars['UUID']['output'];
+};
+
+export type UnsignedIntOperationFilterInput = {
+  eq?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  gt?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  gte?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['UnsignedInt']['input']>>>;
+  lt?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  lte?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  neq?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  ngt?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  ngte?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['UnsignedInt']['input']>>>;
+  nlt?: InputMaybe<Scalars['UnsignedInt']['input']>;
+  nlte?: InputMaybe<Scalars['UnsignedInt']['input']>;
 };
 
 export type UpdateCommunityServerMemberRolesInput = {

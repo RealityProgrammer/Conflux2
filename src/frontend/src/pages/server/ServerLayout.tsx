@@ -3,6 +3,17 @@ import Spinner from "../../components/Spinner.tsx";
 import CommunityServerContextProvider, {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {BsExclamationTriangle} from "react-icons/bs";
 import SidebarContent from "../../components/server/SidebarContent.tsx";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import KickedFromServerDialog from "../../components/server/KickedFromServerDialog.tsx";
+import {useState} from "react";
+import {toast} from "react-toastify";
+import type {
+  MemberRolesUpdatedEvent,
+  ServerDefaultRoleUpdatedEvent,
+  ServerRoleDeletedEvent,
+  ServerRoleUpdatedEvent
+} from "../../api/events.ts";
+import {useSignalR} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
   const { serverId } = useParams();
@@ -66,10 +77,82 @@ function PageOutlet() {
 }
 
 function SuccessfullyLoaded() {
+  const { detailsQueryResult: { data: serverDetails }, updatePermission, refreshPermission } = useCommunityServerContext();
+  const { invokeSafely } = useSignalR();
+  const [showKickedDialog, setShowKickedDialog] = useState(false);
   
+  // invokes leave server and rejoin so that backend can correctly track connection joined groups
+  const refreshPermissionWithGroup = async () => {
+    await invokeSafely("LeaveServer", serverDetails!.id);
+    await invokeSafely("JoinServer", serverDetails!.id);
+
+    await refreshPermission();
+  }
+
+  useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
+    console.log("member roles updated");
+    
+    if (event.serverId !== serverDetails?.id) return;
+    if (event.memberUserId !== serverDetails.authorizeInfo.memberId) return;
+
+    await refreshPermissionWithGroup();
+  });
+
+  useSignalREvent("ServerDefaultRoleUpdated", async (event: ServerDefaultRoleUpdatedEvent) => {
+    if (serverDetails?.id !== event.serverId) return;
+
+    await refreshPermissionWithGroup();
+  });
+
+  useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], async (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
+    if (serverDetails?.id !== event.serverId) return;
+    if (!serverDetails.authorizeInfo.roles.some(r => r.id === event.roleId)) return;
+
+    await refreshPermissionWithGroup();
+  });
   
+  useSignalREvent("KickedFromServer", (kickedServerId: string) => {
+    if (kickedServerId !== serverDetails?.id) {
+      return;
+    }
+    
+    setShowKickedDialog(true);
+    updatePermission({
+      authorizeLevel: -1,
+      roles: [],
+      effectivePermissions: [],
+    });
+  });
+
+  useSignalREvent("BannedFromServer", (bannedServerId: string) => {
+    if (bannedServerId !== serverDetails?.id) {
+      return;
+    }
+
+    updatePermission({
+      authorizeLevel: -1,
+      roles: [],
+      effectivePermissions: [],
+      isBanned: true,
+    });
+
+    toast.info("You have been banned from this server.");
+  });
+
+  useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
+    if (unbannedServerId !== serverDetails?.id) {
+      return;
+    }
+
+    refreshPermission();
+    toast.info("You have been unbanned on this server.");
+  });
+
   return (
-    <Outlet/>
+    <>
+      <Outlet/>
+      <KickedFromServerDialog open={showKickedDialog} onOpenChange={setShowKickedDialog}/>
+    </>
   );
 }
 

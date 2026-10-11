@@ -1,6 +1,5 @@
 query GetJoinedCommunityServer($after: String) {
     joinedServers(after: $after) {
-        totalCount
         pageInfo {
             hasNextPage
             hasPreviousPage

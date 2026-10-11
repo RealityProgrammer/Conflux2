@@ -22,6 +22,7 @@ public interface IConfluxClient {
     Task DirectConversationUpdated(DirectConversationUpdatedEvent data, CancellationToken cancellationToken = default);
     
     Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerDefaultRoleUpdated(ServerDefaultRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleDeleted(ServerRoleDeletedEvent data, CancellationToken cancellationToken = default);
     

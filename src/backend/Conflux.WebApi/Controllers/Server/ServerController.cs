@@ -92,6 +92,26 @@ public sealed class ServerController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
+    
+    [HttpGet("{serverId:guid}/details/authorize")]
+    public async Task<ActionResult<ApiResponse<ServerMemberAuthorizeInfoDto>>> GetServerMemberAuthorizeInfo(Guid serverId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await mediator.Send(new GetServerMemberAuthorizeInfoQuery(serverId, userId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<ServerMemberAuthorizeInfoDto>(result.Value!, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
 
     public sealed record CreateServerRequest(
         [Required] string Name, 

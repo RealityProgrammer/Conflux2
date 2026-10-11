@@ -1044,7 +1044,7 @@ function RoleModificationButton({
           side="top"
           sideOffset={5}
           align="center"
-          className="rounded-lg bg-gray-650 text-sm font-medium text-white shadow-lg animate-in fade-in zoom-in duration-200 h-64 overflow-hidden flex flex-col gap-1"
+          className="rounded-lg bg-gray-650 text-sm font-medium text-white shadow-lg h-64 overflow-hidden flex flex-col gap-1"
           onWheel={(e) => e.stopPropagation()}
           onOpenAutoFocus={(e) => e.stopPropagation()}
         >

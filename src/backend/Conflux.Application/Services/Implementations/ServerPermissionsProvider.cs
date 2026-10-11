@@ -193,7 +193,6 @@ internal sealed class ServerPermissionsProvider(
             roleAuthInfo[0].AuthorizeLevel,
             effectivePermissions,
             [..member.MemberRoles
-                .Where(mr => mr.Role.SpecialRoleType != SpecialRoleType.Default)
                 .OrderByDescending(mr => mr.Role.AuthorizeLevel)
                 .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
             ],

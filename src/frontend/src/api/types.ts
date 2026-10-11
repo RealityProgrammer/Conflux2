@@ -49,6 +49,7 @@ export type ServerChannelIdentityDto = components["schemas"]["ServerChannelIdent
 export type ChannelCategoryDetailDto = components["schemas"]["ChannelCategoryDetailDto"];
 export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryIdentityDto"];
 export type ServerDetailsDto = components["schemas"]["ServerDetailsDto"];
+export type ServerMemberAuthorizeInfoDto = components["schemas"]["ServerMemberAuthorizeInfoDto"];
 export type ChannelDetailsDto = components["schemas"]["ChannelDetailsDto"];
 export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];

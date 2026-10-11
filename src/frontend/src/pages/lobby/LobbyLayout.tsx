@@ -20,9 +20,10 @@ import {Controller, useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  type GetJoinedCommunityServerQuery,
   useInfiniteGetJoinedCommunityServerQuery
 } from "../../graphql/infiniteQueries.ts";
-import {useQueryClient} from "@tanstack/react-query";
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import Spinner from "../../components/Spinner.tsx";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
@@ -110,11 +111,29 @@ function JoinedCommunityServerScrollList() {
 
   const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
 
-  // remove joined server from the query list
-  useSignalREvent("KickedFromServer", (_serverId: string) => {
-    queryClient.invalidateQueries({
-      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
-    });
+  useSignalREvent("KickedFromServer", (serverId: string) => {
+    queryClient.setQueryData<InfiniteData<GetJoinedCommunityServerQuery, unknown>>(
+      useInfiniteGetJoinedCommunityServerQuery.getKey({}), 
+      (oldData) => {
+        if (!oldData || oldData.pages.length === 0) return;
+        
+        return {
+          ...oldData,
+          pages: oldData.pages.map(page => {
+            const contain = page.joinedServers.nodes?.some(node => node.id === serverId);
+            if (!contain) return page;
+            
+            return {
+              ...page,
+              joinedServers: {
+                ...page.joinedServers,
+                nodes: page.joinedServers.nodes!.filter(node => node.id !== serverId),
+              },
+            };
+          }),
+        };
+      }
+    );
   });
 
   return (

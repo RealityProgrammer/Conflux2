@@ -1688,6 +1688,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communities/{serverId}/details/channel-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/details/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations/{conversationId}/messages": {
         parameters: {
             query?: never;
@@ -1989,6 +2067,10 @@ export interface components {
             data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
+            data: null | components["schemas"]["ChannelCategoryDetailDto"][];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfLoginResponse: {
             data: null | components["schemas"]["LoginResponse"];
             error: components["schemas"]["Error"];
@@ -2019,6 +2101,10 @@ export interface components {
         };
         ApiResponseOfServerIdentityDto: {
             data: null | components["schemas"]["ServerIdentityDto"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfServerMemberAuthorizeInfoDto: {
+            data: null | components["schemas"]["ServerMemberAuthorizeInfoDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfServerRoleDto: {

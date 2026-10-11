@@ -37,7 +37,7 @@ export type GetJoinedCommunityServerQueryVariables = Exact<{
 }>;
 
 
-export type GetJoinedCommunityServerQuery = { joinedServers: { totalCount: number, pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } };
+export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } };
 
 export type GetServerModerationLogsQueryVariables = Exact<{
   serverId: string;
@@ -290,7 +290,6 @@ useGetDirectConversationsQuery.fetcher = (variables?: GetDirectConversationsQuer
 export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     query GetJoinedCommunityServer($after: String) {
   joinedServers(after: $after) {
-    totalCount
     pageInfo {
       hasNextPage
       hasPreviousPage

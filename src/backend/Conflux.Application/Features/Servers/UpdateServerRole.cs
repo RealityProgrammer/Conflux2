@@ -19,6 +19,7 @@ public sealed record UpdateServerRoleCommand(
 }
 
 public sealed record ServerRoleUpdatedNotification(Guid ServerId, Guid RoleId) : INotification;
+public sealed record ServerDefaultRoleUpdatedNotification(Guid ServerId) : INotification;
 
 public sealed class UpdateServerRoleHandler(
     ICommunityServerRoleRepository repository,
@@ -102,9 +103,11 @@ public sealed class UpdateServerRoleHandler(
 
         if (role.SpecialRoleType == SpecialRoleType.Default) {
             await defaultRoleAuthorizeProvider.Remove(command.ServerId);
+            await publisher.Publish(new ServerDefaultRoleUpdatedNotification(command.ServerId), CancellationToken.None);
+        } else {
+            await publisher.Publish(new ServerRoleUpdatedNotification(command.ServerId, command.RoleId), CancellationToken.None);
         }
 
-        await publisher.Publish(new ServerRoleUpdatedNotification(command.ServerId, command.RoleId), CancellationToken.None);
         
         return Result<ServerRoleDto>.Success(new(
             role.Id,

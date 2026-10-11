@@ -1,7 +1,8 @@
 import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
-  ServerDetailsDto, ServerIdentityDto, ServerRoleDto, ServiceResponse, ChannelDetailsDto, ChannelCategoryDetailDto
+  ServerDetailsDto, ServerIdentityDto, ServerRoleDto, ServiceResponse, ChannelDetailsDto, ChannelCategoryDetailDto,
+  ServerMemberAuthorizeInfoDto
 } from "./types.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
@@ -66,7 +67,7 @@ export const communityServerService = {
   getChannelCategories: async (serverId: string): Promise<ServiceResponse<ChannelCategoryDetailDto[]>> => {
     try {
       const response: AxiosResponse<BackendResponse<ChannelCategoryDetailDto[]>> =
-        await apiClient.get<BackendResponse<ChannelCategoryDetailDto[]>>(`/communities/${encodeURIComponent(serverId)}/channel-categories`);
+        await apiClient.get<BackendResponse<ChannelCategoryDetailDto[]>>(`/communities/${encodeURIComponent(serverId)}/details/channel-categories`);
 
       return {
         success: true,
@@ -75,6 +76,22 @@ export const communityServerService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse<ChannelCategoryDetailDto[]>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+  
+  getMemberAuthorizeInfo: async (serverId: string): Promise<ServiceResponse<ServerMemberAuthorizeInfoDto>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<ServerMemberAuthorizeInfoDto>> =
+        await apiClient.get<BackendResponse<ServerMemberAuthorizeInfoDto>>(`/communities/${encodeURIComponent(serverId)}/details/authorize`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<ServerMemberAuthorizeInfoDto>>;
       return handleAxiosError(axiosError);
     }
   },

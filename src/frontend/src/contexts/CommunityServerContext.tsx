@@ -1,8 +1,8 @@
 import type {
   ChannelCategoryIdentityDto,
   ServerChannelIdentityDto,
-  ServerDetailsDto,
-  ServiceError
+  ServerDetailsDto, ServerMemberAuthorizeInfoDto,
+  ServiceError, ServiceResponse
 } from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import useServerConnection from "../hooks/useServerConnection.ts";
@@ -24,6 +24,8 @@ interface CommunityServerContextType {
   appendChannel: (channel: ServerChannelIdentityDto) => void;
   removeChannel: (id: string) => void;
   hasPermission: (permission: ServerPermission) => boolean;
+  refreshPermission: () => Promise<void>;
+  updatePermission: (value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">) => void;
 }
 
 const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
@@ -170,7 +172,41 @@ export default function CommunityServerContextProvider({
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return false;
     
     return detailsQueryResult.data.authorizeInfo.effectivePermissions.includes(permission);
-  }
+  };
+  
+  const refreshPermission = async () => {
+    if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return;
+    
+    const response: ServiceResponse<ServerMemberAuthorizeInfoDto> = 
+      await communityServerService.getMemberAuthorizeInfo(detailsQueryResult.data.id);
+    
+    if (response.success && response.data) {
+      queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
+        if (!oldData) return oldData;
+        
+        return {
+          ...oldData,
+          authorizeInfo: response.data!,
+        };
+      });
+    }
+  };
+  
+  const updatePermission = (value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">) => {
+    if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return;
+
+    queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
+      if (!oldData) return oldData;
+
+      return {
+        ...oldData,
+        authorizeInfo: {
+          ...oldData.authorizeInfo,
+          ...value,
+        }
+      };
+    });
+  };
 
   useSignalREvent("ServerChannelCategoryCreated", (event: ServerChannelCategoryCreatedEvent) => {
     if (event.serverId !== serverId) {
@@ -220,6 +256,8 @@ export default function CommunityServerContextProvider({
       appendChannel,
       removeChannel,
       hasPermission,
+      refreshPermission,
+      updatePermission
     }}>
       {children}
     </CommunityServerContext.Provider>

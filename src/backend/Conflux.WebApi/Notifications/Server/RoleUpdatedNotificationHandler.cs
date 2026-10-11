@@ -12,13 +12,24 @@ namespace Conflux.WebApi.Notifications.Server;
 ])]
 public sealed partial record ServerRoleUpdatedEvent;
 
+[Facet(typeof(ServerDefaultRoleUpdatedNotification), Include = [
+    nameof(ServerDefaultRoleUpdatedNotification.ServerId),
+])]
+public sealed partial record ServerDefaultRoleUpdatedEvent;
+
 internal sealed class RoleUpdatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
-) : INotificationHandler<ServerRoleUpdatedNotification> {
+) : INotificationHandler<ServerRoleUpdatedNotification>, INotificationHandler<ServerDefaultRoleUpdatedNotification> {
     public async ValueTask Handle(ServerRoleUpdatedNotification notification, CancellationToken cancellationToken) {
         // not filter connection id just in case some server-side computed field pop up.
         await hubContext.Clients
             .Group(NameProvider.GetServerGroupName(notification.ServerId))
             .ServerRoleUpdated(new(notification), cancellationToken);
+    }
+
+    public async ValueTask Handle(ServerDefaultRoleUpdatedNotification notification, CancellationToken cancellationToken) {
+        await hubContext.Clients
+            .Group(NameProvider.GetServerGroupName(notification.ServerId))
+            .ServerDefaultRoleUpdated(new(notification), cancellationToken);
     }
 }
