@@ -449,6 +449,8 @@ function ChannelCategory({
   setCreateModalState,
   setDeleteModalState,
 }: ChannelCategoryProps) {
+  const { hasPermission } = useCommunityServerContext();
+  
   const [isOpen, setIsOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
@@ -462,58 +464,60 @@ function ChannelCategory({
   
         <span className="flex-1 truncate text-sm min-w-0">{name}</span>
 
-        <div
-          className={`h-5 flex-none ${isDropdownOpen ? 'block' : 'hidden group-hover:block'}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
-            <DropdownMenu.Trigger asChild>
-              <IconButton theme="default">
-                <BsGearFill className="size-4"/>
-              </IconButton>
-            </DropdownMenu.Trigger>
-    
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                side="bottom"
-                sideOffset={5}
-                className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
-                onCloseAutoFocus={(e) => {
-                  e.preventDefault();
-                }}
-              >
-                <DropdownMenu.Item
-                  className="dropdown-item-default"
-                  onSelect={() => setCreateModalState({ categoryId: id, type: "text" })}
+        {hasPermission(ServerPermission.DeleteChannel) && (
+          <div
+            className={`h-5 flex-none ${isDropdownOpen ? 'block' : 'hidden group-hover:block'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
+              <DropdownMenu.Trigger asChild>
+                <IconButton theme="default">
+                  <BsGearFill className="size-4"/>
+                </IconButton>
+              </DropdownMenu.Trigger>
+      
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  side="bottom"
+                  sideOffset={5}
+                  className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
+                  onCloseAutoFocus={(e) => {
+                    e.preventDefault();
+                  }}
                 >
-                  Create text channel
-
-                  <BsChatText className="fill-white size-4 ml-auto"/>
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Item
-                  className="dropdown-item-default"
-                  onSelect={() => setCreateModalState({ categoryId: id, type: "voice" })}
-                >
-                  Create voice channel
-
-                  <BsVolumeUp className="fill-white size-4 ml-auto"/>
-                </DropdownMenu.Item>
-                
-                <DropdownMenu.Item
-                  className="dropdown-item-danger"
-                  onSelect={() => setDeleteModalState({ type: "category", id, })}
-                >
-                  Delete category
-    
-                  <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
-                </DropdownMenu.Item>
-    
-                <DropdownMenu.Arrow className="fill-gray-650"/>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        </div>
+                  <DropdownMenu.Item
+                    className="dropdown-item-default"
+                    onSelect={() => setCreateModalState({ categoryId: id, type: "text" })}
+                  >
+                    Create text channel
+  
+                    <BsChatText className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+  
+                  <DropdownMenu.Item
+                    className="dropdown-item-default"
+                    onSelect={() => setCreateModalState({ categoryId: id, type: "voice" })}
+                  >
+                    Create voice channel
+  
+                    <BsVolumeUp className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+                  
+                  <DropdownMenu.Item
+                    className="dropdown-item-danger"
+                    onSelect={() => setDeleteModalState({ type: "category", id, })}
+                  >
+                    Delete category
+      
+                    <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
+                  </DropdownMenu.Item>
+      
+                  <DropdownMenu.Arrow className="fill-gray-650"/>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
+        )}
       </div>
 
       {isOpen && channels.length > 0 && (
@@ -546,7 +550,7 @@ function ChannelButton({
   type,
   setDeleteModalState,
 }: ChannelButtonProps) {
-  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
   const navigate = useNavigate();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -567,40 +571,42 @@ function ChannelButton({
 
       <span className="flex-1 truncate text-sm min-w-0">{name}</span>
 
-      <div
-        className={`h-5 flex-none ${isDropdownOpen ? 'block' : 'hidden group-hover:block'}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
-          <DropdownMenu.Trigger asChild>
-            <IconButton theme="default">
-              <BsGearFill className="size-4 inline"/>
-            </IconButton>
-          </DropdownMenu.Trigger>
-
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              side="bottom"
-              sideOffset={5}
-              className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
-              onCloseAutoFocus={(e) => {
-                e.preventDefault();
-              }}
-            >
-              <DropdownMenu.Item
-                className="dropdown-item-danger"
-                onSelect={() => setDeleteModalState({ type: "channel", id, })}
+      {hasPermission(ServerPermission.DeleteChannel) && (
+        <div
+          className={`h-5 flex-none ${isDropdownOpen ? 'block' : 'hidden group-hover:block'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
+            <DropdownMenu.Trigger asChild>
+              <IconButton theme="default">
+                <BsGearFill className="size-4 inline"/>
+              </IconButton>
+            </DropdownMenu.Trigger>
+  
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                side="bottom"
+                sideOffset={5}
+                className="w-64 rounded-md bg-gray-650 p-1.5 shadow-lg"
+                onCloseAutoFocus={(e) => {
+                  e.preventDefault();
+                }}
               >
-                Delete channel
-
-                <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
-              </DropdownMenu.Item>
-
-              <DropdownMenu.Arrow className="fill-gray-650"/>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-      </div>
+                <DropdownMenu.Item
+                  className="dropdown-item-danger"
+                  onSelect={() => setDeleteModalState({ type: "channel", id, })}
+                >
+                  Delete channel
+  
+                  <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
+                </DropdownMenu.Item>
+  
+                <DropdownMenu.Arrow className="fill-gray-650"/>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        </div>
+      )}
     </div>
   )
 }
