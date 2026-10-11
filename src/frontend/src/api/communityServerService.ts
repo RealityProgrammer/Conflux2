@@ -1,7 +1,7 @@
 import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
-  ServerSummaryDto, ServerIdentityDto, ServerRoleDto, ServiceResponse, ChannelDetailsDto
+  ServerDetailsDto, ServerIdentityDto, ServerRoleDto, ServiceResponse, ChannelDetailsDto, ChannelCategoryDetailDto
 } from "./types.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
@@ -47,10 +47,10 @@ export const communityServerService = {
     return `/api/communities/${encodeURIComponent(serverId)}/avatar?${queryParams}`;
   },
 
-  getSummary: async (serverId: string): Promise<ServiceResponse<ServerSummaryDto>> => {
+  getDetails: async (serverId: string): Promise<ServiceResponse<ServerDetailsDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<ServerSummaryDto>> =
-        await apiClient.get<BackendResponse<ServerSummaryDto>>(`/communities/${encodeURIComponent(serverId)}/summary`);
+      const response: AxiosResponse<BackendResponse<ServerDetailsDto>> =
+        await apiClient.get<BackendResponse<ServerDetailsDto>>(`/communities/${encodeURIComponent(serverId)}/details`);
 
       return {
         success: true,
@@ -58,7 +58,23 @@ export const communityServerService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ServerSummaryDto>>;
+      const axiosError = error as AxiosError<BackendResponse<ServerDetailsDto>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+  
+  getChannelCategories: async (serverId: string): Promise<ServiceResponse<ChannelCategoryDetailDto[]>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<ChannelCategoryDetailDto[]>> =
+        await apiClient.get<BackendResponse<ChannelCategoryDetailDto[]>>(`/communities/${encodeURIComponent(serverId)}/channel-categories`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<ChannelCategoryDetailDto[]>>;
       return handleAxiosError(axiosError);
     }
   },

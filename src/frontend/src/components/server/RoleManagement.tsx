@@ -34,7 +34,9 @@ import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/Unsave
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
 export default function RoleManagement() {
-  const { serverId } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const serverId = serverDetails!.id;
+  
   const { guard } = useUnsavedChanges();
 
   const queryClient = useQueryClient();
@@ -232,7 +234,8 @@ function RoleList({
   selectedRoleId,
   setSelectedRole,
 }: RoleListProps) {
-  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const serverId = serverDetails!.id;
   
   const {
     reset,
@@ -312,7 +315,7 @@ function RoleList({
           />
         </ErrorPopover>
 
-        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateRole) && (
+        {hasPermission(ServerPermission.CreateRole) && (
           <button
             type="submit"
             disabled={isSubmitting}
@@ -386,10 +389,12 @@ function RoleDetails({
   updateRoleData,
   deleteRoleData,
 }: RoleDetailsProps) {
-  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const serverId = serverDetails!.id;
+  
   const { setDirty } = useUnsavedChanges();
 
-  const isEditable = memberAuthorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
+  const isEditable = serverDetails!.authorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
   
   const formRef = useRef<HTMLFormElement | null>(null);
   const {
@@ -497,7 +502,7 @@ function RoleDetails({
           </span>
         </div>
 
-        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.UpdateRole) && isEditable && (
+        {hasPermission(ServerPermission.UpdateRole) && isEditable && (
           <>
             {isEditingRole ? (
               <div className="flex flex-row gap-2">
@@ -943,7 +948,7 @@ function RoleDetails({
         </Accordion.Root>
       </section>
 
-      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
+      {hasPermission(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
         <div className="flex flex-row justify-end mt-2">
           <button
             type="button"

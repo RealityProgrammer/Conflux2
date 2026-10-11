@@ -53,12 +53,38 @@ public sealed class ServerController(
         return Redirect(await serverMediaService.GetBannerPreSignedUrl(serverId));
     }
 
-    [HttpGet("{serverId:guid}/summary")]
-    public async Task<ActionResult<ApiResponse<ServerSummaryDto>>> GetSummary(Guid serverId) {
-        var result = await mediator.Send(new GetServerSummaryQuery(serverId));
+    [HttpGet("{serverId:guid}/details")]
+    public async Task<ActionResult<ApiResponse<ServerDetailsDto>>> GetDetails(Guid serverId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await mediator.Send(new GetServerDetailsQuery(serverId, userId));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<ServerSummaryDto>(result.Value!, Error.None));
+            return Ok(new ApiResponse<ServerDetailsDto>(result.Value!, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+    
+    [HttpGet("{serverId:guid}/details/channel-categories")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyCollection<ChannelCategoryDetailDto>>>> GetChannelCategories(Guid serverId) {
+        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        var result = await mediator.Send(new GetServerChannelCategoriesQuery(serverId, userId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<IReadOnlyCollection<ChannelCategoryDetailDto>>(result.Value!, Error.None));
         }
 
         return result.Error.Code switch {

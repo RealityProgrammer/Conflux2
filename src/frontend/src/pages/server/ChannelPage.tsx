@@ -2,7 +2,7 @@ import {ChatView} from "../../components/chat/ChatView.tsx";
 import ChatInput from "../../components/chat/ChatInput.tsx";
 import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 import Spinner from "../../components/Spinner.tsx";
-import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {useQuery} from "@tanstack/react-query";
 import {useParams} from "react-router";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
@@ -11,14 +11,14 @@ import ServerChannelContextProvider, {useServerChannelContext} from "../../conte
 import useConversationConnection from "../../hooks/useConversationConnection.ts";
 
 export default function ChannelPage() {
-  const { serverId } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
   const { channelId } = useParams();
   
   const { data: channelDetails, isLoading, isError } = useQuery({
     enabled: !!channelId,
     queryKey: ["channelDetails", channelId],
     queryFn: () => {
-      return communityServerService.getChannelDetails(serverId, channelId!);
+      return communityServerService.getChannelDetails(serverDetails!.id, channelId!);
     },
   });
   

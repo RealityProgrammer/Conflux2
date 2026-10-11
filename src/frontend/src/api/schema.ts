@@ -1649,7 +1649,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/communities/{serverId}/summary": {
+    "/api/communities/{serverId}/details": {
         parameters: {
             query?: never;
             header?: never;
@@ -1673,9 +1673,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerSummaryDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerSummaryDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerSummaryDto"];
+                        "text/plain": components["schemas"]["ApiResponseOfServerDetailsDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
                     };
                 };
             };
@@ -2013,16 +2013,16 @@ export interface components {
             data: null | components["schemas"]["ServerChannelIdentityDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfServerDetailsDto: {
+            data: null | components["schemas"]["ServerDetailsDto"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfServerIdentityDto: {
             data: null | components["schemas"]["ServerIdentityDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfServerRoleDto: {
             data: null | components["schemas"]["ServerRoleDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerSummaryDto: {
-            data: null | components["schemas"]["ServerSummaryDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfStartCallResult: {
@@ -2077,8 +2077,6 @@ export interface components {
         };
         /** @enum {string} */
         ChannelType: ChannelType;
-        /** @enum {string} */
-        CommunityServerChannelType: CommunityServerChannelType;
         ConfirmEmailRequest: {
             userId: string;
             confirmationCode: string;
@@ -2088,7 +2086,7 @@ export interface components {
         };
         CreateChannelRequest: {
             name: string;
-            type: components["schemas"]["CommunityServerChannelType"];
+            type: components["schemas"]["ChannelType"];
             /** Format: uuid */
             categoryId: null | string;
         };
@@ -2102,6 +2100,7 @@ export interface components {
         CreateRoleRequest: {
             name: string;
         };
+        "Dictionary`2": unknown;
         DirectConversationSummary: {
             /** Format: uuid */
             conversationId: string;
@@ -2197,24 +2196,7 @@ export interface components {
         PatchRoleRequest: {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];
-            permissionStates: {
-                CreateRole?: components["schemas"]["PermissionState"];
-                UpdateRole?: components["schemas"]["PermissionState"];
-                DeleteRole?: components["schemas"]["PermissionState"];
-                CreateChannel?: components["schemas"]["PermissionState"];
-                DeleteChannel?: components["schemas"]["PermissionState"];
-                UpdateMemberRoles?: components["schemas"]["PermissionState"];
-                ManageMembers?: components["schemas"]["PermissionState"];
-                KickMembers?: components["schemas"]["PermissionState"];
-                WarnMembers?: components["schemas"]["PermissionState"];
-                BanMembers?: components["schemas"]["PermissionState"];
-                UnbanMembers?: components["schemas"]["PermissionState"];
-                ReadModerationLogs?: components["schemas"]["PermissionState"];
-                CreateInvitation?: components["schemas"]["PermissionState"];
-                SendMessage?: components["schemas"]["PermissionState"];
-                EditMessages?: components["schemas"]["PermissionState"];
-                DeleteMessages?: components["schemas"]["PermissionState"];
-            };
+            permissionStates: components["schemas"]["Dictionary`2"];
         };
         PendingFriendRequestDto: {
             /** Format: uuid */
@@ -2249,6 +2231,14 @@ export interface components {
             channelType: components["schemas"]["ChannelType"];
             /** Format: uuid */
             categoryId: null | string;
+        };
+        ServerDetailsDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            hasAvatar: boolean;
+            channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
+            authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
         };
         ServerIdentityDto: {
             /** Format: uuid */
@@ -2291,12 +2281,6 @@ export interface components {
             };
             /** Format: int32 */
             authorizeLevel: number;
-        };
-        ServerSummaryDto: {
-            name: string;
-            description: null | string;
-            hasAvatar: boolean;
-            channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
         };
         SetNamesRequest: {
             userName: string;
@@ -2428,10 +2412,6 @@ export interface operations {
     };
 }
 export enum ChannelType {
-    Text = "Text",
-    Voice = "Voice"
-}
-export enum CommunityServerChannelType {
     Text = "Text",
     Voice = "Voice"
 }

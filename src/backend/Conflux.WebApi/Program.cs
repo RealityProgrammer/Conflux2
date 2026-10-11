@@ -515,7 +515,7 @@ builder.Services.AddOpenApi(options => {
         var extraEnums = new[] {
             typeof(ServerPermission),
             typeof(InvitationController.InvitationExpireAfter),
-            typeof(CommunityServerChannelType),
+            typeof(ChannelType),
             typeof(PermissionState),
         };
 

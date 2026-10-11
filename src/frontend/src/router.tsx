@@ -34,6 +34,7 @@ import CallOverlay from "./components/call/CallOverlay.tsx";
 import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import {directConversationService} from "./api/directConversationService.ts";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
+import {Tooltip} from "radix-ui";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
@@ -69,9 +70,11 @@ export const router = createBrowserRouter([
       };
     },
     element: (
-      <AuthProvider>
-        <Outlet/>
-      </AuthProvider>
+      <Tooltip.Provider delayDuration={500}>
+        <AuthProvider>
+          <Outlet/>
+        </AuthProvider>
+      </Tooltip.Provider>
     ),
     children: [
       {

@@ -1,51 +1,89 @@
-import {AlertDialog} from "radix-ui";
+import {AlertDialog as RadixAlertDialog, Dialog as RadixDialog} from "radix-ui";
 import type {ReactNode} from "react";
+import IconButton from "./IconButton.tsx";
+import {FaXmark} from "react-icons/fa6";
 
-export interface AlertActionDialogProps {
+export interface AlertDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  trigger?: ReactNode;
+  contentClassName?: string;
+  headerIcon?: ReactNode;
   title: string;
-  description?: string | (() => ReactNode);
-  panelClassName?: string;
+  subtitle?: string;
+  children: ReactNode;
+  cancelButton: ReactNode;
   actionButton: ReactNode;
+  disableCloseOnEscapeKeyDown?: boolean;
 }
 
-export default function AlertActionDialog({
+export default function AlertDialog({
   open,
   onOpenChange,
+  trigger,
+  contentClassName,
+  headerIcon,
   title,
-  description,
-  panelClassName,
-  actionButton
-}: AlertActionDialogProps) {
+  subtitle,
+  children,
+  cancelButton,
+  actionButton,
+  disableCloseOnEscapeKeyDown = false,
+}: AlertDialogProps) {
   return (
-    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
-      <AlertDialog.Portal>
-        <AlertDialog.Overlay className="backdrop-overlay"/>
+    <RadixAlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      {trigger && (
+        <RadixDialog.Trigger asChild>
+          {trigger}
+        </RadixDialog.Trigger>
+      )}
+      
+      <RadixAlertDialog.Portal>
+        <RadixAlertDialog.Overlay className="backdrop-overlay"/>
 
-        <AlertDialog.Content
-          className={`centered-dialog rounded-lg bg-gray-650 p-6 text-white ${panelClassName ?? ''}`}>
-          <AlertDialog.Title className="font-semibold text-lg mb-1">{title}</AlertDialog.Title>
+        <RadixAlertDialog.Content
+          className={`flex flex-col ${contentClassName ?? ""}`}
+          onEscapeKeyDown={(e) => {
+            if (disableCloseOnEscapeKeyDown) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <header className="flex-none bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
+            {headerIcon}
 
-          {description && (
-            <AlertDialog.Description className="mb-6">
-              { typeof description === "function" ? description() : description }
-            </AlertDialog.Description>
-          )}
+            <div className="flex-1">
+              <RadixAlertDialog.Title className="font-bold text-xl text-white">{title}</RadixAlertDialog.Title>
 
-          <div className="flex justify-end gap-8">
-            <AlertDialog.Cancel asChild>
-              <button className="cursor-pointer outline-none">
-                Cancel
-              </button>
-            </AlertDialog.Cancel>
+              {subtitle && (
+                <RadixAlertDialog.Description className="text-sm text-gray-400">{subtitle}</RadixAlertDialog.Description>
+              )}
+            </div>
 
-            <AlertDialog.Action asChild>
-              {actionButton}
-            </AlertDialog.Action>
-          </div>
-        </AlertDialog.Content>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
+            <RadixAlertDialog.Cancel asChild>
+              <IconButton theme="default" className="size-6">
+                <FaXmark className="size-6"/>
+              </IconButton>
+            </RadixAlertDialog.Cancel>
+          </header>
+
+          <main className="flex-1 overflow-hidden min-h-0 min-w-0 overflow-y-auto">
+            {children}
+          </main>
+
+          <footer className="flex-none border-t-2 border-t-gray-600">
+            <div className="w-full flex flex-row justify-end p-3 gap-3">
+              <RadixAlertDialog.Cancel asChild>
+                {cancelButton}
+              </RadixAlertDialog.Cancel>
+              
+              <RadixAlertDialog.Action asChild>
+                {actionButton}
+              </RadixAlertDialog.Action>
+            </div>
+          </footer>
+        </RadixAlertDialog.Content>
+      </RadixAlertDialog.Portal>
+    </RadixAlertDialog.Root>
   );
 }

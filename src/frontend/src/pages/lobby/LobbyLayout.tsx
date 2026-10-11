@@ -13,7 +13,7 @@ import IconButton from "../../components/IconButton.tsx";
 import SelectableImageInput from "../../components/SelectableImageInput.tsx";
 import {useEffect, useRef, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
-import DialogForm from "../../components/DialogForm.tsx";
+import ModalForm from "../../components/ModalForm.tsx";
 import {HttpStatusCode} from "axios";
 import ServerAvatar from "../../components/ServerAvatar.tsx";
 import {Controller, useForm} from "react-hook-form";
@@ -41,33 +41,31 @@ function Sidebar() {
   return (
     <aside className="flex-none flex flex-col py-1.5 w-14 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
       <div className="flex justify-center items-center">
-        <Tooltip.Provider delayDuration={500}>
-          <Tooltip.Root>
-            <Tooltip.Trigger className="relative" onClick={() => {
-              if (location.pathname !== "/lobby/me") {
-                navigate("/lobby/me");
-              }
-            }}>
-              <UserAvatar
-                src={auth.userProfile?.avatarRevision ? userService.getAvatarUrl(auth.userProfile.id, auth.userProfile.avatarRevision) : undefined}
-                className="flex-none size-10 cursor-pointer"
-              />
+        <Tooltip.Root>
+          <Tooltip.Trigger className="relative" onClick={() => {
+            if (location.pathname !== "/lobby/me") {
+              navigate("/lobby/me");
+            }
+          }}>
+            <UserAvatar
+              src={auth.userProfile?.avatarRevision ? userService.getAvatarUrl(auth.userProfile.id, auth.userProfile.avatarRevision) : undefined}
+              className="flex-none size-10 cursor-pointer"
+            />
 
-              <PresenceStatusIcon
-                status={effectiveStatus}
-                className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750 bg-gray-750"
-              />
-            </Tooltip.Trigger>
+            <PresenceStatusIcon
+              status={effectiveStatus}
+              className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750 bg-gray-750"
+            />
+          </Tooltip.Trigger>
 
-            <Tooltip.Portal>
-              <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-625 shadow-xl">
-                <p className="text-white font-semibold px-3 py-1">To your private space</p>
+          <Tooltip.Portal>
+            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-625 shadow-xl">
+              <p className="text-white font-semibold px-3 py-1">To your private space</p>
 
-                <Tooltip.Arrow className="fill-gray-600"/>
-              </Tooltip.Content>
-            </Tooltip.Portal>
-          </Tooltip.Root>
-        </Tooltip.Provider>
+              <Tooltip.Arrow className="fill-gray-600"/>
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
       </div>
 
       <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
@@ -144,32 +142,30 @@ function JoinedCommunityServerScrollList() {
 
         return (
           <div className="size-full aspect-square flex justify-center items-center" key={virtualItem.key}>
-            <Tooltip.Provider delayDuration={500}>
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                    <ServerAvatar
-                      serverId={item.id}
-                      hasAvatar={item.hasAvatar}
-                      className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
-                      onClick={() => {
-                        const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                  <ServerAvatar
+                    serverId={item.id}
+                    hasAvatar={item.hasAvatar}
+                    className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
+                    onClick={() => {
+                      const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
 
-                        if (location.pathname !== dest) {
-                          navigate(dest);
-                        }
-                      }}
-                    />
-                </Tooltip.Trigger>
+                      if (location.pathname !== dest) {
+                        navigate(dest);
+                      }
+                    }}
+                  />
+              </Tooltip.Trigger>
 
-                <Tooltip.Portal>
-                  <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-                    <p className="text-white font-semibold px-3 py-1">{item.name}</p>
+              <Tooltip.Portal>
+                <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                  <p className="text-white font-semibold px-3 py-1">{item.name}</p>
 
-                    <Tooltip.Arrow className="fill-gray-600"/>
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </Tooltip.Provider>
+                  <Tooltip.Arrow className="fill-gray-600"/>
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
           </div>
         );
       }}
@@ -208,29 +204,26 @@ function ExpandableMenuIcon() {
             className="z-50 overflow-hidden rounded-2xl bg-gray-775 shadow-sm p-1.5 outline-none origin-[50%_100%] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-4 duration-300"
           >
             <div className="flex items-center gap-2">
-              <Tooltip.Provider delayDuration={500}>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <IconButton theme="default" onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsCreateServerDialogOpen(true);
-                    }}>
-                      <HiOutlineUserGroup className="size-10"/>
-                    </IconButton>
-                  </Tooltip.Trigger>
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <IconButton theme="default" onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsCreateServerDialogOpen(true);
+                  }}>
+                    <HiOutlineUserGroup className="size-10"/>
+                  </IconButton>
+                </Tooltip.Trigger>
 
-                  <Tooltip.Portal>
-                    <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-                      <p className="text-white font-semibold px-3 py-1">Create your own community</p>
+                <Tooltip.Portal>
+                  <Tooltip.Content side="top" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+                    <p className="text-white font-semibold px-3 py-1">Create your own community</p>
 
-                      <Tooltip.Arrow className="fill-gray-600"/>
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
+                    <Tooltip.Arrow className="fill-gray-600"/>
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
 
-              <Tooltip.Provider delayDuration={500}>
-                <Tooltip.Root>
+              <Tooltip.Root>
                   <Tooltip.Trigger asChild>
                     <IconButton theme="default" onClick={() => {
                       setIsMenuOpen(false);
@@ -248,7 +241,6 @@ function ExpandableMenuIcon() {
                     </Tooltip.Content>
                   </Tooltip.Portal>
                 </Tooltip.Root>
-              </Tooltip.Provider>
             </div>
 
             <Popover.Arrow className="fill-gray-775" />
@@ -325,7 +317,7 @@ function CreateServerDialogForm({
 
   return (
     <>
-      <DialogForm
+      <ModalForm
         open={open}
         onOpenChange={onOpenChange}
         formMethods={formMethods}
@@ -391,7 +383,7 @@ function CreateServerDialogForm({
             />
           </ErrorPopover>
         </div>
-      </DialogForm>
+      </ModalForm>
     </>
   );
 }

@@ -14,18 +14,18 @@ import {useInfiniteGetServerModerationLogsQuery} from "../../graphql/infiniteQue
 import AnimatedGearIcon from "../AnimatedGearIcon.tsx";
 import {UnsavedChangesProvider, useUnsavedChanges} from "../../contexts/UnsavedChangesContext.tsx";
 
-export function ServerSettingsDialog({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
+export function ServerManagementModal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   return (
     <UnsavedChangesProvider>
-      <DialogComponent open={open} onOpenChanged={onOpenChanged}/>
+      <Modal open={open} onOpenChanged={onOpenChanged}/>
     </UnsavedChangesProvider>
   );
 }
 
-function DialogComponent({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
+function Modal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   const queryClient = useQueryClient();
   
-  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
   const [activeTab, setActiveTab] = useState<string>("");
   const [shaking, setShaking] = useState(false);
 
@@ -38,9 +38,11 @@ function DialogComponent({open, onOpenChanged}: {open: boolean, onOpenChanged: (
   
   // invalidate the moderation log query when there is update event
   useSignalREvent("UpdateModerationLog", () => {
-    if (!memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ReadModerationLogs)) return;
+    if (!serverDetails || !hasPermission(ServerPermission.ReadModerationLogs)) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetServerModerationLogsQuery.getKey({ serverId, after: null })});
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetServerModerationLogsQuery.getKey({serverId: serverDetails.id, after: null}),
+    });
   });
   
   return (
@@ -66,13 +68,13 @@ function DialogComponent({open, onOpenChanged}: {open: boolean, onOpenChanged: (
             <FaUserShield className="size-8 fill-slate-200"/>
           </Tabs.Trigger>
 
-          {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ManageMembers) && (
+          {hasPermission(ServerPermission.ManageMembers) && (
             <Tabs.Trigger value="members" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
               <BsPeopleFill className="size-8 fill-slate-200"/>
             </Tabs.Trigger>
           )}
 
-          {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ReadModerationLogs) && (
+          {hasPermission(ServerPermission.ReadModerationLogs) && (
             <Tabs.Trigger value="modlogs" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
               <FaClipboardList className="size-8 fill-slate-200"/>
             </Tabs.Trigger>
@@ -94,13 +96,13 @@ function DialogComponent({open, onOpenChanged}: {open: boolean, onOpenChanged: (
             <RoleManagement/>
           </Tabs.Content>
   
-          {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ManageMembers) && (
+          {hasPermission(ServerPermission.ManageMembers) && (
             <Tabs.Content value="members" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
               <MemberManagement/>
             </Tabs.Content>
           )}
   
-          {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.ReadModerationLogs) && (
+          {hasPermission(ServerPermission.ReadModerationLogs) && (
             <Tabs.Content value="modlogs" className="p-2 flex-1 overflow-y-auto relative flex flex-col gap-2">
               <ModerationLog/>
             </Tabs.Content>

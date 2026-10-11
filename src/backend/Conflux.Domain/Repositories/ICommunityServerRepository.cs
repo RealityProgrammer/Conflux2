@@ -4,15 +4,8 @@ using Conflux.Domain.Entities;
 namespace Conflux.Domain.Repositories;
 
 public interface ICommunityServerRepository : IWriteRepository<CommunityServer> {
-    Task<Result<CommunityServerProfileDto>> GetProfile(
-        Guid serverId,
-        CancellationToken cancellationToken = default
-    );
-    
-    Task<List<ChannelCategoryDetailDto>> GetChannelCategorySummaries(
+    Task<List<ChannelCategoryDetailDto>> GetChannelCategoryStructure(
         Guid serverId, 
         CancellationToken cancellationToken = default
     );
-
-    Task<bool> IsCategoryExistsInServer(Guid serverId, Guid categoryId, CancellationToken cancellationToken = default);
 }

@@ -3,7 +3,7 @@ import {type FieldValues, FormProvider, type SubmitHandler, type UseFormReturn} 
 import Dialog from "./Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui"
 
-export interface DialogFormProps<TFieldValues extends FieldValues> {
+export interface ModalFormProps<TFieldValues extends FieldValues> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -17,7 +17,7 @@ export interface DialogFormProps<TFieldValues extends FieldValues> {
   onClear?: () => void;
 }
 
-export default function DialogForm<TFieldValues extends FieldValues>({
+export default function ModalForm<TFieldValues extends FieldValues>({
   open,
   onOpenChange,
   title,
@@ -29,7 +29,7 @@ export default function DialogForm<TFieldValues extends FieldValues>({
   contentClassName,
   headerIcon,
   onClear,
-}: DialogFormProps<TFieldValues>) {
+}: ModalFormProps<TFieldValues>) {
   const formId = useId();
 
   const footerContent = (

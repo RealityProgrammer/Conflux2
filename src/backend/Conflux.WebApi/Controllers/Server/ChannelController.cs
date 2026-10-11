@@ -2,6 +2,7 @@ using Conflux.Application.Enums;
 using Conflux.Application.Features.Servers;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -88,7 +89,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
     
     public sealed record CreateChannelRequest(
         [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name,
-        CommunityServerChannelType Type,
+        ChannelType Type,
         Guid? CategoryId
     );
 }
