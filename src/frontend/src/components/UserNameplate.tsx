@@ -62,8 +62,7 @@ function Root({
 function Skeleton({className, ...props}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
-      <div
-        className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle bg-white/10 animate-pulse"/>
+      <div className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle bg-white/10 animate-pulse"/>
 
       <div className="flex-1 flex flex-col min-w-0">
         <div className="h-4 rounded bg-white/10 animate-pulse" style={{width: `${random(144, 224)}px`}}/>

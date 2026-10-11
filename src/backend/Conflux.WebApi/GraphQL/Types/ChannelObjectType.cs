@@ -1,0 +1,17 @@
+using Conflux.Domain.Entities;
+
+namespace Conflux.WebApi.GraphQL.Types;
+
+public sealed class ChannelObjectType : ObjectType<Channel> {
+    protected override void Configure(IObjectTypeDescriptor<Channel> descriptor) {
+        descriptor.BindFieldsExplicitly();
+
+        descriptor.Field(c => c.Id);
+        descriptor.Field(c => c.Name);
+        descriptor.Field(c => c.CreatedAt);
+        descriptor.Field(c => c.Conversation);
+        descriptor.Field(c => c.ConversationId);
+        descriptor.Field(c => c.ChannelCategoryId);
+        descriptor.Field(c => c.ChannelCategory);
+    }
+}

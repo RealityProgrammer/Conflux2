@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/api/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    download?: boolean;
+                };
+                header?: never;
+                path: {
+                    attachmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -227,46 +264,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/channels/dm/{channelId}/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfDmChannelSummary"];
-                        "application/json": components["schemas"]["ApiResponseOfDmChannelSummary"];
-                        "text/json": components["schemas"]["ApiResponseOfDmChannelSummary"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/channels/dm/{toUserId}": {
+    "/api/calls/direct/{peerId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -278,9 +276,11 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    "X-SignalR-Connection-Id": string;
+                };
                 path: {
-                    toUserId: string;
+                    peerId: string;
                 };
                 cookie?: never;
             };
@@ -292,9 +292,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfDirectMessageResolutionResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfDirectMessageResolutionResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfDirectMessageResolutionResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfStartCallResult"];
+                        "application/json": components["schemas"]["ApiResponseOfStartCallResult"];
+                        "text/json": components["schemas"]["ApiResponseOfStartCallResult"];
                     };
                 };
             };
@@ -305,7 +305,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/communities": {
+    "/api/calls/{callId}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -314,124 +314,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        Name?: string;
-                        Avatar?: components["schemas"]["IFormFile"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerIdentityDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/banner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
+        patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
+                    callId: string;
                 };
                 cookie?: never;
             };
@@ -443,112 +335,16 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerDetailDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerDetailDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerDetailDto"];
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
                     };
                 };
             };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
-    "/api/communities/{serverId}/channel-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ChannelCategoryCreateRequest"];
-                    "text/json": components["schemas"]["ChannelCategoryCreateRequest"];
-                    "application/*+json": components["schemas"]["ChannelCategoryCreateRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
-                        "application/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
-                        "text/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channels": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ChannelCreateRequest"];
-                    "text/json": components["schemas"]["ChannelCreateRequest"];
-                    "application/*+json": components["schemas"]["ChannelCreateRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channel-categories/{categoryId}": {
+    "/api/calls/{callId}/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -558,130 +354,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    categoryId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channels/{channelId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateRoleRequest"];
-                    "text/json": components["schemas"]["CreateRoleRequest"];
-                    "application/*+json": components["schemas"]["CreateRoleRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                    };
-                };
-            };
-        };
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/roles/{roleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
+        patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    "X-SignalR-Connection-Id": string;
+                };
                 path: {
-                    serverId: string;
-                    roleId: string;
+                    callId: string;
                 };
                 cookie?: never;
             };
@@ -700,117 +383,9 @@ export interface paths {
                 };
             };
         };
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    roleId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["PatchRoleRequest"];
-                    "text/json": components["schemas"]["PatchRoleRequest"];
-                    "application/*+json": components["schemas"]["PatchRoleRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                    };
-                };
-            };
-        };
         trace?: never;
     };
-    "/api/channels/{channelId}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    direction?: components["schemas"]["MessageLoadDirection"];
-                    cursor?: string;
-                    count: number;
-                };
-                header?: never;
-                path: {
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfGetMessagesResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfGetMessagesResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfGetMessagesResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        Body?: string;
-                        Attachments?: components["schemas"]["IFormFile"][];
-                        /** Format: uuid */
-                        ReplyToId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/{messageId}": {
+    "/api/calls/{callId}/reject": {
         parameters: {
             query?: never;
             header?: never;
@@ -820,26 +395,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    messageId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch: {
@@ -847,17 +403,11 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    messageId: string;
+                    callId: string;
                 };
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        Body?: string;
-                    };
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -874,21 +424,25 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/attachments/{attachmentId}": {
+    "/api/calls/{callId}/end": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: {
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
             parameters: {
-                query?: {
-                    download?: boolean;
-                };
+                query?: never;
                 header?: never;
                 path: {
-                    attachmentId: string;
+                    callId: string;
                 };
                 cookie?: never;
             };
@@ -899,7 +453,42 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/calls/direct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+                        "application/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+                        "text/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+                    };
                 };
             };
         };
@@ -1645,6 +1234,816 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communities/{serverId}/channel-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateChannelCategoryRequest"];
+                    "text/json": components["schemas"]["CreateChannelCategoryRequest"];
+                    "application/*+json": components["schemas"]["CreateChannelCategoryRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+                        "application/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+                        "text/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/channel-categories/{categoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    categoryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/channels/{channelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    channelId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfChannelDetailsDto"];
+                        "application/json": components["schemas"]["ApiResponseOfChannelDetailsDto"];
+                        "text/json": components["schemas"]["ApiResponseOfChannelDetailsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    channelId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateChannelRequest"];
+                    "text/json": components["schemas"]["CreateChannelRequest"];
+                    "application/*+json": components["schemas"]["CreateChannelRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateRoleRequest"];
+                    "text/json": components["schemas"]["CreateRoleRequest"];
+                    "application/*+json": components["schemas"]["CreateRoleRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    roleId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    roleId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PatchRoleRequest"];
+                    "text/json": components["schemas"]["PatchRoleRequest"];
+                    "application/*+json": components["schemas"]["PatchRoleRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/communities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        Name?: string;
+                        Avatar?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerIdentityDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerDetailsDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/details/channel-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/details/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+                        "application/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+                        "text/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        Body?: string;
+                        Attachments?: components["schemas"]["IFormFile"][];
+                        /** Format: uuid */
+                        ReplyToId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        Body?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReadMessageRequest"];
+                    "text/json": components["schemas"]["ReadMessageRequest"];
+                    "application/*+json": components["schemas"]["ReadMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/{messageId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/{messageId}/unpin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    messageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/direct/{peerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    peerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfDirectConversationSummary"];
+                        "application/json": components["schemas"]["ApiResponseOfDirectConversationSummary"];
+                        "text/json": components["schemas"]["ApiResponseOfDirectConversationSummary"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1656,16 +2055,20 @@ export interface components {
             data: null | components["schemas"]["ChannelCategoryIdentityDto"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfDirectMessageResolutionResponse: {
-            data: null | components["schemas"]["DirectMessageResolutionResponse"];
+        ApiResponseOfChannelDetailsDto: {
+            data: null | components["schemas"]["ChannelDetailsDto"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfDmChannelSummary: {
-            data: null | components["schemas"]["DmChannelSummary"];
+        ApiResponseOfDirectConversationSummary: {
+            data: null | components["schemas"]["DirectConversationSummary"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfGetMessagesResponse: {
-            data: null | components["schemas"]["GetMessagesResponse"];
+        ApiResponseOfGetIncomingDirectCallQueryResult: {
+            data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
+            data: null | components["schemas"]["ChannelCategoryDetailDto"][];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfLoginResponse: {
@@ -1692,16 +2095,24 @@ export interface components {
             data: null | components["schemas"]["ServerChannelIdentityDto"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfServerDetailDto: {
-            data: null | components["schemas"]["ServerDetailDto"];
+        ApiResponseOfServerDetailsDto: {
+            data: null | components["schemas"]["ServerDetailsDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfServerIdentityDto: {
             data: null | components["schemas"]["ServerIdentityDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfServerMemberAuthorizeInfoDto: {
+            data: null | components["schemas"]["ServerMemberAuthorizeInfoDto"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfServerRoleDto: {
             data: null | components["schemas"]["ServerRoleDto"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfStartCallResult: {
+            data: null | components["schemas"]["StartCallResult"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfstring: {
@@ -1712,6 +2123,10 @@ export interface components {
             data: null | components["schemas"]["TimelineMessageDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfTimelineMessagePage: {
+            data: null | components["schemas"]["TimelineMessagePage"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfUserAuthorizationInfo: {
             data: null | components["schemas"]["UserAuthorizationInfo"];
             error: components["schemas"]["Error"];
@@ -1720,14 +2135,11 @@ export interface components {
             data: components["schemas"]["UserRelationshipStatus"];
             error: components["schemas"]["Error"];
         };
-        Attachment: {
-            name: string;
+        AttachmentDto: {
             /** Format: uuid */
             id: string;
-            type: string;
-        };
-        ChannelCategoryCreateRequest: {
             name: string;
+            type: string;
         };
         ChannelCategoryDetailDto: {
             /** Format: uuid */
@@ -1740,19 +2152,29 @@ export interface components {
             id: string;
             name: string;
         };
-        ChannelCreateRequest: {
-            name: string;
-            type: components["schemas"]["CommunityServerChannelType"];
+        ChannelDetailsDto: {
             /** Format: uuid */
-            categoryId: null | string;
+            id: string;
+            name: string;
+            type: components["schemas"]["ChannelType"];
+            /** Format: uuid */
+            conversationId: string;
+            authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
         };
         /** @enum {string} */
         ChannelType: ChannelType;
-        /** @enum {string} */
-        CommunityServerChannelType: CommunityServerChannelType;
         ConfirmEmailRequest: {
             userId: string;
             confirmationCode: string;
+        };
+        CreateChannelCategoryRequest: {
+            name: string;
+        };
+        CreateChannelRequest: {
+            name: string;
+            type: components["schemas"]["ChannelType"];
+            /** Format: uuid */
+            categoryId: null | string;
         };
         CreateInvitationRequest: {
             /** Format: uuid */
@@ -1764,9 +2186,11 @@ export interface components {
         CreateRoleRequest: {
             name: string;
         };
-        DirectMessageResolutionResponse: {
+        "Dictionary`2": unknown;
+        DirectConversationSummary: {
             /** Format: uuid */
-            channelId: string;
+            conversationId: string;
+            peerProfile: components["schemas"]["UserIdentityProfileDto"];
         };
         DiscoverFriendSummary: {
             /** Format: uuid */
@@ -1777,12 +2201,6 @@ export interface components {
             avatarRevision: null | number;
             status: components["schemas"]["UserRelationshipStatus"];
         };
-        DmChannelSummary: {
-            /** Format: uuid */
-            channelId: string;
-            otherUser: components["schemas"]["UserIdentityProfileDto"];
-            friendRequestStatus: components["schemas"]["FriendRequestStatus"];
-        };
         Error: {
             code?: null | string;
             message?: null | string;
@@ -1790,13 +2208,10 @@ export interface components {
         };
         /** @enum {string} */
         FileOperationType: FileOperationType;
-        /** @enum {string} */
-        FriendRequestStatus: FriendRequestStatus;
-        GetMessagesResponse: {
-            messageGroups: components["schemas"]["TimelineMessageClusterDto"][];
-            users: components["schemas"]["UserIdentityProfileDto"][];
-            hasMoreBefore: null | boolean;
-            hasMoreAfter: null | boolean;
+        GetIncomingDirectCallQueryResult: {
+            /** Format: uuid */
+            callId: string;
+            callerProfile: components["schemas"]["UserIdentityProfileDto"];
         };
         /** Format: binary */
         IFormFile: string;
@@ -1811,8 +2226,42 @@ export interface components {
             tokenType: string;
             accessToken: string;
         };
+        MemberRoleDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
+        MessagePropertiesCallEndProperties: {
+            /** @enum {integer} */
+            $type?: MessagePropertiesCallEndProperties$type;
+            duration: string;
+        };
+        MessageReadStrategy: components["schemas"]["MessageReadStrategyLatest"] | components["schemas"]["MessageReadStrategyAround"] | components["schemas"]["MessageReadStrategyBefore"] | components["schemas"]["MessageReadStrategyAfter"];
+        MessageReadStrategyAfter: {
+            /** @enum {string} */
+            type?: MessageReadStrategyAfterType;
+            /** Format: uuid */
+            cursorId: string;
+        };
+        MessageReadStrategyAround: {
+            /** @enum {string} */
+            type?: MessageReadStrategyAroundType;
+            /** Format: uuid */
+            anchorId: string;
+        };
+        MessageReadStrategyBefore: {
+            /** @enum {string} */
+            type?: MessageReadStrategyBeforeType;
+            /** Format: uuid */
+            cursorId: string;
+        };
+        MessageReadStrategyLatest: {
+            /** @enum {string} */
+            type?: MessageReadStrategyLatestType;
+        };
         /** @enum {string} */
-        MessageLoadDirection: MessageLoadDirection;
+        MessageType: MessageType;
         PaginatedResultOfDiscoverFriendSummary: {
             elements: components["schemas"]["DiscoverFriendSummary"][];
             /** Format: int32 */
@@ -1833,21 +2282,7 @@ export interface components {
         PatchRoleRequest: {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];
-            permissionStates: {
-                CreateRole?: components["schemas"]["PermissionState"];
-                UpdateRole?: components["schemas"]["PermissionState"];
-                DeleteRole?: components["schemas"]["PermissionState"];
-                CreateChannel?: components["schemas"]["PermissionState"];
-                DeleteChannel?: components["schemas"]["PermissionState"];
-                UpdateMemberRoles?: components["schemas"]["PermissionState"];
-                ManageMembers?: components["schemas"]["PermissionState"];
-                KickMembers?: components["schemas"]["PermissionState"];
-                WarnMembers?: components["schemas"]["PermissionState"];
-                BanMembers?: components["schemas"]["PermissionState"];
-                UnbanMembers?: components["schemas"]["PermissionState"];
-                ReadModerationLogs?: components["schemas"]["PermissionState"];
-                CreateInvitation?: components["schemas"]["PermissionState"];
-            };
+            permissionStates: components["schemas"]["Dictionary`2"];
         };
         PendingFriendRequestDto: {
             /** Format: uuid */
@@ -1862,6 +2297,9 @@ export interface components {
         PermissionState: PermissionState;
         /** @enum {string} */
         PresenceStatus: PresenceStatus;
+        ReadMessageRequest: {
+            readStrategy: components["schemas"]["MessageReadStrategy"];
+        };
         RefreshResponse: {
             authorizationInfo: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
@@ -1880,17 +2318,28 @@ export interface components {
             /** Format: uuid */
             categoryId: null | string;
         };
-        ServerDetailDto: {
+        ServerDetailsDto: {
+            /** Format: uuid */
+            id: string;
             name: string;
-            description: null | string;
             hasAvatar: boolean;
             channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
+            authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
         };
         ServerIdentityDto: {
             /** Format: uuid */
             id: string;
             name: string;
             hasAvatar: boolean;
+        };
+        ServerMemberAuthorizeInfoDto: {
+            /** Format: uuid */
+            memberId: string;
+            /** Format: int32 */
+            authorizeLevel: number;
+            effectivePermissions: components["schemas"]["ServerPermission"][];
+            roles: components["schemas"]["MemberRoleDto"][];
+            isBanned: boolean;
         };
         /** @enum {string} */
         ServerPermission: ServerPermission;
@@ -1912,6 +2361,9 @@ export interface components {
                 UnbanMembers?: components["schemas"]["PermissionState"];
                 ReadModerationLogs?: components["schemas"]["PermissionState"];
                 CreateInvitation?: components["schemas"]["PermissionState"];
+                SendMessage?: components["schemas"]["PermissionState"];
+                EditMessages?: components["schemas"]["PermissionState"];
+                DeleteMessages?: components["schemas"]["PermissionState"];
             };
             /** Format: int32 */
             authorizeLevel: number;
@@ -1920,40 +2372,46 @@ export interface components {
             userName: string;
             displayName: string;
         };
-        TimelineMessageClusterDto: {
+        StartCallResult: {
             /** Format: uuid */
-            senderUserId: string;
-            messages: components["schemas"]["TimelineMessageClusterItemDto"][];
-        };
-        TimelineMessageClusterItemDto: {
-            /** Format: uuid */
-            id: string;
-            body: null | string;
-            attachments: components["schemas"]["Attachment"][];
-            /** Format: date-time */
-            createdAt: string;
-            replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
+            callId: string;
+            calleeProfile: components["schemas"]["UserIdentityProfileDto"];
+            message: components["schemas"]["TimelineMessageDto"];
         };
         TimelineMessageDto: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            senderUserId: string;
+            type: components["schemas"]["MessageType"];
+            sender: null | components["schemas"]["TimelineMessageSenderDto"];
             body: null | string;
-            attachments: components["schemas"]["Attachment"][];
+            attachments?: components["schemas"]["AttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
+            properties: null | components["schemas"]["MessageProperties"];
+            /** Format: uuid */
+            conversationId: string;
+            isPinned: boolean;
+        };
+        TimelineMessagePage: {
+            messages: components["schemas"]["TimelineMessageDto"][];
+            hasMoreBefore: null | boolean;
+            hasMoreAfter: null | boolean;
         };
         TimelineMessageReplyDto: {
             /** Format: uuid */
-            messageId: string;
-            /** Format: uuid */
-            senderUserId: string;
-            bodySnippet: null | string;
-            hasMoreBody: boolean;
+            id: string;
+            sender: components["schemas"]["TimelineMessageSenderDto"];
+            body: null | string;
             /** Format: int32 */
             attachmentCount: number;
+        };
+        TimelineMessageSenderDto: {
+            /** Format: uuid */
+            id: string;
+            displayName: null | string;
+            /** Format: int32 */
+            avatarRevision?: null | number;
         };
         UserAuthorizationInfo: {
             /** Format: uuid */
@@ -1970,8 +2428,6 @@ export interface components {
             displayName: null | string;
             /** Format: int32 */
             avatarRevision: null | number;
-            /** Format: int32 */
-            bannerRevision: null | number;
         };
         /** @enum {string} */
         UserRelationshipStatus: UserRelationshipStatus;
@@ -2042,11 +2498,6 @@ export interface operations {
     };
 }
 export enum ChannelType {
-    DirectMessage = "DirectMessage",
-    CommunityServerText = "CommunityServerText",
-    CommunityServerVoice = "CommunityServerVoice"
-}
-export enum CommunityServerChannelType {
     Text = "Text",
     Voice = "Voice"
 }
@@ -2054,13 +2505,6 @@ export enum FileOperationType {
     NoMod = "NoMod",
     Set = "Set",
     Delete = "Delete"
-}
-export enum FriendRequestStatus {
-    None = "None",
-    Pending = "Pending",
-    Canceled = "Canceled",
-    Accepted = "Accepted",
-    Rejected = "Rejected"
 }
 export enum InvitationExpireAfter {
     FiveMinutes = "FiveMinutes",
@@ -2077,10 +2521,29 @@ export enum InvitationExpireAfter {
     FourWeeks = "FourWeeks",
     Infinite = "Infinite"
 }
-export enum MessageLoadDirection {
-    Before = "Before",
-    After = "After",
-    Around = "Around"
+export enum MessagePropertiesCallEndProperties$type {
+    Value1 = 1
+}
+export enum MessageReadStrategyAfterType {
+    after = "after"
+}
+export enum MessageReadStrategyAroundType {
+    around = "around"
+}
+export enum MessageReadStrategyBeforeType {
+    before = "before"
+}
+export enum MessageReadStrategyLatestType {
+    latest = "latest"
+}
+export enum MessageType {
+    Message = "Message",
+    CallStart = "CallStart",
+    CallCancel = "CallCancel",
+    CallRejected = "CallRejected",
+    CallEnd = "CallEnd",
+    Pin = "Pin",
+    Unpin = "Unpin"
 }
 export enum PermissionState {
     Inherit = "Inherit",
@@ -2107,7 +2570,10 @@ export enum ServerPermission {
     BanMembers = "BanMembers",
     UnbanMembers = "UnbanMembers",
     ReadModerationLogs = "ReadModerationLogs",
-    CreateInvitation = "CreateInvitation"
+    CreateInvitation = "CreateInvitation",
+    SendMessage = "SendMessage",
+    EditMessages = "EditMessages",
+    DeleteMessages = "DeleteMessages"
 }
 export enum UserRelationshipStatus {
     Stranger = "Stranger",

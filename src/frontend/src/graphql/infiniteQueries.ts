@@ -17,19 +17,27 @@ export type GetAssignableServerRolesQueryVariables = Exact<{
 
 export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } };
 
-export type GetDirectMessageChannelsQueryVariables = Exact<{
+export type GetConversationPinnedMessagesQueryVariables = Exact<{
+  conversationId: string;
   after?: string | null | undefined;
 }>;
 
 
-export type GetDirectMessageChannelsQuery = { directMessageChannels: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, friendRequest: { otherUser: { id: string, displayName: string | null, avatarRevision: number | null, effectivePresenceStatus: Types.PresenceStatus } | null } | null }> | null } };
+export type GetConversationPinnedMessagesQuery = { pinnedMessages: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, body: string | null, createdAt: string, attachments: Array<{ id: string, name: string, type: string }>, sender: { id: string, displayName: string, avatarRevision: number | null } | null }> | null } };
+
+export type GetDirectConversationsQueryVariables = Exact<{
+  after?: string | null | undefined;
+}>;
+
+
+export type GetDirectConversationsQuery = { directConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, avatarRevision: number | null, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus } | null }> | null } };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
 
-export type GetJoinedCommunityServerQuery = { joinedServers: { totalCount: number, pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } };
+export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } };
 
 export type GetServerModerationLogsQueryVariables = Exact<{
   serverId: string;
@@ -138,11 +146,12 @@ useInfiniteGetAssignableServerRolesQuery.getKey = (variables: GetAssignableServe
 
 useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, variables, options);
 
-export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
-    query GetDirectMessageChannels($after: String) {
-  directMessageChannels(
+export const GetConversationPinnedMessagesDocument = new TypedDocumentString(`
+    query GetConversationPinnedMessages($conversationId: UUID!, $after: String) {
+  pinnedMessages(
     after: $after
-    order: {conversation: {latestMessageAt: DESC}}
+    conversationId: $conversationId
+    order: {pinnedAt: DESC}
   ) {
     pageInfo {
       hasNextPage
@@ -151,65 +160,136 @@ export const GetDirectMessageChannelsDocument = new TypedDocumentString(`
     }
     nodes {
       id
-      friendRequest {
-        otherUser {
-          id
-          displayName
-          avatarRevision
-          effectivePresenceStatus
-        }
+      body
+      attachments {
+        id
+        name
+        type
+      }
+      createdAt
+      sender {
+        id
+        displayName
+        avatarRevision
       }
     }
   }
 }
     `);
 
-export const useGetDirectMessageChannelsQuery = <
-      TData = GetDirectMessageChannelsQuery,
+export const useGetConversationPinnedMessagesQuery = <
+      TData = GetConversationPinnedMessagesQuery,
       TError = unknown
     >(
-      variables?: GetDirectMessageChannelsQueryVariables,
-      options?: Omit<UseQueryOptions<GetDirectMessageChannelsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetDirectMessageChannelsQuery, TError, TData>['queryKey'] }
+      variables: GetConversationPinnedMessagesQueryVariables,
+      options?: Omit<UseQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useQuery<GetDirectMessageChannelsQuery, TError, TData>(
+    return useQuery<GetConversationPinnedMessagesQuery, TError, TData>(
       {
-    queryKey: variables === undefined ? ['GetDirectMessageChannels'] : ['GetDirectMessageChannels', variables],
-    queryFn: graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, variables),
+    queryKey: ['GetConversationPinnedMessages', variables],
+    queryFn: graphqlFetcher<GetConversationPinnedMessagesQuery, GetConversationPinnedMessagesQueryVariables>(GetConversationPinnedMessagesDocument, variables),
     ...options
   }
     )};
 
-useGetDirectMessageChannelsQuery.getKey = (variables?: GetDirectMessageChannelsQueryVariables) => variables === undefined ? ['GetDirectMessageChannels'] : ['GetDirectMessageChannels', variables];
+useGetConversationPinnedMessagesQuery.getKey = (variables: GetConversationPinnedMessagesQueryVariables) => ['GetConversationPinnedMessages', variables];
 
-export const useInfiniteGetDirectMessageChannelsQuery = <
-      TData = InfiniteData<GetDirectMessageChannelsQuery>,
+export const useInfiniteGetConversationPinnedMessagesQuery = <
+      TData = InfiniteData<GetConversationPinnedMessagesQuery>,
       TError = unknown
     >(
-      variables: GetDirectMessageChannelsQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<GetDirectMessageChannelsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetDirectMessageChannelsQuery, TError, TData>['queryKey'] }
+      variables: GetConversationPinnedMessagesQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>['queryKey'] }
     ) => {
     
-    return useInfiniteQuery<GetDirectMessageChannelsQuery, TError, TData>(
+    return useInfiniteQuery<GetConversationPinnedMessagesQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? variables === undefined ? ['GetDirectMessageChannels.infinite'] : ['GetDirectMessageChannels.infinite', variables],
-      queryFn: (metaData) => graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      queryKey: optionsQueryKey ?? ['GetConversationPinnedMessages.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetConversationPinnedMessagesQuery, GetConversationPinnedMessagesQueryVariables>(GetConversationPinnedMessagesDocument, {...variables, ...(metaData.pageParam ?? {})})(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteGetDirectMessageChannelsQuery.getKey = (variables?: GetDirectMessageChannelsQueryVariables) => variables === undefined ? ['GetDirectMessageChannels.infinite'] : ['GetDirectMessageChannels.infinite', variables];
+useInfiniteGetConversationPinnedMessagesQuery.getKey = (variables: GetConversationPinnedMessagesQueryVariables) => ['GetConversationPinnedMessages.infinite', variables];
 
 
-useGetDirectMessageChannelsQuery.fetcher = (variables?: GetDirectMessageChannelsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetDirectMessageChannelsQuery, GetDirectMessageChannelsQueryVariables>(GetDirectMessageChannelsDocument, variables, options);
+useGetConversationPinnedMessagesQuery.fetcher = (variables: GetConversationPinnedMessagesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetConversationPinnedMessagesQuery, GetConversationPinnedMessagesQueryVariables>(GetConversationPinnedMessagesDocument, variables, options);
+
+export const GetDirectConversationsDocument = new TypedDocumentString(`
+    query GetDirectConversations($after: String) {
+  directConversations(
+    after: $after
+    where: {latestMessageAt: {neq: null}}
+    order: {latestMessageAt: DESC}
+  ) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+    nodes {
+      id
+      peerUser {
+        id
+        avatarRevision
+        displayName
+        userName
+        effectivePresenceStatus
+      }
+    }
+  }
+}
+    `);
+
+export const useGetDirectConversationsQuery = <
+      TData = GetDirectConversationsQuery,
+      TError = unknown
+    >(
+      variables?: GetDirectConversationsQueryVariables,
+      options?: Omit<UseQueryOptions<GetDirectConversationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetDirectConversationsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetDirectConversationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['GetDirectConversations'] : ['GetDirectConversations', variables],
+    queryFn: graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetDirectConversationsQuery.getKey = (variables?: GetDirectConversationsQueryVariables) => variables === undefined ? ['GetDirectConversations'] : ['GetDirectConversations', variables];
+
+export const useInfiniteGetDirectConversationsQuery = <
+      TData = InfiniteData<GetDirectConversationsQuery>,
+      TError = unknown
+    >(
+      variables: GetDirectConversationsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetDirectConversationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetDirectConversationsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetDirectConversationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['GetDirectConversations.infinite'] : ['GetDirectConversations.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetDirectConversationsQuery.getKey = (variables?: GetDirectConversationsQueryVariables) => variables === undefined ? ['GetDirectConversations.infinite'] : ['GetDirectConversations.infinite', variables];
+
+
+useGetDirectConversationsQuery.fetcher = (variables?: GetDirectConversationsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, variables, options);
 
 export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     query GetJoinedCommunityServer($after: String) {
   joinedServers(after: $after) {
-    totalCount
     pageInfo {
       hasNextPage
       hasPreviousPage

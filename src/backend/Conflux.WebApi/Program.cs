@@ -18,6 +18,7 @@ using Conflux.Application.Options;
 using Conflux.Application.Pipelines;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -31,6 +32,7 @@ using Conflux.WebApi.GraphQL.Middlewares;
 using Conflux.WebApi.Jobs;
 using Conflux.WebApi.Miscs;
 using Conflux.WebApi.Notifications;
+using Conflux.WebApi.Notifications.Conversation;
 using Conflux.WebApi.Notifications.Users;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
@@ -53,6 +55,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using CallingService = Conflux.Application.Services.Implementations.CallingService;
 using Error = Conflux.Domain.Error;
 
 DotNetEnv.Env.TraversePath().Load();
@@ -173,7 +176,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
 builder.Services
     .AddStackExchangeRedisCache(options => {
         options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
-        options.InstanceName = "Conflux";
     });
 
 using var redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> {
@@ -229,7 +231,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMediator(options => {
     options.Assemblies = [
         typeof(CreateServerCommand),
-        typeof(UpdateDmConversationListNotificationHandler),
+        typeof(MessageReceivedNotificationHandler),
     ];
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),
@@ -255,17 +257,25 @@ builder.Services.AddSignalR()
 
 // Conflux services.
 builder.Services
-    .AddScoped<IChannelAuthorizationStrategy, DmChannelAuthorizationStrategy>()
-    .AddScoped<IChannelAuthorizationStrategy, ServerTextChannelAuthorizationStrategy>()
-    .AddScoped<IChannelAuthorizationStrategy, ServerVoiceChannelAuthorizationStrategy>()
-    .AddScoped<IChannelAuthorizationService, ChannelAuthorizationService>()
+    .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
+    .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
+    .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
+    
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
+    
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
+    .AddScoped<IServerDefaultRoleAuthorizeProvider, ServerDefaultRoleAuthorizeProvider>()
+    .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
+    .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
+    
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
+    
     .AddScoped<IUnitOfWork, UnitOfWork>()
+    .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
+    .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
         (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
@@ -273,7 +283,9 @@ builder.Services
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
+    .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
+    .AddScoped<IAttachmentRepository, AttachmentRepository>()
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()
@@ -503,9 +515,8 @@ builder.Services.AddOpenApi(options => {
 
         var extraEnums = new[] {
             typeof(ServerPermission),
-            typeof(MessageLoadDirection),
             typeof(InvitationController.InvitationExpireAfter),
-            typeof(CommunityServerChannelType),
+            typeof(ChannelType),
             typeof(PermissionState),
         };
 

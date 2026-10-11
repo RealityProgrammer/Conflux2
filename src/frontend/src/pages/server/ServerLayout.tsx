@@ -1,342 +1,343 @@
-import {Outlet, useNavigate, useParams} from "react-router";
-import {communityServerService} from "../../api/communityServerService.ts";
+import {Outlet, useParams} from "react-router";
 import Spinner from "../../components/Spinner.tsx";
-import type {ServerDetailDto} from "../../api/types.ts";
-import CommunityServerContextProvider from "../../contexts/CommunityServerContext.tsx";
-import ServerSidebar from "../../components/server/ServerSidebar.tsx";
-import {type QueryKey, useQuery, useQueryClient} from "@tanstack/react-query";
-import {ChannelType} from "../../api/schema.ts";
+import CommunityServerContextProvider, {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
+import {BsExclamationTriangle} from "react-icons/bs";
+import SidebarContent from "../../components/server/SidebarContent.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {MemberRolesUpdatedEvent, ServerRoleDeletedEvent, ServerRoleUpdatedEvent} from "../../api/events.ts";
-import {useAuth} from "../../contexts/AuthContext.tsx";
-import Dialog from "../../components/Dialog.tsx";
+import KickedFromServerDialog from "../../components/server/KickedFromServerDialog.tsx";
 import {useState} from "react";
-import {BsHammer} from "react-icons/bs";
 import {toast} from "react-toastify";
-import useServerMemberAuthorizeInfo, {
-  type ServerMemberAuthorizeInfo
-} from "../../hooks/useServerMemberAuthorizeInfo.ts";
+import type {
+  MemberRolesUpdatedEvent,
+  ServerDefaultRoleUpdatedEvent,
+  ServerRoleDeletedEvent,
+  ServerRoleUpdatedEvent
+} from "../../api/events.ts";
 import {useSignalR} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
-  const navigate = useNavigate();
-
-  const { userAuthorization } = useAuth();
   const { serverId } = useParams();
+  
+  return (
+    <CommunityServerContextProvider 
+      serverId={serverId}
+    >
+      <EnableGuard/>
+    </CommunityServerContextProvider>
+  );
+}
 
-  const serverSummaryQueryKey: QueryKey = ["getServerSummary", serverId];
-
-  const {
-    data: serverSummary,
-    isLoading: isLoadingServerSummary,
-    isError: isLoadingServerSummaryError,
-  } = useQuery({
-    enabled: !!serverId,
-    queryKey: serverSummaryQueryKey,
-    queryFn: async () => {
-      return (await communityServerService.getSummary(serverId!)).data;
-    },
-    staleTime: 15 * 60 * 1000,
-  });
-
-  const {
-    isLoading: isLoadingMemberPermissions,
-    isError: isLoadingMemberPermissionsError,
-    authorizeInfo,
-  } = useServerMemberAuthorizeInfo({
-    serverId: serverId!,
-    userId: userAuthorization?.id!,
-    enabled: !!serverId && !!userAuthorization?.id,
-  });
-
-  const [showKickedDialog, setShowKickedDialog] = useState(false);
-
-  useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
-    if (serverId !== event.serverId) return;
-    if (!authorizeInfo) return;
-
-    if (!authorizeInfo.roleIds.includes(event.roleId)) return;
-
-    authorizeInfo.refreshPermissions();
-  });
-
-  const { connection: signalrConnection, isConnected: isSignalRConnection, invokeSafely } = useSignalR();
-
-  useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
-    if (event.serverId !== serverId) return;
-    if (!authorizeInfo) return;
-    if (event.memberUserId !== userAuthorization?.id) return;
-
-    // invokes leave server and rejoin so that backend can correctly track connection joined groups
-    if (isSignalRConnection && signalrConnection) {
-      await invokeSafely("LeaveServer", serverId);
-      await invokeSafely("JoinServer", serverId);
-    }
-
-    await authorizeInfo.refreshPermissions();
-  });
-
-  useSignalREvent("KickedFromServer", (kickedServerId: string) => {
-    if (serverId !== kickedServerId) {
-      return;
-    }
-
-    setShowKickedDialog(true);
-
-    if (authorizeInfo) {
-      authorizeInfo.refreshPermissions();
-    }
-  });
-
-  useSignalREvent("BannedFromServer", (bannedServerId: string) => {
-    if (serverId !== bannedServerId) {
-      return;
-    }
-
-    if (authorizeInfo) {
-      authorizeInfo.refreshPermissions();
-    }
-
-    toast.info("You have been banned from this server. You can still access some content authorized by the moderation team, but interaction has been restricted to minimum.");
-  });
-
-  useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
-    if (serverId !== unbannedServerId) {
-      return;
-    }
-
-    if (authorizeInfo) {
-      authorizeInfo.refreshPermissions();
-    }
-
-    toast.info("You have been unbanned on this server.");
-  });
-
-  if (isLoadingServerSummary || isLoadingMemberPermissions) {
+function EnableGuard() {
+  const { detailsQueryResult: { isEnabled } } = useCommunityServerContext();
+  
+  if (!isEnabled) {
     return (
       <div className="size-full flex flex-row justify-center items-center">
-        <Spinner className="size-8 fill-white"/>
+        <span className="select-none text-gray-400">
+          Well there is nothing here... Whatever you are trying to find here might have been lost to time.
+        </span>
       </div>
     );
   }
-
-  if (isLoadingServerSummaryError || isLoadingMemberPermissionsError || !serverSummary || !authorizeInfo) {
-    return (
-      <div className="size-full flex flex-row justify-center items-center">
-        <span className="text-white">Failed to load some information. Please try again later...</span>
+  
+  return (
+    <div className="size-full flex flex-row text-white">
+      <aside className="flex-none w-64 h-full bg-gray-725 border-r-2 border-r-gray-600 overflow-hidden">
+        <SidebarContent/>
+      </aside>
+      
+      <div className="flex-1 overflow-auto flex flex-row justify-center items-center">
+        <PageOutlet/>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
+function PageOutlet() {
+  const { detailsQueryResult: { isLoading, isError } } = useCommunityServerContext();
+  
   return (
     <>
-      <SuccessfullyLoadedLayout
-        serverId={serverId!}
-        serverSummary={serverSummary}
-        serverSummaryQueryKey={serverSummaryQueryKey}
-        memberAuthorizeInfo={authorizeInfo}
-      />
-
-      <Dialog
-        open={showKickedDialog}
-        onOpenChange={(open) => {
-          if (open) {
-            setShowKickedDialog(true);
-          } else {
-            setShowKickedDialog(false);
-            navigate("/lobby/me", {
-              replace: true,
-            });
-          }
-        }}
-        headerIcon={(
-          <BsHammer className="size-10 fill-white"/>
-        )}
-        title="Kicked from server"
-        subtitle="You have been banished by the council"
-        contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-lg"
-        disableCloseOnOutsideClick
-        disableCloseOnEscapeKeyDown
-      >
-        <div className="px-4 py-3">
-          You've been kicked from the server.<br/>
-
-          But don't worry, you can rejoin if you have an active invitation.
+      {isLoading ? (
+        <div className="size-full flex flex-row justify-center items-center">
+          <Spinner className="size-10 fill-white"/>
         </div>
-      </Dialog>
+      ) : isError ? (
+        <div className="size-full flex flex-col gap-2 justify-center items-center">
+          <BsExclamationTriangle className="size-10 fill-white"/>
+          <span className="text-gray-400 select-none text-sm">
+            You are not supposed to be here, unless something went wrong. Very wrong...
+          </span>
+        </div>
+      ) : (
+        <SuccessfullyLoaded/>
+      )}
     </>
   );
 }
 
-interface SuccessfullyLoadedLayoutProps {
-  serverId: string;
-  serverSummary: ServerDetailDto;
-  serverSummaryQueryKey: QueryKey
-  memberAuthorizeInfo: ServerMemberAuthorizeInfo;
-}
+function SuccessfullyLoaded() {
+  const { detailsQueryResult: { data: serverDetails }, updatePermission, refreshPermission } = useCommunityServerContext();
+  const { invokeSafely } = useSignalR();
+  const [showKickedDialog, setShowKickedDialog] = useState(false);
+  
+  // invokes leave server and rejoin so that backend can correctly track connection joined groups
+  const refreshPermissionWithGroup = async () => {
+    await invokeSafely("LeaveServer", serverDetails!.id);
+    await invokeSafely("JoinServer", serverDetails!.id);
 
-function SuccessfullyLoadedLayout({
-  serverId,
-  serverSummary,
-  serverSummaryQueryKey,
-  memberAuthorizeInfo,
-}: SuccessfullyLoadedLayoutProps) {
-  const queryClient = useQueryClient();
+    await refreshPermission();
+  }
 
-  const appendChannelCategory = (id: string, name: string) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
-      if (!oldData) return oldData;
+  useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
+    console.log("member roles updated");
+    
+    if (event.serverId !== serverDetails?.id) return;
+    if (event.memberUserId !== serverDetails.authorizeInfo.memberId) return;
 
-      return {
-        ...oldData,
-        channelCategories: [
-          ...oldData.channelCategories,
-          {
-            id,
-            name,
-            channels: [],
-          }
-        ]
-      }
+    await refreshPermissionWithGroup();
+  });
+
+  useSignalREvent("ServerDefaultRoleUpdated", async (event: ServerDefaultRoleUpdatedEvent) => {
+    if (serverDetails?.id !== event.serverId) return;
+
+    await refreshPermissionWithGroup();
+  });
+
+  useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], async (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
+    if (serverDetails?.id !== event.serverId) return;
+    if (!serverDetails.authorizeInfo.roles.some(r => r.id === event.roleId)) return;
+
+    await refreshPermissionWithGroup();
+  });
+  
+  useSignalREvent("KickedFromServer", (kickedServerId: string) => {
+    if (kickedServerId !== serverDetails?.id) {
+      return;
+    }
+    
+    setShowKickedDialog(true);
+    updatePermission({
+      authorizeLevel: -1,
+      roles: [],
+      effectivePermissions: [],
     });
-  };
+  });
 
-  const appendChannel = (
-    id: string,
-    name: string,
-    type: "text" | "voice",
-    categoryId: string | null
-  ) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData: NoInfer<ServerDetailDto> | undefined): ServerDetailDto | undefined => {
-      if (!oldData) return oldData;
+  useSignalREvent("BannedFromServer", (bannedServerId: string) => {
+    if (bannedServerId !== serverDetails?.id) {
+      return;
+    }
 
-      if (!oldData.channelCategories || oldData.channelCategories.length === 0) {
-        return {
-          ...oldData,
-          channelCategories: [
-            {
-              id: null,
-              name: null,
-              channels: [
-                {
-                  id,
-                  name,
-                  channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
-                  categoryId,
-                }
-              ]
-            }
-          ]
-        };
-      }
-
-      return {
-        ...oldData,
-        channelCategories: oldData.channelCategories.map((category) => {
-          if (category.id === categoryId) {
-            return {
-              ...category,
-              channels: [
-                ...category.channels,
-                {
-                  id,
-                  name,
-                  channelType: type === "text" ? ChannelType.CommunityServerText : ChannelType.CommunityServerVoice,
-                  categoryId,
-                },
-              ],
-            };
-          }
-
-          return category;
-        }),
-      };
+    updatePermission({
+      authorizeLevel: -1,
+      roles: [],
+      effectivePermissions: [],
+      isBanned: true,
     });
-  };
 
-  const removeChannelCategory = (id: string) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
-      if (!oldData) return oldData;
+    toast.info("You have been banned from this server.");
+  });
 
-      const removingCategory = oldData.channelCategories.find(c => c.id === id);
+  useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
+    if (unbannedServerId !== serverDetails?.id) {
+      return;
+    }
 
-      if (!removingCategory) {
-        return oldData;
-      }
-
-      let updatedChannelCategories = oldData.channelCategories.filter(c => c.id !== id);
-      const nullCategoryExists = updatedChannelCategories.some((c) => c.id == null);
-
-      // if there is a category with null id, append the channels to it, else create a category with null id
-      if (nullCategoryExists) {
-        updatedChannelCategories = updatedChannelCategories.map((c) => {
-          if (c.id == null) {
-            return {
-              ...c,
-              channels: [...c.channels, ...removingCategory.channels],
-            };
-          }
-          return c;
-        });
-      } else {
-        updatedChannelCategories.push({
-          id: null,
-          name: null,
-          channels: removingCategory.channels,
-        });
-      }
-
-      return {
-        ...oldData,
-        channelCategories: updatedChannelCategories,
-      };
-    });
-  };
-
-  const removeChannel = (id: string) => {
-    queryClient.setQueryData<ServerDetailDto>(serverSummaryQueryKey, (oldData) => {
-      if (!oldData) return oldData;
-
-      return {
-        ...oldData,
-        channelCategories: oldData.channelCategories.map(category => {
-          const channelIndex = category.channels.findIndex((c) => c.id === id);
-
-          if (channelIndex === -1) {
-            return category;
-          }
-
-          const updatedChannels = [
-            ...category.channels.slice(0, channelIndex),
-            ...category.channels.slice(channelIndex + 1)
-          ];
-
-          return {
-            ...category,
-            channels: updatedChannels,
-          }
-        }),
-      }
-    });
-  };
+    refreshPermission();
+    toast.info("You have been unbanned on this server.");
+  });
 
   return (
-    <CommunityServerContextProvider
-      serverId={serverId}
-      serverSummary={serverSummary}
-      appendChannelCategory={appendChannelCategory}
-      appendChannel={appendChannel}
-      removeChannelCategory={removeChannelCategory}
-      removeChannel={removeChannel}
-      memberAuthorizeInfo={memberAuthorizeInfo}
-    >
-      <div className="size-full flex flex-row">
-        <ServerSidebar/>
-
-        <div className="flex-1 overflow-auto flex flex-row justify-center items-center">
-          <Outlet/>
-        </div>
-      </div>
-    </CommunityServerContextProvider>
+    <>
+      <Outlet/>
+      <KickedFromServerDialog open={showKickedDialog} onOpenChange={setShowKickedDialog}/>
+    </>
   );
 }
+
+// export default function ServerLayout() {
+//   const navigate = useNavigate();
+//
+//   const { userAuthorization } = useAuth();
+//   const { serverId } = useParams();
+//
+//   const serverSummaryQueryKey: QueryKey = ["serverDetails", serverId];
+//
+//   const {
+//     data: serverSummary,
+//     isLoading: isLoadingServerSummary,
+//     isError: isLoadingServerSummaryError,
+//   } = useQuery({
+//     enabled: !!serverId,
+//     queryKey: serverSummaryQueryKey,
+//     queryFn: async () => {
+//       return (await communityServerService.getDetails(serverId!)).data;
+//     },
+//     staleTime: 15 * 60 * 1000,
+//   });
+//
+//   const {
+//     isLoading: isLoadingMemberPermissions,
+//     isError: isLoadingMemberPermissionsError,
+//     authorizeInfo,
+//   } = useServerMemberAuthorizeInfo({
+//     serverId: serverId!,
+//     userId: userAuthorization?.id!,
+//     enabled: !!serverId && !!userAuthorization?.id,
+//   });
+//
+//   const [showKickedDialog, setShowKickedDialog] = useState(false);
+//
+//   useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
+//     if (serverId !== event.serverId) return;
+//     if (!authorizeInfo) return;
+//
+//     if (!authorizeInfo.roleIds.includes(event.roleId)) return;
+//
+//     authorizeInfo.refreshPermissions();
+//   });
+//
+//   const { connection: signalrConnection, isConnected: isSignalRConnection, invokeSafely } = useSignalR();
+//
+//   useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
+//     if (event.serverId !== serverId) return;
+//     if (!authorizeInfo) return;
+//     if (event.memberUserId !== userAuthorization?.id) return;
+//
+//     // invokes leave server and rejoin so that backend can correctly track connection joined groups
+//     if (isSignalRConnection && signalrConnection) {
+//       await invokeSafely("LeaveServer", serverId);
+//       await invokeSafely("JoinServer", serverId);
+//     }
+//
+//     await authorizeInfo.refreshPermissions();
+//   });
+//
+//   useSignalREvent("KickedFromServer", (kickedServerId: string) => {
+//     if (serverId !== kickedServerId) {
+//       return;
+//     }
+//
+//     setShowKickedDialog(true);
+//
+//     if (authorizeInfo) {
+//       authorizeInfo.refreshPermissions();
+//     }
+//   });
+//
+//   useSignalREvent("BannedFromServer", (bannedServerId: string) => {
+//     if (serverId !== bannedServerId) {
+//       return;
+//     }
+//
+//     if (authorizeInfo) {
+//       authorizeInfo.refreshPermissions();
+//     }
+//
+//     toast.info("You have been banned from this server. You can still access some content authorized by the moderation team, but interaction has been restricted to minimum.");
+//   });
+//
+//   useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
+//     if (serverId !== unbannedServerId) {
+//       return;
+//     }
+//
+//     if (authorizeInfo) {
+//       authorizeInfo.refreshPermissions();
+//     }
+//
+//     toast.info("You have been unbanned on this server.");
+//   });
+//
+//   if (isLoadingServerSummary || isLoadingMemberPermissions) {
+//     return (
+//       <div className="size-full flex flex-row justify-center items-center">
+//         <Spinner className="size-8 fill-white"/>
+//       </div>
+//     );
+//   }
+//
+//   if (isLoadingServerSummaryError || isLoadingMemberPermissionsError || !serverSummary || !authorizeInfo) {
+//     return (
+//       <div className="size-full flex flex-row justify-center items-center">
+//         <span className="text-white">Failed to load some information. Please try again later...</span>
+//       </div>
+//     );
+//   }
+//
+//   return (
+//     <>
+//       <SuccessfullyLoadedLayout
+//         serverId={serverId!}
+//         serverSummary={serverSummary}
+//         serverSummaryQueryKey={serverSummaryQueryKey}
+//         memberAuthorizeInfo={authorizeInfo}
+//       />
+//
+//       <Dialog
+//         open={showKickedDialog}
+//         onOpenChange={(open) => {
+//           if (open) {
+//             setShowKickedDialog(true);
+//           } else {
+//             setShowKickedDialog(false);
+//             navigate("/lobby/me", {
+//               replace: true,
+//             });
+//           }
+//         }}
+//         headerIcon={(
+//           <BsHammer className="size-10 fill-white"/>
+//         )}
+//         title="Kicked from server"
+//         subtitle="You have been banished by the council"
+//         contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-lg"
+//         disableCloseOnOutsideClick
+//         disableCloseOnEscapeKeyDown
+//       >
+//         <div className="px-4 py-3">
+//           You've been kicked from the server.<br/>
+//
+//           But don't worry, you can rejoin if you have an active invitation.
+//         </div>
+//       </Dialog>
+//     </>
+//   );
+// }
+//
+// interface SuccessfullyLoadedLayoutProps {
+//   serverId: string;
+//   serverSummary: ServerDetailsDto;
+//   serverSummaryQueryKey: QueryKey
+//   memberAuthorizeInfo: ServerMemberAuthorizeInfo;
+// }
+//
+// function SuccessfullyLoadedLayout({
+//   serverId,
+//   serverSummary,
+//   serverSummaryQueryKey,
+//   memberAuthorizeInfo,
+// }: SuccessfullyLoadedLayoutProps) {
+//   const queryClient = useQueryClient();
+//
+//   return (
+//     <CommunityServerContextProvider
+//       serverId={serverId}
+//       detailsQueryResult={serverSummary}
+//       appendChannelCategory={appendChannelCategory}
+//       removeChannelCategory={removeChannelCategory}
+//       removeChannel={removeChannel}
+//       invalidateSummary={invalidateSummary}
+//       memberAuthorizeInfo={memberAuthorizeInfo}
+//     >
+//       <div className="size-full flex flex-row">
+//         <ServerSidebar/>
+//
+//         <div className="flex-1 overflow-auto flex flex-row justify-center items-center">
+//           <Outlet/>
+//         </div>
+//       </div>
+//     </CommunityServerContextProvider>
+//   );
+// }

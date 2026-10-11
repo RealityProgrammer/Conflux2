@@ -1,5 +1,6 @@
 using Conflux.Application.Dto;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -10,8 +11,8 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerPermissionsProvider(
     IServerMemberReadRepository memberReadRepository,
-    ICommunityServerRoleRepository roleRepository,
     IServerPermissionsCacheService cacheService,
+    IServerDefaultRoleAuthorizeProvider defaultRoleAuthorizeProvider,
     TimeProvider timeProvider
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
@@ -29,14 +30,17 @@ internal sealed class ServerPermissionsProvider(
 
         CommunityServerMember? member = await memberReadRepository.AsQueryable()
             .AsNoTracking()
-            .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.MemberRoles)
             .ThenInclude(m => m.Role)
             .ThenInclude(r => r.Permissions)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (member == null) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, UserId = {userId})");
+            return Errors.ResourceNotFound("Community server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), userId.ToString()),
+            ]);
         }
 
         if (member.MemberRoles.Any(mr => mr.Role.SpecialRoleType == SpecialRoleType.Owner)) {
@@ -53,12 +57,16 @@ internal sealed class ServerPermissionsProvider(
             return Result<ServerMemberAuthorizeInfoDto>.Success(ownerDto);
         }
 
-        Result<RoleAuthorizeInfo> defaultRoleGetResult = await GetDefaultRoleInfo(serverId, cancellationToken);
-        if (!defaultRoleGetResult.IsSuccess) {
-            return defaultRoleGetResult.Error;
+        RoleAuthorizeInfo? defaultRoleAuthorizeInfo =
+            await defaultRoleAuthorizeProvider.Get(serverId, cancellationToken);
+        
+        if (defaultRoleAuthorizeInfo == null) {
+            return Errors.ResourceNotFound("Default server role", [
+                new(nameof(CommunityServerRole.CommunityServerId), serverId.ToString()),
+            ]);
         }
 
-        ServerMemberAuthorizeInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value!, timeProvider.GetUtcNow());
+        ServerMemberAuthorizeInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleAuthorizeInfo, timeProvider.GetUtcNow());
         await cacheService.SetUserAuthorizeInfo(serverId, userId, dto, CancellationToken.None);
         
         return Result<ServerMemberAuthorizeInfoDto>.Success(dto);
@@ -79,7 +87,10 @@ internal sealed class ServerPermissionsProvider(
             .FirstOrDefaultAsync(cancellationToken);
 
         if (ids == null) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {serverId}, Id = {memberId})");
+            return Errors.ResourceNotFound("Community server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.Id), memberId.ToString()),
+            ]);
         }
 
         return await GetUserAuthorizeInfo(ids.CommunityServerId, ids.UserId, cancellationToken);
@@ -103,8 +114,6 @@ internal sealed class ServerPermissionsProvider(
         
         var membersByUserId = members.ToDictionary(m => m.UserId);
 
-        Result<RoleAuthorizeInfo>? defaultRoleGetResult = null;
-        
         foreach (var userId in userIds) {
             if (await cacheService.GetUserAuthorizeInfo(serverId, userId, cancellationToken) is { } cached) {
                 dtosToCache[userId] = cached;
@@ -132,15 +141,18 @@ internal sealed class ServerPermissionsProvider(
                 results[userId] = Result<ServerMemberAuthorizeInfoDto>.Success(ownerDto);
                 continue;
             }
+            
+            RoleAuthorizeInfo? defaultRoleAuthorizeInfo =
+                await defaultRoleAuthorizeProvider.Get(serverId, cancellationToken);
 
-            defaultRoleGetResult ??= await GetDefaultRoleInfo(serverId, cancellationToken);
-
-            if (!defaultRoleGetResult.Value.IsSuccess) {
-                results[userId] = defaultRoleGetResult.Value.Error;
+            if (defaultRoleAuthorizeInfo == null) {
+                results[userId] = Errors.ResourceNotFound("Default server role", [
+                    new(nameof(CommunityServerRole.CommunityServerId), serverId.ToString()),
+                ]);
                 continue;
             }
 
-            ServerMemberAuthorizeInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleGetResult.Value.Value!, timeProvider.GetUtcNow());
+            ServerMemberAuthorizeInfoDto dto = CreateMemberAuthorizationInfoDto(member, defaultRoleAuthorizeInfo, timeProvider.GetUtcNow());
 
             dtosToCache[userId] = dto;
             results[userId] = Result<ServerMemberAuthorizeInfoDto>.Success(dto);
@@ -151,32 +163,6 @@ internal sealed class ServerPermissionsProvider(
         }
 
         return results;
-    }
-
-    private async Task<Result<RoleAuthorizeInfo>> GetDefaultRoleInfo(
-        Guid serverId, 
-        CancellationToken cancellationToken
-    ) {
-        RoleAuthorizeInfo? defaultRoleAuthorizationInfo =
-            await cacheService.GetServerDefaultRoleAuthorizationInfo(serverId, cancellationToken);
-
-        if (defaultRoleAuthorizationInfo == null) {
-            CommunityServerRole? defaultRole = 
-                await roleRepository.GetDefaultRole(serverId, false, cancellationToken);
-
-            if (defaultRole == null) {
-                return Errors.ResourceNotFound("Default role");
-            }
-
-            defaultRoleAuthorizationInfo = new(
-                defaultRole.AuthorizeLevel, 
-                defaultRole.Permissions.ToDictionary(p => p.Permission, p => p.State)
-            );
-
-            await cacheService.SetServerDefaultRoleAuthorizationInfo(serverId, defaultRoleAuthorizationInfo, CancellationToken.None);
-        }
-        
-        return Result<RoleAuthorizeInfo>.Success(defaultRoleAuthorizationInfo);
     }
 
     private static List<RoleAuthorizeInfo> ExtractRolesAuthorizationInfo(CommunityServerMember member, RoleAuthorizeInfo defaultRole) {
@@ -207,7 +193,6 @@ internal sealed class ServerPermissionsProvider(
             roleAuthInfo[0].AuthorizeLevel,
             effectivePermissions,
             [..member.MemberRoles
-                .Where(mr => mr.Role.SpecialRoleType != SpecialRoleType.Default)
                 .OrderByDescending(mr => mr.Role.AuthorizeLevel)
                 .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
             ],

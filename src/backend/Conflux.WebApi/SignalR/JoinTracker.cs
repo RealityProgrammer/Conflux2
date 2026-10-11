@@ -5,16 +5,16 @@ namespace Conflux.WebApi.SignalR;
 public sealed class JoinTracker(IConnectionMultiplexer connectionMultiplexer) {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
-    public async Task IncrementChannelJoinCount(string connectionId, Guid channelId) {
-        var key = GetChannelKey(connectionId);
+    public async Task IncrementConversationJoinCount(string connectionId, Guid conversationId) {
+        var key = GetConversationKey(connectionId);
         
-        await _database.HashIncrementAsync(key, channelId.ToString());
+        await _database.HashIncrementAsync(key, conversationId.ToString());
         await _database.KeyExpireAsync(key, TimeSpan.FromHours(24));
     }
 
-    public async Task DecrementChannelJoinCount(string connectionId, Guid channelId) {
-        var key = GetChannelKey(connectionId);
-        string channelIdString = channelId.ToString();
+    public async Task DecrementConversationJoinCount(string connectionId, Guid conversationId) {
+        var key = GetConversationKey(connectionId);
+        string channelIdString = conversationId.ToString();
         
         long count = await _database.HashDecrementAsync(key, channelIdString);
 
@@ -42,15 +42,15 @@ public sealed class JoinTracker(IConnectionMultiplexer connectionMultiplexer) {
     }
     
     public async Task DeleteAllJoinCounts(string connectionId) {
-        await _database.KeyDeleteAsync(GetChannelKey(connectionId));
+        await _database.KeyDeleteAsync(GetConversationKey(connectionId));
         await _database.KeyDeleteAsync(GetServerKey(connectionId));
     }
     
-    private static string GetChannelKey(string connectionId) {
-        return $"SignalR:join:channels:{connectionId}";
+    private static string GetConversationKey(string connectionId) {
+        return $"join:conversations:{connectionId}";
     }
 
     private static string GetServerKey(string connectionId) {
-        return $"SignalR:join:servers:{connectionId}";
+        return $"join:servers:{connectionId}";
     }
 }

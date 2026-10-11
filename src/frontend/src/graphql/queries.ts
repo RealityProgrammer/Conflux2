@@ -24,14 +24,6 @@ export type GetInvitationSummaryQueryVariables = Exact<{
 
 export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, hasAvatar: boolean, numMembers: number } | null } | null };
 
-export type GetServerMemberAuthorizeInfoQueryVariables = Exact<{
-  serverId: string;
-  userId: string;
-}>;
-
-
-export type GetServerMemberAuthorizeInfoQuery = { communityServerMemberByServerAndUserId: { id: string, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean }, roles: Array<{ id: string }> } | null };
-
 export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -185,43 +177,6 @@ useGetInvitationSummaryQuery.getKey = (variables: GetInvitationSummaryQueryVaria
 
 
 useGetInvitationSummaryQuery.fetcher = (variables: GetInvitationSummaryQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables, options);
-
-export const GetServerMemberAuthorizeInfoDocument = new TypedDocumentString(`
-    query GetServerMemberAuthorizeInfo($serverId: UUID!, $userId: UUID!) {
-  communityServerMemberByServerAndUserId(serverId: $serverId, userId: $userId) {
-    id
-    authorizeInfo {
-      authorizeLevel
-      permissions
-      isBanned
-    }
-    roles {
-      id
-    }
-  }
-}
-    `);
-
-export const useGetServerMemberAuthorizeInfoQuery = <
-      TData = GetServerMemberAuthorizeInfoQuery,
-      TError = unknown
-    >(
-      variables: GetServerMemberAuthorizeInfoQueryVariables,
-      options?: Omit<UseQueryOptions<GetServerMemberAuthorizeInfoQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetServerMemberAuthorizeInfoQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetServerMemberAuthorizeInfoQuery, TError, TData>(
-      {
-    queryKey: ['GetServerMemberAuthorizeInfo', variables],
-    queryFn: graphqlFetcher<GetServerMemberAuthorizeInfoQuery, GetServerMemberAuthorizeInfoQueryVariables>(GetServerMemberAuthorizeInfoDocument, variables),
-    ...options
-  }
-    )};
-
-useGetServerMemberAuthorizeInfoQuery.getKey = (variables: GetServerMemberAuthorizeInfoQueryVariables) => ['GetServerMemberAuthorizeInfo', variables];
-
-
-useGetServerMemberAuthorizeInfoQuery.fetcher = (variables: GetServerMemberAuthorizeInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerMemberAuthorizeInfoQuery, GetServerMemberAuthorizeInfoQueryVariables>(GetServerMemberAuthorizeInfoDocument, variables, options);
 
 export const GetSessionUserManualPresenceStatusDocument = new TypedDocumentString(`
     query GetSessionUserManualPresenceStatus {

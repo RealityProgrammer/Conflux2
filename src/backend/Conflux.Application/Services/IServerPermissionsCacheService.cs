@@ -1,4 +1,4 @@
-using Conflux.Application.Dto;
+using Conflux.Domain.Dto;
 
 namespace Conflux.Application.Services;
 
@@ -36,17 +36,6 @@ public interface IServerPermissionsCacheService {
     Task SetUsersAuthorizeInfo(
         Guid serverId,
         IReadOnlyDictionary<Guid, ServerMemberAuthorizeInfoDto> values,
-        CancellationToken cancellationToken = default
-    );
-    
-    Task<RoleAuthorizeInfo?> GetServerDefaultRoleAuthorizationInfo(
-        Guid serverId, 
-        CancellationToken cancellationToken = default
-    );
-
-    Task SetServerDefaultRoleAuthorizationInfo(
-        Guid serverId,
-        RoleAuthorizeInfo value,
         CancellationToken cancellationToken = default
     );
 

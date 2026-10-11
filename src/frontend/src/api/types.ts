@@ -38,22 +38,26 @@ export type RefreshResponse = components["schemas"]["RefreshResponse"];
 
 export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
 export type PendingFriendRequestDto = components["schemas"]["PendingFriendRequestDto"];
-export type DirectMessageResolutionResponse = components["schemas"]["DirectMessageResolutionResponse"];
-export type DmChannelSummary = components["schemas"]["DmChannelSummary"];
-export type Attachment = components["schemas"]["Attachment"];
-export type TimelineMessageClusterDto = components["schemas"]["TimelineMessageClusterDto"];
-export type TimelineMessageClusterItemDto = components["schemas"]["TimelineMessageClusterItemDto"];
+export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
+export type AttachmentDto = components["schemas"]["AttachmentDto"];
 export type TimelineMessageReplyDto = components["schemas"]["TimelineMessageReplyDto"];
+export type StartCallResult = components["schemas"]["StartCallResult"];
+export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
-export type GetMessagesResponse = components["schemas"]["GetMessagesResponse"];
+export type TimelineMessagePage = components["schemas"]["TimelineMessagePage"];
 export type ServerChannelIdentityDto = components["schemas"]["ServerChannelIdentityDto"];
 export type ChannelCategoryDetailDto = components["schemas"]["ChannelCategoryDetailDto"];
 export type ChannelCategoryIdentityDto = components["schemas"]["ChannelCategoryIdentityDto"];
-export type ServerDetailDto = components["schemas"]["ServerDetailDto"];
+export type ServerDetailsDto = components["schemas"]["ServerDetailsDto"];
+export type ServerMemberAuthorizeInfoDto = components["schemas"]["ServerMemberAuthorizeInfoDto"];
+export type ChannelDetailsDto = components["schemas"]["ChannelDetailsDto"];
 export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
+export type CallEndProperties = Omit<components["schemas"]["MessagePropertiesCallEndProperties"], "$type">;
+export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomingDirectCallQueryResult"];
+export type MessageReadStrategy = components["schemas"]["MessageReadStrategy"];
 
-export type DirectCallContext = {
-  result: BackendResult;
-  peerProfile: UserIdentityProfileDto | null;
+export type EditedMessageDto = {
+  id: string;
+  newBody: string | null;
 }

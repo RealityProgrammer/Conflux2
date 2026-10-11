@@ -1,10 +1,10 @@
 import {ScrollArea} from "radix-ui";
-import {messageService} from "../../api/messageService.ts";
+import {conversationService} from "../../api/conversationService.ts";
 import {BsMusicNote} from "react-icons/bs";
-import type {Attachment} from "../../api/types.ts";
+import type {AttachmentDto} from "../../api/types.ts";
 
 export interface MessageAttachmentsProps {
-  attachments: Attachment[];
+  attachments: AttachmentDto[];
   onAttachmentClick: (index: number) => void;
 }
 
@@ -13,17 +13,17 @@ export default function MessageAttachments({
   onAttachmentClick,
 }: MessageAttachmentsProps) {
   return (
-    <ScrollArea.Root className={`h-32 w-full overflow-hidden group`}>
+    <ScrollArea.Root className={`h-32 w-full overflow-hidden group mt-1`}>
       <ScrollArea.Viewport className="size-full [&>div]:flex! [&>div]:h-full [&>div]:flex-col">
         <div className="flex flex-row gap-1 w-max h-full group-has-data-[state=visible]:pb-3">
           {attachments.map((attachment, index) => (
             <div
               key={attachment.id}
-              className="flex-none overflow-hidden relative group h-full aspect-square rounded-md border border-gray-500 cursor-pointer"
+              className="flex-none overflow-hidden relative group h-full aspect-square cursor-pointer"
             >
               {attachment.type.startsWith("image") ? (
                 <img
-                  src={messageService.getAttachmentUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentUrl(attachment.id, false)}
                   alt="attachment"
                   className="object-cover size-full"
                   loading="lazy"
@@ -31,7 +31,7 @@ export default function MessageAttachments({
                 />
               ) : attachment.type.startsWith("video") ? (
                 <video
-                  src={messageService.getAttachmentUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentUrl(attachment.id, false)}
                   className="object-cover size-full"
                   autoPlay={false}
                   onClick={() => onAttachmentClick(index)}

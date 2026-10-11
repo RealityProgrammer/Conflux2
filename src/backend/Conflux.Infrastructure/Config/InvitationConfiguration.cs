@@ -13,5 +13,7 @@ public sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitatio
             .HasForeignKey(i => i.CommunityServerId)
             .HasPrincipalKey(i => i.Id)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(i => i.Version).IsRowVersion();
     }
 }

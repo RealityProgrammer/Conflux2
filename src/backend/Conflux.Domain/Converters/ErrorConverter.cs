@@ -1,9 +1,10 @@
+using Conflux.Domain.Helpers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Conflux.Domain.Converters;
 
-public sealed class ErrorConverter : JsonConverter<Error> {
+internal sealed class ErrorConverter : JsonConverter<Error> {
     public override Error Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
         if (reader.TokenType != JsonTokenType.StartObject) {
             throw new JsonException();
@@ -16,24 +17,22 @@ public sealed class ErrorConverter : JsonConverter<Error> {
             if (reader.TokenType == JsonTokenType.EndObject) {
                 return new(code, message, details);
             }
+            
+            if (reader.TokenType != JsonTokenType.PropertyName) {
+                throw new JsonException("Expected PropertyName token.");
+            }
 
-            if (reader.TokenType == JsonTokenType.PropertyName) {
-                string propertyName = reader.GetString()!;
-                reader.Read();
-                
-                switch (propertyName) {
-                    case "code" or "Code":
-                        code = reader.GetString()!;
-                        break;
+            string propertyName = reader.GetString()!;
+            reader.Read();
 
-                    case "description" or "Description":
-                        message = reader.GetString()!;
-                        break;
-
-                    case "details" or "Details":
-                        details = JsonSerializer.Deserialize<object>(ref reader, options);
-                        break;
-                }
+            if (SerializationHelpers.MatchesProperty(propertyName, nameof(Error.Code), options)) {
+                code = reader.GetString()!;
+            } else if (SerializationHelpers.MatchesProperty(propertyName, nameof(Error.Message), options)) {
+                message = reader.GetString()!;
+            } else if (SerializationHelpers.MatchesProperty(propertyName, nameof(Error.Details), options)) {
+                details = JsonSerializer.Deserialize<object>(ref reader, options);
+            } else {
+                reader.Skip();
             }
         }
 

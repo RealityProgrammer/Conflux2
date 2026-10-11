@@ -3,14 +3,17 @@ import {BsMegaphone, BsPeople} from "react-icons/bs";
 import {Separator} from "radix-ui";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {UpdateDmConversationListEvent, UserPresenceChangedEvent} from "../../api/events.ts";
+import type {
+  DirectConversationUpdatedEvent,
+  UserPresenceChangedEvent
+} from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
-import {
-  type GetDirectMessageChannelsQuery,
-  useInfiniteGetDirectMessageChannelsQuery
-} from "../../graphql/infiniteQueries.ts";
 import {userService} from "../../api/userService.ts";
+import {
+  type GetDirectConversationsQuery,
+  useInfiniteGetDirectConversationsQuery
+} from "../../graphql/infiniteQueries.ts";
 
 export default function UserLobbyLayout() {
   return (
@@ -67,12 +70,12 @@ function DirectMessagesList() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-  } = useInfiniteGetDirectMessageChannelsQuery(
+  } = useInfiniteGetDirectConversationsQuery(
     {},
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
-        const pageInfo = lastPage?.directMessageChannels?.pageInfo;
+        const pageInfo = lastPage?.directConversations?.pageInfo;
 
         if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
           return { after: pageInfo.endCursor };
@@ -84,21 +87,61 @@ function DirectMessagesList() {
     }
   );
 
-  const allElements = data?.pages.flatMap((page) => page?.directMessageChannels.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.directConversations.nodes ?? []) ?? [];
 
-  useSignalREvent("UpdateDmConversationList", async (event: UpdateDmConversationListEvent): Promise<void> => {
-    if (!allElements || allElements.length == 0 || allElements[0].id === event.channelId) return;
+  useSignalREvent("DirectConversationUpdated", async (event: DirectConversationUpdatedEvent) => {
+    const hasConversation = data && data.pages.some(page => {
+      return page.directConversations.nodes?.some(node => node.id === event.conversationId) ?? false;
+    });
 
-    queryClient.invalidateQueries({
-      queryKey: useInfiniteGetDirectMessageChannelsQuery.getKey({}),
-    })
+    if (hasConversation) {
+      queryClient.setQueryData<InfiniteData<GetDirectConversationsQuery, unknown> | undefined>(
+        useInfiniteGetDirectConversationsQuery.getKey({}),
+        (oldData) => {
+          if (!oldData || oldData.pages.length === 0) return oldData;
+
+          const newPages = oldData.pages.map(page => ({
+            ...page,
+            directConversations: {
+              ...page.directConversations,
+              nodes: page.directConversations.nodes ? [...page.directConversations.nodes] : [],
+            },
+          }));
+
+          let conversation: NonNullable<GetDirectConversationsQuery["directConversations"]["nodes"]>[number] | undefined = undefined;
+
+          // extract element
+          for (const page of newPages) {
+            if (!page.directConversations.nodes) continue;
+
+            const index = page.directConversations.nodes.findIndex(node => node.id === event.conversationId) ?? -1;
+            if (index === -1) continue;
+
+            conversation = page.directConversations.nodes.splice(index, 1)[0];
+            break;
+          }
+
+          if (!conversation) return oldData;
+          newPages[0].directConversations.nodes!.unshift(conversation);
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        },
+      );
+    } else {
+      queryClient.invalidateQueries({
+        queryKey: useInfiniteGetDirectConversationsQuery.getKey({}),
+      });
+    }
   });
 
   useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {
-    if (allElements.findIndex(e => e.friendRequest!.otherUser!.id) === -1) return;
+    if (allElements.findIndex(e => e.peerUser?.id === event.userId) === -1) return;
 
-    queryClient.setQueryData<InfiniteData<GetDirectMessageChannelsQuery, unknown>>(
-      useInfiniteGetDirectMessageChannelsQuery.getKey({}),
+    queryClient.setQueryData<InfiniteData<GetDirectConversationsQuery, unknown>>(
+      useInfiniteGetDirectConversationsQuery.getKey({}),
       (oldData) => {
         if (!oldData || !oldData.pages || oldData.pages.length == 0) return oldData;
 
@@ -107,20 +150,17 @@ function DirectMessagesList() {
           pages: oldData.pages.map(page => ({
             ...page,
             directMessageChannels: {
-              ...page.directMessageChannels,
-              nodes: !page.directMessageChannels.nodes ?
+              ...page.directConversations,
+              nodes: !page.directConversations.nodes ?
                 null :
-                page.directMessageChannels.nodes.map(node =>
-                  node.friendRequest?.otherUser?.id !== event.userId ?
+                page.directConversations.nodes.map(node =>
+                  node.peerUser?.id !== event.userId ?
                     node :
                     {
                       ...node,
-                      friendRequest: {
-                        ...node.friendRequest,
-                        otherUser: {
-                          ...node.friendRequest.otherUser,
-                          effectivePresenceStatus: event.status,
-                        }
+                      peerUser: {
+                        ...node.peerUser,
+                        effectivePresenceStatus: event.status,
                       },
                     },
                 ),
@@ -148,13 +188,13 @@ function DirectMessagesList() {
 
         return (
           <UserNameplate.Root
-            avatarSrc={item.friendRequest?.otherUser?.avatarRevision ? userService.getAvatarUrl(item.friendRequest.otherUser.id, item.friendRequest.otherUser.avatarRevision) : undefined}
-            displayName={item.friendRequest?.otherUser?.displayName ?? "???"}
+            avatarSrc={item.peerUser?.avatarRevision ? userService.getAvatarUrl(item.peerUser.id, item.peerUser.avatarRevision) : undefined}
+            displayName={item.peerUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
-            presenceStatus={item.friendRequest!.otherUser!.effectivePresenceStatus}
+            presenceStatus={item.peerUser?.effectivePresenceStatus}
             presenceStatusClassName="size-3 ring-2 ring-gray-725 bg-gray-725"
             onClick={() => {
-              const otherUserId = item.friendRequest?.otherUser?.id;
+              const otherUserId = item.peerUser?.id;
               if (!otherUserId) return;
 
               navigate(`/lobby/me/dm/${encodeURIComponent(otherUserId)}`);

@@ -52,7 +52,7 @@ export default function CallControl({
   handleAudioOutputDeviceChange,
 }: CallControlProps) {
   return (
-    <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
+    <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-col items-center gap-2 z-50">
       <Popover.Root>
         <Popover.Anchor>
           <div className="flex flex-row items-center gap-3 p-2 bg-gray-675 rounded-lg border-2 border-gray-600">

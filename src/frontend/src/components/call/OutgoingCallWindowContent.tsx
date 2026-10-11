@@ -1,11 +1,10 @@
 import {type OutgoingDirectCall, useCallStore} from "../../store/useCallStore.ts";
 import CallWindowHeader from "./CallWindowHeader.tsx";
-import {useSignalR} from "../../contexts/SignalRContext.tsx";
 import UserAvatar from "../UserAvatar.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {userService} from "../../api/userService.ts";
 import IconButton from "../IconButton.tsx";
-import {BsCameraVideoOffFill, BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
+import {BsTelephoneFill, BsTelephoneXFill} from "react-icons/bs";
 import {useTimeout} from "usehooks-ts";
 import {useEffect, useRef, useState} from "react";
 import {animate} from "animejs";
@@ -13,37 +12,26 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   DirectCallAcceptedEvent,
   DirectCallDeniedEvent,
-  DirectCallDroppedEvent,
-  DirectCallEndedEvent
 } from "../../api/events.ts";
-import type {DirectCallContext} from "../../api/types.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
 import {toast} from "react-toastify";
+import type {ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
+import {directConversationService} from "../../api/directConversationService.ts";
+import {useRouteLoaderData} from "react-router";
+import type {DirectMessagePageLoaderProps} from "../../router.tsx";
+import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 
 export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectCall}) {
-  const markCallAsDropped = useCallStore((state) => state.markCallAsDropped);
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
-
-  useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
-    if (call.calleeProfile.id === event.droppedUserId) {
-      markCallAsDropped(call.sessionId);
-    }
-  });
-
-  useSignalREvent("DirectCallEnded", (event: DirectCallEndedEvent) => {
-    if (call.calleeProfile.id === event.enderUserId) {
-      markCallAsEnded(call.sessionId);
-    }
-  });
-
-  if (!call) return null;
-
   if (call.state === "dialing") {
     return <DialingPhase call={call}/>;
+  }
+
+  if (call.state === "canceled") {
+    return <CanceledPhase call={call}/>
   }
 
   if (call.state === "dropped") {
@@ -63,26 +51,35 @@ export default function OutgoingCallWindowContent({call}: {call: OutgoingDirectC
 
 function DialingPhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
-  const markCallAsActive = useCallStore((state) => state.markCallAsActive);
+  const updateCallState = useCallStore((state) => state.updateCallState);
   const endCall = useCallStore((state) => state.endCall);
-  const { invokeSafely } = useSignalR();
+
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const [status, setStatus] = useState<"none" | "cancel" | "no_answer" | "denied">("none");
 
   const handleCancelCall = async () => {
-    try {
-      await invokeSafely("CancelDirectCall", call.calleeProfile.id);
+    const result: ServiceResponse<TimelineMessageDto> = await directConversationService.cancelDirectCall(call.id);
 
+    if (result.success) {
       setStatus("cancel");
-    } catch (err) {
-      console.error("Failed to cancel call:", err);
+      appendMessage(result.data!);
+    } else {
+      toast.error("Failed to cancel call.");
+
+      if (result) {
+        console.error("Failed to cancel call:", result.error);
+      } else {
+        console.error("Failed to cancel call.");
+      }
     }
   };
 
   useEffect(() => {
     if (status !== "none") {
       const timeoutId = setTimeout(() => {
-        endCall(call.sessionId);
+        endCall(call.id);
       }, 3000);
 
       return () => {
@@ -90,20 +87,6 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
       }
     }
   }, [status]);
-
-  useTimeout(() => {
-    if (status === "none") {
-      setStatus("no_answer");
-
-      (async () => {
-        try {
-          await invokeSafely("CancelDirectCall", call.calleeProfile.id);
-        } catch (err) {
-          console.error("Failed to cancel call:", err);
-        }
-      })();
-    }
-  }, 60000);
 
   const calleeAvatarRef = useRef<HTMLDivElement>(null);
 
@@ -127,14 +110,14 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   }, [status]);
 
   useSignalREvent("DirectCallDenied", (event: DirectCallDeniedEvent) => {
-    if (call.calleeProfile.id === event.calleeUserId) {
+    if (call.id === event.callId) {
       setStatus("denied");
     }
   });
 
   useSignalREvent("DirectCallAccepted", (event: DirectCallAcceptedEvent) => {
-    if (call.calleeProfile.id === event.calleeUserId) {
-      markCallAsActive(call.sessionId);
+    if (call.id === event.callId) {
+      updateCallState(call.id, "active");
     }
   });
 
@@ -186,11 +169,33 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
   );
 }
 
+function CanceledPhase({call}: {call: OutgoingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.id);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call canceled"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <UserAvatar
+          src={call.calleeProfile.avatarRevision ? userService.getAvatarUrl(call.calleeProfile.id, call.calleeProfile.avatarRevision) : undefined}
+          alt="Callee avatar"
+          className="w-[min(25cqw,25cqh)]"
+        />
+      </div>
+    </>
+  )
+}
+
 function DroppedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.sessionId);
+    endCall(call.id);
   }, 5000);
 
   return (
@@ -210,9 +215,11 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
 
 function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const { userProfile } = useAuth();
-  const { invokeSafely } = useSignalR();
-  const markCallAsEnded = useCallStore((state) => state.markCallAsEnded);
+  const updateCallState = useCallStore((state) => state.updateCallState);
   const [isEndingCall, setIsEndingCall] = useState(false);
+
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const {
     stream,
@@ -260,23 +267,15 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    try {
-      const context: DirectCallContext = await invokeSafely("EndDirectCall", calleeId);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(call.id);
 
-      if (context) {
-        if (context.result.isSuccess) {
-          markCallAsEnded(call.sessionId);
-        } else {
-          toast.error(`Failed to end call. Reason: ${context.result.error.code}.`);
-        }
-      } else {
-        setIsEndingCall(false);
-        toast.error(`Failed to end call.`);
-      }
-    } catch (err) {
-      console.error("Failed to end call:", err);
-      toast.error("Failed to end call.");
+    if (response.success) {
+      updateCallState(call.id, "ended");
+      appendMessage(response.data!);
+    } else {
       setIsEndingCall(false);
+      toast.error(`Failed to end call.`);
+      console.error("Failed to end call:", response.error);
     }
   };
 
@@ -337,7 +336,7 @@ function EndedPhase({call}: {call: OutgoingDirectCall}) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
-    endCall(call.sessionId);
+    endCall(call.id);
   }, 5000);
 
   return (

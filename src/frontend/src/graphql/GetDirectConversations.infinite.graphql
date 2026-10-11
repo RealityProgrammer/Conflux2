@@ -1,0 +1,24 @@
+query GetDirectConversations($after: String) {
+    directConversations(
+        after: $after
+        where: { latestMessageAt: { neq: null } }
+        order: { latestMessageAt: DESC }
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            endCursor
+        }
+
+        nodes {
+            id
+            peerUser {
+                id
+                avatarRevision
+                displayName
+                userName
+                effectivePresenceStatus
+            }
+        }
+    }
+}

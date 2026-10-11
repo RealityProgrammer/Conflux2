@@ -14,7 +14,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 internal static partial class CommunityServerQuery {
-    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
+    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50)]
     public static async Task<PageConnection<CommunityServer>> GetJoinedServers(
         ClaimsPrincipal claimsPrincipal,
         QueryContext<CommunityServer> queryContext,

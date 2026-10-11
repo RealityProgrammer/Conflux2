@@ -1,6 +1,6 @@
 using Conflux.WebApi.Notifications.Calling;
 using Conflux.WebApi.Notifications.Friend;
-using Conflux.WebApi.Notifications.Messaging;
+using Conflux.WebApi.Notifications.Conversation;
 using Conflux.WebApi.Notifications.Server;
 using Conflux.WebApi.Notifications.Users;
 
@@ -16,10 +16,13 @@ public interface IConfluxClient {
     Task MessageReceived(MessageReceivedEvent data, CancellationToken cancellationToken = default);
     Task MessageEdited(MessageEditedEvent data, CancellationToken cancellationToken = default);
     Task MessageDeleted(MessageDeletedEvent data, CancellationToken cancellationToken = default);
+    Task MessagePinned(MessagePinnedEvent data, CancellationToken cancellationToken = default);
+    Task MessageUnpinned(MessageUnpinnedEvent data, CancellationToken cancellationToken = default);
     
-    Task UpdateDmConversationList(UpdateDmConversationListEvent data, CancellationToken cancellationToken = default);
-
+    Task DirectConversationUpdated(DirectConversationUpdatedEvent data, CancellationToken cancellationToken = default);
+    
     Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
+    Task ServerDefaultRoleUpdated(ServerDefaultRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleDeleted(ServerRoleDeletedEvent data, CancellationToken cancellationToken = default);
     
@@ -45,7 +48,7 @@ public interface IConfluxClient {
     Task UserTyping(UserTypingEvent data, CancellationToken cancellationToken = default);
     Task PresenceUpdated(UserPresenceChangedEvent data, CancellationToken cancellationToken = default);
 
-    Task IncomingDirectCall(IncomingDirectCallEvent data, CancellationToken cancellationToken = default);
+    Task IncomingDirectCall(IncomingCallEvent data, CancellationToken cancellationToken = default);
     Task DirectCallCanceled(DirectCallCanceledEvent data, CancellationToken cancellationToken = default);
     Task DirectCallDenied(DirectCallDeniedEvent data, CancellationToken cancellationToken = default);
     Task DirectCallAccepted(DirectCallAcceptedEvent data, CancellationToken cancellationToken = default);

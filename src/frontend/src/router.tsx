@@ -1,12 +1,11 @@
 import { Suspense, lazy } from 'react';
 import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect} from "react-router";
 import {authService} from "./api/authService.ts";
-import {channelService} from "./api/channelService.ts";
 import {queryClient} from "./main.tsx";
 import {useGetUserIdentityProfileQuery} from "./graphql/queries.ts";
 import {HttpStatusCode} from "axios";
 import type {
-  DmChannelSummary,
+  DirectConversationSummary,
   ServiceResponse,
   UserAuthorizationInfo,
   UserIdentityProfileDto,
@@ -26,18 +25,21 @@ import SignalRProvider from "./contexts/SignalRContext.tsx";
 import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
 import ServerLayout from "./pages/server/ServerLayout.tsx";
 import ChannelPage from "./pages/server/ChannelPage.tsx";
-import ChannelLayout from "./pages/server/ChannelLayout.tsx";
 import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 import {Slide, ToastContainer} from "react-toastify";
 import PresenceProvider from "./contexts/PresenceContext.tsx";
 import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
 import ProfilePage from "./pages/settings/ProfilePage.tsx";
 import CallOverlay from "./components/call/CallOverlay.tsx";
+import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
+import {directConversationService} from "./api/directConversationService.ts";
+import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
+import {Tooltip} from "radix-ui";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type DirectMessagePageLoaderProps = {
-  channelId: string | undefined;
-  channelSummary: DmChannelSummary | undefined;
+  conversationId: string;
+  peerProfile: UserIdentityProfileDto;
 };
 
 export const router = createBrowserRouter([
@@ -68,9 +70,11 @@ export const router = createBrowserRouter([
       };
     },
     element: (
-      <AuthProvider>
-        <Outlet/>
-      </AuthProvider>
+      <Tooltip.Provider delayDuration={500}>
+        <AuthProvider>
+          <Outlet/>
+        </AuthProvider>
+      </Tooltip.Provider>
     ),
     children: [
       {
@@ -170,6 +174,10 @@ export const router = createBrowserRouter([
                 <CallOverlay/>
               </PresenceProvider>
             </SignalRProvider>
+
+            <MediaPreviewGallery/>
+
+            <ExternalLinkDialog/>
           </>
         ),
         children: [
@@ -197,32 +205,27 @@ export const router = createBrowserRouter([
                     element: <FriendsPage/>
                   },
                   {
+                    id: "dm",
                     path: "dm/:userId?",
                     element: <DirectMessagePage/>,
-                    loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps> => {
+                    loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps | undefined> => {
                       const userId: string | undefined = params.userId;
 
                       if (!userId) {
-                        return {channelId: undefined, channelSummary: undefined};
+                        return undefined;
                       }
 
-                      const channelIdResponse: ServiceResponse<string> =
-                        await channelService.getDirectMessageChannelId(userId);
+                      const summary: ServiceResponse<DirectConversationSummary> =
+                        await directConversationService.getDirectConversationSummary(userId);
 
-                      if (!channelIdResponse.success) {
-                        return {channelId: undefined, channelSummary: undefined};
+                      if (!summary.success || !summary.data || !summary.data.conversationId || !summary.data.peerProfile) {
+                        return undefined;
                       }
 
-                      const channelId: string = channelIdResponse.data!;
-
-                      const dmChannelSummary: ServiceResponse<DmChannelSummary> =
-                        await channelService.getDmChannelSummary(channelId);
-
-                      if (!dmChannelSummary.success) {
-                        return {channelId: channelId, channelSummary: undefined};
-                      }
-
-                      return {channelId: channelId, channelSummary: dmChannelSummary.data!};
+                      return {
+                        conversationId: summary.data.conversationId,
+                        peerProfile: summary.data.peerProfile,
+                      };
                     }
                   },
                 ]
@@ -235,13 +238,7 @@ export const router = createBrowserRouter([
                   {
                     id: "channel",
                     path: "channels/:channelId?",
-                    element: <ChannelLayout/>,
-                    children: [
-                      {
-                        index: true,
-                        element: <ChannelPage/>
-                      }
-                    ]
+                    element: <ChannelPage/>
                   }
                 ]
               }

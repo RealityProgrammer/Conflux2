@@ -27,7 +27,7 @@ export default function AuthProvider({children}: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserIdentityProfileDto | null>(loaderData?.userProfile ?? null);
 
   const updateUserProfile = (updates: Partial<UserIdentityProfileDto>) => {
-    setUserProfile(prev => {
+    setUserProfile((prev: UserIdentityProfileDto | null) => {
       if (!prev) return null;
       return {...prev, ...updates};
     });

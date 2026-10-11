@@ -1,7 +1,4 @@
 import type {ReactNode} from "react";
-import IconButton from "../IconButton.tsx";
-import {FaExpand, FaMinus} from "react-icons/fa6";
-import {BsTelephoneXFill} from "react-icons/bs";
 
 interface CallWindowHeaderProps {
   title: ReactNode;

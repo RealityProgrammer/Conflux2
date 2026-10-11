@@ -1,36 +1,18 @@
 using Conflux.Application.Dto;
-using Conflux.Domain.Enums;
-using Conflux.Domain.Repositories;
-using Facet;
-using Facet.Extensions;
-using MemoryPack;
+using Conflux.Domain.Dto;
+using Conflux.Domain.Repositories; 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 using System.Text.Json;
 
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed partial class ServerPermissionsCacheService(
-    IMemoryCache memoryCache,
     IConnectionMultiplexer connectionMultiplexer,
     IServerMemberReadRepository memberReadRepository,
+    IServerRoleVersioningService roleVersioningService,
     ILogger<ServerPermissionsCacheService> logger
 ) : IServerPermissionsCacheService {
-    // permission cache strategy:
-    // store the server's permission version in the memory cache, and then redis cache, or else return 0.
-    // store member's permission in the distributed cache as normal, combine with the server's permission version number.
-    // when the role is updated, increment the server's permission version count.
-    // since member's version is versioned, all member would have to refetch their permission from the database, the old
-    // permissions cache do nothing beside waiting to be dropped by the TTL.
-    // 1. one can argue they can drop using the "*" in the key, but at the time being, i don't think IDistributedCache
-    // support dropping a group of key (https://stackoverflow.com/a/55599848, since 2019, could change by now).
-    // 2. redis execute commands on the main thread (single-threaded), it would have to manually going through every
-    // entry and blocking other requests (Valkey might be the same but idk, gotta pick the minimal option so that it
-    // can support both)
-    // 3. SCAN doesn't block, but it requires the backend to collect all user ids who involves in the server, not good
-    // 4. versioning might also solve concurrency issue, probably lmao
-    
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
     public async Task<ServerMemberAuthorizeInfoDto?> GetUserAuthorizeInfo(
@@ -38,7 +20,7 @@ internal sealed partial class ServerPermissionsCacheService(
         Guid userId,
         CancellationToken cancellationToken = default
     ) {
-        int version = await GetPermissionVersion(serverId);
+        int version = await roleVersioningService.Get(serverId);
         string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
 
         byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
@@ -48,10 +30,7 @@ internal sealed partial class ServerPermissionsCacheService(
         }
 
         try {
-            var deserialized = MemoryPackSerializer.Deserialize<MemberAuthorizeInfoCacheDto>(cached);
-            
-            // should not happen without external interaction but just guard it anyway so that the analyzer can shut up.
-            return deserialized?.ToSource<MemberAuthorizeInfoCacheDto, ServerMemberAuthorizeInfoDto>();
+            return JsonSerializer.Deserialize<ServerMemberAuthorizeInfoDto>(cached);
         } catch (Exception e) {
             logger.LogError(e, "Failed to deserialize cached member authorize info. Null will be returned.");
             return null;
@@ -64,20 +43,19 @@ internal sealed partial class ServerPermissionsCacheService(
         ServerMemberAuthorizeInfoDto value,
         CancellationToken cancellationToken = default
     ) {
-        int version = await GetPermissionVersion(serverId);
+        int version = await roleVersioningService.Get(serverId);
         string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
-
-        MemberAuthorizeInfoCacheDto converted = value.ToFacet<ServerMemberAuthorizeInfoDto, MemberAuthorizeInfoCacheDto>();
         
         await _database.StringSetAsync(
             cacheKey, 
-            MemoryPackSerializer.Serialize(converted), 
+            JsonSerializer.SerializeToUtf8Bytes(value), 
             TimeSpan.FromHours(1)
         );
     }
 
     public async Task DeleteUserAuthorizeInfo(Guid serverId, Guid userId, CancellationToken cancellationToken = default) {
-        int version = await GetPermissionVersion(serverId);
+        int version = await roleVersioningService.Get(serverId);
+        
         string cacheKey = GetRedisKeyForUserPermissions(serverId, userId, version);
         await _database.StringDeleteAsync(cacheKey, ValueCondition.Exists);
     }
@@ -148,64 +126,13 @@ internal sealed partial class ServerPermissionsCacheService(
         await _database.StringSetAsync(cacheKey, JsonSerializer.SerializeToUtf8Bytes(value), TimeSpan.FromHours(24));
     }
 
-    private async Task<int> GetPermissionVersion(Guid serverId) {
-        string memoryKey = GetMemoryKeyForPermissionVersions(serverId);
-        
-        if (memoryCache.TryGetValue(memoryKey, out int version)) {
-            return version;
-        }
-        
-        RedisValue redisResult = await _database.HashGetAsync(GetRedisKeyForPermissionVersions(), serverId.ToString());
-        
-        version = redisResult.HasValue ? (int)redisResult : 1;
-        
-        memoryCache.Set(memoryKey, version, TimeSpan.FromSeconds(30));
-        
-        return version;
-    }
-
     public async Task IncrementServerPermissionVersion(Guid serverId, CancellationToken cancellationToken = default) {
-        string memoryKey = GetMemoryKeyForPermissionVersions(serverId);
-        string redisKey = GetRedisKeyForPermissionVersions();
-
-        if (!memoryCache.TryGetValue(memoryKey, out int oldVersion)) {
-            RedisValue result = await _database.HashGetAsync(redisKey, serverId.ToString());
-            oldVersion = result.HasValue ? (int)result : 1;
-        }
-        
-        memoryCache.Set(memoryKey, oldVersion + 1, TimeSpan.FromSeconds(30));
-
-        var hashField = serverId.ToString();
-        
-        await _database.HashSetAsync(redisKey, hashField, oldVersion + 1);
-        await _database.KeyExpireAsync(redisKey, TimeSpan.FromHours(24), ExpireWhen.HasNoExpiry);
+        await roleVersioningService.Increment(serverId);
     }
-    
+
     private static string GetRedisKeyForUserPermissions(Guid serverId, Guid userId, int version) =>
-        $"server:{serverId}:perms:user:{userId}:version:{version}";
+        $"server:{serverId}:authorize:{userId}:v{version}";
 
     private static string GetRedisKeyForDefaultRoleAuthInfo(Guid serverId) =>
         $"server:{serverId}:default_role";
-    
-    private static string GetMemoryKeyForPermissionVersions(Guid serverId) =>
-        $"server:{serverId}:perms:versions";
-    
-    private static string GetRedisKeyForPermissionVersions() =>
-        $"server:perms:versions";
-
-    [MemoryPackable]
-    [Facet(typeof(ServerMemberAuthorizeInfoDto), Include = [
-        nameof(ServerMemberAuthorizeInfoDto.MemberId),
-        nameof(ServerMemberAuthorizeInfoDto.AuthorizeLevel),
-        nameof(ServerMemberAuthorizeInfoDto.EffectivePermissions),
-        nameof(ServerMemberAuthorizeInfoDto.Roles),
-        nameof(ServerMemberAuthorizeInfoDto.IsBanned),
-    ], GenerateToSource = true)]
-    public sealed partial record MemberAuthorizeInfoCacheDto {
-        public Guid MemberId { get; set; } = MemberId;
-        public int AuthorizeLevel { get; set; } = AuthorizeLevel;
-        public IReadOnlySet<ServerPermission> EffectivePermissions { get; set; } = EffectivePermissions;
-        public MemberRoleDto[] Roles { get; set; } = Roles;
-        public bool IsBanned { get; set; } = IsBanned;
-    }
 }

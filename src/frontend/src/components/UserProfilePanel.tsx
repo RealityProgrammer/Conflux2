@@ -8,9 +8,15 @@ import {hash} from "../utils/hashing.ts";
 
 export interface UserProfileCardProps extends HTMLAttributes<HTMLDivElement> {
   userId: string;
+  avatarClassName?: string;
 }
 
-export default function UserProfilePanel({ userId, className, ...props }: UserProfileCardProps) {
+export default function UserProfilePanel({
+  userId,
+  avatarClassName = "",
+  className,
+  ...props
+}: UserProfileCardProps) {
   const { data, isLoading, isError } = useGetUserFullProfileQuery({ id: userId });
 
   return (
@@ -28,7 +34,7 @@ export default function UserProfilePanel({ userId, className, ...props }: UserPr
           bannerSrc={data.user.bannerRevision ? userService.getBannerUrl(data.user.id, data.user.bannerRevision) : undefined}
           bannerAlt={`${data.user.displayName}'s banner`}
           bannerFallbackColor={`hsl(${Math.abs(hash(data.user.id)) % 360}, 60%, 40%)`}
-          avatarClassName="border-gray-725"
+          avatarClassName={avatarClassName}
           joinDate={new Date(data.user.createdAt)}
           friendedDate={new Date()}
           pronouns={data.user.pronouns ?? undefined}

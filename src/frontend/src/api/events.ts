@@ -1,7 +1,8 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
+  EditedMessageDto,
 } from "./types.ts";
-import type {PresenceStatus} from "../graphql/types.ts";
+import type {PinnedMessageDto, PresenceStatus} from "../graphql/types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -28,7 +29,7 @@ export type MessageReceivedEvent = {
 }
 
 export type MessageEditedEvent = {
-  message: TimelineMessageDto;
+  message: EditedMessageDto;
 }
 
 export type MessageDeletedEvent = {
@@ -42,6 +43,10 @@ export type UpdateDmConversationListEvent = {
 export type ServerRoleCreatedEvent = {
   serverId: string;
   role: ServerRoleDto;
+}
+
+export type ServerDefaultRoleUpdatedEvent = {
+  serverId: string;
 }
 
 export type ServerRoleUpdatedEvent = {
@@ -115,26 +120,44 @@ export type UserPresenceChangedEvent = {
   status: PresenceStatus;
 }
 
-export type IncomingDirectCallEvent = {
+export type IncomingCallEvent = {
+  callId: string;
   callerProfile: UserIdentityProfileDto;
 }
 
 export type DirectCallCanceledEvent = {
-  callerUserId: string;
+  callId: string;
+  callerId: string;
 }
 
 export type DirectCallDeniedEvent = {
-  calleeUserId: string;
+  callId: string;
+  calleeId: string;
 }
 
 export type DirectCallAcceptedEvent = {
-  calleeUserId: string;
+  callId: string;
+  calleeId: string;
 }
 
 export type DirectCallDroppedEvent = {
-  droppedUserId: string;
+  callId: string;
+  dropperId: string;
 }
 
 export type DirectCallEndedEvent = {
-  enderUserId: string;
+  enderId: string;
+  callId: string;
+}
+
+export type DirectConversationUpdatedEvent = {
+  conversationId: string;
+}
+
+export type MessagePinnedEvent = {
+  message: PinnedMessageDto;
+}
+
+export type MessageUnpinnedEvent = {
+  messageId: string;
 }

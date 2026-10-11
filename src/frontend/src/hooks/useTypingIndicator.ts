@@ -24,7 +24,7 @@ export default function useTypingIndicator(
   useSignalREvent("UserTyping", (event: TypingUserEvent) => {
     if (event.userId === currentUserId) return;
 
-    setTypingUsersMap((prev) => {
+    setTypingUsersMap((prev: Map<string, TypingUser>) => {
       const next = new Map(prev);
       next.set(event.userId, { id: event.userId, displayName: event.displayName, avatarRevision: event.avatarRevision });
       return next;
@@ -36,7 +36,7 @@ export default function useTypingIndicator(
     }
 
     timersRef.current[event.userId] = setTimeout(() => {
-      setTypingUsersMap((prev) => {
+      setTypingUsersMap((prev: Map<string, TypingUser>) => {
         const next = new Map(prev);
         next.delete(event.userId);
         return next;

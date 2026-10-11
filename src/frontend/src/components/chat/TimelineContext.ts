@@ -1,4 +1,4 @@
-import type {Attachment, TimelineMessageDto} from "../../api/types.ts";
+import type {AttachmentDto, TimelineMessageDto} from "../../api/types.ts";
 
 export interface TimelineContext {
   actions: {
@@ -10,17 +10,21 @@ export interface TimelineContext {
     onEditDraftChange: (body: string | null) => void;
     onEditSaved: (newBody: string | null) => void;
 
-    onAttachmentClick: (attachments: Attachment[], index: number) => void;
-    onExternalLinkClicked: (url?: string) => void;
+    onAttachmentClick: (attachments: AttachmentDto[], index: number) => void;
 
     retrySendingOperation: (operationId: string) => void;
     removeSendingOperation: (operationId: string) => void;
 
-    retryEditingOperation: (messageId: string) => void;
-    removeEditingOperation: (messageId: string) => void;
+    retryEditOperation: (messageId: string) => void;
+    removeEditOperation: (messageId: string) => void;
+
+    updateMessagePin: (messageId: string, isPinned: boolean) => void;
   };
 
   states: {
     editingMessageDraft: string | null;
+    highlightedMessageId: string | null;
+    allowEditMessage: boolean;
+    allowDeleteMessage: boolean;
   }
 }

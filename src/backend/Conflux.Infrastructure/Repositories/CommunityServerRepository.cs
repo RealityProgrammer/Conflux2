@@ -18,30 +18,7 @@ internal sealed class CommunityServerRepository(
         dbContext.CommunityServers.Add(communityServer);
     }
 
-    public async Task<bool> UpdateHasAvatar(Guid serverId, bool hasAvatar) {
-        int changed = await dbContext.CommunityServers
-            .Where(s => s.Id == serverId)
-            .ExecuteUpdateAsync(setter => {
-                setter.SetProperty(s => s.HasAvatar, hasAvatar);
-            });
-        
-        return changed == 1;
-    }
-    
-    public async Task<Result<CommunityServerProfileDto>> GetProfile(
-        Guid serverId,
-        CancellationToken cancellationToken = default
-    ) {
-        CommunityServerProfileDto? result = await dbContext.CommunityServers
-            .AsNoTracking()
-            .Where(c => c.Id == serverId)
-            .SelectFacet<CommunityServerProfileDto>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return result != null ? Result<CommunityServerProfileDto>.Success(result) : Errors.ResourceNotFound("Server");
-    }
-
-    public async Task<List<ChannelCategoryDetailDto>> GetChannelCategorySummaries(
+    public async Task<List<ChannelCategoryDetailDto>> GetChannelCategoryStructure(
         Guid serverId, 
         CancellationToken cancellationToken = default
     ) {
@@ -54,7 +31,7 @@ internal sealed class CommunityServerRepository(
 
         var channels = await dbContext.Channels
             .AsNoTracking()
-            .Where(c => (c.Type == ChannelType.CommunityServerText || c.Type == ChannelType.CommunityServerVoice) && c.CommunityServerId == serverId)
+            .Where(c => c.CommunityServerId == serverId)
             .SelectFacet<ServerChannelIdentityDto>()
             .ToListAsync(cancellationToken);
 
@@ -83,13 +60,5 @@ internal sealed class CommunityServerRepository(
         result.AddRange(mappedCategories);
 
         return result;
-    }
-    public async Task<bool> IsCategoryExistsInServer(
-        Guid serverId, 
-        Guid categoryId, 
-        CancellationToken cancellationToken = default
-    ) {
-        return await dbContext.ChannelCategories
-            .AnyAsync(c => c.Id == categoryId && c.CommunityServerId == serverId, cancellationToken);
     }
 }

@@ -5,11 +5,12 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Services.Implementations;
 
 public sealed class MessageMediaService(
-    IMessageRepository messageRepository,
+    IAttachmentRepository attachmentRepository,
     IFileFormatInspector fileFormatInspector,
     IBlobStorage blobStorage
 ) : IMessageMediaService {
@@ -51,13 +52,17 @@ public sealed class MessageMediaService(
         string? downloadFileName = null;
         
         if (download) {
-            Attachment? attachment = await messageRepository.GetAttachmentById(attachmentId, CancellationToken.None);
+            string? attachmentName = await attachmentRepository
+                .AsQueryable()
+                .Where(a => a.Id == attachmentId)
+                .Select(a => a.Name)
+                .FirstOrDefaultAsync(CancellationToken.None);
 
-            if (attachment == null) {
-                return Errors.ResourceNotFound($"Attachment (Id = {attachment})");
+            if (attachmentName == null) {
+                return Errors.ResourceNotFound($"Attachment (Id = {attachmentId})");
             }
 
-            downloadFileName = string.IsNullOrEmpty(attachment.Name) ? "file" : attachment.Name;
+            downloadFileName = string.IsNullOrEmpty(attachmentName) ? "file" : attachmentName;
         }
 
         var url = await blobStorage.GetPreSignedUrl(key, expires, new BlobDownloadOptions(download, downloadFileName), cancellationToken);

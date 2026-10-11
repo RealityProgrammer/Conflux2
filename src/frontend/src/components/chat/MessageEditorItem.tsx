@@ -1,14 +1,13 @@
 import {type ChangeEvent, type KeyboardEvent, type ReactNode, type Ref, useLayoutEffect, useRef} from "react";
 import {TimelineItem} from "./TimelineItem.ts";
-import type {TimelineMessageClusterItemDto, TimelineMessageDto, UserIdentityProfileDto} from "../../api/types.ts";
+import type {TimelineMessageDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
-import UserAvatar from "../UserAvatar.tsx";
 import {userService} from "../../api/userService.ts";
+import {MessageRow} from "./MessageRow.tsx";
 
 export type MessageEditorItemProps = {
-  senderProfile: UserIdentityProfileDto;
-  message: TimelineMessageClusterItemDto;
+  message: TimelineMessageDto;
   showHeader: boolean;
 }
 
@@ -25,8 +24,7 @@ export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
     return (
       <MessageEditorView
         key={`editor-${this.data.message.id}`}
-        senderProfile={this.data.senderProfile}
-        message={{ ...this.data.message, senderUserId: this.data.senderProfile.id }}
+        message={this.data.message}
         showHeader={this.data.showHeader}
         context={context}
       />
@@ -36,14 +34,12 @@ export class MessageEditorItem extends TimelineItem<MessageEditorItemProps> {
 
 export interface MessageEditorProps {
   message: TimelineMessageDto;
-  senderProfile: UserIdentityProfileDto;
   showHeader: boolean;
   context: TimelineContext;
 }
 
 function MessageEditorView({
   message,
-  senderProfile,
   showHeader,
   context,
 }: MessageEditorProps) {
@@ -58,10 +54,6 @@ function MessageEditorView({
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
   }, [currentDraft]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    context.actions.onEditDraftChange(e.target.value);
-  };
-
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -74,6 +66,12 @@ function MessageEditorView({
 
   const handleCancelEdit = () => {
     context.actions.onEditCancel();
+  };
+
+  const handleAttachmentClicked = (index: number) => {
+    if (!message.attachments || message.attachments.length === 0) return;
+
+    context.actions.onAttachmentClick(message.attachments, index);
   };
 
   const submitEdit = () => {
@@ -92,40 +90,25 @@ function MessageEditorView({
 
   return (
     <div className="flex flex-col w-full gap-1 px-2">
-      {showHeader ? (
-        <div className="flex flex-row gap-3">
-          <UserAvatar
-            src={senderProfile?.avatarRevision ? userService.getAvatarUrl(senderProfile.id, senderProfile?.avatarRevision) : undefined}
-            className="flex-none mt-1 h-10 aspect-square self-stretch select-none items-center justify-center overflow-hidden rounded-full align-middle cursor-pointer"
-          />
-
-          <div className="flex-1 min-w-0">
-            <p className="text-base text-white">{senderProfile?.userName ?? "Unknown Sender"}</p>
-
-            <EditorContent
-              textareaRef={textareaRef}
-              message={message}
-              handleInputChange={handleInputChange}
-              handleKeyDown={handleKeyDown}
-              handleCancelEdit={handleCancelEdit}
-              submitEdit={submitEdit}
-              onAttachmentClick={(index) => context.actions.onAttachmentClick(message.attachments, index)}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="ml-13">
-          <EditorContent
-            textareaRef={textareaRef}
-            message={message}
-            handleInputChange={handleInputChange}
-            handleKeyDown={handleKeyDown}
-            handleCancelEdit={handleCancelEdit}
-            submitEdit={submitEdit}
-            onAttachmentClick={(index) => context.actions.onAttachmentClick(message.attachments, index)}
-          />
-        </div>
-      )}
+      <MessageRow.Row
+        header={showHeader ? {
+          senderDisplayName: message.sender!.displayName ?? "???",
+          avatarSrc: message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined,
+          avatarAlt: `Avatar of ${message.sender!.displayName ?? "???"}`,
+        } : undefined}
+        date={new Date(message.createdAt)}
+      >
+        <EditorContent
+          textareaRef={textareaRef}
+          message={message}
+          editDraft={context.states.editingMessageDraft}
+          setEditDraft={context.actions.onEditDraftChange}
+          handleKeyDown={handleKeyDown}
+          handleCancelEdit={handleCancelEdit}
+          submitEdit={submitEdit}
+          onAttachmentClick={handleAttachmentClicked}
+        />
+      </MessageRow.Row>
     </div>
   );
 }
@@ -133,7 +116,8 @@ function MessageEditorView({
 interface EditorContentProps {
   textareaRef: Ref<HTMLTextAreaElement>;
   message: TimelineMessageDto;
-  handleInputChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  editDraft: string | null;
+  setEditDraft: (value: string) => void;
   handleKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
   handleCancelEdit: () => void;
   submitEdit: () => void;
@@ -143,19 +127,22 @@ interface EditorContentProps {
 function EditorContent({
   textareaRef,
   message,
-  handleInputChange,
+  editDraft,
+  setEditDraft,
   handleKeyDown,
   handleCancelEdit,
   submitEdit,
   onAttachmentClick,
 }: EditorContentProps) {
   return (
-    <>
+    <div className="w-full">
       <textarea
         ref={textareaRef}
         rows={1}
-        defaultValue={message.body ?? ''}
-        onChange={handleInputChange}
+        value={editDraft ?? ""}
+        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
+          setEditDraft(e.target.value);
+        }}
         onKeyDown={handleKeyDown}
         maxLength={1024}
         className="block input-field min-h-10 max-h-40 w-full text-sm resize-none py-2 px-3 overflow-y-auto leading-6 whitespace-pre-wrap"
@@ -174,6 +161,6 @@ function EditorContent({
           onAttachmentClick={onAttachmentClick}
         />
       )}
-    </>
+    </div>
   );
 }

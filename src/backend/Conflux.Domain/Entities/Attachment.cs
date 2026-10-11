@@ -1,7 +1,10 @@
 namespace Conflux.Domain.Entities;
 
-public sealed class Attachment {
-    public required string Name { get; set; }
-    public required Guid Id { get; set; }
-    public required string Type { get; set; }
+public class Attachment {
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    
+    public Guid MessageId { get; set; }
+    public Message Message { get; set; } = null!;
 }

@@ -109,13 +109,13 @@ export default function useWebRTC({
 
     connectingPeersRef.current.delete(peerId);
 
-    setRemoteStreams((prev) => {
+    setRemoteStreams((prev: Record<string, MediaStream>) => {
       const updated = { ...prev };
       delete updated[peerId];
       return updated;
     });
 
-    setRemoteMediaStates((prev) => {
+    setRemoteMediaStates((prev: Record<string, MediaStream>) => {
       const updated = { ...prev };
       delete updated[peerId];
       return updated;
@@ -123,8 +123,6 @@ export default function useWebRTC({
   };
 
   const createPeerConnection = (peerId: string, isInitiator: boolean) => {
-    console.log(`[createPeerConnection] peerId=${peerId} isInitiator=${isInitiator}`);
-
     if (peersRef.current.has(peerId)) return peersRef.current.get(peerId)!;
 
     const pc = new RTCPeerConnection(RTC_CONFIGURATION);
@@ -150,7 +148,7 @@ export default function useWebRTC({
       dc.onmessage = (e) => {
         try {
           const state = JSON.parse(e.data);
-          setRemoteMediaStates((prev) => ({...prev, [peerId]: state}));
+          setRemoteMediaStates((prev: Record<string, RemoteMediaStates>) => ({...prev, [peerId]: state}));
         } catch (err) {
         }
       };
@@ -165,7 +163,7 @@ export default function useWebRTC({
         incomingDc.onmessage = (e) => {
           try {
             const state = JSON.parse(e.data);
-            setRemoteMediaStates((prev) => ({ ...prev, [peerId]: state }));
+            setRemoteMediaStates((prev: Record<string, RemoteMediaStates>) => ({ ...prev, [peerId]: state }));
           } catch (err) {}
         };
 
@@ -192,11 +190,11 @@ export default function useWebRTC({
 
     // accumulate tracks onto peer's remote media stream
     pc.ontrack = (event) => {
-      setRemoteStreams((prev) => {
+      setRemoteStreams((prev: Record<string, MediaStream>) => {
         const existingStream = prev[peerId];
 
         if (existingStream) {
-          if (!existingStream.getTracks().some((t) => t.id === event.track.id)) {
+          if (!existingStream.getTracks().some((t: MediaStreamTrack) => t.id === event.track.id)) {
             return {
               ...prev,
               [peerId]: new MediaStream([...existingStream.getTracks(), event.track]),
@@ -237,8 +235,6 @@ export default function useWebRTC({
 
   // connect when user connects to the call
   const connectToPeer = async (targetPeerId: string): Promise<void> => {
-    console.log(`[connectToPeer] target=${targetPeerId} caller=${new Error().stack}`);
-
     if (connectingPeersRef.current.has(targetPeerId)) {
       console.warn(`Skipping duplicate offer negotiating with ${targetPeerId}.`);
       return;
@@ -301,10 +297,6 @@ export default function useWebRTC({
   useSignalREvent("ReceiveCallAnswer", async (senderId: string, sdp: string) => {
     const pc = peersRef.current.get(senderId);
     if (!pc) return;
-
-    pc.getTransceivers().map((t) => {
-      console.log("transceivers direction", t.direction);
-    });
 
     try {
       await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));

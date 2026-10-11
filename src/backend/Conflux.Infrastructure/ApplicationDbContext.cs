@@ -13,9 +13,11 @@ public class ApplicationDbContext(
     public DbSet<FriendRequest> FriendRequests { get; set; }
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Attachment> Attachments { get; set; }
     public DbSet<Channel> Channels { get; set; }
     public DbSet<CommunityServer> CommunityServers { get; set; }
     public DbSet<CommunityServerMember> CommunityServerMembers { get; set; }
+    public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<ChannelCategory> ChannelCategories { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<CommunityServerRole> CommunityServerRoles { get; set; }
@@ -30,6 +32,7 @@ public class ApplicationDbContext(
         new ChannelConfiguration().Configure(builder.Entity<Channel>());
         new ConversationConfiguration().Configure(builder.Entity<Conversation>());
         new MessageConfiguration().Configure(builder.Entity<Message>());
+        new AttachmentConfiguration().Configure(builder.Entity<Attachment>());
         new CommunityServerConfiguration().Configure(builder.Entity<CommunityServer>());
         new CommunityServerMemberConfiguration().Configure(builder.Entity<CommunityServerMember>());
         new InvitationConfiguration().Configure(builder.Entity<Invitation>());
@@ -38,5 +41,6 @@ public class ApplicationDbContext(
         new RolePermissionConfiguration().Configure(builder.Entity<RolePermission>());
         new ServerModerationLogConfiguration().Configure(builder.Entity<ServerModerationLog>());
         new ChannelCategoryConfiguration().Configure(builder.Entity<ChannelCategory>());
+        new ConversationParticipantConfiguration().Configure(builder.Entity<ConversationParticipant>());
     }
 }

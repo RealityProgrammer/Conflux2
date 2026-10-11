@@ -64,7 +64,7 @@ function getDialogue(
 export default function Egg() {
   // game state
   const [flags, setFlags] = useState<Record<string, boolean>>({hasEgg: false, ignoredEgg: false});
-  const setFlag = (key: string, value: boolean) => setFlags(prev => ({...prev, [key]: value}));
+  const setFlag = (key: string, value: boolean) => setFlags((prev: Record<string, boolean>) => ({...prev, [key]: value}));
 
   // Dialogue State
   const [showTextbox, setShowTextbox] = useState(false);
@@ -126,7 +126,7 @@ export default function Egg() {
       setIsTyping(false);
     } else {
       if (lineIndex < currentDialog.length - 1) {
-        setLineIndex(prev => prev + 1);
+        setLineIndex((prev: number) => prev + 1);
       } else {
         setShowTextbox(false);
       }

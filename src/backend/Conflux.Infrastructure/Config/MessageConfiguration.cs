@@ -1,13 +1,14 @@
-using Conflux.Domain;
 using Conflux.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System.Text.Json;
 
 namespace Conflux.Infrastructure.Config;
 
 internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.General) {
+        AllowOutOfOrderMetadataProperties = true,
+    };
+    
     public void Configure(EntityTypeBuilder<Message> builder) {
         builder.HasKey(m => m.Id);
         
@@ -16,20 +17,17 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
 
         builder.Property(m => m.Body).HasMaxLength(4000);
 
-        builder.Property(m => m.Attachments)
+        builder.Property(m => m.Properties)
             .HasColumnType("jsonb")
             .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<Attachment[]>(v, (JsonSerializerOptions?)null) ?? Array.Empty<Attachment>()
+                v => JsonSerializer.Serialize(v, JsonOptions),
+                v => JsonSerializer.Deserialize<MessageProperties>(v, JsonOptions)!
             );
             
-        builder.HasIndex(m => m.Attachments).HasMethod("gin");
-        
         // relationship
         builder.HasOne(m => m.Sender)
             .WithMany()
             .HasForeignKey(m => m.SenderUserId)
-            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);  // delete messages when user is deleted
 
         builder.HasOne(m => m.ReplyTo)
@@ -38,12 +36,14 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
             .OnDelete(DeleteBehavior.Restrict);
         
         // constraints
-        builder.ToTable(tableBuilder => tableBuilder.HasCheckConstraint(
-            "CK_Message_CannotReplyToSelf",
-            """
-            "Id" <> "ReplyToId"
-            """
-        ));
+        builder.ToTable(tableBuilder => {
+            tableBuilder.HasCheckConstraint(
+                "CK_Message_CannotReplyToSelf",
+                """
+                "Id" <> "ReplyToId"
+                """
+            );
+        });
         
         // filters
         builder.HasQueryFilter("SoftDeletionFilter", b => b.DeletedAt == null);

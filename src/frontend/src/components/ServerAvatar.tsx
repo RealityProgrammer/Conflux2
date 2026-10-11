@@ -16,6 +16,7 @@ export default function ServerAvatar({serverId, hasAvatar, ...props}: UserAvatar
         src={hasAvatar ? communityServerService.getAvatarUrl(serverId, false) : undefined}
         alt="Avatar"
       />
+      
       <Avatar.Fallback
         className="leading-1 flex size-full items-center justify-center bg-white text-[15px] font-medium text-violet11"
       >

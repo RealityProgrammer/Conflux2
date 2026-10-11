@@ -2,7 +2,7 @@ import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {type ReactNode} from "react";
 import type {MessageInput} from "./ChatInput.tsx";
-import MessageContent from "./MessageContent.tsx";
+import MessageBody from "./MessageBody.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaRepeat, FaTrashCan} from "react-icons/fa6";
 
@@ -22,8 +22,6 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
   }
 
   render(context: TimelineContext): ReactNode {
-
-
     return (
       <div className="hover-highlight">
         <div className={`group px-2 flex flex-row justify-center items-start gap-3 ${this.data.error ? "bg-red-500/40" : ""}`}>
@@ -42,7 +40,7 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
           )}
 
           <div className={`flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}>
-            <MessageContent
+            <MessageBody
               content={this.data.input.messageBody}
             />
 

@@ -1,10 +1,10 @@
-import {createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from "react";
 import {
   HttpTransportType,
   type HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
-  LogLevel
+  LogLevel,
 } from "@microsoft/signalr";
 import {apiClient, graphqlClient} from "../api/client.ts";
 
@@ -32,7 +32,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
         withCredentials: true,
         transport: HttpTransportType.WebSockets,
       })
-      // .configureLogging(LogLevel.Debug)
+      .configureLogging(LogLevel.Debug)
       .withAutomaticReconnect()
       .build();
 

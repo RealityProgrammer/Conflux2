@@ -1,161 +1,279 @@
 import type {
-  Attachment,
+  AttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
-import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
-import {messageService} from "../../api/messageService.ts";
-import {useQueryClient} from "@tanstack/react-query";
+import {conversationService} from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {MessageDeletedEvent, MessageEditedEvent, MessageReceivedEvent} from "../../api/events.ts";
+import type {
+  MessageDeletedEvent,
+  MessageEditedEvent,
+  MessageReceivedEvent
+} from "../../api/events.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
-import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
-import Dialog from "../Dialog.tsx";
-import {Dialog as RadixDialog} from "radix-ui";
-import {Virtuoso} from "react-virtuoso";
-import {BsBoxArrowUpRight} from "react-icons/bs";
-import Spinner from "../Spinner.tsx";
+import {Virtuoso, type VirtuosoHandle} from "react-virtuoso";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import TypingIndicator from "./TypingIndicator.tsx";
+import useTimelineMessagesQuery from "../../hooks/useTimelineMessagesQuery.ts";
+import {MessageRow} from "./MessageRow.tsx";
+import {MessageItem} from "./MessageItem.tsx";
+import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.tsx";
+import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
+import {DateSeparator} from "./DateSeparator.tsx";
+import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
+import Spinner from "../Spinner.tsx";
+import {FaArrowDown} from "react-icons/fa6";
+import IconButton from "../IconButton.tsx";
 
-const START_INDEX = 10000000;
+const LATEST_BUTTON_THRESHOLD = 2000;
+const START_INDEX = 100_000_000;
+const BOTTOM_THRESHOLD = 150;
 
-type MediaGalleryState = {
-  items: { id: string; type: string }[];
-  currentIndex: number;
-};
+interface ChatViewProps {
+  allowDeleteMessage?: boolean;
+  allowEditMessage?: boolean;
+}
 
-export interface ChatViewProps {}
+export function ChatView({
+  allowEditMessage = true,
+  allowDeleteMessage = true,
+}: ChatViewProps) {
+  const setMediaElements = useMediaGalleryStore((state) => state.setElements);
 
-export function ChatView({}: ChatViewProps) {
+  // messaging context and hooks
   const {
-    messageQueryResult: {
-      isFetchingPreviousPage, hasPreviousPage, fetchPreviousPage,
-      isFetchingNextPage, hasNextPage, fetchNextPage,
-      isLoading,
-    },
-    userProfiles,
-    appendMessage,
-    editMessage,
-    deleteMessage,
     handleEditMessage,
     handleDeleteMessage,
     setReplyingMessage,
-    removeSendingOperation,
-    retrySendingOperation,
-    retryEditingOperation,
-    removeEditingOperation,
+    removeSendOperation,
+    retrySendOperation,
+    retryEditOperation,
+    removeEditOperation,
+    conversationId,
+    jumpMessageId,
+    clearJump,
   } = useChatContainerContext();
 
-  const queryClient = useQueryClient();
+  const [anchorId, setAnchorId] = useState<string | null>(null);
 
-  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
+  const {
+    data: messagePages,
+    isFetchingPreviousPage,
+    hasPreviousPage,
+    fetchPreviousPage,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    isLoading,
+  } = useTimelineMessagesQuery(conversationId, anchorId);
 
-  const fetchOlderMessages = async () => {
-    if (isFetchingPreviousPage || !hasPreviousPage) return;
-    await fetchPreviousPage();
-  }
+  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 
-  const fetchNewerMessages = async () => {
-    if (isFetchingNextPage || !hasNextPage) return;
-    await fetchNextPage();
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
+
+  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+  const prevAllowEditRef = useRef(allowEditMessage);
+
+  useEffect(() => {
+    if (prevAllowEditRef.current && !allowEditMessage) {
+      setEditingMessage(undefined);
+      setEditingMessageDraft(null);
+    }
+
+    prevAllowEditRef.current = allowEditMessage;
+  }, [allowEditMessage]);
+  
+  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+  const prevAllowDeleteRef = useRef(allowDeleteMessage);
+  
+  useEffect(() => {
+    if (prevAllowDeleteRef.current && !allowDeleteMessage) {
+      setDeletingMessage(undefined);
+    }
+    
+    prevAllowDeleteRef.current = allowDeleteMessage;
+  }, [allowDeleteMessage]);
+
+  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
+
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const showScrollBottomRef = useRef(false);
+
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const scrollRafRef = useRef(0);
+  const suppressScrollRef = useRef(false);
+
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
+  const userAtBottomRef = useRef(true);
+  const prevListHeightRef = useRef(0);
+
+  useEffect(() => {
+    if (!highlightedMessageId) return;
+
+    const t = setTimeout(() => setHighlightedMessageId(null), 1500);
+    return () => clearTimeout(t);
+  }, [highlightedMessageId]);
+
+  const updateScrollBottomVisibility = () => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    const anchorViewNotLatest = !!anchorId && hasNextPage;
+
+    const shouldShow = distance >= LATEST_BUTTON_THRESHOLD || anchorViewNotLatest;
+
+    if (showScrollBottomRef.current !== shouldShow) {
+      showScrollBottomRef.current = shouldShow;
+      setShowScrollBottom(shouldShow);
+    }
   };
 
-  // gallery
-  const [galleryState, setGalleryState] = useState<MediaGalleryState>({
-    items: [],
-    currentIndex: 0,
-  });
+  const handleScroll = () => {
+    if (suppressScrollRef.current) return;
+    cancelAnimationFrame(scrollRafRef.current);
 
-  const handleAttachmentClick = (messageAttachments: Attachment[], clickedIndex: number) => {
-    setGalleryState({
-      items: messageAttachments.map(att => ({id: att.id, type: att.type})),
-      currentIndex: clickedIndex
+    scrollRafRef.current = requestAnimationFrame(() => {
+      const scroller = scrollerRef.current;
+      
+      if (scroller) {
+        const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+        userAtBottomRef.current = distance <= BOTTOM_THRESHOLD;
+      }
+
+      updateScrollBottomVisibility();
     });
   };
 
-  const [accessingExternalUrl, setAccessingExternalUrl] = useState<string | undefined>(undefined);
+  const handleTotalListHeightChanged = (height: number) => {
+    const prev = prevListHeightRef.current;
+    prevListHeightRef.current = height;
 
-  // message editing
-  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
-  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
+    if (height <= prev) return;
+    if (!userAtBottomRef.current) return;
 
-  const handleSaveEdit = async (newBody: string | null) => {
-    if (editingMessage === undefined) return;
-
-    setEditingMessage(undefined);
-    setEditingMessageDraft(null);
-
-    handleEditMessage(editingMessage, newBody?.trim() ?? null);
+    virtuosoRef.current?.scrollToIndex({
+      index: "LAST",
+      align: "end",
+      behavior: "auto",
+    });
   };
 
-  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
+  useLayoutEffect(() => {
+    suppressScrollRef.current = true;
 
-  // signalr events
-  // change the cache pages when message received
-  useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
-    const senderId = event.message.senderUserId;
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        updateScrollBottomVisibility();
+        suppressScrollRef.current = false;
+      });
+    });
 
-    if (userProfiles[senderId]) {
-      appendMessage(event.message, userProfiles[senderId]);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      cancelAnimationFrame(scrollRafRef.current);
+      suppressScrollRef.current = false;
+    };
+  }, [timelineItems, updateScrollBottomVisibility]);
+
+  const hasUserScrolledRef = useRef(false);
+
+  const virtualKey = anchorId ?? "latest";
+
+  useEffect(() => {
+    updateScrollBottomVisibility();
+  }, [anchorId, hasNextPage]);
+
+  const handleScrollToBottom = () => {
+    if (anchorId && hasNextPage) {
+      setAnchorId(null);
+      clearJump();
     } else {
-      // if we don't know this user, fetch from api
-      try {
-        const userQuery = await queryClient.query({
-          queryKey: useGetUserIdentityProfileQuery.getKey({ id: senderId }),
-          queryFn: useGetUserIdentityProfileQuery.fetcher({ id: senderId }),
-          staleTime: 30 * 60 * 1000,
-        });
-
-        appendMessage(event.message, userQuery.user ?? undefined);
-      } catch (error) {
-        console.error("Failed to fetch user summary for new message", error);
-      }
-    }
-  });
-
-  useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
-    editMessage(event.message.id, event.message.body);
-  });
-
-  useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
-    deleteMessage(event.messageId);
-  });
-
-  // timeline entries
-  const timelineItems = useTimelineItems(editingMessage?.id ?? undefined);
-  const timelineContext: TimelineContext = {
-    actions: {
-      onMessageDeleteTrigger: setDeletingMessage,
-      onMessageEditTrigger: setEditingMessage,
-      onMessageReplyTrigger: setReplyingMessage,
-      onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
-      onEditCancel: () => {
-        setEditingMessage(undefined);
-        setEditingMessageDraft(null);
-      },
-      onEditSaved: (newBody) => handleSaveEdit(newBody),
-      onAttachmentClick: handleAttachmentClick,
-      onExternalLinkClicked: setAccessingExternalUrl,
-
-      removeSendingOperation,
-      retrySendingOperation,
-      retryEditingOperation,
-      removeEditingOperation,
-    },
-    states: {
-      editingMessageDraft: editingMessageDraft,
+      virtuosoRef.current?.scrollToIndex({
+        index: "LAST",
+        align: "end",
+        behavior: "auto"
+      });
     }
   };
 
-  // logic to calculate the jump when older messages are loaded
-  const firstStableIndex = timelineItems.findIndex(item => {
-    const key = item.getKey();
-    return !key.includes('date');
-  });
+  // virtualization
+  const [followEnabled, setFollowEnabled] = useState(!anchorId);
+
+  useEffect(() => {
+    if (!anchorId) {
+      // latest mode: always allow following
+      setFollowEnabled(true);
+      return;
+    }
+    if (hasNextPage) {
+      // anchored, still walking forward: keep it off
+      setFollowEnabled(false);
+      return;
+    }
+
+    const id = requestAnimationFrame(() => setFollowEnabled(true));
+    return () => cancelAnimationFrame(id);
+  }, [anchorId, hasNextPage]);
+
+  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
+
+  const scrollTopBeforeFetchRef = useRef<number | null>(null);
+
+  const prevKeyRef = useRef(virtualKey);
+  const isAtBottomRef = useRef(false);
+  
+  if (prevKeyRef.current !== virtualKey) {
+    prevKeyRef.current = virtualKey;
+    setFirstItemIndex(START_INDEX);
+    hasUserScrolledRef.current = false;
+    isAtBottomRef.current = false;
+  }
+
+  const handleAtBottomStateChange = (atBottom: boolean) => {
+    if (!hasUserScrolledRef.current || !virtuosoRef.current) return;
+
+    const wasAtBottom = isAtBottomRef.current;
+    isAtBottomRef.current = atBottom;
+
+    if (!atBottom) return;              // rising edge only
+    if (wasAtBottom) return;
+    if (!anchorId) return;              // anchored mode only
+    if (isFetchingNextPage || !hasNextPage) return;
+
+    virtuosoRef.current.getState((state) => {
+      scrollTopBeforeFetchRef.current = state.scrollTop;
+    });
+
+    fetchNextPage();
+  };
+
+  useLayoutEffect(() => {
+    const saved = scrollTopBeforeFetchRef.current;
+    if (saved == null) return;
+    scrollTopBeforeFetchRef.current = null;
+
+    virtuosoRef.current?.scrollTo({ top: saved });
+  }, [timelineItems]);
+
+  // if we're anchored and the target item is already in the list, make Virtuoso centred on it, else start at the bottom.
+  const anchorArrayIndex = anchorId && !isLoading ? timelineItems.findIndex(
+    item => item instanceof MessageItem && item.data.message.id === anchorId,
+  ) : -1;
+
+  const initialTopMostItemIndex = anchorArrayIndex >= 0 ?
+    { index: anchorArrayIndex, align: "center" as const } :
+    { index: "LAST" as const, align: "end" as const };
+
+  // when older messages are loaded, shift the amount
+  const firstStableIndex = timelineItems.findIndex(item => !(item instanceof DateSeparator));
   const firstStableKey = firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
   const prevStableRef = useRef({ key: firstStableKey, index: firstStableIndex });
 
@@ -169,7 +287,7 @@ export function ChatView({}: ChatViewProps) {
         const itemsAdded = newIndexOfPrevStable - prev.index;
 
         if (itemsAdded > 0) {
-          setFirstItemIndex(curr => curr - itemsAdded);
+          setFirstItemIndex((curr: number) => curr - itemsAdded);
         }
       }
     }
@@ -177,94 +295,241 @@ export function ChatView({}: ChatViewProps) {
     prevStableRef.current = { key: firstStableKey, index: firstStableIndex };
   }, [timelineItems, firstStableKey, firstStableIndex]);
 
+  useEffect(() => {
+    if (!jumpMessageId) return;
+
+    const arrayIndex = timelineItems.findIndex(item =>
+      item instanceof MessageItem && item.data.message.id === jumpMessageId
+    );
+
+    // message already loaded, jump to it immediately
+    if (arrayIndex >= 0 && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex({
+        index: arrayIndex,
+        align: "center",
+        behavior: "auto",
+      });
+
+      setHighlightedMessageId(jumpMessageId);
+      clearJump();
+      return;
+    }
+
+    // not loaded, set anchor to it
+    if (anchorId !== jumpMessageId) {
+      setAnchorId(jumpMessageId);
+      return;
+    }
+
+    // if message isn't appear after anchor loading, it must be deleted or can't be accessed, return to latest
+    if (!isLoading) {
+      // around query resolved but message isn't there
+      clearJump();
+      setAnchorId(null);
+    }
+  }, [jumpMessageId, timelineItems, firstItemIndex, anchorId, clearJump, isLoading]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!anchorId) return;
+    if (!hasNextPage) return;
+    if (isFetchingNextPage) return;
+
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    // +1 for sub-pixel rounding.
+    if (scroller.scrollHeight > scroller.clientHeight + 1) return;
+
+    fetchNextPage();
+  }, [timelineItems, hasNextPage, isFetchingNextPage, isLoading, anchorId, fetchNextPage]);
+
+  const fetchOlderMessages = async () => {
+    if (isFetchingPreviousPage || !hasPreviousPage) return;
+    await fetchPreviousPage();
+  }
+
+  // edit handling
+  const handleSaveEdit = async (newBody: string | null) => {
+    if (editingMessage === undefined) return;
+
+    setEditingMessage(undefined);
+    setEditingMessageDraft(null);
+
+    handleEditMessage(editingMessage, newBody?.trim() ?? null);
+  };
+
+  // typing indicator
   const { userProfile } = useAuth();
   const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col justify-center items-center overflow-hidden h-full text-white bg-gray-700">
-        <Spinner className="size-10 fill-white"/>
-      </div>
-    );
-  }
+  // signalr events
+  useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
+    if (event.message.conversationId !== conversationId) return;
+
+    appendMessage(event.message);
+  });
+
+  useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
+    updateMessage(event.message.id, { body: event.message.newBody });
+  });
+
+  useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
+    deleteMessage(event.messageId);
+  });
+
+  const timelineContext: TimelineContext = {
+    actions: {
+      onMessageDeleteTrigger: setDeletingMessage,
+      onMessageEditTrigger: setEditingMessage,
+      onMessageReplyTrigger: setReplyingMessage,
+      onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
+      onEditCancel: () => {
+        setEditingMessage(undefined);
+        setEditingMessageDraft(null);
+      },
+      onEditSaved: (newBody) => handleSaveEdit(newBody),
+      onAttachmentClick: (messageAttachments: AttachmentDto[], clickedIndex: number) => {
+        setMediaElements(messageAttachments.map(attachment => ({
+          id: attachment.id,
+          src: conversationService.getAttachmentUrl(attachment.id, false),
+          fileName: attachment.name,
+          mediaType: attachment.type,
+        })), clickedIndex, {
+          downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
+        });
+      },
+
+      removeSendingOperation: removeSendOperation,
+      retrySendingOperation: retrySendOperation,
+      retryEditOperation,
+      removeEditOperation,
+      updateMessagePin: (messageId: string, isPinned: boolean) => updateMessage(messageId, { isPinned }),
+    },
+    states: {
+      editingMessageDraft: editingMessageDraft,
+      highlightedMessageId,
+      allowEditMessage,
+      allowDeleteMessage,
+    }
+  };
+
+  // hacky way to make the top loader not disappear instantly when older messages are loaded
+  const pendingOlderHideRef = useRef(false);
+  const topLoaderRef = useRef<HTMLDivElement>(null);
+
+  const showTopLoader = () => {
+    const topLoader = topLoaderRef.current;
+    if (!topLoader) return;
+    topLoader.classList.remove("opacity-0", "-translate-y-2");
+    topLoader.classList.add("opacity-100", "translate-y-0");
+  };
+
+  const hideTopLoader = () => {
+    const topLoader = topLoaderRef.current;
+    if (!topLoader) return;
+    topLoader.classList.add("opacity-0", "-translate-y-2");
+    topLoader.classList.remove("opacity-100", "translate-y-0");
+  };
+
+  useEffect(() => {
+    if (isFetchingPreviousPage) showTopLoader();
+  }, [isFetchingPreviousPage]);
+
+  useLayoutEffect(() => {
+    if (isFetchingPreviousPage) return;        // still loading
+    if (!pendingOlderHideRef.current) return;  // nothing to hide
+    pendingOlderHideRef.current = false;
+
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(hideTopLoader);
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [isFetchingPreviousPage, messagePages]);
+
+  useEffect(() => {
+    if (isFetchingPreviousPage) {
+      pendingOlderHideRef.current = true;
+    }
+  }, [isFetchingPreviousPage]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full text-white bg-gray-700">
-      <Virtuoso
-        data={timelineItems}
-        alignToBottom={true}
-        followOutput={(isAtBottom) => (isAtBottom ? 'smooth' : false)}
-        initialTopMostItemIndex={{ index: "LAST", align: "end" }}
-        firstItemIndex={firstItemIndex}
-        startReached={fetchOlderMessages}
-        endReached={fetchNewerMessages}
-        overscan={10}
-        className="flex-1 min-h-0"
-        components={{
-          Header: () => (
-            isFetchingPreviousPage ? (
-              <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                Loading older messages...
+      {isLoading ? (
+        <div className="flex-1 min-h-0 mb-2 overflow-hidden">
+          <div className="space-y-1">
+            {[...new Array(20).keys()].map((_, index) => (
+              <div key={index} className="px-2">
+                <MessageRow.HeaderSkeleton>
+                  <MessageRow.BodySkeleton/>
+                </MessageRow.HeaderSkeleton>
               </div>
-            ) : null
-          ),
-          Footer: () => (
-            isFetchingNextPage ? (
-              <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                Loading newer messages...
-              </div>
-            ) : null
-          )
-        }}
-        itemContent={(_index, timelineItem) => {
-          if (!timelineItem) return null;
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="relative flex-1 min-h-0 mb-2">
+          <div
+            ref={topLoaderRef}
+            className="pointer-events-none z-10 absolute top-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out opacity-0 -translate-y-2"
+          >
+            <Spinner className="size-6 fill-white" />
+          </div>
 
-          return timelineItem.render(timelineContext);
-        }}
-      />
+          <div className={`pointer-events-none z-10 absolute bottom-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
+            isFetchingNextPage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+          }`}>
+            <Spinner className="size-6 fill-white"/>
+          </div>
+
+          <Virtuoso
+            ref={virtuosoRef}
+            key={virtualKey}  // so that initialTopMostItemIndex is re-evaluated
+            data={timelineItems}
+            computeItemKey={(_, item) => item.getKey()}
+            atBottomThreshold={BOTTOM_THRESHOLD}
+            followOutput={
+              !anchorId || (followEnabled && !hasNextPage) ?
+                (isAtBottom) => (isAtBottom ? "auto" : false) :
+                false
+            }
+            alignToBottom={!anchorId}
+            initialTopMostItemIndex={initialTopMostItemIndex}
+            firstItemIndex={firstItemIndex}
+            startReached={fetchOlderMessages}
+            atBottomStateChange={handleAtBottomStateChange}
+            isScrolling={(scrolling) => {
+              if (scrolling && !hasUserScrolledRef.current) {
+                hasUserScrolledRef.current = true;
+              }
+            }}
+            totalListHeightChanged={handleTotalListHeightChanged}
+            overscan={10}
+            className="h-full"
+            scrollerRef={(ref) => {
+              if (ref instanceof HTMLDivElement) scrollerRef.current = ref;
+            }}
+            onScroll={handleScroll}
+            itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
+          />
+
+          <IconButton
+            theme="default"
+            className={`z-10 absolute bottom-2 right-2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
+              showScrollBottom ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
+            }`}
+            onClick={handleScrollToBottom}
+          >
+            <FaArrowDown className="size-6"/>
+          </IconButton>
+        </div>
+      )}
 
       <TypingIndicator displayUsers={typingUsers.slice(0, 4)}/>
-
-      {galleryState.items && galleryState.items.length > 0 && (
-        <MediaPreviewGallery
-          open={!!galleryState.items}
-          onOpenChange={(state) => {
-            if (!state) {
-              setGalleryState((prev) => ({
-                ...prev,
-                items: [],
-              }));
-            }
-          }}
-          currentItem={{
-            source: messageService.getAttachmentUrl(galleryState.items[galleryState.currentIndex].id, false),
-            type: galleryState.items[galleryState.currentIndex].type
-          }}
-          hasPreviousItem={galleryState.currentIndex > 0}
-          onPrevious={() => {
-            setGalleryState((prev) => ({
-              ...prev,
-              currentIndex: prev.currentIndex - 1,
-            }));
-          }}
-          hasNextItem={galleryState.currentIndex < galleryState.items.length - 1}
-          onNext={() => {
-            setGalleryState((prev) => ({
-              ...prev,
-              currentIndex: prev.currentIndex + 1,
-            }));
-          }}
-          onDownloadRequested={() => {
-            const downloadUrl = messageService.getAttachmentDownloadUrl(galleryState.items[galleryState.currentIndex].id);
-
-            const link = document.createElement("a");
-            link.href = downloadUrl.toString();
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
-        />
-      )}
 
       <DeleteMessageConfirmationDialog
         open={!!deletingMessage}
@@ -280,161 +545,6 @@ export function ChatView({}: ChatViewProps) {
           }
         }}
       />
-
-      <ExternalLinkConfirmationDialog
-        externalUrl={accessingExternalUrl}
-        open={!!accessingExternalUrl}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAccessingExternalUrl(undefined);
-          }
-        }}
-      />
     </div>
   );
-}
-
-function DeleteMessageConfirmationDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-}: { open: boolean, onOpenChange: (open: boolean) => void, onConfirm: () => void }) {
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Delete Message"
-      subtitle="Nothing happened here, folk..."
-      contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"
-      footerContent={(
-        <div className="w-full flex flex-row justify-end p-3 gap-3">
-          <RadixDialog.Close
-            type="button"
-            className="cursor-pointer basis-20 outline-none"
-          >
-            Cancel
-          </RadixDialog.Close>
-
-          <button
-            className="button-theme-danger cursor-pointer px-3 py-2 rounded-md"
-            onClick={onConfirm}
-          >
-            Delete message
-          </button>
-        </div>
-      )}
-    >
-      <div className="p-3">
-        Are you sure you want to delete this message?<br/>
-        This action cannot be undone. You will never see this message and its attachments ever again.
-      </div>
-    </Dialog>
-  )
-}
-
-const CONFIRMATION_DELAY = 5000;
-
-function ExternalLinkConfirmationDialog({
-  externalUrl,
-  open,
-  onOpenChange,
-}: { externalUrl: string | undefined, open: boolean, onOpenChange: (open: boolean) => void}) {
-  const [canConfirm, setCanConfirm] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    if (open) {
-      // reset states when the dialog opens
-      setCanConfirm(false);
-      setProgress(0);
-
-      // start the visual CSS transition (added a bit delay at the start)
-      const startAnimTimer = setTimeout(() => {
-        setProgress(100);
-      }, 50);
-
-      // unlock button
-      const enableTimer = setTimeout(() => {
-        setCanConfirm(true);
-      }, CONFIRMATION_DELAY + 50);
-
-      return () => {
-        clearTimeout(startAnimTimer);
-        clearTimeout(enableTimer);
-      };
-    } else {
-      setProgress(0);
-      setCanConfirm(false);
-    }
-  }, [open]);
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Prepare to be in the barren land"
-      subtitle="It is dangerous out there..."
-      contentClassName="centered-dialog w-160 rounded-xl text-white bg-gray-650 outline-none"
-      headerIcon={(
-        <BsBoxArrowUpRight className="fill-white size-10"/>
-      )}
-      footerContent={(
-        <div className="w-full flex flex-row justify-end p-3 gap-3">
-          <RadixDialog.Close
-            type="button"
-            className="cursor-pointer basis-20 outline-none"
-          >
-            Cancel
-          </RadixDialog.Close>
-
-          <button
-            disabled={!canConfirm}
-            className={`relative overflow-hidden outline-none w-40 py-2 rounded-md ${canConfirm ? "cursor-pointer" : "cursor-not-allowed"}`}
-            onClick={() => {
-              onOpenChange(false);
-
-              if (!externalUrl) return;
-
-              const link = document.createElement("a");
-              link.href = externalUrl;
-              link.target = "_blank";
-              link.rel = "noopener noreferrer";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-          >
-            <div className="absolute inset-0 bg-red-600" />
-            <div
-              className="absolute left-0 top-0 bottom-0 bg-green-600 ease-linear"
-              style={{
-                width: `${progress}%`,
-                transitionProperty: "width",
-                transitionDuration: progress === 100 ? `${CONFIRMATION_DELAY}ms` : "0ms",
-              }}
-            />
-
-            <span className="relative z-10 text-white font-medium select-none flex items-center justify-center">
-              {canConfirm ? "Confirm Redirect" : "Wait..."}
-            </span>
-          </button>
-        </div>
-      )}
-    >
-      <div className="p-3 space-y-3">
-        <p>
-          Are you sure you want to access this external URL?<br/>
-          Look closely, it can be a trap...<br/>
-        </p>
-
-        <span className="mt-3">
-          External URL:
-
-          <pre className="mt-1 p-2 bg-black/8 border-2 border-gray-500 rounded-md text-wrap text-sm">
-            {externalUrl}
-          </pre>
-        </span>
-      </div>
-    </Dialog>
-  )
 }

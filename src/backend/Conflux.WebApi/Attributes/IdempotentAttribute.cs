@@ -1,4 +1,5 @@
 using Conflux.Domain;
+using MemoryPack;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Caching.Distributed;
@@ -34,16 +35,16 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
         IDistributedCache cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
         IDistributedLockFactory lockFactory = context.HttpContext.RequestServices.GetRequiredService<IDistributedLockFactory>();
 
-        string cacheKey = $"Idempotent:{idempotenceKeyValue}";
+        string cacheKey = $"idempotent:{idempotenceKeyValue}";
 
-        string? cached = await cache.GetStringAsync(cacheKey);
+        byte[]? cached = await cache.GetAsync(cacheKey);
         if (cached is not null) {
             ReturnCachedResult(context, cached);
 
             return;
         }
         
-        string lockResource = $"IdempotentLock:{idempotenceKeyValue}";
+        string lockResource = $"idempotent_lock:{idempotenceKeyValue}";
         
         await using var redLock = await lockFactory.CreateLockAsync(
             lockResource,
@@ -58,7 +59,7 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
             return;
         }
         
-        cached = await cache.GetStringAsync(cacheKey);
+        cached = await cache.GetAsync(cacheKey);
         if (cached is not null) {
             ReturnCachedResult(context, cached);
             return;
@@ -79,23 +80,18 @@ public sealed class IdempotentAttribute(int cacheTimeInMinutes) : Attribute, IAs
             string jsonBody = JsonSerializer.Serialize(objectResult.Value, objectResult.Value.GetType(), serializerOptions);
             
             var idempotentResponse = new IdempotentResponse(jsonBody, statusCode);
-            string serializedResponse = JsonSerializer.Serialize(idempotentResponse);
+            byte[] serializedResponse = MemoryPackSerializer.Serialize(idempotentResponse);
 
-            await cache.SetStringAsync(
+            await cache.SetAsync(
                 cacheKey,
                 serializedResponse,
-                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = _cacheDuration }
+                new() { AbsoluteExpirationRelativeToNow = _cacheDuration }
             );
         }
     }
 
-    private static void ReturnCachedResult(ActionExecutingContext context, string cachedJson) {
-        var serializerOptions = context.HttpContext.RequestServices
-            .GetRequiredService<IOptions<JsonOptions>>()
-            .Value
-            .JsonSerializerOptions;
-        
-        var response = JsonSerializer.Deserialize<IdempotentResponse>(cachedJson, serializerOptions)!;
+    private static void ReturnCachedResult(ActionExecutingContext context, byte[] serialized) {
+        var response = MemoryPackSerializer.Deserialize<IdempotentResponse>(serialized)!;
     
         context.Result = new ContentResult {
             Content = response.JsonBody,

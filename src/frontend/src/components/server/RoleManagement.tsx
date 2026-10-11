@@ -4,7 +4,7 @@ import {
   useInfiniteGetAssignableServerRolesQuery,
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState, type ReactNode} from "react";
 import {BsCircleFill, BsPlusLg} from "react-icons/bs";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import UserAvatar from "../UserAvatar.tsx";
@@ -29,11 +29,15 @@ import {useDebounceValue} from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
 import {userService} from "../../api/userService.ts";
+import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
 export default function RoleManagement() {
-  const { serverId } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const serverId = serverDetails!.id;
+  
+  const { guard } = useUnsavedChanges();
 
   const queryClient = useQueryClient();
   const [isEditingRole, setIsEditingRole] = useState(false);
@@ -137,21 +141,10 @@ export default function RoleManagement() {
 
   const selectedRole = allRoles.find(role => role.id === selectedRoleId);
 
-  const [isFormDirty, setIsFormDirty] = useState(false);
-  const [isShaking, setIsShaking] = useState(false);
-
-  const handleSelectRole = (role: RoleDisplayElement) => {
-    if (isFormDirty) {
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 400);
-      toast.warn((<p className="text-sm">You have unsaved role changes.</p>));
-
-      return;
-    }
-
+  const handleSelectRoleId = guard((role: RoleDisplayElement) => {
     setSelectedRoleId(role.id);
     setIsEditingRole(false);
-  };
+  });
 
   useSignalREvent("ServerRoleDeleted", (event: ServerRoleDeletedEvent) => {
     if (serverId !== event.serverId) return;
@@ -173,7 +166,7 @@ export default function RoleManagement() {
       </header>
 
       <div className="flex-1 flex gap-2 min-h-0 overflow-hidden">
-        <section className="w-48 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
+        <section className="w-64 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
           <RoleList
             roles={allRoles}
             isLoading={isLoading}
@@ -185,18 +178,17 @@ export default function RoleManagement() {
             invalidateRoleQuery={invalidateRoleQuery}
             setRoleName={setRoleName}
             selectedRoleId={selectedRoleId}
-            setSelectedRole={handleSelectRole}
+            setSelectedRole={handleSelectRoleId}
           />
         </section>
 
-        <section className={`flex-1 bg-gray-700 rounded-lg p-3 overflow-y-auto border-gray-600 border-2 space-y-2 transition-colors ${isShaking ? "animate-horizontalShake" : ""}`}>
+        <section className={`flex-1 bg-gray-700 rounded-lg p-3 overflow-y-auto border-gray-600 border-2 space-y-2 transition-colors`}>
           {selectedRoleId && selectedRole ? (
             <RoleDetails
               key={selectedRoleId}
               role={selectedRole}
               isEditingRole={isEditingRole}
               setIsEditingRole={setIsEditingRole}
-              setIsFormDirty={setIsFormDirty}
               updateRoleData={updateRoleData}
               deleteRoleData={deleteRoleData}
             />
@@ -242,9 +234,11 @@ function RoleList({
   selectedRoleId,
   setSelectedRole,
 }: RoleListProps) {
-  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
-
+  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const serverId = serverDetails!.id;
+  
   const {
+    reset,
     register,
     handleSubmit,
     watch,
@@ -273,7 +267,7 @@ function RoleList({
     }
   }, [watchedName]);
 
-  const onCreate: SubmitHandler<CreateRoleFormValues> = async (data: CreateRoleFormValues) => {
+  const handleCreateRole: SubmitHandler<CreateRoleFormValues> = async (data: CreateRoleFormValues) => {
     if (!idempotencyKeyRef.current) {
       idempotencyKeyRef.current = crypto.randomUUID();
     }
@@ -283,10 +277,12 @@ function RoleList({
     if (response.success) {
       invalidateRoleQuery();
       idempotencyKeyRef.current = null;
+      
+      reset(data);
     } else {
       toast.error("Failed to create role.");
     }
-  }
+  };
 
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
@@ -296,7 +292,10 @@ function RoleList({
 
   return (
     <>
-      <form onSubmit={handleSubmit(onCreate)} className="flex flex-row items-center gap-1 border-b-2 border-b-gray-600 p-2 overflow-x-hidden">
+      <form 
+        onSubmit={handleSubmit(handleCreateRole)} 
+        className="flex flex-row items-center gap-1 border-b-2 border-b-gray-600 p-2 overflow-x-hidden"
+      >
         <ErrorPopover
           open={!!errors.name}
           content={errors.name?.message}
@@ -316,7 +315,7 @@ function RoleList({
           />
         </ErrorPopover>
 
-        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.CreateRole) && (
+        {hasPermission(ServerPermission.CreateRole) && (
           <button
             type="submit"
             disabled={isSubmitting}
@@ -379,7 +378,6 @@ type RoleDetailsProps = {
   role: RoleDisplayElement;
   isEditingRole: boolean;
   setIsEditingRole: (value: boolean) => void;
-  setIsFormDirty: (value: boolean) => void;
   updateRoleData: (value: ServerRoleDto) => void;
   deleteRoleData: (roleId: string) => void;
 }
@@ -388,14 +386,17 @@ function RoleDetails({
   role,
   isEditingRole,
   setIsEditingRole,
-  setIsFormDirty,
   updateRoleData,
   deleteRoleData,
 }: RoleDetailsProps) {
-  const { serverId, memberAuthorizeInfo } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const serverId = serverDetails!.id;
+  
+  const { setDirty } = useUnsavedChanges();
 
-  const isEditable = memberAuthorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
-
+  const isEditable = serverDetails!.authorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
+  
+  const formRef = useRef<HTMLFormElement | null>(null);
   const {
     register,
     handleSubmit,
@@ -403,7 +404,7 @@ function RoleDetails({
     setError,
     reset,
     control,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting, isDirty, dirtyFields },
   } = useForm<UpdateRoleFormValues>({
     resolver: zodResolver(updateRoleSchema),
     mode: "onSubmit",
@@ -420,29 +421,47 @@ function RoleDetails({
   });
 
   useEffect(() => {
-    setIsFormDirty(isDirty);
+    setDirty(isDirty);
+  }, [isDirty, setDirty]);
 
-    return () => setIsFormDirty(false);
-  }, [isDirty, setIsFormDirty]);
+  useEffect(() => () => setDirty(false), [setDirty]);
+
+  useUnsavedChangesOnBlock(() => {
+    const element = formRef.current;
+    if (!element) return;
+
+    element.classList.add("animate-horizontalShake");
+    toast.warning("You have unsaved role changes.");
+  });
 
   const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
     if (!isEditable) return;
+    
+    let updatedPermissionStates: Record<ServerPermission, PermissionState> | undefined = undefined;
+    if (dirtyFields.permissions) {
+      updatedPermissionStates = {} as Record<ServerPermission, PermissionState>;
+      
+      for (const [key, isDirty] of Object.entries(dirtyFields.permissions)) {
+        if (!isDirty) continue;
 
+        updatedPermissionStates[key as ServerPermission] = data.permissions[key as ServerPermission];
+      }
+    }
+    
     const response = await communityServerService.updateRole(
       serverId,
       role.id,
       {
-        name: data.name,
-        authorizeLevel: data.authorizeLevel,
-        permissionStates: data.permissions,
+        name: dirtyFields.name ? data.name : undefined,
+        authorizeLevel: dirtyFields.authorizeLevel ? data.authorizeLevel : undefined,
+        permissionStates: updatedPermissionStates,
       }
     );
-
-    setIsEditingRole(false);
-
+  
     if (response.success && response.data) {
       updateRoleData(response.data);
-      setIsFormDirty(false);
+      reset(data);
+      setIsEditingRole(false);
     } else {
       setError("root", {message: response.error?.message ?? "Unknown error."});
     }
@@ -459,7 +478,13 @@ function RoleDetails({
   };
 
   return (
-    <form onSubmit={handleSubmit(handleUpdateRole)}>
+    <form 
+      ref={formRef} 
+      onSubmit={handleSubmit(handleUpdateRole)}
+      onAnimationEnd={() => {
+        formRef.current?.classList.remove("animate-horizontalShake");
+      }}
+    >
       <header className="flex flex-row items-center justify-between mb-2">
         <div className="flex flex-row gap-2 items-center">
           {isEditingRole && role.specialRoleType === SpecialRoleType.None ? (
@@ -477,7 +502,7 @@ function RoleDetails({
           </span>
         </div>
 
-        {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.UpdateRole) && isEditable && (
+        {hasPermission(ServerPermission.UpdateRole) && isEditable && (
           <>
             {isEditingRole ? (
               <div className="flex flex-row gap-2">
@@ -576,108 +601,101 @@ function RoleDetails({
         <Accordion.Root
           type="multiple"
         >
-          <Accordion.Item value="role" className="border-2 border-gray-600 rounded-md">
-            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
-              Role
-            </Accordion.Trigger>
+          <PermissionGroupAccordion 
+            header="Role"
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Create Role</span>
 
-            <Accordion.Content className="border-t-2 border-t-gray-600">
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Create Role</span>
+                <Controller
+                  control={control}
+                  name="permissions.CreateRole"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.CreateRole}
+                      content={errors.permissions?.CreateRole?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                  <Controller
-                    control={control}
-                    name="permissions.CreateRole"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.CreateRole}
-                        content={errors.permissions?.CreateRole?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Update Role</span>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Update Role</span>
+                <Controller
+                  control={control}
+                  name="permissions.UpdateRole"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.UpdateRole}
+                      content={errors.permissions?.UpdateRole?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                  <Controller
-                    control={control}
-                    name="permissions.UpdateRole"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.UpdateRole}
-                        content={errors.permissions?.UpdateRole?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Delete Role</span>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Delete Role</span>
+                <Controller
+                  control={control}
+                  name="permissions.DeleteRole"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.DeleteRole}
+                      content={errors.permissions?.DeleteRole?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </ul>
+          </PermissionGroupAccordion>
 
-                  <Controller
-                    control={control}
-                    name="permissions.DeleteRole"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.DeleteRole}
-                        content={errors.permissions?.DeleteRole?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
-              </ul>
-            </Accordion.Content>
-          </Accordion.Item>
+          <PermissionGroupAccordion
+            header="Channel"
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Create Channel</span>
 
-          <Accordion.Item value="channel" className="border-2 border-gray-600 rounded-md mt-1">
-            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
-              Channel
-            </Accordion.Trigger>
+                <Controller
+                  control={control}
+                  name="permissions.CreateChannel"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.CreateChannel}
+                      content={errors.permissions?.CreateChannel?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-            <Accordion.Content className="border-t-2 border-t-gray-600">
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Create Channel</span>
-
-                  <Controller
-                    control={control}
-                    name="permissions.CreateChannel"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.CreateChannel}
-                        content={errors.permissions?.CreateChannel?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
-
-                <li className="flex flex-row items-center gap-2 text-sm">
+              <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Delete Channel</span>
 
                 <Controller
@@ -697,180 +715,240 @@ function RoleDetails({
                   )}
                 />
               </li>
-              </ul>
-            </Accordion.Content>
-          </Accordion.Item>
+            </ul>
+          </PermissionGroupAccordion>
+          
+          <PermissionGroupAccordion 
+            header="Conversation"
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Send Messages</span>
 
-          <Accordion.Item value="member" className="border-2 border-gray-600 rounded-md mt-1">
-            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
-              Member
-            </Accordion.Trigger>
+                <Controller
+                  control={control}
+                  name="permissions.SendMessage"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.SendMessage}
+                      content={errors.permissions?.SendMessage?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-            <Accordion.Content className="border-t-2 border-t-gray-600">
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Manage Members</span>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Edit Messages</span>
 
-                  <Controller
-                    control={control}
-                    name="permissions.ManageMembers"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.ManageMembers}
-                        content={errors.permissions?.ManageMembers?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+                <Controller
+                  control={control}
+                  name="permissions.EditMessages"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.EditMessages}
+                      content={errors.permissions?.EditMessages?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Update Roles</span>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Delete Messages</span>
 
-                  <Controller
-                    control={control}
-                    name="permissions.UpdateMemberRoles"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.UpdateMemberRoles}
-                        content={errors.permissions?.UpdateMemberRoles?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+                <Controller
+                  control={control}
+                  name="permissions.DeleteMessages"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.DeleteMessages}
+                      content={errors.permissions?.DeleteMessages?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </ul>
+          </PermissionGroupAccordion>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Warn Members</span>
+          <PermissionGroupAccordion
+            header="Member"
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Manage Members</span>
 
-                  <Controller
-                    control={control}
-                    name="permissions.WarnMembers"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.WarnMembers}
-                        content={errors.permissions?.WarnMembers?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+                <Controller
+                  control={control}
+                  name="permissions.ManageMembers"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.ManageMembers}
+                      content={errors.permissions?.ManageMembers?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Kick Members</span>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Update Roles</span>
 
-                  <Controller
-                    control={control}
-                    name="permissions.KickMembers"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.KickMembers}
-                        content={errors.permissions?.KickMembers?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+                <Controller
+                  control={control}
+                  name="permissions.UpdateMemberRoles"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.UpdateMemberRoles}
+                      content={errors.permissions?.UpdateMemberRoles?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Ban Members</span>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Warn Members</span>
 
-                  <Controller
-                    control={control}
-                    name="permissions.BanMembers"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.BanMembers}
-                        content={errors.permissions?.BanMembers?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
+                <Controller
+                  control={control}
+                  name="permissions.WarnMembers"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.WarnMembers}
+                      content={errors.permissions?.WarnMembers?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Unban Members</span>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Kick Members</span>
 
-                  <Controller
-                    control={control}
-                    name="permissions.UnbanMembers"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.UnbanMembers}
-                        content={errors.permissions?.UnbanMembers?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
-              </ul>
-            </Accordion.Content>
-          </Accordion.Item>
+                <Controller
+                  control={control}
+                  name="permissions.KickMembers"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.KickMembers}
+                      content={errors.permissions?.KickMembers?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-          <Accordion.Item value="misc" className="border-2 border-gray-600 rounded-md mt-1">
-            <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
-              Miscellaneous
-            </Accordion.Trigger>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Ban Members</span>
 
-            <Accordion.Content className="border-t-2 border-t-gray-600">
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
-                <li className="flex flex-row items-center gap-2 text-sm">
-                  <span className="flex-1">Read Log</span>
+                <Controller
+                  control={control}
+                  name="permissions.BanMembers"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.BanMembers}
+                      content={errors.permissions?.BanMembers?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
 
-                  <Controller
-                    control={control}
-                    name="permissions.ReadModerationLogs"
-                    render={({field}) => (
-                      <ErrorPopover
-                        open={!!errors.permissions?.ReadModerationLogs}
-                        content={errors.permissions?.ReadModerationLogs?.message}
-                      >
-                        <PermissionStatesPill
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!isEditingRole}
-                        />
-                      </ErrorPopover>
-                    )}
-                  />
-                </li>
-              </ul>
-            </Accordion.Content>
-          </Accordion.Item>
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Unban Members</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.UnbanMembers"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.UnbanMembers}
+                      content={errors.permissions?.UnbanMembers?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </ul>
+          </PermissionGroupAccordion>
+          
+          <PermissionGroupAccordion 
+            header="Miscellaneous"
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+              <li className="flex flex-row items-center gap-2 text-sm">
+                <span className="flex-1">Read Log</span>
+
+                <Controller
+                  control={control}
+                  name="permissions.ReadModerationLogs"
+                  render={({field}) => (
+                    <ErrorPopover
+                      open={!!errors.permissions?.ReadModerationLogs}
+                      content={errors.permissions?.ReadModerationLogs?.message}
+                    >
+                      <PermissionStatesPill
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditingRole}
+                      />
+                    </ErrorPopover>
+                  )}
+                />
+              </li>
+            </ul>
+          </PermissionGroupAccordion>
         </Accordion.Root>
       </section>
 
-      {memberAuthorizeInfo.effectivePermissions.includes(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
+      {hasPermission(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
         <div className="flex flex-row justify-end mt-2">
           <button
             type="button"
@@ -883,4 +961,21 @@ function RoleDetails({
       )}
     </form>
   );
+}
+
+function PermissionGroupAccordion({
+  header,
+  children
+} : { header: string, children: ReactNode }) {
+  return (
+    <Accordion.Item value={header} className="border-2 border-gray-600 rounded-md mt-1">
+      <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
+        {header}
+      </Accordion.Trigger>
+
+      <Accordion.Content className="border-t-2 border-t-gray-600">
+        {children}
+      </Accordion.Content>
+    </Accordion.Item>
+  )
 }

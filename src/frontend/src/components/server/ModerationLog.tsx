@@ -142,14 +142,14 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
 ];
 
 function LogTable() {
-  const { serverId } = useCommunityServerContext();
+  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
 
   const {
     data,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteGetServerModerationLogsQuery({ serverId, after: null }, {
+  } = useInfiniteGetServerModerationLogsQuery({ serverId: serverDetails!.id, after: null }, {
     initialPageParam: { after: null },
     getNextPageParam: (lastPage: GetServerModerationLogsQuery): { after: string } | undefined => {
       const pageInfo = lastPage?.serverModerationLogs?.pageInfo;

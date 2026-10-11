@@ -4,8 +4,8 @@ import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from 
 import {ScrollArea} from "radix-ui";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import MediaPreviewGallery from "../MediaPreviewGallery.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
+import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -31,7 +31,7 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
-  const {channelId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
+  const {conversationId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
 
   const [messageBody, setMessageBody] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -41,7 +41,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
-  const notifyTyping = useTypingEmitter(channelId);
+  const notifyTyping = useTypingEmitter(conversationId);
 
   const handleAttachmentButtonClick = () => {
     if (!fileInputRef.current) {
@@ -97,7 +97,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
   }, []);
 
   const handleRemoveAttachment = (id: string): void => {
-    setAttachments((prev) => {
+    setAttachments((prev: AttachmentItem[]) => {
       const toRemove = prev.find(item => item.id === id);
 
       if (toRemove?.previewUrl) {
@@ -136,14 +136,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
     }
   };
 
-  // gallery states
-  const [previewGalleryState, setPreviewGalleryState] = useState({open: false, index: 0});
-
-  const safeIndex = Math.min(
-    Math.max(0, previewGalleryState.index),
-    Math.max(0, attachments.length - 1)
-  );
-  const activeAttachment = attachments[safeIndex];
+  const setGalleryElements = useMediaGalleryStore(state => state.setElements);
 
   return (
     <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
@@ -182,10 +175,12 @@ export default function ChatInput({disabled}: ChatInputProps) {
                     onRemove={() => handleRemoveAttachment(item.id)}
                     previewUrl={item.previewUrl}
                     onClick={() => {
-                      setPreviewGalleryState({
-                        open: true,
-                        index,
-                      });
+                      setGalleryElements(attachments.map(attachment => ({
+                        id: attachment.id,
+                        fileName: attachment.file.name,
+                        mediaType: attachment.file.type,
+                        src: attachment.previewUrl!,
+                      })), index);
                     }}
                   />
                 ))}
@@ -200,33 +195,6 @@ export default function ChatInput({disabled}: ChatInputProps) {
                 className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
             </ScrollArea.Scrollbar>
           </ScrollArea.Root>
-
-          <MediaPreviewGallery
-            open={previewGalleryState.open}
-            onOpenChange={(state) => {
-              if (!state) {
-                setPreviewGalleryState((prev) => ({...prev, open: false,}));
-              }
-            }}
-            currentItem={{
-              source: activeAttachment.previewUrl!,
-              type: activeAttachment.file.type,
-            }}
-            hasPreviousItem={previewGalleryState.index > 0}
-            onPrevious={() => {
-              setPreviewGalleryState((prev) => ({
-                ...prev,
-                index: prev.index - 1
-              }));
-            }}
-            hasNextItem={previewGalleryState.index < attachments.length - 1}
-            onNext={() => {
-              setPreviewGalleryState((prev) => ({
-                ...prev,
-                index: prev.index + 1
-              }));
-            }}
-          />
         </section>
       )}
 
@@ -256,7 +224,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="Message body goes here"
           disabled={disabled}
-          maxLength={1024}
+          maxLength={4000}
           className="input-field min-h-10 max-h-36 w-full flex-1 text-sm resize-none py-2 px-3 overflow-y-auto leading-relaxed"
         />
 

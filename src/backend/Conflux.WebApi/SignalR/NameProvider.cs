@@ -11,5 +11,7 @@ internal static class NameProvider {
     public static string GetServerViewRolePermissionGroupName(Guid serverId) => 
         $"server:{serverId:N}:perm:ViewRole";
     
-    public static string GetChannelGroupName(Guid channelId) => $"channel:{channelId}";
+    public static string GetConversationGroupName(Guid conversationId) => $"conversation:{conversationId}";
+
+    public static string GetUserGroupName(Guid userId) => $"user:{userId}";
 }

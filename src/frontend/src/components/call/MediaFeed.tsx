@@ -1,7 +1,6 @@
-import {type HTMLAttributes, useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import UserAvatar from "../UserAvatar.tsx";
 import {BsCameraVideoOffFill, BsMicMuteFill} from "react-icons/bs";
-import type {MediaDeviceOption} from "../../hooks/useUserMedia.ts";
 
 interface StreamVideoProps {
   stream: MediaStream | null;
@@ -24,23 +23,9 @@ export default function MediaFeed({
   isVideoEnabled = true,
   isAudioEnabled = true,
 }: StreamVideoProps) {
-  useEffect(() => {
-    console.log('[MediaFeed] stream prop', {
-      streamId: stream?.id,
-      tracks: stream?.getTracks().map(t => ({
-        kind: t.kind, enabled: t.enabled, muted: t.muted, readyState: t.readyState,
-      })),
-      isLocal, isVideoEnabled, isAudioEnabled,
-    });
-  }, [stream, isLocal, isVideoEnabled, isAudioEnabled]);
-
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
-
-  useEffect(() => {
-    console.log('[MediaFeed] hasVideo/hasAudio', { hasVideo, hasAudio });
-  }, [hasVideo, hasAudio]);
 
   useEffect(() => {
     if (!stream) {
@@ -116,6 +101,7 @@ export default function MediaFeed({
           window.removeEventListener("pointerdown", resume);
           window.removeEventListener("keydown", resume);
         };
+
         window.addEventListener("pointerdown", resume, { once: true });
         window.addEventListener("keydown", resume, { once: true });
       });

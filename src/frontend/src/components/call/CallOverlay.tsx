@@ -1,16 +1,12 @@
 import {useCallStore} from "../../store/useCallStore.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {
-  DirectCallDroppedEvent,
-  IncomingDirectCallEvent
-} from "../../api/events.ts";
+import type {IncomingCallEvent} from "../../api/events.ts";
 import CallWindow from "./CallWindow.tsx";
 import {useEffect} from "react";
-import {useSignalR} from "../../contexts/SignalRContext.tsx";
-import type {DirectCallContext} from "../../api/types.ts";
+import type {GetIncomingDirectCallQueryResult, ServiceResponse} from "../../api/types.ts";
+import {directConversationService} from "../../api/directConversationService.ts";
 
 export default function CallOverlay() {
-  const { invokeSafely } = useSignalR();
   const call = useCallStore((state) => state.call);
   const startIncomingDirectCall = useCallStore((state) => state.startIncomingDirectCall);
 
@@ -18,25 +14,25 @@ export default function CallOverlay() {
   useEffect(() => {
     (async () => {
       try {
-        const result: DirectCallContext = await invokeSafely("GetCurrentRingingCall");
+        const response: ServiceResponse<GetIncomingDirectCallQueryResult> = await directConversationService.getIncomingCall();
 
-        if (result && result.result.isSuccess) {
-          startIncomingDirectCall(result.peerProfile!);
+        if (response.success && response.data) {
+          startIncomingDirectCall(response.data.callId, response.data.callerProfile);
         }
       } catch (err) {
         console.log("Failed to get current call:", err);
       }
     })();
-  }, [invokeSafely]);
+  }, []);
 
-  useSignalREvent("IncomingDirectCall", (event: IncomingDirectCallEvent) => {
-    startIncomingDirectCall(event.callerProfile);
+  useSignalREvent("IncomingDirectCall", (event: IncomingCallEvent) => {
+    startIncomingDirectCall(event.callId, event.callerProfile);
   });
 
   return (
     <section className="fixed inset-0 z-2000 pointer-events-none overflow-hidden text-white">
       {call && (
-        <CallWindow key={call.sessionId} callSessionId={call.sessionId}/>
+        <CallWindow key={call.id} call={call}/>
       )}
     </section>
   )
