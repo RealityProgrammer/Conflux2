@@ -182,7 +182,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full justify-center">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.avatarRevision !== null ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : null : field.value : undefined}
+                  value={userData ? field.value === undefined ? userData.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
                   fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
@@ -213,7 +213,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.bannerRevision !== null ? userService.getBannerUrl(userData.id, userData.bannerRevision) : null : field.value : undefined}
+                  value={userData ? field.value === undefined ? userData.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
@@ -410,24 +410,25 @@ function Displayer({
   const { control } = useFormContext<UpdateProfileFormValues>();
   const watchedValues = useWatch({ control });
 
-  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatarRevision ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : undefined);
-  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.bannerRevision ? userService.getBannerUrl(userData.id, userData.bannerRevision) : undefined);
+  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : undefined);
+  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : undefined);
 
   return (
     <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container">
-      <UserProfileContent
-        avatarSrc={avatarDisplayUrl ?? undefined}
-        bannerSrc={bannerDisplayUrl ?? undefined}
-        bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}
-        avatarClassName="border-gray-675 bg-gray-675"
-        presenceStatus={watchedValues.presence}
-        presenceStatusClassName="size-1/3 bg-gray-675 border-4 border-gray-675"
-        displayName={watchedValues.displayName || "\u003CDisplay Name\u003E"}
-        username={userData?.userName ?? "???"}
-        joinDate={userData ? new Date(userData.createdAt) : undefined}
-        pronouns={watchedValues.pronouns}
-        bio={watchedValues.bio || "\u003CBiography\u003E"}
-      />
+      {/*<UserProfileContent*/}
+      {/*  userId={}*/}
+      {/*  // avatarSrc={avatarDisplayUrl ?? undefined}*/}
+      {/*  bannerSrc={bannerDisplayUrl ?? undefined}*/}
+      {/*  bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}*/}
+      {/*  avatarClassName="border-gray-675 bg-gray-675"*/}
+      {/*  presenceStatus={watchedValues.presence}*/}
+      {/*  presenceStatusClassName="size-1/3 bg-gray-675 border-4 border-gray-675"*/}
+      {/*  displayName={watchedValues.displayName || "\u003CDisplay Name\u003E"}*/}
+      {/*  username={userData?.userName ?? "???"}*/}
+      {/*  joinDate={userData ? new Date(userData.createdAt) : undefined}*/}
+      {/*  pronouns={watchedValues.pronouns}*/}
+      {/*  bio={watchedValues.bio || "\u003CBiography\u003E"}*/}
+      {/*/>*/}
     </div>
   );
 }

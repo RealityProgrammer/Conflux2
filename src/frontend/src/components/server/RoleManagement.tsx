@@ -7,7 +7,6 @@ import {
 import {useEffect, useRef, useState, type ReactNode} from "react";
 import {BsCircleFill, BsPlusLg} from "react-icons/bs";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
-import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import PermissionStatesPill from "./PermissionStatesPill.tsx";
 import {Accordion, Separator} from "radix-ui";
@@ -28,8 +27,8 @@ import {PermissionState} from "../../api/schema.ts";
 import {useDebounceValue} from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
-import {userService} from "../../api/userService.ts";
 import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
+import {Avatar} from "../Avatar.tsx";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
@@ -540,8 +539,9 @@ function RoleDetails({
             <span>Created By</span>
 
             <div className="flex items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
-              <UserAvatar
-                src={role.creatorUser?.avatarRevision ? userService.getAvatarUrl(role.creatorUser.id, role.creatorUser.avatarRevision) : undefined}
+              <Avatar.User
+                userId={role.creatorUser!.id}
+                version={role.creatorUser?.avatar?.version}
                 className="size-5 rounded-full overflow-hidden"
               />
 

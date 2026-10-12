@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conflux.Infrastructure.Config;
 
-internal sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachment> {
-    public void Configure(EntityTypeBuilder<Attachment> builder) {
+internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaItem> {
+    public void Configure(EntityTypeBuilder<MediaItem> builder) {
         builder.HasKey(a => a.Id);
 
-        builder.Property(a => a.Name).HasMaxLength(256);
-        builder.Property(a => a.Type).HasMaxLength(24);
+        builder.Property(a => a.FileName).HasMaxLength(256);
+        builder.Property(a => a.ContentType).HasMaxLength(24);
         
         builder.HasOne(a => a.Message)
             .WithMany(m => m.Attachments)

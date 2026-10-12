@@ -224,7 +224,12 @@ export const router = createBrowserRouter([
 
                       return {
                         conversationId: summary.data.conversationId,
-                        peerProfile: summary.data.peerProfile,
+                        peerProfile: {
+                          ...summary.data.peerProfile,
+                          avatar: summary.data.peerProfile.avatarVersion ? {
+                            version: summary.data.peerProfile.avatarVersion
+                          } : null,
+                        },
                       };
                     }
                   },

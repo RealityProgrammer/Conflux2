@@ -15,7 +15,9 @@ query GetServerModerationLogs($serverId: UUID!, $after: String) {
                 user {
                     id
                     displayName
-                    avatarRevision
+                    avatar {
+                        version
+                    }
                 }
             }
             action
@@ -23,7 +25,9 @@ query GetServerModerationLogs($serverId: UUID!, $after: String) {
                 user {
                     id
                     displayName
-                    avatarRevision
+                    avatar {
+                        version
+                    }
                 }
             }
             createdAt

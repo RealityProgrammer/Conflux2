@@ -6,6 +6,6 @@ public sealed record DiscoverFriendSummary(
     Guid UserId, 
     string UserName, 
     string DisplayName, 
-    int? AvatarRevision, 
+    int? AvatarVersion, 
     UserRelationshipStatus Status
 );

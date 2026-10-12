@@ -1,13 +1,14 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {type ReactNode} from "react";
-import UserAvatar from "../UserAvatar.tsx";
 import {BsPinAngleFill} from "react-icons/bs";
+import {Avatar} from "../Avatar.tsx";
 
 type PinMessageProps = {
   id: string;
   senderDisplayName: string;
-  senderAvatarSrc: string | undefined;
+  senderId?: string;
+  senderAvatarVersion?: number;
   action: "pin" | "unpin";
 }
 
@@ -24,10 +25,11 @@ export class PinMessageItem extends TimelineItem<PinMessageProps> {
     return (
       <div className="pt-1 text-sm">
         <div className="py-1 px-4 hover-highlight flex flex-row items-center">
-          <UserAvatar
-            src={this.data.senderAvatarSrc}
+          <Avatar.User
+            userId={this.data.senderId}
+            version={this.data.senderAvatarVersion}
             alt={`Avatar of ${this.data.senderDisplayName}`}
-            className="size-8 mr-4"
+            className="size-8 mr-4 rounded-full"
           />
 
           <span className="select-none">

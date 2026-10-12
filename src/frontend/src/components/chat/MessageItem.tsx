@@ -18,7 +18,6 @@ import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaThumbtack, FaThumbtackSlash, FaTrashCan} from "react-icons/fa6";
-import {userService} from "../../api/userService.ts";
 import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
 import {MessageRow} from "./MessageRow.tsx";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
@@ -127,7 +126,7 @@ function MessageView({
       <ContextMenu.Trigger
         className={`relative w-full group block ${showHeader ? "pt-1" : ""}`}
       >
-        <div className={`hover-highlight flex flex-col ${isHighlighted ? "animate-messageHighlight" : ""}`}>
+        <div className={`hover-highlight flex flex-col pt-0.5 ${isHighlighted ? "animate-messageHighlight" : ""}`}>
           <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
             {message.replyTo && (
               <MessageRow.Reply
@@ -140,7 +139,8 @@ function MessageView({
 
             <MessageRow.Row
               header={showHeader ? {
-                avatarSrc: message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined,
+                senderId: message.sender?.id,
+                senderAvatarVersion: message.sender!.avatar?.version,
                 avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
                 senderDisplayName: message.sender?.displayName ?? "???",
               } : undefined}

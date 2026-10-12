@@ -33,24 +33,4 @@ public sealed class DirectConversationController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-
-    // [HttpGet("call")]
-    // public async Task<ActionResult<ApiResponse<UserIdentityProfileDto>>> GetCurrentRingingCall() {
-    //     var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-    //
-    //     if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-    //         return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-    //     }
-    //
-    //     var result = await sender.Send(new GetRingingCallQuery(userId));
-    //     
-    //     if (result.IsSuccess) {
-    //         return Ok(new ApiResponse<UserIdentityProfileDto>(result.Value, Error.None));
-    //     }
-    //     
-    //     return result.Error.Code switch {
-    //         nameof(Errors.ResourceNotFound) => NoContent(), // hmmmm...
-    //         _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
-    //     };
-    // }
 }

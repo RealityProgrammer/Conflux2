@@ -9,7 +9,6 @@ import {
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
-import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import {
   type InspectMemberQuery,
@@ -43,8 +42,8 @@ import ModalForm from "../ModalForm.tsx";
 import ErrorText from "../ErrorText.tsx";
 import DurationInput, {type DurationValue} from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
-import {userService} from "../../api/userService.ts";
 import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
+import {Avatar} from "../Avatar.tsx";
 
 type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
@@ -166,7 +165,8 @@ export default function MemberManagement() {
                   return (
                     <UserNameplate.Root
                       key={member.id}
-                      avatarSrc={member.user.avatarRevision ? userService.getAvatarUrl(member.user.id, member.user.avatarRevision) : undefined}
+                      userId={member.user.id}
+                      avatarVersion={member.user.avatar?.version}
                       displayName={member.user.displayName ?? "???"}
                       userName={member.user.userName ?? "???"}
                       className="p-1 hover-highlight cursor-pointer w-full"
@@ -418,8 +418,9 @@ function MemberInformationContent() {
             </h4>
 
             <div className="flex flex-row items-center gap-2">
-              <UserAvatar
-                src={inspectingMemberInfo.user.avatarRevision ? userService.getAvatarUrl(inspectingMemberInfo.user.id, inspectingMemberInfo.user.avatarRevision) : undefined}
+              <Avatar.User
+                userId={inspectingMemberInfo.user.id}
+                version={inspectingMemberInfo.user.avatar?.version}
                 className="flex-none size-10 rounded-full overflow-hidden"
               />
 

@@ -382,9 +382,10 @@ namespace Conflux.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Attachment[]>("Attachments")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
+                    // commented out on 2026-10-12 14:56pm: In favor for MediaItem entity.
+                    // b.Property<Attachment[]>("Attachments")
+                    //     .IsRequired()
+                    //     .HasColumnType("jsonb");
 
                     b.Property<string>("Body")
                         .HasMaxLength(1024)

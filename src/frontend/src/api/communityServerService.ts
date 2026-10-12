@@ -38,12 +38,9 @@ export const communityServerService = {
     }
   },
 
-  getAvatarUrl: (serverId: string, forceRefresh: boolean): string => {
+  getAvatarUrl: (serverId: string, version: number): string => {
     const queryParams: URLSearchParams = new URLSearchParams();
-
-    if (forceRefresh) {
-      queryParams.append("t", new Date().getTime().toString());
-    }
+    queryParams.append("v", String(version));
 
     return `/api/communities/${encodeURIComponent(serverId)}/avatar?${queryParams}`;
   },

@@ -1,5 +1,7 @@
-import type {ReactNode} from "react";
-import {Avatar} from "radix-ui";
+import type {CSSProperties, ReactNode} from "react";
+import {Avatar as RadixAvatar} from "radix-ui";
+import {Avatar} from "./Avatar.tsx";
+import {userService} from "../api/userService.ts";
 
 export type ImageProfile = {
   src?: string;
@@ -19,25 +21,74 @@ export function Template({
 }: TemplateProps) {
   return (
     <div className="relative w-full aspect-video mb-11">
-      <Avatar.Root className={`size-full aspect-video overflow-hidden ${banner.rootClassName ?? ""}`}>
-        <Avatar.Image
+      <RadixAvatar.Root className={`size-full aspect-video overflow-hidden ${banner.rootClassName ?? ""}`}>
+        <RadixAvatar.Image
           className="size-full object-contain"
           src={banner.src}
           alt={banner.alt}
         />
 
         {banner.fallback}
-      </Avatar.Root>
+      </RadixAvatar.Root>
       
-      <Avatar.Root className={`absolute left-2 -bottom-11 size-21 overflow-hidden rounded-full ${avatar.rootClassName ?? ""}`}>
-        <Avatar.Image
+      <RadixAvatar.Root className={`absolute left-2 -bottom-11 size-21 overflow-hidden rounded-full ${avatar.rootClassName ?? ""}`}>
+        <RadixAvatar.Image
           className="size-full object-contain"
           src={avatar.src}
           alt={avatar.alt}
         />
 
         {avatar.fallback}
-      </Avatar.Root>
+      </RadixAvatar.Root>
+    </div>
+  );
+}
+
+interface UserProps {
+  userId: string;
+  bannerClassName?: string;
+  bannerVersion?: number;
+  bannerAlt?: string;
+  bannerFallbackColor?: CSSProperties["backgroundColor"];
+  avatarClassName?: string;
+  avatarVersion?: number;
+  avatarAlt?: string;
+}
+
+function User({
+  userId,
+  bannerClassName = "",
+  bannerVersion,
+  bannerAlt,
+  bannerFallbackColor = "var(--color-violet-500)",
+  avatarClassName = "",
+  avatarVersion,
+  avatarAlt,
+}: UserProps) {
+  return (
+    <div className="relative w-full aspect-video mb-11">
+      <RadixAvatar.Root className={`size-full aspect-video overflow-hidden ${bannerClassName}`}>
+        <RadixAvatar.Image
+          className="size-full object-contain"
+          src={bannerVersion ? userService.getBannerUrl(userId, bannerVersion) : undefined}
+          alt={bannerAlt}
+        />
+
+        <RadixAvatar.Fallback 
+          className="size-full"
+          style={{
+            backgroundColor: bannerFallbackColor,
+          }}
+        >
+        </RadixAvatar.Fallback>
+      </RadixAvatar.Root>
+      
+      <Avatar.User
+        userId={userId}
+        version={avatarVersion}
+        alt={avatarAlt}
+        className={`absolute left-2 -bottom-11 size-21 overflow-hidden rounded-full ${avatarClassName}`}
+      />
     </div>
   );
 }
@@ -60,5 +111,6 @@ export function Skeleton({
 
 export const AvatarAndBanner = {
   Template,
+  User,
   Skeleton,
 }

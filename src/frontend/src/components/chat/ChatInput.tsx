@@ -249,7 +249,7 @@ function AttachmentThumbnail({file, previewUrl, onRemove, onClick}: AttachmentTh
           src={previewUrl}
           alt={file.name}
           onClick={onClick}
-          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+          className="size-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
         />
       ) : file.type.startsWith("video") ? (
         <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
@@ -262,7 +262,7 @@ function AttachmentThumbnail({file, previewUrl, onRemove, onClick}: AttachmentTh
       ) : (
         <div
           onClick={onClick}
-          className="w-full h-full flex flex-col items-center justify-center p-2 text-xs text-center text-gray-300 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
+          className="size-full flex flex-col items-center justify-center p-2 text-xs text-center text-gray-300 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
         >
           <span className="truncate w-full font-medium">{file.name}</span>
         </div>

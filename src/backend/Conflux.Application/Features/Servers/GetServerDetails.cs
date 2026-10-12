@@ -30,7 +30,7 @@ public sealed class GetServerDetailsHandler(
             .Select(s => new {
                 s.Id,
                 s.Name,
-                s.HasAvatar,
+                AvatarVersion = s.Avatar == null ? (int?)null : s.Avatar.Version,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -42,6 +42,6 @@ public sealed class GetServerDetailsHandler(
 
         var categoryStructure = await repository.GetChannelCategoryStructure(serverId, cancellationToken);
 
-        return Result<ServerDetailsDto>.Success(new(serverInfo.Id, serverInfo.Name, serverInfo.HasAvatar, categoryStructure, userAuthorizeResult.Value!));
+        return Result<ServerDetailsDto>.Success(new(serverInfo.Id, serverInfo.Name, serverInfo.AvatarVersion, categoryStructure, userAuthorizeResult.Value!));
     }
 }

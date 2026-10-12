@@ -30,27 +30,25 @@ public sealed class SessionUserController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var file = request.File;
+        await using var avatarStream = request.File.OpenReadStream();
         
-        await using var fileStream = file.OpenReadStream();
-        
-        fileStream.Position = 0;
-        var result = await mediator.Send(new UploadUserAvatarCommand(userId, fileStream));
-        
+        var result = await mediator.Send(new UpdateProfileCommand(
+            userId, 
+            default,
+            default,
+            default,
+            default,
+            new(avatarStream, true),
+            default
+        ));
+
         if (result.IsSuccess) {
-            return Ok();
+            return Ok(new ApiResponse(Error.None));
         }
-        
+
         return result.Error.Code switch {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
-            
-            nameof(Errors.ConnectionFailure) or nameof(Errors.InvalidCredentials) => 
-                StatusCode(StatusCodes.Status503ServiceUnavailable, new ApiResponse(result.Error)),
-            
-            nameof(Errors.ValidationErrorsOccurred) =>
-                BadRequest(new ApiResponse(result.Error)),
-            
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
     
@@ -150,14 +148,26 @@ public sealed class SessionUserController(
         await using var avatarStream = request.Avatar.Type == FileOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
         await using var bannerStream = request.Banner.Type == FileOperationType.Set ? request.Banner.File!.OpenReadStream() : Stream.Null;
 
-        var result = await mediator.Send(new UpdateUserProfileCommand(
+        PatchField<Stream?> avatarField = request.Avatar.Type switch {
+            FileOperationType.Delete => new(null, true),
+            FileOperationType.Set => new(avatarStream, true),
+            _ => default,
+        };
+        
+        PatchField<Stream?> bannerField = request.Banner.Type switch {
+            FileOperationType.Delete => new(null, true),
+            FileOperationType.Set => new(bannerStream, true),
+            _ => default,
+        };
+        
+        var result = await mediator.Send(new UpdateProfileCommand(
             userId, 
             request.DisplayName, 
             request.Pronouns, 
             request.Biography, 
             request.ManualPresenceStatus,
-            new(request.Avatar.Type, avatarStream),
-            new(request.Banner.Type, bannerStream)
+            avatarField,
+            bannerField
         ));
 
         if (result.IsSuccess) {

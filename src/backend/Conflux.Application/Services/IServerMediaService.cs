@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Domain;
 
 namespace Conflux.Application.Services;
@@ -8,7 +9,7 @@ public interface IServerMediaService {
     
     Task<Result> UploadBanner(Guid serverId, Stream stream, CancellationToken cancellationToken = default);
     Task<Result> DeleteBanner(Guid serverId, CancellationToken cancellationToken = default);
-    
-    Task<string> GetAvatarPreSignedUrl(Guid userId, CancellationToken cancellationToken = default);
-    Task<string> GetBannerPreSignedUrl(Guid userId, CancellationToken cancellationToken = default);
+
+    Task<AvatarMediaItemInfo?> GetAvatar(Guid serverId, CancellationToken cancellationToken = default);
+    Task<BannerMediaItemInfo?> GetBanner(Guid serverId, CancellationToken cancellationToken = default);
 }

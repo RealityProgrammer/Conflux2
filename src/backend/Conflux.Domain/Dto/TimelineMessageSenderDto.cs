@@ -7,7 +7,9 @@ namespace Conflux.Domain.Dto;
 [Facet(typeof(ApplicationUser), Include = [
     nameof(ApplicationUser.Id),
     nameof(ApplicationUser.DisplayName),
-    nameof(ApplicationUser.AvatarRevision),
+    nameof(ApplicationUser.Avatar),
+], NestedFacets = [
+    typeof(MediaItemDto),
 ], CopyDocs = false)]
 public sealed partial record TimelineMessageSenderDto {
     [Required] public Guid Id { get; set; } = Id;

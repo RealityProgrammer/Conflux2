@@ -157,13 +157,13 @@ function SuccessfulHeader({
           fallback: <div className="size-full bg-violet-500"></div>,
         }}
         avatar={{
-          src: serverDetails.hasAvatar ? communityServerService.getAvatarUrl(serverDetails.id, false) : undefined,
+          src: serverDetails.avatarVersion ? communityServerService.getAvatarUrl(serverDetails.id, serverDetails.avatarVersion) : undefined,
           alt: "Server Avatar",
           fallback: <AvatarFallback/>,
           rootClassName: "border-4 border-gray-725",
         }}
       />
-
+      
       <p className="flex-none truncate px-2">{serverDetails.name}</p>
 
       {(canCreateChannel || canAccessServerManagementDialog || canCreateInvitation) && (

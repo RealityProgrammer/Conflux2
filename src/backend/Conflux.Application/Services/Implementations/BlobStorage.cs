@@ -7,6 +7,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Collections.ObjectModel;
 using System.Net;
 
 namespace Conflux.Application.Services.Implementations;
@@ -81,21 +82,29 @@ internal sealed class StorageService(
         }
     }
 
-    public async Task<string> GetPreSignedUrl(
-        string key, 
-        TimeSpan? expires = null, 
-        BlobDownloadOptions? downloadOptions = null, 
-        CancellationToken cancellationToken = default
-    ) {
-        var request = CreatePreSignedUrlRequest(key, expires == null ? null : timeProvider.GetUtcNow().Add(expires.Value).UtcDateTime);
-        
-        if (downloadOptions is { Download: true }) {
-            string? fileName = downloadOptions.Value.FileName;
-            request.ResponseHeaderOverrides.ContentDisposition = string.IsNullOrWhiteSpace(fileName) ? "attachment" : $"attachment; filename=\"{fileName}\"";
+    public async Task<Stream?> GetStream(string key, CancellationToken cancellationToken = default) {
+        try {
+            return await s3Client.GetObjectStreamAsync(_options.BucketName, key, ReadOnlyDictionary<string, object>.Empty, cancellationToken);
+        } catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
+            return null;
         }
-        
-        return await preSigningClient.GetPreSignedURLAsync(request);
     }
+
+    // public async Task<string> GetPreSignedUrl(
+    //     string key, 
+    //     TimeSpan? expires = null, 
+    //     BlobDownloadOptions? downloadOptions = null, 
+    //     CancellationToken cancellationToken = default
+    // ) {
+    //     var request = CreatePreSignedUrlRequest(key, expires == null ? null : timeProvider.GetUtcNow().Add(expires.Value).UtcDateTime);
+    //     
+    //     if (downloadOptions is { Download: true }) {
+    //         string? fileName = downloadOptions.Value.FileName;
+    //         request.ResponseHeaderOverrides.ContentDisposition = string.IsNullOrWhiteSpace(fileName) ? "attachment" : $"attachment; filename=\"{fileName}\"";
+    //     }
+    //     
+    //     return await preSigningClient.GetPreSignedURLAsync(request);
+    // }
 
     private GetPreSignedUrlRequest CreatePreSignedUrlRequest(string key, DateTime? expires) {
         return new() {

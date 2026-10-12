@@ -9,8 +9,7 @@ import {useVirtualizer} from "@tanstack/react-virtual";
 import DateTimeText from "../DateTimeText.tsx";
 import {parse as parseDuration} from "iso8601-duration";
 import {BiInfinite} from "react-icons/bi";
-import UserAvatar from "../UserAvatar.tsx";
-import {userService} from "../../api/userService.ts";
+import {Avatar} from "../Avatar.tsx";
 
 type LogElement = NonNullable<GetServerModerationLogsQuery["serverModerationLogs"]["nodes"]>[number];
 
@@ -53,8 +52,9 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
       
       return (
         <span className="flex flex-row justify-center items-center gap-2">
-          <UserAvatar
-            src={executor.avatarRevision ? userService.getAvatarUrl(executor.id, executor.avatarRevision) : undefined}
+          <Avatar.User
+            userId={executor.id}
+            version={executor.avatar?.version}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 
@@ -84,8 +84,9 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
 
       return (
         <span className="flex flex-row justify-center items-center gap-2">
-          <UserAvatar
-            src={affected.avatarRevision ? userService.getAvatarUrl(affected.id, affected.avatarRevision) : undefined}
+          <Avatar.User
+            userId={affected.id}
+            version={affected.avatar?.version}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 

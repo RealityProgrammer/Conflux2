@@ -7,8 +7,11 @@ namespace Conflux.Domain.Entities;
 public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public bool IsUserNameLocked { get; set; }
 
-    public int? AvatarRevision { get; set; }
-    public int? BannerRevision { get; set; }
+    public Guid? AvatarId { get; set; }
+    public MediaItem? Avatar { get; set; }
+    
+    public Guid? BannerId { get; set; }
+    public MediaItem? Banner { get; set; }
     
     [MaxLength(48)] public string? DisplayName { get; set; }
     [MaxLength(255)] public string? Biography { get; set; }

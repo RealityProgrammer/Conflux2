@@ -23,21 +23,21 @@ export type GetConversationPinnedMessagesQueryVariables = Exact<{
 }>;
 
 
-export type GetConversationPinnedMessagesQuery = { pinnedMessages: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, body: string | null, createdAt: string, attachments: Array<{ id: string, name: string, type: string }>, sender: { id: string, displayName: string, avatarRevision: number | null } | null }> | null } };
+export type GetConversationPinnedMessagesQuery = { pinnedMessages: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, body: string | null, createdAt: string, attachments: Array<{ id: string, name: string, type: string }>, sender: { id: string, displayName: string, avatar: { version: number } | null } | null }> | null } };
 
 export type GetDirectConversationsQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
 
-export type GetDirectConversationsQuery = { directConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, avatarRevision: number | null, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus } | null }> | null } };
+export type GetDirectConversationsQuery = { directConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus, avatar: { version: number } | null } | null }> | null } };
 
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
 
-export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, hasAvatar: boolean }> | null } };
+export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, avatar: { version: number } | null }> | null } };
 
 export type GetServerModerationLogsQueryVariables = Exact<{
   serverId: string;
@@ -45,7 +45,7 @@ export type GetServerModerationLogsQueryVariables = Exact<{
 }>;
 
 
-export type GetServerModerationLogsQuery = { serverModerationLogs: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, action: Types.ServerModerationAction, createdAt: string, banDuration: string | null, reason: string | null, executorMember: { user: { id: string, displayName: string | null, avatarRevision: number | null } } | null, affectedMember: { user: { id: string, displayName: string | null, avatarRevision: number | null } } | null }> | null } };
+export type GetServerModerationLogsQuery = { serverModerationLogs: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, action: Types.ServerModerationAction, createdAt: string, banDuration: string | null, reason: string | null, executorMember: { user: { id: string, displayName: string | null, avatar: { version: number } | null } } | null, affectedMember: { user: { id: string, displayName: string | null, avatar: { version: number } | null } } | null }> | null } };
 
 export type GetServerRolesByServerIdQueryVariables = Exact<{
   serverId: string;
@@ -54,7 +54,7 @@ export type GetServerRolesByServerIdQueryVariables = Exact<{
 }>;
 
 
-export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, avatarRevision: number | null } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } };
+export type GetServerRolesByServerIdQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string, specialRoleType: Types.SpecialRoleType, authorizeLevel: number, createdAt: string, numMembers: number, creatorUser: { id: string, displayName: string | null, avatar: { version: number } | null } | null, permissions: Array<{ permission: Types.ServerPermission, state: Types.PermissionState }> }> | null } };
 
 export type SearchServerMemberForAdminQueryVariables = Exact<{
   serverId: string;
@@ -63,7 +63,7 @@ export type SearchServerMemberForAdminQueryVariables = Exact<{
 }>;
 
 
-export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null } }> | null } };
+export type SearchServerMemberForAdminQuery = { serverMemberSearchForAdmin: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } }> | null } };
 
 
 export class TypedDocumentString<TResult, TVariables>
@@ -170,7 +170,9 @@ export const GetConversationPinnedMessagesDocument = new TypedDocumentString(`
       sender {
         id
         displayName
-        avatarRevision
+        avatar {
+          version
+        }
       }
     }
   }
@@ -235,7 +237,9 @@ export const GetDirectConversationsDocument = new TypedDocumentString(`
       id
       peerUser {
         id
-        avatarRevision
+        avatar {
+          version
+        }
         displayName
         userName
         effectivePresenceStatus
@@ -298,7 +302,9 @@ export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     nodes {
       id
       name
-      hasAvatar
+      avatar {
+        version
+      }
     }
   }
 }
@@ -363,7 +369,9 @@ export const GetServerModerationLogsDocument = new TypedDocumentString(`
         user {
           id
           displayName
-          avatarRevision
+          avatar {
+            version
+          }
         }
       }
       action
@@ -371,7 +379,9 @@ export const GetServerModerationLogsDocument = new TypedDocumentString(`
         user {
           id
           displayName
-          avatarRevision
+          avatar {
+            version
+          }
         }
       }
       createdAt
@@ -445,7 +455,9 @@ export const GetServerRolesByServerIdDocument = new TypedDocumentString(`
       creatorUser {
         id
         displayName
-        avatarRevision
+        avatar {
+          version
+        }
       }
       permissions {
         permission
@@ -511,7 +523,9 @@ export const SearchServerMemberForAdminDocument = new TypedDocumentString(`
         id
         userName
         displayName
-        avatarRevision
+        avatar {
+          version
+        }
       }
     }
   }

@@ -35,7 +35,7 @@ export default function SelectableImageInput({
   };
 
   return (
-    <div className={`relative block w-full group overflow-hidden ${className}`}>
+    <div className={`relative block group overflow-hidden ${className}`}>
       <input
         type="file"
         ref={fileInputRef}
@@ -45,21 +45,21 @@ export default function SelectableImageInput({
       />
 
       <Avatar.Root
-        className="inline-flex items-center justify-center align-middle w-full h-full border-2 border-white/10 rounded-[inherit] overflow-hidden">
+        className="inline-flex items-center justify-center align-middle size-full border-2 border-white/10 rounded-[inherit] overflow-hidden">
         <Avatar.Image
-          className="w-full h-full object-cover rounded-[inherit]"
+          className="size-full object-cover rounded-[inherit]"
           src={displayUrl ?? undefined}
           alt="User Avatar"
         />
         <Avatar.Fallback
-          className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-700 text-2xl font-medium rounded-[inherit]"
+          className="size-full flex items-center justify-center bg-gray-100 text-gray-700 text-2xl font-medium rounded-[inherit]"
         >
           {fallback()}
         </Avatar.Fallback>
       </Avatar.Root>
 
       <div
-        className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
+        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
         onClick={handleAvatarClick}
       >
         <span className="text-white text-sm text-center font-medium px-2">

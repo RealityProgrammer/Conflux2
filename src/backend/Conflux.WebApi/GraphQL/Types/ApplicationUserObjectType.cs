@@ -17,8 +17,10 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.Id).IsProjected();
         descriptor.Field(u => u.UserName);
         descriptor.Field(u => u.DisplayName);
-        descriptor.Field(u => u.AvatarRevision);
-        descriptor.Field(u => u.BannerRevision);
+        descriptor.Field(u => u.AvatarId);
+        descriptor.Field(u => u.Avatar).Type<MediaItemObjectType>();
+        descriptor.Field(u => u.BannerId);
+        descriptor.Field(u => u.Banner).Type<MediaItemObjectType>();
         descriptor.Field(u => u.Biography);
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);

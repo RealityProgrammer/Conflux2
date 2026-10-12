@@ -13,7 +13,7 @@ public class ApplicationDbContext(
     public DbSet<FriendRequest> FriendRequests { get; set; }
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<Message> Messages { get; set; }
-    public DbSet<Attachment> Attachments { get; set; }
+    public DbSet<MediaItem> MediaItems { get; set; }
     public DbSet<Channel> Channels { get; set; }
     public DbSet<CommunityServer> CommunityServers { get; set; }
     public DbSet<CommunityServerMember> CommunityServerMembers { get; set; }
@@ -32,7 +32,7 @@ public class ApplicationDbContext(
         new ChannelConfiguration().Configure(builder.Entity<Channel>());
         new ConversationConfiguration().Configure(builder.Entity<Conversation>());
         new MessageConfiguration().Configure(builder.Entity<Message>());
-        new AttachmentConfiguration().Configure(builder.Entity<Attachment>());
+        new MediaItemConfiguration().Configure(builder.Entity<MediaItem>());
         new CommunityServerConfiguration().Configure(builder.Entity<CommunityServer>());
         new CommunityServerMemberConfiguration().Configure(builder.Entity<CommunityServerMember>());
         new InvitationConfiguration().Configure(builder.Entity<Invitation>());

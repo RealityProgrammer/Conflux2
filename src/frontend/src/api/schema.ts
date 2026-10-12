@@ -2135,12 +2135,6 @@ export interface components {
             data: components["schemas"]["UserRelationshipStatus"];
             error: components["schemas"]["Error"];
         };
-        AttachmentDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            type: string;
-        };
         ChannelCategoryDetailDto: {
             /** Format: uuid */
             id: null | string;
@@ -2198,7 +2192,7 @@ export interface components {
             userName: string;
             displayName: string;
             /** Format: int32 */
-            avatarRevision: null | number;
+            avatarVersion: null | number;
             status: components["schemas"]["UserRelationshipStatus"];
         };
         Error: {
@@ -2226,10 +2220,21 @@ export interface components {
             tokenType: string;
             accessToken: string;
         };
+        MediaItemDto: {
+            /** Format: int32 */
+            version: number;
+            contentType: string;
+        };
         MemberRoleDto: {
             /** Format: uuid */
             id: string;
             name: string;
+        };
+        MessageAttachmentDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            type: string;
         };
         MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
         MessagePropertiesCallEndProperties: {
@@ -2322,7 +2327,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
-            hasAvatar: boolean;
+            /** Format: int32 */
+            avatarVersion: null | number;
             channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
             authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
         };
@@ -2330,7 +2336,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
-            hasAvatar: boolean;
+            /** Format: int32 */
+            avatarVersion: null | number;
         };
         ServerMemberAuthorizeInfoDto: {
             /** Format: uuid */
@@ -2384,7 +2391,7 @@ export interface components {
             type: components["schemas"]["MessageType"];
             sender: null | components["schemas"]["TimelineMessageSenderDto"];
             body: null | string;
-            attachments?: components["schemas"]["AttachmentDto"][];
+            attachments?: components["schemas"]["MessageAttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
@@ -2410,8 +2417,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             displayName: null | string;
-            /** Format: int32 */
-            avatarRevision?: null | number;
+            avatar?: null | components["schemas"]["MediaItemDto"];
         };
         UserAuthorizationInfo: {
             /** Format: uuid */
@@ -2427,7 +2433,7 @@ export interface components {
             userName: null | string;
             displayName: null | string;
             /** Format: int32 */
-            avatarRevision: null | number;
+            avatarVersion: null | number;
         };
         /** @enum {string} */
         UserRelationshipStatus: UserRelationshipStatus;
@@ -2502,8 +2508,8 @@ export enum ChannelType {
     Voice = "Voice"
 }
 export enum FileOperationType {
-    NoMod = "NoMod",
     Set = "Set",
+    NoMod = "NoMod",
     Delete = "Delete"
 }
 export enum InvitationExpireAfter {

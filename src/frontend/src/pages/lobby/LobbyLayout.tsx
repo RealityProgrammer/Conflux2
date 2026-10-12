@@ -2,7 +2,6 @@ import {useAuth} from "../../contexts/AuthContext.tsx";
 import {Label, Popover, Separator, Tooltip} from "radix-ui";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {BsPeople} from "react-icons/bs";
-import UserAvatar from "../../components/UserAvatar.tsx";
 import {useDocumentTitle} from "usehooks-ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {
@@ -15,7 +14,6 @@ import {useEffect, useRef, useState} from "react";
 import {communityServerService} from "../../api/communityServerService.ts";
 import ModalForm from "../../components/ModalForm.tsx";
 import {HttpStatusCode} from "axios";
-import ServerAvatar from "../../components/ServerAvatar.tsx";
 import {Controller, useForm} from "react-hook-form";
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,9 +27,9 @@ import Spinner from "../../components/Spinner.tsx";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
 import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears, FaXmark} from "react-icons/fa6";
-import {userService} from "../../api/userService.ts";
 import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
+import {Avatar} from "../../components/Avatar.tsx";
 
 function Sidebar() {
   const auth = useAuth();
@@ -42,31 +40,18 @@ function Sidebar() {
   return (
     <aside className="flex-none flex flex-col py-1.5 w-14 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
       <div className="flex justify-center items-center">
-        <Tooltip.Root>
-          <Tooltip.Trigger className="relative" onClick={() => {
-            if (location.pathname !== "/lobby/me") {
-              navigate("/lobby/me");
-            }
-          }}>
-            <UserAvatar
-              src={auth.userProfile?.avatarRevision ? userService.getAvatarUrl(auth.userProfile.id, auth.userProfile.avatarRevision) : undefined}
-              className="flex-none size-10 cursor-pointer"
-            />
-
-            <PresenceStatusIcon
-              status={effectiveStatus}
-              className="absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-4 border-2 border-gray-750 bg-gray-750"
-            />
-          </Tooltip.Trigger>
-
-          <Tooltip.Portal>
-            <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-625 shadow-xl">
-              <p className="text-white font-semibold px-3 py-1">To your private space</p>
-
-              <Tooltip.Arrow className="fill-gray-600"/>
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
+        <div className="flex-none size-10 relative rounded-full" onClick={() => {
+          if (location.pathname !== "/lobby/me") {
+            navigate("/lobby/me");
+          }
+        }}>
+          <Avatar.User
+            userId={auth.userProfile?.id}
+            version={auth.userProfile?.avatar?.version}
+            className="size-10 cursor-pointer rounded-full"
+            presenceStatus={effectiveStatus}
+          />
+        </div>
       </div>
 
       <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
@@ -163,18 +148,18 @@ function JoinedCommunityServerScrollList() {
           <div className="size-full aspect-square flex justify-center items-center" key={virtualItem.key}>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
-                  <ServerAvatar
-                    serverId={item.id}
-                    hasAvatar={item.hasAvatar}
-                    className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
-                    onClick={() => {
-                      const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
+                <Avatar.Server
+                  serverId={item.id}
+                  version={item.avatar?.version}
+                  className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
+                  onClick={() => {
+                    const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
 
-                      if (location.pathname !== dest) {
-                        navigate(dest);
-                      }
-                    }}
-                  />
+                    if (location.pathname !== dest) {
+                      navigate(dest);
+                    }
+                  }}
+                />
               </Tooltip.Trigger>
 
               <Tooltip.Portal>

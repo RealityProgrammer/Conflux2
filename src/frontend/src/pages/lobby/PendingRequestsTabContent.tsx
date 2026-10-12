@@ -18,7 +18,6 @@ import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 import {UserRelationshipStatus} from "../../api/schema.ts";
-import {userService} from "../../api/userService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -200,7 +199,8 @@ function Row({element, removeCacheElement}: RowProps) {
 
   return (
     <UserNameplate.Root
-      avatarSrc={element.avatarRevision ? userService.getAvatarUrl(element.userId, element.avatarRevision) : undefined}
+      userId={element.userId}
+      avatarVersion={element.avatarRevision ?? undefined}
       userName={element.userName}
       displayName={element.displayName}
       className="w-full p-1.5"

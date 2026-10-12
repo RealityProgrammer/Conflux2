@@ -3,7 +3,6 @@ import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import MessageAttachments from "./MessageAttachments.tsx";
-import {userService} from "../../api/userService.ts";
 import {MessageRow} from "./MessageRow.tsx";
 
 export type MessageEditorItemProps = {
@@ -93,7 +92,8 @@ function MessageEditorView({
       <MessageRow.Row
         header={showHeader ? {
           senderDisplayName: message.sender!.displayName ?? "???",
-          avatarSrc: message.sender!.avatarRevision ? userService.getAvatarUrl(message.sender!.id, message.sender!.avatarRevision) : undefined,
+          senderId: message.sender?.id,
+          senderAvatarVersion: message.sender!.avatar?.version,
           avatarAlt: `Avatar of ${message.sender!.displayName ?? "???"}`,
         } : undefined}
         date={new Date(message.createdAt)}

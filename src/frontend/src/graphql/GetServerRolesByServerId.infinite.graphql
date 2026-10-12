@@ -21,7 +21,9 @@ query GetServerRolesByServerId($serverId: UUID!, $nameFilter: String, $after: St
             creatorUser {
                 id
                 displayName
-                avatarRevision
+                avatar {
+                    version
+                }
             }
             permissions {
                 permission

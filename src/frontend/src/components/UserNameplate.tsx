@@ -1,11 +1,12 @@
-import UserAvatar from "./UserAvatar.tsx";
 import {type HTMLAttributes, type ReactNode} from "react";
 import {random} from "animejs";
 import type {PresenceStatus} from "../graphql/types.ts";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
+import {Avatar} from "./Avatar.tsx";
 
 interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
-  avatarSrc?: string;
+  userId: string;
+  avatarVersion?: number;
   avatarAlt?: string;
   displayName: string;
   userName?: string;
@@ -15,7 +16,8 @@ interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 function Root({
-  avatarSrc,
+  userId,
+  avatarVersion,
   avatarAlt,
   userName,
   displayName,
@@ -27,20 +29,13 @@ function Root({
 }: UserNameplateProps) {
   return (
     <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
-      <div className="relative">
-        <UserAvatar
-          src={avatarSrc}
-          alt={avatarAlt}
-          className="flex-none size-8 cursor-pointer"
-        />
-
-        {presenceStatus && (
-          <PresenceStatusIcon
-            status={presenceStatus}
-            className={`absolute bottom-0 right-0 translate-x-[10%] translate-y-[10%] rounded-full size-3 ${presenceStatusClassName}`}
-          />
-        )}
-      </div>
+      <Avatar.User
+        userId={userId}
+        version={avatarVersion}
+        alt={avatarAlt}
+        className="flex-none size-8 cursor-pointer rounded-full"
+        presenceStatus={presenceStatus}
+      />
 
       <div className="flex-1 flex flex-col min-w-0 select-none">
         <p className="text-sm truncate">

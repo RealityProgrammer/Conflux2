@@ -224,8 +224,10 @@ type ApplicationUser {
   id: UUID!
   userName: String
   displayName: String
-  avatarRevision: Int
-  bannerRevision: Int
+  avatarId: UUID
+  avatar: MediaItem
+  bannerId: UUID
+  banner: MediaItem
   biography: String
   pronouns: String
   createdAt: DateTime!
@@ -233,12 +235,6 @@ type ApplicationUser {
   manualPresenceStatus: PresenceStatus @cost(weight: "10")
   effectivePresenceStatus: PresenceStatus! @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
-}
-
-type AttachmentDto {
-  id: UUID!
-  name: String!
-  type: String!
 }
 
 type BanCommunityServerMemberPayload {
@@ -268,7 +264,10 @@ type CommunityServer {
   id: UUID!
   name: String!
   description: String
-  hasAvatar: Boolean!
+  avatarId: UUID
+  avatar: MediaItem
+  bannerId: UUID
+  banner: MediaItem
   createdAt: DateTime!
   creatorUserId: UUID!
   creatorUser: ApplicationUser
@@ -440,10 +439,28 @@ type LeaveCommunityServerPayload {
   serverId: UUID!
 }
 
+type MediaItem {
+  id: UUID!
+  version: Int!
+  fileName: String
+  contentType: String!
+}
+
+type MediaItemDto {
+  version: Int!
+  contentType: String!
+}
+
 type MemberAuthorizeInfo {
   authorizeLevel: Int!
   permissions: [ServerPermission!]!
   isBanned: Boolean!
+}
+
+type MessageAttachmentDto {
+  id: UUID!
+  name: String!
+  type: String!
 }
 
 "A cursor that points to a specific page."
@@ -473,7 +490,7 @@ type PageInfo {
 type PinnedMessageDto {
   id: UUID!
   body: String
-  attachments: [AttachmentDto!]!
+  attachments: [MessageAttachmentDto!]!
   senderUserId: UUID!
   sender: TimelineMessageSenderDto
   createdAt: DateTime!
@@ -541,7 +558,7 @@ type ServerModerationLogEdge {
 type TimelineMessageSenderDto {
   id: UUID!
   displayName: String!
-  avatarRevision: Int
+  avatar: MediaItemDto
 }
 
 type UnbanCommunityServerMemberPayload {
@@ -565,8 +582,10 @@ input ApplicationUserFilterInput {
   and: [ApplicationUserFilterInput!]
   or: [ApplicationUserFilterInput!]
   isUserNameLocked: BooleanOperationFilterInput
-  avatarRevision: IntOperationFilterInput
-  bannerRevision: IntOperationFilterInput
+  avatarId: UuidOperationFilterInput
+  avatar: MediaItemFilterInput
+  bannerId: UuidOperationFilterInput
+  banner: MediaItemFilterInput
   displayName: StringOperationFilterInput
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
@@ -596,8 +615,10 @@ input ApplicationUserFilterInput {
 
 input ApplicationUserSortInput {
   isUserNameLocked: SortEnumType @cost(weight: "10")
-  avatarRevision: SortEnumType @cost(weight: "10")
-  bannerRevision: SortEnumType @cost(weight: "10")
+  avatarId: SortEnumType @cost(weight: "10")
+  avatar: MediaItemSortInput @cost(weight: "10")
+  bannerId: SortEnumType @cost(weight: "10")
+  banner: MediaItemSortInput @cost(weight: "10")
   displayName: SortEnumType @cost(weight: "10")
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")
@@ -619,16 +640,6 @@ input ApplicationUserSortInput {
   lockoutEnd: SortEnumType @cost(weight: "10")
   lockoutEnabled: SortEnumType @cost(weight: "10")
   accessFailedCount: SortEnumType @cost(weight: "10")
-}
-
-input AttachmentFilterInput {
-  and: [AttachmentFilterInput!]
-  or: [AttachmentFilterInput!]
-  id: UuidOperationFilterInput
-  name: StringOperationFilterInput
-  type: StringOperationFilterInput
-  messageId: UuidOperationFilterInput
-  message: MessageFilterInput
 }
 
 input BanCommunityServerMemberInput {
@@ -703,11 +714,14 @@ input CommunityServerFilterInput {
   id: UuidOperationFilterInput
   name: StringOperationFilterInput
   description: StringOperationFilterInput
-  hasAvatar: BooleanOperationFilterInput
   creatorUserId: UuidOperationFilterInput
   creatorUser: ApplicationUserFilterInput
   ownerUserId: UuidOperationFilterInput
   ownerUser: ApplicationUserFilterInput
+  avatarId: UuidOperationFilterInput
+  avatar: MediaItemFilterInput
+  bannerId: UuidOperationFilterInput
+  banner: MediaItemFilterInput
   createdAt: DateTimeOperationFilterInput
   channelCategories: ListFilterInputTypeOfChannelCategoryFilterInput
   channels: ListFilterInputTypeOfChannelFilterInput
@@ -773,11 +787,14 @@ input CommunityServerSortInput {
   id: SortEnumType @cost(weight: "10")
   name: SortEnumType @cost(weight: "10")
   description: SortEnumType @cost(weight: "10")
-  hasAvatar: SortEnumType @cost(weight: "10")
   creatorUserId: SortEnumType @cost(weight: "10")
   creatorUser: ApplicationUserSortInput @cost(weight: "10")
   ownerUserId: SortEnumType @cost(weight: "10")
   ownerUser: ApplicationUserSortInput @cost(weight: "10")
+  avatarId: SortEnumType @cost(weight: "10")
+  avatar: MediaItemSortInput @cost(weight: "10")
+  bannerId: SortEnumType @cost(weight: "10")
+  banner: MediaItemSortInput @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
 }
 
@@ -921,13 +938,6 @@ input LeaveCommunityServerInput {
   serverId: UUID!
 }
 
-input ListFilterInputTypeOfAttachmentFilterInput {
-  all: AttachmentFilterInput @cost(weight: "10")
-  none: AttachmentFilterInput @cost(weight: "10")
-  some: AttachmentFilterInput @cost(weight: "10")
-  any: Boolean @cost(weight: "10")
-}
-
 input ListFilterInputTypeOfChannelCategoryFilterInput {
   all: ChannelCategoryFilterInput @cost(weight: "10")
   none: ChannelCategoryFilterInput @cost(weight: "10")
@@ -984,6 +994,13 @@ input ListFilterInputTypeOfInvitationFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
+input ListFilterInputTypeOfMediaItemFilterInput {
+  all: MediaItemFilterInput @cost(weight: "10")
+  none: MediaItemFilterInput @cost(weight: "10")
+  some: MediaItemFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
 input ListFilterInputTypeOfMessageFilterInput {
   all: MessageFilterInput @cost(weight: "10")
   none: MessageFilterInput @cost(weight: "10")
@@ -1005,6 +1022,40 @@ input ListFilterInputTypeOfServerModerationLogFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
+input MediaItemDtoSortInput {
+  version: SortEnumType @cost(weight: "10")
+  contentType: SortEnumType @cost(weight: "10")
+}
+
+input MediaItemFilterInput {
+  and: [MediaItemFilterInput!]
+  or: [MediaItemFilterInput!]
+  id: UuidOperationFilterInput
+  type: MediaItemTypeOperationFilterInput
+  contentType: StringOperationFilterInput
+  fileName: StringOperationFilterInput
+  version: IntOperationFilterInput
+  messageId: UuidOperationFilterInput
+  message: MessageFilterInput
+}
+
+input MediaItemSortInput {
+  id: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  contentType: SortEnumType @cost(weight: "10")
+  fileName: SortEnumType @cost(weight: "10")
+  version: SortEnumType @cost(weight: "10")
+  messageId: SortEnumType @cost(weight: "10")
+  message: MessageSortInput @cost(weight: "10")
+}
+
+input MediaItemTypeOperationFilterInput {
+  eq: MediaItemType @cost(weight: "10")
+  neq: MediaItemType @cost(weight: "10")
+  in: [MediaItemType!] @cost(weight: "10")
+  nin: [MediaItemType!] @cost(weight: "10")
+}
+
 input MembershipStatusOperationFilterInput {
   eq: MembershipStatus @cost(weight: "10")
   neq: MembershipStatus @cost(weight: "10")
@@ -1018,7 +1069,7 @@ input MessageFilterInput {
   id: UuidOperationFilterInput
   type: MessageTypeOperationFilterInput
   body: StringOperationFilterInput
-  attachments: ListFilterInputTypeOfAttachmentFilterInput
+  attachments: ListFilterInputTypeOfMediaItemFilterInput
   properties: MessagePropertiesFilterInput
   senderUserId: UuidOperationFilterInput
   sender: ApplicationUserFilterInput
@@ -1036,6 +1087,22 @@ input MessageFilterInput {
 input MessagePropertiesFilterInput {
   and: [MessagePropertiesFilterInput!]
   or: [MessagePropertiesFilterInput!]
+}
+
+input MessageSortInput {
+  id: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  body: SortEnumType @cost(weight: "10")
+  senderUserId: SortEnumType @cost(weight: "10")
+  sender: ApplicationUserSortInput @cost(weight: "10")
+  conversationId: SortEnumType @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  updatedAt: SortEnumType @cost(weight: "10")
+  deletedAt: SortEnumType @cost(weight: "10")
+  replyToId: SortEnumType @cost(weight: "10")
+  replyTo: MessageSortInput @cost(weight: "10")
+  pinnedAt: SortEnumType @cost(weight: "10")
 }
 
 input MessageTypeOperationFilterInput {
@@ -1148,7 +1215,7 @@ input StringOperationFilterInput {
 input TimelineMessageSenderDtoSortInput {
   id: SortEnumType @cost(weight: "10")
   displayName: SortEnumType @cost(weight: "10")
-  avatarRevision: SortEnumType @cost(weight: "10")
+  avatar: MediaItemDtoSortInput @cost(weight: "10")
 }
 
 input UnbanCommunityServerMemberInput {
@@ -1235,6 +1302,14 @@ enum InvitationStatus {
   Expired
   MaxUsesReached
   AlreadyJoinedServer
+}
+
+enum MediaItemType {
+  UserAvatar
+  UserBanner
+  ServerAvatar
+  ServerBanner
+  MessageAttachment
 }
 
 enum MembershipStatus {

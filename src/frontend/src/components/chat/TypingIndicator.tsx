@@ -1,7 +1,6 @@
 import type {TypingUser} from "../../hooks/useTypingIndicator.ts";
-import UserAvatar from "../UserAvatar.tsx";
 import {useEffect, useState} from "react";
-import {userService} from "../../api/userService.ts";
+import {Avatar} from "../Avatar.tsx";
 
 interface TypingIndicatorProps {
   displayUsers: TypingUser[];
@@ -50,9 +49,10 @@ export default function TypingIndicator({
       <section className="flex items-center gap-3 px-4 py-0.5 border-t border-t-gray-600 bg-gray-650 text-sm text-gray-400">
         <div className="flex -space-x-3">
           {renderedUsers.map((user) => (
-            <UserAvatar
+            <Avatar.User
               key={user.id}
-              src={user.avatarRevision ? userService.getAvatarUrl(user.id, user.avatarRevision) : undefined}
+              userId={user.id}
+              version={user.avatarVersion ?? undefined}
               className="size-7 rounded-full overflow-hidden ring-2 ring-gray-650"
             />
           ))}

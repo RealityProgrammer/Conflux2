@@ -15,12 +15,12 @@ namespace Conflux.Domain.Dto;
     nameof(Message.PinnedAt),
 ], NestedFacets = [
     typeof(TimelineMessageSenderDto),
-    typeof(AttachmentDto),
+    typeof(MessageAttachmentDto),
 ])]
 public sealed partial record PinnedMessageDto {
     [Required] public Guid Id { get; set; } = Id;
     public string? Body { get; set; } = Body;
-    [Required] public ICollection<AttachmentDto> Attachments { get; set; } = Attachments;
+    [Required] public ICollection<MessageAttachmentDto> Attachments { get; set; } = Attachments;
     [Required] public Guid? SenderUserId { get; set; } = SenderUserId;
     public TimelineMessageSenderDto? Sender { get; set; } = Sender;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;

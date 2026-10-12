@@ -3,7 +3,7 @@ import type { UserIdentityProfileDto } from "../api/types.ts";
 
 type BaseCall = {
   id: string;
-  state: "dialing" | "canceled" | "active" | "dropped" | "ended";
+  state: "dialing" | "canceled" | "active" | "rejected" | "dropped" | "ended";
 }
 
 export type OutgoingDirectCall = BaseCall & {

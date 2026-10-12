@@ -9,7 +9,6 @@ import type {
 } from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
-import {userService} from "../../api/userService.ts";
 import {
   type GetDirectConversationsQuery,
   useInfiniteGetDirectConversationsQuery
@@ -188,7 +187,8 @@ function DirectMessagesList() {
 
         return (
           <UserNameplate.Root
-            avatarSrc={item.peerUser?.avatarRevision ? userService.getAvatarUrl(item.peerUser.id, item.peerUser.avatarRevision) : undefined}
+            userId={item.peerUser!.id}
+            avatarVersion={item.peerUser?.avatar?.version}
             displayName={item.peerUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             presenceStatus={item.peerUser?.effectivePresenceStatus}

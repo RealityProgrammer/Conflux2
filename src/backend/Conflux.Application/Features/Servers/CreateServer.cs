@@ -29,7 +29,6 @@ public sealed class CreateServerHandler(
         CommunityServer server = new() {
             Name = request.Name,
             Description = null,
-            HasAvatar = false,
             CreatorUserId = request.CreatorUserId,
             OwnerUserId = request.CreatorUserId,
             Members = [],
