@@ -27,7 +27,6 @@ import Spinner from "../../components/Spinner.tsx";
 import {usePresence} from "../../contexts/PresenceContext.tsx";
 import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears, FaXmark} from "react-icons/fa6";
-import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {Avatar} from "../../components/Avatar.tsx";
 
@@ -49,7 +48,7 @@ function Sidebar() {
             userId={auth.userProfile?.id}
             version={auth.userProfile?.avatar?.version}
             className="size-10 cursor-pointer rounded-full"
-            presenceStatus={effectiveStatus}
+            presence={{status: effectiveStatus, className: "size-4"}}
           />
         </div>
       </div>

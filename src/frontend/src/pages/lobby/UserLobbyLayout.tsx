@@ -191,8 +191,10 @@ function DirectMessagesList() {
             avatarVersion={item.peerUser?.avatar?.version}
             displayName={item.peerUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
-            presenceStatus={item.peerUser?.effectivePresenceStatus}
-            presenceStatusClassName="size-3 ring-2 ring-gray-725 bg-gray-725"
+            presence={item.peerUser?.effectivePresenceStatus ? {
+              status: item.peerUser.effectivePresenceStatus,
+              className: "size-4 border-2 border-gray-725 bg-gray-725",
+            } : undefined}
             onClick={() => {
               const otherUserId = item.peerUser?.id;
               if (!otherUserId) return;

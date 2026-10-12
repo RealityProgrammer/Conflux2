@@ -45,6 +45,13 @@ export const communityServerService = {
     return `/api/communities/${encodeURIComponent(serverId)}/avatar?${queryParams}`;
   },
 
+  getBannerUrl: (serverId: string, version: number): string => {
+    const queryParams: URLSearchParams = new URLSearchParams();
+    queryParams.append("v", String(version));
+
+    return `/api/communities/${encodeURIComponent(serverId)}/banner?${queryParams}`;
+  },
+
   getDetails: async (serverId: string): Promise<ServiceResponse<ServerDetailsDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<ServerDetailsDto>> =

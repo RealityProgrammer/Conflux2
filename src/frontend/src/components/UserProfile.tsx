@@ -1,5 +1,4 @@
-import {type ReactNode, useRef, useEffect} from "react";
-import {TruncatedText} from "./TruncatedText.tsx";
+import {type ReactNode} from "react";
 
 interface NamesProps {
   displayName: string;
@@ -83,7 +82,7 @@ function Bio({children, displayName}: BioProps) {
   const randomTitle = HUMOROUS_TITLES[Math.floor(Math.random() * HUMOROUS_TITLES.length)]
   
   return (
-    <div className="flex flex-col gap-2 p-3 bg-white/5 border border-white/10 rounded-lg backdrop-blur-sm transition-all hover:bg-white/[0.07]">
+    <div className="flex flex-col gap-2 p-3 bg-white/5 border border-white/10 rounded-lg hover-highlight">
       <blockquote className="relative pl-3 border-l-2 border-violet-500 text-sm text-gray-200 italic leading-relaxed">
         {children}
       </blockquote>

@@ -2,7 +2,6 @@ import {AvatarAndBanner} from "../AvatarAndBanner.tsx";
 import {
   BsChatText,
   BsExclamationCircle,
-  BsExclamationTriangle,
   BsFolder,
   BsFolderX,
   BsGearFill,
@@ -58,20 +57,7 @@ export default function SidebarContent() {
         </>
       ) : isError || !serverDetails ? (
         <>
-          <AvatarAndBanner.Template
-            banner={{fallback: (
-              <div
-                className="bg-red-300 size-full flex flex-row justify-center items-center"
-              >
-                <BsExclamationTriangle className="size-8 fill-red-500 animate-pulse"/>
-              </div>
-            )}}
-            avatar={{fallback: (
-              <div className="bg-red-300 border-4 border-gray-725 size-full overflow-hidden rounded-full flex flex-col gap-1 justify-center items-center">
-                <BsExclamationTriangle className="size-12 fill-red-500 animate-pulse"/>
-              </div>
-            )}}
-          />
+          <AvatarAndBanner.Error/>
 
           <div className="flex flex-row gap-2 items-center justify-start px-2">
             <p className="flex-none truncate">Unknown Land</p>

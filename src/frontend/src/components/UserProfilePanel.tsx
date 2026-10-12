@@ -1,5 +1,4 @@
 import {type HTMLAttributes} from "react";
-import UserProfileContent from "./UserProfileContent.tsx";
 import Spinner from "./Spinner.tsx";
 import {BsExclamationTriangle} from "react-icons/bs";
 import {useGetUserFullProfileQuery} from "../graphql/queries.ts";
@@ -38,8 +37,7 @@ export default function UserProfilePanel({
             bannerAlt={`Banner of ${data.user.displayName ?? "???"}`}
             bannerVersion={data.user.banner?.version}
             bannerFallbackColor={`hsl(${Math.abs(hash(data.user.id)) % 360}, 60%, 40%)`}
-            // presenceStatus={presenceStatus}
-            // presenceStatusClassName={presenceStatusClassName}
+            presence={{status: data.user.effectivePresenceStatus, className: "size-8 border-4!"}}
             avatarClassName={avatarClassName}
           />
           
@@ -66,19 +64,11 @@ export default function UserProfilePanel({
               />
             </UserProfile.FieldContainer>
 
-            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
-
-            <span className="group-label">About me</span>
-
-            <UserProfile.Bio displayName={data.user.displayName ?? "???"}>
-              Such is life
-            </UserProfile.Bio>
-
             {data.user.biography && (
               <>
                 <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
     
-                <span className="group-label">About me</span>
+                <span className="group-label mb-1">About me</span>
     
                 <UserProfile.Bio displayName={data.user.displayName ?? "???"}>
                   {data.user.biography}
@@ -87,24 +77,6 @@ export default function UserProfilePanel({
             )}
           </div>
         </>
-        // <UserProfileContent
-        //   userId={data.user.id}
-        //   username={data.user.userName ?? "???"}
-        //   displayName={data.user.displayName ?? "???"}
-        //   avatarVersion={data.user.avatar?.version}
-        //   avatarAlt={`${data.user.displayName}'s avatar`}
-        //   bannerVersion={data.user.banner?.version}
-        //   bannerAlt={`${data.user.displayName}'s banner`}
-        //   bannerFallbackColor={`hsl(${Math.abs(hash(data.user.id)) % 360}, 60%, 40%)`}
-        //   avatarClassName={avatarClassName}
-        //   joinDate={new Date(data.user.createdAt)}
-        //   friendedDate={new Date()}
-        //   pronouns={data.user.pronouns ?? undefined}
-        //   bio={data.user.biography ?? undefined}
-        //   mutualFriendsCount={data.user.numMutualFriends}
-        //   presenceStatus={data.user.effectivePresenceStatus}
-        //   presenceStatusClassName="size-1/4 ring-4 ring-gray-725 bg-gray-725"
-        // />
       ) : (
         <div className="size-full flex flex-col justify-center items-center">
           <BsExclamationTriangle className="fill-white size-12"/>

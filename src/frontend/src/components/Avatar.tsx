@@ -6,12 +6,17 @@ import type {RefObject} from "react";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 import type {PresenceStatus} from "../api/schema.ts";
 
+export interface PresenceProps {
+  status: PresenceStatus;
+  className?: string;
+}
+
 interface UserAvatarProps extends RadixAvatar.AvatarProps {
   userId?: string;
   version?: number;
   alt?: string;
   ref?: RefObject<HTMLDivElement | null>;
-  presenceStatus?: PresenceStatus;
+  presence?: PresenceProps;
 }
 
 function User({
@@ -20,7 +25,7 @@ function User({
   version,
   alt,
   className,
-  presenceStatus,
+  presence,
   ...props
 }: UserAvatarProps) {
   return (
@@ -41,10 +46,10 @@ function User({
         </RadixAvatar.Root>
       </div>
 
-      {presenceStatus && (
+      {presence && (
         <PresenceStatusIcon
-          status={presenceStatus}
-          className="absolute bottom-0 right-0 translate-x-[20%] translate-y-[20%] rounded-full size-4 border-2 border-gray-750 bg-gray-750"
+          status={presence.status}
+          className={`absolute bottom-0 right-0 translate-x-[20%] translate-y-[20%] rounded-full border-2 border-gray-750 bg-gray-750 ${presence.className ?? ""}`}
         />
       )}
     </div>
