@@ -7,6 +7,8 @@ import {hash} from "../utils/hashing.ts";
 import {AvatarAndBanner} from "./AvatarAndBanner.tsx";
 import {UserProfile} from "./UserProfile.tsx";
 import {Separator} from "radix-ui";
+import DateTimeText from "./DateTimeText.tsx";
+import {TruncatedText} from "./TruncatedText.tsx";
 
 export interface UserProfileCardProps extends HTMLAttributes<HTMLDivElement> {
   userId: string;
@@ -41,21 +43,48 @@ export default function UserProfilePanel({
             avatarClassName={avatarClassName}
           />
           
-          <div className="px-2">
+          <div className="px-2 space-y-2">
             <UserProfile.Names displayName={data.user.displayName ?? "???"} userName={data.user.userName ?? "???"}/>
             
             <UserProfile.FieldContainer>
-              <UserProfile.Field label="Field 1" value="Value 1"/>
-              <UserProfile.Field label="Field 2" value="Value 2"/>
-              <UserProfile.Field label="Field 3" value="Value 3"/>
-              <UserProfile.Field label="Field 4" value="Value 4"/>
+              <UserProfile.Field 
+                label="Join Date" 
+                value={<DateTimeText value={new Date(data.user.createdAt)}/>}
+              />
+              
+              {data.user.pronouns && (
+                <UserProfile.Field label="Pronouns" value={(
+                  <TruncatedText>{data.user.pronouns}</TruncatedText>
+                )}/>
+              )}
+              
+              <UserProfile.Field 
+                label="Mutual Friend Count" 
+                value={(
+                  <span>{data.user.numMutualFriends}</span>
+                )}
+              />
             </UserProfile.FieldContainer>
 
             <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
 
             <span className="group-label">About me</span>
 
-            <p className="text-[13px] text-gray-50">Insert bio here</p>
+            <UserProfile.Bio displayName={data.user.displayName ?? "???"}>
+              Such is life
+            </UserProfile.Bio>
+
+            {data.user.biography && (
+              <>
+                <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+    
+                <span className="group-label">About me</span>
+    
+                <UserProfile.Bio displayName={data.user.displayName ?? "???"}>
+                  {data.user.biography}
+                </UserProfile.Bio>
+              </>
+            )}
           </div>
         </>
         // <UserProfileContent

@@ -67,7 +67,7 @@ function User({
 }: UserProps) {
   return (
     <div className="relative w-full aspect-video mb-11">
-      <RadixAvatar.Root className={`size-full aspect-video overflow-hidden ${bannerClassName}`}>
+      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${bannerClassName}`}>
         <RadixAvatar.Image
           className="size-full object-contain"
           src={bannerVersion ? userService.getBannerUrl(userId, bannerVersion) : undefined}
@@ -75,7 +75,7 @@ function User({
         />
 
         <RadixAvatar.Fallback 
-          className="size-full"
+          className="block size-full"
           style={{
             backgroundColor: bannerFallbackColor,
           }}
@@ -83,12 +83,14 @@ function User({
         </RadixAvatar.Fallback>
       </RadixAvatar.Root>
       
-      <Avatar.User
-        userId={userId}
-        version={avatarVersion}
-        alt={avatarAlt}
-        className={`absolute left-2 -bottom-11 size-21 overflow-hidden rounded-full ${avatarClassName}`}
-      />
+      <div className="absolute left-2 -bottom-11">
+        <Avatar.User
+          userId={userId}
+          version={avatarVersion}
+          alt={avatarAlt}
+          className={`size-21 overflow-hidden rounded-full ${avatarClassName}`}
+        />
+      </div>
     </div>
   );
 }
