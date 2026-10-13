@@ -14,8 +14,6 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class StorageService(
     IAmazonS3 s3Client,
-    [FromKeyedServices("PreSigningClient")] IAmazonS3 preSigningClient,
-    TimeProvider timeProvider,
     ILogger<StorageService> logger,
     IOptions<StorageServiceOptions> options
 ) : IBlobStorage {
@@ -88,30 +86,5 @@ internal sealed class StorageService(
         } catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
             return null;
         }
-    }
-
-    // public async Task<string> GetPreSignedUrl(
-    //     string key, 
-    //     TimeSpan? expires = null, 
-    //     BlobDownloadOptions? downloadOptions = null, 
-    //     CancellationToken cancellationToken = default
-    // ) {
-    //     var request = CreatePreSignedUrlRequest(key, expires == null ? null : timeProvider.GetUtcNow().Add(expires.Value).UtcDateTime);
-    //     
-    //     if (downloadOptions is { Download: true }) {
-    //         string? fileName = downloadOptions.Value.FileName;
-    //         request.ResponseHeaderOverrides.ContentDisposition = string.IsNullOrWhiteSpace(fileName) ? "attachment" : $"attachment; filename=\"{fileName}\"";
-    //     }
-    //     
-    //     return await preSigningClient.GetPreSignedURLAsync(request);
-    // }
-
-    private GetPreSignedUrlRequest CreatePreSignedUrlRequest(string key, DateTime? expires) {
-        return new() {
-            BucketName = _options.BucketName,
-            Key = key,
-            Expires = expires,
-            Protocol = _options.UseHttps ? Protocol.HTTPS : Protocol.HTTP,
-        };
     }
 }

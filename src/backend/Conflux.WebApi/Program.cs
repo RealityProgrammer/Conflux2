@@ -317,21 +317,10 @@ var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOption
 
 builder.Services.AddSingleton<IAmazonS3>(_ => {
     var config = new AmazonS3Config {
-        ServiceURL = s3Settings.ServiceUrl,
+        ServiceURL = builder.Configuration.GetConnectionString("S3"),
         ForcePathStyle = true,
         AuthenticationRegion = s3Settings.Region,
         UseHttp = s3Settings.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-    };
-    
-    return new AmazonS3Client(s3Settings.AccessKey, s3Settings.SecretKey, config);
-});
-
-builder.Services.AddKeyedSingleton<IAmazonS3>("PreSigningClient", (_, _) => {
-    var config = new AmazonS3Config {
-        ServiceURL = s3Settings.PreSignUrl,
-        ForcePathStyle = true,
-        AuthenticationRegion = s3Settings.Region,
-        UseHttp = s3Settings.PreSignUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
     };
     
     return new AmazonS3Client(s3Settings.AccessKey, s3Settings.SecretKey, config);
@@ -377,7 +366,7 @@ builder.Services.AddOpenApi(options => {
             schema.Type &= ~JsonSchemaType.String;
         }
         
-        var targetType = context.JsonTypeInfo?.Type ?? context.ParameterDescription?.Type;
+        var targetType = context.JsonTypeInfo.Type ?? context.ParameterDescription?.Type;
         
         if (targetType == null) {
             return Task.CompletedTask;
