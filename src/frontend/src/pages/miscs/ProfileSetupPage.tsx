@@ -182,8 +182,8 @@ const setNamesSchema = z.object({
     .max(32, { error: "User name must be between 8 and 32 characters." }),
 
   displayName: z.string()
-    .min(8, { error: "Display name must be between 8 and 32 characters." })
-    .max(32, { error: "Display name must be between 8 and 32 characters." }),
+    .min(8, { error: "Display name must be between 8 and 48 characters." })
+    .max(48, { error: "Display name must be between 8 and 48 characters." }),
 });
 
 type SetNamesFormValues = z.infer<typeof setNamesSchema>;

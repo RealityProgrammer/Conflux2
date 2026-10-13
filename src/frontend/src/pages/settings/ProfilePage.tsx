@@ -42,7 +42,7 @@ export default function ProfilePage() {
 const profileSchema = z.object({
   displayName: z.string()
     .min(1, { error: "Display name is required." })
-    .max(32, "Display name can only have maximum length of 32 characters."),
+    .max(48, "Display name can only have maximum length of 48 characters."),
 
   pronouns: z.string()
     .max(32, "Pronouns can only have maximum length of 32 characters.")
