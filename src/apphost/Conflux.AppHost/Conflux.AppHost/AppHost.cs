@@ -20,9 +20,9 @@ var s3BucketName = builder.AddParameter("S3-Bucket-Name", true);
 
 var mailServerHost = builder.AddParameter("Mail-Server-Host");
 var mailServerPort = builder.AddParameter("Mail-Server-Port");
-var mailSenderName = builder.AddParameter("Mail-Sender-Name");
-var mailSenderEmail = builder.AddParameter("Mail-Sender-Email");
-var mailPassword = builder.AddParameter("Mail-Password");
+var mailSenderName = builder.AddParameter("Mail-Sender-Name", secret: true);
+var mailSenderEmail = builder.AddParameter("Mail-Sender-Email", secret: true);
+var mailPassword = builder.AddParameter("Mail-Password", secret: true);
 
 builder.AddDockerComposeEnvironment("compose")
     .WithDashboard(builder.Environment.IsDevelopment());
