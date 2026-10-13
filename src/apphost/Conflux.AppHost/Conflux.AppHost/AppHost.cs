@@ -7,11 +7,11 @@ var jwtIssuer = builder.AddParameter("JWT-Issuer");
 var jwtAudience = builder.AddParameter("JWT-Audience");
 
 var frontendOrigin = builder.AddParameter("Frontend-Origin");
-var accessTokenDuration = builder.AddParameter("Access-Token-Duration");
-var refreshTokenDuration = builder.AddParameter("Refresh-Token-Duration");
-var maxAvatarSize = builder.AddParameter("Max-Avatar-Size");
-var maxBannerSize = builder.AddParameter("Max-Banner-Size");
-var maxMessageAttachmentSize = builder.AddParameter("Max-Message-Attachment-Size");
+var accessTokenDuration = builder.AddParameter("Auth-Access-Token-Duration");
+var refreshTokenDuration = builder.AddParameter("Auth-Refresh-Token-Duration");
+var maxAvatarSize = builder.AddParameter("Media-Max-Avatar-Size");
+var maxBannerSize = builder.AddParameter("Media-Max-Banner-Size");
+var maxMessageAttachmentSize = builder.AddParameter("Media-Max-Message-Attachment-Size");
 
 var s3AccessKey = builder.AddParameter("S3-Access-Key", true);
 var s3SecretKey = builder.AddParameter("S3-Secret-Key", true);
@@ -52,12 +52,12 @@ var backendApi = builder
     .WaitFor(database);
 
 backendApi
-    .WithEnvironment("FrontendOrigin", frontendOrigin)
-    .WithEnvironment("AccessTokenDuration", accessTokenDuration)
-    .WithEnvironment("RefreshTokenDuration", refreshTokenDuration)
-    .WithEnvironment("MaxAvatarSize", maxAvatarSize)
-    .WithEnvironment("MaxBannerSize", maxBannerSize)
-    .WithEnvironment("MaxMessageAttachmentSize", maxMessageAttachmentSize)
+    .WithEnvironment("Frontend__Origin", frontendOrigin)
+    .WithEnvironment("Auth__AccessTokenDuration", accessTokenDuration)
+    .WithEnvironment("Auth__RefreshTokenDuration", refreshTokenDuration)
+    .WithEnvironment("Media__MaxAvatarSize", maxAvatarSize)
+    .WithEnvironment("Media__MaxBannerSize", maxBannerSize)
+    .WithEnvironment("Media__MaxMessageAttachmentSize", maxMessageAttachmentSize)
     
     .WithEnvironment("JWT__Secret", jwtSecret)
     .WithEnvironment("JWT__Issuer", jwtIssuer)
@@ -73,8 +73,7 @@ backendApi
     .WithEnvironment("Mail__ServerPort", mailServerPort)
     .WithEnvironment("Mail__SenderName", mailSenderName)
     .WithEnvironment("Mail__SenderEmail", mailSenderEmail)
-    .WithEnvironment("Mail__Password", mailPassword)
-    ;
+    .WithEnvironment("Mail__Password", mailPassword);
 
 backendApi.PublishAsDockerComposeService((resource, service) => {
     service.Image = string.Empty;
