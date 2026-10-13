@@ -16,12 +16,11 @@ import type {
 import {DropdownMenu} from "radix-ui";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
-import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
-import Spinner from "../../components/Spinner.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {UserRelationshipStatus} from "../../api/schema.ts";
+import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
 
 interface RowProps {
   user: DiscoverFriendSummary;
@@ -29,7 +28,6 @@ interface RowProps {
 }
 
 export default function AddFriendTabContent() {
-  const ITEM_HEIGHT: number = 52;
   const PAGE_SIZE: number = 20;
 
   const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
@@ -37,7 +35,6 @@ export default function AddFriendTabContent() {
   const {
     data,
     fetchNextPage,
-    hasNextPage,
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
@@ -66,7 +63,7 @@ export default function AddFriendTabContent() {
 
   const queryClient = useQueryClient();
 
-  const updateCacheStatus = (userId: string, newStatus: UserRelationshipStatus) => {
+  const updateRelationshipStatus = (userId: string, newStatus: UserRelationshipStatus) => {
     queryClient.setQueryData<InfiniteData<PaginatedResult<DiscoverFriendSummary>>>(
       ["discoverUsers", userNameSearch],
       (oldData) => {
@@ -87,79 +84,78 @@ export default function AddFriendTabContent() {
 
   // handle realtime modification
   useSignalREvent("FriendRequestReceived", (event: FriendRequestReceivedEvent) => {
-    updateCacheStatus(event.senderUserId, UserRelationshipStatus.IncomingRequest);
+    updateRelationshipStatus(event.senderUserId, UserRelationshipStatus.IncomingRequest);
   });
 
   useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
-    updateCacheStatus(event.senderUserId, UserRelationshipStatus.Stranger);
+    updateRelationshipStatus(event.senderUserId, UserRelationshipStatus.Stranger);
   });
 
   useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
-    updateCacheStatus(event.acceptorUserId, UserRelationshipStatus.Friended);
+    updateRelationshipStatus(event.acceptorUserId, UserRelationshipStatus.Friended);
   });
 
   useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
-    updateCacheStatus(event.rejecterUserId, UserRelationshipStatus.Stranger);
+    updateRelationshipStatus(event.rejecterUserId, UserRelationshipStatus.Stranger);
   });
 
   useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
-    updateCacheStatus(event.invokerUserId, UserRelationshipStatus.Stranger);
+    updateRelationshipStatus(event.invokerUserId, UserRelationshipStatus.Stranger);
   });
 
   return (
     <div className="flex flex-col gap-2 h-full">
-      <header className="flex-none">
-        <p>In search of a friend?</p>
-        <p>You can send friend request with their username.</p>
+      <header className="flex-none text-sm">
+        <span className="block">In search of a friend?</span>
+        <span className="block">You can send friend request with their username.</span>
       </header>
 
-      <section className="flex-none flex flex-row">
+      <section className="flex-none flex flex-row h-10">
         <div
-          className="select-none w-11 h-11 flex justify-center items-center border border-gray-600 rounded-l-lg border-r-0">
+          className="select-none w-11 flex justify-center items-center border border-gray-600 rounded-l-lg border-r-0">
           @
         </div>
 
-        <input className="flex-1 input-field w-full h-11 px-3 rounded-l-none"
-               placeholder="Enter friend's username"
-               onChange={(e) => {
-                 setUserNameSearch(e.target.value);
-               }}/>
+        <input 
+          className="flex-1 input-field w-full px-3 rounded-l-none"
+          placeholder="Enter username"
+          onChange={(e) => {
+            setUserNameSearch(e.target.value);
+          }}/>
       </section>
 
-      <VirtualizedScrollList
-        className="flex-1"
-        viewportClassName="rounded-md border-2 border-gray-600"
-        itemCount={allElements.length}
-        isLoading={isLoading}
-        keyExtractor={(index) => allElements[index].userId}
-        estimateSize={() => ITEM_HEIGHT}
-        fetchNextPage={() => {
-          fetchNextPage()
-        }}
-        hasNextPage={hasNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-        renderEmpty={() => (
-          <div className="flex flex-1 select-none items-center justify-center text-gray-400">
-            No items found.
+      <div className="flex-1 overflow-hidden border-2 border-gray-600 rounded-md">
+        {(!userNameSearch || userNameSearch.length === 0) ? (
+          <div className="size-full flex flex-row justify-center items-center text-gray-500">
+            <span className="select-none">Enter the name above</span>
           </div>
+        ) : isLoading ? (
+          <>
+            {Array.from({length: 20}).map((_, index) => (
+              <UserNameplate.Skeleton key={index} className="p-1.5"/>
+            ))}
+          </>
+        ) : (
+          <VirtualizedScrollList2
+            totalCount={allElements.length}
+            computeItemKey={(index) => allElements[index].userId}
+            atBottomThreshold={120}
+            endReached={() => fetchNextPage()}
+            overscan={10}
+            renderItem={(index) => {
+              return (
+                <Row user={allElements[index]} updateCacheStatus={updateRelationshipStatus}/>
+              );
+            }}
+            renderEmpty={() => (
+              <div className="size-full flex flex-row justify-center items-center text-gray-500">
+                <span className="select-none">There is nothing here...</span>
+              </div>
+            )}
+            showBottomLoader={isFetchingNextPage}
+          />
         )}
-        renderItem={(itemIndex: number) => (
-          <Row user={allElements[itemIndex]} updateCacheStatus={updateCacheStatus}/>
-        )}
-        renderSkeletonItem={(index) =>
-          <UserNameplate.Skeleton key={index}
-                                  className="p-1.5"
-                                  style={{height: `${ITEM_HEIGHT}px`}}/>
-        }
-        renderFetchingNext={() => (
-          <div
-            className="flex w-full items-center justify-center"
-            style={{height: `${ITEM_HEIGHT}px`}}
-          >
-            <Spinner className="size-6 fill-white align-middle"/>
-          </div>
-        )}
-      />
+      </div>
     </div>
   );
 }
@@ -209,7 +205,7 @@ function Row({user, updateCacheStatus}: RowProps) {
       avatarVersion={user.avatarVersion ?? undefined}
       userName={user.userName}
       displayName={user.displayName}
-      className="w-full p-1.5"
+      className="w-full p-1.5 hover-highlight"
     >
       {user.status == UserRelationshipStatus.Stranger ? (
         <FriendActionButtons.Send

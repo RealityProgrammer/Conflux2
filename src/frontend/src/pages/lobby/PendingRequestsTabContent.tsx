@@ -5,8 +5,6 @@ import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/rea
 import {type PaginatedResult, type PendingFriendRequestDto, type ServiceResponse} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
-import Spinner from "../../components/Spinner.tsx";
-import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import type {
   FriendRequestAcceptedEvent,
   FriendRequestCanceledEvent,
@@ -18,6 +16,7 @@ import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 import {UserRelationshipStatus} from "../../api/schema.ts";
+import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -37,7 +36,6 @@ export default function PendingRequestsTabContent() {
   const {
     data,
     fetchNextPage,
-    hasNextPage,
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
@@ -120,46 +118,42 @@ export default function PendingRequestsTabContent() {
       <div className="flex-none relative w-full flex items-center">
         <BsSearch className="absolute left-2.5 size-4 fill-white pointer-events-none"/>
 
-        <input className="input-field w-full h-11 px-3 pl-8"
-               placeholder="Search..."
-               onChange={(e) => {
-                 setUserNameSearch(e.target.value);
-               }}/>
+        <input 
+          className="input-field w-full h-10 px-3 pl-8"
+          placeholder="Search..."
+          onChange={(e) => {
+            setUserNameSearch(e.target.value);
+          }}/>
       </div>
 
-      <VirtualizedScrollList
-        className="flex-1"
-        viewportClassName="rounded-md border-2 border-gray-600"
-        isLoading={isLoading}
-        itemCount={allElements.length}
-        keyExtractor={(index) => allElements[index].userId}
-        estimateSize={() => ITEM_HEIGHT}
-        fetchNextPage={() => {
-          fetchNextPage()
-        }}
-        hasNextPage={hasNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-        renderEmpty={() => (
-          <div className="flex flex-1 select-none items-center justify-center text-gray-400">
-            No items found.
-          </div>
+      <div className="flex-1 overflow-hidden border-2 border-gray-600 rounded-md">
+        {isLoading ? (
+          <>
+            {Array.from({length: 20}).map((_, index) => (
+              <UserNameplate.Skeleton key={index} className="p-1.5"/>
+            ))}
+          </>
+        ) : (
+          <VirtualizedScrollList2
+            totalCount={allElements.length}
+            computeItemKey={(index) => allElements[index].userId}
+            atBottomThreshold={120}
+            endReached={() => fetchNextPage()}
+            overscan={10}
+            renderItem={(index) => {
+              return (
+                <Row element={allElements[index]} removeCacheElement={removeCacheElement}/>
+              );
+            }}
+            renderEmpty={() => (
+              <div className="size-full flex flex-row justify-center items-center text-gray-500">
+                <span className="select-none">There is nothing here...</span>
+              </div>
+            )}
+            showBottomLoader={isFetchingNextPage}
+          />
         )}
-        renderItem={(itemIndex: number) => (
-          <Row element={allElements[itemIndex]} removeCacheElement={removeCacheElement}/>
-        )}
-        renderSkeletonItem={(index) => (
-          <UserNameplate.Skeleton key={index}
-                                  className="p-1.5"
-                                  style={{height: `${ITEM_HEIGHT}px`}}/>
-        )}
-        renderFetchingNext={() => (
-          <div
-            className="flex w-full items-center justify-center"
-            style={{height: `${ITEM_HEIGHT}px`}}
-          >
-            <Spinner className="size-6 fill-white align-middle"/>
-          </div>
-        )}/>
+      </div>
     </div>
   );
 }
@@ -203,7 +197,7 @@ function Row({element, removeCacheElement}: RowProps) {
       avatarVersion={element.avatarRevision ?? undefined}
       userName={element.userName}
       displayName={element.displayName}
-      className="w-full p-1.5"
+      className="w-full p-1.5 hover-highlight"
       style={{height: `${ITEM_HEIGHT}px`}}
     >
       {element.status === UserRelationshipStatus.IncomingRequest ? (
