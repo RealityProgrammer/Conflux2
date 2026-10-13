@@ -1,4 +1,3 @@
-import UserAvatar from "../UserAvatar.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import {formatDate} from "date-fns";
 import {BsPaperclip} from "react-icons/bs";
@@ -6,6 +5,7 @@ import type {ReactNode} from "react";
 import usePositionBasedRandom from "../../hooks/usePositionBasedRandom.ts";
 import {distribute} from "../../utils/random.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import {Avatar} from "../Avatar.tsx";
 
 interface ReplyProps {
   messageId: string;
@@ -52,8 +52,9 @@ function Reply({
 
 interface RowProps {
   header: {
+    senderId?: string;
+    senderAvatarVersion?: number;
     senderDisplayName: string;
-    avatarSrc?: string;
     avatarAlt?: string;
   } | undefined;
   date: Date;
@@ -69,10 +70,11 @@ function Row({
     <div className="flex flex-row gap-3 w-full">
       {!!header ? (
         <>
-          <UserAvatar
-            src={header.avatarSrc}
+          <Avatar.User
+            userId={header.senderId}
+            version={header.senderAvatarVersion}
             alt={header.avatarAlt}
-            className="flex-none size-10 select-none overflow-hidden rounded-full cursor-pointer"
+            className="flex-none size-10 select-none overflow-hidden rounded-full cursor-pointer mt-0.75"
           />
 
           <div className="flex-1 min-w-0">

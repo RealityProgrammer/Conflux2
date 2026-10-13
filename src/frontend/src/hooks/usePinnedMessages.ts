@@ -47,7 +47,7 @@ export default function usePinnedMessages(
       useInfiniteGetConversationPinnedMessagesQuery.getKey({ conversationId, after: null }),
       (oldData) => {
         if (!oldData) return oldData;
-
+        
         return {
           ...oldData,
           pages: oldData.pages.map((page, index: number) =>
@@ -64,7 +64,7 @@ export default function usePinnedMessages(
                     sender: {
                       id: message.sender!.id,
                       displayName: message.sender!.displayName,
-                      avatarRevision: message.sender!.avatarRevision ?? null,
+                      avatar: message.sender!.avatar ?? null,
                     },
                   },
                   ...page.pinnedMessages.nodes,

@@ -19,8 +19,10 @@ export type Scalars = {
 
 export type ApplicationUser = {
   __typename?: 'ApplicationUser';
-  avatarRevision?: Maybe<Scalars['Int']['output']>;
-  bannerRevision?: Maybe<Scalars['Int']['output']>;
+  avatar?: Maybe<MediaItem>;
+  avatarId?: Maybe<Scalars['UUID']['output']>;
+  banner?: Maybe<MediaItem>;
+  bannerId?: Maybe<Scalars['UUID']['output']>;
   biography?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   displayName?: Maybe<Scalars['String']['output']>;
@@ -36,8 +38,10 @@ export type ApplicationUser = {
 export type ApplicationUserFilterInput = {
   accessFailedCount?: InputMaybe<IntOperationFilterInput>;
   and?: InputMaybe<Array<ApplicationUserFilterInput>>;
-  avatarRevision?: InputMaybe<IntOperationFilterInput>;
-  bannerRevision?: InputMaybe<IntOperationFilterInput>;
+  avatar?: InputMaybe<MediaItemFilterInput>;
+  avatarId?: InputMaybe<UuidOperationFilterInput>;
+  banner?: InputMaybe<MediaItemFilterInput>;
+  bannerId?: InputMaybe<UuidOperationFilterInput>;
   biography?: InputMaybe<StringOperationFilterInput>;
   concurrencyStamp?: InputMaybe<StringOperationFilterInput>;
   conversationParticipants?: InputMaybe<ListFilterInputTypeOfConversationParticipantFilterInput>;
@@ -68,8 +72,10 @@ export type ApplicationUserFilterInput = {
 
 export type ApplicationUserSortInput = {
   accessFailedCount?: InputMaybe<SortEnumType>;
-  avatarRevision?: InputMaybe<SortEnumType>;
-  bannerRevision?: InputMaybe<SortEnumType>;
+  avatar?: InputMaybe<MediaItemSortInput>;
+  avatarId?: InputMaybe<SortEnumType>;
+  banner?: InputMaybe<MediaItemSortInput>;
+  bannerId?: InputMaybe<SortEnumType>;
   biography?: InputMaybe<SortEnumType>;
   concurrencyStamp?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
@@ -102,23 +108,6 @@ export enum ApplyPolicy {
   /** The policy is applied in the validation step before the execution. */
   Validation = 'VALIDATION'
 }
-
-export type AttachmentDto = {
-  __typename?: 'AttachmentDto';
-  id: Scalars['UUID']['output'];
-  name: Scalars['String']['output'];
-  type: Scalars['String']['output'];
-};
-
-export type AttachmentFilterInput = {
-  and?: InputMaybe<Array<AttachmentFilterInput>>;
-  id?: InputMaybe<UuidOperationFilterInput>;
-  message?: InputMaybe<MessageFilterInput>;
-  messageId?: InputMaybe<UuidOperationFilterInput>;
-  name?: InputMaybe<StringOperationFilterInput>;
-  or?: InputMaybe<Array<AttachmentFilterInput>>;
-  type?: InputMaybe<StringOperationFilterInput>;
-};
 
 export type BanCommunityServerMemberInput = {
   duration?: InputMaybe<Scalars['Duration']['input']>;
@@ -219,13 +208,16 @@ export type ChannelTypeOperationFilterInput = {
 
 export type CommunityServer = {
   __typename?: 'CommunityServer';
+  avatar?: Maybe<MediaItem>;
+  avatarId?: Maybe<Scalars['UUID']['output']>;
+  banner?: Maybe<MediaItem>;
+  bannerId?: Maybe<Scalars['UUID']['output']>;
   channelCategories?: Maybe<Array<Maybe<ChannelCategory>>>;
   channels?: Maybe<Array<Maybe<Channel>>>;
   createdAt: Scalars['DateTime']['output'];
   creatorUser?: Maybe<ApplicationUser>;
   creatorUserId: Scalars['UUID']['output'];
   description?: Maybe<Scalars['String']['output']>;
-  hasAvatar: Scalars['Boolean']['output'];
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
   numMembers: Scalars['Int']['output'];
@@ -256,13 +248,16 @@ export type CommunityServerEdge = {
 
 export type CommunityServerFilterInput = {
   and?: InputMaybe<Array<CommunityServerFilterInput>>;
+  avatar?: InputMaybe<MediaItemFilterInput>;
+  avatarId?: InputMaybe<UuidOperationFilterInput>;
+  banner?: InputMaybe<MediaItemFilterInput>;
+  bannerId?: InputMaybe<UuidOperationFilterInput>;
   channelCategories?: InputMaybe<ListFilterInputTypeOfChannelCategoryFilterInput>;
   channels?: InputMaybe<ListFilterInputTypeOfChannelFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   creatorUser?: InputMaybe<ApplicationUserFilterInput>;
   creatorUserId?: InputMaybe<UuidOperationFilterInput>;
   description?: InputMaybe<StringOperationFilterInput>;
-  hasAvatar?: InputMaybe<BooleanOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   invitations?: InputMaybe<ListFilterInputTypeOfInvitationFilterInput>;
   members?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
@@ -399,11 +394,14 @@ export type CommunityServerRoleFilterInput = {
 };
 
 export type CommunityServerSortInput = {
+  avatar?: InputMaybe<MediaItemSortInput>;
+  avatarId?: InputMaybe<SortEnumType>;
+  banner?: InputMaybe<MediaItemSortInput>;
+  bannerId?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
   creatorUser?: InputMaybe<ApplicationUserSortInput>;
   creatorUserId?: InputMaybe<SortEnumType>;
   description?: InputMaybe<SortEnumType>;
-  hasAvatar?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   name?: InputMaybe<SortEnumType>;
   ownerUser?: InputMaybe<ApplicationUserSortInput>;
@@ -655,13 +653,6 @@ export type LeaveCommunityServerPayload = {
   serverId: Scalars['UUID']['output'];
 };
 
-export type ListFilterInputTypeOfAttachmentFilterInput = {
-  all?: InputMaybe<AttachmentFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
-  none?: InputMaybe<AttachmentFilterInput>;
-  some?: InputMaybe<AttachmentFilterInput>;
-};
-
 export type ListFilterInputTypeOfChannelCategoryFilterInput = {
   all?: InputMaybe<ChannelCategoryFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -718,6 +709,13 @@ export type ListFilterInputTypeOfInvitationFilterInput = {
   some?: InputMaybe<InvitationFilterInput>;
 };
 
+export type ListFilterInputTypeOfMediaItemFilterInput = {
+  all?: InputMaybe<MediaItemFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<MediaItemFilterInput>;
+  some?: InputMaybe<MediaItemFilterInput>;
+};
+
 export type ListFilterInputTypeOfMessageFilterInput = {
   all?: InputMaybe<MessageFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -737,6 +735,62 @@ export type ListFilterInputTypeOfServerModerationLogFilterInput = {
   any?: InputMaybe<Scalars['Boolean']['input']>;
   none?: InputMaybe<ServerModerationLogFilterInput>;
   some?: InputMaybe<ServerModerationLogFilterInput>;
+};
+
+export type MediaItem = {
+  __typename?: 'MediaItem';
+  contentType: Scalars['String']['output'];
+  fileName?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UUID']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type MediaItemDto = {
+  __typename?: 'MediaItemDto';
+  contentType: Scalars['String']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type MediaItemDtoSortInput = {
+  contentType?: InputMaybe<SortEnumType>;
+  version?: InputMaybe<SortEnumType>;
+};
+
+export type MediaItemFilterInput = {
+  and?: InputMaybe<Array<MediaItemFilterInput>>;
+  contentType?: InputMaybe<StringOperationFilterInput>;
+  fileName?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  message?: InputMaybe<MessageFilterInput>;
+  messageId?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<MediaItemFilterInput>>;
+  type?: InputMaybe<MediaItemTypeOperationFilterInput>;
+  version?: InputMaybe<IntOperationFilterInput>;
+};
+
+export type MediaItemSortInput = {
+  contentType?: InputMaybe<SortEnumType>;
+  fileName?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  message?: InputMaybe<MessageSortInput>;
+  messageId?: InputMaybe<SortEnumType>;
+  type?: InputMaybe<SortEnumType>;
+  version?: InputMaybe<SortEnumType>;
+};
+
+export enum MediaItemType {
+  MessageAttachment = 'MessageAttachment',
+  ServerAvatar = 'ServerAvatar',
+  ServerBanner = 'ServerBanner',
+  UserAvatar = 'UserAvatar',
+  UserBanner = 'UserBanner'
+}
+
+export type MediaItemTypeOperationFilterInput = {
+  eq?: InputMaybe<MediaItemType>;
+  in?: InputMaybe<Array<MediaItemType>>;
+  neq?: InputMaybe<MediaItemType>;
+  nin?: InputMaybe<Array<MediaItemType>>;
 };
 
 export type MemberAuthorizeInfo = {
@@ -759,9 +813,16 @@ export type MembershipStatusOperationFilterInput = {
   nin?: InputMaybe<Array<MembershipStatus>>;
 };
 
+export type MessageAttachmentDto = {
+  __typename?: 'MessageAttachmentDto';
+  id: Scalars['UUID']['output'];
+  name: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type MessageFilterInput = {
   and?: InputMaybe<Array<MessageFilterInput>>;
-  attachments?: InputMaybe<ListFilterInputTypeOfAttachmentFilterInput>;
+  attachments?: InputMaybe<ListFilterInputTypeOfMediaItemFilterInput>;
   body?: InputMaybe<StringOperationFilterInput>;
   conversation?: InputMaybe<ConversationFilterInput>;
   conversationId?: InputMaybe<UuidOperationFilterInput>;
@@ -783,6 +844,22 @@ export type MessageFilterInput = {
 export type MessagePropertiesFilterInput = {
   and?: InputMaybe<Array<MessagePropertiesFilterInput>>;
   or?: InputMaybe<Array<MessagePropertiesFilterInput>>;
+};
+
+export type MessageSortInput = {
+  body?: InputMaybe<SortEnumType>;
+  conversation?: InputMaybe<ConversationSortInput>;
+  conversationId?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  deletedAt?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  pinnedAt?: InputMaybe<SortEnumType>;
+  replyTo?: InputMaybe<MessageSortInput>;
+  replyToId?: InputMaybe<SortEnumType>;
+  sender?: InputMaybe<ApplicationUserSortInput>;
+  senderUserId?: InputMaybe<SortEnumType>;
+  type?: InputMaybe<SortEnumType>;
+  updatedAt?: InputMaybe<SortEnumType>;
 };
 
 export enum MessageType {
@@ -889,7 +966,7 @@ export type PermissionStateOperationFilterInput = {
 
 export type PinnedMessageDto = {
   __typename?: 'PinnedMessageDto';
-  attachments: Array<AttachmentDto>;
+  attachments: Array<MessageAttachmentDto>;
   body?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
@@ -1246,13 +1323,13 @@ export type StringOperationFilterInput = {
 
 export type TimelineMessageSenderDto = {
   __typename?: 'TimelineMessageSenderDto';
-  avatarRevision?: Maybe<Scalars['Int']['output']>;
+  avatar?: Maybe<MediaItemDto>;
   displayName: Scalars['String']['output'];
   id: Scalars['UUID']['output'];
 };
 
 export type TimelineMessageSenderDtoSortInput = {
-  avatarRevision?: InputMaybe<SortEnumType>;
+  avatar?: InputMaybe<MediaItemDtoSortInput>;
   displayName?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
 };

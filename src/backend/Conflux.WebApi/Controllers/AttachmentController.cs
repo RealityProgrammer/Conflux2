@@ -12,17 +12,27 @@ public sealed class AttachmentController(
     IMessageMediaService messageMediaService
 ) : ControllerBase {
     [HttpGet("{attachmentId:guid}")]
-    [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetAttachmentUrl(Guid attachmentId, [FromQuery] bool download = false) {
-        var result = await messageMediaService.GetAttachmentUrl(attachmentId, TimeSpan.FromHours(1), download: download);
-
-        if (result.IsSuccess) {
-            return Redirect(result.Value!);
-        }
-
-        return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NotFound(),
-            _ => StatusCode(StatusCodes.Status500InternalServerError),
+    public async Task<ActionResult> GetAttachmentUrl(
+        Guid attachmentId, 
+        [FromQuery] bool download = false, 
+        CancellationToken cancellationToken = default
+    ) {
+        var mediaInfo = await messageMediaService.GetAttachment(attachmentId, cancellationToken);
+        if (mediaInfo == null) return NotFound();
+        
+        Response.GetTypedHeaders().CacheControl = new() {
+            Public = true,
+            MaxAge = TimeSpan.FromDays(7),
         };
+        
+        Response.Headers.ContentDisposition = 
+            string.IsNullOrWhiteSpace(mediaInfo.FileName) ? "attachment" : $"attachment; filename=\"{mediaInfo.FileName}\"";
+        
+        return File(
+            mediaInfo.Stream, 
+            mediaInfo.ContentType, 
+            null, 
+            new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{mediaInfo.Version}\"")
+        );
     }
 }

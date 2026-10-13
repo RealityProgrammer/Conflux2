@@ -3,7 +3,9 @@ query GetInvitationSummary($id: String!) {
         communityServer {
             id
             name,
-            hasAvatar
+            avatar {
+                version
+            }
             numMembers
         },
         status

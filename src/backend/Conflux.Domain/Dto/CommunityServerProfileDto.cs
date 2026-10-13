@@ -7,6 +7,9 @@ namespace Conflux.Domain.Dto;
     nameof(CommunityServer.Id),
     nameof(CommunityServer.Name),
     nameof(CommunityServer.Description),
-    nameof(CommunityServer.HasAvatar),
+    nameof(CommunityServer.Avatar),
+    nameof(CommunityServer.Banner),
+], NestedFacets = [
+    typeof(MediaItemDto),
 ])]
 public sealed partial record CommunityServerProfileDto;

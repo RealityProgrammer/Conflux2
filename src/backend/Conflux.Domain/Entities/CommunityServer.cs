@@ -5,13 +5,18 @@ public class CommunityServer : IHasCreatedAt {
 
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
-    public bool HasAvatar { get; set; }
     
     public Guid CreatorUserId { get; set; }
     public ApplicationUser CreatorUser { get; set; } = null!;
     
     public Guid OwnerUserId { get; set; }
     public ApplicationUser OwnerUser { get; set; } = null!;
+    
+    public Guid? AvatarId { get; set; }
+    public MediaItem? Avatar { get; set; }
+    
+    public Guid? BannerId { get; set; }
+    public MediaItem? Banner { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 

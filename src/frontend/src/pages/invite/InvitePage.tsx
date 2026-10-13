@@ -1,5 +1,4 @@
 import {useNavigate, useParams} from "react-router";
-import ServerAvatar from "../../components/ServerAvatar.tsx";
 import {useState} from "react";
 import Spinner from "../../components/Spinner.tsx";
 import {invitationService} from "../../api/invitationService.ts";
@@ -7,6 +6,7 @@ import {BsCheckLg, BsCircleFill, BsExclamationTriangle} from "react-icons/bs";
 import ErrorText from "../../components/ErrorText.tsx";
 import {type GetInvitationSummaryQuery, useGetInvitationSummaryQuery} from "../../graphql/queries.ts";
 import {InvitationStatus} from "../../graphql/types.ts";
+import {Avatar} from "../../components/Avatar.tsx";
 
 export default function InvitePage() {
   const { inviteId } = useParams();
@@ -84,12 +84,12 @@ function Invitation({summary, invitationId}: {
 
   return (
     <div className="flex flex-row items-center gap-4">
-      <ServerAvatar
-        serverId={summary.status}
-        hasAvatar={summary.communityServer!.hasAvatar}
+      <Avatar.Server
+        serverId={summary.communityServer?.id}
+        version={summary.communityServer?.avatar?.version}
         className="flex-none size-48 overflow-hidden rounded-full"
       />
-
+      
       <section className="flex-1">
         <header>
           <p className="text-center">You're invited to...</p>

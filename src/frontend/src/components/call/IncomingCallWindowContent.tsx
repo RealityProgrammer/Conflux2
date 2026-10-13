@@ -1,9 +1,7 @@
 import {type IncomingDirectCall, useCallStore} from "../../store/useCallStore.ts";
 import CallWindowHeader from "./CallWindowHeader.tsx";
-import UserAvatar from "../UserAvatar.tsx";
 import IconButton from "../IconButton.tsx";
 import {BsTelephoneInboundFill, BsTelephoneXFill} from "react-icons/bs";
-import {userService} from "../../api/userService.ts";
 import {useEffect, useRef, useState} from "react";
 import {createTimeline} from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -21,6 +19,7 @@ import {directConversationService} from "../../api/directConversationService.ts"
 import {useRouteLoaderData} from "react-router";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
+import {Avatar} from "../Avatar.tsx";
 
 export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
   if (call.state === "dialing") {
@@ -33,6 +32,10 @@ export default function IncomingCallWindowContent({call}: {call: IncomingDirectC
 
   if (call.state === "dropped") {
     return <DroppedPhase call={call}/>
+  }
+
+  if (call.state === "rejected") {
+    return <RejectedPhase call={call}/>
   }
 
   if (call.state === "active") {
@@ -57,7 +60,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
     const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectDirectCall(call.id);
 
     if (response.success) {
-      updateCallState(call.id, "ended")
+      updateCallState(call.id, "rejected")
       appendMessage(response.data!);
     } else {
       toast.error(`Failed to deny call.`);
@@ -128,11 +131,12 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
       <CallWindowHeader title={`Incoming call from ${call.callerProfile.displayName}`}/>
 
       <section className="flex-1 bg-black flex flex-col justify-center items-center gap-2 @container-size relative overflow-hidden">
-        <UserAvatar
+        <Avatar.User
           ref={callerAvatarRef}
-          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+          userId={call.callerProfile.id}
+          version={call.callerProfile.avatar?.version}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)]"
+          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
           style={{ transform: "scale(1)"}}
         />
         <div
@@ -169,10 +173,34 @@ function CanceledPhase({call}: {call: IncomingDirectCall}) {
       <CallWindowHeader title="Call canceled"/>
 
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
-        <UserAvatar
-          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+        <Avatar.User
+          userId={call.callerProfile.id}
+          version={call.callerProfile.avatar?.version} 
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)]"
+          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
+        />
+      </div>
+    </>
+  )
+}
+
+function RejectedPhase({call}: {call: IncomingDirectCall}) {
+  const endCall = useCallStore((state) => state.endCall);
+
+  useTimeout(() => {
+    endCall(call.id);
+  }, 5000);
+
+  return (
+    <>
+      <CallWindowHeader title="Call rejected"/>
+
+      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+        <Avatar.User
+          userId={call.callerProfile.id}
+          version={call.callerProfile.avatar?.version}
+          alt="Caller avatar"
+          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
       </div>
     </>
@@ -191,10 +219,11 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
       <CallWindowHeader title="Call dropped"/>
 
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
-        <UserAvatar
-          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+        <Avatar.User
+          userId={call.callerProfile.id}
+          version={call.callerProfile.avatar?.version}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)]"
+          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
       </div>
     </>
@@ -274,7 +303,8 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
             <MediaFeed
               stream={stream}
               isLocal
-              avatarUrl={userProfile?.avatarRevision ? userService.getAvatarUrl(userProfile.id, userProfile.avatarRevision) : undefined}
+              peerId={userProfile?.id}
+              peerAvatarVersion={userProfile?.avatar?.version}
               isVideoEnabled={!isVideoDisabled}
             />
           )}
@@ -283,7 +313,8 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
         {/* Remote video */}
         <MediaFeed
           stream={remoteStream}
-          avatarUrl={call.callerProfile.avatarRevision ? userService.getAvatarUrl(callerId, call.callerProfile.avatarRevision) : undefined}
+          peerId={callerId}
+          peerAvatarVersion={call.callerProfile.avatar?.version}
           displayName={call.callerProfile.displayName ?? "???"}
           className="object-contain size-full"
           audioOutputDeviceId={selectedAudioDeviceOutputId}
@@ -325,10 +356,11 @@ function EndedPhase({call}: {call: IncomingDirectCall}) {
       <CallWindowHeader title="Call ended"/>
 
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
-        <UserAvatar
-          src={call.callerProfile.avatarRevision ? userService.getAvatarUrl(call.callerProfile.id, call.callerProfile.avatarRevision) : undefined}
+        <Avatar.User
+          userId={call.callerProfile.id}
+          version={call.callerProfile.avatar?.version}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)]"
+          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
       </div>
     </>

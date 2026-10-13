@@ -6,7 +6,9 @@ query InspectMember($id: UUID!) {
             id
             userName
             displayName
-            avatarRevision
+            avatar {
+                version
+            }
         }
         roles {
             id

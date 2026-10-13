@@ -2,7 +2,6 @@ import {AvatarAndBanner} from "../AvatarAndBanner.tsx";
 import {
   BsChatText,
   BsExclamationCircle,
-  BsExclamationTriangle,
   BsFolder,
   BsFolderX,
   BsGearFill,
@@ -58,20 +57,7 @@ export default function SidebarContent() {
         </>
       ) : isError || !serverDetails ? (
         <>
-          <AvatarAndBanner.Template
-            banner={{fallback: (
-              <div
-                className="bg-red-300 size-full flex flex-row justify-center items-center"
-              >
-                <BsExclamationTriangle className="size-8 fill-red-500 animate-pulse"/>
-              </div>
-            )}}
-            avatar={{fallback: (
-              <div className="bg-red-300 border-4 border-gray-725 size-full overflow-hidden rounded-full flex flex-col gap-1 justify-center items-center">
-                <BsExclamationTriangle className="size-12 fill-red-500 animate-pulse"/>
-              </div>
-            )}}
-          />
+          <AvatarAndBanner.Error/>
 
           <div className="flex flex-row gap-2 items-center justify-start px-2">
             <p className="flex-none truncate">Unknown Land</p>
@@ -157,13 +143,13 @@ function SuccessfulHeader({
           fallback: <div className="size-full bg-violet-500"></div>,
         }}
         avatar={{
-          src: serverDetails.hasAvatar ? communityServerService.getAvatarUrl(serverDetails.id, false) : undefined,
+          src: serverDetails.avatarVersion ? communityServerService.getAvatarUrl(serverDetails.id, serverDetails.avatarVersion) : undefined,
           alt: "Server Avatar",
           fallback: <AvatarFallback/>,
           rootClassName: "border-4 border-gray-725",
         }}
       />
-
+      
       <p className="flex-none truncate px-2">{serverDetails.name}</p>
 
       {(canCreateChannel || canAccessServerManagementDialog || canCreateInvitation) && (

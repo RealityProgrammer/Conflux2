@@ -54,9 +54,9 @@ public sealed class SendMessageHandler(
         var utcNow = timeProvider.GetUtcNow();
         
         // upload attachments
-        Attachment[] attachments = [];
+        MediaItem[] attachments = [];
         if (command.Attachments.Count > 0) {
-            Result<Attachment[]> attachmentResults = await UploadAttachments(command.Attachments, cancellationToken);
+            Result<MediaItem[]> attachmentResults = await UploadAttachments(command.Attachments, cancellationToken);
 
             if (!attachmentResults.IsSuccess) {
                 return attachmentResults.Error;
@@ -124,17 +124,17 @@ public sealed class SendMessageHandler(
         return Result<TimelineMessageDto>.Success(dto);
     }
 
-    private async Task<Result<Attachment[]>> UploadAttachments(
+    private async Task<Result<MediaItem[]>> UploadAttachments(
         IReadOnlyList<UploadFile> attachments, 
         CancellationToken cancellationToken
     ) {
-        Attachment?[] finalAttachments = new Attachment?[attachments.Count];
+        MediaItem?[] finalAttachments = new MediaItem?[attachments.Count];
         
         for (int i = 0; i < attachments.Count; i++) {
             var attachment = attachments[i];
             
             try {
-                Result<Attachment> uploaded = 
+                Result<MediaItem> uploaded = 
                     await messageMediaService.UploadAttachment(attachment.Stream, attachment.FileName, cancellationToken);
 
                 if (uploaded.IsSuccess) {
@@ -149,10 +149,10 @@ public sealed class SendMessageHandler(
             }
         }
 
-        return Result<Attachment[]>.Success(finalAttachments!);
+        return Result<MediaItem[]>.Success(finalAttachments!);
     }
 
-    private async ValueTask DeleteUploadedAttachments(IEnumerable<Attachment?> attachments) {
+    private async ValueTask DeleteUploadedAttachments(IEnumerable<MediaItem?> attachments) {
         foreach (var attachment in attachments) {
             if (attachment != null && attachment.Id != Guid.Empty) {
                 await messageMediaService.DeleteAttachment(attachment.Id, CancellationToken.None);

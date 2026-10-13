@@ -1,5 +1,5 @@
 import type {
-  AttachmentDto,
+  MessageAttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
@@ -389,7 +389,7 @@ export function ChatView({
         setEditingMessageDraft(null);
       },
       onEditSaved: (newBody) => handleSaveEdit(newBody),
-      onAttachmentClick: (messageAttachments: AttachmentDto[], clickedIndex: number) => {
+      onAttachmentClick: (messageAttachments: MessageAttachmentDto[], clickedIndex: number) => {
         setMediaElements(messageAttachments.map(attachment => ({
           id: attachment.id,
           src: conversationService.getAttachmentUrl(attachment.id, false),

@@ -17,7 +17,7 @@ internal sealed partial class TypingIndicatorService(
         byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
 
         if (cached != null && MemoryPackSerializer.Deserialize<TypingUserCacheDto>(cached) is { } deserializedCache) {
-            return new(deserializedCache.UserId, deserializedCache.DisplayName, deserializedCache.AvatarRevision);
+            return new(deserializedCache.UserId, deserializedCache.DisplayName, deserializedCache.AvatarVersion);
         }
         
         if (!Guid.TryParse(userId, out Guid parsedUserId)) {
@@ -30,7 +30,7 @@ internal sealed partial class TypingIndicatorService(
             .Select(u => new TypingUserDto(
                 u.Id,
                 u.DisplayName ?? "Someone", 
-                u.AvatarRevision
+                u.Avatar == null ? null : u.Avatar.Version
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -40,7 +40,7 @@ internal sealed partial class TypingIndicatorService(
         
         await _database.StringSetAsync(
             cacheKey, 
-            MemoryPackSerializer.Serialize(new TypingUserCacheDto(dto.UserId, dto.DisplayName, dto.AvatarRevision)),
+            MemoryPackSerializer.Serialize(new TypingUserCacheDto(dto.UserId, dto.DisplayName, dto.AvatarVersion)),
             TimeSpan.FromSeconds(30),
             ValueCondition.Always
         );
@@ -49,5 +49,5 @@ internal sealed partial class TypingIndicatorService(
     }
     
     [MemoryPackable]
-    internal sealed partial record TypingUserCacheDto(Guid UserId, string DisplayName, int? AvatarRevision);
+    internal sealed partial record TypingUserCacheDto(Guid UserId, string DisplayName, int? AvatarVersion);
 }

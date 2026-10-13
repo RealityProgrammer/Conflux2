@@ -1,14 +1,12 @@
 import {useLoaderData} from "react-router";
 import {useDocumentTitle} from "usehooks-ts";
 import type {DirectMessagePageLoaderProps} from "../../router.tsx";
-import UserAvatar from "../../components/UserAvatar.tsx";
 import {useState} from "react";
 import {BsPersonFill, BsTelephoneFill} from "react-icons/bs";
 import Egg from "../../components/Egg.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import UserProfilePanel from "../../components/UserProfilePanel.tsx";
 import useConversationConnection from "../../hooks/useConversationConnection.ts";
-import {userService} from "../../api/userService.ts";
 import {useCallStore} from "../../store/useCallStore.ts";
 import type {UserIdentityProfileDto, ServiceResponse, StartCallResult} from "../../api/types.ts";
 import {toast} from "react-toastify";
@@ -18,6 +16,7 @@ import {ChatView} from "../../components/chat/ChatView.tsx";
 import ChatInput from "../../components/chat/ChatInput.tsx";
 import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
+import {Avatar} from "../../components/Avatar.tsx";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -68,7 +67,12 @@ function SuccessPage({
     const response: ServiceResponse<StartCallResult> = await directConversationService.startDirectCall(peerProfile.id);
 
     if (response.success) {
-      startOutgoingDirectCall(response.data!.callId, response.data!.calleeProfile);
+      startOutgoingDirectCall(response.data!.callId, {
+        ...response.data!.calleeProfile,
+        avatar: response.data!.calleeProfile.avatarVersion ? {
+          version: response.data!.calleeProfile.avatarVersion
+        } : null,
+      });
       appendMessage(response.data!.message);
     } else {
       switch (response.error?.code) {
@@ -100,9 +104,10 @@ function SuccessPage({
         <header
           className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2"
         >
-          <UserAvatar
-            src={peerProfile.avatarRevision ? userService.getAvatarUrl(peerProfile.id, peerProfile.avatarRevision) : undefined}
-            className="size-8 flex-none"
+          <Avatar.User
+            userId={peerProfile.id}
+            version={peerProfile.avatar?.version}
+            className="size-8 flex-none rounded-full"
           />
 
           <span className="flex-1 select-none">
@@ -140,7 +145,7 @@ function SuccessPage({
           {showProfile && (
             <UserProfilePanel
               className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
-              avatarClassName="border-gray-725 bg-gray-725"
+              avatarClassName="border-4 border-gray-725 bg-gray-725"
               userId={peerProfile.id}
             />
           )}

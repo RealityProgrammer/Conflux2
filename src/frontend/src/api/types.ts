@@ -1,5 +1,5 @@
 import {type components} from "./schema.ts";
-import type {GetUserFullProfileQuery, GetUserIdentityProfileQuery} from "../graphql/queries.ts";
+import type {GetUserIdentityProfileQuery} from "../graphql/queries.ts";
 import type {HttpStatusCode} from "axios";
 
 // requests
@@ -31,7 +31,6 @@ export type PaginatedResult<T> =
 export type UserAuthorizationInfo = components["schemas"]["UserAuthorizationInfo"];
 
 export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['user']>;
-export type UserFullProfileDto = NonNullable<GetUserFullProfileQuery['user']>
 
 export type LoginResponse = components["schemas"]["LoginResponse"];
 export type RefreshResponse = components["schemas"]["RefreshResponse"];
@@ -39,11 +38,11 @@ export type RefreshResponse = components["schemas"]["RefreshResponse"];
 export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
 export type PendingFriendRequestDto = components["schemas"]["PendingFriendRequestDto"];
 export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
-export type AttachmentDto = components["schemas"]["AttachmentDto"];
-export type TimelineMessageReplyDto = components["schemas"]["TimelineMessageReplyDto"];
+export type MediaItemDto = components["schemas"]["MediaItemDto"];
 export type StartCallResult = components["schemas"]["StartCallResult"];
 export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
+export type MessageAttachmentDto = components["schemas"]["MessageAttachmentDto"];
 export type TimelineMessagePage = components["schemas"]["TimelineMessagePage"];
 export type ServerChannelIdentityDto = components["schemas"]["ServerChannelIdentityDto"];
 export type ChannelCategoryDetailDto = components["schemas"]["ChannelCategoryDetailDto"];

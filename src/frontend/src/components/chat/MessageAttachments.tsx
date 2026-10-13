@@ -1,10 +1,10 @@
 import {ScrollArea} from "radix-ui";
 import {conversationService} from "../../api/conversationService.ts";
 import {BsMusicNote} from "react-icons/bs";
-import type {AttachmentDto} from "../../api/types.ts";
+import type {MessageAttachmentDto} from "../../api/types.ts";
 
 export interface MessageAttachmentsProps {
-  attachments: AttachmentDto[];
+  attachments: MessageAttachmentDto[];
   onAttachmentClick: (index: number) => void;
 }
 

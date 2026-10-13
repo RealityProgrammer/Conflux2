@@ -6,7 +6,6 @@ import MessageBody from "./chat/MessageBody.tsx";
 import {Virtuoso} from "react-virtuoso";
 import {MessageRow} from "./chat/MessageRow.tsx";
 import MessageAttachments from "./chat/MessageAttachments.tsx";
-import {userService} from "../api/userService.ts";
 import {
   type GetConversationPinnedMessagesQuery,
 } from "../graphql/infiniteQueries.ts";
@@ -150,7 +149,8 @@ function ContentDisplay({
                 <MessageRow.Row
                   header={{
                     senderDisplayName: message.sender?.displayName ?? "???",
-                    avatarSrc: message.sender?.avatarRevision ? userService.getAvatarUrl(message.sender.id, message.sender.avatarRevision) : undefined,
+                    senderId: message.sender?.id,
+                    senderAvatarVersion: message.sender?.avatar?.version,
                     avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
                   }}
                   date={new Date(message.createdAt)}

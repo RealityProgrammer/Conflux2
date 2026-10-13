@@ -15,6 +15,6 @@ partial class GatewayHub {
         
         await Clients
             .OthersInGroup(NameProvider.GetConversationGroupName(channelIdGuid))
-            .UserTyping(new(dto.UserId, dto.DisplayName, dto.AvatarRevision), Context.ConnectionAborted);
+            .UserTyping(new(dto.UserId, dto.DisplayName, dto.AvatarVersion), Context.ConnectionAborted);
     }
 }

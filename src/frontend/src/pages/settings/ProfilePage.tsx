@@ -1,4 +1,4 @@
-import {Label, Select, Separator} from "radix-ui";
+import {Label, Select, Separator, Avatar as RadixAvatar} from "radix-ui";
 import {Controller, FormProvider, type SubmitHandler, useForm, useFormContext, useWatch} from "react-hook-form";
 import {z} from "zod";
 import {PresenceStatus} from "../../graphql/types.ts";
@@ -23,7 +23,8 @@ import IconButton from "../../components/IconButton.tsx";
 import {useQueryClient} from "@tanstack/react-query";
 import {usePreviewUrl} from "../../hooks/usePreviewUrl.ts";
 import {hash} from "../../utils/hashing.ts";
-import UserProfileContent from "../../components/UserProfileContent.tsx";
+import {AvatarAndBanner} from "../../components/AvatarAndBanner.tsx";
+import {UserProfile} from "../../components/UserProfile.tsx";
 
 export default function ProfilePage() {
   return (
@@ -41,7 +42,7 @@ export default function ProfilePage() {
 const profileSchema = z.object({
   displayName: z.string()
     .min(1, { error: "Display name is required." })
-    .max(32, "Display name can only have maximum length of 32 characters."),
+    .max(48, "Display name can only have maximum length of 48 characters."),
 
   pronouns: z.string()
     .max(32, "Pronouns can only have maximum length of 32 characters.")
@@ -144,8 +145,8 @@ function ProfileForm() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 px-2 overflow-y-hidden">
-        <section className="overflow-y-auto">
+      <div className="grid grid-cols-3 gap-3 px-2 overflow-y-hidden">
+        <section className="overflow-y-auto col-span-2">
           <p className="group-label">Fields</p>
 
           <FormFields userData={data?.sessionUser}/>
@@ -182,7 +183,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full justify-center">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.avatarRevision !== null ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : null : field.value : undefined}
+                  value={userData ? field.value === undefined ? userData.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
                   fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
@@ -213,7 +214,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.bannerRevision !== null ? userService.getBannerUrl(userData.id, userData.bannerRevision) : null : field.value : undefined}
+                  value={userData ? field.value === undefined ? userData.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
@@ -407,27 +408,64 @@ function FormButtons() {
 function Displayer({
   userData,
 }: { userData: GetSessionUserProfileSettingInfoQuery["sessionUser"] | undefined }) {
+  const { userProfile } = useAuth();
   const { control } = useFormContext<UpdateProfileFormValues>();
   const watchedValues = useWatch({ control });
 
-  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatarRevision ? userService.getAvatarUrl(userData.id, userData.avatarRevision) : undefined);
-  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.bannerRevision ? userService.getBannerUrl(userData.id, userData.bannerRevision) : undefined);
+  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : undefined);
+  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : undefined);
 
   return (
-    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container">
-      <UserProfileContent
-        avatarSrc={avatarDisplayUrl ?? undefined}
-        bannerSrc={bannerDisplayUrl ?? undefined}
-        bannerFallbackColor={`hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`}
-        avatarClassName="border-gray-675 bg-gray-675"
-        presenceStatus={watchedValues.presence}
-        presenceStatusClassName="size-1/3 bg-gray-675 border-4 border-gray-675"
-        displayName={watchedValues.displayName || "\u003CDisplay Name\u003E"}
-        username={userData?.userName ?? "???"}
-        joinDate={userData ? new Date(userData.createdAt) : undefined}
-        pronouns={watchedValues.pronouns}
-        bio={watchedValues.bio || "\u003CBiography\u003E"}
+    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container overflow-y-auto scrollbar-none pb-2">
+      <AvatarAndBanner.Template
+        avatar={{
+          src: avatarDisplayUrl ?? undefined,
+          alt: "Preview Avatar",
+          rootClassName: "border-4 border-gray-675 bg-gray-675",
+          fallback: (
+            <RadixAvatar.Fallback className="flex size-full items-center justify-center bg-gray-100">
+              <BsPerson className="size-5/6 fill-black" />
+            </RadixAvatar.Fallback>
+          ),
+        }}
+        banner={{
+          src: bannerDisplayUrl ?? undefined,
+          alt: "Preview Banner",
+          rootClassName: "",
+          fallback: (
+            <RadixAvatar.Fallback className="block size-full" style={{
+              backgroundColor: `hsl(${Math.abs(hash(userProfile?.id ?? "???")) % 360}, 60%, 40%)`,
+            }}>
+            </RadixAvatar.Fallback>
+          )
+        }}
+        // presence={{status: watchedValues.presence, className: "size-8 border-4!"}}
       />
+
+      <div className="px-2 space-y-2">
+        <UserProfile.Names displayName={watchedValues.displayName ?? "???"} userName={userProfile?.userName ?? "???"}/>
+
+        <UserProfile.FieldContainer>
+          {[...Array(5).keys()].map((value) => (
+            <UserProfile.Field
+              label={`Field ${value}`}
+              value={<span>Value {value}</span>}
+            />
+          ))}
+        </UserProfile.FieldContainer>
+
+        {watchedValues.bio && (
+          <>
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+
+            <span className="group-label mb-1">About me</span>
+
+            <UserProfile.Bio displayName={watchedValues.displayName ?? "???"}>
+              {watchedValues.bio}
+            </UserProfile.Bio>
+          </>
+        )}
+      </div>
     </div>
   );
 }

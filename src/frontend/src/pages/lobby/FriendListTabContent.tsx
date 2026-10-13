@@ -15,7 +15,6 @@ import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {sessionUserService} from "../../api/sessionUserService.ts";
 import {useGetUserIdentityProfileQuery} from "../../graphql/queries.ts";
-import {userService} from "../../api/userService.ts";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -208,7 +207,8 @@ function Row({element, removeUserFromCache, navigateToDirectMessage}: RowProps) 
 
   return (
     <UserNameplate.Root
-      avatarSrc={element.avatarRevision ? userService.getAvatarUrl(element.id, element.avatarRevision) : undefined}
+      userId={element.id}
+      avatarVersion={element.avatar?.version}
       userName={element.userName ?? "???"}
       displayName={element.displayName ?? "???"}
       className="w-full p-1.5"

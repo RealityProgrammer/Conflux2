@@ -22,7 +22,7 @@ export type GetInvitationSummaryQueryVariables = Exact<{
 }>;
 
 
-export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, hasAvatar: boolean, numMembers: number } | null } | null };
+export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, numMembers: number, avatar: { version: number } | null } | null } | null };
 
 export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -32,28 +32,28 @@ export type GetSessionUserManualPresenceStatusQuery = { sessionUser: { manualPre
 export type GetSessionUserProfileSettingInfoQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null, bannerRevision: number | null, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
+export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null, avatar: { version: number } | null, banner: { version: number } | null } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null, bannerRevision: number | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number, effectivePresenceStatus: Types.PresenceStatus } | null };
+export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number, effectivePresenceStatus: Types.PresenceStatus, avatar: { version: number } | null, banner: { version: number } | null } | null };
 
 export type GetUserIdentityProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null } | null };
+export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } | null };
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, avatarRevision: number | null }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
+export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -149,7 +149,9 @@ export const GetInvitationSummaryDocument = new TypedDocumentString(`
     communityServer {
       id
       name
-      hasAvatar
+      avatar {
+        version
+      }
       numMembers
     }
     status
@@ -213,8 +215,12 @@ export const GetSessionUserProfileSettingInfoDocument = new TypedDocumentString(
     id
     userName
     displayName
-    avatarRevision
-    bannerRevision
+    avatar {
+      version
+    }
+    banner {
+      version
+    }
     biography
     pronouns
     createdAt
@@ -250,8 +256,12 @@ export const GetUserFullProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    avatarRevision
-    bannerRevision
+    avatar {
+      version
+    }
+    banner {
+      version
+    }
     biography
     pronouns
     createdAt
@@ -288,7 +298,9 @@ export const GetUserIdentityProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    avatarRevision
+    avatar {
+      version
+    }
   }
 }
     `);
@@ -323,7 +335,9 @@ export const InspectMemberDocument = new TypedDocumentString(`
       id
       userName
       displayName
-      avatarRevision
+      avatar {
+        version
+      }
     }
     roles {
       id

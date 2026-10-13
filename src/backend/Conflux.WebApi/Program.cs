@@ -276,16 +276,24 @@ builder.Services
     .AddScoped<IUnitOfWork, UnitOfWork>()
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
+    
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
         (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
     )
+    
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
-    .AddScoped<IAttachmentRepository, AttachmentRepository>()
+    // .AddScoped<IAttachmentRepository, MediaItemRepository>()
+    
+    .AddScoped<IMediaItemReadRepository, MediaItemRepository>()
+    .AddScoped<IMediaItemWriteRepository>(services =>
+        (MediaItemRepository)services.GetRequiredService<IMediaItemReadRepository>()
+    )
+    
     .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()

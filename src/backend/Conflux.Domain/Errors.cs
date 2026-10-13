@@ -150,4 +150,10 @@ public static class Errors {
 
     public static Error InvalidCallStates() =>
         new(nameof(InvalidCallStates), "Invalid call states.");
+    
+    public static Error FileBackupFailure() =>
+        new(nameof(FileBackupFailure), "File backup failed.");
+
+    public static Error MediaUploadError() =>
+        new(nameof(MediaUploadError), "Media upload failed.");
 }

@@ -31,11 +31,11 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("AvatarRevision")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("AvatarId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int?>("BannerRevision")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("BannerId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Biography")
                         .HasMaxLength(255)
@@ -49,8 +49,8 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DisplayName")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasMaxLength(48)
+                        .HasColumnType("character varying(48)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -107,6 +107,10 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AvatarId");
+
+                    b.HasIndex("BannerId");
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -115,32 +119,6 @@ namespace Conflux.Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Conflux.Domain.Entities.Attachment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(24)
-                        .HasColumnType("character varying(24)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageId");
-
-                    b.ToTable("Attachments");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Channel", b =>
@@ -210,6 +188,12 @@ namespace Conflux.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AvatarId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BannerId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -220,9 +204,6 @@ namespace Conflux.Infrastructure.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<bool>("HasAvatar")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(48)
@@ -232,6 +213,10 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AvatarId");
+
+                    b.HasIndex("BannerId");
 
                     b.HasIndex("CreatorUserId");
 
@@ -426,6 +411,37 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasIndex("CommunityServerId");
 
                     b.ToTable("Invitations");
+                });
+
+            modelBuilder.Entity("Conflux.Domain.Entities.MediaItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("MessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("MediaItems");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>
@@ -664,15 +680,19 @@ namespace Conflux.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Conflux.Domain.Entities.Attachment", b =>
+            modelBuilder.Entity("Conflux.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.HasOne("Conflux.Domain.Entities.Message", "Message")
-                        .WithMany("Attachments")
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Avatar")
+                        .WithMany()
+                        .HasForeignKey("AvatarId");
 
-                    b.Navigation("Message");
+                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Banner")
+                        .WithMany()
+                        .HasForeignKey("BannerId");
+
+                    b.Navigation("Avatar");
+
+                    b.Navigation("Banner");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Channel", b =>
@@ -714,6 +734,16 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.CommunityServer", b =>
                 {
+                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Avatar")
+                        .WithMany()
+                        .HasForeignKey("AvatarId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Banner")
+                        .WithMany()
+                        .HasForeignKey("BannerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "CreatorUser")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
@@ -725,6 +755,10 @@ namespace Conflux.Infrastructure.Migrations
                         .HasForeignKey("OwnerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Avatar");
+
+                    b.Navigation("Banner");
 
                     b.Navigation("CreatorUser");
 
@@ -844,6 +878,16 @@ namespace Conflux.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("CommunityServer");
+                });
+
+            modelBuilder.Entity("Conflux.Domain.Entities.MediaItem", b =>
+                {
+                    b.HasOne("Conflux.Domain.Entities.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Message");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>

@@ -1,18 +1,20 @@
 import {Separator} from "radix-ui";
 import {FaBirthdayCake} from "react-icons/fa";
 import {FaHandshake, FaMarsAndVenus} from "react-icons/fa6";
-import UserAvatarAndBanner from "./UserAvatarAndBanner.tsx";
-import type {CSSProperties} from "react";
 import type {PresenceStatus} from "../graphql/types.ts";
 import {TruncatedText} from "./TruncatedText.tsx";
+import {AvatarAndBanner} from "./AvatarAndBanner.tsx";
+import type {CSSProperties} from "react";
+import {UserProfile} from "./UserProfile.tsx";
 
 interface UserProfileContentProps {
+  userId: string;
   username: string;
   displayName: string;
-  avatarSrc?: string;
+  avatarVersion?: number;
   avatarAlt?: string;
   avatarClassName?: string;
-  bannerSrc?: string;
+  bannerVersion?: number;
   bannerAlt?: string;
   bannerFallbackColor?: CSSProperties["backgroundColor"];
   presenceStatus?: PresenceStatus;
@@ -25,16 +27,17 @@ interface UserProfileContentProps {
 }
 
 export default function UserProfileContent({
+  userId,
   username,
   displayName,
-  avatarSrc,
+  avatarVersion,
   avatarAlt,
   avatarClassName,
-  bannerSrc,
+  bannerVersion,
   bannerAlt,
-  bannerFallbackColor,
-  presenceStatus,
-  presenceStatusClassName,
+  // presenceStatus,
+  // presenceStatusClassName,
+  bannerFallbackColor = "",
   joinDate,
   pronouns,
   bio,
@@ -43,20 +46,23 @@ export default function UserProfileContent({
 }: UserProfileContentProps) {
   return (
     <>
-      <UserAvatarAndBanner
-        avatarSrc={avatarSrc}
+      <AvatarAndBanner.User
+        userId={userId}
         avatarAlt={avatarAlt}
-        bannerSrc={bannerSrc}
+        avatarVersion={avatarVersion}
         bannerAlt={bannerAlt}
+        bannerVersion={bannerVersion}
         bannerFallbackColor={bannerFallbackColor}
-        presenceStatus={presenceStatus}
-        presenceStatusClassName={presenceStatusClassName}
+        // presenceStatus={presenceStatus}
+        // presenceStatusClassName={presenceStatusClassName}
         avatarClassName={avatarClassName}
       />
 
       <div className="px-2">
-        <p className="text-xl font-bold truncate">{displayName}</p>
-        <p className="text-sm ml-1 truncate text-stone-300">@{username}</p>
+        <UserProfile.Names
+          displayName={displayName}
+          userName={username}
+        />
 
         <div className="grid grid-cols-2 gap-x-2 text-sm mt-2 text-gray-500">
           <p className="mt-1 min-w-0 flex items-center gap-2">

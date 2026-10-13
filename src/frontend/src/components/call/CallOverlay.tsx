@@ -17,7 +17,12 @@ export default function CallOverlay() {
         const response: ServiceResponse<GetIncomingDirectCallQueryResult> = await directConversationService.getIncomingCall();
 
         if (response.success && response.data) {
-          startIncomingDirectCall(response.data.callId, response.data.callerProfile);
+          startIncomingDirectCall(response.data.callId, {
+            ...response.data.callerProfile,
+            avatar: response.data.callerProfile.avatarVersion ? {
+              version: response.data.callerProfile.avatarVersion,
+            } : null,
+          });
         }
       } catch (err) {
         console.log("Failed to get current call:", err);

@@ -1,10 +1,11 @@
 import {useEffect, useRef, useState} from "react";
-import UserAvatar from "../UserAvatar.tsx";
 import {BsCameraVideoOffFill, BsMicMuteFill} from "react-icons/bs";
+import {Avatar} from "../Avatar.tsx";
 
 interface StreamVideoProps {
   stream: MediaStream | null;
-  avatarUrl?: string;
+  peerId?: string;
+  peerAvatarVersion?: number;
   displayName?: string;
   isLocal?: boolean;
   className?: string;
@@ -15,7 +16,8 @@ interface StreamVideoProps {
 
 export default function MediaFeed({
   stream,
-  avatarUrl,
+  peerId,
+  peerAvatarVersion,
   displayName,
   className = '',
   audioOutputDeviceId,
@@ -123,8 +125,9 @@ export default function MediaFeed({
 
       {!hasVideo && (
         <div className="flex flex-col items-center justify-center gap-2 p-2 max-w-full max-h-full">
-          <UserAvatar
-            src={avatarUrl}
+          <Avatar.User
+            userId={peerId}
+            version={peerAvatarVersion}
             alt={`${displayName}'s avatar`}
             className="size-12 shrink-0 aspect-square rounded-full ring-2 ring-gray-700 overflow-hidden shadow-lg select-none object-cover"
           />

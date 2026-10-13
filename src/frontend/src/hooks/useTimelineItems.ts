@@ -9,7 +9,6 @@ import {CallStartItem} from "../components/chat/CallStartItem.tsx";
 import type {CallEndProperties, TimelineMessagePage} from "../api/types.ts";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 import {PinMessageItem} from "../components/chat/PinMessageItem.tsx";
-import {userService} from "../api/userService.ts";
 import {CallCancelItem} from "../components/chat/CallCancelItem.tsx";
 import {CallEndItem} from "../components/chat/CallEndItem.tsx";
 import type {InfiniteData} from "@tanstack/react-query";
@@ -124,7 +123,8 @@ export default function useTimelineItems(
             items.push(new PinMessageItem({
               id: message.id,
               senderDisplayName: message.sender?.displayName ?? "???",
-              senderAvatarSrc: message.sender?.avatarRevision ? userService.getAvatarUrl(message.sender.id, message.sender.avatarRevision) : undefined,
+              senderId: message.sender?.id,
+              senderAvatarVersion: message.sender?.avatar?.version,
               action: message.type === MessageType.Pin ? "pin" : "unpin",
             }));
             break;

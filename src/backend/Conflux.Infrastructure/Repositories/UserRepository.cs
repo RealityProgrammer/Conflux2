@@ -16,34 +16,6 @@ internal sealed class UserRepository(
         return userManager.Users;
     }
 
-    public async Task<bool> UpdateAvatarRevision(
-        Guid userId, 
-        int? revision,
-        CancellationToken cancellationToken = default
-    ) {
-        int numChange = await dbContext.Users
-            .Where(u => u.Id == userId)
-            .ExecuteUpdateAsync(builder => {
-                builder.SetProperty(u => u.AvatarRevision, revision);
-            }, cancellationToken);
-
-        return numChange > 0;
-    }
-
-    public async Task<Result<bool>> IsProfileSetup(Guid userId, CancellationToken cancellationToken = default) {
-        var isProfileSetup = await dbContext.Users
-            .Where(u => u.Id == userId)
-            .Select(u => u.IsUserNameLocked)
-            .Cast<bool?>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (isProfileSetup is not { } value) {
-            return Errors.NoUserFoundFromId();
-        }
-
-        return Result<bool>.Success(value);
-    }
-
     public async Task<Result<UserIdentityProfileDto>> GetIdentityProfile(Guid userId, CancellationToken cancellationToken = default) {
         UserIdentityProfileDto? result = await dbContext.Users
             .Where(u => u.Id == userId)
