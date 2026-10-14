@@ -29,5 +29,9 @@
     <ItemGroup>
         <Using Include="Microsoft.EntityFrameworkCore"/>
     </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Migrations\" />
+    </ItemGroup>
 
 </Project>
