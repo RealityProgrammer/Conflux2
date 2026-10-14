@@ -11,11 +11,12 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class JwtProvider(
-    IConfiguration config,
     TimeProvider timeProvider,
-    IOptions<AuthServiceOptions> options
+    IOptions<AuthOptions> authOptions,
+    IOptions<JwtOptions> jwtOptions
 ) : IJwtProvider {
-    private readonly AuthServiceOptions _options = options.Value;
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+    private readonly AuthOptions _authOptions = authOptions.Value;
     
     public void GenerateAccessToken(ApplicationUser user, IEnumerable<string> roles, out string accessToken, out long expireTick) {
         var claims = new List<Claim> {
@@ -35,14 +36,14 @@ internal sealed class JwtProvider(
             claims.Add(new("role", role));
         }
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret));
         var credential = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        DateTimeOffset accessTokenExpire = timeProvider.GetUtcNow().AddSeconds(_options.AccessTokenDuration);
+        DateTimeOffset accessTokenExpire = timeProvider.GetUtcNow().AddSeconds(_authOptions.AccessTokenDuration);
 
         var token = new JwtSecurityToken(
-            issuer: config["Jwt:Issuer"],
-            audience: config["Jwt:Audience"],
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: claims,
             expires: accessTokenExpire.UtcDateTime,
             signingCredentials: credential
@@ -58,6 +59,6 @@ internal sealed class JwtProvider(
         rng.GetBytes(randomNumber);
         
         refreshToken = Convert.ToBase64String(randomNumber);
-        expiration = timeProvider.GetUtcNow().AddSeconds(_options.RefreshTokenDuration);
+        expiration = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration);
     }
 }

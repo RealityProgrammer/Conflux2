@@ -15,9 +15,9 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class StorageService(
     IAmazonS3 s3Client,
     ILogger<StorageService> logger,
-    IOptions<StorageServiceOptions> options
+    IOptions<S3Options> options
 ) : IBlobStorage {
-    private readonly StorageServiceOptions _options = options.Value;
+    private readonly S3Options _options = options.Value;
 
     public async Task<Result> Upload(string key, Stream stream, string contentType, CancellationToken cancellationToken = default) {
         var uploadRequest = new PutObjectRequest {

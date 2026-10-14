@@ -8,6 +8,7 @@ using Humanizer;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 using TimelineMessageDto = Conflux.Domain.Dto.TimelineMessageDto;
@@ -234,8 +235,7 @@ public sealed class ConversationController(
             }
 
             if (Attachments is { Length: > 0 }) {
-                var configuration = validationContext.GetService<IConfiguration>()!;
-                var options = configuration.GetSection("Services:User").Get<MessagingServiceOptions>()!;
+                var options = validationContext.GetRequiredService<IOptions<MediaOptions>>().Value;
 
                 if (Attachments.Length > 4) {
                     yield return new("Only 4 attachments allowed in a message.", [
@@ -244,8 +244,8 @@ public sealed class ConversationController(
                 }
 
                 foreach (var attachment in Attachments) {
-                    if (attachment.Length > options.MaxAttachmentSizeBytes) {
-                        yield return new($"Attachment must be smaller than {options.MaxAttachmentSizeBytes.Bytes():MB}.", [
+                    if (attachment.Length > options.MaxMessageAttachmentSize) {
+                        yield return new($"Attachment must be smaller than {options.MaxMessageAttachmentSize.Bytes():MB}.", [
                             nameof(Attachments),
                         ]);
                     }

@@ -44,6 +44,7 @@ using HotChocolate.Types.Descriptors;
 using Mediator;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using RedLockNet;
 using RedLockNet.SERedis;
@@ -63,6 +64,14 @@ DotNetEnv.Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 bool isDevelopment = builder.Environment.IsDevelopment();
+
+// options
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth"))
+    .Configure<JwtOptions>(builder.Configuration.GetSection("JWT"))
+    .Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"))
+    .Configure<MailOptions>(builder.Configuration.GetSection("Mail"))
+    .Configure<MediaOptions>(builder.Configuration.GetSection("Media"))
+    .Configure<S3Options>(builder.Configuration.GetSection("S3"));
 
 // keys and stuffs
 builder.Configuration.AddKeyPerFile("/run/secrets", true);
@@ -305,28 +314,20 @@ builder.Services
     )
     .AddScoped<ICallingService, CallingService>()
 
-    .Configure<AuthServiceOptions>(builder.Configuration.GetSection("Services:Auth"))
-    .Configure<UserServiceOptions>(builder.Configuration.GetSection("Services:User"))
-    .Configure<MessagingServiceOptions>(builder.Configuration.GetSection("Services:Messaging"))
-    .Configure<CommunityServerServiceOptions>(builder.Configuration.GetSection("Services:CommunityServer"))
-    .Configure<InvitationOptions>(builder.Configuration.GetSection("Services:Invitation"));
+    .Configure<AuthOptions>(builder.Configuration.GetSection("Services:Auth"));
 
 // blob service.
-var s3Settings = builder.Configuration.GetSection("S3").Get<StorageServiceOptions>()
-                 ?? throw new InvalidOperationException("Missing configuration of S3.");
-
-builder.Services.AddSingleton<IAmazonS3>(_ => {
+builder.Services.AddSingleton<IAmazonS3>((services) => {
+    var s3Options = services.GetRequiredService<IOptions<S3Options>>().Value;
+    
     var config = new AmazonS3Config {
         ServiceURL = builder.Configuration.GetConnectionString("S3"),
         ForcePathStyle = true,
-        AuthenticationRegion = s3Settings.Region,
-        UseHttp = s3Settings.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+        AuthenticationRegion = s3Options.Region,
     };
     
-    return new AmazonS3Client(s3Settings.AccessKey, s3Settings.SecretKey, config);
+    return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
 });
-
-builder.Services.Configure<StorageServiceOptions>(builder.Configuration.GetSection("S3"));
 
 builder.Services
     .AddSingleton<IBlobStorage, StorageService>()

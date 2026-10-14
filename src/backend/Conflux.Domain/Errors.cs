@@ -42,8 +42,8 @@ public static class Errors {
     public static Error ValidationErrorsOccurred(Dictionary<string, string[]> fieldErrors) =>
         new(nameof(ValidationErrorsOccurred), "One or more validation errors occurred.", fieldErrors);
     
-    public static Error MissingConfiguration(string path) =>
-        new(nameof(MissingConfiguration), $"Missing configuration {path}.");
+    public static Error MissingConfiguration(string name) =>
+        new(nameof(MissingConfiguration), $"Missing {name} configuration.");
     
     public static Error ConnectionFailure(string toWhere) =>
         new(nameof(ConnectionFailure), $"Failed to establish connection to {toWhere}.");

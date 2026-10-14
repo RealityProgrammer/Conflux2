@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Hosting;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
 var jwtSecret = builder.AddParameter("JWT-Secret", true);
@@ -32,12 +30,14 @@ builder.AddDockerComposeEnvironment("compose")
 var cache = builder
     .AddValkey("Valkey")
     .WithImageTag("alpine")
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithEndpoint(6379, 6379)
+    .WithDataVolume();
 
 var database = builder
     .AddPostgres("Database")
     .WithImageTag("alpine")
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithEndpoint(5432, 5432)
+    .WithVolume("postgres-data", "/var/lib/postgresql");
 
 database.AddDatabase("conflux");
 
@@ -45,6 +45,7 @@ var garage = builder
     .AddContainer("garage", "dxflrs/garage", "v2.3.0")
     .WithHttpEndpoint(3900, 3900, "s3-api")
     .WithVolume("garage-data", "/var/lib/garage/data")
+    .WithVolume("garage-meta", "/var/lib/garage/meta")
     .WithBindMount("../../../../garage/garage.toml", "/etc/garage.toml", true);
 
 garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
@@ -59,6 +60,7 @@ if (builder.ExecutionContext.IsPublishMode) {
 
     backendApi
         .WithEnvironment("Frontend__Origin", frontendOrigin)
+        
         .WithEnvironment("Auth__AccessTokenDuration", accessTokenDuration)
         .WithEnvironment("Auth__RefreshTokenDuration", refreshTokenDuration)
         .WithEnvironment("Media__MaxAvatarSize", maxAvatarSize)

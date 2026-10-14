@@ -1,18 +1,12 @@
-using Conflux.Application.Options;
-using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
-using Microsoft.Extensions.Options;
 
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class InvitationRepository(
     ApplicationDbContext dbContext,
-    TimeProvider timeProvider,
-    IOptions<InvitationOptions> invitationOptions
+    TimeProvider timeProvider
 ) : IInvitationRepository {
-    private readonly InvitationOptions _options = invitationOptions.Value;
-
     public IQueryable<Invitation> AsQueryable() {
         return dbContext.Invitations;
     }
@@ -29,8 +23,8 @@ internal sealed class InvitationRepository(
 
     public async Task<int> DeleteInactive(CancellationToken cancellationToken = default) {
         var utcNow = timeProvider.GetUtcNow();
-        var neverUsedInactiveTime = utcNow.Add(-_options.NeverUsedInactiveTimespan);
-        var lastUsedInactiveTime = utcNow.Add(-_options.LastUsedInactiveTimespan);
+        var neverUsedInactiveTime = utcNow.Subtract(TimeSpan.FromDays(7));
+        var lastUsedInactiveTime = utcNow.Subtract(TimeSpan.FromDays(14));
         
         return await dbContext.Invitations
             .Where(i => 
