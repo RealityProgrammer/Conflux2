@@ -1,4 +1,8 @@
+using Microsoft.Extensions.Configuration;
+
 var builder = DistributedApplication.CreateBuilder(args);
+
+bool useLocalGarage = builder.Configuration.GetValue("USE_LOCAL_GARAGE", true);
 
 var jwtSecret = builder.AddParameter("JWT-Secret", true);
 var jwtIssuer = builder.AddParameter("JWT-Issuer");
@@ -11,6 +15,7 @@ var maxAvatarSize = builder.AddParameter("Media-Max-Avatar-Size");
 var maxBannerSize = builder.AddParameter("Media-Max-Banner-Size");
 var maxMessageAttachmentSize = builder.AddParameter("Media-Max-Message-Attachment-Size");
 
+var s3Endpoint = builder.AddParameter("S3-Endpoint", true);
 var s3AccessKey = builder.AddParameter("S3-Access-Key", true);
 var s3SecretKey = builder.AddParameter("S3-Secret-Key", true);
 var s3Region = builder.AddParameter("S3-Region", true);
@@ -41,25 +46,27 @@ var database = builder
 
 database.AddDatabase("conflux");
 
-var garage = builder
-    .AddContainer("garage", "dxflrs/garage", "v2.3.0")
-    .WithHttpEndpoint(3900, 3900, "s3-api")
-    .WithVolume("garage-data", "/var/lib/garage/data")
-    .WithVolume("garage-meta", "/var/lib/garage/meta");
+IResourceBuilder<ContainerResource>? garage = null;
+
+if (useLocalGarage) {
+    garage = builder
+        .AddContainer("garage", "dxflrs/garage", "v2.3.0")
+        .WithHttpEndpoint(3900, 3900, "s3-api")
+        .WithVolume("garage-data", "/var/lib/garage/data")
+        .WithVolume("garage-meta", "/var/lib/garage/meta");
     
-    // .WithBindMount("./garage/garage.toml", "/etc/garage.toml", true);
+    garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
 
-garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
-
-garage.PublishAsDockerComposeService((resource, service) => {
-    service.AddVolume(new() {
-        Type = "bind",
-        Name = "TOML",
-        Source = "./garage/garage.toml",
-        Target = "/etc/garage.toml",
-        ReadOnly = true,
+    garage.PublishAsDockerComposeService((resource, service) => {
+        service.AddVolume(new() {
+            Type = "bind",
+            Name = "TOML",
+            Source = "./garage/garage.toml",
+            Target = "/etc/garage.toml",
+            ReadOnly = true,
+        });
     });
-});
+}
 
 if (builder.ExecutionContext.IsPublishMode) {
     var backendApi = builder
@@ -82,17 +89,22 @@ if (builder.ExecutionContext.IsPublishMode) {
         .WithEnvironment("JWT__Issuer", jwtIssuer)
         .WithEnvironment("JWT__Audience", jwtAudience)
 
-        .WithEnvironment("S3__Endpoint", garage.GetEndpoint("s3-api"))
-        .WithEnvironment("S3__AccessKey", s3AccessKey)
-        .WithEnvironment("S3__SecretKey", s3SecretKey)
-        .WithEnvironment("S3__Region", s3Region)
-        .WithEnvironment("S3__BucketName", s3BucketName)
-
         .WithEnvironment("Mail__ServerHost", mailServerHost)
         .WithEnvironment("Mail__ServerPort", mailServerPort)
         .WithEnvironment("Mail__SenderName", mailSenderName)
         .WithEnvironment("Mail__SenderEmail", mailSenderEmail)
-        .WithEnvironment("Mail__Password", mailPassword);
+        .WithEnvironment("Mail__Password", mailPassword)
+
+        .WithEnvironment("S3__AccessKey", s3AccessKey)
+        .WithEnvironment("S3__SecretKey", s3SecretKey)
+        .WithEnvironment("S3__Region", s3Region)
+        .WithEnvironment("S3__BucketName", s3BucketName);
+    
+    if (useLocalGarage && garage != null) {
+        backendApi.WithEnvironment("S3__Endpoint", garage.GetEndpoint("s3-api"));
+    } else {
+        backendApi.WithEnvironment("S3__Endpoint", s3Endpoint);
+    }
 
     backendApi.PublishAsDockerComposeService((resource, service) => {
         service.Image = string.Empty;
@@ -100,6 +112,10 @@ if (builder.ExecutionContext.IsPublishMode) {
             Context = "./src/backend",
             Dockerfile = "Dockerfile",
         };
+        
+        service.Ports = [
+            "5127:5127",
+        ];
     });
 
     backendApi.WithEnvironment("OTEL_SDK_DISABLED", "true");
