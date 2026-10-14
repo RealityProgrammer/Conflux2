@@ -77,6 +77,7 @@ if (builder.ExecutionContext.IsPublishMode) {
         .WaitFor(database);
 
     backendApi
+        .WithEnvironment("ASPNETCORE_URLS", "http://0.0.0.0:5127")
         .WithEnvironment("Frontend__Origin", frontendOrigin)
         
         .WithEnvironment("Auth__AccessTokenDuration", accessTokenDuration)
