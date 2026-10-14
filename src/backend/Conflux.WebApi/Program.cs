@@ -321,7 +321,7 @@ builder.Services.AddSingleton<IAmazonS3>((services) => {
     var s3Options = services.GetRequiredService<IOptions<S3Options>>().Value;
     
     var config = new AmazonS3Config {
-        ServiceURL = builder.Configuration.GetConnectionString("S3"),
+        ServiceURL = s3Options.Endpoint,
         ForcePathStyle = true,
         AuthenticationRegion = s3Options.Region,
     };
