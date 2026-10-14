@@ -45,10 +45,21 @@ var garage = builder
     .AddContainer("garage", "dxflrs/garage", "v2.3.0")
     .WithHttpEndpoint(3900, 3900, "s3-api")
     .WithVolume("garage-data", "/var/lib/garage/data")
-    .WithVolume("garage-meta", "/var/lib/garage/meta")
-    .WithBindMount("../../../../garage/garage.toml", "/etc/garage.toml", true);
+    .WithVolume("garage-meta", "/var/lib/garage/meta");
+    
+    // .WithBindMount("./garage/garage.toml", "/etc/garage.toml", true);
 
 garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
+
+garage.PublishAsDockerComposeService((resource, service) => {
+    service.AddVolume(new() {
+        Type = "bind",
+        Name = "TOML",
+        Source = "./garage/garage.toml",
+        Target = "/etc/garage.toml",
+        ReadOnly = true,
+    });
+});
 
 if (builder.ExecutionContext.IsPublishMode) {
     var backendApi = builder
@@ -86,7 +97,7 @@ if (builder.ExecutionContext.IsPublishMode) {
     backendApi.PublishAsDockerComposeService((resource, service) => {
         service.Image = string.Empty;
         service.Build = new() {
-            Context = "../../../../backend",
+            Context = "./src/backend",
             Dockerfile = "Dockerfile",
         };
     });
