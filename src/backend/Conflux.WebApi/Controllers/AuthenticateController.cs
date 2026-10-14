@@ -17,10 +17,10 @@ namespace Conflux.WebApi.Controllers;
 public sealed class AuthenticateController(
     IMediator mediator,
     TimeProvider timeProvider,
-    IOptions<AuthServiceOptions> options,
+    IOptions<AuthOptions> options,
     ILogger<AuthenticateController> logger
 ) : ControllerBase {
-    private readonly AuthServiceOptions _authOptions = options.Value;
+    private readonly AuthOptions _authOptions = options.Value;
     
     [HttpPost("login", Name = "Login")]
     [IgnoreAntiforgeryToken]

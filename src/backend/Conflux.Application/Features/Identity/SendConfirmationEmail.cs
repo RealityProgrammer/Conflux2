@@ -1,3 +1,4 @@
+using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
@@ -5,6 +6,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MimeKit;
 using System.Collections.Specialized;
@@ -16,33 +18,12 @@ public sealed record SendConfirmationEmailCommand(Guid UserId) : ICommand<Result
 
 public sealed class SendConfirmationEmailHandler(
     IConfiguration config,
-    UserManager<ApplicationUser> userManager
+    UserManager<ApplicationUser> userManager,
+    IOptions<MailOptions> options
 ) : ICommandHandler<SendConfirmationEmailCommand, Result> {
+    private readonly MailOptions _options = options.Value;
+    
     public async ValueTask<Result> Handle(SendConfirmationEmailCommand request, CancellationToken cancellationToken) {
-        if (config["Mail:SenderName"] is not { } senderName) {
-            return Errors.MissingConfiguration("Mail:SenderName");
-        }
-        
-        if (config["Mail:SenderEmail"] is not { } senderEmail) {
-            return Errors.MissingConfiguration("Mail:SenderEmail");
-        }
-        
-        if (config["Mail:Server"] is not { } server) {
-            return Errors.MissingConfiguration("Mail:Server");
-        }
-        
-        if (config["Mail:Port"] is not { } port) {
-            return Errors.MissingConfiguration("Mail:Port");
-        }
-
-        if (!int.TryParse(port, out int parsedPort)) {
-            return Result.Failure("Mail.InvalidPort", "Failed to parse mail server port.");
-        }
-        
-        if (config["Mail:Password"] is not { } password) {
-            return Errors.MissingConfiguration("Mail:Password");
-        }
-
         string userId = request.UserId.ToString();
         var user = await userManager.FindByIdAsync(userId);
 
@@ -70,7 +51,7 @@ public sealed class SendConfirmationEmailHandler(
         string redirectUrl = builder.Uri.ToString();
         
         var email = new MimeMessage();
-        email.From.Add(new MailboxAddress(senderName, senderEmail));
+        email.From.Add(new MailboxAddress(_options.SenderName, _options.SenderEmail));
         email.To.Add(MailboxAddress.Parse(user.Email!));
         email.Subject = "Account Confirmation code for Conflux";
         email.Body = new TextPart(MimeKit.Text.TextFormat.Html) {
@@ -108,13 +89,13 @@ public sealed class SendConfirmationEmailHandler(
 
         try {
             try {
-                await smtp.ConnectAsync(server, parsedPort, SecureSocketOptions.StartTls, cancellationToken);
+                await smtp.ConnectAsync(_options.ServerHost, _options.ServerPort, SecureSocketOptions.StartTls, cancellationToken);
             } catch {
                 return Errors.ConnectionFailure("mailing server");
             }
 
             try {
-                await smtp.AuthenticateAsync(senderEmail, password, cancellationToken);
+                await smtp.AuthenticateAsync(_options.SenderEmail, _options.Password, cancellationToken);
             } catch {
                 return Errors.InvalidCredentials("mailing service");
             }

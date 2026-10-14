@@ -213,11 +213,10 @@ public sealed class SessionUserController(
             if (File == null!) {
                 yield return new("Avatar file is required.", [ nameof(File) ]);
             } else {
-                var configuration = context.GetService<IConfiguration>()!;
-                var options = configuration.GetSection("Services:User").Get<UserServiceOptions>()!;
+                var options = context.GetRequiredService<IOptions<MediaOptions>>().Value;
                 
-                if (File.Length > options.MaxAvatarSizeBytes) {
-                    yield return new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.", [ nameof(File) ]);
+                if (File.Length > options.MaxAvatarSize) {
+                    yield return new($"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", [ nameof(File) ]);
                 }
             }
         }
@@ -256,12 +255,12 @@ public sealed class SessionUserController(
                 results.Add(new("Undefined PresenceStatus value.", [nameof(ManualPresenceStatus)]));
             }
 
-            var options = validationContext.GetRequiredService<IOptions<UserServiceOptions>>().Value;
+            var options = validationContext.GetRequiredService<IOptions<MediaOptions>>().Value;
 
             if (Avatar.Type == FileOperationType.Set) {
                 if (Avatar.File is { } avatarFile) {
-                    if (avatarFile.Length > options.MaxAvatarSizeBytes) {
-                        results.Add(new($"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.", [nameof(Avatar)]));
+                    if (avatarFile.Length > options.MaxAvatarSize) {
+                        results.Add(new($"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", [nameof(Avatar)]));
                     }
                 } else {
                     results.Add(new("Avatar is required for Set operation.", [nameof(Avatar)]));
@@ -270,8 +269,8 @@ public sealed class SessionUserController(
 
             if (Banner.Type == FileOperationType.Set) {
                 if (Banner.File is { } avatarFile) {
-                    if (avatarFile.Length > options.MaxBannerSizeBytes) {
-                        results.Add(new($"Banner must be smaller than {options.MaxBannerSizeBytes.Bytes():MB}.", [nameof(Banner)]));
+                    if (avatarFile.Length > options.MaxBannerSize) {
+                        results.Add(new($"Banner must be smaller than {options.MaxBannerSize.Bytes():MB}.", [nameof(Banner)]));
                     }
                 } else {
                     results.Add(new("Banner is required for Set operation.", [nameof(Banner)]));

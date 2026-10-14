@@ -152,11 +152,11 @@ public sealed class ServerController(
                 ));
             }
             
-            var options = context.GetRequiredService<IOptions<CommunityServerServiceOptions>>().Value;
+            var options = context.GetRequiredService<IOptions<MediaOptions>>().Value;
                 
-            if (Avatar != null && Avatar.Length > options.MaxAvatarSizeBytes) {
+            if (Avatar != null && Avatar.Length > options.MaxAvatarSize) {
                 results.Add(new(
-                    $"Avatar must be smaller than {options.MaxAvatarSizeBytes.Bytes():MB}.", 
+                    $"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", 
                     [nameof(Avatar)]
                 ));
             }
