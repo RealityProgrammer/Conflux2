@@ -24,8 +24,10 @@ var mailSenderName = builder.AddParameter("Mail-Sender-Name", secret: true);
 var mailSenderEmail = builder.AddParameter("Mail-Sender-Email", secret: true);
 var mailPassword = builder.AddParameter("Mail-Password", secret: true);
 
+var garageRpcSecret = builder.AddParameter("Garage-Rpc-Secret", secret: true);
+
 builder.AddDockerComposeEnvironment("compose")
-    .WithDashboard(builder.Environment.IsDevelopment());
+    .WithDashboard(!builder.ExecutionContext.IsPublishMode);
 
 var cache = builder
     .AddValkey("Valkey")
@@ -42,47 +44,52 @@ database.AddDatabase("conflux");
 var garage = builder
     .AddContainer("garage", "dxflrs/garage", "v2.3.0")
     .WithHttpEndpoint(3900, 3900, "s3-api")
-    .WithVolume("garage-data", "/var/lib/garage/data");
+    .WithVolume("garage-data", "/var/lib/garage/data")
+    .WithBindMount("../../../../garage/garage.toml", "/etc/garage.toml", true);
 
-var backendApi = builder
-    .AddContainer("backend", "placeholder")
-    .WithHttpEndpoint(port: 5127, targetPort: 5127, name: "http")
-    .WithReference(database)
-    .WithReference(cache)
-    .WaitFor(database);
+garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
 
-backendApi
-    .WithEnvironment("Frontend__Origin", frontendOrigin)
-    .WithEnvironment("Auth__AccessTokenDuration", accessTokenDuration)
-    .WithEnvironment("Auth__RefreshTokenDuration", refreshTokenDuration)
-    .WithEnvironment("Media__MaxAvatarSize", maxAvatarSize)
-    .WithEnvironment("Media__MaxBannerSize", maxBannerSize)
-    .WithEnvironment("Media__MaxMessageAttachmentSize", maxMessageAttachmentSize)
-    
-    .WithEnvironment("JWT__Secret", jwtSecret)
-    .WithEnvironment("JWT__Issuer", jwtIssuer)
-    .WithEnvironment("JWT__Audience", jwtAudience)
-    
-    .WithEnvironment("S3__Endpoint", garage.GetEndpoint("s3-api"))
-    .WithEnvironment("S3__AccessKey", s3AccessKey)
-    .WithEnvironment("S3__SecretKey", s3SecretKey)
-    .WithEnvironment("S3__Region", s3Region)
-    .WithEnvironment("S3__BucketName", s3BucketName)
-    
-    .WithEnvironment("Mail__ServerHost", mailServerHost)
-    .WithEnvironment("Mail__ServerPort", mailServerPort)
-    .WithEnvironment("Mail__SenderName", mailSenderName)
-    .WithEnvironment("Mail__SenderEmail", mailSenderEmail)
-    .WithEnvironment("Mail__Password", mailPassword);
+if (builder.ExecutionContext.IsPublishMode) {
+    var backendApi = builder
+        .AddDockerfile("backend", "../../../backend", "Dockerfile")
+        .WithHttpEndpoint(port: 5127, targetPort: 5127, name: "http")
+        .WithReference(database)
+        .WithReference(cache)
+        .WaitFor(database);
 
-backendApi.PublishAsDockerComposeService((resource, service) => {
-    service.Image = string.Empty;
-    service.Build = new() {
-        Context = "../../../backend",
-        Dockerfile = "Dockerfile",
-    };
-});
+    backendApi
+        .WithEnvironment("Frontend__Origin", frontendOrigin)
+        .WithEnvironment("Auth__AccessTokenDuration", accessTokenDuration)
+        .WithEnvironment("Auth__RefreshTokenDuration", refreshTokenDuration)
+        .WithEnvironment("Media__MaxAvatarSize", maxAvatarSize)
+        .WithEnvironment("Media__MaxBannerSize", maxBannerSize)
+        .WithEnvironment("Media__MaxMessageAttachmentSize", maxMessageAttachmentSize)
 
-backendApi.WithEnvironment("OTEL_SDK_DISABLED", "true");
+        .WithEnvironment("JWT__Secret", jwtSecret)
+        .WithEnvironment("JWT__Issuer", jwtIssuer)
+        .WithEnvironment("JWT__Audience", jwtAudience)
+
+        .WithEnvironment("S3__Endpoint", garage.GetEndpoint("s3-api"))
+        .WithEnvironment("S3__AccessKey", s3AccessKey)
+        .WithEnvironment("S3__SecretKey", s3SecretKey)
+        .WithEnvironment("S3__Region", s3Region)
+        .WithEnvironment("S3__BucketName", s3BucketName)
+
+        .WithEnvironment("Mail__ServerHost", mailServerHost)
+        .WithEnvironment("Mail__ServerPort", mailServerPort)
+        .WithEnvironment("Mail__SenderName", mailSenderName)
+        .WithEnvironment("Mail__SenderEmail", mailSenderEmail)
+        .WithEnvironment("Mail__Password", mailPassword);
+
+    backendApi.PublishAsDockerComposeService((resource, service) => {
+        service.Image = string.Empty;
+        service.Build = new() {
+            Context = "../../../../backend",
+            Dockerfile = "Dockerfile",
+        };
+    });
+
+    backendApi.WithEnvironment("OTEL_SDK_DISABLED", "true");
+}
 
 builder.Build().Run();
