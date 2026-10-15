@@ -14,7 +14,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 public static partial class FriendRequestQuery {
-    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseFiltering]
+    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering]
     public static async Task<PageConnection<FriendRequest>> GetFriendRequests(
         ClaimsPrincipal claimsPrincipal,
         QueryContext<FriendRequest> queryContext,

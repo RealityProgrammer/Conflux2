@@ -40,12 +40,4 @@ public interface IFriendRequestRepository : IWriteRepository<FriendRequest> {
         int count,
         CancellationToken cancellationToken = default
     );
-
-    Task<PaginatedResult<PendingFriendRequestDto>> GetPendingRequests(
-        Guid searcherId,
-        string? nameFilter,
-        int offset,
-        int count,
-        CancellationToken cancellationToken = default
-    );
 }

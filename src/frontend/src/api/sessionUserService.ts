@@ -105,31 +105,6 @@ export const sessionUserService = {
     }
   },
 
-  queryPendingRequests: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<PendingFriendRequestDto>>> => {
-    try {
-      const searchParams = new URLSearchParams();
-
-      if (name) {
-        searchParams.append("name", name);
-      }
-
-      searchParams.append("offset", String(offset));
-      searchParams.append("count", String(count));
-
-      const response: AxiosResponse<BackendResponse<PaginatedResult<PendingFriendRequestDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResult<PendingFriendRequestDto>>>(`users/me/pending-requests?${searchParams.toString()}`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
   updateProfile: async (
     displayName?: string,
     pronouns?: string | null,

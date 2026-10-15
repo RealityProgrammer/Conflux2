@@ -39,6 +39,13 @@ export type GetJoinedCommunityServerQueryVariables = Exact<{
 
 export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, avatar: { version: number } | null }> | null } };
 
+export type GetPendingFriendRequestsQueryVariables = Exact<{
+  after?: string | null | undefined;
+}>;
+
+
+export type GetPendingFriendRequestsQuery = { friendRequests: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, status: Types.FriendRequestStatus, senderUserId: string, otherUser: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } | null }> | null } };
+
 export type GetServerModerationLogsQueryVariables = Exact<{
   serverId: string;
   after?: string | null | undefined;
@@ -351,6 +358,73 @@ useInfiniteGetJoinedCommunityServerQuery.getKey = (variables?: GetJoinedCommunit
 
 
 useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServerQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetJoinedCommunityServerQuery, GetJoinedCommunityServerQueryVariables>(GetJoinedCommunityServerDocument, variables, options);
+
+export const GetPendingFriendRequestsDocument = new TypedDocumentString(`
+    query GetPendingFriendRequests($after: String) {
+  friendRequests(after: $after, where: {status: {eq: Pending}}) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+    nodes {
+      id
+      status
+      otherUser {
+        id
+        userName
+        displayName
+        avatar {
+          version
+        }
+      }
+      senderUserId
+    }
+  }
+}
+    `);
+
+export const useGetPendingFriendRequestsQuery = <
+      TData = GetPendingFriendRequestsQuery,
+      TError = unknown
+    >(
+      variables?: GetPendingFriendRequestsQueryVariables,
+      options?: Omit<UseQueryOptions<GetPendingFriendRequestsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetPendingFriendRequestsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetPendingFriendRequestsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['GetPendingFriendRequests'] : ['GetPendingFriendRequests', variables],
+    queryFn: graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetPendingFriendRequestsQuery.getKey = (variables?: GetPendingFriendRequestsQueryVariables) => variables === undefined ? ['GetPendingFriendRequests'] : ['GetPendingFriendRequests', variables];
+
+export const useInfiniteGetPendingFriendRequestsQuery = <
+      TData = InfiniteData<GetPendingFriendRequestsQuery>,
+      TError = unknown
+    >(
+      variables: GetPendingFriendRequestsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetPendingFriendRequestsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetPendingFriendRequestsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetPendingFriendRequestsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['GetPendingFriendRequests.infinite'] : ['GetPendingFriendRequests.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetPendingFriendRequestsQuery.getKey = (variables?: GetPendingFriendRequestsQueryVariables) => variables === undefined ? ['GetPendingFriendRequests.infinite'] : ['GetPendingFriendRequests.infinite', variables];
+
+
+useGetPendingFriendRequestsQuery.fetcher = (variables?: GetPendingFriendRequestsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, variables, options);
 
 export const GetServerModerationLogsDocument = new TypedDocumentString(`
     query GetServerModerationLogs($serverId: UUID!, $after: String) {

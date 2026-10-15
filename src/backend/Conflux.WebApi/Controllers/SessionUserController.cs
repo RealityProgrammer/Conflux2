@@ -181,32 +181,12 @@ public sealed class SessionUserController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-
-    [HttpGet("pending-requests")]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestDto>>>> GetPendingFriendRequests(
-        [FromQuery] string? name,
-        [FromQuery, Required] int offset,
-        [FromQuery, Required] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        var result = await mediator.Send(new GetPendingFriendRequestsQuery(userId, name, offset, count));
-
-        return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result, Error.None));
-    }
     
     public sealed record SetNamesRequest(
         [Required(ErrorMessage = "Username is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 32 characters.")]
         string UserName,
 
-        [Required(ErrorMessage = "Display name is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 32 characters.")]
+        [Required(ErrorMessage = "Display name is required."), StringLength(48, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 48 characters.")]
         string DisplayName
     );
     

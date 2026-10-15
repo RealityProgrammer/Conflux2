@@ -15,7 +15,7 @@ public sealed class RejectFriendRequestHandler(
 ) : ICommandHandler<RejectFriendRequestCommand, Result> {
     public async ValueTask<Result> Handle(RejectFriendRequestCommand request, CancellationToken cancellationToken) {
         var rejecterUserId = request.RejecterUserId;
-        var senderUserId = request.RejecterUserId;
+        var senderUserId = request.SenderUserId;
         
         var requestSummary = await friendRequestRepository.GetRequestSummary(senderUserId, rejecterUserId);
 

@@ -1,0 +1,28 @@
+query GetPendingFriendRequests($after: String) {
+    friendRequests(
+        after: $after,
+        where: {
+            status: { eq: Pending },
+        }
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            endCursor
+        }
+        
+        nodes {
+            id
+            status
+            otherUser {
+                id
+                userName
+                displayName
+                avatar {
+                    version
+                }
+            }
+            senderUserId
+        }
+    }
+}

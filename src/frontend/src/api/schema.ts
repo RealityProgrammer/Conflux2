@@ -1123,47 +1123,6 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/users/me/pending-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    name?: string;
-                    offset: number;
-                    count: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfPaginatedResultOfPendingFriendRequestDto"];
-                        "application/json": components["schemas"]["ApiResponseOfPaginatedResultOfPendingFriendRequestDto"];
-                        "text/json": components["schemas"]["ApiResponseOfPaginatedResultOfPendingFriendRequestDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/users/{userId}/avatar": {
         parameters: {
             query?: never;
@@ -2084,10 +2043,6 @@ export interface components {
             data: null | components["schemas"]["PaginatedResultOfDiscoverFriendSummary"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfPaginatedResultOfPendingFriendRequestDto: {
-            data: null | components["schemas"]["PaginatedResultOfPendingFriendRequestDto"];
-            error: components["schemas"]["Error"];
-        };
         ApiResponseOfPaginatedResultOfUserIdentityProfileDto: {
             data: null | components["schemas"]["PaginatedResultOfUserIdentityProfileDto"];
             error: components["schemas"]["Error"];
@@ -2282,11 +2237,6 @@ export interface components {
             /** Format: int32 */
             totalCount: number;
         };
-        PaginatedResultOfPendingFriendRequestDto: {
-            elements: components["schemas"]["PendingFriendRequestDto"][];
-            /** Format: int32 */
-            totalCount: number;
-        };
         PaginatedResultOfUserIdentityProfileDto: {
             elements: components["schemas"]["UserIdentityProfileDto"][];
             /** Format: int32 */
@@ -2298,15 +2248,6 @@ export interface components {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];
             permissionStates: components["schemas"]["Dictionary`2"];
-        };
-        PendingFriendRequestDto: {
-            /** Format: uuid */
-            userId: string;
-            userName: string;
-            displayName: string;
-            /** Format: int32 */
-            avatarRevision: null | number;
-            status: components["schemas"]["UserRelationshipStatus"];
         };
         /** @enum {string} */
         PermissionState: PermissionState;
