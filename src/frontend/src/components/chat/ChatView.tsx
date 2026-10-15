@@ -381,7 +381,10 @@ export function ChatView({
   const timelineContext: TimelineContext = {
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
-      onMessageEditTrigger: setEditingMessage,
+      onMessageEditTrigger: (message: TimelineMessageDto) => {
+        setEditingMessage(message);
+        setEditingMessageDraft(message.body ?? "");
+      },
       onMessageReplyTrigger: setReplyingMessage,
       onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
       onEditCancel: () => {

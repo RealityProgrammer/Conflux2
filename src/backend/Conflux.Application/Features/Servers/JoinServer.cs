@@ -11,17 +11,22 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record JoinServerCommand(Guid UserId, string InvitationId) : ICommand<Result>;
 
+public sealed record ServerJoinedNotification(Guid UserId, Guid ServerId) : INotification;
+
 public sealed class JoinServerHandler(
     IInvitationRepository invitationRepository,
     IServerMemberWriteRepository memberWriteRepository,
     IServerMemberReadRepository memberReadRepository,
     IUnitOfWork unitOfWork,
     ILogger<JoinServerHandler> logger,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IPublisher publisher
 ) : ICommandHandler<JoinServerCommand, Result> {
     private const int MaxRetries = 5;
     
     public async ValueTask<Result> Handle(JoinServerCommand command, CancellationToken cancellationToken) {
+        Guid userId = command.UserId;
+        
         for (int attempt = 0; attempt < MaxRetries; attempt++) {
             await unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -54,7 +59,7 @@ public sealed class JoinServerHandler(
 
                 // check member status
                 var member = await memberReadRepository.AsQueryable()
-                    .Where(m => m.CommunityServerId == invitation.CommunityServerId && m.UserId == command.UserId)
+                    .Where(m => m.CommunityServerId == invitation.CommunityServerId && m.UserId == userId)
                     .FirstOrDefaultAsync(cancellationToken);
 
                 if (member is { Status: MembershipStatus.Active }) {
@@ -71,7 +76,7 @@ public sealed class JoinServerHandler(
                     member.CreatedAt = now;
                 } else {
                     CommunityServerMember newMember = new() {
-                        UserId = command.UserId,
+                        UserId = userId,
                         CommunityServerId = invitation.CommunityServerId,
                         Status = MembershipStatus.Active,
                     };
@@ -83,6 +88,8 @@ public sealed class JoinServerHandler(
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitAsync(cancellationToken);
 
+                await publisher.Publish(new ServerJoinedNotification(userId, invitation.CommunityServerId), CancellationToken.None);
+                
                 return Result.Success();
             } catch (DbUpdateConcurrencyException) {
                 await unitOfWork.RollbackAsync(cancellationToken);
@@ -103,7 +110,7 @@ public sealed class JoinServerHandler(
                 return Errors.UnexpectedError();
             }
         }
-
+        
         return Errors.UnexpectedError();
     }
 }
