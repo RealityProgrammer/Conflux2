@@ -49,22 +49,34 @@ database.AddDatabase("conflux");
 IResourceBuilder<ContainerResource>? garage = null;
 
 if (useLocalGarage) {
+    var garageConfigPath = builder.ExecutionContext.IsPublishMode 
+        ? "./garage/garage.toml" 
+        : "../../../../garage/garage.toml";
+    
     garage = builder
         .AddContainer("garage", "dxflrs/garage", "v2.3.0")
         .WithHttpEndpoint(3900, 3900, "s3-api")
         .WithVolume("garage-data", "/var/lib/garage/data")
         .WithVolume("garage-meta", "/var/lib/garage/meta");
+
+    if (!builder.ExecutionContext.IsPublishMode) {
+        garage.WithBindMount(garageConfigPath, "/etc/garage.toml", true);
+    }
     
     garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
 
     garage.PublishAsDockerComposeService((resource, service) => {
-        service.AddVolume(new() {
+        service.Volumes.Add(new() {
+            Name = "GarageConfiguration",
             Type = "bind",
-            Name = "TOML",
             Source = "./garage/garage.toml",
             Target = "/etc/garage.toml",
             ReadOnly = true,
         });
+
+        foreach (var key in service.Environment.Keys.Where(k => k.Contains("BINDMOUNT"))) {
+            service.Environment.Remove(key);
+        }
     });
 }
 
@@ -117,6 +129,12 @@ if (builder.ExecutionContext.IsPublishMode) {
         service.Ports = [
             "5127:5127",
         ];
+        
+        service.ExtraHosts = new() {
+            ["host.docker.internal"] = "host-gateway",
+        };
+
+        service.Environment.Remove("BACKEND_IMAGE");
     });
 
     backendApi.WithEnvironment("OTEL_SDK_DISABLED", "true");
