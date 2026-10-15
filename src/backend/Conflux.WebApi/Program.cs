@@ -282,6 +282,7 @@ builder.Services
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
     .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
     
+    .AddSingleton<IEmailQueue, EmailQueue>()
     .AddSingleton<IMailService, MailService>()
     .AddScoped<IAuthMailService, AuthMailService>()
     
@@ -593,7 +594,8 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 builder.Services
     .AddHostedService<InvitationCleanupWorker>()
     .AddHostedService<GhostConnectionCleanupWorker>()
-    .AddHostedService<CallCleanupWorker>();
+    .AddHostedService<CallCleanupWorker>()
+    .AddHostedService<EmailBackgroundWorker>();
 
 var app = builder.Build();
 
