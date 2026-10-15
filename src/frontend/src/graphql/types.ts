@@ -1033,6 +1033,7 @@ export type Query = {
   communityServerRoles: CommunityServerRoleConnection;
   directConversations: ConversationConnection;
   friendRequests: FriendRequestConnection;
+  friends: FriendRequestConnection;
   invitation?: Maybe<Invitation>;
   joinedServers: CommunityServerConnection;
   pinnedMessages: PinnedMessageDtoConnection;
@@ -1104,7 +1105,18 @@ export type QueryFriendRequestsArgs = {
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<FriendRequestSortInput>>;
   where?: InputMaybe<FriendRequestFilterInput>;
+};
+
+
+export type QueryFriendsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  nameFilter?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Array<FriendRequestSortInput>>;
 };
 
 

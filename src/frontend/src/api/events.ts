@@ -161,3 +161,11 @@ export type MessagePinnedEvent = {
 export type MessageUnpinnedEvent = {
   messageId: string;
 }
+
+export type JoinedServerEvent = {
+  serverId: string;
+}
+
+export type CreatedServerEvent = {
+  serverId: string;
+}

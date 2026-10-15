@@ -155,7 +155,7 @@ public sealed class AuthenticateController(
         return Ok(new ApiResponse<UserAuthorizationInfo>(info.Value, Error.None));
     }
 
-    [HttpPost("send-verify-email")] // Post to use the antiforgery token.
+    [HttpPost("resend-confirm-email")]
     [Authorize]
     public async Task<ActionResult<ApiResponse>> SendVerifyEmail() {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
@@ -164,7 +164,7 @@ public sealed class AuthenticateController(
             return Unauthorized(new ApiResponse(Errors.InvalidCredentials()));
         }
 
-        var result = await mediator.Send(new SendConfirmationEmailCommand(userId));
+        var result = await mediator.Send(new ResendConfirmationEmailCommand(userId));
 
         if (result.IsSuccess) {
             return Ok();

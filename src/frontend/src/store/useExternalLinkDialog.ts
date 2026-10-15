@@ -15,5 +15,12 @@ export const useExternalLinkDialog = create<DialogState>((set) => ({
 }));
 
 export const requestExternalLinkNavigate = (url: string): void => {
-  useExternalLinkDialog.getState().openDialog(url);
+  const targetUrl = new URL(url, window.location.origin);
+  const isExternalUrl = targetUrl.hostname !== window.location.hostname;
+  
+  if (isExternalUrl) {
+    useExternalLinkDialog.getState().openDialog(url);
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
 };

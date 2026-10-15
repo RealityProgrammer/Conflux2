@@ -4,6 +4,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -17,7 +18,12 @@ public sealed record UpdateProfileCommand(
     PatchField<PresenceStatus> ManualPresenceStatus,
     PatchField<Stream?> Avatar,
     PatchField<Stream?> Banner
-) : ICommand<Result>;
+) : ICommand<Result<UpdateProfileResult>>;
+
+public sealed class UpdateProfileResult {
+    public Optional<int?> AvatarVersion { get; set; }
+    public Optional<int?> BannerVersion { get; set; }
+}
 
 public sealed class UpdateProfileHandler(
     IUserRepository userRepository,
@@ -25,8 +31,11 @@ public sealed class UpdateProfileHandler(
     IMediaItemWriteRepository mediaItemWriteRepository,
     IUnitOfWork unitOfWork,
     ILogger<UpdateProfileHandler> logger
-) : ICommandHandler<UpdateProfileCommand, Result> {
-    public async ValueTask<Result> Handle(UpdateProfileCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<UpdateProfileCommand, Result<UpdateProfileResult>> {
+    public async ValueTask<Result<UpdateProfileResult>> Handle(
+        UpdateProfileCommand command, 
+        CancellationToken cancellationToken
+    ) {
         Guid userId = command.UserId;
         
         // update fields that can be updated with single database call.
@@ -56,6 +65,8 @@ public sealed class UpdateProfileHandler(
                 return Errors.NoUserFoundFromId();
             }
         }
+
+        Optional<int?> avatarVersion = default;
         
         // process avatar
         if (command.Avatar.IsSet) {
@@ -63,7 +74,7 @@ public sealed class UpdateProfileHandler(
             
             if (backupResult.IsSuccess) {
                 try {
-                    await UpdateMedia(
+                    Result<int?> updateResult = await UpdateMedia(
                         userId,
                         command.Avatar.Value,
                         MediaItemType.UserAvatar,
@@ -73,11 +84,15 @@ public sealed class UpdateProfileHandler(
                         usrId => userMediaService.RestoreAvatar(usrId, CancellationToken.None),
                         cancellationToken
                     );
+
+                    if (updateResult.IsSuccess) {
+                        avatarVersion = updateResult.Value;
+                    }
                 } finally {
                     await userMediaService.DeleteAvatarBackup(userId, CancellationToken.None);
                 }
             } else if (backupResult.Error.Code == nameof(Errors.FileNotExists)) {
-                await UpdateMedia(
+                Result<int?> updateResult = await UpdateMedia(
                     userId,
                     command.Avatar.Value,
                     MediaItemType.UserAvatar,
@@ -87,8 +102,14 @@ public sealed class UpdateProfileHandler(
                     usrId => userMediaService.DeleteAvatar(usrId, CancellationToken.None),
                     cancellationToken
                 );
+
+                if (updateResult.IsSuccess) {
+                    avatarVersion = updateResult.Value;
+                }
             }
         }
+        
+        Optional<int?> bannerVersion = default;
         
         // process banner
         if (command.Banner.IsSet) {
@@ -96,7 +117,7 @@ public sealed class UpdateProfileHandler(
             
             if (backupResult.IsSuccess) {
                 try {
-                    await UpdateMedia(
+                    Result<int?> updateResult =  await UpdateMedia(
                         userId,
                         command.Banner.Value,
                         MediaItemType.UserBanner,
@@ -106,11 +127,15 @@ public sealed class UpdateProfileHandler(
                         usrId => userMediaService.RestoreBanner(usrId, CancellationToken.None),
                         cancellationToken
                     );
+
+                    if (updateResult.IsSuccess) {
+                        bannerVersion = updateResult.Value;
+                    }
                 } finally {
                     await userMediaService.DeleteBannerBackup(userId, CancellationToken.None);
                 }
             } else if (backupResult.Error.Code == nameof(Errors.FileNotExists)) {
-                await UpdateMedia(
+                Result<int?> updateResult =  await UpdateMedia(
                     userId,
                     command.Banner.Value,
                     MediaItemType.UserBanner,
@@ -120,13 +145,18 @@ public sealed class UpdateProfileHandler(
                     usrId => userMediaService.DeleteBanner(usrId, CancellationToken.None),
                     cancellationToken
                 );
+                
+                bannerVersion = updateResult.Value;
             }
         }
 
-        return Result.Success();
+        return Result<UpdateProfileResult>.Success(new() {
+            AvatarVersion = avatarVersion,
+            BannerVersion = bannerVersion,
+        });
     }
 
-    private async Task UpdateMedia(
+    private async Task<Result<int?>> UpdateMedia(
         Guid userId, 
         Stream? stream,
         MediaItemType mediaItemType,
@@ -141,7 +171,7 @@ public sealed class UpdateProfileHandler(
                 await uploadAction(userId, stream, cancellationToken);
 
             if (uploadResult.IsSuccess) {
-                await UpsertMediaItem(
+                return await UpsertMediaItem(
                     userId,
                     mediaItemType,
                     uploadResult.Value!.Format.MediaType,
@@ -150,6 +180,8 @@ public sealed class UpdateProfileHandler(
                     cancellationToken
                 );
             }
+
+            return uploadResult.Error;
         } else {
             Result deleteResult = await deleteAction(userId, cancellationToken);
 
@@ -161,16 +193,27 @@ public sealed class UpdateProfileHandler(
                     .FirstOrDefaultAsync(cancellationToken);
 
                 if (mediaId != null) {
+                    await userRepository
+                        .AsQueryable()
+                        .Where(u => u.Id == userId)
+                        .ExecuteUpdateAsync(builder => {
+                            builder.SetProperty(mediaIdSelector, (Guid?)null);
+                        }, cancellationToken);
+                    
                     await mediaItemWriteRepository
                         .AsQueryable()
                         .Where(i => i.Id == mediaId.Value)
                         .ExecuteDeleteAsync(cancellationToken);
+
+                    return Result<int?>.Success(null);
                 }
             }
+
+            return deleteResult.Error;
         }
     }
 
-    private async Task UpsertMediaItem(
+    private async Task<Result<int?>> UpsertMediaItem(
         Guid userId, 
         MediaItemType mediaItemType,
         string contentType,
@@ -185,49 +228,54 @@ public sealed class UpdateProfileHandler(
             .FirstOrDefaultAsync(cancellationToken);
         
         if (mediaId != null) {
-            // update the media content type and version
-            await mediaItemWriteRepository
-                .AsQueryable()
-                .Where(i => i.Id == mediaId.Value)
-                .ExecuteUpdateAsync(builder => {
-                    builder.SetProperty(i => i.ContentType, contentType);
-                    builder.SetProperty(i => i.Version, i => i.Version + 1);
-                }, cancellationToken);
-        } else {
-            // begin transaction, add new media item and update foreign key to it
-            await unitOfWork.BeginTransactionAsync(cancellationToken);
+            int? version = await mediaItemWriteRepository.Update(mediaId.Value, contentType, cancellationToken);
 
-            try {
-                MediaItem mediaItem = new() {
-                    Type = mediaItemType,
-                    ContentType = contentType,
-                    Version = 1,
-                };
-
-                mediaItemWriteRepository.Add(mediaItem);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
-
-                bool success = await userRepository
-                    .AsQueryable()
-                    .Where(u => u.Id == userId)
-                    .ExecuteUpdateAsync(builder => {
-                        builder.SetProperty(mediaIdSelector, mediaItem.Id);
-                    }, cancellationToken) == 1;
-
-                if (success) {
-                    await unitOfWork.SaveChangesAsync(cancellationToken);
-                    await unitOfWork.CommitAsync(cancellationToken);
-                } else {
-                    await unitOfWork.RollbackAsync(CancellationToken.None);
-                    await restoreAction(userId);
-                }
-            } catch (OperationCanceledException) {
-                await unitOfWork.RollbackAsync(CancellationToken.None);
-                throw;
-            } catch (Exception e) {
-                logger.LogError(e, "Exception thrown while creating new MediaItem type {type} for user {id}.", mediaItemType, userId);
-                await unitOfWork.RollbackAsync(CancellationToken.None);
+            if (version == null) {
+                return Errors.OperationFailure("update media content type");
             }
+
+            return Result<int?>.Success(version);
+        }
+        
+        // begin transaction, add new media item and update foreign key to it
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try {
+            MediaItem mediaItem = new() {
+                Type = mediaItemType,
+                ContentType = contentType,
+                Version = 1,
+            };
+
+            mediaItemWriteRepository.Add(mediaItem);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            bool success = await userRepository
+                .AsQueryable()
+                .Where(u => u.Id == userId)
+                .ExecuteUpdateAsync(builder => {
+                    builder.SetProperty(mediaIdSelector, mediaItem.Id);
+                }, cancellationToken) == 1;
+
+            if (success) {
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                await unitOfWork.CommitAsync(cancellationToken);
+
+                return Result<int?>.Success(mediaItem.Version);
+            }
+            
+            await unitOfWork.RollbackAsync(CancellationToken.None);
+            await restoreAction(userId);
+            
+            return Errors.OperationFailure("create media item");
+        } catch (OperationCanceledException) {
+            await unitOfWork.RollbackAsync(CancellationToken.None);
+            throw;
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while creating new MediaItem type {type} for user {id}.", mediaItemType, userId);
+            await unitOfWork.RollbackAsync(CancellationToken.None);
+
+            return Errors.UnexpectedError();
         }
     }
 }

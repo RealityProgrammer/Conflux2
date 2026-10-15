@@ -23,7 +23,7 @@ public sealed class SessionUserController(
     IMediator mediator
 ) : ControllerBase {
     [HttpPost("avatar")]
-    public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
+    public async Task<ActionResult<ApiResponse<int>>> UploadAvatar([FromForm] UploadAvatarRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -43,7 +43,7 @@ public sealed class SessionUserController(
         ));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<int?>(result.Value!.AvatarVersion.Value!.Value, Error.None));
         }
 
         return result.Error.Code switch {
@@ -116,29 +116,11 @@ public sealed class SessionUserController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-    
-    [HttpGet("friends")]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> GetFriends(
-        [FromQuery] string? name,
-        [FromQuery, Required] int offset,
-        [FromQuery, Required] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserIdentityProfileDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        var result = await mediator.Send(new GetFriendsQuery(userId, name, offset, count));
-
-        return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result, Error.None));
-    }
 
     [HttpPatch("profile")]
-    public async Task<ActionResult<ApiResponse>> UpdateProfile([FromForm] UpdateProfileRequest request) {
+    public async Task<ActionResult<ApiResponse<UpdateProfileResult>>> UpdateProfile(
+        [FromForm] UpdateProfileRequest request
+    ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -171,7 +153,7 @@ public sealed class SessionUserController(
         ));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<UpdateProfileResult>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
@@ -179,32 +161,12 @@ public sealed class SessionUserController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-
-    [HttpGet("pending-requests")]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<PendingFriendRequestDto>>>> GetPendingFriendRequests(
-        [FromQuery] string? name,
-        [FromQuery, Required] int offset,
-        [FromQuery, Required] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        var result = await mediator.Send(new GetPendingFriendRequestsQuery(userId, name, offset, count));
-
-        return Ok(new ApiResponse<PaginatedResult<PendingFriendRequestDto>>(result, Error.None));
-    }
     
     public sealed record SetNamesRequest(
         [Required(ErrorMessage = "Username is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 32 characters.")]
         string UserName,
 
-        [Required(ErrorMessage = "Display name is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 32 characters.")]
+        [Required(ErrorMessage = "Display name is required."), StringLength(48, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 48 characters.")]
         string DisplayName
     );
     

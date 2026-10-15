@@ -210,7 +210,7 @@ function MessageView({
               className="dropdown-item-default"
               onSelect={handleEditTrigger}
             >
-              Edit message <BsPencilFill className="fill-white size-4 ml-auto"/>
+              Edit Message <BsPencilFill className="fill-white size-4 ml-auto"/>
             </ContextMenu.Item>
           )}
 

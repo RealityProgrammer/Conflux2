@@ -3,6 +3,7 @@ import {useNavigate, useRevalidator, useRouteLoaderData} from "react-router";
 import {authService} from "../api/authService.ts";
 import type {UserAuthorizationInfo, UserIdentityProfileDto} from "../api/types.ts";
 import {useQueryClient} from "@tanstack/react-query";
+import type {RootLoaderProps} from "../router.tsx";
 
 interface AuthContextType {
   userAuthorization: UserAuthorizationInfo | null;
@@ -18,24 +19,21 @@ export default function AuthProvider({children}: { children: ReactNode }) {
   const revalidator = useRevalidator();
   const navigate = useNavigate();
 
-  const loaderData = useRouteLoaderData("root") as {
-    authorizationInfo: UserAuthorizationInfo | null,
-    userProfile: UserIdentityProfileDto | null
-  } | null;
+  // grab the data from root loader
+  const loaderData = useRouteLoaderData("root") as RootLoaderProps | null;
 
-  const authorizationInfo: UserAuthorizationInfo | null = loaderData?.authorizationInfo ?? null;
+  // put the user profile into state
   const [userProfile, setUserProfile] = useState<UserIdentityProfileDto | null>(loaderData?.userProfile ?? null);
 
-  const updateUserProfile = (updates: Partial<UserIdentityProfileDto>) => {
-    setUserProfile((prev: UserIdentityProfileDto | null) => {
-      if (!prev) return null;
-      return {...prev, ...updates};
-    });
-  };
-
+  // keep the user profile in sync in case loader re-run
   useEffect(() => {
     setUserProfile(loaderData?.userProfile ?? null);
   }, [loaderData?.userProfile]);
+  
+  // update callback
+  const updateUserProfile = (updates: Partial<UserIdentityProfileDto>) => {
+    setUserProfile((prev: UserIdentityProfileDto | null): UserIdentityProfileDto | null => (prev ? { ...prev, ...updates } : null));
+  };
 
   const logout = async (): Promise<void> => {
     await authService.logout();
@@ -51,7 +49,7 @@ export default function AuthProvider({children}: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      userAuthorization: authorizationInfo,
+      userAuthorization: loaderData?.authorizationInfo ?? null,
       userProfile: userProfile,
       updateUserProfile: updateUserProfile,
       logout,

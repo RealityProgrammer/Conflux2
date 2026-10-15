@@ -17,15 +17,15 @@ public class CommunityServerConfiguration : IEntityTypeConfiguration<CommunitySe
         builder.Property(s => s.OwnerUserId)
             .IsRequired();
         
-        builder.HasOne(u => u.Avatar)
+        builder.HasOne(s => s.Avatar)
             .WithMany()
             .HasForeignKey(u => u.AvatarId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(u => u.Banner)
+        builder.HasOne(s => s.Banner)
             .WithMany()
             .HasForeignKey(u => u.BannerId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Cascade);
 
         // TODO: Determine the behaviour when creator user is deleted (Cascade, Restrict, etc...)
         builder.HasOne(s => s.CreatorUser)

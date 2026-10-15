@@ -29,6 +29,7 @@ import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {Avatar} from "../../components/Avatar.tsx";
+import type {CreatedServerEvent, JoinedServerEvent} from "../../api/events.ts";
 
 function Sidebar() {
   const auth = useAuth();
@@ -77,7 +78,7 @@ function JoinedCommunityServerScrollList() {
     fetchNextPage,
     isLoading,
   } = useInfiniteGetJoinedCommunityServerQuery(
-    {},
+    { after: null },
     {
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
@@ -95,9 +96,15 @@ function JoinedCommunityServerScrollList() {
 
   const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
 
+  useSignalREvent("JoinedServer", (event: JoinedServerEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
+    });
+  });
+  
   useSignalREvent("KickedFromServer", (serverId: string) => {
     queryClient.setQueryData<InfiniteData<GetJoinedCommunityServerQuery, unknown>>(
-      useInfiniteGetJoinedCommunityServerQuery.getKey({}), 
+      useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }), 
       (oldData) => {
         if (!oldData || oldData.pages.length === 0) return;
         
@@ -291,10 +298,6 @@ function CreateServerDialogForm({
 
     if (response.success) {
       onOpenChange(false);
-
-      queryClient.invalidateQueries({
-        queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
-      });
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
         const details = response.error.details as Record<"name" | "avatar", string[]>;
@@ -318,6 +321,12 @@ function CreateServerDialogForm({
     }
   };
 
+  useSignalREvent(["JoinedServer", "CreatedServer"], (_event: JoinedServerEvent | CreatedServerEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
+    });
+  });
+  
   return (
     <>
       <ModalForm

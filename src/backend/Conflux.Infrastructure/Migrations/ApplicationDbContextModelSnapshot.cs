@@ -17,7 +17,7 @@ namespace Conflux.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -737,12 +737,12 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasOne("Conflux.Domain.Entities.MediaItem", "Avatar")
                         .WithMany()
                         .HasForeignKey("AvatarId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Conflux.Domain.Entities.MediaItem", "Banner")
                         .WithMany()
                         .HasForeignKey("BannerId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "CreatorUser")
                         .WithMany()

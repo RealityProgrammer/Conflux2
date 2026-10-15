@@ -1,7 +1,7 @@
 import type {
   BackendResponse,
   PaginatedResult, PendingFriendRequestDto,
-  ServiceResponse,
+  ServiceResponse, UpdateProfileResult,
   UserIdentityProfileDto
 } from "./types.ts";
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
@@ -11,19 +11,20 @@ import {authService} from "./authService.ts";
 import type {PresenceStatus} from "../graphql/types.ts";
 
 export const sessionUserService = {
-  uploadAvatar: async (file: File): Promise<ServiceResponse> => {
+  uploadAvatar: async (file: File): Promise<ServiceResponse<number>> => {
     try {
       const formData = new FormData();
       formData.set("File", file);
 
-      const response: AxiosResponse<BackendResponse> = await apiClient.postForm("/users/me/avatar", formData);
+      const response: AxiosResponse<BackendResponse<number>> = await apiClient.postForm("/users/me/avatar", formData);
 
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
+      const axiosError = error as AxiosError<BackendResponse<number>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -104,31 +105,6 @@ export const sessionUserService = {
     }
   },
 
-  queryPendingRequests: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<PendingFriendRequestDto>>> => {
-    try {
-      const searchParams = new URLSearchParams();
-
-      if (name) {
-        searchParams.append("name", name);
-      }
-
-      searchParams.append("offset", String(offset));
-      searchParams.append("count", String(count));
-
-      const response: AxiosResponse<BackendResponse<PaginatedResult<PendingFriendRequestDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResult<PendingFriendRequestDto>>>(`users/me/pending-requests?${searchParams.toString()}`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
   updateProfile: async (
     displayName?: string,
     pronouns?: string | null,
@@ -136,7 +112,7 @@ export const sessionUserService = {
     manualPresenceStatus?: PresenceStatus,
     avatar?: File | null,
     banner?: File | null,
-  ): Promise<ServiceResponse> => {
+  ): Promise<ServiceResponse<UpdateProfileResult>> => {
     try {
       const formData = new FormData();
 
@@ -176,15 +152,16 @@ export const sessionUserService = {
         formData.append("banner.type", "NoMod");
       }
 
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.patchForm<BackendResponse>(`users/me/profile`, formData);
+      const response: AxiosResponse<BackendResponse<UpdateProfileResult>> =
+        await apiClient.patchForm<BackendResponse<UpdateProfileResult>>(`users/me/profile`, formData);
 
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
+      const axiosError = error as AxiosError<BackendResponse<UpdateProfileResult>>;
       return handleAxiosError(axiosError);
     }
   }

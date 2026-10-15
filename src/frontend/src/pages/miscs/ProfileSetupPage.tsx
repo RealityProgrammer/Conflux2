@@ -66,6 +66,8 @@ type UploadAvatarFormValues = z.infer<typeof uploadAvatarSchema>;
 function AvatarPanel({
   setDisplayingPanel,
 }: AvatarPanelProps) {
+  const auth = useAuth();
+  
   const {
     control,
     handleSubmit,
@@ -84,11 +86,17 @@ function AvatarPanel({
   const onSubmit = async (data: UploadAvatarFormValues) => {
     if (isDirty) {
       if (data.file) {
-        const response: ServiceResponse = await sessionUserService.uploadAvatar(data.file);
+        const response: ServiceResponse<number> = await sessionUserService.uploadAvatar(data.file);
 
         if (response.success) {
           setDisplayingPanel(DisplayingPanel.Name);
           reset(data);
+          
+          auth.updateUserProfile({
+            avatar: {
+              version: response.data!,
+            }
+          });
         } else {
           if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
             const details = response.error.details as Record<"file", string[]>;

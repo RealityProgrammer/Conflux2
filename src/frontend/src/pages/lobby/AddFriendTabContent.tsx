@@ -106,7 +106,7 @@ export default function AddFriendTabContent() {
   return (
     <div className="flex flex-col gap-2 h-full">
       <header className="flex-none text-sm">
-        <span className="block">In search of a friend?</span>
+        <span className="block">Need to search for a friend?</span>
         <span className="block">You can send friend request with their username.</span>
       </header>
 

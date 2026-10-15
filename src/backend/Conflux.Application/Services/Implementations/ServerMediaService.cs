@@ -12,11 +12,15 @@ internal sealed class ServerMediaService(
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector
 ) : IServerMediaService {
-    public async Task<Result> UploadAvatar(Guid serverId, Stream stream, CancellationToken cancellationToken = default) {
+    public async Task<Result<MediaUploadResult>> UploadAvatar(
+        Guid serverId, 
+        Stream stream, 
+        CancellationToken cancellationToken = default
+    ) {
         Result<Image> validateResult = ValidateImageFormat(stream);
 
         if (!validateResult.IsSuccess) {
-            return validateResult;
+            return validateResult.Error;
         }
         
         Image imageFormat = validateResult.Value!;
@@ -24,7 +28,7 @@ internal sealed class ServerMediaService(
         string key = GetAvatarKey(serverId);
         var uploadResult = await blobStorage.Upload(key, stream, imageFormat.MediaType, cancellationToken);
 
-        return uploadResult.IsSuccess ? Result.Success() : uploadResult;
+        return uploadResult.IsSuccess ? Result<MediaUploadResult>.Success(new(imageFormat)) : uploadResult.Error;
     }
 
     public async Task<Result> DeleteAvatar(Guid serverId, CancellationToken cancellationToken = default) {

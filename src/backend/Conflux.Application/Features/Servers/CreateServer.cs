@@ -17,20 +17,30 @@ public sealed record CreateServerCommand(
     Stream? AvatarStream
 ) : ICommand<Result<ServerIdentityDto>>;
 
+public sealed record ServerCreatedNotification(
+    Guid CreatorUserId,
+    Guid ServerId
+) : INotification;
+
 public sealed class CreateServerHandler(
     ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
-    IServerMediaService serverMediaService
+    IServerMediaService serverMediaService,
+    IMediaItemWriteRepository mediaItemWriteRepository,
+    ILogger<CreateServerHandler> logger,
+    IPublisher publisher
 ) : ICommandHandler<CreateServerCommand, Result<ServerIdentityDto>> {
     public async ValueTask<Result<ServerIdentityDto>> Handle(
-        CreateServerCommand request, 
+        CreateServerCommand command, 
         CancellationToken cancellationToken
     ) {
+        Guid creatorId = command.CreatorUserId;
+        
         CommunityServer server = new() {
-            Name = request.Name,
+            Name = command.Name,
             Description = null,
-            CreatorUserId = request.CreatorUserId,
-            OwnerUserId = request.CreatorUserId,
+            CreatorUserId = creatorId,
+            OwnerUserId = creatorId,
             Members = [],
         };
 
@@ -38,7 +48,7 @@ public sealed class CreateServerHandler(
             Name = "Default",
             SpecialRoleType = SpecialRoleType.Default,
             AuthorizeLevel = -1,
-            CreatorUserId = request.CreatorUserId,
+            CreatorUserId = creatorId,
             Permissions = [..Enum.GetValues<ServerPermission>().Select(p => new RolePermission {
                 Permission = p,
                 State = PermissionState.Disable,
@@ -50,13 +60,13 @@ public sealed class CreateServerHandler(
             SpecialRoleType = SpecialRoleType.Owner,
             AuthorizeLevel = int.MaxValue,
             Permissions = [],   // owner is the special role, so every operation short-circuit 
-            CreatorUserId = request.CreatorUserId,
+            CreatorUserId = creatorId,
         };
 
         server.Roles = [defaultRole, ownerRole]; // all members have implicit default role, so no need to waste memory storing it in the database
 
         CommunityServerMember ownerMember = new() {
-            UserId = request.CreatorUserId,
+            UserId = creatorId,
             CommunityServer = server,
             MemberRoles = [
                 new() {
@@ -84,11 +94,34 @@ public sealed class CreateServerHandler(
             return Errors.UnexpectedError();
         }
         
-        // upload the avatar, doesn't matter if it's upload successfully or not the importance is we got everything created.
-        if (request.AvatarStream is { } avatarStream) {
-            await serverMediaService.UploadAvatar(server.Id, avatarStream, CancellationToken.None);
+        // upload avatar
+        if (command.AvatarStream is { } avatarStream) {
+            Result<MediaUploadResult> avatarUploadResult = 
+                await serverMediaService.UploadAvatar(server.Id, avatarStream, CancellationToken.None);
+
+            if (avatarUploadResult.IsSuccess) {
+                MediaItem mediaItem = new() {
+                    ContentType = avatarUploadResult.Value!.Format.MediaType,
+                    Type = MediaItemType.ServerAvatar,
+                    Version = 1,
+                };
+                
+                mediaItemWriteRepository.Add(mediaItem);
+                server.Avatar = mediaItem;
+                
+                try {
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                } catch (OperationCanceledException) {
+                    await serverMediaService.DeleteAvatar(server.Id, CancellationToken.None);
+                    throw;
+                } catch (Exception e) {
+                    logger.LogError(e, "Exception thrown while uploading server avatar.");
+                    await serverMediaService.DeleteAvatar(server.Id, CancellationToken.None);
+                }
+            }
         }
 
+        await publisher.Publish(new ServerCreatedNotification(creatorId, server.Id), CancellationToken.None);
         return Result<ServerIdentityDto>.Success(new(server));
     }
 }

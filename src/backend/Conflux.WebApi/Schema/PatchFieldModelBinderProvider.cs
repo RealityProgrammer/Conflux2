@@ -1,7 +1,7 @@
 using Conflux.Application.Dto;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Conflux.WebApi.Miscs;
+namespace Conflux.WebApi.Schema;
 
 internal sealed class PatchFieldModelBinderProvider : IModelBinderProvider {
     public IModelBinder? GetBinder(ModelBinderProviderContext context) {

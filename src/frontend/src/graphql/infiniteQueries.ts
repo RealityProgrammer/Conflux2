@@ -32,12 +32,27 @@ export type GetDirectConversationsQueryVariables = Exact<{
 
 export type GetDirectConversationsQuery = { directConversations: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, peerUser: { id: string, displayName: string | null, userName: string | null, effectivePresenceStatus: Types.PresenceStatus, avatar: { version: number } | null } | null }> | null } };
 
+export type GetFriendsQueryVariables = Exact<{
+  after?: string | null | undefined;
+  nameFilter?: string | null | undefined;
+}>;
+
+
+export type GetFriendsQuery = { friends: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ otherUser: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } | null }> | null } };
+
 export type GetJoinedCommunityServerQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
 
 
 export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, avatar: { version: number } | null }> | null } };
+
+export type GetPendingFriendRequestsQueryVariables = Exact<{
+  after?: string | null | undefined;
+}>;
+
+
+export type GetPendingFriendRequestsQuery = { friendRequests: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, status: Types.FriendRequestStatus, senderUserId: string, otherUser: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } | null }> | null } };
 
 export type GetServerModerationLogsQueryVariables = Exact<{
   serverId: string;
@@ -291,6 +306,70 @@ useInfiniteGetDirectConversationsQuery.getKey = (variables?: GetDirectConversati
 
 useGetDirectConversationsQuery.fetcher = (variables?: GetDirectConversationsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetDirectConversationsQuery, GetDirectConversationsQueryVariables>(GetDirectConversationsDocument, variables, options);
 
+export const GetFriendsDocument = new TypedDocumentString(`
+    query GetFriends($after: String, $nameFilter: String) {
+  friends(after: $after, nameFilter: $nameFilter) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+    nodes {
+      otherUser {
+        id
+        userName
+        displayName
+        avatar {
+          version
+        }
+      }
+    }
+  }
+}
+    `);
+
+export const useGetFriendsQuery = <
+      TData = GetFriendsQuery,
+      TError = unknown
+    >(
+      variables?: GetFriendsQueryVariables,
+      options?: Omit<UseQueryOptions<GetFriendsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetFriendsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetFriendsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['GetFriends'] : ['GetFriends', variables],
+    queryFn: graphqlFetcher<GetFriendsQuery, GetFriendsQueryVariables>(GetFriendsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetFriendsQuery.getKey = (variables?: GetFriendsQueryVariables) => variables === undefined ? ['GetFriends'] : ['GetFriends', variables];
+
+export const useInfiniteGetFriendsQuery = <
+      TData = InfiniteData<GetFriendsQuery>,
+      TError = unknown
+    >(
+      variables: GetFriendsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetFriendsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetFriendsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetFriendsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['GetFriends.infinite'] : ['GetFriends.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetFriendsQuery, GetFriendsQueryVariables>(GetFriendsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetFriendsQuery.getKey = (variables?: GetFriendsQueryVariables) => variables === undefined ? ['GetFriends.infinite'] : ['GetFriends.infinite', variables];
+
+
+useGetFriendsQuery.fetcher = (variables?: GetFriendsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetFriendsQuery, GetFriendsQueryVariables>(GetFriendsDocument, variables, options);
+
 export const GetJoinedCommunityServerDocument = new TypedDocumentString(`
     query GetJoinedCommunityServer($after: String) {
   joinedServers(after: $after) {
@@ -351,6 +430,73 @@ useInfiniteGetJoinedCommunityServerQuery.getKey = (variables?: GetJoinedCommunit
 
 
 useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServerQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetJoinedCommunityServerQuery, GetJoinedCommunityServerQueryVariables>(GetJoinedCommunityServerDocument, variables, options);
+
+export const GetPendingFriendRequestsDocument = new TypedDocumentString(`
+    query GetPendingFriendRequests($after: String) {
+  friendRequests(after: $after, where: {status: {eq: Pending}}) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+    nodes {
+      id
+      status
+      otherUser {
+        id
+        userName
+        displayName
+        avatar {
+          version
+        }
+      }
+      senderUserId
+    }
+  }
+}
+    `);
+
+export const useGetPendingFriendRequestsQuery = <
+      TData = GetPendingFriendRequestsQuery,
+      TError = unknown
+    >(
+      variables?: GetPendingFriendRequestsQueryVariables,
+      options?: Omit<UseQueryOptions<GetPendingFriendRequestsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetPendingFriendRequestsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetPendingFriendRequestsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['GetPendingFriendRequests'] : ['GetPendingFriendRequests', variables],
+    queryFn: graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetPendingFriendRequestsQuery.getKey = (variables?: GetPendingFriendRequestsQueryVariables) => variables === undefined ? ['GetPendingFriendRequests'] : ['GetPendingFriendRequests', variables];
+
+export const useInfiniteGetPendingFriendRequestsQuery = <
+      TData = InfiniteData<GetPendingFriendRequestsQuery>,
+      TError = unknown
+    >(
+      variables: GetPendingFriendRequestsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetPendingFriendRequestsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetPendingFriendRequestsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetPendingFriendRequestsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['GetPendingFriendRequests.infinite'] : ['GetPendingFriendRequests.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetPendingFriendRequestsQuery.getKey = (variables?: GetPendingFriendRequestsQueryVariables) => variables === undefined ? ['GetPendingFriendRequests.infinite'] : ['GetPendingFriendRequests.infinite', variables];
+
+
+useGetPendingFriendRequestsQuery.fetcher = (variables?: GetPendingFriendRequestsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, variables, options);
 
 export const GetServerModerationLogsDocument = new TypedDocumentString(`
     query GetServerModerationLogs($serverId: UUID!, $after: String) {

@@ -1,14 +1,10 @@
-using Conflux.Application.Dto;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Conflux.WebApi.Miscs;
+namespace Conflux.WebApi.Schema;
 
-internal sealed class PatchFieldModelBinder<T> : IModelBinder {
-    private readonly IModelBinder _innerBinder;
-
-    public PatchFieldModelBinder(IModelBinder innerBinder) {
-        _innerBinder = innerBinder ?? throw new ArgumentNullException(nameof(innerBinder));
-    }
+internal sealed class OptionalModelBinder<T>(IModelBinder innerBinder) : IModelBinder {
+    private readonly IModelBinder _innerBinder = 
+        innerBinder ?? throw new ArgumentNullException(nameof(innerBinder));
 
     public async Task BindModelAsync(ModelBindingContext bindingContext) {
         if (bindingContext == null) throw new ArgumentNullException(nameof(bindingContext));
@@ -23,7 +19,7 @@ internal sealed class PatchFieldModelBinder<T> : IModelBinder {
         }
 
         if (!isSet) {
-            bindingContext.Result = ModelBindingResult.Success(new PatchField<T>(default!, false));
+            bindingContext.Result = ModelBindingResult.Success(default(Facet.Optional<T>));
             return;
         }
 
@@ -39,7 +35,7 @@ internal sealed class PatchFieldModelBinder<T> : IModelBinder {
         }
 
         bindingContext.Result = ModelBindingResult.Success(innerResult.IsModelSet ? 
-            new PatchField<T>((T)innerResult.Model!, true) : 
-            new PatchField<T>(default!, true));
+            new Facet.Optional<T>((T)innerResult.Model!) : 
+            new Facet.Optional<T>(default!));
     }
 }

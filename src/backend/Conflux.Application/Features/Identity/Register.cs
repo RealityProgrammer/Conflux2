@@ -7,8 +7,11 @@ namespace Conflux.Application.Features.Identity;
 
 public sealed record RegisterCommand(string Email, string Password) : ICommand<Result<ApplicationUser>>;
 
+public sealed record UserRegisteredNotification(ApplicationUser User) : INotification;
+
 public sealed class RegisterHandler(
-    UserManager<ApplicationUser> userManager
+    UserManager<ApplicationUser> userManager,
+    IPublisher publisher
 ) : ICommandHandler<RegisterCommand, Result<ApplicationUser>> {
     public async ValueTask<Result<ApplicationUser>> Handle(RegisterCommand request, CancellationToken cancellationToken) {
         var generatedUserName = $"user-{RandomNumberGenerator.GetString("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 16)}";
@@ -37,7 +40,8 @@ public sealed class RegisterHandler(
             
             return Errors.ValidationErrorsOccurred(validationErrors);
         }
-        
+
+        await publisher.Publish(new UserRegisteredNotification(user), CancellationToken.None);
         return Result<ApplicationUser>.Success(user);
     }
 }

@@ -914,9 +914,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfint"];
+                        "application/json": components["schemas"]["ApiResponseOfint"];
+                        "text/json": components["schemas"]["ApiResponseOfint"];
                     };
                 };
             };
@@ -1028,47 +1028,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/users/me/friends": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    name?: string;
-                    offset: number;
-                    count: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfPaginatedResultOfUserIdentityProfileDto"];
-                        "application/json": components["schemas"]["ApiResponseOfPaginatedResultOfUserIdentityProfileDto"];
-                        "text/json": components["schemas"]["ApiResponseOfPaginatedResultOfUserIdentityProfileDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/users/me/profile": {
         parameters: {
             query?: never;
@@ -1114,54 +1073,13 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+                        "application/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+                        "text/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
                     };
                 };
             };
         };
-        trace?: never;
-    };
-    "/api/users/me/pending-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    name?: string;
-                    offset: number;
-                    count: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfPaginatedResultOfPendingFriendRequestDto"];
-                        "application/json": components["schemas"]["ApiResponseOfPaginatedResultOfPendingFriendRequestDto"];
-                        "text/json": components["schemas"]["ApiResponseOfPaginatedResultOfPendingFriendRequestDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/users/{userId}/avatar": {
@@ -2067,6 +1985,11 @@ export interface components {
             data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfint: {
+            /** Format: int32 */
+            data: number;
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
             data: null | components["schemas"]["ChannelCategoryDetailDto"][];
             error: components["schemas"]["Error"];
@@ -2077,14 +2000,6 @@ export interface components {
         };
         ApiResponseOfPaginatedResultOfDiscoverFriendSummary: {
             data: null | components["schemas"]["PaginatedResultOfDiscoverFriendSummary"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfPaginatedResultOfPendingFriendRequestDto: {
-            data: null | components["schemas"]["PaginatedResultOfPendingFriendRequestDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfPaginatedResultOfUserIdentityProfileDto: {
-            data: null | components["schemas"]["PaginatedResultOfUserIdentityProfileDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfRefreshResponse: {
@@ -2125,6 +2040,10 @@ export interface components {
         };
         ApiResponseOfTimelineMessagePage: {
             data: null | components["schemas"]["TimelineMessagePage"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfUpdateProfileResult: {
+            data: null | components["schemas"]["UpdateProfileResult"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfUserAuthorizationInfo: {
@@ -2267,18 +2186,9 @@ export interface components {
         };
         /** @enum {string} */
         MessageType: MessageType;
+        OptionalOfint: null | number;
         PaginatedResultOfDiscoverFriendSummary: {
             elements: components["schemas"]["DiscoverFriendSummary"][];
-            /** Format: int32 */
-            totalCount: number;
-        };
-        PaginatedResultOfPendingFriendRequestDto: {
-            elements: components["schemas"]["PendingFriendRequestDto"][];
-            /** Format: int32 */
-            totalCount: number;
-        };
-        PaginatedResultOfUserIdentityProfileDto: {
-            elements: components["schemas"]["UserIdentityProfileDto"][];
             /** Format: int32 */
             totalCount: number;
         };
@@ -2288,15 +2198,6 @@ export interface components {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];
             permissionStates: components["schemas"]["Dictionary`2"];
-        };
-        PendingFriendRequestDto: {
-            /** Format: uuid */
-            userId: string;
-            userName: string;
-            displayName: string;
-            /** Format: int32 */
-            avatarRevision: null | number;
-            status: components["schemas"]["UserRelationshipStatus"];
         };
         /** @enum {string} */
         PermissionState: PermissionState;
@@ -2418,6 +2319,10 @@ export interface components {
             id: string;
             displayName: null | string;
             avatar?: null | components["schemas"]["MediaItemDto"];
+        };
+        UpdateProfileResult: {
+            avatarVersion?: components["schemas"]["OptionalOfint"];
+            bannerVersion?: components["schemas"]["OptionalOfint"];
         };
         UserAuthorizationInfo: {
             /** Format: uuid */

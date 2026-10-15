@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
+using Conflux.Application.Converters;
 using Conflux.Application.Dto;
 using Conflux.Application.Enums;
 using Conflux.Application.Features.Servers;
@@ -34,6 +35,7 @@ using Conflux.WebApi.Miscs;
 using Conflux.WebApi.Notifications;
 using Conflux.WebApi.Notifications.Conversation;
 using Conflux.WebApi.Notifications.Users;
+using Conflux.WebApi.Schema;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
@@ -55,6 +57,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.RateLimiting;
 using CallingService = Conflux.Application.Services.Implementations.CallingService;
 using Error = Conflux.Domain.Error;
@@ -279,10 +282,14 @@ builder.Services
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
     .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
     
+    .AddSingleton<IMailService, MailService>()
+    .AddScoped<IAuthMailService, AuthMailService>()
+    
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
     
     .AddScoped<IUnitOfWork, UnitOfWork>()
+    
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
     
@@ -296,7 +303,6 @@ builder.Services
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
-    // .AddScoped<IAttachmentRepository, MediaItemRepository>()
     
     .AddScoped<IMediaItemReadRepository, MediaItemRepository>()
     .AddScoped<IMediaItemWriteRepository>(services =>
@@ -340,8 +346,23 @@ builder.Services
 builder.Services.AddControllersWithViews(options => {
     options.Filters.Add<AntiforgeryValidationFilter>();
     options.ModelBinderProviders.Insert(0, new PatchFieldModelBinderProvider());
+    options.ModelBinderProviders.Insert(0, new OptionalModelBinderProvider());
 }).AddJsonOptions(options => {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.JsonSerializerOptions.Converters.Add(new OptionalConverterFactory());
+    
+    var existingResolver = options.JsonSerializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
+    options.JsonSerializerOptions.TypeInfoResolver = existingResolver.WithAddedModifier(static typeInfo => {
+        if (typeInfo.Kind != JsonTypeInfoKind.Object) return;
+
+        foreach (var prop in typeInfo.Properties) {
+            if (prop.PropertyType.IsGenericType && 
+                prop.PropertyType.GetGenericTypeDefinition() == typeof(Optional<>)) {
+                    
+                prop.ShouldSerialize = static (obj, value) => value is IOptional { HasValue: true };
+            }
+        }
+    });
 }).ConfigureApiBehaviorOptions(options => {
     options.InvalidModelStateResponseFactory = context => {
         var validationErrors = context.ModelState
@@ -422,7 +443,7 @@ builder.Services.AddOpenApi(options => {
                 return Task.CompletedTask;
             }
             
-            if (typeDef == typeof(PatchField<>)) {
+            if (typeDef == typeof(PatchField<>) || typeDef == typeof(Facet.Optional<>)) {
                 var elementType = targetType.GetGenericArguments()[0];
                 
                 schema.Properties?.Clear();
@@ -535,6 +556,7 @@ builder.Services.AddOpenApi(options => {
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
     options.SchemaFilter<PatchFieldSchemaFilter>();
+    options.SchemaFilter<OptionalSchemaFilter>();
     
     options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme {
         Type = SecuritySchemeType.Http,

@@ -1,16 +1,15 @@
-using Conflux.Application.Dto;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Conflux.WebApi.Miscs;
+namespace Conflux.WebApi.Schema;
 
-public sealed class PatchFieldSchemaFilter : ISchemaFilter {
+public sealed class OptionalSchemaFilter : ISchemaFilter {
     public void Apply(IOpenApiSchema schema, SchemaFilterContext context) {
         if (schema is not OpenApiSchema openApiSchema) {
             return;
         }
 
-        if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(PatchField<>)) {
+        if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(Facet.Optional<>)) {
             var innerType = context.Type.GetGenericArguments()[0];
 
             var innerSchema = context.SchemaGenerator.GenerateSchema(innerType, context.SchemaRepository);
