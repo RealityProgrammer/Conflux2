@@ -181,10 +181,10 @@ export const authService = {
     return activeGetAuthorizationInfoPromise;
   },
 
-  sendVerifyEmail: async (): Promise<ServiceResponse> => {
+  resendConfirmEmail: async (): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/send-verify-email");
+        await apiClient.post<BackendResponse>("/auth/resend-confirm-email");
 
       return {
         success: true,

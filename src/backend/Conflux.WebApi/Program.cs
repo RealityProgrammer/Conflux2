@@ -282,10 +282,14 @@ builder.Services
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
     .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
     
+    .AddSingleton<IMailService, MailService>()
+    .AddScoped<IAuthMailService, AuthMailService>()
+    
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
     
     .AddScoped<IUnitOfWork, UnitOfWork>()
+    
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
     
@@ -299,7 +303,6 @@ builder.Services
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
-    // .AddScoped<IAttachmentRepository, MediaItemRepository>()
     
     .AddScoped<IMediaItemReadRepository, MediaItemRepository>()
     .AddScoped<IMediaItemWriteRepository>(services =>
