@@ -914,9 +914,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfint"];
+                        "application/json": components["schemas"]["ApiResponseOfint"];
+                        "text/json": components["schemas"]["ApiResponseOfint"];
                     };
                 };
             };
@@ -1114,9 +1114,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+                        "application/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+                        "text/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
                     };
                 };
             };
@@ -2067,6 +2067,11 @@ export interface components {
             data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfint: {
+            /** Format: int32 */
+            data: number;
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
             data: null | components["schemas"]["ChannelCategoryDetailDto"][];
             error: components["schemas"]["Error"];
@@ -2125,6 +2130,10 @@ export interface components {
         };
         ApiResponseOfTimelineMessagePage: {
             data: null | components["schemas"]["TimelineMessagePage"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfUpdateProfileResult: {
+            data: null | components["schemas"]["UpdateProfileResult"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfUserAuthorizationInfo: {
@@ -2267,6 +2276,7 @@ export interface components {
         };
         /** @enum {string} */
         MessageType: MessageType;
+        OptionalOfint: null | number;
         PaginatedResultOfDiscoverFriendSummary: {
             elements: components["schemas"]["DiscoverFriendSummary"][];
             /** Format: int32 */
@@ -2418,6 +2428,10 @@ export interface components {
             id: string;
             displayName: null | string;
             avatar?: null | components["schemas"]["MediaItemDto"];
+        };
+        UpdateProfileResult: {
+            avatarVersion?: components["schemas"]["OptionalOfint"];
+            bannerVersion?: components["schemas"]["OptionalOfint"];
         };
         UserAuthorizationInfo: {
             /** Format: uuid */

@@ -37,6 +37,11 @@ import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
 import {Tooltip} from "radix-ui";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
+export type RootLoaderProps = {
+  authorizationInfo: UserAuthorizationInfo;
+  userProfile: UserIdentityProfileDto;
+}
+
 export type DirectMessagePageLoaderProps = {
   conversationId: string;
   peerProfile: UserIdentityProfileDto;
@@ -46,10 +51,14 @@ export const router = createBrowserRouter([
   {
     id: "root",
     path: "/",
-    loader: async () => {
-      const authResponse = await authService.getAuthorizationInfo();
+    loader: async (): Promise<RootLoaderProps | null> => {
+      const authResponse: ServiceResponse<UserAuthorizationInfo> = await authService.getAuthorizationInfo();
 
-      const authInfo = authResponse.data;
+      if (!authResponse.success) {
+        return null;
+      }
+      
+      const authInfo: UserAuthorizationInfo = authResponse.data!;
       let profileInfo: UserIdentityProfileDto | null = null;
 
       if (authInfo?.id) {
@@ -66,7 +75,7 @@ export const router = createBrowserRouter([
 
       return {
         authorizationInfo: authInfo,
-        userProfile: profileInfo
+        userProfile: profileInfo!,
       };
     },
     element: (

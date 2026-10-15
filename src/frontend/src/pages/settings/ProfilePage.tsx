@@ -25,6 +25,7 @@ import {usePreviewUrl} from "../../hooks/usePreviewUrl.ts";
 import {hash} from "../../utils/hashing.ts";
 import {AvatarAndBanner} from "../../components/AvatarAndBanner.tsx";
 import {UserProfile} from "../../components/UserProfile.tsx";
+import type {ServiceResponse, UpdateProfileResult} from "../../api/types.ts";
 
 export default function ProfilePage() {
   return (
@@ -104,7 +105,7 @@ function ProfileForm() {
   const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (data: UpdateProfileFormValues) => {
     if (!isDirty) return;
 
-    const response = await sessionUserService.updateProfile(
+    const response: ServiceResponse<UpdateProfileResult> = await sessionUserService.updateProfile(
       dirtyFields.displayName ? data.displayName : undefined,
       dirtyFields.pronouns ? data.pronouns : undefined,
       dirtyFields.bio ? data.bio : undefined,
@@ -119,9 +120,30 @@ function ProfileForm() {
         avatar: undefined,
         banner: undefined,
       });
-      auth?.updateUserProfile({
+      
+      auth.updateUserProfile({
         displayName: data.displayName,
+        // avatar: response.data?.avatarVersion !== undefined ? {
+        //   version: response.data.avatarVersion,
+        // } : undefined,
       });
+      
+      if (response.data?.avatarVersion !== undefined) {
+        auth.updateUserProfile({
+          avatar: response.data?.avatarVersion === null ? null : {
+            version: response.data.avatarVersion,
+          }
+        });
+      }
+      
+      // TODO: Update banner
+      // if (response.data?.bannerVersion !== undefined) {
+      //   auth.updateUserProfile({
+      //     banner: response.data?.bannerVersion === null ? null : {
+      //       version: response.data.bannerVersion,
+      //     }
+      //   });
+      // }
 
       if (dirtyFields.presence) {
         presence.updateManualStatus(data.presence, "client");
@@ -446,10 +468,11 @@ function Displayer({
         <UserProfile.Names displayName={watchedValues.displayName ?? "???"} userName={userProfile?.userName ?? "???"}/>
 
         <UserProfile.FieldContainer>
-          {[...Array(5).keys()].map((value) => (
+          {[...Array(5).keys()].map((_, index) => (
             <UserProfile.Field
-              label={`Field ${value}`}
-              value={<span>Value {value}</span>}
+              key={index}
+              label={`Field ${index}`}
+              value={<span>Value {index}</span>}
             />
           ))}
         </UserProfile.FieldContainer>

@@ -23,7 +23,7 @@ public sealed class SessionUserController(
     IMediator mediator
 ) : ControllerBase {
     [HttpPost("avatar")]
-    public async Task<ActionResult<ApiResponse>> UploadAvatar([FromForm] UploadAvatarRequest request) {
+    public async Task<ActionResult<ApiResponse<int>>> UploadAvatar([FromForm] UploadAvatarRequest request) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -43,7 +43,7 @@ public sealed class SessionUserController(
         ));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<int?>(result.Value!.AvatarVersion.Value!.Value, Error.None));
         }
 
         return result.Error.Code switch {
@@ -138,7 +138,9 @@ public sealed class SessionUserController(
     }
 
     [HttpPatch("profile")]
-    public async Task<ActionResult<ApiResponse>> UpdateProfile([FromForm] UpdateProfileRequest request) {
+    public async Task<ActionResult<ApiResponse<UpdateProfileResult>>> UpdateProfile(
+        [FromForm] UpdateProfileRequest request
+    ) {
         var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
         if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
@@ -171,7 +173,7 @@ public sealed class SessionUserController(
         ));
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<UpdateProfileResult>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {

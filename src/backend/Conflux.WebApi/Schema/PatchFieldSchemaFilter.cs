@@ -2,7 +2,7 @@ using Conflux.Application.Dto;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Conflux.WebApi.Miscs;
+namespace Conflux.WebApi.Schema;
 
 public sealed class PatchFieldSchemaFilter : ISchemaFilter {
     public void Apply(IOpenApiSchema schema, SchemaFilterContext context) {

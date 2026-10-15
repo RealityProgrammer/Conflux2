@@ -1,14 +1,11 @@
 using Conflux.Application.Dto;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Conflux.WebApi.Miscs;
+namespace Conflux.WebApi.Schema;
 
-internal sealed class PatchFieldModelBinder<T> : IModelBinder {
-    private readonly IModelBinder _innerBinder;
-
-    public PatchFieldModelBinder(IModelBinder innerBinder) {
-        _innerBinder = innerBinder ?? throw new ArgumentNullException(nameof(innerBinder));
-    }
+internal sealed class PatchFieldModelBinder<T>(IModelBinder innerBinder) : IModelBinder {
+    private readonly IModelBinder _innerBinder = 
+        innerBinder ?? throw new ArgumentNullException(nameof(innerBinder));
 
     public async Task BindModelAsync(ModelBindingContext bindingContext) {
         if (bindingContext == null) throw new ArgumentNullException(nameof(bindingContext));

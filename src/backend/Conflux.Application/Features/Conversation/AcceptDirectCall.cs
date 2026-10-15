@@ -6,6 +6,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record AcceptDirectCallCommand(Guid CallId, Guid CalleeId, string CalleeConnectionId) : ICommand<Result>;
 
+
 public sealed record CallAcceptedNotification(Guid CallId, Guid CalleeId, Guid CallerId) : INotification;
 
 internal sealed class AcceptDirectCallHandler(
