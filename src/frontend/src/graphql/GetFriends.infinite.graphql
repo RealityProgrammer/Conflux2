@@ -1,0 +1,27 @@
+query GetFriends($after: String, $nameFilter: String) {
+    friends(
+        after: $after
+        nameFilter: $nameFilter
+        order: {
+            updatedAt: DESC
+            createdAt: DESC
+        }
+    ) {
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            endCursor
+        }
+        
+        nodes {
+            otherUser {
+                id
+                userName
+                displayName
+                avatar {
+                    version
+                }
+            }
+        }
+    }
+}

@@ -1028,47 +1028,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/users/me/friends": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    name?: string;
-                    offset: number;
-                    count: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfPaginatedResultOfUserIdentityProfileDto"];
-                        "application/json": components["schemas"]["ApiResponseOfPaginatedResultOfUserIdentityProfileDto"];
-                        "text/json": components["schemas"]["ApiResponseOfPaginatedResultOfUserIdentityProfileDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/users/me/profile": {
         parameters: {
             query?: never;
@@ -2043,10 +2002,6 @@ export interface components {
             data: null | components["schemas"]["PaginatedResultOfDiscoverFriendSummary"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfPaginatedResultOfUserIdentityProfileDto: {
-            data: null | components["schemas"]["PaginatedResultOfUserIdentityProfileDto"];
-            error: components["schemas"]["Error"];
-        };
         ApiResponseOfRefreshResponse: {
             data: null | components["schemas"]["RefreshResponse"];
             error: components["schemas"]["Error"];
@@ -2234,11 +2189,6 @@ export interface components {
         OptionalOfint: null | number;
         PaginatedResultOfDiscoverFriendSummary: {
             elements: components["schemas"]["DiscoverFriendSummary"][];
-            /** Format: int32 */
-            totalCount: number;
-        };
-        PaginatedResultOfUserIdentityProfileDto: {
-            elements: components["schemas"]["UserIdentityProfileDto"][];
             /** Format: int32 */
             totalCount: number;
         };

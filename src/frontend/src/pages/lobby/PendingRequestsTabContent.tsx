@@ -1,8 +1,6 @@
-import {useDebounceValue} from "usehooks-ts";
-import {BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
-import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
-import {type PaginatedResult, type PendingFriendRequestDto, type ServiceResponse} from "../../api/types.ts";
+import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
+import {type ServiceResponse} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import type {
@@ -14,16 +12,12 @@ import type {
 import useFriendActions from "../../hooks/useFriendActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {sessionUserService} from "../../api/sessionUserService.ts";
-import {UserRelationshipStatus} from "../../api/schema.ts";
 import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
 import {
   type GetPendingFriendRequestsQuery,
   useInfiniteGetPendingFriendRequestsQuery
 } from "../../graphql/infiniteQueries.ts";
 import {useAuth} from "../../contexts/AuthContext.tsx";
-
-const ITEM_HEIGHT: number = 52;
 
 export default function PendingRequestsTabContent() {
   const queryClient = useQueryClient();
@@ -185,7 +179,6 @@ function Row({
       userName={element.otherUser!.userName!}
       displayName={element.otherUser!.displayName!}
       className="w-full p-1.5 hover-highlight"
-      style={{height: `${ITEM_HEIGHT}px`}}
     >
       {userProfile!.id === element.senderUserId ? (
         <>

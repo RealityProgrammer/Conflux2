@@ -116,26 +116,6 @@ public sealed class SessionUserController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-    
-    [HttpGet("friends")]
-    public async Task<ActionResult<ApiResponse<PaginatedResult<UserIdentityProfileDto>>>> GetFriends(
-        [FromQuery] string? name,
-        [FromQuery, Required] int offset,
-        [FromQuery, Required] int count
-    ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<UserIdentityProfileDto>(null, Errors.InvalidIdentifier()));
-        }
-        
-        offset = int.Max(offset, 0);
-        count = int.Max(count, 1);
-        
-        var result = await mediator.Send(new GetFriendsQuery(userId, name, offset, count));
-
-        return Ok(new ApiResponse<PaginatedResult<UserIdentityProfileDto>>(result, Error.None));
-    }
 
     [HttpPatch("profile")]
     public async Task<ActionResult<ApiResponse<UpdateProfileResult>>> UpdateProfile(

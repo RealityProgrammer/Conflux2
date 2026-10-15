@@ -118,28 +118,4 @@ internal sealed class FriendRequestRepository(
         
         return new(paginatedItems, totalCount);
     }
-
-    public async Task<PaginatedResult<UserIdentityProfileDto>> GetFriends(
-        Guid searcherId, 
-        string? nameFilter,
-        int offset,
-        int count,
-        CancellationToken cancellationToken = default
-    ) {
-        var acceptedRequestsQuery = dbContext.FriendRequests
-            .Where(r => r.SenderUserId == searcherId || r.ReceiverUserId == searcherId)
-            .Where(r => r.Status == FriendRequestStatus.Accepted)
-            .Select(r => r.SenderUserId == searcherId ? r.Receiver : r.Sender)
-            .NameContains(nameFilter);
-
-        int totalCount = await acceptedRequestsQuery.CountAsync(cancellationToken);
-        var paginatedItems = await acceptedRequestsQuery
-            .OrderBy(u => u.UserName)
-            .Skip(offset)
-            .Take(count)
-            .SelectFacet<UserIdentityProfileDto>()
-            .ToListAsync(cancellationToken);
-        
-        return new(paginatedItems, totalCount);
-    }
 }

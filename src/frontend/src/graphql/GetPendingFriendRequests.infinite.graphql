@@ -1,8 +1,8 @@
 query GetPendingFriendRequests($after: String) {
     friendRequests(
-        after: $after,
+        after: $after
         where: {
-            status: { eq: Pending },
+            status: { eq: Pending }
         }
     ) {
         pageInfo {
