@@ -323,7 +323,7 @@ builder.Services
     
     .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
     .AddScoped<IUserAccountDeletionWriteRepository>(services => 
-        (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionWriteRepository>()
+        (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
     );
 
 // blob service.

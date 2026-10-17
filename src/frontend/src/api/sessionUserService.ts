@@ -109,7 +109,7 @@ export const sessionUserService = {
   deleteAccount: async (reason: UserAccountDeleteReason, extraMessage: string | null): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(`users/me/friends/delete-account`, {
+        await apiClient.post<BackendResponse>(`users/me/delete-account`, {
           reason,
           extraMessage,
         });

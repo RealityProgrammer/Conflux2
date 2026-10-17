@@ -18,6 +18,7 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     [MaxLength(32)] public string? Pronouns { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
     
     // manual != current
     public PresenceStatus ManualPresenceStatus { get; set; } = PresenceStatus.Online;

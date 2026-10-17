@@ -611,6 +611,7 @@ input ApplicationUserFilterInput {
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
   createdAt: DateTimeOperationFilterInput
+  deletedAt: DateTimeOperationFilterInput
   manualPresenceStatus: PresenceStatusOperationFilterInput
   lastSeenAt: DateTimeOperationFilterInput
   sentFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
@@ -645,6 +646,7 @@ input ApplicationUserSortInput {
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
+  deletedAt: SortEnumType @cost(weight: "10")
   manualPresenceStatus: SortEnumType @cost(weight: "10")
   lastSeenAt: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")

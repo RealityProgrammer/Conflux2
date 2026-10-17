@@ -6,7 +6,7 @@
       <synchronize>true</synchronize>
       <configured-by-url>true</configured-by-url>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/conflux?logServerErrorDetail=true&amp;password=6Ah}NEyK}_~N{s{eK7e.P7&amp;user=postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/conflux?logServerErrorDetail=true&amp;password=uy.M1ANuVJdeyfE!TrDA9T&amp;user=postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
