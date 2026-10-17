@@ -38,13 +38,13 @@ var cache = builder
     .WithEndpoint(6379, 6379)
     .WithDataVolume();
 
-var database = builder
-    .AddPostgres("Database")
-    .WithImageTag("alpine")
+var postgres = builder
+    .AddPostgres("Postgres")
+    .WithImageTag("18.6-alpine3.24")
     .WithEndpoint(5432, 5432)
-    .WithVolume("postgres-data", "/var/lib/postgresql");
+    .WithDataVolume();
 
-database.AddDatabase("conflux");
+var database = postgres.AddDatabase("conflux");
 
 IResourceBuilder<ContainerResource>? garage = null;
 
@@ -54,7 +54,7 @@ if (useLocalGarage) {
         : "../../../../garage/garage.toml";
     
     garage = builder
-        .AddContainer("garage", "dxflrs/garage", "v2.3.0")
+        .AddContainer("Garage", "dxflrs/garage", "v2.3.0")
         .WithHttpEndpoint(3900, 3900, "s3-api")
         .WithVolume("garage-data", "/var/lib/garage/data")
         .WithVolume("garage-meta", "/var/lib/garage/meta");
