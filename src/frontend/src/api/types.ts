@@ -36,7 +36,6 @@ export type LoginResponse = components["schemas"]["LoginResponse"];
 export type RefreshResponse = components["schemas"]["RefreshResponse"];
 
 export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
-export type PendingFriendRequestDto = components["schemas"]["PendingFriendRequestDto"];
 export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
 export type MediaItemDto = components["schemas"]["MediaItemDto"];
 export type StartCallResult = components["schemas"]["StartCallResult"];

@@ -35,6 +35,7 @@ import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import {directConversationService} from "./api/directConversationService.ts";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
 import {Tooltip} from "radix-ui";
+import DeleteAccountPage from "./pages/settings/DeleteAccountPage.tsx";
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type RootLoaderProps = {
@@ -280,6 +281,10 @@ export const router = createBrowserRouter([
               {
                 path: "profile",
                 element: <ProfilePage/>
+              },
+              {
+                path: "delete-account",
+                element: <DeleteAccountPage/>
               },
               {
                 path: "*",

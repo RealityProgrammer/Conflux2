@@ -320,8 +320,11 @@ builder.Services
         (ServerModerationLogRepository)services.GetRequiredService<IServerModerationLogReadRepository>()
     )
     .AddScoped<ICallingService, CallingService>()
-
-    .Configure<AuthOptions>(builder.Configuration.GetSection("Services:Auth"));
+    
+    .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
+    .AddScoped<IUserAccountDeletionWriteRepository>(services => 
+        (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionWriteRepository>()
+    );
 
 // blob service.
 builder.Services.AddSingleton<IAmazonS3>((services) => {

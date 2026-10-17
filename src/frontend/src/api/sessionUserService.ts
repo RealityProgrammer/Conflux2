@@ -1,6 +1,6 @@
 import type {
   BackendResponse,
-  PaginatedResult, PendingFriendRequestDto,
+  PaginatedResult,
   ServiceResponse, UpdateProfileResult,
   UserIdentityProfileDto
 } from "./types.ts";
@@ -9,6 +9,7 @@ import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {authService} from "./authService.ts";
 import type {PresenceStatus} from "../graphql/types.ts";
+import type {UserAccountDeleteReason} from "./schema.ts";
 
 export const sessionUserService = {
   uploadAvatar: async (file: File): Promise<ServiceResponse<number>> => {
@@ -98,6 +99,24 @@ export const sessionUserService = {
         success: true,
         statusCode: response.status,
         data: response.data.data,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+  
+  deleteAccount: async (reason: UserAccountDeleteReason, extraMessage: string | null): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>(`users/me/friends/delete-account`, {
+          reason,
+          extraMessage,
+        });
+
+      return {
+        success: true,
+        statusCode: response.status,
       }
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;

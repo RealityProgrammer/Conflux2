@@ -70,7 +70,7 @@ const HUMOROUS_TITLES = [
   "operating on 3 hours of sleep and bad decisions",
   "ghosting responsibilities like a bad text",
   "expert at making bad situations exponentially worse",
-  "currently unsupervised by an adult",
+  "currently being unsupervised by an adult",
 ];
 
 interface BioProps {

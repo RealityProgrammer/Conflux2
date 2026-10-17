@@ -37,6 +37,7 @@ export type ApplicationUser = {
 
 export type ApplicationUserFilterInput = {
   accessFailedCount?: InputMaybe<IntOperationFilterInput>;
+  accountDeletions?: InputMaybe<ListFilterInputTypeOfUserAccountDeletionFilterInput>;
   and?: InputMaybe<Array<ApplicationUserFilterInput>>;
   avatar?: InputMaybe<MediaItemFilterInput>;
   avatarId?: InputMaybe<UuidOperationFilterInput>;
@@ -737,6 +738,13 @@ export type ListFilterInputTypeOfServerModerationLogFilterInput = {
   some?: InputMaybe<ServerModerationLogFilterInput>;
 };
 
+export type ListFilterInputTypeOfUserAccountDeletionFilterInput = {
+  all?: InputMaybe<UserAccountDeletionFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<UserAccountDeletionFilterInput>;
+  some?: InputMaybe<UserAccountDeletionFilterInput>;
+};
+
 export type MediaItem = {
   __typename?: 'MediaItem';
   contentType: Scalars['String']['output'];
@@ -1390,6 +1398,45 @@ export type UpdateManualPresenceStatusInput = {
 export type UpdateManualPresenceStatusPayload = {
   __typename?: 'UpdateManualPresenceStatusPayload';
   userId: Scalars['UUID']['output'];
+};
+
+export enum UserAccountDeleteReason {
+  AnotherAccount = 'AnotherAccount',
+  Bugs = 'Bugs',
+  Other = 'Other',
+  PrivacyConcern = 'PrivacyConcern'
+}
+
+export type UserAccountDeleteReasonOperationFilterInput = {
+  eq?: InputMaybe<UserAccountDeleteReason>;
+  in?: InputMaybe<Array<UserAccountDeleteReason>>;
+  neq?: InputMaybe<UserAccountDeleteReason>;
+  nin?: InputMaybe<Array<UserAccountDeleteReason>>;
+};
+
+export enum UserAccountDeleteStatus {
+  Canceled = 'Canceled',
+  Deleted = 'Deleted',
+  Pending = 'Pending'
+}
+
+export type UserAccountDeleteStatusOperationFilterInput = {
+  eq?: InputMaybe<UserAccountDeleteStatus>;
+  in?: InputMaybe<Array<UserAccountDeleteStatus>>;
+  neq?: InputMaybe<UserAccountDeleteStatus>;
+  nin?: InputMaybe<Array<UserAccountDeleteStatus>>;
+};
+
+export type UserAccountDeletionFilterInput = {
+  and?: InputMaybe<Array<UserAccountDeletionFilterInput>>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  extraMessage?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<UserAccountDeletionFilterInput>>;
+  reason?: InputMaybe<UserAccountDeleteReasonOperationFilterInput>;
+  status?: InputMaybe<UserAccountDeleteStatusOperationFilterInput>;
+  user?: InputMaybe<ApplicationUserFilterInput>;
+  userId?: InputMaybe<UuidOperationFilterInput>;
 };
 
 export type UuidOperationFilterInput = {

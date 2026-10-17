@@ -617,6 +617,7 @@ input ApplicationUserFilterInput {
   receivedFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
   conversationParticipants: ListFilterInputTypeOfConversationParticipantFilterInput
+  accountDeletions: ListFilterInputTypeOfUserAccountDeletionFilterInput
   id: UuidOperationFilterInput
   userName: StringOperationFilterInput
   normalizedUserName: StringOperationFilterInput
@@ -1043,6 +1044,13 @@ input ListFilterInputTypeOfServerModerationLogFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
+input ListFilterInputTypeOfUserAccountDeletionFilterInput {
+  all: UserAccountDeletionFilterInput @cost(weight: "10")
+  none: UserAccountDeletionFilterInput @cost(weight: "10")
+  some: UserAccountDeletionFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
 input MediaItemDtoSortInput {
   version: SortEnumType @cost(weight: "10")
   contentType: SortEnumType @cost(weight: "10")
@@ -1269,6 +1277,32 @@ input UpdateManualPresenceStatusInput {
   status: PresenceStatus!
 }
 
+input UserAccountDeleteReasonOperationFilterInput {
+  eq: UserAccountDeleteReason @cost(weight: "10")
+  neq: UserAccountDeleteReason @cost(weight: "10")
+  in: [UserAccountDeleteReason!] @cost(weight: "10")
+  nin: [UserAccountDeleteReason!] @cost(weight: "10")
+}
+
+input UserAccountDeleteStatusOperationFilterInput {
+  eq: UserAccountDeleteStatus @cost(weight: "10")
+  neq: UserAccountDeleteStatus @cost(weight: "10")
+  in: [UserAccountDeleteStatus!] @cost(weight: "10")
+  nin: [UserAccountDeleteStatus!] @cost(weight: "10")
+}
+
+input UserAccountDeletionFilterInput {
+  and: [UserAccountDeletionFilterInput!]
+  or: [UserAccountDeletionFilterInput!]
+  id: UuidOperationFilterInput
+  reason: UserAccountDeleteReasonOperationFilterInput
+  status: UserAccountDeleteStatusOperationFilterInput
+  extraMessage: StringOperationFilterInput
+  userId: UuidOperationFilterInput
+  user: ApplicationUserFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
 input UuidOperationFilterInput {
   eq: UUID @cost(weight: "10")
   neq: UUID @cost(weight: "10")
@@ -1398,6 +1432,19 @@ enum SpecialRoleType {
   None
   Default
   Owner
+}
+
+enum UserAccountDeleteReason {
+  PrivacyConcern
+  AnotherAccount
+  Bugs
+  Other
+}
+
+enum UserAccountDeleteStatus {
+  Pending
+  Canceled
+  Deleted
 }
 
 "The `DateTime` scalar type represents a date and time with time zone offset information."

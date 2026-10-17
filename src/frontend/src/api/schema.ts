@@ -184,7 +184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/send-verify-email": {
+    "/api/auth/resend-confirm-email": {
         parameters: {
             query?: never;
             header?: never;
@@ -1080,6 +1080,49 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/users/me/delete-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeleteAccountRequest"];
+                    "text/json": components["schemas"]["DeleteAccountRequest"];
+                    "application/*+json": components["schemas"]["DeleteAccountRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/users/{userId}/avatar": {
@@ -2099,6 +2142,10 @@ export interface components {
         CreateRoleRequest: {
             name: string;
         };
+        DeleteAccountRequest: {
+            reason: components["schemas"]["UserAccountDeleteReason"];
+            extraMessage: null | string;
+        };
         "Dictionary`2": unknown;
         DirectConversationSummary: {
             /** Format: uuid */
@@ -2324,6 +2371,8 @@ export interface components {
             avatarVersion?: components["schemas"]["OptionalOfint"];
             bannerVersion?: components["schemas"]["OptionalOfint"];
         };
+        /** @enum {string} */
+        UserAccountDeleteReason: UserAccountDeleteReason;
         UserAuthorizationInfo: {
             /** Format: uuid */
             id: string;
@@ -2485,6 +2534,12 @@ export enum ServerPermission {
     SendMessage = "SendMessage",
     EditMessages = "EditMessages",
     DeleteMessages = "DeleteMessages"
+}
+export enum UserAccountDeleteReason {
+    PrivacyConcern = "PrivacyConcern",
+    AnotherAccount = "AnotherAccount",
+    Bugs = "Bugs",
+    Other = "Other"
 }
 export enum UserRelationshipStatus {
     Stranger = "Stranger",

@@ -27,4 +27,5 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public virtual ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = [];
     public virtual ICollection<CommunityServerMember> JoinedCommunityServers { get; set; } = [];
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = [];
+    public virtual ICollection<UserAccountDeletion> AccountDeletions { get; set; } = [];
 }
