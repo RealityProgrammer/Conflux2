@@ -95,6 +95,7 @@ public sealed class AuthenticateController(
             return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidRefreshToken()));
         }
         
+        // decode and grab email address
         var decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
         int firstColon = decodedPayload.IndexOf(':');
 

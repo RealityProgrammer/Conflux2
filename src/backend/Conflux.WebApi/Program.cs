@@ -68,6 +68,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 bool isDevelopment = builder.Environment.IsDevelopment();
 
+// keys and stuffs
+builder.Configuration.AddKeyPerFile("/run/secrets", true);
+
 // options
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth"))
     .Configure<JwtOptions>(builder.Configuration.GetSection("JWT"))
@@ -75,9 +78,6 @@ builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth")
     .Configure<MailOptions>(builder.Configuration.GetSection("Mail"))
     .Configure<MediaOptions>(builder.Configuration.GetSection("Media"))
     .Configure<S3Options>(builder.Configuration.GetSection("S3"));
-
-// keys and stuffs
-builder.Configuration.AddKeyPerFile("/run/secrets", true);
 
 // Authenticate & Authorization.
 builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>();
@@ -101,9 +101,9 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at Jwt:Secret."))),
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at JWT:Secret."))),
     };
 
     options.MapInboundClaims = false;

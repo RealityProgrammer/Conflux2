@@ -2,7 +2,6 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
-using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
 namespace Conflux.Application.Features.Identity;
@@ -31,7 +30,7 @@ public sealed class LoginHandler(
         IList<string> roles = await userManager.GetRolesAsync(user);
                     
         jwtProvider.GenerateAccessToken(user, roles, out string accessToken, out _);
-        jwtProvider.GenerateRefreshToken(out string refreshToken, out DateTimeOffset refreshTokenExpiration);
+        jwtProvider.GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset refreshTokenExpiration);
 
         var storeResult = await jwtStorage.StoresAuthenticationToken(user, refreshToken, refreshTokenExpiration);
         
@@ -45,6 +44,6 @@ public sealed class LoginHandler(
             user.IsUserNameLocked,
             roles.AsReadOnly(),
             []
-        ), "Bearer", accessToken, refreshToken));
+        ), "Bearer", accessToken, Convert.ToBase64String(refreshToken)));
     }
 }

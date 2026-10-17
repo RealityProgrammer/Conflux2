@@ -20,7 +20,7 @@ public sealed class RefreshHandler(
             return Errors.NoUserFoundFromEmail();
         }
 
-        var result = await jwtStorage.CheckAuthenticationToken(user, request.RefreshToken);
+        var result = await jwtStorage.CheckAuthenticationToken(user, Convert.FromBase64String(request.RefreshToken));
 
         if (!result.IsSuccess) {
             return result.Error;

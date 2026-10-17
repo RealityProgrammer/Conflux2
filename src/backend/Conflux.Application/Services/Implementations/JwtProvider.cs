@@ -53,12 +53,8 @@ internal sealed class JwtProvider(
         expireTick = accessTokenExpire.Ticks;
     }
     
-    public void GenerateRefreshToken(out string refreshToken, out DateTimeOffset expiration) {
-        var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        
-        refreshToken = Convert.ToBase64String(randomNumber);
+    public void GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset expiration) {
+        refreshToken = RandomNumberGenerator.GetBytes(64);
         expiration = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration);
     }
 }
