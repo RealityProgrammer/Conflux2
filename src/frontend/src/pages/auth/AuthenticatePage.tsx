@@ -176,7 +176,7 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
     setError,
     clearErrors,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isSubmitSuccessful, isDirty },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: "onSubmit",
@@ -184,15 +184,27 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
   });
 
   const passwordValue = watch("password", "");
+  
+  const [hasModified, setHasModified] = useState(false);
+
+  useEffect(() => {
+    if (isSubmitSuccessful) {
+      setHasModified(false);
+    }
+  }, [isSubmitSuccessful]);
+
+  useEffect(() => {
+    if (isDirty) {
+      setHasModified(true);
+    }
+  }, [isDirty]);
 
   const onSubmit: SubmitHandler<RegisterFormValues> = async (data: RegisterFormValues): Promise<void> => {
     try {
-      const response = await authService.register(data as RegisterRequest);
+      const response: ServiceResponse = await authService.register(data as RegisterRequest);
 
       if (response.statusCode === HttpStatusCode.Created) {
-        navigateToLogin();
-        reset();
-
+        reset(data);
         return;
       }
 
@@ -214,6 +226,8 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
     }
   };
 
+  const showSuccess = isSubmitSuccessful && !hasModified;
+
   return (
     <div className="bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative">
       <div className="absolute rounded-t-3xl h-12 w-full overflow-hidden">
@@ -228,12 +242,13 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
           <div>
             <Label.Root className="label block mb-1" htmlFor="register_email">Email</Label.Root>
 
-            <input type="text"
-                   id="register_email"
-                   placeholder="Enter Email"
-                   className="w-full h-11 px-3 input-field"
-                   aria-required
-                   {...register("email")}
+            <input 
+              type="text"
+              id="register_email"
+              placeholder="Enter Email"
+              className="w-full h-11 px-3 input-field"
+              aria-required
+              {...register("email")}
             />
 
             {errors.email && (
@@ -327,6 +342,10 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
             {isSubmitting ? <Spinner className="size-6 fill-white"/> : <p>Register</p>}
           </button>
         </form>
+
+        {showSuccess && (
+          <span className="mt-2 text-sm text-green-500 block text-center">Account created, please wait for confirmation mail.</span>
+        )}
 
         {errors.root && (
           <ErrorText className="block text-center mt-1">{errors.root.message}</ErrorText>
