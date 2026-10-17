@@ -308,7 +308,11 @@ useGetDirectConversationsQuery.fetcher = (variables?: GetDirectConversationsQuer
 
 export const GetFriendsDocument = new TypedDocumentString(`
     query GetFriends($after: String, $nameFilter: String) {
-  friends(after: $after, nameFilter: $nameFilter) {
+  friends(
+    after: $after
+    nameFilter: $nameFilter
+    order: {updatedAt: DESC, createdAt: DESC}
+  ) {
     pageInfo {
       hasNextPage
       hasPreviousPage
