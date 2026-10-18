@@ -14,11 +14,15 @@ internal sealed class SessionService(
 
     public async Task<Guid> CreateSession(Guid userId, string deviceInfo) {
         Guid sessionId = Guid.NewGuid();
+        
+        RedisKey sessionKey = GetSessionsKey(userId);
         RedisValue hashField = sessionId.ToString();
 
         SessionMetadata metadata = new(deviceInfo, timeProvider.GetUtcNow().Ticks);
 
-        await _database.HashSetAsync(GetSessionsKey(userId), hashField, JsonSerializer.Serialize(metadata));
+        await _database.HashSetAsync(sessionKey, hashField, JsonSerializer.Serialize(metadata));
+        await _database.HashFieldExpireAsync(sessionKey, [hashField], InactivityTimeout);
+        
         return sessionId;
     }
 
@@ -51,6 +55,8 @@ internal sealed class SessionService(
             await _database.HashDeleteAsync(sessionKey, hashField);
             return false;
         }
+        
+        await _database.HashFieldExpireAsync(sessionKey, [hashField], InactivityTimeout);
 
         return true;
     }
@@ -73,7 +79,9 @@ internal sealed class SessionService(
         SessionMetadata overrideMetadata = metadata with {
             LastActivityTick = timeProvider.GetUtcNow().Ticks,
         };
+        
         await _database.HashSetAsync(sessionKey, hashField, JsonSerializer.Serialize(overrideMetadata));
+        await _database.HashFieldExpireAsync(sessionKey, [hashField], InactivityTimeout);
     }
 
     private static RedisKey GetSessionsKey(Guid userId) => $"user:{userId}:sessions";

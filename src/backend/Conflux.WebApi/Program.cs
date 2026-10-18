@@ -25,6 +25,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using Conflux.Infrastructure.Repositories;
+using Conflux.Infrastructure.Services;
 using Conflux.WebApi;
 using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
@@ -613,7 +614,8 @@ builder.Services
     .AddHostedService<InvitationCleanupWorker>()
     .AddHostedService<GhostConnectionCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
-    .AddHostedService<EmailBackgroundWorker>();
+    .AddHostedService<EmailBackgroundWorker>()
+    .AddHostedService<SessionCleanupWorker>();
 
 var app = builder.Build();
 

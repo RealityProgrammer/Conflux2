@@ -1,18 +1,21 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Options;
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
+using System.Text;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 public sealed class JwtStorage(
     UserManager<ApplicationUser> userManager,
     TimeProvider timeProvider,
     IOptions<JwtOptions> authOptions,
-    IJwtProvider jwtProvider
+    IJwtProvider jwtProvider,
+    ApplicationDbContext dbContext
 ) : IJwtStorage {
     // storage format: <token hash>:<expiration tick>:<rotate tick, 0 if fresh>(:<previous_token_hash>)?
     private const string ApplicationJwtLoginProvider = "AppJWT";
@@ -122,7 +125,27 @@ public sealed class JwtStorage(
         
         return Result<RefreshTokenRotationResult>.Success(new(newRefreshToken, newExpiration));
     }
-    
+
+    public async Task<int> CleanupExpiredTokens(CancellationToken cancellationToken = default) {
+        var nowTicks = timeProvider.GetUtcNow().Ticks;
+        
+        var allTokens = await dbContext.UserTokens
+            .Where(t => t.LoginProvider == ApplicationJwtLoginProvider && t.Name.StartsWith("RefreshToken_"))
+            .ToListAsync(cancellationToken);
+        
+        foreach (var token in allTokens) {
+            var parts = token.Value!.Split(':');
+            
+            if (parts.Length > 1 && long.TryParse(parts[1], out var expireTick)) {
+                if (nowTicks > expireTick) {
+                    dbContext.UserTokens.Remove(token);
+                }
+            }
+        }
+        
+        return await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private string HashAndEncodeToken(ReadOnlySpan<byte> token) {
         Span<byte> tokenHash = stackalloc byte[HMACSHA256.HashSizeInBytes];
         HashTokenBytes(token, tokenHash);
