@@ -4,6 +4,6 @@ using Conflux.Domain.Entities;
 namespace Conflux.Application.Services;
 
 public interface IJwtStorage {
-    Task<Result> StoresAuthenticationToken(ApplicationUser user, byte[] token, DateTimeOffset expiration);
-    Task<Result> CheckAuthenticationToken(ApplicationUser user, byte[] token);
+    Task<Result> StoreRefreshToken(ApplicationUser user, Guid sessionId, byte[] refreshToken, DateTimeOffset expiration);
+    Task<Result> CheckRefreshToken(ApplicationUser user, Guid sessionId, byte[] refreshToken);
 }

@@ -18,10 +18,17 @@ internal sealed class JwtProvider(
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly AuthOptions _authOptions = authOptions.Value;
     
-    public void GenerateAccessToken(ApplicationUser user, IEnumerable<string> roles, out string accessToken, out long expireTick) {
+    public void GenerateAccessToken(
+        ApplicationUser user, 
+        IEnumerable<string> roles,
+        Guid sessionId,
+        out string accessToken, 
+        out long expireTick
+    ) {
         var claims = new List<Claim> {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Jti, sessionId.ToString()),
         };
         
         if (user.EmailConfirmed) {

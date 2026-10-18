@@ -3,7 +3,6 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using System.Buffers.Text;
 using System.Security.Cryptography;
 
 namespace Conflux.Application.Services.Implementations;
@@ -17,20 +16,24 @@ public sealed class JwtStorage(
 
     private readonly JwtOptions _jwtOptions = authOptions.Value;
     
-    public async Task<Result> StoresAuthenticationToken(ApplicationUser user, byte[] token, DateTimeOffset expiration) {
+    public async Task<Result> StoreRefreshToken(ApplicationUser user, Guid sessionId, byte[] refreshToken, DateTimeOffset expiration) {
         ReadOnlySpan<byte> secret = Encoding.UTF8.GetBytes(_jwtOptions.RefreshTokenSecret);
         Span<byte> encryptedRefreshToken = stackalloc byte[HMACSHA256.HashSizeInBytes];
 
-        if (!HMACSHA256.TryHashData(secret, token, encryptedRefreshToken, out _)) {
+        if (!HMACSHA256.TryHashData(secret, refreshToken, encryptedRefreshToken, out _)) {
             return Errors.OperationFailure("calculate hash of refresh token");
         }
-        
+
+        string tokenName = $"RefreshToken_{sessionId}";
         string encodedTokenHash = Convert.ToBase64String(encryptedRefreshToken);
+        
+        // just in case
+        await userManager.RemoveAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, tokenName);
         
         IdentityResult identityResult = await userManager.SetAuthenticationTokenAsync(
             user, 
             ApplicationJwtLoginProvider, 
-            "RefreshToken", 
+            tokenName,
             $"{encodedTokenHash}:{expiration.Ticks}"
         );
             
@@ -41,8 +44,9 @@ public sealed class JwtStorage(
         return Result.Success();
     }
 
-    public async Task<Result> CheckAuthenticationToken(ApplicationUser user, byte[] token) {
-        var storedData = await userManager.GetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, "RefreshToken");
+    public async Task<Result> CheckRefreshToken(ApplicationUser user, Guid sessionId, byte[] refreshToken) {
+        string tokenName =  $"RefreshToken_{sessionId}";
+        var storedData = await userManager.GetAuthenticationTokenAsync(user, ApplicationJwtLoginProvider, tokenName);
         
         if (string.IsNullOrEmpty(storedData)) {
             return Errors.InvalidRefreshToken();
@@ -65,7 +69,7 @@ public sealed class JwtStorage(
         ReadOnlySpan<byte> secret = Encoding.UTF8.GetBytes(_jwtOptions.RefreshTokenSecret);
         Span<byte> encryptedRefreshToken = stackalloc byte[HMACSHA256.HashSizeInBytes];
 
-        if (!HMACSHA256.TryHashData(secret, token, encryptedRefreshToken, out _)) {
+        if (!HMACSHA256.TryHashData(secret, refreshToken, encryptedRefreshToken, out _)) {
             return Errors.OperationFailure("calculate hash of refresh token");
         }
         

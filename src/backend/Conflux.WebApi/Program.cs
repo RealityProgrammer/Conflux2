@@ -115,7 +115,20 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
             }
             
             return Task.CompletedTask;
-        }
+        },
+        
+        OnTokenValidated = async context => {
+            var sessionService = context.HttpContext.RequestServices.GetRequiredService<ISessionService>();
+            
+            if (!Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId) || !Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti), out Guid sessionId)) {
+                context.Fail("Invalid token claims.");
+                return;
+            }
+            
+            if (!await sessionService.IsSessionValid(userId, sessionId)) {
+                context.Fail("Session has been revoked or expired.");
+            }
+        },
     };
 });
 
@@ -273,6 +286,7 @@ builder.Services
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
     
+    .AddSingleton<ISessionService, SessionService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
     
