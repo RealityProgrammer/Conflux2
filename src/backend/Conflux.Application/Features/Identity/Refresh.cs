@@ -38,7 +38,7 @@ public sealed class RefreshHandler(
             return Errors.InvalidRefreshToken();
         }
 
-        await sessionService.TickleSession(user.Id, sessionId);
+        await sessionService.ResetSessionActivityTime(user.Id, sessionId);
 
         IList<string> roles = await userManager.GetRolesAsync(user);
         jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out _);

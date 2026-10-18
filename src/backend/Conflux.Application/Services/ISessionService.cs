@@ -5,5 +5,5 @@ public interface ISessionService {
     Task RemoveSession(Guid userId, Guid sessionId);
     Task RemoveAllSession(Guid userId);
     Task<bool> IsSessionValid(Guid userId, Guid sessionId);
-    Task TickleSession(Guid userId, Guid sessionId);
+    Task ResetSessionActivityTime(Guid userId, Guid sessionId);
 }

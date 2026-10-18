@@ -55,7 +55,7 @@ internal sealed class SessionService(
         return true;
     }
 
-    public async Task TickleSession(Guid userId, Guid sessionId) {
+    public async Task ResetSessionActivityTime(Guid userId, Guid sessionId) {
         RedisKey sessionKey = GetSessionsKey(userId);
         RedisValue hashField = sessionId.ToString();
         RedisValue value = await _database.HashGetAsync(sessionKey, hashField);
