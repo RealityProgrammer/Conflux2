@@ -127,7 +127,7 @@ public sealed class BanServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while banning member.");
+            logger.LogError(e, "Exception thrown while banning member.");
             return Errors.UnexpectedError();
         }
     }

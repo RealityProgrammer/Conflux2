@@ -113,7 +113,7 @@ public sealed class UpdateMemberRolesHandler(
             await unitOfWork.RollbackAsync(cancellationToken);
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while updating member roles.");
+            logger.LogError(e, "Exception thrown while updating member roles.");
             
             await unitOfWork.RollbackAsync(cancellationToken);
             return Errors.UnexpectedError();

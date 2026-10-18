@@ -11,7 +11,7 @@ internal sealed class GhostConnectionCleanupWorker(
             try {
                 await connectionTracker.PruneConnections();
             } catch (Exception ex) {
-                logger.LogError(ex, "Error occurred while sweeping ghost connections.");
+                logger.LogError(ex, "Exception thrown while sweeping ghost connections.");
             }
 
             // Run this check every 60 seconds

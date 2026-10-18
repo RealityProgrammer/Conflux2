@@ -92,7 +92,7 @@ public sealed class WarnServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while warning member.");
+            logger.LogError(e, "Exception thrown while warning member.");
             return Errors.UnexpectedError();
         }
     }

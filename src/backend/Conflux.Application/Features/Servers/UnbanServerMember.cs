@@ -75,7 +75,7 @@ public sealed class UnbanServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while unbanning member.");
+            logger.LogError(e, "Exception thrown while unbanning member.");
             return Errors.UnexpectedError();
         }
     }

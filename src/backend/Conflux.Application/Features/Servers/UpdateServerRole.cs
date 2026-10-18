@@ -94,7 +94,7 @@ public sealed class UpdateServerRoleHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogInformation(e, "Exception thrown while updating server role.");
+            logger.LogError(e, "Exception thrown while updating server role.");
             return Errors.UnexpectedError();
         }
         

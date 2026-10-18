@@ -103,7 +103,7 @@ public sealed class KickServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while kicking member.");
+            logger.LogError(e, "Exception thrown while kicking member.");
             return Errors.UnexpectedError();
         }
     }

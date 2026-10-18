@@ -640,7 +640,7 @@ if (app.Environment.IsDevelopment()) {
         
         await DatabaseSeedHelper.SeedUserAsync(userManager, dbContext, logger);
     } catch (Exception e) {
-        logger.LogError(e, "An error occurred while seeding the database.");
+        logger.LogError(e, "Exception thrown while seeding the database.");
     }
 }
 
