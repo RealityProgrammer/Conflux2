@@ -11,24 +11,28 @@ public sealed record RefreshCommand(
     string Email, 
     Guid SessionId, 
     string RefreshToken
-) : ICommand<Result<RefreshResponse>>;
+) : ICommand<Result<RefreshResult>>;
 
 public sealed class RefreshHandler(
     UserManager<ApplicationUser> userManager,
     IJwtStorage jwtStorage,
     IJwtProvider jwtProvider,
     ISessionService sessionService
-) : ICommandHandler<RefreshCommand, Result<RefreshResponse>> {
-    public async ValueTask<Result<RefreshResponse>> Handle(RefreshCommand command, CancellationToken cancellationToken) {
+) : ICommandHandler<RefreshCommand, Result<RefreshResult>> {
+    public async ValueTask<Result<RefreshResult>> Handle(RefreshCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByEmailAsync(command.Email);
         if (user == null) {
             return Errors.NoUserFoundFromEmail();
         }
 
-        // check refresh token
+        // check and rotate the refresh token
         Guid sessionId = command.SessionId;
-        var result = await jwtStorage.CheckRefreshToken(user, sessionId, Convert.FromBase64String(command.RefreshToken));
-
+        Result<RefreshTokenRotationResult> result = await jwtStorage.RotateRefreshToken(
+            user, 
+            sessionId, 
+            Convert.FromBase64String(command.RefreshToken)
+        );
+        
         if (!result.IsSuccess) {
             return result.Error;
         }
@@ -41,14 +45,14 @@ public sealed class RefreshHandler(
         await sessionService.ResetSessionActivityTime(user.Id, sessionId);
 
         IList<string> roles = await userManager.GetRolesAsync(user);
-        jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out _);
+        jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out DateTimeOffset accessTokenExpireAt);
         
-        return Result<RefreshResponse>.Success(new(new(
+        return Result<RefreshResult>.Success(new(new(
             user.Id,
             user.EmailConfirmed,
             user.IsUserNameLocked,
             roles.AsReadOnly(),
             []
-        ), "Bearer", accessToken));
+        ), "Bearer", accessToken, accessTokenExpireAt, Convert.ToBase64String(result.Value!.NewRefreshToken), result.Value!.NewExpiration));
     }
 }

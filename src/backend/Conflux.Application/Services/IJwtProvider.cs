@@ -8,8 +8,8 @@ public interface IJwtProvider {
         IEnumerable<string> roles,
         Guid sessionId,
         out string accessToken, 
-        out long expireTick
+        out DateTimeOffset expireAt
     );
     
-    void GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset expiration);
+    void GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset expireAt);
 }

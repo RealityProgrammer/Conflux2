@@ -1,12 +1,10 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
-using Conflux.Application.Options;
 using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 using Error = Conflux.Domain.Error;
@@ -16,12 +14,8 @@ namespace Conflux.WebApi.Controllers;
 [Authorize, ApiController, Route("api/auth")]
 public sealed class AuthenticateController(
     ISender sender,
-    TimeProvider timeProvider,
-    IOptions<AuthOptions> options,
     ILogger<AuthenticateController> logger
 ) : ControllerBase {
-    private readonly AuthOptions _authOptions = options.Value;
-    
     [AllowAnonymous, HttpPost("login", Name = "Login"), IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest request) {
         var userAgent = Request.Headers.UserAgent.ToString();
@@ -38,8 +32,8 @@ public sealed class AuthenticateController(
 
         var response = loginResult.Value;
 
-        SetAccessTokenCookie(response!.AccessToken);
-        SetRefreshTokenCookie(request.Email, response!.SessionId, response.RefreshToken);
+        SetAccessTokenCookie(response!.AccessToken, response.AccessTokenExpireAt);
+        SetRefreshTokenCookie(request.Email, response.SessionId, response.RefreshToken, response.RefreshTokenExpireAt);
     
         return Ok(new ApiResponse<LoginResponse>(
             new(response.AuthorizationInfo, response.TokenType, response.AccessToken),
@@ -47,26 +41,26 @@ public sealed class AuthenticateController(
         ));
     }
 
-    private void SetAccessTokenCookie(string accessToken) {
+    private void SetAccessTokenCookie(string accessToken, DateTimeOffset expireAt) {
         var cookieOptions = new CookieOptions {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = timeProvider.GetUtcNow().AddSeconds(_authOptions.AccessTokenDuration),
+            Expires = expireAt,
         };
 
         // Attach the cookie to the response
         Response.Cookies.Append("X-Access-Token", accessToken, cookieOptions);
     }
     
-    private void SetRefreshTokenCookie(string email, Guid sessionId, string refreshToken) {
+    private void SetRefreshTokenCookie(string email, Guid sessionId, string refreshToken, DateTimeOffset expireAt) {
         var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{sessionId}:{refreshToken}"));
         
         var cookieOptions = new CookieOptions {
             HttpOnly = true,                            // Prevent JavaScript access.
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,             // Prevent CSRF
-            Expires = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration),
+            Expires = expireAt,
         };
 
         Response.Cookies.Append("X-Refresh-Token", payload, cookieOptions);
@@ -92,7 +86,7 @@ public sealed class AuthenticateController(
     [AllowAnonymous, HttpPost("refresh"), IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<RefreshResponse>>> Refresh() {
         if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
-            return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidRefreshToken()));
+            return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
         }
 
         string decodedPayload;
@@ -100,14 +94,14 @@ public sealed class AuthenticateController(
         try {
             decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
         } catch {
-            return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidRefreshToken()));
+            return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
         }
         
         if (
             decodedPayload.Split(':', 3) is not { Length: 3 } parts || 
             !Guid.TryParse(parts[1], out Guid sessionId)
         ) {
-            return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidRefreshToken()));
+            return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
         }
 
         string email = parts[0];
@@ -117,12 +111,13 @@ public sealed class AuthenticateController(
         
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
-            return Unauthorized(new ApiResponse<RefreshResponse>(null, Errors.InvalidCredentials()));
+            return Unauthorized(new ApiResponse(Errors.InvalidCredentials()));
         }
         
-        RefreshResponse value = result.Value!;
+        RefreshResult value = result.Value!;
         
-        SetAccessTokenCookie(value.AccessToken);
+        SetAccessTokenCookie(value.AccessToken, value.AccessTokenExpireAt);
+        SetRefreshTokenCookie(email, sessionId, value.RefreshToken, value.RefreshTokenExpireAt);
         
         return Ok(new ApiResponse<RefreshResponse>(
             new(value.AuthorizationInfo, value.TokenType, value.AccessToken), 
@@ -242,6 +237,7 @@ public sealed class AuthenticateController(
     );
     
     public sealed record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
+    public sealed record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     
     public sealed record RegisterRequest(
         [Required, EmailAddress] string Email, 

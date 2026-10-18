@@ -104,6 +104,7 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         ValidIssuer = builder.Configuration["JWT:Issuer"],
         ValidAudience = builder.Configuration["JWT:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at JWT:Secret."))),
+        ClockSkew = TimeSpan.FromSeconds(30),
     };
 
     options.MapInboundClaims = false;

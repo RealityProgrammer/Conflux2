@@ -23,7 +23,7 @@ internal sealed class JwtProvider(
         IEnumerable<string> roles,
         Guid sessionId,
         out string accessToken, 
-        out long expireTick
+        out DateTimeOffset expireAt
     ) {
         var claims = new List<Claim> {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -57,11 +57,11 @@ internal sealed class JwtProvider(
         );
 
         accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-        expireTick = accessTokenExpire.Ticks;
+        expireAt = accessTokenExpire;
     }
     
-    public void GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset expiration) {
+    public void GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset expireAt) {
         refreshToken = RandomNumberGenerator.GetBytes(64);
-        expiration = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration);
+        expireAt = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration);
     }
 }
