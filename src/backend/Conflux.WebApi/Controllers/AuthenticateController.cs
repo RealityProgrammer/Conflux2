@@ -170,14 +170,11 @@ public sealed class AuthenticateController(
     
     [HttpPost("delete-account"), Idempotent(60)]
     public async Task<ActionResult<ApiResponse>> DeleteAccount([FromBody] SessionUserController.DeleteAccountRequest request) {
-        if (!Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await sender.Send(new DeleteAccountCommand(userId, request.Reason, request.ExtraMessage));
+        Result result = await sender.Send(new DeleteAccountCommand(request.Reason, request.ExtraMessage));
 
         if (!result.IsSuccess) {
             return result.Error.Code switch {
+                nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
                 nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
             };

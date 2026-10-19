@@ -6,17 +6,21 @@ using Microsoft.AspNetCore.Identity;
 namespace Conflux.Application.Features.Users;
 
 public sealed record SetUserNamesCommand(
-    Guid UserId,
     string UserName,
     string DisplayName
 ) : ICommand<Result>;
 
 public sealed class SetupUserProfileHandler(
+    ICurrentUserService currentUserService,
     UserManager<ApplicationUser> userManager,
     IUnitOfWork unitOfWork
 ) : ICommandHandler<SetUserNamesCommand, Result> {
     public async ValueTask<Result> Handle(SetUserNamesCommand request, CancellationToken cancellationToken) {
-        ApplicationUser? user = await userManager.FindByIdAsync(request.UserId.ToString());
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+        
+        ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
 
         if (user == null) {
             return Errors.NoUserFoundFromId();

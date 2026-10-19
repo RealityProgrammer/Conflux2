@@ -23,7 +23,13 @@ internal static partial class ApplicationUserMutation {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        var result = await mediator.Send(new UpdateManualPresenceStatusCommand(userId, status));
+        var result = await mediator.Send(new UpdateManualPresenceStatusCommand(status));
+
+        if (result.IsSuccess) {
+            return new(userId);
+        }
+        
+        
 
         return result.IsSuccess ?
             new(userId) :

@@ -78,14 +78,7 @@ public sealed class SessionUserController(
     
     [HttpPost("names")]
     public async Task<ActionResult<ApiResponse>> SetNames([FromBody] SetNamesRequest request) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
         Result result = await sender.Send(new SetUserNamesCommand(
-            userId,
             request.UserName,
             request.DisplayName
         ));
@@ -102,13 +95,7 @@ public sealed class SessionUserController(
 
     [HttpPost("lock-name")]
     public async Task<ActionResult<ApiResponse>> LockName() {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await sender.Send(new LockNameCommand(userId));
+        Result result = await sender.Send(new LockNameCommand());
         
         if (result.IsSuccess) {
             return Ok(new ApiResponse(Error.None));

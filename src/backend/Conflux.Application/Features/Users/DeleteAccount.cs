@@ -9,12 +9,12 @@ using Npgsql;
 namespace Conflux.Application.Features.Users;
 
 public sealed record DeleteAccountCommand(
-    Guid UserId,
     UserAccountDeleteReason Reason,
     string? ExtraMessage
 ) : ICommand<Result>;
 
 public sealed class DeleteAccountHandler(
+    ICurrentUserService currentUserService,
     IUserRepository userRepository,
     IUserAccountDeletionReadRepository accountDeletionReadRepository,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
@@ -23,7 +23,9 @@ public sealed class DeleteAccountHandler(
     ISessionService sessionService
 ) : ICommandHandler<DeleteAccountCommand, Result> {
     public async ValueTask<Result> Handle(DeleteAccountCommand command, CancellationToken cancellationToken) {
-        var userId = command.UserId;
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
         
         // prevent already deleted
         bool isDeleted = (await userRepository
