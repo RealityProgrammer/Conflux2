@@ -1,4 +1,5 @@
 using Conflux.Application.Services;
+using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 
 namespace Conflux.WebApi.Services.Implementations;
@@ -8,7 +9,7 @@ internal sealed class CurrentUserService(
 ) : ICurrentUserService {
     public Guid? UserId {
         get {
-            var claimValue = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var claimValue = httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             return Guid.TryParse(claimValue, out var id) ? id : null;
         }
     }

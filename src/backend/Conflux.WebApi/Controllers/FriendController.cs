@@ -123,7 +123,7 @@ public sealed class FriendController(
         }
 
         return result.Error.Code switch {
-            nameof(Errors.InvalidIdentifier) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

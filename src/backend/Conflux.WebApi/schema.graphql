@@ -229,8 +229,6 @@ type Mutation @authorize @authorize {
   updateCommunityServerMemberRoles(
     input: UpdateCommunityServerMemberRolesInput!
   ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
-  leaveCommunityServer(input: LeaveCommunityServerInput!): LeaveCommunityServerPayload!
-    @cost(weight: "10")
   kickCommunityServerMember(input: KickCommunityServerMemberInput!): KickCommunityServerMemberPayload!
     @cost(weight: "10")
   banCommunityServerMember(input: BanCommunityServerMemberInput!): BanCommunityServerMemberPayload!
@@ -264,7 +262,7 @@ type BanCommunityServerMemberPayload {
 
 type Channel {
   id: UUID!
-  name: String
+  name: String!
   createdAt: DateTime!
   conversation: Conversation!
   conversationId: UUID!
@@ -454,10 +452,6 @@ type Invitation {
 
 type KickCommunityServerMemberPayload {
   memberId: UUID!
-}
-
-type LeaveCommunityServerPayload {
-  serverId: UUID!
 }
 
 type MediaItem {
@@ -956,10 +950,6 @@ input KickCommunityServerMemberInput {
   serverId: UUID!
   memberId: UUID!
   reason: String
-}
-
-input LeaveCommunityServerInput {
-  serverId: UUID!
 }
 
 input ListFilterInputTypeOfChannelCategoryFilterInput {
