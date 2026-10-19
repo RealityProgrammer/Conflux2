@@ -54,12 +54,9 @@ export const router = createBrowserRouter([
     path: "/",
     loader: async (): Promise<RootLoaderProps | null> => {
       const authResponse: ServiceResponse<UserAuthorizationInfo> = await authService.getAuthorizationInfo();
-
-      if (!authResponse.success) {
-        return null;
-      }
+      if (!authResponse.success || !authResponse.data) return null;
       
-      const authInfo: UserAuthorizationInfo = authResponse.data!;
+      const authInfo: UserAuthorizationInfo = authResponse.data;
       let profileInfo: UserIdentityProfileDto | null = null;
 
       if (authInfo?.id) {
@@ -74,10 +71,7 @@ export const router = createBrowserRouter([
         }
       }
 
-      return {
-        authorizationInfo: authInfo,
-        userProfile: profileInfo!,
-      };
+      return { authorizationInfo: authInfo,  userProfile: profileInfo! };
     },
     element: (
       <Tooltip.Provider delayDuration={500}>
@@ -97,20 +91,11 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <AuthenticatePage/>,
-            // action: authAction,
-            loader: async () => {
-              const response = await authService.getAuthorizationInfo();
-
-              if (response.statusCode === HttpStatusCode.Ok && response.data) {
-                return redirect('/lobby/me');
-              }
-
-              return null;
-            },
+            loader: requireGuest,
           },
           {
             path: "verify-email",
-            loader: restrictConfirmedUser,
+            loader: requireUnverified,
             element:
               <Suspense fallback={<SuspenseFallback/>}>
                 <VerifyEmailPage/>
@@ -118,7 +103,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "confirm-email",
-            loader: restrictConfirmedUser,
+            loader: requireUnverified,
             element:
               <Suspense fallback={<SuspenseFallback/>}>
                 <ConfirmEmailPage/>
@@ -129,13 +114,8 @@ export const router = createBrowserRouter([
       {
         path: "setup-profile",
         loader: async () => {
-          const response = await authService.getAuthorizationInfo();
-
-          if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
-            return redirect('/auth#login');
-          }
-
-          return response.data.isProfileSetup ? redirect('/') : null;
+          const auth = await requireAuth();
+          return auth.isProfileSetup ? redirect('/') : null;
         },
         element:
           <Suspense fallback={<SuspenseFallback/>}>
@@ -143,25 +123,7 @@ export const router = createBrowserRouter([
           </Suspense>
       },
       {
-        loader: async () => {
-          const response = await authService.getAuthorizationInfo();
-
-          if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
-            return redirect('/auth#login');
-          }
-
-          const authorizationInfo: UserAuthorizationInfo = response.data;
-
-          if (!authorizationInfo.isVerified) {
-            return redirect("/auth/verify-email");
-          }
-
-          if (!authorizationInfo.isProfileSetup) {
-            return redirect("/setup-profile");
-          }
-
-          return null;
-        },
+        loader: appGuard,
         // only rerun the loader if the path has truly changed
         shouldRevalidate: ({currentUrl, nextUrl}) => {
           return currentUrl.pathname !== nextUrl.pathname;
@@ -302,10 +264,46 @@ export const router = createBrowserRouter([
   }
 ]);
 
-async function restrictConfirmedUser() {
+// require user to be login, else send to login page
+async function requireAuth(): Promise<UserAuthorizationInfo> {
   const response = await authService.getAuthorizationInfo();
 
-  if (response.statusCode === HttpStatusCode.Ok && response.data && response.data.isVerified) {
+  if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
+    throw redirect('/auth#login');
+  }
+
+  return response.data;
+}
+
+// require user to be logged in, else, sends to lobby.
+async function requireGuest(): Promise<null> {
+  const response = await authService.getAuthorizationInfo();
+
+  if (response.statusCode === HttpStatusCode.Ok && response.data) {
+    throw redirect('/lobby/me');
+  }
+
+  return null;
+}
+
+async function appGuard(): Promise<UserAuthorizationInfo> {
+  const authInfo = await requireAuth();
+
+  if (!authInfo.isVerified) {
+    throw redirect('/auth/verify-email');
+  }
+
+  if (!authInfo.isProfileSetup) {
+    throw redirect('/setup-profile');
+  }
+
+  return authInfo;
+}
+
+async function requireUnverified() {
+  const response = await requireAuth();
+
+  if (response.isVerified) {
     return redirect('/');
   }
 
