@@ -24,9 +24,7 @@ export const graphqlClient = apiClient.create({
   withCredentials: true,
 });
 
-// request intercepting to attach the CSRF token into the header
-apiClient.interceptors.request.use((config) => {
-  // Only attach for state-changing methods
+const attachCsrfToken = (config: InternalAxiosRequestConfig) => {
   if (['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase() || '')) {
     const csrfToken = Cookies.get('XSRF-TOKEN');
     if (csrfToken) {
@@ -34,7 +32,10 @@ apiClient.interceptors.request.use((config) => {
     }
   }
   return config;
-});
+};
+
+apiClient.interceptors.request.use(attachCsrfToken);
+graphqlClient.interceptors.request.use(attachCsrfToken);
 
 // refresh queue logic
 let refreshPromise: Promise<void> | null = null;
