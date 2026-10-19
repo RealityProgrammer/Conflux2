@@ -10,7 +10,8 @@ namespace Conflux.Application.Features.Users;
 public sealed record GetUserAuthorizationInfoQuery(string UserId) : IQuery<Result<UserAuthorizationInfo>>;
 
 public sealed class GetUserAuthorizationInfoHandler(
-    UserManager<ApplicationUser> userManager
+    UserManager<ApplicationUser> userManager,
+    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
 ) : IQueryHandler<GetUserAuthorizationInfoQuery, Result<UserAuthorizationInfo>> {
     public async ValueTask<Result<UserAuthorizationInfo>> Handle(GetUserAuthorizationInfoQuery query, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(query.UserId);
@@ -20,10 +21,12 @@ public sealed class GetUserAuthorizationInfoHandler(
         }
 
         var userRoles = await userManager.GetRolesAsync(user);
+        bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
         
         return Result<UserAuthorizationInfo>.Success(new(
             user.Id,
             user.EmailConfirmed,
+            isPendingDeletion,
             user.IsUserNameLocked,
             userRoles.AsReadOnly(),
             []

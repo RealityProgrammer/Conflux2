@@ -96,7 +96,7 @@ function JoinedCommunityServerScrollList() {
 
   const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
 
-  useSignalREvent("JoinedServer", (event: JoinedServerEvent) => {
+  useSignalREvent("JoinedServer", (_event: JoinedServerEvent) => {
     queryClient.invalidateQueries({
       queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
     });

@@ -10,32 +10,34 @@ import type {
   UserAuthorizationInfo,
   UserIdentityProfileDto,
 } from "./api/types.ts";
-import HomePage from "./pages/HomePage"
-import AuthenticatePage from "./pages/auth/AuthenticatePage.tsx";
-import AuthProvider from "./contexts/AuthContext.tsx";
-const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
-const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
-const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
-import LobbyLayout from "./pages/lobby/LobbyLayout.tsx";
-import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
-import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
-import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
-import FriendsPage from "./pages/lobby/FriendsPage.tsx";
-import SignalRProvider from "./contexts/SignalRContext.tsx";
-import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
-import ServerLayout from "./pages/server/ServerLayout.tsx";
-import ChannelPage from "./pages/server/ChannelPage.tsx";
-import SuspenseFallback from "./pages/SuspenseFallback.tsx";
-import {Slide, ToastContainer} from "react-toastify";
-import PresenceProvider from "./contexts/PresenceContext.tsx";
-import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
-import ProfilePage from "./pages/settings/ProfilePage.tsx";
 import CallOverlay from "./components/call/CallOverlay.tsx";
 import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import {directConversationService} from "./api/directConversationService.ts";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
 import {Tooltip} from "radix-ui";
-import DeleteAccountPage from "./pages/settings/DeleteAccountPage.tsx";
+import {Slide, ToastContainer} from "react-toastify";
+import SuspenseFallback from "./pages/SuspenseFallback.tsx";
+
+import HomePage from "./pages/HomePage"
+const AuthenticatePage = lazy(() => import("./pages/auth/AuthenticatePage.tsx"));
+import AuthProvider from "./contexts/AuthContext.tsx";
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
+const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
+const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
+const LobbyLayout = lazy(() => import("./pages/lobby/LobbyLayout.tsx"));
+const LobbyPage = lazy(() => import("./pages/lobby/LobbyPage.tsx"));
+const DirectMessagePage = lazy(() => import("./pages/lobby/DirectMessagePage.tsx"));
+const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
+const FriendsPage = lazy(() => import("./pages/lobby/FriendsPage.tsx"));
+const SignalRProvider = lazy(() => import("./contexts/SignalRContext.tsx"));
+const UserLobbyLayout = lazy(() => import("./pages/lobby/UserLobbyLayout.tsx"));
+const ServerLayout = lazy(() => import("./pages/server/ServerLayout.tsx"));
+const ChannelPage = lazy(() => import("./pages/server/ChannelPage.tsx"));
+const PresenceProvider = lazy(() => import("./contexts/PresenceContext.tsx"));
+const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout.tsx"));
+const ProfilePage = lazy(() => import("./pages/settings/ProfilePage.tsx"));
+const DeleteAccountPage = lazy(() => import("./pages/settings/DeleteAccountPage.tsx"));
+const ImpendingDoomPage = lazy(() => import("./pages/ImpendingDoomPage.tsx"));
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type RootLoaderProps = {
@@ -121,6 +123,10 @@ export const router = createBrowserRouter([
           <Suspense fallback={<SuspenseFallback/>}>
             <ProfileSetupPage/>
           </Suspense>
+      },
+      {
+        path: "impending-doom",
+        element: <ImpendingDoomPage/>
       },
       {
         loader: appGuard,
@@ -295,6 +301,10 @@ async function appGuard(): Promise<UserAuthorizationInfo> {
 
   if (!authInfo.isProfileSetup) {
     throw redirect('/setup-profile');
+  }
+  
+  if (authInfo.isPendingDelete) {
+    throw redirect("/impending-doom");
   }
 
   return authInfo;

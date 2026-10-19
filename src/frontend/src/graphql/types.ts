@@ -47,6 +47,7 @@ export type ApplicationUserFilterInput = {
   concurrencyStamp?: InputMaybe<StringOperationFilterInput>;
   conversationParticipants?: InputMaybe<ListFilterInputTypeOfConversationParticipantFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  deletedAt?: InputMaybe<DateTimeOperationFilterInput>;
   displayName?: InputMaybe<StringOperationFilterInput>;
   email?: InputMaybe<StringOperationFilterInput>;
   emailConfirmed?: InputMaybe<BooleanOperationFilterInput>;
@@ -80,6 +81,7 @@ export type ApplicationUserSortInput = {
   biography?: InputMaybe<SortEnumType>;
   concurrencyStamp?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
+  deletedAt?: InputMaybe<SortEnumType>;
   displayName?: InputMaybe<SortEnumType>;
   email?: InputMaybe<SortEnumType>;
   emailConfirmed?: InputMaybe<SortEnumType>;
@@ -135,7 +137,7 @@ export type Channel = {
   conversationId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
 };
 
 export type ChannelCategory = {
@@ -645,15 +647,6 @@ export type KickCommunityServerMemberPayload = {
   memberId: Scalars['UUID']['output'];
 };
 
-export type LeaveCommunityServerInput = {
-  serverId: Scalars['UUID']['input'];
-};
-
-export type LeaveCommunityServerPayload = {
-  __typename?: 'LeaveCommunityServerPayload';
-  serverId: Scalars['UUID']['output'];
-};
-
 export type ListFilterInputTypeOfChannelCategoryFilterInput = {
   all?: InputMaybe<ChannelCategoryFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -891,7 +884,6 @@ export type Mutation = {
   __typename?: 'Mutation';
   banCommunityServerMember: BanCommunityServerMemberPayload;
   kickCommunityServerMember: KickCommunityServerMemberPayload;
-  leaveCommunityServer: LeaveCommunityServerPayload;
   unbanCommunityServerMember: UnbanCommunityServerMemberPayload;
   updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
   updateManualPresenceStatus: UpdateManualPresenceStatusPayload;
@@ -906,11 +898,6 @@ export type MutationBanCommunityServerMemberArgs = {
 
 export type MutationKickCommunityServerMemberArgs = {
   input: KickCommunityServerMemberInput;
-};
-
-
-export type MutationLeaveCommunityServerArgs = {
-  input: LeaveCommunityServerInput;
 };
 
 

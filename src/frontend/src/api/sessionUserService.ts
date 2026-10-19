@@ -1,15 +1,13 @@
 import type {
   BackendResponse,
-  PaginatedResult,
-  ServiceResponse, UpdateProfileResult,
-  UserIdentityProfileDto
+  ServiceResponse, 
+  UpdateProfileResult,
 } from "./types.ts";
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {authService} from "./authService.ts";
 import type {PresenceStatus} from "../graphql/types.ts";
-import type {UserAccountDeleteReason} from "./schema.ts";
 
 export const sessionUserService = {
   uploadAvatar: async (file: File): Promise<ServiceResponse<number>> => {

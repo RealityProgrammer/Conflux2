@@ -4,7 +4,6 @@ import {z} from "zod";
 import {Controller, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {UserAccountDeleteReason} from "../../api/schema.ts";
-import {sessionUserService} from "../../api/sessionUserService.ts";
 import {toast} from "react-toastify";
 import {BsChevronDown} from "react-icons/bs";
 import SelectItem from "../../components/SelectItem.tsx";

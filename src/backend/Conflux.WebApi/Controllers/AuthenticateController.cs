@@ -174,6 +174,7 @@ public sealed class AuthenticateController(
 
         if (!result.IsSuccess) {
             return result.Error.Code switch {
+                nameof(Errors.AccountDeleteRequestExists) => Ok(new ApiResponse(Error.None)),
                 nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
                 nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),

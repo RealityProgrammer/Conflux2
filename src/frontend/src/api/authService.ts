@@ -90,8 +90,7 @@ export const authService = {
           { headers }
         );
 
-        localStorage.setItem("hasSession", "true");
-        setCachedAuthorization(response.data.data!.authorizationInfo);
+        setCachedAuthorization(response.data.data!.authorization);
 
         await csrfService.requestCsrfToken();
 

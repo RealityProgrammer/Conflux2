@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
 namespace Conflux.Application.Features.Identity;
@@ -17,7 +18,8 @@ public sealed class LoginHandler(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IJwtProvider jwtProvider,
-    ISessionService sessionService
+    ISessionService sessionService,
+    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
 ) : ICommandHandler<LoginCommand, Result<LoginResult>> {
     public async ValueTask<Result<LoginResult>> Handle(LoginCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByEmailAsync(command.Email);
@@ -44,10 +46,13 @@ public sealed class LoginHandler(
         if (!storeResult.IsSuccess) {
             return storeResult.Error;
         }
+
+        bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
         
         return Result<LoginResult>.Success(new(new(
             user.Id,
             user.EmailConfirmed,
+            isPendingDeletion,
             user.IsUserNameLocked,
             roles.AsReadOnly(),
             []

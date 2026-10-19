@@ -1,4 +1,4 @@
-import {BsCheck, BsCheckLg} from "react-icons/bs";
+import {BsCheckLg} from "react-icons/bs";
 import {Select} from "radix-ui";
 import type {HTMLAttributes, ReactNode} from "react";
 
