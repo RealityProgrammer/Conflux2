@@ -81,49 +81,6 @@ export const sessionUserService = {
     }
   },
 
-  queryFriends: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<UserIdentityProfileDto>>> => {
-    try {
-      const searchParams = new URLSearchParams();
-
-      if (name) {
-        searchParams.append("name", name);
-      }
-
-      searchParams.append("offset", String(offset));
-      searchParams.append("count", String(count));
-
-      const response: AxiosResponse<BackendResponse<PaginatedResult<UserIdentityProfileDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResult<UserIdentityProfileDto>>>(`users/me/friends?${searchParams.toString()}`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-  
-  deleteAccount: async (reason: UserAccountDeleteReason, extraMessage: string | null): Promise<ServiceResponse> => {
-    try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(`users/me/delete-account`, {
-          reason,
-          extraMessage,
-        });
-
-      return {
-        success: true,
-        statusCode: response.status,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
   updateProfile: async (
     displayName?: string,
     pronouns?: string | null,

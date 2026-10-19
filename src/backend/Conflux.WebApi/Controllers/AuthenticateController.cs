@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
 using Conflux.Domain;
+using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -165,6 +166,35 @@ public sealed class AuthenticateController(
         });
         
         return Ok();
+    }
+    
+    [HttpPost("delete-account")]
+    public async Task<ActionResult<ApiResponse>> DeleteAccount([FromBody] SessionUserController.DeleteAccountRequest request) {
+        if (!Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out Guid userId)) {
+            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
+        }
+        
+        Result result = await sender.Send(new DeleteAccountCommand(userId, request.Reason, request.ExtraMessage));
+
+        if (!result.IsSuccess) {
+            return result.Error.Code switch {
+                nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+            };
+        }
+        
+        Response.Cookies.Delete("X-Access-Token", new() {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Strict,
+        });
+        Response.Cookies.Delete("X-Refresh-Token", new() {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Strict,
+        });
+        
+        return Ok(new ApiResponse(Error.None));
     }
 
     [HttpGet("authorization-info")]

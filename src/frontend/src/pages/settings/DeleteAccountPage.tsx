@@ -10,6 +10,8 @@ import {BsChevronDown} from "react-icons/bs";
 import SelectItem from "../../components/SelectItem.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
+import {useState} from "react";
+import {authService} from "../../api/authService.ts";
 
 export default function DeleteAccountPage() {
   const auth = useAuth();
@@ -31,6 +33,7 @@ export default function DeleteAccountPage() {
     control,
     register,
     handleSubmit,
+    reset,
     formState: { errors }
   } = useForm<RequestDeleteAccountFormValues>({
     resolver: zodResolver(requestDeleteAccountSchema),
@@ -42,12 +45,14 @@ export default function DeleteAccountPage() {
       confirmUsername: "",
     },
   });
-  
+
   const onSubmit = async (values: RequestDeleteAccountFormValues) => {
-    const response = await sessionUserService.deleteAccount(values.reason, values.extraMessage);
+    const response = await authService.deleteAccount(values.reason, values.extraMessage);
     
     if (response.success) {
-      toast.success("Deletion requested.");
+      toast.success("Account deletion requested.");
+      reset(values);
+      auth.invalidateSession();
     } else {
       toast.error("Failed to request account deletion. Please try again later.");
     }

@@ -11,6 +11,7 @@ import axios, {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios"
 import Cookies from "js-cookie";
 import {handleAxiosError} from "./errorHandling.ts";
 import {csrfService} from "./csrfService.ts";
+import type {UserAccountDeleteReason} from "./schema.ts";
 
 let activeRefreshPromise: Promise<ServiceResponse<RefreshResponse>> | null = null;
 let activeGetAuthorizationInfoPromise: Promise<ServiceResponse<UserAuthorizationInfo | null>> | null = null;
@@ -135,9 +136,46 @@ export const authService = {
       return handleAxiosError(axiosError);
     }
   },
+  
+  logoutAll: async (): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse = await apiClient.post<BackendResponse>('/auth/logout-all');
+      cachedAuthorization = null;
+      localStorage.removeItem("hasSession");
 
-  hasAuthorizationInfo: () => {
-    return !!cachedAuthorization;
+      await csrfService.requestCsrfToken();
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  deleteAccount: async (reason: UserAccountDeleteReason, extraMessage: string | null): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>(
+          `auth/delete-account`,
+          { reason, extraMessage},
+        );
+
+      cachedAuthorization = null;
+      localStorage.removeItem("hasSession");
+      
+      await csrfService.requestCsrfToken();
+      
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
   },
 
   getAuthorizationInfo: async (): Promise<ServiceResponse<UserAuthorizationInfo>> => {

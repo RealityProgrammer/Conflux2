@@ -14,7 +14,7 @@ public sealed record DeleteAccountCommand(
     string? ExtraMessage
 ) : ICommand<Result>;
 
-public sealed record DeleteAccountHandler(
+public sealed class DeleteAccountHandler(
     IUserRepository userRepository,
     IUserAccountDeletionReadRepository accountDeletionReadRepository,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,

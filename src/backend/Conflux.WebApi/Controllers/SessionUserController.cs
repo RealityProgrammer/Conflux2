@@ -1,10 +1,12 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Friends;
+using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
+using Conflux.WebApi.Attributes;
 using Conflux.WebApi.Dto;
 using Humanizer;
 using Mediator;
@@ -12,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
@@ -154,26 +157,6 @@ public sealed class SessionUserController(
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UpdateProfileResult>(result.Value, Error.None));
-        }
-
-        return result.Error.Code switch {
-            nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
-        };
-    }
-
-    [HttpPost("delete-account")]
-    public async Task<ActionResult<ApiResponse>> DeleteAccount([FromBody] DeleteAccountRequest request) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<PendingFriendRequestDto>(null, Errors.InvalidIdentifier()));
-        }
-
-        Result result = await sender.Send(new DeleteAccountCommand(userId, request.Reason, request.ExtraMessage));
-        
-        if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
         }
 
         return result.Error.Code switch {
