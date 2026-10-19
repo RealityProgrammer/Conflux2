@@ -5,7 +5,6 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record DeleteServerChannelCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     Guid ChannelId
 ) : ICommand<Result>, IServerCommand {

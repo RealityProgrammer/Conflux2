@@ -21,7 +21,6 @@ public sealed record UpdateCommunityServerMemberRolesPayload(Guid MemberId) {
     }
 }
 
-public sealed record LeaveCommunityServerPayload(Guid ServerId);
 public sealed record KickCommunityServerMemberPayload(Guid MemberId);
 public sealed record BanCommunityServerMemberPayload(Guid MemberId);
 public sealed record UnbanCommunityServerMemberPayload(Guid MemberId);
@@ -33,37 +32,12 @@ internal static partial class CommunityServerMemberMutation {
         Guid serverId,
         Guid memberId,
         IReadOnlyCollection<Guid> roleIds,
-        [Service] IMediator mediator,
-        [Service] IHttpContextAccessor httpContextAccessor
+        [Service] IMediator mediator
     ) {
-        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
-        }
-        
-        var result = await mediator.Send(new UpdateMemberRolesCommand(userId, serverId, memberId, roleIds));
+        var result = await mediator.Send(new UpdateMemberRolesCommand(serverId, memberId, roleIds));
 
         return result.IsSuccess ? 
             new(memberId) : 
-            throw new GraphQLException(result.Error.ToHotChocolateError());
-    }
-
-    public static async Task<LeaveCommunityServerPayload> LeaveCommunityServer(
-        Guid serverId,
-        [Service] IMediator mediator,
-        [Service] IHttpContextAccessor httpContextAccessor
-    ) {
-        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
-        }
-
-        var result = await mediator.Send(new LeaveServerCommand(userId, serverId));
-        
-        return result.IsSuccess ?
-            new(serverId) :
             throw new GraphQLException(result.Error.ToHotChocolateError());
     }
 
@@ -71,16 +45,9 @@ internal static partial class CommunityServerMemberMutation {
         Guid serverId,
         Guid memberId,
         string? reason,
-        [Service] IMediator mediator,
-        [Service] IHttpContextAccessor httpContextAccessor
+        [Service] IMediator mediator
     ) {
-        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
-        }
-
-        var result = await mediator.Send(new KickServerMemberCommand(userId, serverId, memberId, reason));
+        var result = await mediator.Send(new KickServerMemberCommand(serverId, memberId, reason));
 
         return result.IsSuccess ?
             new(serverId) :
@@ -92,16 +59,9 @@ internal static partial class CommunityServerMemberMutation {
         Guid memberId,
         string? reason,
         TimeSpan? duration,
-        [Service] IMediator mediator,
-        [Service] IHttpContextAccessor httpContextAccessor
+        [Service] IMediator mediator
     ) {
-        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
-        }
-        
-        var result = await mediator.Send(new BanServerMemberCommand(userId, serverId, memberId, reason, duration));
+        var result = await mediator.Send(new BanServerMemberCommand(serverId, memberId, reason, duration));
 
         return result.IsSuccess ?
             new(serverId) :
@@ -111,16 +71,9 @@ internal static partial class CommunityServerMemberMutation {
     public static async Task<UnbanCommunityServerMemberPayload> UnbanCommunityServerMember(
         Guid serverId,
         Guid memberId,
-        [Service] IMediator mediator,
-        [Service] IHttpContextAccessor httpContextAccessor
+        [Service] IMediator mediator
     ) {
-        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
-        }
-        
-        var result = await mediator.Send(new UnbanServerMemberCommand(userId, serverId, memberId));
+        var result = await mediator.Send(new UnbanServerMemberCommand(serverId, memberId));
 
         return result.IsSuccess ?
             new(serverId) :
@@ -131,16 +84,9 @@ internal static partial class CommunityServerMemberMutation {
         Guid serverId,
         Guid memberId,
         string? reason,
-        [Service] IMediator mediator,
-        [Service] IHttpContextAccessor httpContextAccessor
+        [Service] IMediator mediator
     ) {
-        var idClaim = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
-        }
-        
-        var result = await mediator.Send(new WarnServerMemberCommand(userId, serverId, memberId, reason));
+        var result = await mediator.Send(new WarnServerMemberCommand(serverId, memberId, reason));
 
         return result.IsSuccess ?
             new(serverId) :

@@ -7,6 +7,7 @@ using Conflux.Domain.Enums;
 namespace Conflux.Application.Pipelines;
 
 public sealed class ServerAuthorizationPipelineBehaviour<TMessage, TResponse>(
+    ICurrentUserService currentUserService,
     IServerPermissionsProvider permissionsProvider
 ) : IPipelineBehavior<TMessage, TResponse> where TMessage : IServerCommand where TResponse : IResult<TResponse> {
     public async ValueTask<TResponse> Handle(
@@ -14,7 +15,11 @@ public sealed class ServerAuthorizationPipelineBehaviour<TMessage, TResponse>(
         MessageHandlerDelegate<TMessage, TResponse> next, 
         CancellationToken cancellationToken
     ) {
-        var executorPermissionsResult = await permissionsProvider.GetUserAuthorizeInfo(message.ServerId, message.ExecutorUserId, cancellationToken);
+        if (currentUserService.UserId is not { } userId) {
+            return TResponse.Failure(Errors.InvalidIdentifier());
+        }
+        
+        var executorPermissionsResult = await permissionsProvider.GetUserAuthorizeInfo(message.ServerId, userId, cancellationToken);
 
         if (!executorPermissionsResult.IsSuccess) {
             return TResponse.Failure(executorPermissionsResult.Error);

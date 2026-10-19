@@ -35,15 +35,8 @@ public sealed class InvitationController(
     [HttpPost]
     [EnableRateLimiting("CreateServerInvitationPolicy")]
     public async Task<ActionResult<ApiResponse<string>>> CreateInvitation([FromBody] CreateInvitationRequest request) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
         var validDuration = ExpirationTimespanLookup.GetValueOrDefault(request.ExpireAfter, TimeSpan.FromMinutes(5));
         var result = await mediator.Send(new CreateServerInvitationCommand(
-            userId,
             request.ServerId, 
             request.MaxUses, 
             validDuration
@@ -61,13 +54,7 @@ public sealed class InvitationController(
 
     [HttpPost("{invitationId}/join")]
     public async Task<ActionResult<ApiResponse>> JoinServerWithInvitation(string invitationId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await mediator.Send(new JoinServerCommand(userId, invitationId));
+        var result = await mediator.Send(new JoinServerCommand(invitationId));
 
         if (result.IsSuccess) {
             return Ok();

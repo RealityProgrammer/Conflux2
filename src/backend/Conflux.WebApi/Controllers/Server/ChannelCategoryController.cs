@@ -19,13 +19,7 @@ public sealed class ChannelCategoryController(
         Guid serverId, 
         [FromBody] CreateChannelCategoryRequest request
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await sender.Send(new CreateServerChannelCategoryCommand(userId, serverId, request.Name));
+        var result = await sender.Send(new CreateServerChannelCategoryCommand(serverId, request.Name));
 
         if (result.IsSuccess) {
             return Created((Uri?)null, new ApiResponse<ChannelCategoryIdentityDto>(result.Value, Domain.Error.None));
@@ -41,13 +35,7 @@ public sealed class ChannelCategoryController(
     
     [HttpDelete("{categoryId:guid}")]
     public async Task<ActionResult> DeleteChannelCategory(Guid serverId, Guid categoryId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await sender.Send(new DeleteServerChannelCategoryCommand(userId, serverId, categoryId));
+        var result = await sender.Send(new DeleteServerChannelCategoryCommand(serverId, categoryId));
         
         if (result.IsSuccess) {
             return NoContent();

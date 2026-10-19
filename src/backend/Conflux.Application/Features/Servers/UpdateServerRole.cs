@@ -8,7 +8,6 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record UpdateServerRoleCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     Guid RoleId,
     PatchField<string> Name,
@@ -22,6 +21,7 @@ public sealed record ServerRoleUpdatedNotification(Guid ServerId, Guid RoleId) :
 public sealed record ServerDefaultRoleUpdatedNotification(Guid ServerId) : INotification;
 
 public sealed class UpdateServerRoleHandler(
+    ICurrentUserService currentUserService,
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork,
     IServerPermissionsProvider permissionsProvider,
@@ -31,6 +31,7 @@ public sealed class UpdateServerRoleHandler(
     ILogger<UpdateServerRoleHandler> logger
 ) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
+        Guid userId = currentUserService.UserId!.Value;
         CommunityServerRole? role = await repository.FindById(command.RoleId, true, cancellationToken);
 
         if (role == null || role.CommunityServerId != command.ServerId) {
@@ -46,7 +47,7 @@ public sealed class UpdateServerRoleHandler(
         }
         
         // restrict member from updating role with higher authorize level
-        var result = await permissionsProvider.GetUserAuthorizeInfo(command.ServerId, command.ExecutorUserId, cancellationToken);
+        var result = await permissionsProvider.GetUserAuthorizeInfo(command.ServerId, userId, cancellationToken);
 
         if (!result.IsSuccess) {
             return result.Error;

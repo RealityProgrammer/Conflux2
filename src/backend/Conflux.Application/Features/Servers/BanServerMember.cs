@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record BanServerMemberCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     Guid InteractingMemberId,
     string? Reason,
@@ -53,6 +52,7 @@ public sealed record ServerMemberBannedNotification(
 ) : INotification;
 
 public sealed class BanServerMemberHandler(
+    ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
     IServerPermissionsCacheService permissionsCacheService,
     IServerModerationLogWriteRepository moderationLogWriteRepository,
@@ -62,24 +62,34 @@ public sealed class BanServerMemberHandler(
     TimeProvider timeProvider
 ) : ICommandHandler<BanServerMemberCommand, Result> {
     public async ValueTask<Result> Handle(BanServerMemberCommand command, CancellationToken cancellationToken) {
+        Guid executorUserId = currentUserService.UserId!.Value;
+        Guid serverId = command.ServerId;
+        Guid interactingMemberId = command.InteractingMemberId;
+        
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
-            .Where(m => m.CommunityServerId == command.ServerId && m.UserId == command.ExecutorUserId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == executorUserId)
             .Select(m => m.Id)
             .Cast<Guid?>()
             .FirstOrDefault();
 
         if (!executorMemberId.HasValue) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, UserId = {command.ExecutorUserId})");
+            return Errors.ResourceNotFound("Server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), executorUserId.ToString()),
+            ]);
         }
         
         CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.InteractingMemberId)
+            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, Id = {command.InteractingMemberId})");
+            return Errors.ResourceNotFound("Server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+            ]);
         }
 
         if (affectedMember.Roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner)) {
@@ -108,7 +118,7 @@ public sealed class BanServerMemberHandler(
             }
             
             ServerModerationLog log = new() {
-                CommunityServerId = command.ServerId,
+                CommunityServerId = serverId,
                 Action = ServerModerationAction.Ban,
                 Reason = command.Reason,
                 BanDuration = command.Duration,
@@ -121,13 +131,13 @@ public sealed class BanServerMemberHandler(
 
             // delete the permission cache
             await permissionsCacheService.DeleteUserAuthorizeInfo(affectedMember.CommunityServerId, affectedMember.UserId, CancellationToken.None);
-            await mediator.Publish(new ServerMemberBannedNotification(command.ServerId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
+            await mediator.Publish(new ServerMemberBannedNotification(serverId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
             
             return Result.Success();
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Exception thrown while banning member.");
+            logger.LogError(e, "Exception thrown while banning member {memberId}.", interactingMemberId);
             return Errors.UnexpectedError();
         }
     }

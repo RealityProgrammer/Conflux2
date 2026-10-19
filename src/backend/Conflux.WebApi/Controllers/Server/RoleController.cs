@@ -21,13 +21,7 @@ public sealed class RoleController(
         Guid serverId, 
         [FromBody] CreateRoleRequest request
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await sender.Send(new CreateServerRoleCommand(userId, serverId, request.Name));
+        var result = await sender.Send(new CreateServerRoleCommand(serverId, request.Name));
         
         if (result.IsSuccess) {
             return Created((Uri?)null, new ApiResponse<ServerRoleDto>(result.Value, Error.None));
@@ -46,14 +40,7 @@ public sealed class RoleController(
         Guid roleId, 
         [FromBody] PatchRoleRequest request
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
         var result = await sender.Send(new UpdateServerRoleCommand(
-            userId, 
             serverId, 
             roleId,
             request.Name,
@@ -74,13 +61,7 @@ public sealed class RoleController(
 
     [HttpDelete("{roleId:guid}")]
     public async Task<ActionResult<ApiResponse>> DeleteRole(Guid serverId, Guid roleId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await sender.Send(new DeleteServerRoleCommand(userId, serverId, roleId));
+        var result = await sender.Send(new DeleteServerRoleCommand(serverId, roleId));
         
         if (result.IsSuccess) {
             return NoContent();

@@ -12,7 +12,6 @@ using Npgsql;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record CreateServerCommand(
-    Guid CreatorUserId, 
     string Name, 
     Stream? AvatarStream
 ) : ICommand<Result<ServerIdentityDto>>;
@@ -23,6 +22,7 @@ public sealed record ServerCreatedNotification(
 ) : INotification;
 
 public sealed class CreateServerHandler(
+    ICurrentUserService currentUserService,
     ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
     IServerMediaService serverMediaService,
@@ -34,13 +34,15 @@ public sealed class CreateServerHandler(
         CreateServerCommand command, 
         CancellationToken cancellationToken
     ) {
-        Guid creatorId = command.CreatorUserId;
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
         
         CommunityServer server = new() {
             Name = command.Name,
             Description = null,
-            CreatorUserId = creatorId,
-            OwnerUserId = creatorId,
+            CreatorUserId = userId,
+            OwnerUserId = userId,
             Members = [],
         };
 
@@ -48,7 +50,7 @@ public sealed class CreateServerHandler(
             Name = "Default",
             SpecialRoleType = SpecialRoleType.Default,
             AuthorizeLevel = -1,
-            CreatorUserId = creatorId,
+            CreatorUserId = userId,
             Permissions = [..Enum.GetValues<ServerPermission>().Select(p => new RolePermission {
                 Permission = p,
                 State = PermissionState.Disable,
@@ -60,13 +62,13 @@ public sealed class CreateServerHandler(
             SpecialRoleType = SpecialRoleType.Owner,
             AuthorizeLevel = int.MaxValue,
             Permissions = [],   // owner is the special role, so every operation short-circuit 
-            CreatorUserId = creatorId,
+            CreatorUserId = userId,
         };
 
         server.Roles = [defaultRole, ownerRole]; // all members have implicit default role, so no need to waste memory storing it in the database
 
         CommunityServerMember ownerMember = new() {
-            UserId = creatorId,
+            UserId = userId,
             CommunityServer = server,
             MemberRoles = [
                 new() {
@@ -121,7 +123,7 @@ public sealed class CreateServerHandler(
             }
         }
 
-        await publisher.Publish(new ServerCreatedNotification(creatorId, server.Id), CancellationToken.None);
+        await publisher.Publish(new ServerCreatedNotification(userId, server.Id), CancellationToken.None);
         return Result<ServerIdentityDto>.Success(new(server));
     }
 }

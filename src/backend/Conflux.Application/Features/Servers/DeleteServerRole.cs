@@ -6,7 +6,6 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record DeleteServerRoleCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     Guid RoleId
 ) : ICommand<Result>, IServerCommand {
