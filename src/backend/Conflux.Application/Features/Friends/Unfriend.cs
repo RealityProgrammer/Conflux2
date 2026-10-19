@@ -1,3 +1,4 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -9,15 +10,18 @@ public sealed record UnfriendCommand(Guid InvokerUserId, Guid FriendUserId) : IC
 public sealed record UnfriendNotification(Guid InvokerUserId, Guid OtherUserId) : INotification;
 
 public sealed class UnfriendHandler(
+    ICurrentUserService currentUserService,
     IFriendRequestRepository friendRequestRepository,
     IMediator mediator,
     TimeProvider timeProvider
 ) : ICommandHandler<UnfriendCommand, Result> {
     public async ValueTask<Result> Handle(UnfriendCommand request, CancellationToken cancellationToken) {
-        var invokerUserId = request.InvokerUserId;
-        var friendUserId = request.FriendUserId;
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
         
-        var requestSummary = await friendRequestRepository.GetRequestSummary(invokerUserId, friendUserId);
+        var friendUserId = request.FriendUserId;
+        var requestSummary = await friendRequestRepository.GetRequestSummary(userId, friendUserId);
         
         if (requestSummary == null) {
             return Errors.ResourceNotFound("Friend request");
@@ -36,7 +40,7 @@ public sealed class UnfriendHandler(
         );
 
         if (success) {
-            await mediator.Publish(new UnfriendNotification(invokerUserId, friendUserId), cancellationToken);
+            await mediator.Publish(new UnfriendNotification(userId, friendUserId), cancellationToken);
             return Result.Success();
         }
 

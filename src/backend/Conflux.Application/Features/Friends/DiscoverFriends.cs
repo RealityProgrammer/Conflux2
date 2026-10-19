@@ -1,30 +1,36 @@
+using Conflux.Application.Services;
+using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Friends;
 
 public sealed record DiscoverFriendsQuery(
-    Guid SearchingUserId,
     string? NameFilter, 
     int Offset, 
     int Count
-) : IQuery<PaginatedResult<DiscoverFriendSummary>>;
+) : IQuery<Result<PaginatedResult<DiscoverFriendSummary>>>;
 
 public sealed class DiscoverFriendsHandler(
+    ICurrentUserService currentUserService,
     IFriendRequestRepository friendRequestRepository
-) : IQueryHandler<DiscoverFriendsQuery, PaginatedResult<DiscoverFriendSummary>> {
-    public async ValueTask<PaginatedResult<DiscoverFriendSummary>> Handle(
+) : IQueryHandler<DiscoverFriendsQuery, Result<PaginatedResult<DiscoverFriendSummary>>> {
+    public async ValueTask<Result<PaginatedResult<DiscoverFriendSummary>>> Handle(
         DiscoverFriendsQuery query, 
         CancellationToken cancellationToken
     ) {
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+        
         var result = await friendRequestRepository.GetFriendDiscovery(
-            query.SearchingUserId, 
+            userId,
             query.NameFilter, 
             query.Offset, 
             query.Count,
             cancellationToken
         );
         
-        return result;
+        return Result<PaginatedResult<DiscoverFriendSummary>>.Success(result);
     }
 }

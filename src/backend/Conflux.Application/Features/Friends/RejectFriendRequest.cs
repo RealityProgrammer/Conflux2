@@ -1,29 +1,33 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Friends;
 
-public sealed record RejectFriendRequestCommand(Guid RejecterUserId, Guid SenderUserId) : ICommand<Result>;
+public sealed record RejectFriendRequestCommand(Guid SenderUserId) : ICommand<Result>;
 
 public sealed record FriendRequestRejectedNotification(Guid RejecterUserId, Guid SenderUserId) : INotification;
 
 public sealed class RejectFriendRequestHandler(
+    ICurrentUserService currentUserService,
     IFriendRequestRepository friendRequestRepository,
     IMediator mediator,
     TimeProvider timeProvider
 ) : ICommandHandler<RejectFriendRequestCommand, Result> {
     public async ValueTask<Result> Handle(RejectFriendRequestCommand request, CancellationToken cancellationToken) {
-        var rejecterUserId = request.RejecterUserId;
-        var senderUserId = request.SenderUserId;
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
         
-        var requestSummary = await friendRequestRepository.GetRequestSummary(senderUserId, rejecterUserId);
+        var senderUserId = request.SenderUserId;
+        var requestSummary = await friendRequestRepository.GetRequestSummary(senderUserId, userId);
 
         if (requestSummary == null) {
             return Errors.ResourceNotFound("Friend request");
         }
 
-        if (requestSummary.Sender.Id == rejecterUserId) {
+        if (requestSummary.Sender.Id == userId) {
             return Errors.Forbidden("Only the receiver can reject request.");
         }
 
@@ -42,7 +46,7 @@ public sealed class RejectFriendRequestHandler(
                 );
 
                 if (success) {
-                    await mediator.Publish(new FriendRequestRejectedNotification(rejecterUserId, senderUserId), cancellationToken);
+                    await mediator.Publish(new FriendRequestRejectedNotification(userId, senderUserId), cancellationToken);
                     return Result.Success();
                 }
 

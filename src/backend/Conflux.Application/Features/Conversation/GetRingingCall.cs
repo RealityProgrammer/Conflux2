@@ -4,7 +4,7 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Application.Features.Friends;
+namespace Conflux.Application.Features.Conversation;
 
 public sealed record GetRingingCallQuery(Guid UserId) : IQuery<Result<GetIncomingDirectCallQueryResult?>>;
 
