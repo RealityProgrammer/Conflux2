@@ -46,13 +46,20 @@ export default function DeleteAccountPage() {
     },
   });
 
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+
   const onSubmit = async (values: RequestDeleteAccountFormValues) => {
-    const response = await authService.deleteAccount(values.reason, values.extraMessage);
+    const response = await authService.deleteAccount(
+      values.reason, 
+      values.extraMessage,
+      idempotencyKey
+    );
     
     if (response.success) {
       toast.success("Account deletion requested.");
       reset(values);
       auth.invalidateSession();
+      setIdempotencyKey(crypto.randomUUID());
     } else {
       toast.error("Failed to request account deletion. Please try again later.");
     }

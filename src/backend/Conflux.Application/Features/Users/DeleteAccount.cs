@@ -19,7 +19,8 @@ public sealed class DeleteAccountHandler(
     IUserAccountDeletionReadRepository accountDeletionReadRepository,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     IUnitOfWork unitOfWork,
-    ILogger<DeleteAccountHandler> logger
+    ILogger<DeleteAccountHandler> logger,
+    ISessionService sessionService
 ) : ICommandHandler<DeleteAccountCommand, Result> {
     public async ValueTask<Result> Handle(DeleteAccountCommand command, CancellationToken cancellationToken) {
         var userId = command.UserId;
@@ -42,7 +43,7 @@ public sealed class DeleteAccountHandler(
             .AnyAsync(cancellationToken);
 
         if (hasPendingRequest) {
-            return Result.Success();
+            return Errors.AccountDeleteRequestExists();
         }
 
         UserAccountDeletion request = new() {
@@ -69,6 +70,8 @@ public sealed class DeleteAccountHandler(
             logger.LogError(e, "Exception thrown while adding UserAccountDeletion.");
             return Errors.UnexpectedError();
         }
+
+        await sessionService.RemoveAllSession(userId);
 
         return Result.Success();
     }

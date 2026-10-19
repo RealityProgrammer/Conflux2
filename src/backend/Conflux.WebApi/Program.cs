@@ -284,6 +284,8 @@ builder.Services.AddSignalR()
 
 // Conflux services.
 builder.Services
+    .AddScoped<ICurrentUserService, CurrentUserService>()
+        
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()

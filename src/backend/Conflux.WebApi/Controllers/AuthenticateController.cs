@@ -168,7 +168,7 @@ public sealed class AuthenticateController(
         return Ok();
     }
     
-    [HttpPost("delete-account")]
+    [HttpPost("delete-account"), Idempotent(60)]
     public async Task<ActionResult<ApiResponse>> DeleteAccount([FromBody] SessionUserController.DeleteAccountRequest request) {
         if (!Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out Guid userId)) {
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));

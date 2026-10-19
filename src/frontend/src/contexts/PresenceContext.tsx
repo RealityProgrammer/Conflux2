@@ -26,7 +26,11 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
 
   const { data, isLoading, isError } = useGetSessionUserManualPresenceStatusQuery(
     {},
-    { enabled: !!userProfile?.id }
+    { 
+      enabled: !!userProfile?.id,
+      staleTime: 60 * 30 * 1000,
+      refetchOnWindowFocus: false,
+    },
   );
 
   const updateManualPresenceMutation = useUpdateManualPresenceStatusMutation({

@@ -34,7 +34,7 @@ internal sealed class JwtProvider(
         if (user.EmailConfirmed) {
             claims.Add(new(JwtRegisteredClaimNames.EmailVerified, "true"));
         }
-
+        
         if (user.IsUserNameLocked) {
             claims.Add(new("ProfileSetupComplete", "true"));
         }
