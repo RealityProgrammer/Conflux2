@@ -20,19 +20,14 @@ public sealed class CallController(
         Guid peerId,
         [Required, FromHeader(Name = "X-SignalR-Connection-Id")] string callerConnectionId
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await sender.Send(new StartDirectCallCommand(callerId, callerConnectionId, peerId));
+        var result = await sender.Send(new StartDirectCallCommand(callerConnectionId, peerId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<StartCallResult>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -40,19 +35,14 @@ public sealed class CallController(
     
     [HttpPatch("{callId:guid}/cancel")]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> CancelDirectCall(Guid callId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var callerId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await sender.Send(new CancelDirectCallCommand(callId, callerId));
+        var result = await sender.Send(new CancelDirectCallCommand(callId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -63,19 +53,14 @@ public sealed class CallController(
         Guid callId,
         [Required, FromHeader(Name = "X-SignalR-Connection-Id")] string calleeConnectionId
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var calleeId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await sender.Send(new AcceptDirectCallCommand(callId, calleeId, calleeConnectionId));
+        var result = await sender.Send(new AcceptDirectCallCommand(callId, calleeConnectionId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse(Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -83,19 +68,14 @@ public sealed class CallController(
     
     [HttpPatch("{callId:guid}/reject")]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> RejectCall(Guid callId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var calleeId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await sender.Send(new DenyCallCommand(callId, calleeId));
+        var result = await sender.Send(new DenyCallCommand(callId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -103,19 +83,14 @@ public sealed class CallController(
     
     [HttpPatch("{callId:guid}/end")]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> EndCall(Guid callId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var enderId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await sender.Send(new EndDirectCallCommand(callId, enderId));
+        var result = await sender.Send(new EndDirectCallCommand(callId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
@@ -136,6 +111,7 @@ public sealed class CallController(
         }
         
         return result.Error.Code switch {
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.NoUserFoundFromId) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),

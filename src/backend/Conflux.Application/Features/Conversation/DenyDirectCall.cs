@@ -10,11 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record DenyCallCommand(Guid CallId, Guid CalleeId) : ICommand<Result<TimelineMessageDto>>;
+public sealed record DenyCallCommand(Guid CallId) : ICommand<Result<TimelineMessageDto>>;
 
 public sealed record CallDeniedNotification(Guid CallId, Guid CallerId, Guid CalleeId) : INotification;
 
 internal sealed class DenyCallHandler(
+    ICurrentUserService currentUserService,
     ICallingService callingService,
     IUserRepository userRepository,
     IDirectConversationProvider directConversationProvider,
@@ -24,9 +25,11 @@ internal sealed class DenyCallHandler(
     ILogger<DenyCallHandler> logger
 ) : ICommandHandler<DenyCallCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(DenyCallCommand command, CancellationToken cancellationToken) {
+        if (currentUserService.UserId is not { } calleeId) {
+            return Errors.InvalidIdentifier();
+        }
+
         // reject call first
-        Guid calleeId = command.CalleeId;
-        
         Result<RejectDirectCallResult> result = await callingService.RejectDirectCall(command.CallId, calleeId);
         
         if (!result.IsSuccess) {

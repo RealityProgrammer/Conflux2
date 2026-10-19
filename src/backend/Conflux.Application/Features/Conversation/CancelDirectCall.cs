@@ -10,11 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record CancelDirectCallCommand(Guid CallId, Guid CallerId) : ICommand<Result<TimelineMessageDto>>;
+public sealed record CancelDirectCallCommand(Guid CallId) : ICommand<Result<TimelineMessageDto>>;
 
 public sealed record DirectCallCanceledNotification(Guid CallId, Guid CallerId, Guid CalleeId) : INotification;
 
 internal sealed class CancelDirectCallHandler(
+    ICurrentUserService currentUserService,
     ICallingService callingService,
     IUserRepository userRepository,
     IDirectConversationProvider directConversationProvider,
@@ -24,17 +25,21 @@ internal sealed class CancelDirectCallHandler(
     ILogger<CancelDirectCallHandler> logger
 ) : ICommandHandler<CancelDirectCallCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(CancelDirectCallCommand command, CancellationToken cancellationToken) {
-        // cancel call first.
-        Guid callerId = command.CallerId;
+        if (currentUserService.UserId is not { } callerId) {
+            return Errors.InvalidIdentifier();
+        }
+
+        Guid callId = command.CallId;
         
-        Result<CancelDirectCallResult> result = await callingService.CancelDirectCall(command.CallId, command.CallerId);
+        // cancel call first.
+        Result<CancelDirectCallResult> result = await callingService.CancelDirectCall(callId, callerId);
         
         if (!result.IsSuccess) {
             return result.Error;
         }
 
         Guid calleeId = result.Value!.CalleeId;
-        await publisher.Publish(new DirectCallCanceledNotification(command.CallId, callerId, calleeId), CancellationToken.None);
+        await publisher.Publish(new DirectCallCanceledNotification(callId, callerId, calleeId), CancellationToken.None);
         
         var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, cancellationToken);
         

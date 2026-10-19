@@ -11,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record SendMessageCommand(
-    Guid SenderUserId,
     Guid ConversationId,
     string? Body,
     IReadOnlyList<UploadFile> Attachments,
@@ -24,6 +23,7 @@ public sealed record MessageReceivedNotification(
 ) : INotification;
 
 public sealed class SendMessageHandler(
+    ICurrentUserService currentUserService,
     IUserRepository userRepository,
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
@@ -35,19 +35,22 @@ public sealed class SendMessageHandler(
     IMessageMediaService messageMediaService
 ) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand command, CancellationToken cancellationToken) {
+        if (currentUserService.UserId is not { } senderUserId) {
+            return Errors.InvalidIdentifier();
+        }
+        
         Guid conversationId = command.ConversationId;
-        Guid senderUserId = command.SenderUserId;
         
         Domain.Entities.Conversation? conversation = await conversationRepository
             .AsQueryable()
-            .Where(c => c.Id == command.ConversationId)
+            .Where(c => c.Id == conversationId)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (conversation == null) {
             return Errors.ResourceNotFound("Conversation", [new("Id", conversationId.ToString())]);
         }
 
-        if (!await conversationAuthorizeService.CanSendMessage(command.SenderUserId, conversationId, cancellationToken)) {
+        if (!await conversationAuthorizeService.CanSendMessage(senderUserId, conversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to send message in this conversation.");
         }
 
