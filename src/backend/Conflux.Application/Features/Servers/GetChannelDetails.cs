@@ -15,7 +15,6 @@ public sealed record GetChannelDetailsQuery(
 
 public sealed class GetChannelDetailsHandler(
     IChannelRepository channelRepository,
-    IServerMemberReadRepository serverMemberRepository,
     IServerPermissionsProvider permissionsProvider
 ) : IQueryHandler<GetChannelDetailsQuery, Result<ChannelDetailsDto>> {
     public async ValueTask<Result<ChannelDetailsDto>> Handle(

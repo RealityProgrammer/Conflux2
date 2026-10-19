@@ -13,8 +13,7 @@ namespace Conflux.WebApi.Notifications.Server;
 public sealed partial record ServerChannelDeletedEvent;
 
 internal sealed class ChannelDeletedNotificationHandler(
-    IHubContext<GatewayHub, IConfluxClient> hubContext,
-    IHttpContextAccessor httpContextAccessor
+    IHubContext<GatewayHub, IConfluxClient> hubContext
 ) : INotificationHandler<ServerChannelDeletedNotification> {
     public async ValueTask Handle(
         ServerChannelDeletedNotification notification, 

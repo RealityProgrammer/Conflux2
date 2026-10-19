@@ -11,8 +11,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.102.3" />
-      <PackageReference Include="AWSSDK.S3" Version="4.0.104.3" />
+      <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.102.4" />
+      <PackageReference Include="AWSSDK.S3" Version="4.0.104.4" />
       <PackageReference Include="FileSignatures" Version="7.3.0" />
       <PackageReference Include="Humanizer.Core" Version="3.0.10" />
       <PackageReference Include="MailKit" Version="4.18.1" />

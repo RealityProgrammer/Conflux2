@@ -8,7 +8,6 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ConversationAuthorizeService(
     IEnumerable<IConversationAuthorizeStrategy> strategies,
-    IConversationRepository conversationRepository,
     IConversationMetadataProvider conversationMetadataProvider,
     IServerRoleVersioningService serverRoleVersioningService,
     IConnectionMultiplexer connectionMultiplexer

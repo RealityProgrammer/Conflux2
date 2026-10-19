@@ -143,6 +143,7 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
