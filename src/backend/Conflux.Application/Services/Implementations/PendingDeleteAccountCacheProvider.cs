@@ -27,6 +27,10 @@ internal sealed class PendingDeleteAccountCacheProvider(
         await _database.HashDeleteAsync("account:pending_delete", userId.ToString());
     }
 
+    public async Task Remove(IReadOnlyList<Guid> userIds) {
+        await _database.HashDeleteAsync("account:pending_delete", [..userIds.Select(id => id.ToString())]);
+    }
+
     public async Task<bool> Check(Guid userId, CancellationToken cancellationToken = default) {
         RedisValue value = await _database.HashGetAsync("account:pending_delete", userId.ToString());
 

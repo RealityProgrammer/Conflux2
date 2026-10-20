@@ -10,7 +10,8 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class UserRepository(
     UserManager<ApplicationUser> userManager,
-    ApplicationDbContext dbContext
+    ApplicationDbContext dbContext,
+    TimeProvider timeProvider
 ) : IUserRepository {
     public IQueryable<ApplicationUser> AsQueryable() {
         return userManager.Users;
@@ -51,5 +52,38 @@ internal sealed class UserRepository(
         }
 
         return Result<PresenceStatus>.Success(result.Value);
+    }
+
+    public async Task<int> AnonymizeUsers(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken = default) {
+        var now = timeProvider.GetUtcNow();
+
+        return await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE "AspNetUsers" AS u
+            SET 
+                "Email" = 'ghostuser_' || t.generated_name || '@purged.gone',
+                "NormalizedEmail" = 'GHOSTUSER_' || UPPER(t.generated_name) || '@PURGED.GONE',
+                "EmailConfirmed" = false,
+                "TwoFactorEnabled" = false,
+                "UserName" = 'ghostuser_' || t.generated_name,
+                "NormalizedUserName" = 'GHOSTUSER_' || t.generated_name,
+                "DisplayName" = 'ghostuser_' || t.generated_name,
+                "PasswordHash" = 'PURGED_PASSWORD',
+                "PhoneNumber" = NULL,
+                "PhoneNumberConfirmed" = false,
+                "AvatarId" = NULL,
+                "BannerId" = NULL,
+                "Biography" = NULL,
+                "Pronouns" = NULL,
+                "DeletedAt" = {now}
+            FROM (
+                SELECT 
+                    "Id",
+                    substr(md5(random()::text), 1, 16) AS generated_name
+                FROM "AspNetUsers" 
+                WHERE "Id" = ANY({userIds})
+            ) AS t
+            WHERE u."Id" = t."Id";
+            """, cancellationToken);
     }
 }

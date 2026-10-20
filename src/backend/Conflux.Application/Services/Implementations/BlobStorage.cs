@@ -68,6 +68,46 @@ internal sealed class StorageService(
         }
     }
 
+    public async Task<Result> DeleteRange(IEnumerable<string> keys, CancellationToken cancellationToken = default) {
+        foreach (var batch in keys.Chunk(1000)) {
+            var deleteRequest = new DeleteObjectsRequest {
+                BucketName = _options.BucketName,
+                Objects = [..batch.Select(k => new KeyVersion { Key = k })],
+            };
+
+            try {
+                var response = await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
+
+                if (response.DeleteErrors is { Count: > 0 }) {
+                    bool anyCriticalError = response.DeleteErrors
+                        .Any(e => e.Code != "NoSuchKey" && e.Code != "NotFound");
+
+                    if (anyCriticalError) {
+                        return Errors.StorageError("Failed to delete some objects due to server errors.");
+                    }
+                }
+            } catch (DeleteObjectsException ex) {
+                bool anyCriticalError = ex.Response.DeleteErrors
+                    .Any(e => e.Code != "NoSuchKey" && e.Code != "NotFound");
+
+                if (anyCriticalError) {
+                    return Errors.StorageError("Failed to delete some objects due to server errors.", ex.Message);
+                }
+            } catch (AmazonS3Exception ex) when (ex.ErrorCode is "NoSuchKey" or "NotFound" || ex.StatusCode == HttpStatusCode.NotFound) {
+                // swallow if the whole request failed because the files didn't exist
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (HttpRequestException e) when (e.HttpRequestError == HttpRequestError.ConnectionError) {
+                return Errors.ConnectionFailure("S3");
+            } catch (Exception e) {
+                logger.LogError(e, "Exception thrown while deleting file from S3.");
+                return Errors.UnexpectedError();
+            }
+        }
+
+        return Result.Success();
+    }
+
     public async Task<Result> Copy(string from, string to, CancellationToken cancellationToken = default) {
         try {
             await s3Client.CopyObjectAsync(_options.BucketName, from, _options.BucketName, to, cancellationToken);

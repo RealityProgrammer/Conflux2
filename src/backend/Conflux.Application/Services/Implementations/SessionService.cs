@@ -35,6 +35,10 @@ internal sealed class SessionService(
         await _database.KeyDeleteAsync(GetSessionsKey(userId));
     }
 
+    public async Task RemoveAllSession(IReadOnlyList<Guid> userIds) {
+        await _database.KeyDeleteAsync([..userIds.Select(GetSessionsKey)]);
+    }
+
     public async Task<bool> IsSessionValid(Guid userId, Guid sessionId) {
         RedisKey sessionKey = GetSessionsKey(userId);
         RedisValue hashField = sessionId.ToString();

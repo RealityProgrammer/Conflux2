@@ -11,16 +11,22 @@ internal sealed partial class SessionCleanupWorker(
 
         using var timer = new PeriodicTimer(TimeSpan.FromHours(24));
 
-        while (await timer.WaitForNextTickAsync(stoppingToken)) {
-            try {
-                using var scope = scopeFactory.CreateScope();
-                var jwtStorage = scope.ServiceProvider.GetRequiredService<IJwtStorage>();
+        try {
+            while (await timer.WaitForNextTickAsync(stoppingToken)) {
+                try {
+                    using var scope = scopeFactory.CreateScope();
+                    var jwtStorage = scope.ServiceProvider.GetRequiredService<IJwtStorage>();
 
-                int cleanAmount = await jwtStorage.CleanupExpiredTokens(stoppingToken);
-                LogSuccessfullyCleanedUp(logger, cleanAmount);
-            } catch (Exception e) {
-                logger.LogError(e, "Exception thrown while cleaning session.");
+                    int cleanAmount = await jwtStorage.CleanupExpiredTokens(stoppingToken);
+                    LogSuccessfullyCleanedUp(logger, cleanAmount);
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception e) {
+                    logger.LogError(e, "Exception thrown while cleaning session.");
+                }
             }
+        } catch (OperationCanceledException) {
+            logger.LogInformation("Stopping...");
         }
     }
     

@@ -287,6 +287,7 @@ builder.Services.AddSignalR()
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
     .AddScoped<IPendingDeleteAccountCacheProvider, PendingDeleteAccountCacheProvider>()
+    .AddScoped<IAccountPurgingService, AccountPurgingService>()
         
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
@@ -619,7 +620,8 @@ builder.Services
     .AddHostedService<GhostConnectionCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
     .AddHostedService<EmailBackgroundWorker>()
-    .AddHostedService<SessionCleanupWorker>();
+    .AddHostedService<SessionCleanupWorker>()
+    .AddHostedService<PurgePendingDeleteAccountsWorker>();
 
 var app = builder.Build();
 

@@ -159,7 +159,20 @@ internal sealed class UserMediaService(
 
         return Result<Image>.Success(imageFormat);
     }
-    
+
+    public async Task Purge(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken = default) {
+        if (userIds.Count == 0) return;
+        
+        var allKeys = userIds.SelectMany(userId => new[] {
+            GetAvatarKey(userId),
+            GetAvatarBackupKey(userId),
+            GetBannerKey(userId),
+            GetBannerBackupKey(userId)
+        });
+        
+        await blobStorage.DeleteRange(allKeys, cancellationToken);
+    }
+
     private static string GetAvatarKey(Guid userId) {
         return $"users/{userId}/avatar";
     }

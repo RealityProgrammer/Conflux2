@@ -12,12 +12,18 @@ internal sealed partial class InvitationCleanupWorker(
         // clean the database once every hour
         using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
 
-        while (await timer.WaitForNextTickAsync(stoppingToken)) {
-            try {
-                await PerformCleanupAsync(stoppingToken);
-            } catch (OperationCanceledException) {
-                logger.LogInformation("Stopping...");
+        try {
+            while (await timer.WaitForNextTickAsync(stoppingToken)) {
+                try {
+                    await PerformCleanupAsync(stoppingToken);
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception e) {
+                    logger.LogError(e, "Exception thrown while cleaning up invitations.");
+                }
             }
+        } catch (OperationCanceledException) {
+            logger.LogInformation("Stopping...");
         }
     }
 

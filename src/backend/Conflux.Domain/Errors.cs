@@ -165,4 +165,7 @@ public static class Errors {
 
     public static Error RequireActiveAccount() =>
         new(nameof(RequireActiveAccount), "An active account is required.");
+    
+    public static Error StorageError(string message, string? details = null) =>
+        new(nameof(StorageError), message, details);
 }
