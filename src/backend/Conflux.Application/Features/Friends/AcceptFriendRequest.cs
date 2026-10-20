@@ -5,7 +5,9 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Friends;
 
-public sealed record AcceptFriendRequestCommand(Guid SenderUserId) : ICommand<Result>;
+public sealed record AcceptFriendRequestCommand(
+    Guid SenderUserId
+) : ICommand<Result>;
 
 public sealed record FriendRequestAcceptedNotification(Guid AcceptorUserId, Guid SenderUserId) : INotification;
 

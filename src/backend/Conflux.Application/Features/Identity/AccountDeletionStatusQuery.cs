@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record AccountDeletionStatusQuery : IQuery<Result<AccountDeletionStatus>>;
+public sealed record AccountDeletionStatusQuery : IQuery<Result<AccountDeletionStatus>>, IAllowNonActiveAccount;
 
 public sealed class AccountDeletionStatusQueryHandler(
     ICurrentUserService currentUserService,

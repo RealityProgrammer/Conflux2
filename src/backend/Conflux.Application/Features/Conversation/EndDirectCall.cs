@@ -10,7 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record EndDirectCallCommand(Guid CallId) : ICommand<Result<TimelineMessageDto>>;
+public sealed record EndDirectCallCommand(
+    Guid CallId
+) : ICommand<Result<TimelineMessageDto>>;
 
 public sealed record CallEndedNotification(Guid CallId, Guid PeerId, Guid EnderId) : INotification;
 

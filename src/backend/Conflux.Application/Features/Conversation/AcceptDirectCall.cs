@@ -4,8 +4,10 @@ using Conflux.Domain;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record AcceptDirectCallCommand(Guid CallId, string CalleeConnectionId) : ICommand<Result>;
-
+public sealed record AcceptDirectCallCommand(
+    Guid CallId, 
+    string CalleeConnectionId
+) : ICommand<Result>;
 
 public sealed record CallAcceptedNotification(Guid CallId, Guid CalleeId, Guid CallerId) : INotification;
 

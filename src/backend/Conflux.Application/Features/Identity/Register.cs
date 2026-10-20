@@ -5,7 +5,10 @@ using System.Security.Cryptography;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record RegisterCommand(string Email, string Password) : ICommand<Result<ApplicationUser>>;
+public sealed record RegisterCommand(
+    string Email, 
+    string Password
+) : ICommand<Result<ApplicationUser>>, IAllowNonActiveAccount;
 
 public sealed record UserRegisteredNotification(ApplicationUser User) : INotification;
 

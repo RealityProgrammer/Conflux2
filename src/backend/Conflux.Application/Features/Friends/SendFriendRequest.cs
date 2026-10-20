@@ -7,7 +7,9 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Friends;
 
-public sealed record SendFriendRequestCommand(Guid ToUserId) : ICommand<Result<UserRelationshipStatus>>;
+public sealed record SendFriendRequestCommand(
+    Guid ToUserId
+) : ICommand<Result<UserRelationshipStatus>>;
 
 public sealed record FriendRequestReceivedNotification(Guid ReceiverUserId, Guid SenderUserId) : INotification;
 

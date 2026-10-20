@@ -7,13 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record RestoreAccountCommand : ICommand<Result>;
+public sealed record RestoreAccountCommand : ICommand<Result>, IAllowNonActiveAccount;
 
 public sealed partial class RestoreAccountHandler(
     ICurrentUserService currentUserService,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     TimeProvider timeProvider,
-    ILogger<RestoreAccountHandler> logger
+    ILogger<RestoreAccountHandler> logger,
+    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
 ) : ICommandHandler<RestoreAccountCommand, Result> {
     public async ValueTask<Result> Handle(
         RestoreAccountCommand command, 
@@ -41,6 +42,7 @@ public sealed partial class RestoreAccountHandler(
             LogMultipleRowsUpdated(logger, userId);
         }
 
+        await pendingDeleteAccountCacheProvider.Remove(userId);
         return Result.Success();
     }
     

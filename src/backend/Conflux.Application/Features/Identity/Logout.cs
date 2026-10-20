@@ -2,7 +2,7 @@ using Conflux.Application.Services;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record LogoutCommand(Guid UserId, Guid SessionId) : ICommand;
+public sealed record LogoutCommand(Guid UserId, Guid SessionId) : ICommand, IAllowNonActiveAccount;
 
 public sealed class LogoutHandler(
     ISessionService sessionService

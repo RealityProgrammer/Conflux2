@@ -6,7 +6,9 @@ using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record GetRingingCallQuery(Guid UserId) : IQuery<Result<GetIncomingDirectCallQueryResult?>>;
+public sealed record GetRingingCallQuery(
+    Guid UserId
+) : IQuery<Result<GetIncomingDirectCallQueryResult?>>;
 
 internal sealed class GetRingingCallHandler(
     ICallingService callingService,

@@ -162,4 +162,7 @@ public static class Errors {
     
     public static Error NoPendingAccountDeletion() =>
         new(nameof(NoPendingAccountDeletion), "No pending account deletion.");
+
+    public static Error RequireActiveAccount() =>
+        new(nameof(RequireActiveAccount), "An active account is required.");
 }

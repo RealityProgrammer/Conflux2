@@ -11,7 +11,7 @@ public sealed record GetUserAuthorizationInfoQuery(string UserId) : IQuery<Resul
 
 public sealed class GetUserAuthorizationInfoHandler(
     UserManager<ApplicationUser> userManager,
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
+    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
 ) : IQueryHandler<GetUserAuthorizationInfoQuery, Result<UserAuthorizationInfo>> {
     public async ValueTask<Result<UserAuthorizationInfo>> Handle(GetUserAuthorizationInfoQuery query, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(query.UserId);
@@ -21,7 +21,7 @@ public sealed class GetUserAuthorizationInfoHandler(
         }
 
         var userRoles = await userManager.GetRolesAsync(user);
-        bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
+        bool isPendingDeletion = await pendingDeleteAccountCacheProvider.Check(user.Id, cancellationToken);
         
         return Result<UserAuthorizationInfo>.Success(new(
             user.Id,

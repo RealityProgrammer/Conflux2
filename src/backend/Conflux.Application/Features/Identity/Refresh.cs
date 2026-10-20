@@ -18,7 +18,7 @@ public sealed class RefreshHandler(
     IJwtStorage jwtStorage,
     IJwtProvider jwtProvider,
     ISessionService sessionService,
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
+    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
 ) : ICommandHandler<RefreshCommand, Result<RefreshResult>> {
     public async ValueTask<Result<RefreshResult>> Handle(RefreshCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
@@ -46,7 +46,7 @@ public sealed class RefreshHandler(
 
         await sessionService.ResetSessionActivityTime(user.Id, sessionId);
         
-        bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
+        bool isPendingDeletion = await pendingDeleteAccountCacheProvider.Check(user.Id);
         IList<string> roles = !isPendingDeletion ? await userManager.GetRolesAsync(user) : [];
         
         jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out DateTimeOffset accessTokenExpireAt);

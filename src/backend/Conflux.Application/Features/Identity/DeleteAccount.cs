@@ -20,7 +20,8 @@ public sealed class DeleteAccountHandler(
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     IUnitOfWork unitOfWork,
     ILogger<DeleteAccountHandler> logger,
-    ISessionService sessionService
+    ISessionService sessionService,
+    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
 ) : ICommandHandler<DeleteAccountCommand, Result> {
     public async ValueTask<Result> Handle(DeleteAccountCommand command, CancellationToken cancellationToken) {
         if (currentUserService.UserId is not { } userId) {
@@ -74,6 +75,7 @@ public sealed class DeleteAccountHandler(
         }
 
         await sessionService.RemoveAllSession(userId);
+        await pendingDeleteAccountCacheProvider.Remove(userId);
 
         return Result.Success();
     }

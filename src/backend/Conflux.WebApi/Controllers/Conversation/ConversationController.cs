@@ -67,6 +67,7 @@ public sealed class ConversationController(
             }
         
             return result.Error.Code switch {
+                nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
                 nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
                 nameof(Errors.Forbidden) => NotFound(new ApiResponse(Errors.ResourceNotFound("Conversation"))),
                 nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
@@ -94,6 +95,7 @@ public sealed class ConversationController(
         }
 
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
@@ -110,6 +112,7 @@ public sealed class ConversationController(
         }
         
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
@@ -133,6 +136,7 @@ public sealed class ConversationController(
         }
 
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<TimelineMessagePage>(null, result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<TimelineMessagePage>(null, result.Error)),
@@ -153,6 +157,7 @@ public sealed class ConversationController(
         }
         
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
@@ -173,6 +178,7 @@ public sealed class ConversationController(
         }
         
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),

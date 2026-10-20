@@ -263,6 +263,7 @@ builder.Services.AddMediator(options => {
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),
         typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
+        typeof(RequiresActiveAccountBehavior<,>),
         typeof(KickServerMemberValidationPipeline),
         typeof(WarnServerMemberValidationPipeline),
         typeof(BanServerMemberValidationPipeline),
@@ -285,6 +286,7 @@ builder.Services.AddSignalR()
 // Conflux services.
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
+    .AddScoped<IPendingDeleteAccountCacheProvider, PendingDeleteAccountCacheProvider>()
         
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()

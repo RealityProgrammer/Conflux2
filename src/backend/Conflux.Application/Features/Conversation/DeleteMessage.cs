@@ -5,7 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record DeleteMessageCommand(Guid ConversationId, Guid MessageId) : ICommand<Result>;
+public sealed record DeleteMessageCommand(
+    Guid ConversationId, 
+    Guid MessageId
+) : ICommand<Result>;
 
 public sealed record MessageDeletedNotification(Guid ConversationId, Guid MessageId) : INotification;
 
