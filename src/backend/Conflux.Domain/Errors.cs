@@ -159,4 +159,7 @@ public static class Errors {
     
     public static Error AccountDeleteRequestExists() =>
         new(nameof(AccountDeleteRequestExists), "Account delete request already exists.");
+    
+    public static Error NoPendingAccountDeletion() =>
+        new(nameof(NoPendingAccountDeletion), "No pending account deletion.");
 }

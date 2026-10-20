@@ -1,6 +1,7 @@
 import type {
+  AccountDeletionStatus,
   BackendResponse,
-  ServiceResponse, 
+  ServiceResponse,
   UpdateProfileResult,
 } from "./types.ts";
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
@@ -138,5 +139,20 @@ export const sessionUserService = {
       const axiosError = error as AxiosError<BackendResponse<UpdateProfileResult>>;
       return handleAxiosError(axiosError);
     }
-  }
+  },
+  
+  getAccountDeletionStatus: async (): Promise<ServiceResponse<AccountDeletionStatus>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<AccountDeletionStatus>> = await apiClient.get("/users/me/deletion");
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatus>>;
+      return handleAxiosError(axiosError);
+    }
+  },
 }

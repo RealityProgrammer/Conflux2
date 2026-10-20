@@ -151,6 +151,20 @@ public sealed class SessionUserController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
+
+    [HttpGet("deletion")]
+    public async Task<ActionResult<ApiResponse<AccountDeletionStatus>>> GetAccountDeletionStatus() {
+        var result = await sender.Send(new AccountDeletionStatusQuery());
+        
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<AccountDeletionStatus>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.NoPendingAccountDeletion) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
     
     public sealed record SetNamesRequest(
         [Required(ErrorMessage = "Username is required."), StringLength(32, MinimumLength = 8, ErrorMessage = "Username must be between 8 and 32 characters.")]
