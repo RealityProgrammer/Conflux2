@@ -1293,6 +1293,7 @@ input UserAccountDeletionFilterInput {
   userId: UuidOperationFilterInput
   user: ApplicationUserFilterInput
   createdAt: DateTimeOperationFilterInput
+  appliedAt: DateTimeOperationFilterInput
 }
 
 input UuidOperationFilterInput {

@@ -138,7 +138,7 @@ export const authService = {
   
   logoutAll: async (): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse = await apiClient.post<BackendResponse>('/auth/logout-all');
+      const response: AxiosResponse = await apiClient.post<BackendResponse>("/auth/logout-all");
       useAuthStore.getState().clearSession();
 
       await csrfService.requestCsrfToken();
@@ -157,7 +157,7 @@ export const authService = {
     try {
       const response: AxiosResponse<BackendResponse> =
         await apiClient.post<BackendResponse>(
-          `auth/delete-account`,
+          "auth/delete-account",
           { reason, extraMessage},
           { headers: { "Idempotency-Key": idempotencyKey } }
         );
@@ -166,6 +166,24 @@ export const authService = {
       
       await csrfService.requestCsrfToken();
       
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  restoreAccount: async (): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>("auth/restore-account");
+
+      useAuthStore.getState().clearSession();
+
+      await csrfService.requestCsrfToken();
+
       return {
         success: true,
         statusCode: response.status,

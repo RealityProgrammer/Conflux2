@@ -174,7 +174,7 @@ public sealed class AuthenticateController(
 
         if (!result.IsSuccess) {
             return result.Error.Code switch {
-                nameof(Errors.AccountDeleteRequestExists) => Ok(new ApiResponse(Error.None)),
+                nameof(Errors.PendingAccountDeletionExists) => Ok(new ApiResponse(Error.None)),
                 nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
                 nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
@@ -186,6 +186,34 @@ public sealed class AuthenticateController(
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
         });
+        Response.Cookies.Delete("X-Refresh-Token", new() {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Strict,
+        });
+        
+        return Ok(new ApiResponse(Error.None));
+    }
+
+    [HttpPost("restore-account")]
+    public async Task<ActionResult<ApiResponse>> RestoreAccount() {
+        Result result = await sender.Send(new RestoreAccountCommand());
+
+        if (!result.IsSuccess) {
+            return result.Error.Code switch {
+                nameof(Errors.NoPendingAccountDeletion) => NotFound(new ApiResponse(Error.None)),
+                nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+                nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+            };
+        }
+        
+        Response.Cookies.Delete("X-Access-Token", new() {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Strict,
+        });
+        
         Response.Cookies.Delete("X-Refresh-Token", new() {
             HttpOnly = true,
             Secure = Request.IsHttps,

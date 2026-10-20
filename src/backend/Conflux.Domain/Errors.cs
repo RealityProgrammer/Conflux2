@@ -157,8 +157,8 @@ public static class Errors {
     public static Error MediaUploadError() =>
         new(nameof(MediaUploadError), "Media upload failed.");
     
-    public static Error AccountDeleteRequestExists() =>
-        new(nameof(AccountDeleteRequestExists), "Account delete request already exists.");
+    public static Error PendingAccountDeletionExists() =>
+        new(nameof(PendingAccountDeletionExists), "Account delete request already exists.");
     
     public static Error NoPendingAccountDeletion() =>
         new(nameof(NoPendingAccountDeletion), "No pending account deletion.");

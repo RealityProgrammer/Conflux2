@@ -13,4 +13,5 @@ public sealed class UserAccountDeletion : IHasCreatedAt {
     public ApplicationUser User { get; set; } = null!;
     
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? AppliedAt { get; set; }
 }

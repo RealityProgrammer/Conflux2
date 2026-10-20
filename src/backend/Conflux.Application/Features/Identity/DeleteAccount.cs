@@ -6,7 +6,7 @@ using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-namespace Conflux.Application.Features.Users;
+namespace Conflux.Application.Features.Identity;
 
 public sealed record DeleteAccountCommand(
     UserAccountDeleteReason Reason,
@@ -45,7 +45,7 @@ public sealed class DeleteAccountHandler(
             .AnyAsync(cancellationToken);
 
         if (hasPendingRequest) {
-            return Errors.AccountDeleteRequestExists();
+            return Errors.PendingAccountDeletionExists();
         }
 
         UserAccountDeletion request = new() {

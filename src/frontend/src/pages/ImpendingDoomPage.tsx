@@ -3,10 +3,12 @@ import {FaFireFlameCurved} from "react-icons/fa6";
 import {BsExclamationTriangle, BsPersonXFill} from "react-icons/bs";
 import {type CSSProperties, useEffect, useState} from "react";
 import {useAuth} from "../contexts/AuthContext.tsx";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {sessionUserService} from "../api/sessionUserService.ts";
 import type {AccountDeletionStatus, ServiceResponse} from "../api/types.ts";
 import Spinner from "../components/Spinner.tsx";
+import {useRestoreAccountMutation} from "../hooks/useRestoreAccountMutation.ts";
+import {toast} from "react-toastify";
 
 const GRACE_PERIOD_DAYS = 14;
 
@@ -83,7 +85,19 @@ function ContentPanel() {
 }
 
 function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
-  const { logout } = useAuth();
+  const { logout, invalidateSession } = useAuth();
+  const { mutate, isPending } = useRestoreAccountMutation({
+    onSuccess: (data: ServiceResponse) => {
+      if (data.success) {
+        invalidateSession();
+      } else {
+        toast.error("Failed to restore account. Please try again later.");
+      }
+    },
+    onError: (_error) => {
+      toast.error("Failed to restore account. Please try again later.");
+    },
+  });
 
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -179,11 +193,19 @@ function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
       </main>
 
       <footer className="border-t border-t-gray-600 flex flex-row justify-end gap-3 p-4">
-        <button className="button-theme-danger px-3 py-2 rounded-md cursor-pointer" onClick={logout}>
+        <button 
+          className="button-theme-danger px-3 py-2 rounded-md cursor-pointer"
+          disabled={isPending}
+          onClick={logout}
+        >
           Logout
         </button>
 
-        <button className="button-theme-primary px-3 py-2 rounded-md cursor-pointer">
+        <button 
+          className="button-theme-primary px-3 py-2 rounded-md cursor-pointer"
+          disabled={isPending}
+          onClick={() => mutate()}
+        >
           Restore Account
         </button>
       </footer>
