@@ -5,10 +5,12 @@ import {type CSSProperties, useEffect, useState} from "react";
 import {useAuth} from "../contexts/AuthContext.tsx";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {sessionUserService} from "../api/sessionUserService.ts";
-import type {AccountDeletionStatus, ServiceResponse} from "../api/types.ts";
+import type {AccountDeletionStatus, RestoreAccountResponse, ServiceResponse} from "../api/types.ts";
 import Spinner from "../components/Spinner.tsx";
 import {useRestoreAccountMutation} from "../hooks/useRestoreAccountMutation.ts";
 import {toast} from "react-toastify";
+import {useAuthStore} from "../store/useAuthStore.ts";
+import {useNavigate} from "react-router";
 
 const GRACE_PERIOD_DAYS = 14;
 
@@ -85,11 +87,16 @@ function ContentPanel() {
 }
 
 function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
-  const { logout, invalidateSession } = useAuth();
+  const { logout } = useAuth();
+  const setCachedAuthorization = useAuthStore(state => state.setCachedAuthorization);
+  const navigate = useNavigate();
+  
   const { mutate, isPending } = useRestoreAccountMutation({
-    onSuccess: (data: ServiceResponse) => {
-      if (data.success) {
-        invalidateSession();
+    onSuccess: (data: ServiceResponse<RestoreAccountResponse>) => {
+      if (data.success && data.data) {
+        setCachedAuthorization(data.data.authorization);
+        navigate("/lobby");
+        toast.success("Account has been restored.");
       } else {
         toast.error("Failed to restore account. Please try again later.");
       }

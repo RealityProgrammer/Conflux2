@@ -1,7 +1,7 @@
 namespace Conflux.Application.Dto;
 
 public sealed record LoginResult(
-    UserAuthorizationInfo AuthorizationInfo, 
+    UserAuthorizationInfo AuthorizationInfo,
     string TokenType, 
     string AccessToken,
     DateTimeOffset AccessTokenExpireAt,

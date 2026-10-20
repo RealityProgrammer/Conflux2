@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 namespace Conflux.Application.Features.Identity;
 
 public sealed record RefreshCommand(
-    string Email, 
+    Guid UserId,
     Guid SessionId, 
     string RefreshToken
 ) : ICommand<Result<RefreshResult>>;
@@ -21,7 +21,8 @@ public sealed class RefreshHandler(
     IUserAccountDeletionReadRepository userAccountDeletionReadRepository
 ) : ICommandHandler<RefreshCommand, Result<RefreshResult>> {
     public async ValueTask<Result<RefreshResult>> Handle(RefreshCommand command, CancellationToken cancellationToken) {
-        var user = await userManager.FindByEmailAsync(command.Email);
+        var user = await userManager.FindByIdAsync(command.UserId.ToString());
+        
         if (user == null) {
             return Errors.NoUserFoundFromEmail();
         }
@@ -45,10 +46,10 @@ public sealed class RefreshHandler(
 
         await sessionService.ResetSessionActivityTime(user.Id, sessionId);
         
-        IList<string> roles = await userManager.GetRolesAsync(user);
-        jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out DateTimeOffset accessTokenExpireAt);
-        
         bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
+        IList<string> roles = !isPendingDeletion ? await userManager.GetRolesAsync(user) : [];
+        
+        jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out DateTimeOffset accessTokenExpireAt);
         
         return Result<RefreshResult>.Success(new(new(
             user.Id,

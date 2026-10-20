@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
@@ -14,7 +15,10 @@ public sealed partial class RestoreAccountHandler(
     TimeProvider timeProvider,
     ILogger<RestoreAccountHandler> logger
 ) : ICommandHandler<RestoreAccountCommand, Result> {
-    public async ValueTask<Result> Handle(RestoreAccountCommand command, CancellationToken cancellationToken) {
+    public async ValueTask<Result> Handle(
+        RestoreAccountCommand command, 
+        CancellationToken cancellationToken
+    ) {
         if (currentUserService.UserId is not { } userId) {
             return Errors.InvalidIdentifier();
         }
@@ -29,14 +33,15 @@ public sealed partial class RestoreAccountHandler(
                 builder.SetProperty(r => r.AppliedAt, utcNow);
             }, cancellationToken);
 
-        switch (updated) {
-            case 0: return Errors.NoPendingAccountDeletion();
-            case 1: return Result.Success();
-            
-            default:
-                LogMultipleRowsUpdated(logger, userId);
-                return Result.Success();
+        if (updated == 0) {
+            return Errors.NoPendingAccountDeletion();
         }
+
+        if (updated > 1) {
+            LogMultipleRowsUpdated(logger, userId);
+        }
+
+        return Result.Success();
     }
     
     [LoggerMessage(LogLevel.Information, "Somehow we got 2 rows updated for user {userId}.")]

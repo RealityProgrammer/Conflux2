@@ -76,11 +76,23 @@ export const router = createBrowserRouter([
       return { authorizationInfo: authInfo,  userProfile: profileInfo! };
     },
     element: (
-      <Tooltip.Provider delayDuration={500}>
-        <AuthProvider>
-          <Outlet/>
-        </AuthProvider>
-      </Tooltip.Provider>
+      <>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          newestOnTop
+          draggable="touch"
+          pauseOnHover
+          theme="dark"
+          transition={Slide}
+        />
+        
+        <Tooltip.Provider delayDuration={500}>
+          <AuthProvider>
+            <Outlet/>
+          </AuthProvider>
+        </Tooltip.Provider>
+      </>
     ),
     children: [
       {
@@ -126,6 +138,10 @@ export const router = createBrowserRouter([
       },
       {
         path: "impending-doom",
+        loader: async () => {
+          const auth = await requireAuth();
+          return auth.isPendingDelete ? null : redirect("/lobby");
+        },
         element: <ImpendingDoomPage/>
       },
       {
@@ -136,16 +152,6 @@ export const router = createBrowserRouter([
         },
         element: (
           <>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              newestOnTop
-              draggable="touch"
-              pauseOnHover
-              theme="dark"
-              transition={Slide}
-            />
-
             <SignalRProvider>
               <PresenceProvider>
                 <Outlet/>

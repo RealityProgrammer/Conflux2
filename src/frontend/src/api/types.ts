@@ -56,6 +56,7 @@ export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomin
 export type MessageReadStrategy = components["schemas"]["MessageReadStrategy"];
 export type UpdateProfileResult = components["schemas"]["UpdateProfileResult"];
 export type AccountDeletionStatus = components["schemas"]["AccountDeletionStatus"];
+export type RestoreAccountResponse = components["schemas"]["RestoreAccountResponse"];
 
 export type EditedMessageDto = {
   id: string;

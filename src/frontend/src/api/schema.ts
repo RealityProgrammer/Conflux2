@@ -219,6 +219,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/restore-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
+                        "application/json": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
+                        "text/json": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/authorization-info": {
         parameters: {
             query?: never;
@@ -2232,6 +2269,10 @@ export interface components {
             data: null | components["schemas"]["RefreshResponse"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfRestoreAccountResponse: {
+            data: null | components["schemas"]["RestoreAccountResponse"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfServerChannelIdentityDto: {
             data: null | components["schemas"]["ServerChannelIdentityDto"];
             error: components["schemas"]["Error"];
@@ -2445,6 +2486,11 @@ export interface components {
             email: string;
             password: string;
             confirmPassword: string;
+        };
+        RestoreAccountResponse: {
+            authorization: components["schemas"]["UserAuthorizationInfo"];
+            tokenType: string;
+            accessToken: string;
         };
         ServerChannelIdentityDto: {
             /** Format: uuid */

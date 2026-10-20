@@ -34,7 +34,7 @@ public sealed class AuthenticateController(
         var response = loginResult.Value;
 
         SetAccessTokenCookie(response!.AccessToken, response.AccessTokenExpireAt);
-        SetRefreshTokenCookie(request.Email, response.SessionId, response.RefreshToken, response.RefreshTokenExpireAt);
+        SetRefreshTokenCookie(response.AuthorizationInfo.Id, response.SessionId, response.RefreshToken, response.RefreshTokenExpireAt);
     
         return Ok(new ApiResponse<LoginResponse>(
             new(response.AuthorizationInfo, response.TokenType, response.AccessToken),
@@ -54,8 +54,8 @@ public sealed class AuthenticateController(
         Response.Cookies.Append("X-Access-Token", accessToken, cookieOptions);
     }
     
-    private void SetRefreshTokenCookie(string email, Guid sessionId, string refreshToken, DateTimeOffset expireAt) {
-        var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{sessionId}:{refreshToken}"));
+    private void SetRefreshTokenCookie(Guid userId, Guid sessionId, string refreshToken, DateTimeOffset expireAt) {
+        var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{userId}:{sessionId}:{refreshToken}"));
         
         var cookieOptions = new CookieOptions {
             HttpOnly = true,                            // Prevent JavaScript access.
@@ -86,29 +86,11 @@ public sealed class AuthenticateController(
     
     [AllowAnonymous, HttpPost("refresh"), IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<RefreshResponse>>> Refresh() {
-        if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
+        if (!TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken)) {
             return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
         }
 
-        string decodedPayload;
-
-        try {
-            decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
-        } catch {
-            return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
-        }
-        
-        if (
-            decodedPayload.Split(':', 3) is not { Length: 3 } parts || 
-            !Guid.TryParse(parts[1], out Guid sessionId)
-        ) {
-            return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
-        }
-
-        string email = parts[0];
-        string refreshToken = parts[2];
-
-        var result = await sender.Send(new RefreshCommand(email, sessionId, refreshToken));
+        var result = await sender.Send(new RefreshCommand(userId, sessionId, refreshToken));
         
         if (!result.IsSuccess) {
             // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
@@ -118,7 +100,7 @@ public sealed class AuthenticateController(
         RefreshResult value = result.Value!;
         
         SetAccessTokenCookie(value.AccessToken, value.AccessTokenExpireAt);
-        SetRefreshTokenCookie(email, sessionId, value.RefreshToken, value.RefreshTokenExpireAt);
+        SetRefreshTokenCookie(userId, sessionId, value.RefreshToken, value.RefreshTokenExpireAt);
         
         return Ok(new ApiResponse<RefreshResponse>(
             new(value.AuthorizationInfo, value.TokenType, value.AccessToken), 
@@ -196,31 +178,38 @@ public sealed class AuthenticateController(
     }
 
     [HttpPost("restore-account")]
-    public async Task<ActionResult<ApiResponse>> RestoreAccount() {
-        Result result = await sender.Send(new RestoreAccountCommand());
+    public async Task<ActionResult<ApiResponse<RestoreAccountResponse>>> RestoreAccount() {
+        if (!TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken)) {
+            return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
+        }
+        
+        var restoreResult = await sender.Send(new RestoreAccountCommand());
 
-        if (!result.IsSuccess) {
-            return result.Error.Code switch {
+        if (!restoreResult.IsSuccess) {
+            return restoreResult.Error.Code switch {
                 nameof(Errors.NoPendingAccountDeletion) => NotFound(new ApiResponse(Error.None)),
-                nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
-                nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
-                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+                nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(restoreResult.Error)),
+                nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(restoreResult.Error)),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(restoreResult.Error)),
             };
         }
         
-        Response.Cookies.Delete("X-Access-Token", new() {
-            HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-        });
+        var refreshResult = await sender.Send(new RefreshCommand(userId, sessionId, refreshToken));
         
-        Response.Cookies.Delete("X-Refresh-Token", new() {
-            HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-        });
+        if (!refreshResult.IsSuccess) {
+            // we could return BadRequest user is not found, but it could be abused as a user query mechanism.
+            return Unauthorized(new ApiResponse(Errors.InvalidCredentials()));
+        }
         
-        return Ok(new ApiResponse(Error.None));
+        RefreshResult refreshValue = refreshResult.Value!;
+        
+        SetAccessTokenCookie(refreshValue.AccessToken, refreshValue.AccessTokenExpireAt);
+        SetRefreshTokenCookie(userId, sessionId, refreshValue.RefreshToken, refreshValue.RefreshTokenExpireAt);
+        
+        return Ok(new ApiResponse<RestoreAccountResponse>(
+            new(refreshValue.AuthorizationInfo, refreshValue.TokenType, refreshValue.AccessToken), 
+            Error.None
+        ));
     }
 
     [HttpGet("authorization-info")]
@@ -285,6 +274,36 @@ public sealed class AuthenticateController(
                 return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
         }
     }
+
+    private bool TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken) {
+        if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
+            goto failure;
+        }
+
+        string decodedPayload;
+
+        try {
+            decodedPayload = Encoding.UTF8.GetString(Convert.FromBase64String(cookiePayload));
+        } catch {
+            goto failure;
+        }
+        
+        if (
+            decodedPayload.Split(':', 3) is not { Length: 3 } parts || 
+            !Guid.TryParse(parts[0], out userId) ||
+            !Guid.TryParse(parts[1], out sessionId)
+        ) {
+            goto failure;
+        }
+
+        refreshToken = parts[2];
+        return true;
+        
+        failure:
+        userId = sessionId = Guid.Empty;
+        refreshToken = string.Empty;
+        return false;
+    }
     
     // ReSharper disable NotAccessedPositionalProperty.Global
     public sealed record LoginRequest(
@@ -294,6 +313,7 @@ public sealed class AuthenticateController(
     
     public sealed record LoginResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     public sealed record RefreshResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
+    public sealed record RestoreAccountResponse(UserAuthorizationInfo Authorization, string TokenType, string AccessToken);
     
     public sealed record RegisterRequest(
         [Required, EmailAddress] string Email, 

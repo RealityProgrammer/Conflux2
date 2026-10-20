@@ -1,5 +1,5 @@
 import {apiClient} from "./client.ts";
-import type {EmailConfirmationRequest, LoginRequest, RegisterRequest} from "./types.ts";
+import type {EmailConfirmationRequest, LoginRequest, RegisterRequest, RestoreAccountResponse} from "./types.ts";
 import type {
   BackendResponse,
   LoginResponse,
@@ -176,9 +176,10 @@ export const authService = {
     }
   },
 
-  restoreAccount: async (): Promise<ServiceResponse> => {
+  restoreAccount: async (): Promise<ServiceResponse<RestoreAccountResponse>> => {
     try {
-      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>("auth/restore-account");
+      const response: AxiosResponse<BackendResponse<RestoreAccountResponse>> = 
+        await apiClient.post<BackendResponse<RestoreAccountResponse>>("auth/restore-account");
 
       useAuthStore.getState().clearSession();
 
@@ -187,9 +188,10 @@ export const authService = {
       return {
         success: true,
         statusCode: response.status,
+        data: response.data.data,
       }
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
+      const axiosError = error as AxiosError<BackendResponse<RestoreAccountResponse>>;
       return handleAxiosError(axiosError);
     }
   },

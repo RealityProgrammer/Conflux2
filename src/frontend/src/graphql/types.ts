@@ -1416,6 +1416,7 @@ export type UserAccountDeleteStatusOperationFilterInput = {
 
 export type UserAccountDeletionFilterInput = {
   and?: InputMaybe<Array<UserAccountDeletionFilterInput>>;
+  appliedAt?: InputMaybe<DateTimeOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   extraMessage?: InputMaybe<StringOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;

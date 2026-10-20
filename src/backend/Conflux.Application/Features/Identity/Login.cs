@@ -35,8 +35,9 @@ public sealed class LoginHandler(
         }
 
         var sessionId = await sessionService.CreateSession(user.Id, command.DeviceInfo);
+        bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
         
-        IList<string> roles = await userManager.GetRolesAsync(user);
+        IList<string> roles = !isPendingDeletion ? await userManager.GetRolesAsync(user) : [];
                     
         jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out DateTimeOffset accessTokenExpireAt);
         jwtProvider.GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset refreshTokenExpireAt);
@@ -46,8 +47,6 @@ public sealed class LoginHandler(
         if (!storeResult.IsSuccess) {
             return storeResult.Error;
         }
-
-        bool isPendingDeletion = await userAccountDeletionReadRepository.HasPendingDelete(user.Id, cancellationToken);
         
         return Result<LoginResult>.Success(new(new(
             user.Id,
