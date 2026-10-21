@@ -9,8 +9,7 @@ namespace Conflux.Infrastructure.Services;
 
 internal sealed class AccountDeleteStatusCacheProvider(
     IConnectionMultiplexer connectionMultiplexer,
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository,
-    TimeProvider timeProvider // Inject TimeProvider to calculate exact remaining time
+    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
 ) : IAccountDeleteStatusCacheProvider {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
