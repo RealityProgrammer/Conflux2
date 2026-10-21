@@ -4,19 +4,14 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record SendPasswordResetMailCommand : ICommand;
+public sealed record SendPasswordResetMailCommand(string Email) : ICommand;
 
 public sealed class SendPasswordResetMailHandler(
-    ICurrentUserService currentUserService,
     IAuthMailService authMailService,
     UserManager<ApplicationUser> userManager
 ) : ICommandHandler<SendPasswordResetMailCommand> {
     public async ValueTask<Unit> Handle(SendPasswordResetMailCommand command, CancellationToken cancellationToken) {
-        if (currentUserService.UserId is not { } userId) {
-            return Unit.Value;
-        }
-        
-        ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
+        ApplicationUser? user = await userManager.FindByEmailAsync(command.Email);
 
         if (user == null) {
             return Unit.Value;

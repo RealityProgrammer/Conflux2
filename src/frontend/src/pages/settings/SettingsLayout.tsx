@@ -24,6 +24,7 @@ export default function SettingsLayout() {
           
           <div className="space-y-1">
             <NavigateLink to="profile">Profile</NavigateLink>
+            <NavigateLink to="account">Account</NavigateLink>
           </div>
         </section>
 

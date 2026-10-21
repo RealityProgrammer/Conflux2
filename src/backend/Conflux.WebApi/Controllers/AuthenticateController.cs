@@ -281,8 +281,8 @@ public sealed class AuthenticateController(
     }
     
     [HttpPost("forgot-password"), AllowAnonymous]
-    public async Task<ActionResult<ApiResponse>> ForgotPassword() {
-        await sender.Send(new SendPasswordResetMailCommand());
+    public async Task<ActionResult<ApiResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request) {
+        await sender.Send(new SendPasswordResetMailCommand(request.Email));
         return Ok();
     }
 
@@ -363,5 +363,9 @@ public sealed class AuthenticateController(
     public sealed record ChangePasswordRequest(
         string OldPassword,
         string NewPassword
+    );
+
+    public sealed record ForgotPasswordRequest(
+        string Email
     );
 }

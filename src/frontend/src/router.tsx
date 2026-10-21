@@ -36,6 +36,7 @@ const ChannelPage = lazy(() => import("./pages/server/ChannelPage.tsx"));
 const PresenceProvider = lazy(() => import("./contexts/PresenceContext.tsx"));
 const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout.tsx"));
 const ProfilePage = lazy(() => import("./pages/settings/ProfilePage.tsx"));
+const AccountPage = lazy(() => import("./pages/settings/AccountPage.tsx"));
 const DeleteAccountPage = lazy(() => import("./pages/settings/DeleteAccountPage.tsx"));
 const ImpendingDoomPage = lazy(() => import("./pages/ImpendingDoomPage.tsx"));
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
@@ -255,6 +256,10 @@ export const router = createBrowserRouter([
               {
                 path: "profile",
                 element: <ProfilePage/>
+              },
+              {
+                path: "account",
+                element: <AccountPage/>
               },
               {
                 path: "delete-account",
