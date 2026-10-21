@@ -98,6 +98,10 @@ builder.Services
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => {
+    options.TokenLifespan = TimeSpan.FromMinutes(30);
+});
+
 var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
     options.TokenValidationParameters = new() {
         ValidateIssuer = true,
