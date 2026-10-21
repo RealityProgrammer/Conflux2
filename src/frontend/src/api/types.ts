@@ -5,7 +5,6 @@ import type {HttpStatusCode} from "axios";
 // requests
 export type LoginRequest = components["schemas"]["LoginRequest"];
 export type RegisterRequest = components["schemas"]["RegisterRequest"];
-export type EmailConfirmationRequest = components["schemas"]["ConfirmEmailRequest"];
 
 export type InvitationExpireAfter = components["schemas"]["InvitationExpireAfter"];
 

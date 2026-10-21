@@ -268,10 +268,13 @@ export const authService = {
     }
   },
 
-  confirmEmail: async (request: EmailConfirmationRequest): Promise<ServiceResponse> => {
+  confirmEmail: async (email: string, confirmationCode: string): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/confirm-email", request);
+        await apiClient.post<BackendResponse>("/auth/confirm-email", {
+          email,
+          confirmationCode,
+        });
 
       if (response.status === HttpStatusCode.Ok) {
         // refresh the authorization information.
@@ -293,6 +296,25 @@ export const authService = {
       const response: AxiosResponse<BackendResponse> =
         await apiClient.post<BackendResponse>("/auth/forgot-password", { email });
 
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+  
+  resetPassword: async (email: string, token: string, password: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>("/auth/reset-password", {
+          email,
+          token,
+          password
+        });
+      
       return {
         success: true,
         statusCode: response.status,

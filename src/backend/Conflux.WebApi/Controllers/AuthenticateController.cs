@@ -267,7 +267,7 @@ public sealed class AuthenticateController(
 
     [HttpPost("confirm-email"), AllowAnonymous]
     public async Task<ActionResult<ApiResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest request) {
-        var result = await sender.Send(new ConfirmEmailCommand(request.UserId, request.ConfirmationCode));
+        var result = await sender.Send(new ConfirmEmailCommand(request.Email, request.ConfirmationCode));
         
         if (result.IsSuccess) {
             return Ok();
@@ -283,7 +283,23 @@ public sealed class AuthenticateController(
     [HttpPost("forgot-password"), AllowAnonymous]
     public async Task<ActionResult<ApiResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request) {
         await sender.Send(new SendPasswordResetMailCommand(request.Email));
-        return Ok();
+        return Ok(new ApiResponse(Error.None));
+    }
+
+    [HttpPost("reset-password"), AllowAnonymous]
+    public async Task<ActionResult<ApiResponse>> ResetPassword([FromBody] ResetPasswordRequest request) {
+        var result = await sender.Send(new ResetPasswordCommand(request.Email, request.Token, request.Password));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse(Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.NoUserFoundFromEmail) => BadRequest(new ApiResponse(Errors.UnexpectedError())),
+            nameof(Errors.InvalidCredentials) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
 
     [HttpPost("change-password")]
@@ -348,7 +364,7 @@ public sealed class AuthenticateController(
     );
     // ReSharper restore NotAccessedPositionalProperty.Global
 
-    public sealed record ConfirmEmailRequest(string UserId, string ConfirmationCode);
+    public sealed record ConfirmEmailRequest(string Email, string ConfirmationCode);
     
     public sealed record DeleteAccountRequest(
         [Required] UserAccountDeleteReason Reason, 
@@ -367,5 +383,11 @@ public sealed class AuthenticateController(
 
     public sealed record ForgotPasswordRequest(
         string Email
+    );
+
+    public sealed record ResetPasswordRequest(
+        string Email,
+        string Token,
+        string Password
     );
 }

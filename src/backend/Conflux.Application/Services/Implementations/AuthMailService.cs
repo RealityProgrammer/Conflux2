@@ -23,7 +23,7 @@ public sealed class AuthMailService(
         string encodedCode = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(confirmCode));
 
         NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);
-        queryArguments.Add("userId", user.Id.ToString());
+        queryArguments.Add("email", user.Email);
         queryArguments.Add("code", encodedCode);
 
         UriBuilder builder = new UriBuilder(_frontendOptions.Origin) {
@@ -73,9 +73,9 @@ public sealed class AuthMailService(
         string encoded = Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(resetToken));
 
         NameValueCollection queryArguments = HttpUtility.ParseQueryString(string.Empty);
-        queryArguments.Add("userId", user.Id.ToString());
-        queryArguments.Add("code", encoded);
-
+        queryArguments.Add("email", user.Email);
+        queryArguments.Add("token", encoded);
+        
         UriBuilder builder = new UriBuilder(_frontendOptions.Origin) {
             Path = "auth/reset-password",
             Query = queryArguments.ToString(),

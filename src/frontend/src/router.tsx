@@ -20,6 +20,7 @@ import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 
 import HomePage from "./pages/HomePage"
 const AuthenticatePage = lazy(() => import("./pages/auth/AuthenticatePage.tsx"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
 import AuthProvider from "./contexts/AuthContext.tsx";
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
 const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
@@ -105,8 +106,8 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <AuthenticatePage/>,
             loader: requireGuest,
+            element: <AuthenticatePage/>,
           },
           {
             path: "verify-email",
@@ -123,6 +124,11 @@ export const router = createBrowserRouter([
               <Suspense fallback={<SuspenseFallback/>}>
                 <ConfirmEmailPage/>
               </Suspense>
+          },
+          {
+            path: "reset-password",
+            loader: requireGuest,
+            element: <ResetPasswordPage/>
           }
         ]
       },
@@ -325,7 +331,7 @@ async function requireUnverified() {
   const response = await requireAuth();
 
   if (response.isVerified) {
-    return redirect('/');
+    throw redirect('/');
   }
 
   return null;

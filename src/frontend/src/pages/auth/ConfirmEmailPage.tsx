@@ -13,25 +13,25 @@ export default function ConfirmEmailPage() {
   const [searchParams] = useSearchParams();
   const navigation = useNavigate();
 
-  const userId: string | null = searchParams.get("userId");
-  const base64EncodedCode: string | null = searchParams.get("code");
+  const email: string | null = searchParams.get("email");
+  const confirmationCode: string | null = searchParams.get("code");
 
   const [verificationStatus, setVerificationStatus] = useState(
-    userId == null || base64EncodedCode == null ? VerificationStatus.Failed : VerificationStatus.Verifying
+    email == null || confirmationCode == null ? VerificationStatus.Failed : VerificationStatus.Verifying
   );
 
   const hasExecuted = useRef<boolean>(false);
 
   useEffect(() => {
     if (hasExecuted.current) return;
+    
     hasExecuted.current = true;
+    
+    if (!email || !confirmationCode) return;
 
     if (verificationStatus === VerificationStatus.Verifying) {
       const startVerify = async () => {
-        await authService.confirmEmail({
-          userId: userId!,
-          confirmationCode: atob(base64EncodedCode!),
-        });
+        await authService.confirmEmail(email, confirmationCode);
 
         setVerificationStatus(VerificationStatus.Success);
 
@@ -44,7 +44,7 @@ export default function ConfirmEmailPage() {
 
       startVerify();
     }
-  }, [base64EncodedCode, verificationStatus, navigation, userId]);
+  }, [confirmationCode, verificationStatus, navigation, email]);
 
   return (
     <div className="h-dvh w-dvw bg-gray-800 grid grid-cols-1 px-4 md:px-0 md:grid-cols-4 lg:grid-cols-3">
@@ -61,8 +61,7 @@ export default function ConfirmEmailPage() {
                     <p className="text-center text-gray-400 text-sm mt-2">
                       Verifying...
                     </p>
-                  </>
-                  : verificationStatus === VerificationStatus.Success ?
+                  </> : verificationStatus === VerificationStatus.Success ?
                     <>
                       <h1 className="text-center font-bold text-3xl text-white">
                         Verification Success
