@@ -7,6 +7,8 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.102.5" />
+        <PackageReference Include="AWSSDK.S3" Version="4.0.104.5" />
         <PackageReference Include="Bogus" Version="35.6.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
             <PrivateAssets>all</PrivateAssets>
@@ -16,10 +18,12 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.13" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.13" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.13" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
         <PackageReference Include="DotNetEnv" Version="3.2.0" />
+        <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="13.0.1" />
     </ItemGroup>
     
     <ItemGroup>
@@ -28,6 +32,7 @@
     
     <ItemGroup>
         <Using Include="Microsoft.EntityFrameworkCore"/>
+        <Using Include="Microsoft.Extensions.Logging"/>
     </ItemGroup>
     
     <ItemGroup>

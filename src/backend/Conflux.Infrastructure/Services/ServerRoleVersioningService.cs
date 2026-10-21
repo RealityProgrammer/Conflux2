@@ -1,6 +1,7 @@
+using Conflux.Application.Services;
 using StackExchange.Redis;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class ServerRoleVersioningService(
     IConnectionMultiplexer connectionMultiplexer

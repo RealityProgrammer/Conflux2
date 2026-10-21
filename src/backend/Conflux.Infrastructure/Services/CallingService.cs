@@ -1,8 +1,9 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Services;
 using Conflux.Domain;
 using StackExchange.Redis;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed partial class CallingService(
     IConnectionMultiplexer connectionMultiplexer,

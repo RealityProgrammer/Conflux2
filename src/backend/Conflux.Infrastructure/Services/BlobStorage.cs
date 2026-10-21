@@ -1,16 +1,13 @@
 using Amazon.S3;
 using Amazon.S3.Model;
-using Conflux.Application.Dto;
 using Conflux.Application.Options;
+using Conflux.Application.Services;
 using Conflux.Domain;
-using Conflux.Domain.Entities;
-using Conflux.Domain.Repositories;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Collections.ObjectModel;
 using System.Net;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class StorageService(
     IAmazonS3 s3Client,

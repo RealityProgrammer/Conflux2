@@ -1,6 +1,7 @@
+using Conflux.Application.Services;
 using System.Threading.Channels;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.WebApi.Services.Implementations;
 
 internal sealed class EmailQueue : IEmailQueue {
     private readonly Channel<EmailMessage> _queue;

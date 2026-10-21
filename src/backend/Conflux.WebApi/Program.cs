@@ -60,7 +60,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.RateLimiting;
-using CallingService = Conflux.Application.Services.Implementations.CallingService;
+using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
 
 DotNetEnv.Env.TraversePath().Load();

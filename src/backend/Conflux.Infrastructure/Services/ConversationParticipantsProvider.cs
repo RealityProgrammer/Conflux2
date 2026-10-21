@@ -1,8 +1,8 @@
+using Conflux.Application.Services;
 using Conflux.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class ConversationParticipantsProvider(
     IConnectionMultiplexer connectionMultiplexer,

@@ -1,11 +1,11 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Services;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class ServerDefaultRoleAuthorizeProvider(
     ICommunityServerRoleRepository roleRepository,

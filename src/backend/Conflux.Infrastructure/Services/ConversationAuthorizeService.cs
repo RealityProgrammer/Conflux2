@@ -1,10 +1,10 @@
+using Conflux.Application.Services;
 using Conflux.Domain.Enums;
-using Conflux.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
+
 // ReSharper disable VariableHidesOuterVariable
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class ConversationAuthorizeService(
     IEnumerable<IConversationAuthorizeStrategy> strategies,
@@ -75,7 +75,7 @@ internal sealed class ConversationAuthorizeService(
         return await AuthorizeAsync(
             userId, 
             conversationId, 
-            "edit", 
+            "delete", 
             (strategy, userId, conversationId, cancellationToken) => 
                 strategy.CanDeleteMessage(userId, conversationId, cancellationToken), 
             cancellationToken
@@ -102,7 +102,7 @@ internal sealed class ConversationAuthorizeService(
 
         RedisResult value = await _database.ScriptEvaluateAsync(
             _getOperationAuthorizeInfoScript, 
-            new GetOperationAuthorizeInfoParameters(key, "read", CacheTtl)
+            new GetOperationAuthorizeInfoParameters(key, operation, CacheTtl)
         );
         
         if (!value.IsNull) {
@@ -116,7 +116,7 @@ internal sealed class ConversationAuthorizeService(
         
         await _database.ScriptEvaluateAsync(
             _setOperationAuthorizeInfoScript, 
-            new SetOperationAuthorizeInfoParameters(key, "read", allow, CacheTtl)
+            new SetOperationAuthorizeInfoParameters(key, operation, allow, CacheTtl)
         );
         
         return allow;

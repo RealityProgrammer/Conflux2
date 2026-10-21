@@ -1,8 +1,9 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Services;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class SessionService(
     IConnectionMultiplexer connectionMultiplexer,

@@ -1,11 +1,12 @@
 using Conflux.Application.Options;
+using Conflux.Application.Services;
 using Conflux.Domain;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class MailService(
     IOptions<MailOptions> mailOptions,

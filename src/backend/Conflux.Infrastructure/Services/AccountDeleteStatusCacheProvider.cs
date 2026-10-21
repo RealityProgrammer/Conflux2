@@ -1,10 +1,11 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using StackExchange.Redis;
 
-namespace Conflux.Application.Services.Implementations;
+namespace Conflux.Infrastructure.Services;
 
 internal sealed class AccountDeleteStatusCacheProvider(
     IConnectionMultiplexer connectionMultiplexer,
