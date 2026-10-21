@@ -21,23 +21,14 @@ public sealed class DeleteAccountHandler(
     IUnitOfWork unitOfWork,
     ILogger<DeleteAccountHandler> logger,
     ISessionService sessionService,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
 ) : ICommandHandler<DeleteAccountCommand, Result> {
     public async ValueTask<Result> Handle(DeleteAccountCommand command, CancellationToken cancellationToken) {
         if (currentUserService.UserId is not { } userId) {
             return Errors.InvalidIdentifier();
         }
         
-        // prevent already deleted
-        bool isDeleted = (await userRepository
-            .AsQueryable()
-            .Where(u => u.Id == userId)
-            .Select(u => u.DeletedAt)
-            .FirstOrDefaultAsync(cancellationToken)).HasValue;
-
-        if (isDeleted) {
-            return Errors.NoUserFoundFromId();
-        }
+        // no need to check if account already have a request here, RequiresActiveAccountBehavior already done it
         
         // if user is already having a pending request, return success
         bool hasPendingRequest = await accountDeletionReadRepository
@@ -75,7 +66,7 @@ public sealed class DeleteAccountHandler(
         }
 
         await sessionService.RemoveAllSession(userId);
-        await pendingDeleteAccountCacheProvider.Remove(userId);
+        await accountDeleteStatusCacheProvider.Remove(userId);
 
         return Result.Success();
     }

@@ -1,24 +1,25 @@
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using StackExchange.Redis;
 
 namespace Conflux.Application.Services.Implementations;
 
-internal sealed class PendingDeleteAccountCacheProvider(
+internal sealed class AccountDeleteStatusCacheProvider(
     IConnectionMultiplexer connectionMultiplexer,
     IUserAccountDeletionReadRepository userAccountDeletionReadRepository
-) : IPendingDeleteAccountCacheProvider {
+) : IAccountDeleteStatusCacheProvider {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
-    public async Task<bool?> IsDeleting(Guid userId) {
+    public async Task<AccountDeletionStatus?> GetStatus(Guid userId) {
         RedisValue value = await _database.HashGetAsync("account:pending_delete", userId.ToString());
-        return value.IsNullOrEmpty ? null : (bool)value;
+        return value.IsNullOrEmpty ? null : (AccountDeletionStatus)(int)value;
     }
 
-    public async Task Set(Guid userId, bool isDeleting) {
+    public async Task Set(Guid userId, AccountDeletionStatus status) {
         await _database.HashFieldSetAndSetExpiryAsync(
             "account:pending_delete", 
             userId.ToString(), 
-            isDeleting, 
+            (int)status, 
             expiry: TimeSpan.FromMinutes(5)
         );
     }
@@ -31,16 +32,16 @@ internal sealed class PendingDeleteAccountCacheProvider(
         await _database.HashDeleteAsync("account:pending_delete", [..userIds.Select(id => id.ToString())]);
     }
 
-    public async Task<bool> Check(Guid userId, CancellationToken cancellationToken = default) {
+    public async Task<AccountDeletionStatus> Check(Guid userId, CancellationToken cancellationToken = default) {
         RedisValue value = await _database.HashGetAsync("account:pending_delete", userId.ToString());
 
         if (value.HasValue) {
-            return (bool)value;
+            return (AccountDeletionStatus)(int)value;
         }
         
-        bool hasPendingDelete = await userAccountDeletionReadRepository.HasPendingDelete(userId, cancellationToken);
-        await Set(userId, hasPendingDelete);
+        var status = await userAccountDeletionReadRepository.GetDeletionStatus(userId, cancellationToken);
+        await Set(userId, status);
 
-        return hasPendingDelete;
+        return status;
     }
 }

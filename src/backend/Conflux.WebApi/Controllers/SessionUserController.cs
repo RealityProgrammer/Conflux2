@@ -153,11 +153,11 @@ public sealed class SessionUserController(
     }
 
     [HttpGet("deletion")]
-    public async Task<ActionResult<ApiResponse<AccountDeletionStatus>>> GetAccountDeletionStatus() {
+    public async Task<ActionResult<ApiResponse<AccountDeletionStatusDto>>> GetAccountDeletionStatus() {
         var result = await sender.Send(new AccountDeletionStatusQuery());
         
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<AccountDeletionStatus>(result.Value, Error.None));
+            return Ok(new ApiResponse<AccountDeletionStatusDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {

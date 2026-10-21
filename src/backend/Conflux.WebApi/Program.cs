@@ -286,7 +286,7 @@ builder.Services.AddSignalR()
 // Conflux services.
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
-    .AddScoped<IPendingDeleteAccountCacheProvider, PendingDeleteAccountCacheProvider>()
+    .AddScoped<IAccountDeleteStatusCacheProvider, AccountDeleteStatusCacheProvider>()
     .AddScoped<IAccountPurgingService, AccountPurgingService>()
         
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()

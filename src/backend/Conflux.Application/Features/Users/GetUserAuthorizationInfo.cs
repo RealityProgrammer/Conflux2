@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
@@ -11,7 +12,7 @@ public sealed record GetUserAuthorizationInfoQuery(string UserId) : IQuery<Resul
 
 public sealed class GetUserAuthorizationInfoHandler(
     UserManager<ApplicationUser> userManager,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
 ) : IQueryHandler<GetUserAuthorizationInfoQuery, Result<UserAuthorizationInfo>> {
     public async ValueTask<Result<UserAuthorizationInfo>> Handle(GetUserAuthorizationInfoQuery query, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(query.UserId);
@@ -19,9 +20,15 @@ public sealed class GetUserAuthorizationInfoHandler(
         if (user == null) {
             return Result<UserAuthorizationInfo>.Failure(Errors.NoUserFoundFromId());
         }
+        
+        var deleteStatus = await accountDeleteStatusCacheProvider.Check(user.Id, cancellationToken);
+
+        if (deleteStatus is not AccountDeletionStatus.None and not AccountDeletionStatus.Pending) {
+            return Errors.InvalidCredentials();
+        }
 
         var userRoles = await userManager.GetRolesAsync(user);
-        bool isPendingDeletion = await pendingDeleteAccountCacheProvider.Check(user.Id, cancellationToken);
+        bool isPendingDeletion = deleteStatus == AccountDeletionStatus.Pending;
         
         return Result<UserAuthorizationInfo>.Success(new(
             user.Id,

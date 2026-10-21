@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record AccountDeletionStatusQuery : IQuery<Result<AccountDeletionStatus>>, IAllowNonActiveAccount;
+public sealed record AccountDeletionStatusQuery : IQuery<Result<AccountDeletionStatusDto>>, IAllowNonActiveAccount;
 
 public sealed class AccountDeletionStatusQueryHandler(
     ICurrentUserService currentUserService,
     IUserAccountDeletionReadRepository userAccountDeletionReadRepository
-) : IQueryHandler<AccountDeletionStatusQuery, Result<AccountDeletionStatus>> {
-    public async ValueTask<Result<AccountDeletionStatus>> Handle(
+) : IQueryHandler<AccountDeletionStatusQuery, Result<AccountDeletionStatusDto>> {
+    public async ValueTask<Result<AccountDeletionStatusDto>> Handle(
         AccountDeletionStatusQuery query, 
         CancellationToken cancellationToken
     ) {
@@ -31,7 +31,7 @@ public sealed class AccountDeletionStatusQueryHandler(
             return Errors.NoPendingAccountDeletion();
         }
 
-        return Result<AccountDeletionStatus>.Success(new(
+        return Result<AccountDeletionStatusDto>.Success(new(
             deletion.CreatedAt,
             deletion.CreatedAt + TimeSpan.FromDays(14),
             deletion.Reason,

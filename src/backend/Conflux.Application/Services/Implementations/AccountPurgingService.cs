@@ -11,7 +11,7 @@ internal sealed partial class AccountPurgingService(
     IUserRepository userRepository,
     TimeProvider timeProvider,
     ILogger<AccountPurgingService> logger,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider,
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
     IUserMediaService userMediaService,
     ISessionService sessionService,
     IMediaItemWriteRepository mediaItemWriteRepository
@@ -73,7 +73,7 @@ internal sealed partial class AccountPurgingService(
             });
         
         // delete pending cache
-        await pendingDeleteAccountCacheProvider.Remove(expiredUserIds);
+        await accountDeleteStatusCacheProvider.Remove(expiredUserIds);
         
         // delete sessions
         await sessionService.RemoveAllSession(expiredUserIds);

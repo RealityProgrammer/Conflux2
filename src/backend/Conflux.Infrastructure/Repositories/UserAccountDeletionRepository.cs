@@ -5,7 +5,8 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class UserAccountDeletionRepository(
-    ApplicationDbContext dbContext
+    ApplicationDbContext dbContext,
+    TimeProvider timeProvider
 ) : IUserAccountDeletionReadRepository, IUserAccountDeletionWriteRepository {
     public IQueryable<UserAccountDeletion> AsQueryable() {
         return dbContext.UserAccountDeletions;
@@ -15,9 +16,32 @@ internal sealed class UserAccountDeletionRepository(
         dbContext.UserAccountDeletions.Add(value);
     }
 
-    public async Task<bool> HasPendingDelete(Guid userId, CancellationToken cancellationToken = default) {
-        return await dbContext.UserAccountDeletions
-            .Where(r => r.UserId == userId && r.Status == UserAccountDeleteStatus.Pending)
-            .AnyAsync(cancellationToken);
+    public async Task<AccountDeletionStatus> GetDeletionStatus(Guid userId, CancellationToken cancellationToken = default) {
+        var deletion = await dbContext.UserAccountDeletions
+            .AsNoTracking()
+            .Where(d => d.UserId == userId)
+            .OrderByDescending(d => d.CreatedAt) // gets the most recent deletion attempt only
+            .Select(d => new { d.Status, d.CreatedAt })
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        if (deletion == null) {
+            return AccountDeletionStatus.None;
+        }
+        
+        switch (deletion.Status) {
+            case UserAccountDeleteStatus.Deleted:
+                return AccountDeletionStatus.Deleted;
+
+            case UserAccountDeleteStatus.Pending:
+                var now = timeProvider.GetUtcNow();
+                var expirationTime = deletion.CreatedAt.AddDays(14);
+
+                return expirationTime <= now ? AccountDeletionStatus.Expired : AccountDeletionStatus.Pending;
+
+            case UserAccountDeleteStatus.Canceled:
+            default:
+                return AccountDeletionStatus.None;
+        }
+
     }
 }

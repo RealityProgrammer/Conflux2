@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
@@ -19,12 +20,19 @@ public sealed class LoginHandler(
     SignInManager<ApplicationUser> signInManager,
     IJwtProvider jwtProvider,
     ISessionService sessionService,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
 ) : ICommandHandler<LoginCommand, Result<LoginResult>> {
     public async ValueTask<Result<LoginResult>> Handle(LoginCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByEmailAsync(command.Email);
 
-        if (user == null) {
+        // restrict deleted account access
+        if (user is not { DeletedAt: null }) {
+            return Errors.InvalidCredentials();
+        }
+
+        var deleteStatus = await accountDeleteStatusCacheProvider.Check(user.Id, cancellationToken);
+
+        if (deleteStatus is not AccountDeletionStatus.None and not AccountDeletionStatus.Pending) {
             return Errors.InvalidCredentials();
         }
         
@@ -35,7 +43,7 @@ public sealed class LoginHandler(
         }
 
         var sessionId = await sessionService.CreateSession(user.Id, command.DeviceInfo);
-        bool isPendingDeletion = await pendingDeleteAccountCacheProvider.Check(user.Id, cancellationToken);
+        bool isPendingDeletion = deleteStatus == AccountDeletionStatus.Pending;
         
         IList<string> roles = !isPendingDeletion ? await userManager.GetRolesAsync(user) : [];
                     

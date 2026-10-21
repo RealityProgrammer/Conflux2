@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.AspNetCore.Identity;
 
@@ -18,13 +19,19 @@ public sealed class RefreshHandler(
     IJwtStorage jwtStorage,
     IJwtProvider jwtProvider,
     ISessionService sessionService,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
 ) : ICommandHandler<RefreshCommand, Result<RefreshResult>> {
     public async ValueTask<Result<RefreshResult>> Handle(RefreshCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
         
         if (user == null) {
-            return Errors.NoUserFoundFromEmail();
+            return Errors.InvalidCredentials();
+        }
+        
+        var deleteStatus = await accountDeleteStatusCacheProvider.Check(user.Id, cancellationToken);
+        
+        if (deleteStatus is not AccountDeletionStatus.None and not AccountDeletionStatus.Pending) {
+            return Errors.InvalidCredentials();
         }
 
         // check and rotate the refresh token
@@ -45,8 +52,8 @@ public sealed class RefreshHandler(
         }
 
         await sessionService.ResetSessionActivityTime(user.Id, sessionId);
-        
-        bool isPendingDeletion = await pendingDeleteAccountCacheProvider.Check(user.Id);
+
+        bool isPendingDeletion = deleteStatus == AccountDeletionStatus.Pending;
         IList<string> roles = !isPendingDeletion ? await userManager.GetRolesAsync(user) : [];
         
         jwtProvider.GenerateAccessToken(user, roles, sessionId, out string accessToken, out DateTimeOffset accessTokenExpireAt);

@@ -14,7 +14,7 @@ public sealed partial class RestoreAccountHandler(
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     TimeProvider timeProvider,
     ILogger<RestoreAccountHandler> logger,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
 ) : ICommandHandler<RestoreAccountCommand, Result> {
     public async ValueTask<Result> Handle(
         RestoreAccountCommand command, 
@@ -42,7 +42,7 @@ public sealed partial class RestoreAccountHandler(
             LogMultipleRowsUpdated(logger, userId);
         }
 
-        await pendingDeleteAccountCacheProvider.Remove(userId);
+        await accountDeleteStatusCacheProvider.Remove(userId);
         return Result.Success();
     }
     

@@ -1,12 +1,13 @@
 using Conflux.Application.Features;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Pipelines;
 
 internal sealed class RequiresActiveAccountBehavior<TMessage, TResponse>(
     ICurrentUserService currentUserService,
-    IPendingDeleteAccountCacheProvider pendingDeleteAccountCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
 ) : IPipelineBehavior<TMessage, TResponse> where TMessage : IMessage where TResponse : IResult<TResponse> {
     public async ValueTask<TResponse> Handle(
         TMessage request, 
@@ -21,9 +22,10 @@ internal sealed class RequiresActiveAccountBehavior<TMessage, TResponse>(
             return TResponse.Failure(Errors.InvalidIdentifier());
         }
 
-        bool isDeleting = await pendingDeleteAccountCacheProvider.Check(userId, cancellationToken);
+        AccountDeletionStatus status = 
+            await accountDeleteStatusCacheProvider.Check(userId, cancellationToken);
 
-        if (isDeleting) {
+        if (status != AccountDeletionStatus.None) {
             return TResponse.Failure(Errors.RequireActiveAccount());
         }
         
