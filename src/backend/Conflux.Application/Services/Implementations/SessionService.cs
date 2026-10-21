@@ -88,5 +88,12 @@ internal sealed class SessionService(
         await _database.HashFieldExpireAsync(sessionKey, [hashField], InactivityTimeout);
     }
 
+    public async Task<List<string>> GetSessions(Guid userId) {
+        RedisKey sessionKey = GetSessionsKey(userId);
+        HashEntry[] allEntries = await _database.HashGetAllAsync(sessionKey);
+
+        return [..allEntries.Select(entry => entry.Value.ToString())];
+    }
+
     private static RedisKey GetSessionsKey(Guid userId) => $"user:{userId}:sessions";
 }

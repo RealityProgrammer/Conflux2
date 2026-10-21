@@ -317,6 +317,12 @@ public sealed class AuthenticateController(
         };
     }
 
+    [HttpPost("sessions")]
+    public async Task<ActionResult<ApiResponse<List<string>>>> GetAllSessions() {
+        var result = await sender.Send(new SessionsQuery());
+        return Ok(new ApiResponse<List<string>>(result, Error.None));
+    }
+
     private bool TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken) {
         if (!Request.Cookies.TryGetValue("X-Refresh-Token", out var cookiePayload)) {
             goto failure;

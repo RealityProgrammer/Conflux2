@@ -7,4 +7,5 @@ public interface ISessionService {
     Task RemoveAllSession(IReadOnlyList<Guid> userIds);
     Task<bool> IsSessionValid(Guid userId, Guid sessionId);
     Task ResetSessionActivityTime(Guid userId, Guid sessionId);
+    Task<List<string>> GetSessions(Guid userId);
 }

@@ -324,4 +324,10 @@ export const authService = {
       return handleAxiosError(axiosError);
     }
   },
+
+  getSessions: async (): Promise<ServiceResponse<string[]>> => {
+    try {
+      
+    }
+  },
 };
