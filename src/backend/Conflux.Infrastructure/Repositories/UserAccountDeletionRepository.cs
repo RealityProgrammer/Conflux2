@@ -1,3 +1,5 @@
+using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -16,7 +18,7 @@ internal sealed class UserAccountDeletionRepository(
         dbContext.UserAccountDeletions.Add(value);
     }
 
-    public async Task<AccountDeletionStatus> GetDeletionStatus(Guid userId, CancellationToken cancellationToken = default) {
+    public async Task<Result<AccountDeletionDetails>> GetDeletionDetails(Guid userId, CancellationToken cancellationToken = default) {
         var deletion = await dbContext.UserAccountDeletions
             .AsNoTracking()
             .Where(d => d.UserId == userId)
@@ -25,22 +27,29 @@ internal sealed class UserAccountDeletionRepository(
             .FirstOrDefaultAsync(cancellationToken);
         
         if (deletion == null) {
-            return AccountDeletionStatus.None;
+            return Errors.ResourceNotFound("User Account Deletion", [
+                new(nameof(UserAccountDeletion.UserId), userId.ToString()),
+            ]);
         }
         
         switch (deletion.Status) {
             case UserAccountDeleteStatus.Deleted:
-                return AccountDeletionStatus.Deleted;
+                return Result<AccountDeletionDetails>.Success(new(AccountDeletionStatus.Deleted, TimeSpan.Zero));
 
             case UserAccountDeleteStatus.Pending:
                 var now = timeProvider.GetUtcNow();
                 var expirationTime = deletion.CreatedAt.AddDays(14);
 
-                return expirationTime <= now ? AccountDeletionStatus.Expired : AccountDeletionStatus.Pending;
+                var remainingTime = expirationTime - now;
+
+                return Result<AccountDeletionDetails>.Success(new(
+                    remainingTime > TimeSpan.Zero ? AccountDeletionStatus.Pending : AccountDeletionStatus.Expired, 
+                    remainingTime
+                ));
 
             case UserAccountDeleteStatus.Canceled:
             default:
-                return AccountDeletionStatus.None;
+                return Result<AccountDeletionDetails>.Success(new(AccountDeletionStatus.None, TimeSpan.Zero));
         }
 
     }

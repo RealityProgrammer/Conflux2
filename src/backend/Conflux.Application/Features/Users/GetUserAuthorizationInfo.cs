@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Conflux.Application.Features.Users;
 
-public sealed record GetUserAuthorizationInfoQuery(string UserId) : IQuery<Result<UserAuthorizationInfo>>;
+public sealed record GetUserAuthorizationInfoQuery(string UserId) : IQuery<Result<UserAuthorizationInfo>>, IAllowNonActiveAccount;
 
 public sealed class GetUserAuthorizationInfoHandler(
     UserManager<ApplicationUser> userManager,

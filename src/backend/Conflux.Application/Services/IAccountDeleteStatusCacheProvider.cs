@@ -4,7 +4,7 @@ namespace Conflux.Application.Services;
 
 public interface IAccountDeleteStatusCacheProvider {
     Task<AccountDeletionStatus?> GetStatus(Guid userId);
-    Task Set(Guid userId, AccountDeletionStatus isDeleting);
+    Task Set(Guid userId, AccountDeletionStatus isDeleting, TimeSpan? expires = default);
     Task Remove(Guid userId);
     Task Remove(IReadOnlyList<Guid> userIds);
     Task<AccountDeletionStatus> Check(Guid userId, CancellationToken cancellationToken = default);

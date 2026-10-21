@@ -1,3 +1,5 @@
+using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using StackExchange.Redis;
@@ -6,7 +8,8 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class AccountDeleteStatusCacheProvider(
     IConnectionMultiplexer connectionMultiplexer,
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
+    IUserAccountDeletionReadRepository userAccountDeletionReadRepository,
+    TimeProvider timeProvider // Inject TimeProvider to calculate exact remaining time
 ) : IAccountDeleteStatusCacheProvider {
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
@@ -15,12 +18,22 @@ internal sealed class AccountDeleteStatusCacheProvider(
         return value.IsNullOrEmpty ? null : (AccountDeletionStatus)(int)value;
     }
 
-    public async Task Set(Guid userId, AccountDeletionStatus status) {
+    public async Task Set(Guid userId, AccountDeletionStatus status, TimeSpan? expires) {
+        var expiry = TimeSpan.FromMinutes(5);
+
+        if (status == AccountDeletionStatus.Pending && expires.HasValue) {
+            var remainingTime = expires.Value;
+            
+            if (remainingTime > TimeSpan.Zero && remainingTime < expiry) {
+                expiry = remainingTime;
+            }
+        }
+
         await _database.HashFieldSetAndSetExpiryAsync(
             "account:pending_delete", 
             userId.ToString(), 
             (int)status, 
-            expiry: TimeSpan.FromMinutes(5)
+            expiry
         );
     }
 
@@ -29,6 +42,8 @@ internal sealed class AccountDeleteStatusCacheProvider(
     }
 
     public async Task Remove(IReadOnlyList<Guid> userIds) {
+        if (userIds.Count == 0) return;
+        
         await _database.HashDeleteAsync("account:pending_delete", [..userIds.Select(id => id.ToString())]);
     }
 
@@ -39,9 +54,15 @@ internal sealed class AccountDeleteStatusCacheProvider(
             return (AccountDeletionStatus)(int)value;
         }
         
-        var status = await userAccountDeletionReadRepository.GetDeletionStatus(userId, cancellationToken);
-        await Set(userId, status);
+        // Fetch status and expiration info from repository
+        Result<AccountDeletionDetails> result = await userAccountDeletionReadRepository.GetDeletionDetails(userId, cancellationToken);
 
-        return status;
+        if (!result.IsSuccess) {
+            return AccountDeletionStatus.None;
+        }
+        
+        AccountDeletionDetails details = result.Value!;
+        await Set(userId, details.Status, details.ExpiryTime);
+        return details.Status;
     }
 }

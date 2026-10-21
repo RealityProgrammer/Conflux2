@@ -1,8 +1,8 @@
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 
 namespace Conflux.Domain.Repositories;
 
 public interface IUserAccountDeletionReadRepository : IReadRepository<UserAccountDeletion> {
-    Task<AccountDeletionStatus> GetDeletionStatus(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<AccountDeletionDetails>> GetDeletionDetails(Guid userId, CancellationToken cancellationToken = default);
 }
