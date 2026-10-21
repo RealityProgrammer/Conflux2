@@ -573,6 +573,9 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<int>("Reason")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RestorationPasswordHash")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 

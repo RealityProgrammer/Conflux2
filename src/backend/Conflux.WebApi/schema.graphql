@@ -1292,6 +1292,7 @@ input UserAccountDeletionFilterInput {
   extraMessage: StringOperationFilterInput
   userId: UuidOperationFilterInput
   user: ApplicationUserFilterInput
+  restorationPasswordHash: StringOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   appliedAt: DateTimeOperationFilterInput
 }

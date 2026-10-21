@@ -3,6 +3,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -10,7 +11,8 @@ namespace Conflux.Application.Features.Identity;
 
 public sealed record DeleteAccountCommand(
     UserAccountDeleteReason Reason,
-    string? ExtraMessage
+    string? ExtraMessage,
+    string RestorationPassword
 ) : ICommand<Result>;
 
 public sealed class DeleteAccountHandler(
@@ -21,7 +23,8 @@ public sealed class DeleteAccountHandler(
     IUnitOfWork unitOfWork,
     ILogger<DeleteAccountHandler> logger,
     ISessionService sessionService,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
+    IPasswordHasher<object> passwordHasher
 ) : ICommandHandler<DeleteAccountCommand, Result> {
     public async ValueTask<Result> Handle(DeleteAccountCommand command, CancellationToken cancellationToken) {
         if (currentUserService.UserId is not { } userId) {
@@ -39,12 +42,15 @@ public sealed class DeleteAccountHandler(
         if (hasPendingRequest) {
             return Errors.PendingAccountDeletionExists();
         }
+        
+        string hashedPassword = passwordHasher.HashPassword(new(), command.RestorationPassword);
 
         UserAccountDeletion request = new() {
             UserId = userId,
             Reason = command.Reason,
             ExtraMessage = command.ExtraMessage,
             Status = UserAccountDeleteStatus.Pending,
+            RestorationPasswordHash = hashedPassword,
         };
 
         accountDeletionWriteRepository.Add(request);

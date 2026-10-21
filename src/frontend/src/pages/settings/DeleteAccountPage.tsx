@@ -24,6 +24,7 @@ export default function DeleteAccountPage() {
     confirmUsername: z.string().refine((val) => val === currentUserName, {
       message: "Username does not match your account username.",
     }),
+    restorationPassword: z.string().min(8, "Restoration password must be at least 8 characters."),
   });
 
   type RequestDeleteAccountFormValues = z.infer<typeof requestDeleteAccountSchema>;
@@ -51,6 +52,7 @@ export default function DeleteAccountPage() {
     const response = await authService.deleteAccount(
       values.reason, 
       values.extraMessage,
+      values.restorationPassword,
       idempotencyKey
     );
     
@@ -171,6 +173,19 @@ export default function DeleteAccountPage() {
                 placeholder="Elaborate more..."
                 maxLength={255}
                 {...register("extraMessage")}
+              />
+            </ErrorPopover>
+          </div>
+
+          <div className="mt-4">
+            <Label.Root className="label mb-1 block">...the password to restore the account?</Label.Root>
+
+            <ErrorPopover open={!!errors.restorationPassword} content={errors.restorationPassword?.message}>
+              <input
+                type="text"
+                className="resize-none input-field w-full h-10"
+                placeholder="Enter restoration password"
+                {...register("restorationPassword")}
               />
             </ErrorPopover>
           </div>

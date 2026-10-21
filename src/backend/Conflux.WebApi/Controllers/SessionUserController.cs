@@ -246,9 +246,4 @@ public sealed class SessionUserController(
             return results;
         }
     }
-
-    public sealed record DeleteAccountRequest(
-        [Required] UserAccountDeleteReason Reason, 
-        [MaxLength(255)] string? ExtraMessage
-    );
 }

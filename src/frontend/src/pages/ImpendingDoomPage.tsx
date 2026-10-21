@@ -3,7 +3,7 @@ import {FaFireFlameCurved} from "react-icons/fa6";
 import {BsExclamationTriangle, BsPersonXFill} from "react-icons/bs";
 import {type CSSProperties, useEffect, useState} from "react";
 import {useAuth} from "../contexts/AuthContext.tsx";
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useQuery} from "@tanstack/react-query";
 import {sessionUserService} from "../api/sessionUserService.ts";
 import type {AccountDeletionStatus, RestoreAccountResponse, ServiceResponse} from "../api/types.ts";
 import Spinner from "../components/Spinner.tsx";
@@ -11,6 +11,9 @@ import {useRestoreAccountMutation} from "../hooks/useRestoreAccountMutation.ts";
 import {toast} from "react-toastify";
 import {useAuthStore} from "../store/useAuthStore.ts";
 import {useNavigate} from "react-router";
+import {useForm} from "react-hook-form";
+import {z} from "zod";
+import {zodResolver} from "@hookform/resolvers/zod";
 
 const GRACE_PERIOD_DAYS = 14;
 
@@ -86,6 +89,12 @@ function ContentPanel() {
   )
 }
 
+const restoreAccountSchema = z.object({
+  restorationPassword: z.string(),
+});
+
+type RestoreAccountFormValues = z.infer<typeof restoreAccountSchema>;
+
 function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
   const { logout } = useAuth();
   const setCachedAuthorization = useAuthStore(state => state.setCachedAuthorization);
@@ -105,7 +114,22 @@ function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
       toast.error("Failed to restore account. Please try again later.");
     },
   });
+  
+  const formMethods = useForm<RestoreAccountFormValues>({
+    resolver: zodResolver(restoreAccountSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+  });
 
+  const { reset, handleSubmit, register } = formMethods;
+  
+  const onRestoreAccountSubmit = (values: RestoreAccountFormValues) => {
+    mutate(values.restorationPassword);
+  };
+
+  const [showRestoreForm, setShowRestoreForm] = useState(false);
+
+  // timer related stuff
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -199,22 +223,58 @@ function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
         </div>
       </main>
 
-      <footer className="border-t border-t-gray-600 flex flex-row justify-end gap-3 p-4">
-        <button 
-          className="button-theme-danger px-3 py-2 rounded-md cursor-pointer"
-          disabled={isPending}
-          onClick={logout}
-        >
-          Logout
-        </button>
+      <footer className="border-t border-t-gray-600 p-4">
+        {showRestoreForm ? (
+          <form onSubmit={handleSubmit(onRestoreAccountSubmit)} className="flex flex-row gap-2 justify-center items-center">
+            <input
+              type="password"
+              placeholder="Enter restoration password..."
+              className="flex-1 input-field h-10"
+              autoFocus
+              {...register("restorationPassword")}
+            />
 
-        <button 
-          className="button-theme-primary px-3 py-2 rounded-md cursor-pointer"
-          disabled={isPending}
-          onClick={() => mutate()}
-        >
-          Restore Account
-        </button>
+            <button
+              type="button"
+              className="px-3 py-2 text-white text-sm cursor-pointer flex-1 sm:flex-none"
+              onClick={() => {
+                setShowRestoreForm(false);
+                reset();
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="button-theme-primary px-3 py-2 rounded-md cursor-pointer flex-1 sm:flex-none"
+              disabled={isPending}
+            >
+              {isPending ? 'Restoring...' : 'Confirm Restore'}
+            </button>
+          </form>
+        ) : (
+          <div className="flex flex-row justify-end gap-3">
+            <button 
+              className="button-theme-danger px-3 py-2 rounded-md cursor-pointer"
+              disabled={isPending}
+              onClick={logout}
+            >
+              Logout
+            </button>
+    
+            <button 
+              className="button-theme-primary px-3 py-2 rounded-md cursor-pointer"
+              disabled={isPending}
+              onClick={() => {
+                setShowRestoreForm(true);
+              }}
+            >
+              Restore Account
+            </button>
+          </div>
+        )}
       </footer>
     </>
   )

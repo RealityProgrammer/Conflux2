@@ -235,7 +235,13 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RestoreAccountRequest"];
+                    "text/json": components["schemas"]["RestoreAccountRequest"];
+                    "application/*+json": components["schemas"]["RestoreAccountRequest"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -1279,9 +1285,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfAccountDeletionStatus"];
-                        "application/json": components["schemas"]["ApiResponseOfAccountDeletionStatus"];
-                        "text/json": components["schemas"]["ApiResponseOfAccountDeletionStatus"];
+                        "text/plain": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
+                        "application/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
+                        "text/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
                     };
                 };
             };
@@ -2217,7 +2223,7 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AccountDeletionStatus: {
+        AccountDeletionStatusDto: {
             /** Format: date-time */
             scheduledAt: string;
             /** Format: date-time */
@@ -2228,8 +2234,8 @@ export interface components {
         ApiResponse: {
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfAccountDeletionStatus: {
-            data: null | components["schemas"]["AccountDeletionStatus"];
+        ApiResponseOfAccountDeletionStatusDto: {
+            data: null | components["schemas"]["AccountDeletionStatusDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfChannelCategoryIdentityDto: {
@@ -2369,6 +2375,7 @@ export interface components {
         DeleteAccountRequest: {
             reason: components["schemas"]["UserAccountDeleteReason"];
             extraMessage: null | string;
+            restorationPassword: string;
         };
         "Dictionary`2": unknown;
         DirectConversationSummary: {
@@ -2486,6 +2493,9 @@ export interface components {
             email: string;
             password: string;
             confirmPassword: string;
+        };
+        RestoreAccountRequest: {
+            restorationPassword: string;
         };
         RestoreAccountResponse: {
             authorization: components["schemas"]["UserAuthorizationInfo"];

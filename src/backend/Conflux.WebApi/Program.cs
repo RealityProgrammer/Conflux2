@@ -81,7 +81,9 @@ builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth")
     .Configure<S3Options>(builder.Configuration.GetSection("S3"));
 
 // Authenticate & Authorization.
-builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>();
+builder.Services
+    .AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>()
+    .AddScoped<IPasswordHasher<object>, Argon2PasswordHasher<object>>();    // the irony that nobody need contextual hashing
 
 builder.Services
     .AddIdentityCore<ApplicationUser>(options => {

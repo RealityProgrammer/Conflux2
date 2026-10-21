@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
 using Conflux.Domain;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -151,8 +152,14 @@ public sealed class AuthenticateController(
     }
     
     [HttpPost("delete-account"), Idempotent(60)]
-    public async Task<ActionResult<ApiResponse>> DeleteAccount([FromBody] SessionUserController.DeleteAccountRequest request) {
-        Result result = await sender.Send(new DeleteAccountCommand(request.Reason, request.ExtraMessage));
+    public async Task<ActionResult<ApiResponse>> DeleteAccount(
+        [FromBody] DeleteAccountRequest request
+    ) {
+        Result result = await sender.Send(new DeleteAccountCommand(
+            request.Reason, 
+            request.ExtraMessage, 
+            request.RestorationPassword
+        ));
 
         if (!result.IsSuccess) {
             return result.Error.Code switch {
@@ -178,15 +185,19 @@ public sealed class AuthenticateController(
     }
 
     [HttpPost("restore-account")]
-    public async Task<ActionResult<ApiResponse<RestoreAccountResponse>>> RestoreAccount() {
+    public async Task<ActionResult<ApiResponse<RestoreAccountResponse>>> RestoreAccount(
+        [FromBody] RestoreAccountRequest request
+    ) {
         if (!TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken)) {
             return Unauthorized(new ApiResponse(Errors.InvalidRefreshToken()));
         }
         
-        var restoreResult = await sender.Send(new RestoreAccountCommand());
+        var restoreResult = await sender.Send(new RestoreAccountCommand(request.RestorationPassword));
 
         if (!restoreResult.IsSuccess) {
             return restoreResult.Error.Code switch {
+                nameof(Errors.AccountExpired) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(restoreResult.Error)),
+                nameof(Errors.InvalidCredentials) => BadRequest(new ApiResponse(restoreResult.Error)),
                 nameof(Errors.NoPendingAccountDeletion) => NotFound(new ApiResponse(Error.None)),
                 nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(restoreResult.Error)),
                 nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(restoreResult.Error)),
@@ -323,4 +334,14 @@ public sealed class AuthenticateController(
     // ReSharper restore NotAccessedPositionalProperty.Global
 
     public sealed record ConfirmEmailRequest(string UserId, string ConfirmationCode);
+    
+    public sealed record DeleteAccountRequest(
+        [Required] UserAccountDeleteReason Reason, 
+        [MaxLength(255)] string? ExtraMessage,
+        string RestorationPassword
+    );
+
+    public sealed record RestoreAccountRequest(
+        string RestorationPassword
+    );
 }

@@ -153,12 +153,12 @@ export const authService = {
     }
   },
 
-  deleteAccount: async (reason: UserAccountDeleteReason, extraMessage: string | null, idempotencyKey: string): Promise<ServiceResponse> => {
+  deleteAccount: async (reason: UserAccountDeleteReason, extraMessage: string | null, restorationPassword: string, idempotencyKey: string): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse> =
         await apiClient.post<BackendResponse>(
           "auth/delete-account",
-          { reason, extraMessage},
+          { reason, extraMessage, restorationPassword },
           { headers: { "Idempotency-Key": idempotencyKey } }
         );
 
@@ -176,10 +176,13 @@ export const authService = {
     }
   },
 
-  restoreAccount: async (): Promise<ServiceResponse<RestoreAccountResponse>> => {
+  restoreAccount: async (restorationPassword: string): Promise<ServiceResponse<RestoreAccountResponse>> => {
     try {
       const response: AxiosResponse<BackendResponse<RestoreAccountResponse>> = 
-        await apiClient.post<BackendResponse<RestoreAccountResponse>>("auth/restore-account");
+        await apiClient.post<BackendResponse<RestoreAccountResponse>>(
+          "auth/restore-account",
+          { restorationPassword }
+        );
 
       useAuthStore.getState().clearSession();
 

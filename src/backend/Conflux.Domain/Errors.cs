@@ -168,4 +168,7 @@ public static class Errors {
     
     public static Error StorageError(string message, string? details = null) =>
         new(nameof(StorageError), message, details);
+    
+    public static Error AccountExpired() =>
+        new(nameof(AccountExpired), "Account expired.");
 }

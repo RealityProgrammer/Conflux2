@@ -1,20 +1,21 @@
-using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Identity;
 
-public sealed record RestoreAccountCommand : ICommand<Result>, IAllowNonActiveAccount;
+public sealed record RestoreAccountCommand(string Password) : ICommand<Result>, IAllowNonActiveAccount;
 
-public sealed partial class RestoreAccountHandler(
+public sealed class RestoreAccountHandler(
     ICurrentUserService currentUserService,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     TimeProvider timeProvider,
-    ILogger<RestoreAccountHandler> logger,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
+    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
+    IPasswordHasher<object> passwordHasher,
+    IUnitOfWork unitOfWork
 ) : ICommandHandler<RestoreAccountCommand, Result> {
     public async ValueTask<Result> Handle(
         RestoreAccountCommand command, 
@@ -24,28 +25,40 @@ public sealed partial class RestoreAccountHandler(
             return Errors.InvalidIdentifier();
         }
 
-        var utcNow = timeProvider.GetUtcNow();
-
-        int updated = await accountDeletionWriteRepository
+        // ensure having a deletion and still in grace-period
+        var deletion = await accountDeletionWriteRepository
             .AsQueryable()
-            .Where(x => x.UserId == userId && x.Status == UserAccountDeleteStatus.Pending)
-            .ExecuteUpdateAsync(builder => {
-                builder.SetProperty(r => r.Status, UserAccountDeleteStatus.Canceled);
-                builder.SetProperty(r => r.AppliedAt, utcNow);
-            }, cancellationToken);
+            .FirstOrDefaultAsync(d => d.UserId == userId && d.Status == UserAccountDeleteStatus.Pending, cancellationToken);
 
-        if (updated == 0) {
+        if (deletion == null) {
             return Errors.NoPendingAccountDeletion();
         }
+        
+        // check for grace-period time
+        var utcNow = timeProvider.GetUtcNow();
 
-        if (updated > 1) {
-            LogMultipleRowsUpdated(logger, userId);
+        if (utcNow >= deletion.CreatedAt + TimeSpan.FromDays(14)) {
+            return Errors.AccountExpired();
+        }
+        
+        // verify password
+        var verificationResult = passwordHasher.VerifyHashedPassword(
+            new(), 
+            deletion.RestorationPasswordHash ?? string.Empty, 
+            command.Password
+        );
+        
+        if (verificationResult == PasswordVerificationResult.Failed) {
+            return Errors.InvalidCredentials();
         }
 
+        deletion.Status = UserAccountDeleteStatus.Canceled;
+        deletion.AppliedAt = utcNow;
+        deletion.RestorationPasswordHash = null;
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        
         await accountDeleteStatusCacheProvider.Remove(userId);
         return Result.Success();
     }
-    
-    [LoggerMessage(LogLevel.Information, "Somehow we got 2 rows updated for user {userId}.")]
-    private static partial void LogMultipleRowsUpdated(ILogger logger, Guid userId);
 }

@@ -1422,6 +1422,7 @@ export type UserAccountDeletionFilterInput = {
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<UserAccountDeletionFilterInput>>;
   reason?: InputMaybe<UserAccountDeleteReasonOperationFilterInput>;
+  restorationPasswordHash?: InputMaybe<StringOperationFilterInput>;
   status?: InputMaybe<UserAccountDeleteStatusOperationFilterInput>;
   user?: InputMaybe<ApplicationUserFilterInput>;
   userId?: InputMaybe<UuidOperationFilterInput>;
