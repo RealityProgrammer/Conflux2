@@ -273,17 +273,32 @@ public sealed class AuthenticateController(
             return Ok();
         }
 
-        switch (result.Error.Code) {
-            case nameof(Errors.NoUserFoundFromId) or nameof(Errors.InvalidConfirmationCode):
-                return BadRequest(new ApiResponse(result.Error));
+        return result.Error.Code switch {
+            nameof(Errors.NoUserFoundFromId) or nameof(Errors.InvalidConfirmationCode) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.UserAlreadyVerified) => Ok(new ApiResponse(Error.None)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),
+        };
+    }
+    
+    [HttpPost("forgot-password"), AllowAnonymous]
+    public async Task<ActionResult<ApiResponse>> ForgotPassword() {
+        await sender.Send(new SendPasswordResetMailCommand());
+        return Ok();
+    }
 
-            case nameof(Errors.UserAlreadyVerified):
-                return Ok();
-            
-            default:
-                logger.LogWarning("Error while confirming email: {e}", result.Error);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError()));
+    [HttpPost("change-password")]
+    public async Task<ActionResult<ApiResponse>> ChangePassword([FromBody] ChangePasswordRequest request) {
+        var result = await sender.Send(new ChangePasswordCommand(request.OldPassword, request.NewPassword));
+        
+        if (result.IsSuccess) {
+            return Ok();
         }
+
+        return result.Error.Code switch {
+            nameof(Errors.NoUserFoundFromId) or nameof(Errors.InvalidConfirmationCode) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),
+        };
     }
 
     private bool TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken) {
@@ -343,5 +358,10 @@ public sealed class AuthenticateController(
 
     public sealed record RestoreAccountRequest(
         string RestorationPassword
+    );
+
+    public sealed record ChangePasswordRequest(
+        string OldPassword,
+        string NewPassword
     );
 }
