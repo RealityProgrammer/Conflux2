@@ -12,7 +12,7 @@ public sealed record RefreshCommand(
     Guid UserId,
     Guid SessionId, 
     string RefreshToken
-) : ICommand<Result<RefreshResult>>;
+) : ICommand<Result<RefreshResult>>, IAllowNonActiveAccount;
 
 public sealed class RefreshHandler(
     UserManager<ApplicationUser> userManager,

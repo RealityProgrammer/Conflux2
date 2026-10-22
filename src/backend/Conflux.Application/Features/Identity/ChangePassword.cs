@@ -31,10 +31,24 @@ public sealed class ChangePasswordHandler(
             return Result.Success();
         }
 
+        Dictionary<string, string[]> validationErrors = [];
+
+        if (result.Errors.FirstOrDefault(c => c.Code == nameof(IdentityErrorDescriber.PasswordMismatch)) is { } incorrectPasswordError) {
+            validationErrors[nameof(ChangePasswordCommand.OldPassword)] = [
+                incorrectPasswordError.Description,
+            ];
+        }
+
+        var passwordErrors = result.Errors.Where(e => e.Code.StartsWith("Password") && e.Code != nameof(IdentityErrorDescriber.PasswordMismatch)).ToList();
+        if (passwordErrors.Count > 0) {
+            validationErrors.Add(nameof(ChangePasswordCommand.NewPassword), [.. passwordErrors.Select(e => e.Description)]);
+        }
+
+        if (validationErrors.Count > 0) {
+            return Errors.ValidationErrorsOccurred(validationErrors);
+        }
+        
         var firstError = result.Errors.First();
-        return firstError.Code switch {
-            nameof(IdentityErrorDescriber.PasswordMismatch) => Errors.InvalidCredentials(),
-            _ => new(firstError.Code, firstError.Description),
-        };
+        return new Error(firstError.Code, firstError.Description);
     }
 }

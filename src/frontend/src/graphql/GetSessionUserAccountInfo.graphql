@@ -1,0 +1,6 @@
+query GetSessionUserAccountInfo {
+    sessionUser {
+        email
+        phoneNumber
+    }
+}

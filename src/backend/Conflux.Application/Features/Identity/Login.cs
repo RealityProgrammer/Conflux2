@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Enums;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -11,7 +12,9 @@ namespace Conflux.Application.Features.Identity;
 public sealed record LoginCommand(
     string Email, 
     string Password,
-    string DeviceInfo
+    string OperatingSystemInfo,
+    string BrowserInfo,
+    SessionDevice Device
 ) : ICommand<Result<LoginResult>>, IAllowNonActiveAccount;
 
 public sealed class LoginHandler(
@@ -42,7 +45,7 @@ public sealed class LoginHandler(
             return Errors.InvalidCredentials();
         }
 
-        var sessionId = await sessionService.CreateSession(user.Id, command.DeviceInfo);
+        var sessionId = await sessionService.CreateSession(user.Id, command.OperatingSystemInfo, command.BrowserInfo, command.Device);
         bool isPendingDeletion = deleteStatus == AccountDeletionStatus.Pending;
         
         IList<string> roles = !isPendingDeletion ? await userManager.GetRolesAsync(user) : [];

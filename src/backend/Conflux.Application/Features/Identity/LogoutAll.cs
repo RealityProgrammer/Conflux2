@@ -8,7 +8,7 @@ public sealed class LogoutAllHandler(
     ISessionService sessionService
 ) : ICommandHandler<LogoutAllCommand> {
     public async ValueTask<Unit> Handle(LogoutAllCommand command, CancellationToken cancellationToken) {
-        await sessionService.RemoveAllSession(command.UserId);
+        await sessionService.RemoveAllSessions(command.UserId);
         return Unit.Value;
     }
 }

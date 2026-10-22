@@ -28,7 +28,7 @@ internal sealed class JwtProvider(
         var claims = new List<Claim> {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
-            new(JwtRegisteredClaimNames.Jti, sessionId.ToString()),
+            new(JwtRegisteredClaimNames.Sid, sessionId.ToString()),
         };
         
         if (user.EmailConfirmed) {

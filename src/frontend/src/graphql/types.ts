@@ -27,10 +27,12 @@ export type ApplicationUser = {
   createdAt: Scalars['DateTime']['output'];
   displayName?: Maybe<Scalars['String']['output']>;
   effectivePresenceStatus: PresenceStatus;
+  email?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
   manualPresenceStatus?: Maybe<PresenceStatus>;
   numMutualFriends: Scalars['Int']['output'];
+  phoneNumber?: Maybe<Scalars['String']['output']>;
   pronouns?: Maybe<Scalars['String']['output']>;
   userName?: Maybe<Scalars['String']['output']>;
 };

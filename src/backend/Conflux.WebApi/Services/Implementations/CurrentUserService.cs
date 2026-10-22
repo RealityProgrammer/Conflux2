@@ -14,5 +14,12 @@ internal sealed class CurrentUserService(
         }
     }
 
+    public Guid? SessionId {
+        get {
+            var claimValue = httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sid);
+            return Guid.TryParse(claimValue, out var id) ? id : null;
+        }
+    }
+
     public bool IsAuthenticated => httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 }

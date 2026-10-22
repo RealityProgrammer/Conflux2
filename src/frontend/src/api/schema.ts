@@ -508,6 +508,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfSessionsQueryResult"];
+                        "application/json": components["schemas"]["ApiResponseOfSessionsQueryResult"];
+                        "text/json": components["schemas"]["ApiResponseOfSessionsQueryResult"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sessionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/calls/direct/{peerId}": {
         parameters: {
             query?: never;
@@ -2428,6 +2541,10 @@ export interface components {
             data: null | components["schemas"]["ServerRoleDto"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfSessionsQueryResult: {
+            data: null | components["schemas"]["SessionsQueryResult"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfStartCallResult: {
             data: null | components["schemas"]["StartCallResult"];
             error: components["schemas"]["Error"];
@@ -2483,7 +2600,7 @@ export interface components {
         /** @enum {string} */
         ChannelType: ChannelType;
         ConfirmEmailRequest: {
-            userId: string;
+            email: string;
             confirmationCode: string;
         };
         CreateChannelCategoryRequest: {
@@ -2703,6 +2820,21 @@ export interface components {
             /** Format: int32 */
             authorizeLevel: number;
         };
+        SessionDetails: {
+            /** Format: uuid */
+            sessionId: string;
+            operatingSystemInfo: string;
+            browserInfo: string;
+            device: components["schemas"]["SessionDevice"];
+            /** Format: int64 */
+            lastActivityMs: number;
+        };
+        /** @enum {string} */
+        SessionDevice: SessionDevice;
+        SessionsQueryResult: {
+            currentSession: components["schemas"]["SessionDetails"];
+            allSessions: components["schemas"]["SessionDetails"][];
+        };
         SetNamesRequest: {
             userName: string;
             displayName: string;
@@ -2915,6 +3047,12 @@ export enum ServerPermission {
     SendMessage = "SendMessage",
     EditMessages = "EditMessages",
     DeleteMessages = "DeleteMessages"
+}
+export enum SessionDevice {
+    Desktop = "Desktop",
+    Phone = "Phone",
+    Tablet = "Tablet",
+    Other = "Other"
 }
 export enum UserAccountDeleteReason {
     PrivacyConcern = "PrivacyConcern",

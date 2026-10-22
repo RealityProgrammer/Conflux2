@@ -65,7 +65,9 @@ public sealed class JwtStorage(
             return Errors.InvalidRefreshToken();
         }
 
-        if (timeProvider.GetUtcNow().Ticks > expireTick) {
+        long nowTick = timeProvider.GetUtcNow().Ticks;
+
+        if (nowTick > expireTick) {
             return Errors.ExpiredRefreshToken();
         }
 

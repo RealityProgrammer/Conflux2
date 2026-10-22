@@ -36,6 +36,7 @@
         <PackageReference Include="ScottBrady91.AspNetCore.Identity.Argon2PasswordHasher" Version="2.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.3.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.0" />
+        <PackageReference Include="UAParser.Core" Version="4.0.6" />
     </ItemGroup>
 
     <ItemGroup>

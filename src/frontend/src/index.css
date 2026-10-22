@@ -294,7 +294,7 @@
 }
 
 @utility button-cursor {
-    @apply not-disabled:cursor-pointer disabled:cursor-default
+    @apply not-disabled:cursor-pointer disabled:cursor-not-allowed;
 }
 
 @utility hover-highlight {
@@ -307,6 +307,10 @@
 
 @utility dropdown-item-danger {
     @apply relative flex p-2 select-none items-center rounded-sm leading-none outline-none hover-highlight font-semibold text-sm text-red-500 data-disabled:text-red-500/35 cursor-pointer data-disabled:pointer-events-none;
+}
+
+@utility button-theme-primary2 {
+    @apply bg-white/20 hover:bg-white/35 active:bg-white/15 disabled:bg-white/5 disabled:hover:bg-white/5;
 }
 
 @utility button-theme-primary {

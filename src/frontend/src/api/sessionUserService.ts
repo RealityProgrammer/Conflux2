@@ -1,5 +1,5 @@
 import type {
-  AccountDeletionStatus,
+  AccountDeletionStatusDto,
   BackendResponse,
   ServiceResponse,
   UpdateProfileResult,
@@ -141,9 +141,9 @@ export const sessionUserService = {
     }
   },
   
-  getAccountDeletionStatus: async (): Promise<ServiceResponse<AccountDeletionStatus>> => {
+  getAccountDeletionStatus: async (): Promise<ServiceResponse<AccountDeletionStatusDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<AccountDeletionStatus>> = await apiClient.get("/users/me/deletion");
+      const response: AxiosResponse<BackendResponse<AccountDeletionStatusDto>> = await apiClient.get("/users/me/deletion");
 
       return {
         success: true,
@@ -151,7 +151,7 @@ export const sessionUserService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatus>>;
+      const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatusDto>>;
       return handleAxiosError(axiosError);
     }
   },

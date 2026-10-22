@@ -416,7 +416,7 @@ function FormButtons() {
 
       <button
         type="submit"
-        className="button-theme-primary w-32 py-2 cursor-pointer rounded-md flex flex-row justify-center items-center"
+        className="button-theme-primary w-32 py-2 button-cursor rounded-md flex flex-row justify-center items-center"
         disabled={isSubmitting}
       >
         {isSubmitting ? (

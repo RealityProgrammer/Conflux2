@@ -5,7 +5,7 @@ import {type CSSProperties, useEffect, useState} from "react";
 import {useAuth} from "../contexts/AuthContext.tsx";
 import {useQuery} from "@tanstack/react-query";
 import {sessionUserService} from "../api/sessionUserService.ts";
-import type {AccountDeletionStatus, RestoreAccountResponse, ServiceResponse} from "../api/types.ts";
+import type {AccountDeletionStatusDto, RestoreAccountResponse, ServiceResponse} from "../api/types.ts";
 import Spinner from "../components/Spinner.tsx";
 import {useRestoreAccountMutation} from "../hooks/useRestoreAccountMutation.ts";
 import {toast} from "react-toastify";
@@ -54,10 +54,10 @@ export default function ImpendingDoomPage() {
 }
 
 function ContentPanel() {
-  const { data, isLoading, isError } = useQuery<unknown, Error, AccountDeletionStatus>({
+  const { data, isLoading, isError } = useQuery<unknown, Error, AccountDeletionStatusDto>({
     queryKey: ["GetAccountDeletionStatus"],
-    queryFn: async (): Promise<AccountDeletionStatus> => {
-      const response: ServiceResponse<AccountDeletionStatus> = await sessionUserService.getAccountDeletionStatus();
+    queryFn: async (): Promise<AccountDeletionStatusDto> => {
+      const response: ServiceResponse<AccountDeletionStatusDto> = await sessionUserService.getAccountDeletionStatus();
 
       if (!response.success) {
         throw new Error(response.error!.message!);
@@ -95,7 +95,7 @@ const restoreAccountSchema = z.object({
 
 type RestoreAccountFormValues = z.infer<typeof restoreAccountSchema>;
 
-function SuccessfullyLoaded({data}: {data: AccountDeletionStatus}) {
+function SuccessfullyLoaded({data}: {data: AccountDeletionStatusDto}) {
   const { logout } = useAuth();
   const setCachedAuthorization = useAuthStore(state => state.setCachedAuthorization);
   const navigate = useNavigate();

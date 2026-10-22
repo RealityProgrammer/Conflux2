@@ -60,6 +60,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.RateLimiting;
+using UAParser.Extensions;
 using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
 
@@ -128,7 +129,7 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         OnTokenValidated = async context => {
             var sessionService = context.HttpContext.RequestServices.GetRequiredService<ISessionService>();
             
-            if (!Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId) || !Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti), out Guid sessionId)) {
+            if (!Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId) || !Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sid), out Guid sessionId)) {
                 context.Fail("Invalid token claims.");
                 return;
             }
@@ -245,6 +246,7 @@ builder.Services
     });
 
 // general services needed
+builder.Services.AddUserAgentParser();
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
     [
         new Png(),

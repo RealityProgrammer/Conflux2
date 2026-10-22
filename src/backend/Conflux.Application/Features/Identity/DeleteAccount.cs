@@ -71,7 +71,7 @@ public sealed class DeleteAccountHandler(
             return Errors.UnexpectedError();
         }
 
-        await sessionService.RemoveAllSession(userId);
+        await sessionService.RemoveAllSessions(userId);
         await accountDeleteStatusCacheProvider.Remove(userId);
 
         return Result.Success();

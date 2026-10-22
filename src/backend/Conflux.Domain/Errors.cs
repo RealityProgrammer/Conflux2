@@ -171,4 +171,10 @@ public static class Errors {
     
     public static Error AccountExpired() =>
         new(nameof(AccountExpired), "Account expired.");
+    
+    public static Error InvalidSession() => 
+        new(nameof(InvalidSession), "Invalid session.");
+    
+    public static Error SessionNotFound(Guid sessionId) => 
+        new(nameof(SessionNotFound), $"Session {sessionId} was not found.");
 }

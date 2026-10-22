@@ -1,5 +1,10 @@
 import {apiClient} from "./client.ts";
-import type {EmailConfirmationRequest, LoginRequest, RegisterRequest, RestoreAccountResponse} from "./types.ts";
+import type {
+  LoginRequest,
+  RegisterRequest,
+  RestoreAccountResponse,
+  SessionsQueryResult
+} from "./types.ts";
 import type {
   BackendResponse,
   LoginResponse,
@@ -290,6 +295,21 @@ export const authService = {
       return handleAxiosError(axiosError);
     }
   },
+  
+  changePassword: async (oldPassword: string, newPassword: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.post<BackendResponse>("/auth/change-password", { oldPassword, newPassword });
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 
   forgotPassword: async (email: string): Promise<ServiceResponse> => {
     try {
@@ -325,9 +345,49 @@ export const authService = {
     }
   },
 
-  getSessions: async (): Promise<ServiceResponse<string[]>> => {
+  getSessions: async (): Promise<ServiceResponse<SessionsQueryResult>> => {
     try {
-      
+      const response: AxiosResponse<BackendResponse<SessionsQueryResult>> = 
+        await apiClient.get<BackendResponse>("/auth/sessions");
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<SessionsQueryResult>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  deleteSession: async (sessionId: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.delete<BackendResponse>(`/auth/sessions/${encodeURIComponent(sessionId)}`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  deleteOtherSessions: async (): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> =
+        await apiClient.delete<BackendResponse>(`/auth/sessions/others`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
     }
   },
 };

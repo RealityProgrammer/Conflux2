@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Enums;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
 using Conflux.Domain;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
+using UAParser.Interfaces;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
@@ -16,14 +18,40 @@ namespace Conflux.WebApi.Controllers;
 [Authorize, ApiController, Route("api/auth")]
 public sealed class AuthenticateController(
     ISender sender,
+    IUserAgentParser userAgentParser,
     ILogger<AuthenticateController> logger
 ) : ControllerBase {
     [AllowAnonymous, HttpPost("login", Name = "Login"), IgnoreAntiforgeryToken]
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest request) {
-        var userAgent = Request.Headers.UserAgent.ToString();
-        var finalUserAgent = string.IsNullOrEmpty(userAgent) ? "Unknown Device" : userAgent;
+        var clientInfo = userAgentParser.ClientInfo;
+
+        string deviceFamily = clientInfo.Device.Family;
+        string osName = clientInfo.OS.Family;
         
-        var loginResult = await sender.Send(new LoginCommand(request.Email, request.Password, finalUserAgent));
+        SessionDevice deviceType = SessionDevice.Other; // fallback
+
+        if (
+            deviceFamily.Equals("iPhone", StringComparison.OrdinalIgnoreCase) || 
+            osName.Equals("Android", StringComparison.OrdinalIgnoreCase) && !clientInfo.String.Contains("Tablet", StringComparison.OrdinalIgnoreCase)
+        ) {
+            deviceType = SessionDevice.Phone;
+        } else if (
+            deviceFamily.Contains("iPad", StringComparison.OrdinalIgnoreCase) || 
+            deviceFamily.Contains("Tablet", StringComparison.OrdinalIgnoreCase) || 
+            osName.Equals("iPadOS", StringComparison.OrdinalIgnoreCase)
+        ) {
+            deviceType = SessionDevice.Tablet;
+        } else if (
+            osName.Equals("Windows", StringComparison.OrdinalIgnoreCase) ||
+            osName.Equals("Mac OS X", StringComparison.OrdinalIgnoreCase) ||
+            osName.Equals("Linux", StringComparison.OrdinalIgnoreCase) ||
+            osName.Equals("Ubuntu", StringComparison.OrdinalIgnoreCase) ||
+            osName.Equals("Chrome OS", StringComparison.OrdinalIgnoreCase)
+        ) {
+            deviceType = SessionDevice.Desktop;
+        }
+        
+        var loginResult = await sender.Send(new LoginCommand(request.Email, request.Password, clientInfo.OS.ToString(), clientInfo.Browser.ToString(), deviceType));
     
         if (!loginResult.IsSuccess) {
             return loginResult.Error.Code switch {
@@ -111,7 +139,7 @@ public sealed class AuthenticateController(
     
     [HttpPost("logout"), IgnoreAntiforgeryToken]
     public async Task<ActionResult> Logout() {
-        if (Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out Guid userId) && Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Jti), out Guid sessionId)) {
+        if (Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sub), out Guid userId) && Guid.TryParse(User.FindFirstValue(JwtRegisteredClaimNames.Sid), out Guid sessionId)) {
             await sender.Send(new LogoutCommand(userId, sessionId));
         }
         
@@ -307,20 +335,56 @@ public sealed class AuthenticateController(
         var result = await sender.Send(new ChangePasswordCommand(request.OldPassword, request.NewPassword));
         
         if (result.IsSuccess) {
-            return Ok();
+            return Ok(new ApiResponse(Error.None));
         }
 
         return result.Error.Code switch {
-            nameof(Errors.NoUserFoundFromId) or nameof(Errors.InvalidConfirmationCode) => BadRequest(new ApiResponse(result.Error)),
-            nameof(Errors.InvalidCredentials) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) or nameof(Errors.NoUserFoundFromId) or nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),
         };
     }
 
-    [HttpPost("sessions")]
-    public async Task<ActionResult<ApiResponse<List<string>>>> GetAllSessions() {
+    [HttpGet("sessions")]
+    public async Task<ActionResult<ApiResponse<SessionsQueryResult>>> GetAllSessions() {
         var result = await sender.Send(new SessionsQuery());
-        return Ok(new ApiResponse<List<string>>(result, Error.None));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<SessionsQueryResult>(result.Value, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) or nameof(Errors.InvalidSession) => Unauthorized(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),
+        };
+    }
+
+    [HttpDelete("sessions/{sessionId:guid}")]
+    public async Task<ActionResult<ApiResponse>> DeleteSession(Guid sessionId) {
+        var result = await sender.Send(new DeleteSessionCommand(sessionId));
+
+        if (result.IsSuccess) {
+            return NoContent();
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.SessionNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpDelete("sessions/others")]
+    public async Task<ActionResult<ApiResponse>> DeleteOtherSessions() {
+        var result = await sender.Send(new DeleteOtherSessionsCommand());
+
+        if (result.IsSuccess) {
+            return NoContent();
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) or nameof(Errors.SessionNotFound) => Unauthorized(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
 
     private bool TryExtractRefreshToken(out Guid userId, out Guid sessionId, out string refreshToken) {

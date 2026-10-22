@@ -4,8 +4,9 @@ import Dialog from "./Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui"
 
 export interface ModalFormProps<TFieldValues extends FieldValues> {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: ReactNode;
   title: string;
   subtitle?: string;
   formMethods: UseFormReturn<TFieldValues>;
@@ -20,6 +21,7 @@ export interface ModalFormProps<TFieldValues extends FieldValues> {
 export default function ModalForm<TFieldValues extends FieldValues>({
   open,
   onOpenChange,
+  trigger,
   title,
   subtitle,
   formMethods,
@@ -63,7 +65,14 @@ export default function ModalForm<TFieldValues extends FieldValues>({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(open) => {
+        onOpenChange?.(open);
+        
+        if (!open) {
+          formMethods.reset();
+        }
+      }}
+      trigger={trigger}
       contentClassName={`bg-gray-650 ${contentClassName ?? ""}`}
       headerIcon={headerIcon}
       title={title}
@@ -73,7 +82,7 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       <FormProvider {...formMethods}>
         <form
           id={formId}
-          className="mt-2 px-4 py-2"
+          className="px-4 py-2"
           onSubmit={formMethods.handleSubmit(onSubmit)}
         >
           {children}

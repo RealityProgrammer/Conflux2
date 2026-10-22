@@ -25,6 +25,32 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);
         descriptor.Field(u => u.LastSeenAt);
+        descriptor.Field("email")
+            .ParentRequires<ApplicationUser>(u => u.Email)
+            .Type<StringType>()
+            .Resolve((context, _) => {
+                var user = context.Parent<ApplicationUser>();
+                var currentUserId = context.GetUser()?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+                if (Guid.TryParse(currentUserId, out Guid userId) && userId == user.Id) {
+                    return user.Email;
+                }
+
+                return null;
+            });
+        descriptor.Field("phoneNumber")
+            .ParentRequires<ApplicationUser>(u => u.PhoneNumber)
+            .Type<StringType>()
+            .Resolve((context, _) => {
+                var user = context.Parent<ApplicationUser>();
+                var currentUserId = context.GetUser()?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+                if (Guid.TryParse(currentUserId, out Guid userId) && userId == user.Id) {
+                    return user.PhoneNumber;
+                }
+
+                return null;
+            });
 
         descriptor.Field("manualPresenceStatus")
             .Type<EnumType<PresenceStatus>>()
