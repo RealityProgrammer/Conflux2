@@ -44,7 +44,7 @@ var postgres = builder
     .WithEndpoint(5432, 5432)
     .WithDataVolume();
 
-var database = postgres.AddDatabase("conflux");
+var database = postgres.AddDatabase("Database", "Conflux");
 
 IResourceBuilder<ContainerResource>? garage = null;
 
