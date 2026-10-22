@@ -5,7 +5,6 @@ import type {HttpStatusCode} from "axios";
 // requests
 export type LoginRequest = components["schemas"]["LoginRequest"];
 export type RegisterRequest = components["schemas"]["RegisterRequest"];
-export type EmailConfirmationRequest = components["schemas"]["ConfirmEmailRequest"];
 
 export type InvitationExpireAfter = components["schemas"]["InvitationExpireAfter"];
 
@@ -36,7 +35,6 @@ export type LoginResponse = components["schemas"]["LoginResponse"];
 export type RefreshResponse = components["schemas"]["RefreshResponse"];
 
 export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
-export type PendingFriendRequestDto = components["schemas"]["PendingFriendRequestDto"];
 export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
 export type MediaItemDto = components["schemas"]["MediaItemDto"];
 export type StartCallResult = components["schemas"]["StartCallResult"];
@@ -56,6 +54,11 @@ export type CallEndProperties = Omit<components["schemas"]["MessagePropertiesCal
 export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomingDirectCallQueryResult"];
 export type MessageReadStrategy = components["schemas"]["MessageReadStrategy"];
 export type UpdateProfileResult = components["schemas"]["UpdateProfileResult"];
+export type AccountDeletionStatusDto = components["schemas"]["AccountDeletionStatusDto"];
+export type RestoreAccountResponse = components["schemas"]["RestoreAccountResponse"];
+export type SessionsQueryResult = components["schemas"]["SessionsQueryResult"];
+export type SessionDetails = components["schemas"]["SessionDetails"];
+export type SessionDevice = components["schemas"]["SessionDevice"];
 
 export type EditedMessageDto = {
   id: string;

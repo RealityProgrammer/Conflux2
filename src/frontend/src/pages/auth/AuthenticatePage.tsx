@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState, type MouseEvent, type MouseEventHandler} from "react";
 import {animate, JSAnimation, random} from "animejs";
 import {useLocation, useNavigate, useRevalidator} from "react-router";
 import {authService} from "../../api/authService.ts";
@@ -13,6 +13,7 @@ import ErrorText from "../../components/ErrorText.tsx";
 import {type SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {toast} from "react-toastify";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -27,6 +28,8 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
 
   const {
     register,
+    trigger,
+    getValues,
     handleSubmit,
     setError,
     clearErrors,
@@ -38,7 +41,7 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
     reValidateMode: "onSubmit",
   });
 
-  const onSubmit: SubmitHandler<LoginFormValues> = async (data: LoginFormValues): Promise<void> => {
+  const onLoginSubmit: SubmitHandler<LoginFormValues> = async (data: LoginFormValues): Promise<void> => {
     try {
       const response: ServiceResponse<LoginResponse> = await authService.login(data as LoginRequest);
 
@@ -63,6 +66,28 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
     }
   };
 
+  const [isRequestingPasswordResetEmail, setIsRequestingPasswordResetEmail] = useState(false);
+  
+  const onForgotPassword = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    clearErrors("root");
+
+    const isEmailValid = await trigger("email");
+    if (!isEmailValid) return;
+
+    const email = getValues("email");
+    setIsRequestingPasswordResetEmail(true);
+
+    try {
+      await authService.forgotPassword(email);
+      toast.success("A password reset email has been sent.");
+    } catch {
+      toast.error("Failed to request password reset email. Please try again later.");
+    } finally {
+      setIsRequestingPasswordResetEmail(false);
+    }
+  };
+
   return (
     <div className="bg-gray-700 w-full rounded-3xl shadow-xl text-white overflow-visible relative">
       <div className="absolute rounded-t-3xl h-12 w-full overflow-hidden">
@@ -73,16 +98,14 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
         <h1 className="text-center font-bold text-3xl text-white">Welcome Back</h1>
         <p className="text-center text-gray-400 text-sm mt-2">Identify yourself</p>
 
-        <form className="mt-5" onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
+        <form className="mt-5 space-y-3" onSubmit={handleSubmit(onLoginSubmit)} onChange={() => clearErrors("root")}>
           <div>
-            <Label.Root className="label mb-1 block" htmlFor="login_email">Email</Label.Root>
+            <Label.Root className="label mb-1 block">Email</Label.Root>
 
             <input
               type="email"
-              id="login_email"
               placeholder="Enter Email"
-              className="w-full h-11 px-3 input-field"
-              aria-required
+              className="w-full h-10 px-3 input-field"
               {...register("email")}
             />
 
@@ -91,19 +114,18 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
             )}
           </div>
 
-          <div className="mt-4">
-            <Label.Root className="label mb-1 block" htmlFor="login_password">Password</Label.Root>
+          <div>
+            <Label.Root className="label mb-1 block">Password</Label.Root>
 
             <PasswordToggleField.Root>
               <div className="flex flex-nowrap w-full">
                 <PasswordToggleField.Input
-                  id="login_password"
                   placeholder="Enter Password"
-                  className="flex-1 h-11 px-3 input-field mr-1"
-                  aria-required
+                  className="flex-1 h-10 px-3 input-field mr-1"
                   {...register("password")}
                 />
-                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
+                
+                <PasswordToggleField.Toggle className="flex-none h-10 p-2 input-field">
                   <PasswordToggleField.Icon visible={<BsEye className="size-6"/>}
                                             hidden={<BsEyeSlash className="size-6"/>}/>
                 </PasswordToggleField.Toggle>
@@ -119,12 +141,16 @@ function LoginPanel({navigateToRegister}: { navigateToRegister: () => void }) {
             <ErrorText className="block text-center mt-1">{errors.root.message}</ErrorText>
           )}
 
-          <a
-            href="#"
-            className="mt-2 block text-center text-sm text-gray-400 hover:text-indigo-400 transition-colors"
-          >
-            Forgot password?
-          </a>
+          <div className="flex flex-row justify-center items-center">
+            <button
+              type="button"
+              disabled={isRequestingPasswordResetEmail}
+              className="mt-2 block text-center text-sm text-gray-400 hover:text-indigo-400 disabled:text-gray-600 disabled:select-none transition-colors cursor-pointer"
+              onClick={onForgotPassword}
+            >
+              Forgot password?
+            </button>
+          </div>
 
           <button
             type="submit"
@@ -238,16 +264,14 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
         <h1 className="text-center font-bold text-3xl text-white">Welcome</h1>
         <p className="text-center text-gray-400 text-sm mt-2">Hope you got drink</p>
 
-        <form className="mt-5" onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
+        <form className="mt-5 space-y-3" onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
           <div>
-            <Label.Root className="label block mb-1" htmlFor="register_email">Email</Label.Root>
+            <Label.Root className="label block mb-1">Email</Label.Root>
 
             <input 
               type="text"
-              id="register_email"
               placeholder="Enter Email"
-              className="w-full h-11 px-3 input-field"
-              aria-required
+              className="w-full h-10 px-3 input-field"
               {...register("email")}
             />
 
@@ -256,20 +280,18 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
             )}
           </div>
 
-          <div className="mt-4">
-            <Label.Root className="label block mb-1" htmlFor="register_password">Password</Label.Root>
+          <div>
+            <Label.Root className="label block mb-1">Password</Label.Root>
 
             <PasswordToggleField.Root>
               <div className="flex flex-nowrap w-full">
                 <PasswordToggleField.Input
-                  id="register_password"
-                  placeholder="Enter Password"
-                  className="flex-1 h-11 px-3 input-field mr-1"
-                  aria-required
+                  placeholder="Enter password"
+                  className="flex-1 h-10 px-3 input-field mr-1"
                   {...register("password")}
                 />
 
-                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
+                <PasswordToggleField.Toggle className="flex-none h-10 p-2 input-field">
                   <PasswordToggleField.Icon
                     visible={<BsEye className="size-6"/>}
                     hidden={<BsEyeSlash className="size-6"/>}
@@ -305,20 +327,18 @@ function RegisterPanel({navigateToLogin}: { navigateToLogin: () => void }) {
             />
           </div>
 
-          <div className="mt-4">
-            <Label.Root className="label block mb-1" htmlFor="register_confirm_password">Confirm
-              Password</Label.Root>
+          <div>
+            <Label.Root className="label block mb-1">Confirm Password</Label.Root>
 
             <PasswordToggleField.Root>
               <div className="flex flex-nowrap w-full">
                 <PasswordToggleField.Input
-                  id="register_confirm_password"
-                  placeholder="Enter Password (Again)"
-                  className="flex-1 h-11 px-3 input-field mr-1"
-                  aria-required
+                  placeholder="Enter password (again)"
+                  className="flex-1 h-10 px-3 input-field mr-1"
                   {...register("confirmPassword")}
                 />
-                <PasswordToggleField.Toggle className="flex-none h-11 p-2 input-field">
+                
+                <PasswordToggleField.Toggle className="flex-none h-10 p-2 input-field">
                   <PasswordToggleField.Icon
                     visible={<BsEye className="size-6"/>}
                     hidden={<BsEyeSlash className="size-6"/>}

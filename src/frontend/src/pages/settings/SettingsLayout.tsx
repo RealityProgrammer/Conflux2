@@ -9,8 +9,8 @@ export default function SettingsLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="w-dvw h-dvh grid grid-cols-5 text-white">
-      <aside className="col-span-1 bg-gray-725 border-r-2 border-r-gray-600 p-2 overflow-y-auto scrollbar-none space-y-2">
+    <div className="w-dvw h-dvh flex flex-row text-white">
+      <aside className="w-80 flex-none bg-gray-725 border-r-2 border-r-gray-600 p-2 overflow-y-auto scrollbar-none space-y-2">
         <button
           onClick={() => navigate(-1)} // Or replace with a specific path like navigate('/chat')
           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-gray-300 hover:text-white hover-highlight transition-colors text-sm font-medium cursor-pointer group"
@@ -22,8 +22,9 @@ export default function SettingsLayout() {
         <section>
           <p className="group-label">Account</p>
           
-          <div className="flex flex-col gap-1">
+          <div className="space-y-1">
             <NavigateLink to="profile">Profile</NavigateLink>
+            <NavigateLink to="account">Account</NavigateLink>
           </div>
         </section>
 
@@ -32,32 +33,36 @@ export default function SettingsLayout() {
         <section>
           <p className="group-label text-red-500!">Danger</p>
           
-          <button
-            className="w-full px-3 py-1 text-left cursor-pointer transition-colors text-red font-bold hover-highlight text-red-400 rounded-lg"
-            onClick={() => {
-              auth.logout();
-            }}
-          >
-            Logout
-          </button>
+          <div className="space-y-1 p-1 bg-red-400/10 border-2 border-red-500/40 rounded-md">
+            <NavigateLink to="delete-account" className="text-red-400! font-semibold">Delete account</NavigateLink>
+
+            <button
+              className="w-full px-3 py-1.5 text-left cursor-pointer text-red font-semibold hover-highlight text-red-400 rounded-lg"
+              onClick={() => {
+                auth.logout();
+              }}
+            >
+              Logout
+            </button>
+          </div>
         </section>
       </aside>
 
-      <section className="col-span-4 bg-gray-675 overflow-y-auto scrollbar-none p-2">
+      <section className="w-full @container col-span-4 bg-gray-675 overflow-y-auto scrollbar-none p-2">
         <Outlet/>
       </section>
     </div>
   );
 }
 
-function NavigateLink({to, children}: {to: string, children: ReactNode}) {
+function NavigateLink({to, children, className = ""}: {to: string, children: ReactNode, className?: string}) {
   return (
     <NavLink
       to={`/settings/${encodeURIComponent(to)}`}
       className={({ isActive }) =>
-        `px-3 py-1 rounded-lg text-left cursor-pointer transition-colors ${
+        `block px-3 py-1.5 rounded-lg text-left cursor-pointer ${
           isActive ? "text-white bg-white/10" : "hover-highlight text-gray-300"
-        }`
+        } ${className}`
       }
     >
       {children}

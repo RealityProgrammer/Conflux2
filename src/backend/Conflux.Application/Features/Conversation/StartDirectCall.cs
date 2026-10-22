@@ -11,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record StartDirectCallCommand(
-    Guid CallerId,
     string CallerConnectionId,
     Guid CalleeId
 ) : ICommand<Result<StartCallResult>>;
@@ -19,6 +18,7 @@ public sealed record StartDirectCallCommand(
 public sealed record IncomingCallNotification(Guid CallId, Guid CalleeId, UserIdentityProfileDto CallerProfile) : INotification;
 
 internal sealed class StartDirectCallHandler(
+    ICurrentUserService currentUserService,
     ICallingService callingService,
     IUserRepository userRepository,
     IFriendRequestRepository friendRequestRepository,
@@ -32,7 +32,10 @@ internal sealed class StartDirectCallHandler(
         StartDirectCallCommand command, 
         CancellationToken cancellationToken
     ) {
-        Guid callerId = command.CallerId;
+        if (currentUserService.UserId is not { } callerId) {
+            return Errors.InvalidIdentifier();
+        }
+        
         Guid calleeId = command.CalleeId;
         
         var conversationResult = await directConversationProvider.GetOrCreate(callerId, calleeId, cancellationToken);
@@ -55,8 +58,8 @@ internal sealed class StartDirectCallHandler(
             var profiles = await friendRequestRepository.AsQueryable()
                 .Where(r => r.Status == FriendRequestStatus.Accepted)
                 .Where(r =>
-                    r.SenderUserId == command.CallerId && r.ReceiverUserId == command.CalleeId ||
-                    r.SenderUserId == command.CalleeId && r.ReceiverUserId == command.CallerId
+                    r.SenderUserId == callerId && r.ReceiverUserId == calleeId ||
+                    r.SenderUserId == calleeId && r.ReceiverUserId == callerId
                 )
                 .Include(r => r.Sender)
                 .Include(r => r.Receiver)
@@ -81,8 +84,8 @@ internal sealed class StartDirectCallHandler(
                 return Errors.NoAcceptedFriendRequest();
             }
             
-            UserIdentityProfileDto callerProfile = profiles.Sender.Id == command.CallerId ? profiles.Sender : profiles.Receiver;
-            UserIdentityProfileDto calleeProfile = profiles.Sender.Id == command.CallerId ? profiles.Receiver : profiles.Sender;
+            UserIdentityProfileDto callerProfile = profiles.Sender.Id == callerId ? profiles.Sender : profiles.Receiver;
+            UserIdentityProfileDto calleeProfile = profiles.Sender.Id == callerId ? profiles.Receiver : profiles.Sender;
             
             await publisher.Publish(new IncomingCallNotification(callId, calleeProfile.Id, callerProfile), CancellationToken.None);
             
@@ -90,7 +93,7 @@ internal sealed class StartDirectCallHandler(
             Message createdMessage = new Message {
                 Type = MessageType.CallStart,
                 Conversation = conversation,
-                SenderUserId = command.CallerId,
+                SenderUserId = callerId,
             };
             
             conversation.Messages.Add(createdMessage);
@@ -100,7 +103,7 @@ internal sealed class StartDirectCallHandler(
             TimelineMessageDto messageDto = new(createdMessage) {
                 Sender = await userRepository
                     .AsQueryable()
-                    .Where(s => s.Id == command.CallerId)
+                    .Where(s => s.Id == callerId)
                     .SelectFacet<TimelineMessageSenderDto>()
                     .FirstOrDefaultAsync(CancellationToken.None),
             };

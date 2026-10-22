@@ -1,4 +1,4 @@
-import {BsCheck} from "react-icons/bs";
+import {BsCheckLg} from "react-icons/bs";
 import {Select} from "radix-ui";
 import type {HTMLAttributes, ReactNode} from "react";
 
@@ -28,7 +28,7 @@ export default function SelectItem({
       </span>
 
       <Select.ItemIndicator className="flex-none flex items-center">
-        <BsCheck className="fill-white size-4" />
+        <BsCheckLg className="fill-white size-4" />
       </Select.ItemIndicator>
     </Select.Item>
   );

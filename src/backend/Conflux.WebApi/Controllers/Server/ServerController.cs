@@ -25,14 +25,8 @@ public sealed class ServerController(
     [HttpPost]
     [Idempotent(360)]
     public async Task<ActionResult<ApiResponse<ServerIdentityDto>>> CreateCommunityServer([FromForm] CreateServerRequest serverRequest) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
         await using var stream = serverRequest.Avatar?.OpenReadStream();
-        var result = await mediator.Send(new CreateServerCommand(userId, serverRequest.Name, stream));
+        var result = await mediator.Send(new CreateServerCommand(serverRequest.Name, stream));
         
         if (result.IsSuccess) {
             return Created((Uri?)null, new ApiResponse<ServerIdentityDto>(result.Value, Error.None));
@@ -133,6 +127,21 @@ public sealed class ServerController(
         }
 
         return result.Error.Code switch {
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpPost("{serverId:guid}/leave")]
+    public async Task<ActionResult<ApiResponse>> LeaveServer(Guid serverId) {
+        var result = await mediator.Send(new LeaveServerCommand(serverId));
+        
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse(Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };

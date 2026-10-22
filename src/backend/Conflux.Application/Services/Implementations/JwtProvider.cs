@@ -18,16 +18,23 @@ internal sealed class JwtProvider(
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly AuthOptions _authOptions = authOptions.Value;
     
-    public void GenerateAccessToken(ApplicationUser user, IEnumerable<string> roles, out string accessToken, out long expireTick) {
+    public void GenerateAccessToken(
+        ApplicationUser user, 
+        IEnumerable<string> roles,
+        Guid sessionId,
+        out string accessToken, 
+        out DateTimeOffset expireAt
+    ) {
         var claims = new List<Claim> {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Sid, sessionId.ToString()),
         };
         
         if (user.EmailConfirmed) {
             claims.Add(new(JwtRegisteredClaimNames.EmailVerified, "true"));
         }
-
+        
         if (user.IsUserNameLocked) {
             claims.Add(new("ProfileSetupComplete", "true"));
         }
@@ -50,15 +57,11 @@ internal sealed class JwtProvider(
         );
 
         accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-        expireTick = accessTokenExpire.Ticks;
+        expireAt = accessTokenExpire;
     }
     
-    public void GenerateRefreshToken(out string refreshToken, out DateTimeOffset expiration) {
-        var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        
-        refreshToken = Convert.ToBase64String(randomNumber);
-        expiration = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration);
+    public void GenerateRefreshToken(out byte[] refreshToken, out DateTimeOffset expireAt) {
+        refreshToken = RandomNumberGenerator.GetBytes(64);
+        expireAt = timeProvider.GetUtcNow().AddSeconds(_authOptions.RefreshTokenDuration);
     }
 }

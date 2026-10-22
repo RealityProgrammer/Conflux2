@@ -4,7 +4,11 @@ using Conflux.Domain;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record DropCallCommand(Guid UserId, string ConnectionId, bool IsLastConnection) : ICommand<Result>;
+public sealed record DropCallCommand(
+    Guid UserId, 
+    string ConnectionId, 
+    bool IsLastConnection
+) : ICommand<Result>;
 
 public sealed record CallDroppedNotification(Guid CallId, Guid DropperId, Guid PeerId) : INotification;
 

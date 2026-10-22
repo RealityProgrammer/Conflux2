@@ -9,7 +9,6 @@ using Npgsql;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record CreateServerInvitationCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     int? MaxUses,
     TimeSpan? ValidDuration

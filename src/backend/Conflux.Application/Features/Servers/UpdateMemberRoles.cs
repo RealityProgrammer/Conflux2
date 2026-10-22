@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record UpdateMemberRolesCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     Guid InteractingMemberId,
     IReadOnlyCollection<Guid> RoleIds
@@ -26,6 +25,7 @@ public sealed record MemberRolesUpdatedNotification(
 ) : INotification;
 
 public sealed class UpdateMemberRolesHandler(
+    ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
     ICommunityServerRoleRepository roleRepository,
     IServerPermissionsProvider serverPermissionsProvider,
@@ -35,10 +35,12 @@ public sealed class UpdateMemberRolesHandler(
     ILogger<UpdateMemberRolesHandler> logger
 ) : ICommandHandler<UpdateMemberRolesCommand, Result> {
     public async ValueTask<Result> Handle(UpdateMemberRolesCommand command, CancellationToken cancellationToken) {
+        Guid executorUserId = currentUserService.UserId!.Value;
+        
         // get the executor user authorize info to compare role authorize level later.
         var executorAuthorizeInfoResult = await serverPermissionsProvider.GetUserAuthorizeInfo(
             command.ServerId, 
-            command.ExecutorUserId,
+            executorUserId,
             cancellationToken
         );
 
@@ -113,7 +115,7 @@ public sealed class UpdateMemberRolesHandler(
             await unitOfWork.RollbackAsync(cancellationToken);
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while updating member roles.");
+            logger.LogError(e, "Exception thrown while updating member roles.");
             
             await unitOfWork.RollbackAsync(cancellationToken);
             return Errors.UnexpectedError();

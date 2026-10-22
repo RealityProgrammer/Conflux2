@@ -1,10 +1,12 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Friends;
+using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
+using Conflux.WebApi.Attributes;
 using Conflux.WebApi.Dto;
 using Humanizer;
 using Mediator;
@@ -12,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
@@ -20,7 +23,7 @@ namespace Conflux.WebApi.Controllers;
 [Route("api/users/me")]
 [Authorize]
 public sealed class SessionUserController(
-    IMediator mediator
+    ISender sender
 ) : ControllerBase {
     [HttpPost("avatar")]
     public async Task<ActionResult<ApiResponse<int>>> UploadAvatar([FromForm] UploadAvatarRequest request) {
@@ -32,7 +35,7 @@ public sealed class SessionUserController(
         
         await using var avatarStream = request.File.OpenReadStream();
         
-        var result = await mediator.Send(new UpdateProfileCommand(
+        var result = await sender.Send(new UpdateProfileCommand(
             userId, 
             default,
             default,
@@ -60,7 +63,7 @@ public sealed class SessionUserController(
             return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
         }
         
-        var result = await mediator.Send(new DeleteUserAvatarCommand(userId));
+        var result = await sender.Send(new DeleteUserAvatarCommand(userId));
         
         if (result.IsSuccess) {
             return NoContent();
@@ -75,20 +78,13 @@ public sealed class SessionUserController(
     
     [HttpPost("names")]
     public async Task<ActionResult<ApiResponse>> SetNames([FromBody] SetNamesRequest request) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        Result result = await mediator.Send(new SetUserNamesCommand(
-            userId,
+        Result result = await sender.Send(new SetUserNamesCommand(
             request.UserName,
             request.DisplayName
         ));
         
         if (result.IsSuccess) {
-            return Ok();
+            return Ok(new ApiResponse(Error.None));
         }
         
         return result.Error.Code switch {
@@ -99,16 +95,10 @@ public sealed class SessionUserController(
 
     [HttpPost("lock-name")]
     public async Task<ActionResult<ApiResponse>> LockName() {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await mediator.Send(new LockNameCommand(userId));
+        Result result = await sender.Send(new LockNameCommand());
         
         if (result.IsSuccess) {
-            return Ok();
+            return Ok(new ApiResponse(Error.None));
         }
         
         return result.Error.Code switch {
@@ -142,7 +132,7 @@ public sealed class SessionUserController(
             _ => default,
         };
         
-        var result = await mediator.Send(new UpdateProfileCommand(
+        var result = await sender.Send(new UpdateProfileCommand(
             userId, 
             request.DisplayName, 
             request.Pronouns, 
@@ -158,6 +148,20 @@ public sealed class SessionUserController(
 
         return result.Error.Code switch {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpGet("deletion")]
+    public async Task<ActionResult<ApiResponse<AccountDeletionStatusDto>>> GetAccountDeletionStatus() {
+        var result = await sender.Send(new AccountDeletionStatusQuery());
+        
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<AccountDeletionStatusDto>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.NoPendingAccountDeletion) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

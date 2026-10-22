@@ -24,6 +24,11 @@ export type GetInvitationSummaryQueryVariables = Exact<{
 
 export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, numMembers: number, avatar: { version: number } | null } | null } | null };
 
+export type GetSessionUserAccountInfoQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetSessionUserAccountInfoQuery = { sessionUser: { email: string | null, phoneNumber: string | null } | null };
+
 export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -179,6 +184,36 @@ useGetInvitationSummaryQuery.getKey = (variables: GetInvitationSummaryQueryVaria
 
 
 useGetInvitationSummaryQuery.fetcher = (variables: GetInvitationSummaryQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables, options);
+
+export const GetSessionUserAccountInfoDocument = new TypedDocumentString(`
+    query GetSessionUserAccountInfo {
+  sessionUser {
+    email
+    phoneNumber
+  }
+}
+    `);
+
+export const useGetSessionUserAccountInfoQuery = <
+      TData = GetSessionUserAccountInfoQuery,
+      TError = unknown
+    >(
+      variables?: GetSessionUserAccountInfoQueryVariables,
+      options?: Omit<UseQueryOptions<GetSessionUserAccountInfoQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSessionUserAccountInfoQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetSessionUserAccountInfoQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['GetSessionUserAccountInfo'] : ['GetSessionUserAccountInfo', variables],
+    queryFn: graphqlFetcher<GetSessionUserAccountInfoQuery, GetSessionUserAccountInfoQueryVariables>(GetSessionUserAccountInfoDocument, variables),
+    ...options
+  }
+    )};
+
+useGetSessionUserAccountInfoQuery.getKey = (variables?: GetSessionUserAccountInfoQueryVariables) => variables === undefined ? ['GetSessionUserAccountInfo'] : ['GetSessionUserAccountInfo', variables];
+
+
+useGetSessionUserAccountInfoQuery.fetcher = (variables?: GetSessionUserAccountInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetSessionUserAccountInfoQuery, GetSessionUserAccountInfoQueryVariables>(GetSessionUserAccountInfoDocument, variables, options);
 
 export const GetSessionUserManualPresenceStatusDocument = new TypedDocumentString(`
     query GetSessionUserManualPresenceStatus {

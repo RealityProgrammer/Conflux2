@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record UnpinMessageCommand(
-    Guid UserId, 
     Guid ConversationId, 
     Guid MessageId
 ) : ICommand<Result<TimelineMessageDto>>;
@@ -18,6 +17,7 @@ public sealed record UnpinMessageCommand(
 public sealed record MessageUnpinnedNotification(Guid ConversationId, Guid MessageId) : INotification;
 
 internal sealed class UnpinMessageHandler(
+    ICurrentUserService currentUserService,
     IConversationRepository conversationRepository,
     IMessageRepository messageRepository,
     IUserRepository userRepository,
@@ -28,6 +28,10 @@ internal sealed class UnpinMessageHandler(
     ILogger<UnpinMessageHandler> logger
 ) : ICommandHandler<UnpinMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(UnpinMessageCommand command, CancellationToken cancellationToken) {
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+        
         Guid conversationId = command.ConversationId;
         
         Message publishingMessage;
@@ -59,7 +63,7 @@ internal sealed class UnpinMessageHandler(
             }
 
             Message message = new() {
-                SenderUserId = command.UserId,
+                SenderUserId = userId,
                 Type = MessageType.Unpin,
                 ConversationId = command.ConversationId,
             };
@@ -85,7 +89,7 @@ internal sealed class UnpinMessageHandler(
         TimelineMessageDto messageDto = new(publishingMessage) {
             Sender = await userRepository
                 .AsQueryable()
-                .Where(s => s.Id == command.UserId)
+                .Where(s => s.Id == userId)
                 .SelectFacet<TimelineMessageSenderDto>()
                 .FirstOrDefaultAsync(CancellationToken.None),
         };

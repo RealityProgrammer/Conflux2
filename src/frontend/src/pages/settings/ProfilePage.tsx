@@ -31,7 +31,7 @@ export default function ProfilePage() {
   return (
     <>
       <h1 className="font-bold text-2xl">Profile</h1>
-      <p className="text-gray-400 text-sm">This is where you configure your profile, I have nothing else to say</p>
+      <p className="text-gray-400 text-sm">This is where you configure your profile, I have nothing else to say.</p>
 
       <Separator.Root className="horizontal-separator my-2"/>
 
@@ -77,6 +77,8 @@ function ProfileForm() {
     {},
     {
       enabled: !!auth.userProfile,
+      staleTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
     }
   );
 
@@ -414,7 +416,7 @@ function FormButtons() {
 
       <button
         type="submit"
-        className="button-theme-primary w-32 py-2 cursor-pointer rounded-md flex flex-row justify-center items-center"
+        className="button-theme-primary w-32 py-2 button-cursor rounded-md flex flex-row justify-center items-center"
         disabled={isSubmitting}
       >
         {isSubmitting ? (

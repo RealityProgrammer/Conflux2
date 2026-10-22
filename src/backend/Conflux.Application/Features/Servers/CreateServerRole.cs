@@ -10,7 +10,6 @@ using Npgsql;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record CreateServerRoleCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     string Name
 ) : ICommand<Result<ServerRoleDto>>, IServerCommand {
@@ -23,15 +22,18 @@ public sealed record ServerRoleCreatedNotification(
 ) : INotification;
 
 public sealed class CreateServerRoleHandler(
+    ICurrentUserService currentUserService,
     ICommunityServerRoleRepository repository,
     IUnitOfWork unitOfWork,
     IMediator mediator
 ) : ICommandHandler<CreateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(CreateServerRoleCommand command, CancellationToken cancellationToken) {
+        Guid userId = currentUserService.UserId!.Value;
+        
         CommunityServerRole role = new() {
             CommunityServerId = command.ServerId,
             Name = command.Name,
-            CreatorUserId = command.ExecutorUserId,
+            CreatorUserId = userId,
             AuthorizeLevel = 1,
         };
 

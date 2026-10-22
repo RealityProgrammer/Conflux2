@@ -7,15 +7,22 @@ internal sealed class GhostConnectionCleanupWorker(
     ILogger<GhostConnectionCleanupWorker> logger
 ) : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        while (!stoppingToken.IsCancellationRequested) {
-            try {
-                await connectionTracker.PruneConnections();
-            } catch (Exception ex) {
-                logger.LogError(ex, "Error occurred while sweeping ghost connections.");
-            }
+        logger.LogInformation("Started.");
+        
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
 
-            // Run this check every 60 seconds
-            await Task.Delay(TimeSpan.FromSeconds(60), stoppingToken);
+        try {
+            while (await timer.WaitForNextTickAsync(stoppingToken)) {
+                try {
+                    await connectionTracker.PruneConnections();
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception e) {
+                    logger.LogError(e, "Exception thrown while cleaning ghost connections.");
+                }
+            }
+        } catch (OperationCanceledException) {
+            logger.LogInformation("Stopping...");
         }
     }
 }

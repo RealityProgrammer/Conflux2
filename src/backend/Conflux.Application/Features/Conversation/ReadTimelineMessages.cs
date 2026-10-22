@@ -1,19 +1,18 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record ReadTimelineMessagesQuery(
-    Guid ReaderUserId,
     Guid ConversationId,
     MessageReadStrategy ReadStrategy,
     int Count
 ) : IQuery<Result<TimelineMessagePage>>;
 
 public sealed class ReadTimelineMessagesHandler(
+    ICurrentUserService currentUserService,
     IMessageRepository messageRepository,
     IConversationAuthorizeService conversationAuthorizeService
 ) : IQueryHandler<ReadTimelineMessagesQuery, Result<TimelineMessagePage>> {
@@ -21,7 +20,11 @@ public sealed class ReadTimelineMessagesHandler(
         ReadTimelineMessagesQuery query, 
         CancellationToken cancellationToken
     ) {
-        if (!await conversationAuthorizeService.CanReadMessage(query.ReaderUserId, query.ConversationId, cancellationToken)) {
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+        
+        if (!await conversationAuthorizeService.CanReadMessage(userId, query.ConversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to read message in this conversation.");
         }
         

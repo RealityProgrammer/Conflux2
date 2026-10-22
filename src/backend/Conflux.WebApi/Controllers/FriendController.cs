@@ -18,19 +18,14 @@ public sealed class FriendController(
 ) : ControllerBase {
     [HttpPost("requests/{toUserId:guid}")]
     public async Task<ActionResult<ApiResponse<UserRelationshipStatus>>> SendFriendRequest(Guid toUserId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await mediator.Send(new SendFriendRequestCommand(userId, toUserId));
+        var result = await mediator.Send(new SendFriendRequestCommand(toUserId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<UserRelationshipStatus>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) => Conflict(new ApiResponse(result.Error)),
             nameof(Errors.DisallowSelfAction) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
@@ -39,19 +34,14 @@ public sealed class FriendController(
 
     [HttpPost("requests/{toUserId:guid}/cancel")]
     public async Task<ActionResult<ApiResponse>> CancelFriendRequest([FromRoute] Guid toUserId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await mediator.Send(new CancelFriendRequestCommand(userId, toUserId));
+        Result result = await mediator.Send(new CancelFriendRequestCommand(toUserId));
 
         if (result.IsSuccess) {
             return Ok();
         }
 
         return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) or nameof(Errors.FriendRequestRejected) => Conflict(new ApiResponse(result.Error)),
@@ -61,19 +51,14 @@ public sealed class FriendController(
     
     [HttpPost("requests/{senderUserId:guid}/reject")]
     public async Task<ActionResult<ApiResponse>> RejectFriendRequest([FromRoute] Guid senderUserId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await mediator.Send(new RejectFriendRequestCommand(userId, senderUserId));
+        Result result = await mediator.Send(new RejectFriendRequestCommand(senderUserId));
 
         if (result.IsSuccess) {
             return Ok();
         }
 
         return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.AlreadyFriended) or nameof(Errors.FriendRequestCanceled) => Conflict(new ApiResponse(result.Error)),
@@ -83,19 +68,14 @@ public sealed class FriendController(
     
     [HttpPost("requests/{senderUserId:guid}/accept")]
     public async Task<ActionResult<ApiResponse>> AcceptFriendRequest([FromRoute] Guid senderUserId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await mediator.Send(new AcceptFriendRequestCommand(userId, senderUserId));
+        Result result = await mediator.Send(new AcceptFriendRequestCommand(senderUserId));
 
         if (result.IsSuccess) {
             return Ok();
         }
 
         return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.FriendRequestCanceled) or 
@@ -119,6 +99,7 @@ public sealed class FriendController(
         }
 
         return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             nameof(Errors.NotFriend) => Conflict(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
@@ -132,17 +113,18 @@ public sealed class FriendController(
         [FromQuery, Required] int offset,
         [FromQuery, Required] int count
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(null, Errors.InvalidIdentifier()));
-        }
-        
         offset = int.Max(offset, 0);
         count = int.Max(count, 1);
         
-        var result = await mediator.Send(new DiscoverFriendsQuery(userId, name, offset, count));
+        var result = await mediator.Send(new DiscoverFriendsQuery(name, offset, count));
 
-        return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result, Error.None));
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<PaginatedResult<DiscoverFriendSummary>>(result.Value!, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
 }

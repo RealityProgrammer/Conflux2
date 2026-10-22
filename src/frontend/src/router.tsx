@@ -10,31 +10,36 @@ import type {
   UserAuthorizationInfo,
   UserIdentityProfileDto,
 } from "./api/types.ts";
-import HomePage from "./pages/HomePage"
-import AuthenticatePage from "./pages/auth/AuthenticatePage.tsx";
-import AuthProvider from "./contexts/AuthContext.tsx";
-const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
-const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
-const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
-import LobbyLayout from "./pages/lobby/LobbyLayout.tsx";
-import {LobbyPage} from "./pages/lobby/LobbyPage.tsx";
-import DirectMessagePage from "./pages/lobby/DirectMessagePage.tsx";
-import SystemAnnouncementPage from "./pages/lobby/SystemAnnouncementPage.tsx";
-import FriendsPage from "./pages/lobby/FriendsPage.tsx";
-import SignalRProvider from "./contexts/SignalRContext.tsx";
-import UserLobbyLayout from "./pages/lobby/UserLobbyLayout.tsx";
-import ServerLayout from "./pages/server/ServerLayout.tsx";
-import ChannelPage from "./pages/server/ChannelPage.tsx";
-import SuspenseFallback from "./pages/SuspenseFallback.tsx";
-import {Slide, ToastContainer} from "react-toastify";
-import PresenceProvider from "./contexts/PresenceContext.tsx";
-import SettingsLayout from "./pages/settings/SettingsLayout.tsx";
-import ProfilePage from "./pages/settings/ProfilePage.tsx";
 import CallOverlay from "./components/call/CallOverlay.tsx";
 import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import {directConversationService} from "./api/directConversationService.ts";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
 import {Tooltip} from "radix-ui";
+import {Slide, ToastContainer} from "react-toastify";
+import SuspenseFallback from "./pages/SuspenseFallback.tsx";
+
+import HomePage from "./pages/HomePage"
+const AuthenticatePage = lazy(() => import("./pages/auth/AuthenticatePage.tsx"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
+import AuthProvider from "./contexts/AuthContext.tsx";
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
+const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
+const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
+const LobbyLayout = lazy(() => import("./pages/lobby/LobbyLayout.tsx"));
+const LobbyPage = lazy(() => import("./pages/lobby/LobbyPage.tsx"));
+const DirectMessagePage = lazy(() => import("./pages/lobby/DirectMessagePage.tsx"));
+const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
+const FriendsPage = lazy(() => import("./pages/lobby/FriendsPage.tsx"));
+const SignalRProvider = lazy(() => import("./contexts/SignalRContext.tsx"));
+const UserLobbyLayout = lazy(() => import("./pages/lobby/UserLobbyLayout.tsx"));
+const ServerLayout = lazy(() => import("./pages/server/ServerLayout.tsx"));
+const ChannelPage = lazy(() => import("./pages/server/ChannelPage.tsx"));
+const PresenceProvider = lazy(() => import("./contexts/PresenceContext.tsx"));
+const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout.tsx"));
+const ProfilePage = lazy(() => import("./pages/settings/ProfilePage.tsx"));
+const AccountPage = lazy(() => import("./pages/settings/AccountPage.tsx"));
+const DeleteAccountPage = lazy(() => import("./pages/settings/DeleteAccountPage.tsx"));
+const ImpendingDoomPage = lazy(() => import("./pages/ImpendingDoomPage.tsx"));
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type RootLoaderProps = {
@@ -53,12 +58,9 @@ export const router = createBrowserRouter([
     path: "/",
     loader: async (): Promise<RootLoaderProps | null> => {
       const authResponse: ServiceResponse<UserAuthorizationInfo> = await authService.getAuthorizationInfo();
-
-      if (!authResponse.success) {
-        return null;
-      }
+      if (!authResponse.success || !authResponse.data) return null;
       
-      const authInfo: UserAuthorizationInfo = authResponse.data!;
+      const authInfo: UserAuthorizationInfo = authResponse.data;
       let profileInfo: UserIdentityProfileDto | null = null;
 
       if (authInfo?.id) {
@@ -73,17 +75,26 @@ export const router = createBrowserRouter([
         }
       }
 
-      return {
-        authorizationInfo: authInfo,
-        userProfile: profileInfo!,
-      };
+      return { authorizationInfo: authInfo,  userProfile: profileInfo! };
     },
     element: (
-      <Tooltip.Provider delayDuration={500}>
-        <AuthProvider>
-          <Outlet/>
-        </AuthProvider>
-      </Tooltip.Provider>
+      <>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          newestOnTop
+          draggable="touch"
+          pauseOnHover
+          theme="dark"
+          transition={Slide}
+        />
+        
+        <Tooltip.Provider delayDuration={500}>
+          <AuthProvider>
+            <Outlet/>
+          </AuthProvider>
+        </Tooltip.Provider>
+      </>
     ),
     children: [
       {
@@ -95,21 +106,12 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
+            loader: requireGuest,
             element: <AuthenticatePage/>,
-            // action: authAction,
-            loader: async () => {
-              const response = await authService.getAuthorizationInfo();
-
-              if (response.statusCode === HttpStatusCode.Ok && response.data) {
-                return redirect('/lobby/me');
-              }
-
-              return null;
-            },
           },
           {
             path: "verify-email",
-            loader: restrictConfirmedUser,
+            loader: requireUnverified,
             element:
               <Suspense fallback={<SuspenseFallback/>}>
                 <VerifyEmailPage/>
@@ -117,24 +119,24 @@ export const router = createBrowserRouter([
           },
           {
             path: "confirm-email",
-            loader: restrictConfirmedUser,
+            loader: requireUnverified,
             element:
               <Suspense fallback={<SuspenseFallback/>}>
                 <ConfirmEmailPage/>
               </Suspense>
+          },
+          {
+            path: "reset-password",
+            loader: requireGuest,
+            element: <ResetPasswordPage/>
           }
         ]
       },
       {
         path: "setup-profile",
         loader: async () => {
-          const response = await authService.getAuthorizationInfo();
-
-          if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
-            return redirect('/auth#login');
-          }
-
-          return response.data.isProfileSetup ? redirect('/') : null;
+          const auth = await requireAuth();
+          return auth.isProfileSetup ? redirect('/') : null;
         },
         element:
           <Suspense fallback={<SuspenseFallback/>}>
@@ -142,41 +144,21 @@ export const router = createBrowserRouter([
           </Suspense>
       },
       {
+        path: "impending-doom",
         loader: async () => {
-          const response = await authService.getAuthorizationInfo();
-
-          if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
-            return redirect('/auth#login');
-          }
-
-          const authorizationInfo: UserAuthorizationInfo = response.data;
-
-          if (!authorizationInfo.isVerified) {
-            return redirect("/auth/verify-email");
-          }
-
-          if (!authorizationInfo.isProfileSetup) {
-            return redirect("/setup-profile");
-          }
-
-          return null;
+          const auth = await requireAuth();
+          return auth.isPendingDelete ? null : redirect("/lobby");
         },
+        element: <ImpendingDoomPage/>
+      },
+      {
+        loader: appGuard,
         // only rerun the loader if the path has truly changed
         shouldRevalidate: ({currentUrl, nextUrl}) => {
           return currentUrl.pathname !== nextUrl.pathname;
         },
         element: (
           <>
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              newestOnTop
-              draggable="touch"
-              pauseOnHover
-              theme="dark"
-              transition={Slide}
-            />
-
             <SignalRProvider>
               <PresenceProvider>
                 <Outlet/>
@@ -282,6 +264,14 @@ export const router = createBrowserRouter([
                 element: <ProfilePage/>
               },
               {
+                path: "account",
+                element: <AccountPage/>
+              },
+              {
+                path: "delete-account",
+                element: <DeleteAccountPage/>
+              },
+              {
                 path: "*",
                 element: (
                   <div className="flex flex-row justify-center items-center size-full">
@@ -297,11 +287,51 @@ export const router = createBrowserRouter([
   }
 ]);
 
-async function restrictConfirmedUser() {
+// require user to be login, else send to login page
+async function requireAuth(): Promise<UserAuthorizationInfo> {
   const response = await authService.getAuthorizationInfo();
 
-  if (response.statusCode === HttpStatusCode.Ok && response.data && response.data.isVerified) {
-    return redirect('/');
+  if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
+    throw redirect('/auth#login');
+  }
+
+  return response.data;
+}
+
+// require user to be logged in, else, sends to lobby.
+async function requireGuest(): Promise<null> {
+  const response = await authService.getAuthorizationInfo();
+
+  if (response.statusCode === HttpStatusCode.Ok && response.data) {
+    throw redirect('/lobby/me');
+  }
+
+  return null;
+}
+
+async function appGuard(): Promise<UserAuthorizationInfo> {
+  const authInfo = await requireAuth();
+
+  if (!authInfo.isVerified) {
+    throw redirect('/auth/verify-email');
+  }
+
+  if (!authInfo.isProfileSetup) {
+    throw redirect('/setup-profile');
+  }
+  
+  if (authInfo.isPendingDelete) {
+    throw redirect("/impending-doom");
+  }
+
+  return authInfo;
+}
+
+async function requireUnverified() {
+  const response = await requireAuth();
+
+  if (response.isVerified) {
+    throw redirect('/');
   }
 
   return null;

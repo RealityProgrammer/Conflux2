@@ -10,11 +10,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record EndDirectCallCommand(Guid CallId, Guid EnderId) : ICommand<Result<TimelineMessageDto>>;
+public sealed record EndDirectCallCommand(
+    Guid CallId
+) : ICommand<Result<TimelineMessageDto>>;
 
 public sealed record CallEndedNotification(Guid CallId, Guid PeerId, Guid EnderId) : INotification;
 
 internal sealed class EndDirectCallHandler(
+    ICurrentUserService currentUserService,
     ICallingService callingService,
     IUserRepository userRepository,
     IDirectConversationProvider directConversationProvider,
@@ -24,7 +27,9 @@ internal sealed class EndDirectCallHandler(
     ILogger<EndDirectCallHandler> logger
 ) : ICommandHandler<EndDirectCallCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(EndDirectCallCommand command, CancellationToken cancellationToken) {
-        Guid enderId = command.EnderId;
+        if (currentUserService.UserId is not { } enderId) {
+            return Errors.InvalidIdentifier();
+        }
         
         Result<EndDirectCallResult> result = await callingService.EndDirectCall(command.CallId, enderId);
         if (!result.IsSuccess) {
@@ -47,7 +52,7 @@ internal sealed class EndDirectCallHandler(
             Type = MessageType.CallEnd,
             Properties = new CallEndProperties(result.Value!.CallDuration),
             Conversation = conversation,
-            SenderUserId = command.EnderId,
+            SenderUserId = enderId,
         };
         
         conversation.Messages.Add(message);
@@ -63,7 +68,7 @@ internal sealed class EndDirectCallHandler(
             TimelineMessageDto messageDto = new(message) {
                 Sender = await userRepository
                     .AsQueryable()
-                    .Where(s => s.Id == command.EnderId)
+                    .Where(s => s.Id == enderId)
                     .SelectFacet<TimelineMessageSenderDto>()
                     .FirstOrDefaultAsync(CancellationToken.None),
             };

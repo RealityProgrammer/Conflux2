@@ -5,11 +5,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Conversation;
 
-public sealed record DeleteMessageCommand(Guid ConversationId, Guid RequesterUserId, Guid MessageId) : ICommand<Result>;
+public sealed record DeleteMessageCommand(
+    Guid ConversationId, 
+    Guid MessageId
+) : ICommand<Result>;
 
 public sealed record MessageDeletedNotification(Guid ConversationId, Guid MessageId) : INotification;
 
 public sealed class DeleteMessageHandler(
+    ICurrentUserService currentUserService,
     IMessageRepository messageRepository,
     IConversationAuthorizeService conversationAuthorizeService,
     TimeProvider timeProvider,
@@ -17,21 +21,28 @@ public sealed class DeleteMessageHandler(
     ILogger<DeleteMessageHandler> logger
 ) : ICommandHandler<DeleteMessageCommand, Result> {
     public async ValueTask<Result> Handle(DeleteMessageCommand command, CancellationToken cancellationToken) {
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+
+        Guid messageId = command.MessageId;
+        Guid conversationId = command.ConversationId;
+        
         var messageInfo = await messageRepository
             .AsQueryable()
-            .Where(m => m.Id == command.MessageId && m.ConversationId == command.ConversationId)
+            .Where(m => m.Id == messageId && m.ConversationId == conversationId)
             .Select(m => new { m.Id, m.ConversationId, m.SenderUserId, m.DeletedAt })
             .FirstOrDefaultAsync(cancellationToken);
         
-        if (messageInfo == null || messageInfo.ConversationId != command.ConversationId) {
+        if (messageInfo == null) {
             return Errors.ResourceNotFound("Message");
         }
         
-        if (!await conversationAuthorizeService.CanDeleteMessage(command.RequesterUserId, messageInfo.ConversationId, cancellationToken)) {
+        if (!await conversationAuthorizeService.CanDeleteMessage(userId, conversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to delete message in this conversation.");
         }
         
-        if (messageInfo.SenderUserId != command.RequesterUserId) {
+        if (messageInfo.SenderUserId != userId) {
             return Errors.Forbidden("User is not allowed to delete other user message.");
         }
         
@@ -42,7 +53,7 @@ public sealed class DeleteMessageHandler(
         try {
             int changed = await messageRepository
                 .AsQueryable()
-                .Where(m => m.Id == command.MessageId)
+                .Where(m => m.Id == messageId)
                 .ExecuteUpdateAsync(builder => {
                     builder.SetProperty(m => m.DeletedAt, timeProvider.GetUtcNow());
                 }, cancellationToken);
@@ -57,7 +68,7 @@ public sealed class DeleteMessageHandler(
             return Errors.UnexpectedError();
         }
 
-        await publisher.Publish(new MessageDeletedNotification(command.ConversationId, messageInfo.Id), CancellationToken.None);
+        await publisher.Publish(new MessageDeletedNotification(conversationId, messageInfo.Id), CancellationToken.None);
         
         return Result.Success();
     }

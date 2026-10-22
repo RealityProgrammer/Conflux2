@@ -229,8 +229,6 @@ type Mutation @authorize @authorize {
   updateCommunityServerMemberRoles(
     input: UpdateCommunityServerMemberRolesInput!
   ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
-  leaveCommunityServer(input: LeaveCommunityServerInput!): LeaveCommunityServerPayload!
-    @cost(weight: "10")
   kickCommunityServerMember(input: KickCommunityServerMemberInput!): KickCommunityServerMemberPayload!
     @cost(weight: "10")
   banCommunityServerMember(input: BanCommunityServerMemberInput!): BanCommunityServerMemberPayload!
@@ -253,6 +251,8 @@ type ApplicationUser {
   pronouns: String
   createdAt: DateTime!
   lastSeenAt: DateTime!
+  email: String @cost(weight: "10")
+  phoneNumber: String @cost(weight: "10")
   manualPresenceStatus: PresenceStatus @cost(weight: "10")
   effectivePresenceStatus: PresenceStatus! @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
@@ -264,7 +264,7 @@ type BanCommunityServerMemberPayload {
 
 type Channel {
   id: UUID!
-  name: String
+  name: String!
   createdAt: DateTime!
   conversation: Conversation!
   conversationId: UUID!
@@ -456,10 +456,6 @@ type KickCommunityServerMemberPayload {
   memberId: UUID!
 }
 
-type LeaveCommunityServerPayload {
-  serverId: UUID!
-}
-
 type MediaItem {
   id: UUID!
   version: Int!
@@ -611,12 +607,14 @@ input ApplicationUserFilterInput {
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
   createdAt: DateTimeOperationFilterInput
+  deletedAt: DateTimeOperationFilterInput
   manualPresenceStatus: PresenceStatusOperationFilterInput
   lastSeenAt: DateTimeOperationFilterInput
   sentFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   receivedFriendRequests: ListFilterInputTypeOfFriendRequestFilterInput
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
   conversationParticipants: ListFilterInputTypeOfConversationParticipantFilterInput
+  accountDeletions: ListFilterInputTypeOfUserAccountDeletionFilterInput
   id: UuidOperationFilterInput
   userName: StringOperationFilterInput
   normalizedUserName: StringOperationFilterInput
@@ -644,6 +642,7 @@ input ApplicationUserSortInput {
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
+  deletedAt: SortEnumType @cost(weight: "10")
   manualPresenceStatus: SortEnumType @cost(weight: "10")
   lastSeenAt: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")
@@ -955,10 +954,6 @@ input KickCommunityServerMemberInput {
   reason: String
 }
 
-input LeaveCommunityServerInput {
-  serverId: UUID!
-}
-
 input ListFilterInputTypeOfChannelCategoryFilterInput {
   all: ChannelCategoryFilterInput @cost(weight: "10")
   none: ChannelCategoryFilterInput @cost(weight: "10")
@@ -1040,6 +1035,13 @@ input ListFilterInputTypeOfServerModerationLogFilterInput {
   all: ServerModerationLogFilterInput @cost(weight: "10")
   none: ServerModerationLogFilterInput @cost(weight: "10")
   some: ServerModerationLogFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfUserAccountDeletionFilterInput {
+  all: UserAccountDeletionFilterInput @cost(weight: "10")
+  none: UserAccountDeletionFilterInput @cost(weight: "10")
+  some: UserAccountDeletionFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 
@@ -1269,6 +1271,34 @@ input UpdateManualPresenceStatusInput {
   status: PresenceStatus!
 }
 
+input UserAccountDeleteReasonOperationFilterInput {
+  eq: UserAccountDeleteReason @cost(weight: "10")
+  neq: UserAccountDeleteReason @cost(weight: "10")
+  in: [UserAccountDeleteReason!] @cost(weight: "10")
+  nin: [UserAccountDeleteReason!] @cost(weight: "10")
+}
+
+input UserAccountDeleteStatusOperationFilterInput {
+  eq: UserAccountDeleteStatus @cost(weight: "10")
+  neq: UserAccountDeleteStatus @cost(weight: "10")
+  in: [UserAccountDeleteStatus!] @cost(weight: "10")
+  nin: [UserAccountDeleteStatus!] @cost(weight: "10")
+}
+
+input UserAccountDeletionFilterInput {
+  and: [UserAccountDeletionFilterInput!]
+  or: [UserAccountDeletionFilterInput!]
+  id: UuidOperationFilterInput
+  reason: UserAccountDeleteReasonOperationFilterInput
+  status: UserAccountDeleteStatusOperationFilterInput
+  extraMessage: StringOperationFilterInput
+  userId: UuidOperationFilterInput
+  user: ApplicationUserFilterInput
+  restorationPasswordHash: StringOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  appliedAt: DateTimeOperationFilterInput
+}
+
 input UuidOperationFilterInput {
   eq: UUID @cost(weight: "10")
   neq: UUID @cost(weight: "10")
@@ -1398,6 +1428,19 @@ enum SpecialRoleType {
   None
   Default
   Owner
+}
+
+enum UserAccountDeleteReason {
+  PrivacyConcern
+  AnotherAccount
+  Bugs
+  Other
+}
+
+enum UserAccountDeleteStatus {
+  Pending
+  Canceled
+  Deleted
 }
 
 "The `DateTime` scalar type represents a date and time with time zone offset information."

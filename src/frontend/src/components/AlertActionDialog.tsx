@@ -1,4 +1,4 @@
-import {AlertDialog as RadixAlertDialog, Dialog as RadixDialog} from "radix-ui";
+import {AlertDialog as RadixAlertDialog} from "radix-ui";
 import type {ReactNode} from "react";
 import IconButton from "./IconButton.tsx";
 import {FaXmark} from "react-icons/fa6";
@@ -33,9 +33,9 @@ export default function AlertDialog({
   return (
     <RadixAlertDialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger && (
-        <RadixDialog.Trigger asChild>
+        <RadixAlertDialog.Trigger asChild>
           {trigger}
-        </RadixDialog.Trigger>
+        </RadixAlertDialog.Trigger>
       )}
       
       <RadixAlertDialog.Portal>

@@ -16,4 +16,6 @@ public interface IUserRepository : IRepository<ApplicationUser> {
     );
 
     Task<Result<PresenceStatus>> GetManualPresenceStatus(Guid userId, CancellationToken cancellationToken = default);
+    
+    Task<int> AnonymizeUsers(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken = default);
 }

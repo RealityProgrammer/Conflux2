@@ -1,8 +1,8 @@
 import type {
+  AccountDeletionStatusDto,
   BackendResponse,
-  PaginatedResult, PendingFriendRequestDto,
-  ServiceResponse, UpdateProfileResult,
-  UserIdentityProfileDto
+  ServiceResponse,
+  UpdateProfileResult,
 } from "./types.ts";
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
 import {apiClient} from "./client.ts";
@@ -80,31 +80,6 @@ export const sessionUserService = {
     }
   },
 
-  queryFriends: async (name: string | null, offset: number, count: number): Promise<ServiceResponse<PaginatedResult<UserIdentityProfileDto>>> => {
-    try {
-      const searchParams = new URLSearchParams();
-
-      if (name) {
-        searchParams.append("name", name);
-      }
-
-      searchParams.append("offset", String(offset));
-      searchParams.append("count", String(count));
-
-      const response: AxiosResponse<BackendResponse<PaginatedResult<UserIdentityProfileDto>>> =
-        await apiClient.get<BackendResponse<PaginatedResult<UserIdentityProfileDto>>>(`users/me/friends?${searchParams.toString()}`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
   updateProfile: async (
     displayName?: string,
     pronouns?: string | null,
@@ -164,5 +139,20 @@ export const sessionUserService = {
       const axiosError = error as AxiosError<BackendResponse<UpdateProfileResult>>;
       return handleAxiosError(axiosError);
     }
-  }
+  },
+  
+  getAccountDeletionStatus: async (): Promise<ServiceResponse<AccountDeletionStatusDto>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<AccountDeletionStatusDto>> = await apiClient.get("/users/me/deletion");
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatusDto>>;
+      return handleAxiosError(axiosError);
+    }
+  },
 }

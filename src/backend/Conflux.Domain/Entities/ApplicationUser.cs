@@ -18,6 +18,7 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     [MaxLength(32)] public string? Pronouns { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
     
     // manual != current
     public PresenceStatus ManualPresenceStatus { get; set; } = PresenceStatus.Online;
@@ -27,4 +28,5 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
     public virtual ICollection<FriendRequest> ReceivedFriendRequests { get; set; } = [];
     public virtual ICollection<CommunityServerMember> JoinedCommunityServers { get; set; } = [];
     public virtual ICollection<ConversationParticipant> ConversationParticipants { get; set; } = [];
+    public virtual ICollection<UserAccountDeletion> AccountDeletions { get; set; } = [];
 }

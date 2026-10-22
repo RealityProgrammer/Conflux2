@@ -1,22 +1,28 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Friends;
 
-public sealed record AcceptFriendRequestCommand(Guid AcceptorUserId, Guid SenderUserId) : ICommand<Result>;
+public sealed record AcceptFriendRequestCommand(
+    Guid SenderUserId
+) : ICommand<Result>;
 
 public sealed record FriendRequestAcceptedNotification(Guid AcceptorUserId, Guid SenderUserId) : INotification;
 
 public sealed class AcceptFriendRequestHandler(
+    ICurrentUserService currentUserService,
     IFriendRequestRepository friendRequestRepository,
     IMediator mediator,
     TimeProvider timeProvider
 ) : ICommandHandler<AcceptFriendRequestCommand, Result> {
     public async ValueTask<Result> Handle(AcceptFriendRequestCommand request, CancellationToken cancellationToken) {
-        var senderUserId = request.SenderUserId;
-        var acceptorUserId = request.AcceptorUserId;
+        if (currentUserService.UserId is not { } acceptorUserId) {
+            return Errors.InvalidIdentifier();
+        }
         
+        var senderUserId = request.SenderUserId;
         var requestSummary = await friendRequestRepository.GetRequestSummary(senderUserId, acceptorUserId);
         
         if (requestSummary == null) {

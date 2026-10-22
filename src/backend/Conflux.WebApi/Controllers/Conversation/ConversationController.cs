@@ -28,12 +28,6 @@ public sealed class ConversationController(
         [FromForm] SendMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
         if (request.Body.AsSpan().Trim().IsEmpty && request.Attachments is not { Length: > 0 }) {
             return BadRequest(new ApiResponse(Errors.EmptyMessageContent()));
         }
@@ -62,7 +56,6 @@ public sealed class ConversationController(
 
         try {
             var result = await mediator.Send(new SendMessageCommand(
-                userId, 
                 conversationId, 
                 request.Body, 
                 attachments, 
@@ -74,6 +67,8 @@ public sealed class ConversationController(
             }
         
             return result.Error.Code switch {
+                nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+                nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
                 nameof(Errors.Forbidden) => NotFound(new ApiResponse(Errors.ResourceNotFound("Conversation"))),
                 nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
                 nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(result.Error)),
@@ -93,19 +88,15 @@ public sealed class ConversationController(
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await mediator.Send(new EditMessageCommand(conversationId, userId, messageId, request.Body), cancellationToken);
+        var result = await mediator.Send(new EditMessageCommand(conversationId, messageId, request.Body), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse(Error.None));
         }
 
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
@@ -114,19 +105,15 @@ public sealed class ConversationController(
 
     [HttpDelete("{conversationId:guid}/messages/{messageId:guid}")]
     public async Task<ActionResult> DeleteMessage(Guid conversationId, Guid messageId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        Result result = await mediator.Send(new DeleteMessageCommand(conversationId, userId, messageId));
+        Result result = await mediator.Send(new DeleteMessageCommand(conversationId, messageId));
 
         if (result.IsSuccess) {
             return NoContent();
         }
         
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
@@ -139,21 +126,18 @@ public sealed class ConversationController(
         [FromBody] ReadMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
-        var result = await mediator.Send(new ReadTimelineMessagesQuery(
-            userId, conversationId, request.ReadStrategy, 50
-        ), cancellationToken);
+        var result = await mediator.Send(
+            new ReadTimelineMessagesQuery(conversationId, request.ReadStrategy, 50), 
+            cancellationToken
+        );
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessagePage>(result.Value, Error.None));
         }
 
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<TimelineMessagePage>(null, result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<TimelineMessagePage>(null, result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessagePage>(null, result.Error)),
@@ -166,19 +150,15 @@ public sealed class ConversationController(
         Guid conversationId,
         Guid messageId
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await mediator.Send(new PinMessageCommand(userId, conversationId, messageId));
+        var result = await mediator.Send(new PinMessageCommand(conversationId, messageId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
@@ -191,19 +171,15 @@ public sealed class ConversationController(
         Guid conversationId,
         Guid messageId
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await mediator.Send(new UnpinMessageCommand(userId, conversationId, messageId));
+        var result = await mediator.Send(new UnpinMessageCommand(conversationId, messageId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
         
         return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),

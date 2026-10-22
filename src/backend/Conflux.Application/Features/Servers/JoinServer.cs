@@ -9,11 +9,12 @@ using Npgsql;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record JoinServerCommand(Guid UserId, string InvitationId) : ICommand<Result>;
+public sealed record JoinServerCommand(string InvitationId) : ICommand<Result>;
 
 public sealed record ServerJoinedNotification(Guid UserId, Guid ServerId) : INotification;
 
 public sealed class JoinServerHandler(
+    ICurrentUserService currentUserService,
     IInvitationRepository invitationRepository,
     IServerMemberWriteRepository memberWriteRepository,
     IServerMemberReadRepository memberReadRepository,
@@ -25,7 +26,9 @@ public sealed class JoinServerHandler(
     private const int MaxRetries = 5;
     
     public async ValueTask<Result> Handle(JoinServerCommand command, CancellationToken cancellationToken) {
-        Guid userId = command.UserId;
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
         
         for (int attempt = 0; attempt < MaxRetries; attempt++) {
             await unitOfWork.BeginTransactionAsync(cancellationToken);

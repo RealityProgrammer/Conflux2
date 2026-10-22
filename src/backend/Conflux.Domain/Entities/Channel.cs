@@ -7,7 +7,7 @@ public class Channel : IHasCreatedAt {
     
     public ChannelType Type { get; set; }
 
-    public string? Name { get; set; }
+    public string Name { get; set; } = null!;
     
     public Guid ConversationId { get; set; }
     public Conversation Conversation { get; set; } = null!;

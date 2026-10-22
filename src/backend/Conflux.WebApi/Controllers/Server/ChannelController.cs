@@ -41,14 +41,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
         Guid serverId,
         [FromBody] CreateChannelRequest request
     ) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-
         var result = await sender.Send(new CreateServerChannelCommand(
-            userId, 
             serverId, 
             request.Name, 
             request.Type, 
@@ -68,13 +61,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
     
     [HttpDelete("{channelId:guid}")]
     public async Task<ActionResult> DeleteChannel(Guid serverId, Guid channelId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await sender.Send(new DeleteServerChannelCommand(userId, serverId, channelId));
+        var result = await sender.Send(new DeleteServerChannelCommand(serverId, channelId));
         
         if (result.IsSuccess) {
             return NoContent();

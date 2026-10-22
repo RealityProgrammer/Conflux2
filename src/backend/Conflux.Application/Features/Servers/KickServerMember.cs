@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record KickServerMemberCommand(
-    Guid ExecutorUserId, 
     Guid ServerId, 
     Guid InteractingMemberId,
     string? Reason
@@ -44,6 +43,7 @@ public sealed record ServerMemberKickedNotification(
 ) : INotification;
 
 public sealed class KickServerMemberHandler(
+    ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
     IServerPermissionsCacheService permissionsCacheService,
     IServerModerationLogWriteRepository moderationLogWriteRepository,
@@ -52,24 +52,34 @@ public sealed class KickServerMemberHandler(
     ILogger<KickServerMemberHandler> logger
 ) : ICommandHandler<KickServerMemberCommand, Result> {
     public async ValueTask<Result> Handle(KickServerMemberCommand command, CancellationToken cancellationToken) {
+        Guid executorUserId = currentUserService.UserId!.Value;
+        Guid serverId = command.ServerId;
+        Guid interactingMemberId = command.InteractingMemberId;
+        
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
-            .Where(m => m.CommunityServerId == command.ServerId && m.UserId == command.ExecutorUserId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == executorUserId)
             .Select(m => m.Id)
             .Cast<Guid?>()
             .FirstOrDefault();
 
         if (!executorMemberId.HasValue) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, UserId = {command.ExecutorUserId})");
+            return Errors.ResourceNotFound("Server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), executorUserId.ToString()),
+            ]);
         }
         
         CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.InteractingMemberId)
+            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
-            return Errors.ResourceNotFound($"Community server member (CommunityServerId = {command.ServerId}, Id = {command.InteractingMemberId})");
+            return Errors.ResourceNotFound("Server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+            ]);
         }
 
         if (affectedMember.Status != MembershipStatus.Active) {
@@ -103,7 +113,7 @@ public sealed class KickServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Error occurred while kicking member.");
+            logger.LogError(e, "Exception thrown while kicking member.");
             return Errors.UnexpectedError();
         }
     }

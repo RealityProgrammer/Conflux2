@@ -10,7 +10,6 @@ using Npgsql;
 namespace Conflux.Application.Features.Servers;
 
 public sealed record CreateServerChannelCategoryCommand(
-    Guid ExecutorUserId,
     Guid ServerId,
     string Name
 ) : ICommand<Result<ChannelCategoryIdentityDto>>, IServerCommand {

@@ -16,7 +16,7 @@ internal sealed class EmailBackgroundWorker(
 
                 await mailService.SendHtmlEmailAsync(emailMessage.ToEmail, emailMessage.Subject, emailMessage.Body, stoppingToken);
             } catch (Exception ex) when (ex is not OperationCanceledException) {
-                logger.LogError(ex, "Error occurred while processing email queue.");
+                logger.LogError(ex, "Exception thrown while processing email queue.");
             }
         }
     }

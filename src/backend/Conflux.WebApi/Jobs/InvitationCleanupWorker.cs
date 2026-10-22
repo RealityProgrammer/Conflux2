@@ -14,7 +14,13 @@ internal sealed partial class InvitationCleanupWorker(
 
         try {
             while (await timer.WaitForNextTickAsync(stoppingToken)) {
-                await PerformCleanupAsync(stoppingToken);
+                try {
+                    await PerformCleanupAsync(stoppingToken);
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception e) {
+                    logger.LogError(e, "Exception thrown while cleaning up invitations.");
+                }
             }
         } catch (OperationCanceledException) {
             logger.LogInformation("Stopping...");
@@ -36,7 +42,7 @@ internal sealed partial class InvitationCleanupWorker(
             }
         } catch (Exception ex) {
             // Log the error but DO NOT throw, otherwise the entire BackgroundService will crash and stop running
-            logger.LogError(ex, "Error occurred while cleaning up invitations.");
+            logger.LogError(ex, "Exception thrown while cleaning up invitations.");
         }
     }
     

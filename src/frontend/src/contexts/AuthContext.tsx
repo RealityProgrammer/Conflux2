@@ -9,7 +9,9 @@ interface AuthContextType {
   userAuthorization: UserAuthorizationInfo | null;
   userProfile: UserIdentityProfileDto | null;
   updateUserProfile: (updates: Partial<UserIdentityProfileDto>) => void;
+  invalidateSession: () => void;
   logout: () => void;
+  logoutAll: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,10 +36,8 @@ export default function AuthProvider({children}: { children: ReactNode }) {
   const updateUserProfile = (updates: Partial<UserIdentityProfileDto>) => {
     setUserProfile((prev: UserIdentityProfileDto | null): UserIdentityProfileDto | null => (prev ? { ...prev, ...updates } : null));
   };
-
-  const logout = async (): Promise<void> => {
-    await authService.logout();
-
+  
+  const invalidateSession = async (): Promise<void> => {
     await revalidator.revalidate();
     queryClient.clear();
 
@@ -45,7 +45,17 @@ export default function AuthProvider({children}: { children: ReactNode }) {
       pathname: "/auth",
       hash: "login",
     });
-  }
+  };
+
+  const logout = async (): Promise<void> => {
+    await authService.logout();
+    await invalidateSession();
+  };
+  
+  const logoutAll = async (): Promise<void> => {
+    await authService.logoutAll();
+    await invalidateSession();
+  };
 
   return (
     <AuthContext.Provider value={{
@@ -53,6 +63,8 @@ export default function AuthProvider({children}: { children: ReactNode }) {
       userProfile: userProfile,
       updateUserProfile: updateUserProfile,
       logout,
+      logoutAll,
+      invalidateSession,
     }}>
       {children}
     </AuthContext.Provider>

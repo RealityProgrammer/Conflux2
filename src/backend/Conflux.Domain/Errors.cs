@@ -156,4 +156,25 @@ public static class Errors {
 
     public static Error MediaUploadError() =>
         new(nameof(MediaUploadError), "Media upload failed.");
+    
+    public static Error PendingAccountDeletionExists() =>
+        new(nameof(PendingAccountDeletionExists), "Account delete request already exists.");
+    
+    public static Error NoPendingAccountDeletion() =>
+        new(nameof(NoPendingAccountDeletion), "No pending account deletion.");
+
+    public static Error RequireActiveAccount() =>
+        new(nameof(RequireActiveAccount), "An active account is required.");
+    
+    public static Error StorageError(string message, string? details = null) =>
+        new(nameof(StorageError), message, details);
+    
+    public static Error AccountExpired() =>
+        new(nameof(AccountExpired), "Account expired.");
+    
+    public static Error InvalidSession() => 
+        new(nameof(InvalidSession), "Invalid session.");
+    
+    public static Error SessionNotFound(Guid sessionId) => 
+        new(nameof(SessionNotFound), $"Session {sessionId} was not found.");
 }

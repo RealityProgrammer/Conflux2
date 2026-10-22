@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record PinMessageCommand(
-    Guid UserId, 
     Guid ConversationId, 
     Guid MessageId
 ) : ICommand<Result<TimelineMessageDto>>;
@@ -18,6 +17,7 @@ public sealed record PinMessageCommand(
 public sealed record MessagePinnedNotification(Guid ConversationId, PinnedMessageDto Message) : INotification;
 
 internal sealed class PinMessageHandler(
+    ICurrentUserService currentUserService,
     IConversationRepository conversationRepository,
     IMessageRepository messageRepository,
     IUserRepository userRepository,
@@ -28,6 +28,10 @@ internal sealed class PinMessageHandler(
     IPublisher publisher
 ) : ICommandHandler<PinMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(PinMessageCommand command, CancellationToken cancellationToken) {
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+        
         Guid conversationId = command.ConversationId;
         
         Message publishingMessage;
@@ -63,7 +67,7 @@ internal sealed class PinMessageHandler(
             }
 
             Message message = new() {
-                SenderUserId = command.UserId,
+                SenderUserId = userId,
                 Type = MessageType.Pin,
                 Conversation = conversation,
             };
@@ -89,7 +93,7 @@ internal sealed class PinMessageHandler(
         TimelineMessageDto messageDto = new(publishingMessage) {
             Sender = await userRepository
                 .AsQueryable()
-                .Where(s => s.Id == command.UserId)
+                .Where(s => s.Id == userId)
                 .SelectFacet<TimelineMessageSenderDto>()
                 .FirstOrDefaultAsync(CancellationToken.None),
         };

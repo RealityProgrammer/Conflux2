@@ -18,4 +18,6 @@ public interface IUserMediaService {
     
     Task<AvatarMediaItemInfo?> GetAvatar(Guid userId, CancellationToken cancellationToken = default);
     Task<BannerMediaItemInfo?> GetBanner(Guid userId, CancellationToken cancellationToken = default);
+    
+    Task Purge(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken = default);
 }

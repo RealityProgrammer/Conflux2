@@ -27,16 +27,19 @@ export type ApplicationUser = {
   createdAt: Scalars['DateTime']['output'];
   displayName?: Maybe<Scalars['String']['output']>;
   effectivePresenceStatus: PresenceStatus;
+  email?: Maybe<Scalars['String']['output']>;
   id: Scalars['UUID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
   manualPresenceStatus?: Maybe<PresenceStatus>;
   numMutualFriends: Scalars['Int']['output'];
+  phoneNumber?: Maybe<Scalars['String']['output']>;
   pronouns?: Maybe<Scalars['String']['output']>;
   userName?: Maybe<Scalars['String']['output']>;
 };
 
 export type ApplicationUserFilterInput = {
   accessFailedCount?: InputMaybe<IntOperationFilterInput>;
+  accountDeletions?: InputMaybe<ListFilterInputTypeOfUserAccountDeletionFilterInput>;
   and?: InputMaybe<Array<ApplicationUserFilterInput>>;
   avatar?: InputMaybe<MediaItemFilterInput>;
   avatarId?: InputMaybe<UuidOperationFilterInput>;
@@ -46,6 +49,7 @@ export type ApplicationUserFilterInput = {
   concurrencyStamp?: InputMaybe<StringOperationFilterInput>;
   conversationParticipants?: InputMaybe<ListFilterInputTypeOfConversationParticipantFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  deletedAt?: InputMaybe<DateTimeOperationFilterInput>;
   displayName?: InputMaybe<StringOperationFilterInput>;
   email?: InputMaybe<StringOperationFilterInput>;
   emailConfirmed?: InputMaybe<BooleanOperationFilterInput>;
@@ -79,6 +83,7 @@ export type ApplicationUserSortInput = {
   biography?: InputMaybe<SortEnumType>;
   concurrencyStamp?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
+  deletedAt?: InputMaybe<SortEnumType>;
   displayName?: InputMaybe<SortEnumType>;
   email?: InputMaybe<SortEnumType>;
   emailConfirmed?: InputMaybe<SortEnumType>;
@@ -134,7 +139,7 @@ export type Channel = {
   conversationId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
 };
 
 export type ChannelCategory = {
@@ -644,15 +649,6 @@ export type KickCommunityServerMemberPayload = {
   memberId: Scalars['UUID']['output'];
 };
 
-export type LeaveCommunityServerInput = {
-  serverId: Scalars['UUID']['input'];
-};
-
-export type LeaveCommunityServerPayload = {
-  __typename?: 'LeaveCommunityServerPayload';
-  serverId: Scalars['UUID']['output'];
-};
-
 export type ListFilterInputTypeOfChannelCategoryFilterInput = {
   all?: InputMaybe<ChannelCategoryFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -735,6 +731,13 @@ export type ListFilterInputTypeOfServerModerationLogFilterInput = {
   any?: InputMaybe<Scalars['Boolean']['input']>;
   none?: InputMaybe<ServerModerationLogFilterInput>;
   some?: InputMaybe<ServerModerationLogFilterInput>;
+};
+
+export type ListFilterInputTypeOfUserAccountDeletionFilterInput = {
+  all?: InputMaybe<UserAccountDeletionFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<UserAccountDeletionFilterInput>;
+  some?: InputMaybe<UserAccountDeletionFilterInput>;
 };
 
 export type MediaItem = {
@@ -883,7 +886,6 @@ export type Mutation = {
   __typename?: 'Mutation';
   banCommunityServerMember: BanCommunityServerMemberPayload;
   kickCommunityServerMember: KickCommunityServerMemberPayload;
-  leaveCommunityServer: LeaveCommunityServerPayload;
   unbanCommunityServerMember: UnbanCommunityServerMemberPayload;
   updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
   updateManualPresenceStatus: UpdateManualPresenceStatusPayload;
@@ -898,11 +900,6 @@ export type MutationBanCommunityServerMemberArgs = {
 
 export type MutationKickCommunityServerMemberArgs = {
   input: KickCommunityServerMemberInput;
-};
-
-
-export type MutationLeaveCommunityServerArgs = {
-  input: LeaveCommunityServerInput;
 };
 
 
@@ -1390,6 +1387,47 @@ export type UpdateManualPresenceStatusInput = {
 export type UpdateManualPresenceStatusPayload = {
   __typename?: 'UpdateManualPresenceStatusPayload';
   userId: Scalars['UUID']['output'];
+};
+
+export enum UserAccountDeleteReason {
+  AnotherAccount = 'AnotherAccount',
+  Bugs = 'Bugs',
+  Other = 'Other',
+  PrivacyConcern = 'PrivacyConcern'
+}
+
+export type UserAccountDeleteReasonOperationFilterInput = {
+  eq?: InputMaybe<UserAccountDeleteReason>;
+  in?: InputMaybe<Array<UserAccountDeleteReason>>;
+  neq?: InputMaybe<UserAccountDeleteReason>;
+  nin?: InputMaybe<Array<UserAccountDeleteReason>>;
+};
+
+export enum UserAccountDeleteStatus {
+  Canceled = 'Canceled',
+  Deleted = 'Deleted',
+  Pending = 'Pending'
+}
+
+export type UserAccountDeleteStatusOperationFilterInput = {
+  eq?: InputMaybe<UserAccountDeleteStatus>;
+  in?: InputMaybe<Array<UserAccountDeleteStatus>>;
+  neq?: InputMaybe<UserAccountDeleteStatus>;
+  nin?: InputMaybe<Array<UserAccountDeleteStatus>>;
+};
+
+export type UserAccountDeletionFilterInput = {
+  and?: InputMaybe<Array<UserAccountDeletionFilterInput>>;
+  appliedAt?: InputMaybe<DateTimeOperationFilterInput>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  extraMessage?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<UserAccountDeletionFilterInput>>;
+  reason?: InputMaybe<UserAccountDeleteReasonOperationFilterInput>;
+  restorationPasswordHash?: InputMaybe<StringOperationFilterInput>;
+  status?: InputMaybe<UserAccountDeleteStatusOperationFilterInput>;
+  user?: InputMaybe<ApplicationUserFilterInput>;
+  userId?: InputMaybe<UuidOperationFilterInput>;
 };
 
 export type UuidOperationFilterInput = {

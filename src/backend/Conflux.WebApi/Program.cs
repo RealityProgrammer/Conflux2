@@ -25,6 +25,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using Conflux.Infrastructure.Repositories;
+using Conflux.Infrastructure.Services;
 using Conflux.WebApi;
 using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
@@ -59,7 +60,8 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.RateLimiting;
-using CallingService = Conflux.Application.Services.Implementations.CallingService;
+using UAParser.Extensions;
+using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
 
 DotNetEnv.Env.TraversePath().Load();
@@ -67,6 +69,9 @@ DotNetEnv.Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 bool isDevelopment = builder.Environment.IsDevelopment();
+
+// keys and stuffs
+builder.Configuration.AddKeyPerFile("/run/secrets", true);
 
 // options
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth"))
@@ -76,11 +81,10 @@ builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection("Auth")
     .Configure<MediaOptions>(builder.Configuration.GetSection("Media"))
     .Configure<S3Options>(builder.Configuration.GetSection("S3"));
 
-// keys and stuffs
-builder.Configuration.AddKeyPerFile("/run/secrets", true);
-
 // Authenticate & Authorization.
-builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>();
+builder.Services
+    .AddScoped<IPasswordHasher<ApplicationUser>, Argon2PasswordHasher<ApplicationUser>>()
+    .AddScoped<IPasswordHasher<object>, Argon2PasswordHasher<object>>();    // the irony that nobody need contextual hashing
 
 builder.Services
     .AddIdentityCore<ApplicationUser>(options => {
@@ -95,15 +99,20 @@ builder.Services
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => {
+    options.TokenLifespan = TimeSpan.FromMinutes(30);
+});
+
 var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
     options.TokenValidationParameters = new() {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at Jwt:Secret."))),
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"] ?? throw new InvalidOperationException("Missing configuration of JWT secret at JWT:Secret."))),
+        ClockSkew = TimeSpan.FromSeconds(30),
     };
 
     options.MapInboundClaims = false;
@@ -115,7 +124,20 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
             }
             
             return Task.CompletedTask;
-        }
+        },
+        
+        OnTokenValidated = async context => {
+            var sessionService = context.HttpContext.RequestServices.GetRequiredService<ISessionService>();
+            
+            if (!Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId) || !Guid.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sid), out Guid sessionId)) {
+                context.Fail("Invalid token claims.");
+                return;
+            }
+            
+            if (!await sessionService.IsSessionValid(userId, sessionId)) {
+                context.Fail("Session has been revoked or expired.");
+            }
+        },
     };
 });
 
@@ -224,6 +246,7 @@ builder.Services
     });
 
 // general services needed
+builder.Services.AddUserAgentParser();
 builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
     [
         new Png(),
@@ -248,6 +271,7 @@ builder.Services.AddMediator(options => {
     options.PipelineBehaviors = [
         typeof(ServerAuthorizationPipelineBehaviour<,>),
         typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
+        typeof(RequiresActiveAccountBehavior<,>),
         typeof(KickServerMemberValidationPipeline),
         typeof(WarnServerMemberValidationPipeline),
         typeof(BanServerMemberValidationPipeline),
@@ -269,10 +293,15 @@ builder.Services.AddSignalR()
 
 // Conflux services.
 builder.Services
+    .AddScoped<ICurrentUserService, CurrentUserService>()
+    .AddScoped<IAccountDeleteStatusCacheProvider, AccountDeleteStatusCacheProvider>()
+    .AddScoped<IAccountPurgingService, AccountPurgingService>()
+        
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
     
+    .AddSingleton<ISessionService, SessionService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
     
@@ -320,8 +349,11 @@ builder.Services
         (ServerModerationLogRepository)services.GetRequiredService<IServerModerationLogReadRepository>()
     )
     .AddScoped<ICallingService, CallingService>()
-
-    .Configure<AuthOptions>(builder.Configuration.GetSection("Services:Auth"));
+    
+    .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
+    .AddScoped<IUserAccountDeletionWriteRepository>(services => 
+        (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
+    );
 
 // blob service.
 builder.Services.AddSingleton<IAmazonS3>((services) => {
@@ -595,7 +627,9 @@ builder.Services
     .AddHostedService<InvitationCleanupWorker>()
     .AddHostedService<GhostConnectionCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
-    .AddHostedService<EmailBackgroundWorker>();
+    .AddHostedService<EmailBackgroundWorker>()
+    .AddHostedService<SessionCleanupWorker>()
+    .AddHostedService<PurgePendingDeleteAccountsWorker>();
 
 var app = builder.Build();
 
@@ -622,7 +656,7 @@ if (app.Environment.IsDevelopment()) {
         
         await DatabaseSeedHelper.SeedUserAsync(userManager, dbContext, logger);
     } catch (Exception e) {
-        logger.LogError(e, "An error occurred while seeding the database.");
+        logger.LogError(e, "Exception thrown while seeding the database.");
     }
 }
 
