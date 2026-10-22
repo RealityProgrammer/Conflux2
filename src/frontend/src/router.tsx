@@ -111,7 +111,6 @@ export const router = createBrowserRouter([
           },
           {
             path: "verify-email",
-            loader: requireUnverified,
             element:
               <Suspense fallback={<SuspenseFallback/>}>
                 <VerifyEmailPage/>
@@ -119,7 +118,6 @@ export const router = createBrowserRouter([
           },
           {
             path: "confirm-email",
-            loader: requireUnverified,
             element:
               <Suspense fallback={<SuspenseFallback/>}>
                 <ConfirmEmailPage/>
@@ -325,14 +323,4 @@ async function appGuard(): Promise<UserAuthorizationInfo> {
   }
 
   return authInfo;
-}
-
-async function requireUnverified() {
-  const response = await requireAuth();
-
-  if (response.isVerified) {
-    throw redirect('/');
-  }
-
-  return null;
 }
