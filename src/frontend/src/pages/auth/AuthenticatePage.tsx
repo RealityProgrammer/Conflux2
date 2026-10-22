@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, type MouseEvent, type MouseEventHandler} from "react";
+import {useEffect, useRef, useState, type MouseEvent} from "react";
 import {animate, JSAnimation, random} from "animejs";
 import {useLocation, useNavigate, useRevalidator} from "react-router";
 import {authService} from "../../api/authService.ts";

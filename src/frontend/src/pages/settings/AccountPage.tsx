@@ -6,7 +6,6 @@ import {
   BsEyeSlash,
   BsKeyFill
 } from "react-icons/bs";
-import { Dialog as RadixDialog } from "radix-ui";
 import DateTimeText from "../../components/DateTimeText.tsx";
 import useSessionsQuery from "../../hooks/useSessionsQuery.ts";
 import Spinner from "../../components/Spinner.tsx";
@@ -20,10 +19,8 @@ import Container from "../../components/Container.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {useGetSessionUserAccountInfoQuery} from "../../graphql/queries.ts";
 import {masker} from "../../utils/masker.ts";
-import Dialog from "../../components/Dialog.tsx";
-import AlertDialog from "../../components/AlertActionDialog.tsx";
 import {z} from "zod";
-import {type FieldError, useForm} from "react-hook-form";
+import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
 import ModalForm from "../../components/ModalForm.tsx";

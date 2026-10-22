@@ -9,7 +9,7 @@ import ErrorText from "../../components/ErrorText.tsx";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {authService} from "../../api/authService.ts";
-import {useNavigate, useParams, useSearchParams} from "react-router";
+import {useNavigate, useSearchParams} from "react-router";
 import {toast} from "react-toastify";
 
 const resetPasswordSchema = z.object({
