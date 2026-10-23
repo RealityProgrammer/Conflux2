@@ -20,7 +20,7 @@ export default function useExtractInputSuggestion({
   if (textBeforeCursor.endsWith(":")) return { type: "mode" };
 
   // emoji mode trigger ":e" or ":e[search_term]"
-  const emojiMatch = textBeforeCursor.match(/:e([a-zA-Z0-9_-]*)$/);
+  const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
   if (emojiMatch) {
     return {
       type: "emoji",
@@ -29,7 +29,7 @@ export default function useExtractInputSuggestion({
   }
 
   // time mode trigger ":t" or ":t[value]"
-  const timeMatch = textBeforeCursor.match(/:t(.*)$/);
+  const timeMatch = textBeforeCursor.match(/:t(\d*)$/);
   if (timeMatch) {
     const rawVal = timeMatch[1].trim();
     const miliseconds = rawVal ? Number(rawVal) || 0 : Date.now();
@@ -37,7 +37,7 @@ export default function useExtractInputSuggestion({
   }
   
   // fallback to emoji, might remove
-  const fallbackEmojiMatch = textBeforeCursor.match(/:([a-zA-Z0-9_-]{2,}$)/);
+  const fallbackEmojiMatch = textBeforeCursor.match(/:([\w-]{2,}$)/);
   if (fallbackEmojiMatch) {
     return {
       type: "emoji",

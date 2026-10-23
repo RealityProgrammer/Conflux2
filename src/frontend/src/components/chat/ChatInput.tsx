@@ -15,6 +15,7 @@ import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import useExtractInputSuggestion from "../../hooks/useExtractInputSuggestion.ts";
+import {SuggestionContent} from "./SuggestionContent.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -53,6 +54,11 @@ export default function ChatInput({disabled}: ChatInputProps) {
     text: messageBody,
     cursorPosition,
   });
+  
+  const handleInsertStringAtCursorPosition = (value: string) => {
+    setMessageBody((prev: string): string => prev.slice(0, cursorPosition) + value + prev.slice(cursorPosition));
+    setCursorPosition((prev: number): number => prev + value.length);
+  };
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
@@ -161,7 +167,29 @@ export default function ChatInput({disabled}: ChatInputProps) {
   const setGalleryElements = useMediaGalleryStore(state => state.setElements);
 
   return (
-    <footer className="flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
+    <footer className="relative flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
+      {suggestion.type !== "none" && (
+        <div className="max-h-48 overflow-y-auto scrollbar-none z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl bg-gray-725 border-2 border-gray-600 rounded-lg">
+          {suggestion.type === "mode" ? (
+            <SuggestionContent.Mode onSelect={(mode) => {
+              handleInsertStringAtCursorPosition(mode);
+              console.log("selected", mode);
+            }}/>
+          ) : suggestion.type === "emoji" ? (
+            <SuggestionContent.Emoji onSelect={() => {
+            }}/>
+          ) : suggestion.type === "time" ? (
+            <SuggestionContent.Time
+              onSelectSystemTime={() => {
+                handleInsertStringAtCursorPosition(String(new Date().getTime()) + ": ");
+              }}
+            />
+          ) : (
+            <p className="text-center text-sm">Unknown suggestion mode</p>
+          )}
+        </div>
+      )}
+      
       {replyingMessage && (
         <section className="flex flex-col min-w-0">
           <div className="flex flex-row gap-2 mb-1">
@@ -186,38 +214,36 @@ export default function ChatInput({disabled}: ChatInputProps) {
       )}
 
       {attachments.length > 0 && (
-        <section>
-          <ScrollArea.Root className="h-20 w-full overflow-hidden">
-            <ScrollArea.Viewport className="size-full">
-              <div className="flex flex-row gap-2 w-max h-20 pr-4 pb-3">
-                {attachments.map((item, index) => (
-                  <AttachmentThumbnail
-                    key={item.id}
-                    file={item.file}
-                    onRemove={() => handleRemoveAttachment(item.id)}
-                    previewUrl={item.previewUrl}
-                    onClick={() => {
-                      setGalleryElements(attachments.map(attachment => ({
-                        id: attachment.id,
-                        fileName: attachment.file.name,
-                        mediaType: attachment.file.type,
-                        src: attachment.previewUrl!,
-                      })), index);
-                    }}
-                  />
-                ))}
-              </div>
-            </ScrollArea.Viewport>
+        <ScrollArea.Root className="h-32 w-full overflow-hidden">
+          <ScrollArea.Viewport className="size-full min-h-0">
+            <div className="flex flex-row gap-2 w-max h-32 pr-4 pb-3">
+              {attachments.map((item, index) => (
+                <AttachmentThumbnail
+                  key={item.id}
+                  file={item.file}
+                  onRemove={() => handleRemoveAttachment(item.id)}
+                  previewUrl={item.previewUrl}
+                  onClick={() => {
+                    setGalleryElements(attachments.map(attachment => ({
+                      id: attachment.id,
+                      fileName: attachment.file.name,
+                      mediaType: attachment.file.type,
+                      src: attachment.previewUrl!,
+                    })), index);
+                  }}
+                />
+              ))}
+            </div>
+          </ScrollArea.Viewport>
 
-            <ScrollArea.Scrollbar
-              className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
-              orientation="horizontal"
-            >
-              <ScrollArea.Thumb
-                className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
-            </ScrollArea.Scrollbar>
-          </ScrollArea.Root>
-        </section>
+          <ScrollArea.Scrollbar
+            className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
+            orientation="horizontal"
+          >
+            <ScrollArea.Thumb
+              className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
+          </ScrollArea.Scrollbar>
+        </ScrollArea.Root>
       )}
 
       <section className="flex flex-row items-end gap-2">
@@ -249,7 +275,6 @@ export default function ChatInput({disabled}: ChatInputProps) {
           onClick={handleCursorMove}
           placeholder="Message body goes here"
           disabled={disabled}
-          maxLength={4000}
           className="input-field min-h-10 max-h-36 w-full flex-1 text-sm resize-none py-2 px-3 overflow-y-auto leading-relaxed"
         />
 
