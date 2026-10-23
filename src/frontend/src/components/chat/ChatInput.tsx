@@ -1,11 +1,20 @@
 import IconButton from "../IconButton.tsx";
 import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
-import {type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState} from "react";
+import {
+  type ChangeEvent,
+  type EventHandler,
+  type KeyboardEvent,
+  type SyntheticEvent,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import {ScrollArea} from "radix-ui";
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
+import useExtractInputSuggestion from "../../hooks/useExtractInputSuggestion.ts";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -33,11 +42,17 @@ type AttachmentItem = {
 export default function ChatInput({disabled}: ChatInputProps) {
   const {conversationId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
 
-  const [messageBody, setMessageBody] = useState("");
-  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [messageBody, setMessageBody] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+
+  const suggestion = useExtractInputSuggestion({
+    text: messageBody,
+    cursorPosition,
+  });
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
@@ -53,6 +68,8 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setMessageBody(e.target.value);
+    setCursorPosition(e.target.selectionStart);
+    
     notifyTyping();
 
     const textarea = textareaRef.current;
@@ -60,6 +77,11 @@ export default function ChatInput({disabled}: ChatInputProps) {
       textarea.style.height = "auto"; // reset height to recalculate true scrollHeight
       textarea.style.height = `${textarea.scrollHeight}px`; // Expand to fit text
     }
+  };
+
+  const handleCursorMove = (e: SyntheticEvent<HTMLTextAreaElement>) => {
+    const pos = e.currentTarget.selectionStart || 0;
+    setCursorPosition(pos);
   };
 
   const handleAttachmentChanged = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
@@ -222,6 +244,9 @@ export default function ChatInput({disabled}: ChatInputProps) {
           value={messageBody}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
+          onSelect={handleCursorMove}
+          onKeyUp={handleCursorMove}
+          onClick={handleCursorMove}
           placeholder="Message body goes here"
           disabled={disabled}
           maxLength={4000}
