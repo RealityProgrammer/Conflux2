@@ -59,6 +59,12 @@ export default function ChatInput({disabled}: ChatInputProps) {
     setMessageBody((prev: string): string => prev.slice(0, cursorPosition) + value + prev.slice(cursorPosition));
     setCursorPosition((prev: number): number => prev + value.length);
   };
+  
+  const handleReplaceStartSuggestion = (value: string) => {
+    if (suggestion.type === "none") return;
+    
+    setMessageBody((prev: string): string => prev.slice(0, suggestion.suggestionStartPosition) + value + prev.slice(cursorPosition));
+  }
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
@@ -180,7 +186,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
           className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
           searchTerm={suggestion.searchTerm ?? ""}
           onSelect={(emoji) => {
-            handleInsertStringAtCursorPosition(emoji);
+            handleReplaceStartSuggestion(emoji);
           }}
         />
       ) : suggestion.type === "time" ? (
