@@ -13,6 +13,7 @@ import {ChannelType, ServerPermission} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerChannelDeletedEvent} from "../../api/events.ts";
 import {useState} from "react";
+import TypingIndicator from "../../components/chat/TypingIndicator.tsx";
 
 export default function ChannelPage() {
   const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
@@ -112,7 +113,10 @@ function SuccessLayout() {
               />
   
               {hasPermission(ServerPermission.SendMessage) && (
-                <ChatInput/>
+                <>
+                  <TypingIndicator/>
+                  <ChatInput/>
+                </>
               )}
             </div>
           </ChatContainerContextProvider>

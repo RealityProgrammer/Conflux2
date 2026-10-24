@@ -292,13 +292,8 @@ const markdownComponents: Components = {
     
     const emojiAttribute: string = (props as any)["data-chat-emoji"] as string;
     if (emojiAttribute) {
-      const emojiId = emojiAttribute;
-      
       return (
-        <span>Emoji is TODO</span>
-        // <div className="size-5 max-w-5 max-h-5 bg-red-500">
-        //
-        // </div>
+        <span>emoji {emojiAttribute} here</span>
       );
     }
     

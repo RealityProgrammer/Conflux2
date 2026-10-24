@@ -347,6 +347,30 @@ namespace Conflux.Infrastructure.Migrations
                     b.ToTable("ConversationParticipants");
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Emoji", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ServerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ShortCode")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("character varying(48)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("Emojis");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -889,6 +913,17 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Emoji", b =>
+                {
+                    b.HasOne("Conflux.Domain.Entities.CommunityServer", "Server")
+                        .WithMany("Emojis")
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Receiver")
@@ -1075,6 +1110,8 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("ChannelCategories");
 
                     b.Navigation("Channels");
+
+                    b.Navigation("Emojis");
 
                     b.Navigation("Invitations");
 

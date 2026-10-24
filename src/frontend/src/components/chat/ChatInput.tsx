@@ -2,7 +2,6 @@ import IconButton from "../IconButton.tsx";
 import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
 import {
   type ChangeEvent,
-  type EventHandler,
   type KeyboardEvent,
   type SyntheticEvent,
   useEffect,

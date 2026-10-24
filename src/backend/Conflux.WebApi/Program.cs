@@ -353,6 +353,11 @@ builder.Services
     .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
     .AddScoped<IUserAccountDeletionWriteRepository>(services => 
         (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
+    )
+    
+    .AddScoped<IEmojiReadRepository, EmojiRepository>()
+    .AddScoped<IEmojiWriteRepository>(services => 
+        (EmojiRepository)services.GetRequiredService<IEmojiReadRepository>()
     );
 
 // blob service.

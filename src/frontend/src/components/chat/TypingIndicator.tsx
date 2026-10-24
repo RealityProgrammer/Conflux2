@@ -1,22 +1,20 @@
-import type {TypingUser} from "../../hooks/useTypingIndicator.ts";
+import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import {useEffect, useState} from "react";
 import {Avatar} from "../Avatar.tsx";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 
-interface TypingIndicatorProps {
-  displayUsers: TypingUser[];
-}
+export default function TypingIndicator() {
+  const { userProfile } = useAuth();
+  const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
 
-export default function TypingIndicator({
-  displayUsers
-}: TypingIndicatorProps) {
-  const [renderedUsers, setRenderedUsers] = useState(displayUsers);
-  const isVisible = displayUsers.length > 0;
+  const [renderedUsers, setRenderedUsers] = useState(typingUsers);
+  const isVisible = typingUsers.length > 0;
 
   useEffect(() => {
-    if (displayUsers.length > 0) {
-      setRenderedUsers(displayUsers);
+    if (typingUsers.length > 0) {
+      setRenderedUsers(typingUsers);
     }
-  }, [displayUsers]);
+  }, [typingUsers]);
 
   const renderTypingText = () => {
     switch (renderedUsers.length) {
@@ -33,7 +31,7 @@ export default function TypingIndicator({
       );
       case 3: return (
         <>
-          <DisplayName name={renderedUsers[0].displayName}/>, <DisplayName name={renderedUsers[1].displayName}/> and <DisplayName name={displayUsers[2].displayName}/> is typing...
+          <DisplayName name={renderedUsers[0].displayName}/>, <DisplayName name={renderedUsers[1].displayName}/> and <DisplayName name={typingUsers[2].displayName}/> is typing...
         </>
       );
       default: return <span className="font-semibold text-gray-200">Several people are typing...</span>;
@@ -41,33 +39,20 @@ export default function TypingIndicator({
   };
 
   return (
-    <div
-      className={`flex-none overflow-hidden transition-[max-height] duration-500 ease-in-out ${
-        isVisible ? "max-h-15" : "max-h-0"
-      }`}
-    >
-      <section className="flex items-center gap-3 px-4 py-0.5 border-t border-t-gray-600 bg-gray-650 text-sm text-gray-400">
-        <div className="flex -space-x-3">
-          {renderedUsers.map((user) => (
-            <Avatar.User
-              key={user.id}
-              userId={user.id}
-              version={user.avatarVersion ?? undefined}
-              className="size-7 rounded-full overflow-hidden ring-2 ring-gray-650"
-            />
-          ))}
-        </div>
+    <div className="flex-none h-5 text-xs text-gray-400 flex items-center px-4 overflow-hidden">
+      {isVisible ? (
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-1.5 select-none">
+            <div>{renderTypingText()}</div>
 
-        <div className="flex items-center gap-1.5 select-none">
-          <div>{renderTypingText()}</div>
-
-          <div className="flex gap-0.5 items-center mt-1">
-            <span className="size-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="size-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="size-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="flex gap-0.5 items-center mt-1">
+              <span className="size-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="size-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="size-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
           </div>
         </div>
-      </section>
+      ) : null}
     </div>
   );
 }
