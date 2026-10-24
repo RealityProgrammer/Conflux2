@@ -3,15 +3,12 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
-import {isValidElement} from "react";
-import IconButton from "../IconButton.tsx";
-import {BsCopy} from "react-icons/bs";
-import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
-import {a11yDark} from "react-syntax-highlighter/dist/esm/styles/prism";
+import {isValidElement, lazy} from "react";
 import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.ts";
 import { visit } from "unist-util-visit";
 import type { Node, Parent, Literal } from "unist";
 import {formatDate} from "date-fns";
+const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 
 interface MessageContentProps {
   content: string | null;
@@ -128,25 +125,7 @@ const markdownComponents: Components = {
       const code = String(codeProps.children).replace(/\n$/, "");
 
       return (
-        <div className="relative group my-1">
-          <div className="flex items-center justify-between px-2 py-1.5 bg-gray-800 text-xs text-gray-400 rounded-t-md border-2 border-b-0 border-gray-500">
-            <span>{match ? match[1] : "Unknown"}</span>
-
-            <IconButton
-              theme="default"
-              onClick={() => navigator.clipboard.writeText(code)}
-            >
-              <BsCopy className="size-4"/>
-            </IconButton>
-          </div>
-
-          <SyntaxHighlighter
-            children={code}
-            language={match?.[1]}
-            style={a11yDark}
-            className="mt-0! border-2! border-gray-500! rounded-t-none! rounded-b-md! overflow-hidden w-full"
-          />
-        </div>
+        <CodeBlock language={match?.[1]} code={code}/>
       );
     }
 
@@ -316,7 +295,7 @@ const markdownComponents: Components = {
       const emojiId = emojiAttribute;
       
       return (
-        <span>😀</span>
+        <span>Emoji is TODO</span>
         // <div className="size-5 max-w-5 max-h-5 bg-red-500">
         //
         // </div>

@@ -1,10 +1,9 @@
 import {BsClockFill, BsEmojiSmileFill} from "react-icons/bs";
 import {useInterval} from "usehooks-ts";
-import {type RefObject, useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Separator} from "radix-ui";
 import {type GridComponents, VirtuosoGrid} from "react-virtuoso";
 import {emojiTable} from "../../emoji.ts";
-import {useDebounceValue} from "usehooks-ts";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t") => void;
@@ -88,19 +87,23 @@ function Emoji({ className = "", searchTerm, onSelect }: EmojiProps) {
   };
 
   const totalCount = filteredEmojiTable.length;
-  const rowHeight = 52;         // Approximate height of an item row in pixels
-  const containerPadding = 16;  // Top/bottom padding buffer
-  const maxContainerHeight = 288; // h-72 equals 288px
+  const numRows = Math.ceil(totalCount / itemsPerRow);
+
+  const rowHeight = 43.2;
+  const itemVerticalPadding = 4;
+  const totalRowBlockHeight = rowHeight + itemVerticalPadding;
+  const containerPadding = 8;
+  const maxContainerHeight = 288;
 
   const calculatedHeight = Math.min(
-    Math.ceil(totalCount / itemsPerRow) * rowHeight + containerPadding,
+    numRows * totalRowBlockHeight + containerPadding,
     maxContainerHeight
   );
   
   return (
     <div
       ref={containerRef}
-      className={`p-1 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 ${className}`}
+      className={`p-1 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 ${className}`}
       style={{ height: `${calculatedHeight}px` }}
     >
       <VirtuosoGrid

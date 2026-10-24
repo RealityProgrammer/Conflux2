@@ -128,6 +128,16 @@ export default function CommunityServerContextProvider({
   
   const appendChannel = (channel: ServerChannelIdentityDto) => {
     updateServerDetails((oldData) => {
+      if (oldData.channelCategories.length === 0) {
+        return {
+          channelCategories: [{
+            id: null,
+            name: null,
+            channels: [channel],
+          }],
+        };
+      }
+
       return {
         channelCategories: oldData.channelCategories.map(category => {
           if (category.id !== channel.categoryId) return category;
@@ -228,16 +238,8 @@ export default function CommunityServerContextProvider({
     if (event.serverId !== serverId) {
       return;
     }
-    
-    const response = await communityServerService.getChannelCategories(event.serverId);
-    
-    if (response.success && response.data) {
-      updateServerDetails(() => {
-        return {
-          channelCategories: response.data! ?? undefined,
-        }
-      });
-    }
+
+    appendChannel(event.channel);
   });
 
   useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
