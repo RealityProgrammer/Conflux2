@@ -15,7 +15,7 @@ import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import useExtractInputSuggestion from "../../hooks/useExtractInputSuggestion.ts";
-import {SuggestionContent} from "./SuggestionContent.tsx";
+import {Suggestion} from "./Suggestion.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -168,27 +168,29 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   return (
     <footer className="relative flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
-      {suggestion.type !== "none" && (
-        <div className="max-h-48 overflow-y-auto scrollbar-none z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl bg-gray-725 border-2 border-gray-600 rounded-lg">
-          {suggestion.type === "mode" ? (
-            <SuggestionContent.Mode onSelect={(mode) => {
-              handleInsertStringAtCursorPosition(mode);
-              console.log("selected", mode);
-            }}/>
-          ) : suggestion.type === "emoji" ? (
-            <SuggestionContent.Emoji onSelect={() => {
-            }}/>
-          ) : suggestion.type === "time" ? (
-            <SuggestionContent.Time
-              onSelectSystemTime={() => {
-                handleInsertStringAtCursorPosition(String(new Date().getTime()) + ": ");
-              }}
-            />
-          ) : (
-            <p className="text-center text-sm">Unknown suggestion mode</p>
-          )}
-        </div>
-      )}
+      {suggestion.type === "mode" ? (
+        <Suggestion.Mode
+          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          onSelect={(mode) => {
+            handleInsertStringAtCursorPosition(mode);
+          }}
+        />
+      ) : suggestion.type === "emoji" ? (
+        <Suggestion.Emoji
+          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          searchTerm={suggestion.searchTerm ?? ""}
+          onSelect={(emoji) => {
+            handleInsertStringAtCursorPosition(emoji);
+          }}
+        />
+      ) : suggestion.type === "time" ? (
+        <Suggestion.Time
+          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          onSelectSystemTime={() => {
+            handleInsertStringAtCursorPosition(String(new Date().getTime()) + ": ");
+          }}
+        />
+      ) : null}
       
       {replyingMessage && (
         <section className="flex flex-col min-w-0">

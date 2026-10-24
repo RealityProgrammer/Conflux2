@@ -9,7 +9,7 @@ import {directConversationService} from "../../api/directConversationService.ts"
 export default function CallOverlay() {
   const call = useCallStore((state) => state.call);
   const startIncomingDirectCall = useCallStore((state) => state.startIncomingDirectCall);
-
+  
   // check if there is ongoing "incoming call" if callee refresh page while having an incoming call
   useEffect(() => {
     (async () => {

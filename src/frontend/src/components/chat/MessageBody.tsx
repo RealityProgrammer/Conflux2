@@ -316,9 +316,10 @@ const markdownComponents: Components = {
       const emojiId = emojiAttribute;
       
       return (
-        <div className="size-5 max-w-5 max-h-5 bg-red-500">
-        
-        </div>
+        <span>😀</span>
+        // <div className="size-5 max-w-5 max-h-5 bg-red-500">
+        //
+        // </div>
       );
     }
     
