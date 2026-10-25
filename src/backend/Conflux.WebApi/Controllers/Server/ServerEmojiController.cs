@@ -12,6 +12,13 @@ namespace Conflux.WebApi.Controllers.Server;
 public sealed class ServerEmojiController(
     ISender sender
 ) : ControllerBase {
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<List<EmojiListItemDto>>>> Get(Guid serverId) {
+        var result = await sender.Send(new QueryEmoji(serverId));
+
+        return Ok(new ApiResponse<List<EmojiListItemDto>>(result, Error.None));
+    }
+    
     [HttpPost]
     public async Task<ActionResult<ApiResponse<EmojiDto>>> Create(Guid serverId, [FromForm] CreateEmojiRequest request) {
         using var stream = request.Image.OpenReadStream();

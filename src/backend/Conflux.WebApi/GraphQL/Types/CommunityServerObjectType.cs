@@ -1,4 +1,8 @@
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
+using Conflux.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Frozen;
 
 namespace Conflux.WebApi.GraphQL.Types;
 
@@ -30,5 +34,30 @@ public sealed class CommunityServerObjectType : ObjectType<CommunityServer> {
                     
                 return await dataLoader.LoadAsync(server.Id, context.RequestAborted);
             });
+    }
+    
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<Guid, int>> GetCommunityServersMemberCount(
+        IReadOnlyList<Guid> serverIds,
+        [Service] IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        CancellationToken cancellationToken
+    ) {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        
+        if (serverIds.Count == 0) {
+            return FrozenDictionary<Guid, int>.Empty;
+        }
+        
+        var counts = await dbContext.CommunityServerMembers
+            .AsNoTracking()
+            .Where(m => serverIds.Contains(m.CommunityServerId) && m.Status == MembershipStatus.Active)
+            .GroupBy(m => m.CommunityServerId)
+            .Select(g => new {
+                ServerId = g.Key,
+                Count = g.Count(),
+            })
+            .ToDictionaryAsync(x => x.ServerId, x => x.Count, cancellationToken);
+    
+        return serverIds.ToDictionary(id => id, id => counts.GetValueOrDefault(id, 0));
     }
 }

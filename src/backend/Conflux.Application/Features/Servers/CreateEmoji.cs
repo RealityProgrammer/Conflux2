@@ -23,8 +23,9 @@ public sealed partial class CreateEmojiHandler(
     ICommunityServerReadRepository communityServerReadRepository,
     IEmojiReadRepository emojiReadRepository,
     IUnitOfWork unitOfWork,
-    ILogger<CreateEmojiHandler> logger,
-    IEmojiMediaService mediaService
+    IEmojiMediaService mediaService,
+    IServerEmojiCacheProvider cacheProvider,
+    ILogger<CreateEmojiHandler> logger
 ) : ICommandHandler<CreateEmojiCommand, Result<EmojiDto>> {
     private const int MaxEmojiCount = 50;
     
@@ -77,6 +78,8 @@ public sealed partial class CreateEmojiHandler(
             await RollbackDatabase();
             return Errors.OperationFailure("create emoji");
         }
+        
+        await cacheProvider.Remove(serverId);
 
         EmojiDto dto = new(emoji);
         await publisher.Publish(new EmojiCreatedNotification(dto), CancellationToken.None);

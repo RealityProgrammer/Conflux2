@@ -12,6 +12,7 @@ type Query
   @authorize
   @authorize
   @authorize
+  @authorize
   @authorize {
   communityServerMembers(
     "Returns the first _n_ elements from the list."
@@ -137,6 +138,7 @@ type Query
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
+  emoji(id: UUID!): Emoji @cost(weight: "10")
   friendRequests(
     "Returns the first _n_ elements from the list."
     first: Int
@@ -408,6 +410,14 @@ type ConversationEdge {
   node: Conversation!
   "A cursor for use in pagination."
   cursor: String!
+}
+
+type Emoji {
+  id: UUID!
+  createdAt: DateTime!
+  shortCode: String!
+  serverId: UUID!
+  server: CommunityServer!
 }
 
 type FriendRequest {
