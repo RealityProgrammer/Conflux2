@@ -38,6 +38,4 @@ public interface IServerPermissionsCacheService {
         IReadOnlyDictionary<Guid, ServerMemberAuthorizeInfoDto> values,
         CancellationToken cancellationToken = default
     );
-
-    Task IncrementServerPermissionVersion(Guid serverId, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,3 @@
-using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Repositories;
@@ -7,7 +6,7 @@ using System.Text.Json;
 
 namespace Conflux.Infrastructure.Services;
 
-internal sealed partial class ServerPermissionsCacheService(
+internal sealed class ServerPermissionsCacheService(
     IConnectionMultiplexer connectionMultiplexer,
     IServerMemberReadRepository memberReadRepository,
     IServerRoleVersioningService roleVersioningService,
@@ -106,33 +105,7 @@ internal sealed partial class ServerPermissionsCacheService(
             await SetUserAuthorizeInfo(serverId, userId, authorizeInfo, cancellationToken);
         }
     }
-
-    public async Task<RoleAuthorizeInfo?> GetServerDefaultRoleAuthorizationInfo(
-        Guid serverId, 
-        CancellationToken cancellationToken = default
-    ) {
-        string cacheKey = GetRedisKeyForDefaultRoleAuthInfo(serverId);
-        
-        byte[]? cached = (byte[]?)await _database.StringGetAsync(cacheKey);
-        return cached == null ? null : JsonSerializer.Deserialize<RoleAuthorizeInfo>(cached);
-    }
-
-    public async Task SetServerDefaultRoleAuthorizationInfo(
-        Guid serverId, 
-        RoleAuthorizeInfo value, 
-        CancellationToken cancellationToken = default
-    ) {
-        string cacheKey = GetRedisKeyForDefaultRoleAuthInfo(serverId);
-        await _database.StringSetAsync(cacheKey, JsonSerializer.SerializeToUtf8Bytes(value), TimeSpan.FromHours(24));
-    }
-
-    public async Task IncrementServerPermissionVersion(Guid serverId, CancellationToken cancellationToken = default) {
-        await roleVersioningService.Increment(serverId);
-    }
-
+    
     private static string GetRedisKeyForUserPermissions(Guid serverId, Guid userId, int version) =>
         $"server:{serverId}:authorize:{userId}:v{version}";
-
-    private static string GetRedisKeyForDefaultRoleAuthInfo(Guid serverId) =>
-        $"server:{serverId}:default_role";
 }
