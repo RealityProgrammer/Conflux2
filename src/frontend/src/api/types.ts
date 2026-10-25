@@ -59,6 +59,7 @@ export type RestoreAccountResponse = components["schemas"]["RestoreAccountRespon
 export type SessionsQueryResult = components["schemas"]["SessionsQueryResult"];
 export type SessionDetails = components["schemas"]["SessionDetails"];
 export type SessionDevice = components["schemas"]["SessionDevice"];
+export type EmojiManagementDto = components["schemas"]["EmojiManagementDto"];
 
 export type EditedMessageDto = {
   id: string;

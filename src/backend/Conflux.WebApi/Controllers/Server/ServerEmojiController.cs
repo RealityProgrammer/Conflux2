@@ -14,9 +14,23 @@ public sealed class ServerEmojiController(
 ) : ControllerBase {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<EmojiListItemDto>>>> Get(Guid serverId) {
-        var result = await sender.Send(new QueryEmoji(serverId));
+        var result = await sender.Send(new QueryEmojiEntries(serverId));
 
         return Ok(new ApiResponse<List<EmojiListItemDto>>(result, Error.None));
+    }
+    
+    [HttpGet("management")]
+    public async Task<ActionResult<ApiResponse<List<EmojiManagementDto>>>> GetForManagement(Guid serverId) {
+        var result = await sender.Send(new QueryEmojisForManagement(serverId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<List<EmojiManagementDto>>(result.Value, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
     }
     
     [HttpPost]

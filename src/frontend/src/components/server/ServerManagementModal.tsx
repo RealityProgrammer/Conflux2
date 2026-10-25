@@ -1,6 +1,6 @@
 import Dialog from "../Dialog.tsx";
 import {Tabs} from "radix-ui";
-import {BsPeopleFill} from "react-icons/bs";
+import {BsPeopleFill, BsEmojiSmileFill} from "react-icons/bs";
 import {useEffect, useState} from "react";
 import {FaClipboardList, FaUserShield} from "react-icons/fa6";
 import RoleManagement from "./RoleManagement.tsx";
@@ -13,6 +13,7 @@ import {useQueryClient} from "@tanstack/react-query";
 import {useInfiniteGetServerModerationLogsQuery} from "../../graphql/infiniteQueries.ts";
 import AnimatedGearIcon from "../AnimatedGearIcon.tsx";
 import {UnsavedChangesProvider, useUnsavedChanges} from "../../contexts/UnsavedChangesContext.tsx";
+import EmojiManagement from "./EmojiManagement.tsx";
 
 export function ServerManagementModal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: boolean) => void}) {
   return (
@@ -79,6 +80,10 @@ function Modal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: bool
               <FaClipboardList className="size-8 fill-slate-200"/>
             </Tabs.Trigger>
           )}
+
+          <Tabs.Trigger value="emoji" className={`hover-highlight outline-none p-1 rounded-md cursor-pointer data-[state=active]:bg-white/8`}>
+            <BsEmojiSmileFill className="size-8 fill-slate-200"/>
+          </Tabs.Trigger>
         </Tabs.List>
 
         <div
@@ -107,6 +112,10 @@ function Modal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: bool
               <ModerationLog/>
             </Tabs.Content>
           )}
+
+          <Tabs.Content value="emoji" className="p-2 flex-1 overflow-hidden relative flex flex-col gap-2">
+            <EmojiManagement/>
+          </Tabs.Content>
         </div>
       </Tabs.Root>
     </Dialog>

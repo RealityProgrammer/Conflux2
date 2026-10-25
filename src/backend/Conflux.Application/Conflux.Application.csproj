@@ -12,6 +12,8 @@
 
     <ItemGroup>
       <PackageReference Include="FileSignatures" Version="7.3.0" />
+      <PackageReference Include="FluentValidation" Version="12.2.0" />
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
       <PackageReference Include="Humanizer.Core" Version="3.0.10" />
       <PackageReference Include="MailKit" Version="4.18.1" />
       <PackageReference Include="Mediator.Abstractions" Version="3.0.2" />
@@ -23,6 +25,8 @@
         <Using Include="System.Text"/>
         <Using Include="Microsoft.Extensions.Logging"/>
         <Using Include="Mediator"/>
+        <Using Include="FluentValidation"/>
+        <Using Include="FluentValidation.Results"/>
     </ItemGroup>
 
 </Project>

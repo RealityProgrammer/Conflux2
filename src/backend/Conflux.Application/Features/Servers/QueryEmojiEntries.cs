@@ -1,19 +1,17 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Services;
-using Conflux.Domain;
 using Conflux.Domain.Repositories;
-using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record QueryEmoji(Guid ServerId) : IQuery<List<EmojiListItemDto>>;
+public sealed record QueryEmojiEntries(Guid ServerId) : IQuery<List<EmojiListItemDto>>;
 
-public sealed class QueryEmojiHandler(
+public sealed class QueryEmojiEntriesHandler(
     IEmojiReadRepository emojiReadRepository,
     IServerEmojiCacheProvider cacheProvider
-) : IQueryHandler<QueryEmoji, List<EmojiListItemDto>> {
-    public async ValueTask<List<EmojiListItemDto>> Handle(QueryEmoji query, CancellationToken cancellationToken) {
+) : IQueryHandler<QueryEmojiEntries, List<EmojiListItemDto>> {
+    public async ValueTask<List<EmojiListItemDto>> Handle(QueryEmojiEntries query, CancellationToken cancellationToken) {
         var serverId = query.ServerId;
 
         if (await cacheProvider.Get(serverId) is { } cached) {
@@ -23,6 +21,7 @@ public sealed class QueryEmojiHandler(
         List<EmojiListItemDto> emojis = await emojiReadRepository
             .AsQueryable()
             .Where(e => e.ServerId == query.ServerId)
+            .OrderBy(e => e.ShortCode)
             .Select(e => new EmojiListItemDto(e.Id, e.ShortCode))
             .ToListAsync(cancellationToken);
 

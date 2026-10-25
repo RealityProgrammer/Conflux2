@@ -4,6 +4,8 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Humanizer;
+using System.Text.RegularExpressions;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -12,12 +14,43 @@ public sealed record CreateEmojiCommand(
     string ShortCode,
     Stream ImageStream
 ) : ICommand<Result<EmojiDto>>, IServerCommand {
-    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateEmoji];
+    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.ManageEmojis, ServerPermission.CreateEmoji];
+}
+
+public sealed partial class CreateEmojiCommandValidator : AbstractValidator<CreateEmojiCommand> {
+    private static readonly long MaxFileSizeInBytes = (long)128.Kilobytes().Bytes;
+    
+    public CreateEmojiCommandValidator() {
+        RuleFor(command => command.ShortCode)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage("ShortCode is required.")
+            .Matches(ShortCodeRegex())
+            .WithMessage("ShortCode can only contain letters, numbers, dashes, and underscores.")
+            .MaximumLength(48)
+            .WithMessage("ShortCode cannot exceed {MaxLength} characters.");
+
+        RuleFor(command => command.ImageStream)
+            .NotNull()
+            .WithMessage("Emoji image stream is required.")
+            .Must(stream => {
+                if (stream.CanSeek) {
+                    return stream.Length <= MaxFileSizeInBytes;
+                }
+
+                return true;
+            })
+            .WithMessage("Emoji image stream cannot exceed 128KB.");
+    }
+    
+    [GeneratedRegex(@"^[a-zA-Z0-9\-_]+$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex ShortCodeRegex();
 }
 
 public sealed record EmojiCreatedNotification(EmojiDto Emoji) : INotification;
 
 public sealed partial class CreateEmojiHandler(
+    ICurrentUserService currentUserService,
     IPublisher publisher,
     IEmojiWriteRepository emojiWriteRepository,
     ICommunityServerReadRepository communityServerReadRepository,
@@ -30,6 +63,10 @@ public sealed partial class CreateEmojiHandler(
     private const int MaxEmojiCount = 50;
     
     public async ValueTask<Result<EmojiDto>> Handle(CreateEmojiCommand command, CancellationToken cancellationToken) {
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
+        }
+        
         Guid serverId = command.ServerId;
 
         if (!await communityServerReadRepository.Exists(serverId, cancellationToken)) {
@@ -46,6 +83,7 @@ public sealed partial class CreateEmojiHandler(
         Emoji emoji = new() {
             ServerId = serverId,
             ShortCode = command.ShortCode,
+            CreatorId = userId,
         };
         
         emojiWriteRepository.Add(emoji);

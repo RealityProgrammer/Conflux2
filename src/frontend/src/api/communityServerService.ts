@@ -2,7 +2,7 @@ import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
   ServerDetailsDto, ServerIdentityDto, ServerRoleDto, ServiceResponse, ChannelDetailsDto, ChannelCategoryDetailDto,
-  ServerMemberAuthorizeInfoDto
+  ServerMemberAuthorizeInfoDto, EmojiManagementDto
 } from "./types.ts";
 import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
@@ -254,6 +254,22 @@ export const communityServerService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  getEmojisForManagement: async (serverId: string): Promise<ServiceResponse<EmojiManagementDto[]>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<EmojiManagementDto[]>> =
+        await apiClient.get<BackendResponse<EmojiManagementDto[]>>(`/communities/${encodeURIComponent(serverId)}/emojis/management`);
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data!.data,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<EmojiManagementDto[]>>;
       return handleAxiosError(axiosError);
     }
   },

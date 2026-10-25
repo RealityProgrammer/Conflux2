@@ -356,6 +356,9 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("CreatorId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ServerId")
                         .HasColumnType("uuid");
 
@@ -365,6 +368,8 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("character varying(48)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
 
                     b.HasIndex("ServerId");
 
@@ -915,11 +920,19 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.Emoji", b =>
                 {
+                    b.HasOne("Conflux.Domain.Entities.ApplicationUser", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Conflux.Domain.Entities.CommunityServer", "Server")
                         .WithMany("Emojis")
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Creator");
 
                     b.Navigation("Server");
                 });

@@ -111,10 +111,10 @@ function SuccessLayout() {
                 allowEditMessage={hasPermission(ServerPermission.EditMessages)}
                 allowDeleteMessage={hasPermission(ServerPermission.DeleteMessages)}
               />
-  
+              <TypingIndicator/>
+
               {hasPermission(ServerPermission.SendMessage) && (
                 <>
-                  <TypingIndicator/>
                   <ChatInput/>
                 </>
               )}

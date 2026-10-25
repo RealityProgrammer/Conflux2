@@ -42,6 +42,7 @@ using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
 using FileSignatures;
 using FileSignatures.Formats;
+using FluentValidation;
 using HotChocolate.Execution;
 using HotChocolate.Types.Descriptors;
 using Mediator;
@@ -269,6 +270,7 @@ builder.Services.AddMediator(options => {
         typeof(MessageReceivedNotificationHandler),
     ];
     options.PipelineBehaviors = [
+        typeof(ValidationBehavior<,>),
         typeof(ServerAuthorizationPipelineBehaviour<,>),
         typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
         typeof(RequiresActiveAccountBehavior<,>),
@@ -278,7 +280,7 @@ builder.Services.AddMediator(options => {
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
-
+builder.Services.AddValidatorsFromAssemblyContaining(typeof(CreateEmojiCommandValidator));
 builder.Services
     .AddSingleton<JoinTracker>()
     .AddSingleton<SignalRConnectionTracker>()

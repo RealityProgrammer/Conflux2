@@ -11,7 +11,7 @@ public sealed record DeleteEmojiCommand(
     Guid ServerId, 
     Guid EmojiId
 ) : ICommand<Result>, IServerCommand {
-    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.DeleteEmoji];
+    public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.ManageEmojis, ServerPermission.DeleteEmoji];
 }
 
 public sealed record EmojiDeletedNotification(Guid ServerId, Guid EmojiId) : INotification;

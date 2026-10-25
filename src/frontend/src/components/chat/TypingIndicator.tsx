@@ -39,7 +39,7 @@ export default function TypingIndicator() {
   };
 
   return (
-    <div className="flex-none h-5 text-xs text-gray-400 flex items-center px-4 overflow-hidden">
+    <div className="flex-none bg-gray-700 h-5 text-xs flex items-center px-4 overflow-hidden">
       {isVisible ? (
         <div className="flex items-center gap-3 w-full">
           <div className="flex items-center gap-1.5 select-none">

@@ -19,13 +19,15 @@ interface ContainerProps {
   minBreakpoint?: typeof BREAKPOINTS[number];
   maxBreakpoint: typeof BREAKPOINTS[number];
   className?: string;
-  children: ReactNode;
+  containerClassName?: string;
+  children?: ReactNode;
 }
 
 export default function Container({
   minBreakpoint = "sm",
   maxBreakpoint,
-  className,
+  containerClassName = "",
+  className = "",
   children,
 }: ContainerProps) {
   const minIndex = BREAKPOINTS.indexOf(minBreakpoint);
@@ -37,7 +39,7 @@ export default function Container({
   ).map((breakpoint) => CONTAINER_CLASSES[breakpoint]).join(' ');
   
   return (
-    <div className="@container w-full">
+    <div className={`@container w-full ${containerClassName}`}>
       <div className={`mx-auto w-full max-w-full ${selectedClasses} ${className}`}>
         {children}
       </div>
