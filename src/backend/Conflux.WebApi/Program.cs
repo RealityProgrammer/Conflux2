@@ -339,7 +339,10 @@ builder.Services
         (MediaItemRepository)services.GetRequiredService<IMediaItemReadRepository>()
     )
     
-    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
+    .AddScoped<ICommunityServerReadRepository, CommunityServerRepository>()
+    .AddScoped<ICommunityServerWriteRepository>(services =>
+        (CommunityServerRepository)services.GetRequiredService<ICommunityServerReadRepository>())
+    
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>()
@@ -377,7 +380,8 @@ builder.Services
     .AddSingleton<IBlobStorage, StorageService>()
     .AddScoped<IUserMediaService, UserMediaService>()
     .AddScoped<IServerMediaService, ServerMediaService>()
-    .AddScoped<IMessageMediaService, MessageMediaService>();
+    .AddScoped<IMessageMediaService, MessageMediaService>()
+    .AddScoped<IEmojiMediaService, EmojiMediaService>();
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers

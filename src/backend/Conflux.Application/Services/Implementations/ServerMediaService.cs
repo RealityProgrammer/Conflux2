@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerMediaService(
-    ICommunityServerRepository serverRepository,
+    ICommunityServerWriteRepository communityServerWriteRepository,
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector
 ) : IServerMediaService {
@@ -58,7 +58,7 @@ internal sealed class ServerMediaService(
         Stream? attachmentStream = await blobStorage.GetStream(GetAvatarKey(serverId), cancellationToken);
         if (attachmentStream == null) return null;
         
-        var info = await serverRepository
+        var info = await communityServerWriteRepository
             .AsQueryable()
             .Where(u => u.Id == serverId)
             .Select(u => u.Avatar != null ? new { u.Avatar.ContentType, u.Avatar.Version } : null)
@@ -76,7 +76,7 @@ internal sealed class ServerMediaService(
         Stream? attachmentStream = await blobStorage.GetStream(GetBannerKey(serverId), cancellationToken);
         if (attachmentStream == null) return null;
         
-        var info = await serverRepository
+        var info = await communityServerWriteRepository
             .AsQueryable()
             .Where(u => u.Id == serverId)
             .Select(u => u.Banner != null ? new { u.Banner.ContentType, u.Banner.Version } : null)

@@ -177,4 +177,7 @@ public static class Errors {
     
     public static Error SessionNotFound(Guid sessionId) => 
         new(nameof(SessionNotFound), $"Session {sessionId} was not found.");
+    
+    public static Error ServerEmojiLimit() =>
+        new(nameof(ServerEmojiLimit), "Server has hit emoji limit.");
 }

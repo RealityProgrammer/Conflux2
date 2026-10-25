@@ -1,7 +1,6 @@
-using Conflux.Domain;
+using Conflux.Application.Services;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
 
@@ -9,13 +8,17 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class CommunityServerRepository(
     ApplicationDbContext dbContext
-) : ICommunityServerRepository {
+) : ICommunityServerWriteRepository, ICommunityServerReadRepository {
     public IQueryable<CommunityServer> AsQueryable() {
         return dbContext.CommunityServers;
     }
     
     public void Add(CommunityServer communityServer) {
         dbContext.CommunityServers.Add(communityServer);
+    }
+
+    public async Task<bool> Exists(Guid id, CancellationToken cancellationToken = default) {
+        return await dbContext.CommunityServers.AnyAsync(c => c.Id == id, cancellationToken);
     }
 
     public async Task<List<ChannelCategoryDetailDto>> GetChannelCategoryStructure(

@@ -749,6 +749,7 @@ input CommunityServerFilterInput {
   invitations: ListFilterInputTypeOfInvitationFilterInput
   roles: ListFilterInputTypeOfCommunityServerRoleFilterInput
   moderationLogs: ListFilterInputTypeOfServerModerationLogFilterInput
+  emojis: ListFilterInputTypeOfEmojiFilterInput
 }
 
 input CommunityServerMemberFilterInput {
@@ -886,6 +887,16 @@ input DurationOperationFilterInput {
   nlte: Duration @cost(weight: "10")
 }
 
+input EmojiFilterInput {
+  and: [EmojiFilterInput!]
+  or: [EmojiFilterInput!]
+  id: UuidOperationFilterInput
+  shortCode: StringOperationFilterInput
+  serverId: UuidOperationFilterInput
+  server: CommunityServerFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
 input FriendRequestFilterInput {
   and: [FriendRequestFilterInput!]
   or: [FriendRequestFilterInput!]
@@ -993,6 +1004,13 @@ input ListFilterInputTypeOfConversationParticipantFilterInput {
   all: ConversationParticipantFilterInput @cost(weight: "10")
   none: ConversationParticipantFilterInput @cost(weight: "10")
   some: ConversationParticipantFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfEmojiFilterInput {
+  all: EmojiFilterInput @cost(weight: "10")
+  none: EmojiFilterInput @cost(weight: "10")
+  some: EmojiFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 
@@ -1417,6 +1435,8 @@ enum ServerPermission {
   SendMessage
   EditMessages
   DeleteMessages
+  CreateEmoji
+  DeleteEmoji
 }
 
 enum SortEnumType {

@@ -20,7 +20,7 @@ public sealed partial record UserPresenceChangedEvent {
 internal sealed class UserPresenceChangedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IFriendRequestRepository friendRequestRepository,
-    ICommunityServerRepository communityServerRepository
+    ICommunityServerWriteRepository communityServerWriteRepository
 ) : INotificationHandler<UserPresenceChangedNotification> {
     private const int ServerBroadcastMemberThreshold = 1600;    // might put this in an option now.
     
@@ -41,7 +41,7 @@ internal sealed class UserPresenceChangedNotificationHandler(
         // server (this is not gonna scale well so imma do dirty trick by only broadcasting to server with member count below a certain threshold)
         
         // query user's joined servers along with member count.
-        var userJoinedServersWithMemberCount = await communityServerRepository.AsQueryable()
+        var userJoinedServersWithMemberCount = await communityServerWriteRepository.AsQueryable()
             .Where(s => s.Members.Any(member => member.UserId == notification.UserId))
             .Select(s => new { s.Id, MemberCount = s.Members.Count })
             .ToListAsync(cancellationToken);

@@ -12,7 +12,7 @@ internal sealed class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork {
         try {
             return await dbContext.SaveChangesAsync(cancellationToken);
         } catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) {
-            throw new UniqueConstraintException("A database constraint was violated.", ex);
+            throw new UniqueConstraintException("A database unique constraint was violated.", ex);
         }
     }
 
