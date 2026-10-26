@@ -1,6 +1,6 @@
 import type {
   AccountDeletionStatusDto,
-  BackendResponse,
+  BackendResponse, ServerEmojiGroupDto,
   ServiceResponse,
   UpdateProfileResult,
 } from "./types.ts";
@@ -152,6 +152,22 @@ export const sessionUserService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatusDto>>;
+      return handleAxiosError(axiosError);
+    }
+  },
+
+  getEmojiEntryGroups: async (): Promise<ServiceResponse<ServerEmojiGroupDto[]>> => {
+    try {
+      const response: AxiosResponse<BackendResponse<ServerEmojiGroupDto[]>> =
+        await apiClient.get("/users/me/emojis");
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: response.data.data,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse<ServerEmojiGroupDto[]>>;
       return handleAxiosError(axiosError);
     }
   },
