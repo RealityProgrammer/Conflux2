@@ -184,8 +184,8 @@ export default function ChatInput({disabled}: ChatInputProps) {
         <Suggestion.Emoji
           className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
           searchTerm={suggestion.searchTerm ?? ""}
-          onSelect={(emoji) => {
-            handleReplaceStartSuggestion(emoji);
+          onSelect={(emojiIds) => {
+            handleInsertStringAtCursorPosition(emojiIds + ": ");
           }}
         />
       ) : suggestion.type === "time" ? (

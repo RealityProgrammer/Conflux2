@@ -21,6 +21,7 @@ import {emojiService} from "../../api/emojiService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {queryClient} from "../../main.tsx";
 import type {EmojiCreatedEvent, EmojiDeletedEvent} from "../../api/events.ts";
+import {Emoji} from "../Emoji.tsx";
 
 export default function EmojiManagement() {
   return (
@@ -394,10 +395,10 @@ function Row({data, isSelected, onToggleSelection}: {data: EmojiManagementDto, i
           />
         )}
 
-        <img
-          src={emojiService.getImageUrl(data.id)}
-          alt={data.shortCode}
-          className="flex-none size-10 object-contain"
+        <Emoji.Root
+          emojiId={data.id}
+          shortCode={data.shortCode}
+          className="flex-none size-10"
         />
 
         <div className="flex-1">

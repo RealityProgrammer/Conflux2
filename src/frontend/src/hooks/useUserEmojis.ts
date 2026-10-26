@@ -2,11 +2,7 @@ import {useQuery, type UseQueryResult} from "@tanstack/react-query";
 import type {ServerEmojiGroupDto} from "../api/types.ts";
 import {sessionUserService} from "../api/sessionUserService.ts";
 
-interface UseUserEmojisResult {
-  queryResult: UseQueryResult<ServerEmojiGroupDto[]>;
-}
-
-export default function useUserEmojis(): UseUserEmojisResult {
+export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   const queryResult = useQuery({
     queryKey: useUserEmojis.queryKey,
     queryFn: async (): Promise<ServerEmojiGroupDto[]> => {
@@ -23,7 +19,7 @@ export default function useUserEmojis(): UseUserEmojisResult {
     refetchOnWindowFocus: false,
   });
 
-  return { queryResult };
+  return queryResult;
 }
 
 useUserEmojis.queryKey = ["UserEmojis"];

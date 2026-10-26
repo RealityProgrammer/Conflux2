@@ -1,16 +1,19 @@
-import {BsClockFill, BsEmojiSmileFill} from "react-icons/bs";
+import {BsClockFill, BsEmojiSmileFill, BsExclamationTriangle} from "react-icons/bs";
 import {useInterval} from "usehooks-ts";
-import {useEffect, useRef, useState} from "react";
+import {useState} from "react";
 import {Separator} from "radix-ui";
-import {type GridComponents, VirtuosoGrid} from "react-virtuoso";
-import {emojiTable} from "../../emoji.ts";
+import {Virtuoso} from "react-virtuoso";
+import useUserEmojis from "../../hooks/useUserEmojis.ts";
+import Spinner from "../Spinner.tsx";
+import type {ServerEmojiGroupDto} from "../../api/types.ts";
+import {Emoji} from "../Emoji.tsx";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t") => void;
   className?: string;
 }
 
-function Mode({ className = "", onSelect }: ModeProps) {
+function SelectMode({ className = "", onSelect }: ModeProps) {
   return (
     <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll ${className}`}>
       <ul className="space-y-1 text-sm">
@@ -43,89 +46,66 @@ function Mode({ className = "", onSelect }: ModeProps) {
 }
 
 interface EmojiProps {
-  onSelect: (emoji: string) => void;
+  onSelect: (emojiIds: string) => void;
   searchTerm: string;
   className?: string;
 }
 
-function Emoji({ className = "", searchTerm, onSelect }: EmojiProps) {
-  const filteredEmojiTable = searchTerm && searchTerm.length > 0 ? emojiTable.filter(e => e.name.includes(searchTerm)) : emojiTable;
-  
-  // really hacky way to do responsiveness while keeping height correct
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [itemsPerRow, setItemsPerRow] = useState(3);
+function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
+  const { data, isLoading, isError } = useUserEmojis();
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+  const filteredData = !data ?
+    [] :
+    !searchTerm || searchTerm.length === 0 ?
+      data :
+      data.map(group => ({
+        ...group,
+        emojiEntries: group.emojiEntries.filter(e => e.shortCode.includes(searchTerm.trim())),
+      })).filter(group => group.emojiEntries.length > 0);
 
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        setItemsPerRow(width < 320 ? 1 : width < 640 ? 2 : width < 1024 ? 3 : 4);
-      }
-    });
-
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const emojiGridComponents: GridComponents = {
-    List: ({className = "", children, ...props}) => (
-      <div ref={props.ref} {...props} className={`flex flex-wrap ${className}`}>
-        {children}
-      </div>
-    ),
-    Item: ({ children, ...props }) => (
-      <div 
-        className="flex-none flex content-stretch" 
-        style={{ width: `${(1 / itemsPerRow) * 100}%`, padding: "0.125rem", }}
-        {...props} 
-      >
-        {children}
-      </div>
-    ),
-  };
-
-  const totalCount = filteredEmojiTable.length;
-  const numRows = Math.ceil(totalCount / itemsPerRow);
-
-  const rowHeight = 43.2;
-  const itemVerticalPadding = 4;
-  const totalRowBlockHeight = rowHeight + itemVerticalPadding;
-  const containerPadding = 8;
-  const maxContainerHeight = 288;
-
-  const calculatedHeight = Math.min(
-    numRows * totalRowBlockHeight + containerPadding,
-    maxContainerHeight
-  );
-  
   return (
     <div
-      ref={containerRef}
-      className={`p-1 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 ${className}`}
-      style={{ height: `${calculatedHeight}px` }}
+      className={`p-1 h-72 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 ${className}`}
     >
-      <VirtuosoGrid
-        className="overflow-x-hidden scrollbar-none"
-        totalCount={filteredEmojiTable.length}
-        components={emojiGridComponents}
-        itemContent={(index) => {
-          const entry = filteredEmojiTable[index];
+      {isLoading ? (
+        <div className="size-full flex flex-row justify-center items-center">
+          <Spinner className="size-8 fill-white"/>
+        </div>
+      ) : isError || !data ? (
+        <div className="size-full flex flex-col gap-1 justify-center items-center">
+          <BsExclamationTriangle className="size-8 fill-white"/>
+          <p className="select-none text-center">Failed to load your emojis.</p>
+        </div>
+      ) : (
+        <Virtuoso
+          className="h-full"
+          data={filteredData}
+          computeItemKey={(index) => filteredData[index].serverInfo.serverId}
+          itemContent={(_, emojiGroup: ServerEmojiGroupDto) => (
+            <div className="mb-4 px-2">
+              <div className="sticky top-0 bg-gray-725 backdrop-blur-sm py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                {emojiGroup.serverInfo.name}
+              </div>
 
-          return (
-            <div 
-              className="select-none cursor-pointer hover-highlight flex-1 flex flex-row items-center gap-2 p-2 border-2 border-gray-600 rounded-md"
-              onClick={() => {
-                onSelect(entry.value);
-              }}
-            >
-              <p className="flex-none">{entry.value}</p>
-              <span className="flex-1 text-sm truncate min-w-0">{entry.name}</span>
+              <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-1 justify-center mt-1">
+                {emojiGroup.emojiEntries.map((emojiEntry) => (
+                  <button
+                    key={emojiEntry.id}
+                    className="size-10 p-1 rounded-md hover-highlight cursor-pointer"
+                    onClick={() => onSelect(emojiEntry.id)}
+                  >
+                    <Emoji.Root
+                      emojiId={emojiEntry.id}
+                      shortCode={emojiEntry.shortCode}
+                      className="size-full block"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
-          );
-        }}
-      />
+          )}
+        />
+      )}
     </div>
   );
 }
@@ -135,7 +115,7 @@ interface TimeProps {
   className?: string;
 }
 
-function Time({ className = "", onSelectSystemTime }: TimeProps) {
+function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   const [systemTime, setSystemTime] = useState<number>(() => Date.now());
   useInterval(() => {
     setSystemTime(Date.now());
@@ -166,7 +146,7 @@ function Time({ className = "", onSelectSystemTime }: TimeProps) {
 }
 
 export const Suggestion = {
-  Mode,
-  Emoji,
-  Time,
+  Mode: SelectMode,
+  Emoji: EmojiMode,
+  Time: TimeMode,
 }

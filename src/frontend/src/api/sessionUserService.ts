@@ -159,7 +159,7 @@ export const sessionUserService = {
   getEmojiEntryGroups: async (): Promise<ServiceResponse<ServerEmojiGroupDto[]>> => {
     try {
       const response: AxiosResponse<BackendResponse<ServerEmojiGroupDto[]>> =
-        await apiClient.get("/users/me/emojis");
+        await apiClient.get("/users/me/emojis/entries");
 
       return {
         success: true,
