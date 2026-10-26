@@ -8,4 +8,5 @@ public interface IBlobStorage {
     Task<Result> DeleteRange(IEnumerable<string> keys, CancellationToken cancellationToken = default);
     Task<Result> Copy(string from, string to, CancellationToken cancellationToken = default);
     Task<Stream?> GetStream(string key, CancellationToken cancellationToken = default);
+    string GeneratePreSignedUrl(string key, TimeSpan expireIn);
 }

@@ -375,6 +375,20 @@ builder.Services.AddSingleton<IAmazonS3>((services) => {
         ServiceURL = s3Options.Endpoint,
         ForcePathStyle = true,
         AuthenticationRegion = s3Options.Region,
+        UseHttp = !s3Options.Endpoint.StartsWith("https"),
+    };
+    
+    return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
+});
+
+builder.Services.AddKeyedSingleton<IAmazonS3>("PreSignS3", (services, key) => {
+    var s3Options = services.GetRequiredService<IOptions<S3Options>>().Value;
+    
+    var config = new AmazonS3Config {
+        ServiceURL = s3Options.PreSignEndpoint,
+        ForcePathStyle = true,
+        AuthenticationRegion = s3Options.Region,
+        UseHttp = !s3Options.PreSignEndpoint.StartsWith("https"),
     };
     
     return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);

@@ -27,7 +27,11 @@ internal sealed class EmojiMediaService(
     public async Task<Result> Delete(List<Guid> emojiIds, CancellationToken cancellationToken = default) {
         return await blobStorage.DeleteRange(emojiIds.Select(GetStorageKey), cancellationToken);
     }
-    
+
+    public string GetPreSignedUrl(Guid emojiId, TimeSpan expireIn) {
+        return blobStorage.GeneratePreSignedUrl(GetStorageKey(emojiId), expireIn);
+    }
+
     private Result<Image> ValidateImageFormat(Stream stream) {
         if (fileFormatInspector.DetermineFileFormat(stream) is not { } fileFormat) {
             return Errors.ValidationErrorsOccurred(new() {

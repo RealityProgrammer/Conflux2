@@ -3,6 +3,7 @@ using Amazon.S3.Model;
 using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Collections.ObjectModel;
 using System.Net;
@@ -11,8 +12,10 @@ namespace Conflux.Infrastructure.Services;
 
 internal sealed class StorageService(
     IAmazonS3 s3Client,
+    [FromKeyedServices("PreSignS3")] IAmazonS3 preSignS3Client,
     ILogger<StorageService> logger,
-    IOptions<S3Options> options
+    IOptions<S3Options> options,
+    TimeProvider timeProvider
 ) : IBlobStorage {
     private readonly S3Options _options = options.Value;
 
@@ -123,5 +126,17 @@ internal sealed class StorageService(
         } catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
             return null;
         }
+    }
+
+    public string GeneratePreSignedUrl(string key, TimeSpan expireIn) {
+        var request = new GetPreSignedUrlRequest {
+            BucketName = _options.BucketName,
+            Key = key,
+            Expires = timeProvider.GetUtcNow().Add(expireIn).UtcDateTime,
+            Verb = HttpVerb.GET,
+            Protocol = _options.PreSignEndpoint.StartsWith("https") ? Protocol.HTTPS : Protocol.HTTP,
+        };
+
+        return preSignS3Client.GetPreSignedURL(request);
     }
 }

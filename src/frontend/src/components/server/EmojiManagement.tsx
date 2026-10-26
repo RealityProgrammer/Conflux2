@@ -17,6 +17,7 @@ import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {toast} from "react-toastify";
 import {ServerPermission} from "../../api/schema.ts";
+import {emojiService} from "../../api/emojiService.ts";
 
 export default function EmojiManagement() {
   return (
@@ -361,13 +362,11 @@ function Row({data, isSelected, onToggleSelection}: {data: EmojiManagementDto, i
           className="input-checkbox size-4 flex-none"
         />
 
-        <div className="flex-none rounded-lg bg-gray-900/60 border border-gray-700/80 flex items-center justify-center overflow-hidden shrink-0">
-          <img
-            //src={emoji.imageUrl}
-            alt={data.shortCode}
-            className="size-10 object-contain"
-          />
-        </div>
+        <img
+          src={emojiService.getImageUrl(data.id)}
+          alt={data.shortCode}
+          className="flex-none size-10 object-contain"
+        />
 
         <div className="flex-1">
           <span className="text-sm text-white font-semibold">
