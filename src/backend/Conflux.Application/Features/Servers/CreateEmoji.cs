@@ -18,7 +18,7 @@ public sealed record CreateEmojiCommand(
 }
 
 public sealed partial class CreateEmojiCommandValidator : AbstractValidator<CreateEmojiCommand> {
-    private static readonly long MaxFileSizeInBytes = (long)128.Kilobytes().Bytes;
+    private static readonly long MaxFileSizeInBytes = (long)256.Kilobytes().Bytes;
     
     public CreateEmojiCommandValidator() {
         RuleFor(command => command.ShortCode)
@@ -40,10 +40,10 @@ public sealed partial class CreateEmojiCommandValidator : AbstractValidator<Crea
 
                 return true;
             })
-            .WithMessage("Emoji image stream cannot exceed 128KB.");
+            .WithMessage("Emoji image stream cannot exceed 256KB.");
     }
     
-    [GeneratedRegex(@"^[a-zA-Z0-9\-_]+$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex(@"^[\w\-]+$", RegexOptions.None | RegexOptions.ECMAScript, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ShortCodeRegex();
 }
 

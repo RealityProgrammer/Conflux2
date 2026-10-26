@@ -48,10 +48,13 @@ public sealed class ServerEmojiController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-
-    [HttpDelete("{emojiId:guid}")]
-    public async Task<ActionResult<ApiResponse>> Delete(Guid serverId, Guid emojiId) {
-        var result = await sender.Send(new DeleteEmojiCommand(serverId, emojiId));
+    
+    [HttpPost("delete")]
+    public async Task<ActionResult<ApiResponse>> BulkDelete(
+        Guid serverId, 
+        [FromBody] BulkDeleteEmojiRequest request
+    ) {
+        var result = await sender.Send(new BulkDeleteEmojiCommand(serverId, request.Ids));
 
         if (result.IsSuccess) {
             return NoContent();
@@ -64,4 +67,5 @@ public sealed class ServerEmojiController(
     }
 
     public sealed record CreateEmojiRequest([MaxLength(48)] string ShortCode, [Required] IFormFile Image);
+    public sealed record BulkDeleteEmojiRequest(List<Guid> Ids);
 }

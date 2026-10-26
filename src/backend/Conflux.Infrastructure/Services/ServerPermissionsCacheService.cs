@@ -32,6 +32,8 @@ internal sealed class ServerPermissionsCacheService(
             return JsonSerializer.Deserialize<ServerMemberAuthorizeInfoDto>(cached);
         } catch (Exception e) {
             logger.LogError(e, "Failed to deserialize cached member authorize info. Null will be returned.");
+            await _database.KeyDeleteAsync(cacheKey);
+            
             return null;
         }
     }

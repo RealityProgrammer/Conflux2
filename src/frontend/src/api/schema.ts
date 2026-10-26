@@ -2291,7 +2291,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/communities/{serverId}/emojis/{emojiId}": {
+    "/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2300,18 +2300,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete: {
+        post: {
             parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    emojiId: string;
+                query?: {
+                    serverId?: string;
                 };
+                header?: never;
+                path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkDeleteEmojiRequest"];
+                    "text/json": components["schemas"]["BulkDeleteEmojiRequest"];
+                    "application/*+json": components["schemas"]["BulkDeleteEmojiRequest"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -2326,6 +2330,7 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2732,6 +2737,9 @@ export interface components {
         ApiResponseOfUserRelationshipStatus: {
             data: components["schemas"]["UserRelationshipStatus"];
             error: components["schemas"]["Error"];
+        };
+        BulkDeleteEmojiRequest: {
+            ids: string[];
         };
         ChangePasswordRequest: {
             oldPassword: string;

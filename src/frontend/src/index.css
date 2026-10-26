@@ -247,6 +247,10 @@
         transition duration-300;
     }
 
+    .input-checkbox {
+        @apply appearance-none checked:appearance-auto indeterminate:appearance-auto bg-gray-300 border-2 border-gray-600 rounded-sm;
+    }
+
     .panel-accent-color-1 {
         @apply bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500;
     }

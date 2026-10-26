@@ -24,9 +24,8 @@ internal sealed class EmojiMediaService(
         return uploadResult.IsSuccess ? Result<MediaUploadResult>.Success(new(imageFormat)) : uploadResult.Error;
     }
 
-    public async Task<Result> Delete(Guid emojiId, CancellationToken cancellationToken = default) {
-        string key = GetStorageKey(emojiId);
-        return await blobStorage.Delete(key, cancellationToken);
+    public async Task<Result> Delete(List<Guid> emojiIds, CancellationToken cancellationToken = default) {
+        return await blobStorage.DeleteRange(emojiIds.Select(GetStorageKey), cancellationToken);
     }
     
     private Result<Image> ValidateImageFormat(Stream stream) {

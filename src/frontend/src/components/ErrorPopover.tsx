@@ -5,12 +5,14 @@ export interface ErrorPopoverProps {
   open: boolean;
   children: ReactNode;
   content?: string;
+  sideOffset?: number;
 }
 
 export default function ErrorPopover({
   open,
   children,
   content,
+  sideOffset = 5,
 }: ErrorPopoverProps) {
   return (
     <Popover.Root open={open}>
@@ -21,7 +23,7 @@ export default function ErrorPopover({
       <Popover.Portal>
         <Popover.Content
           side="top"
-          sideOffset={5}
+          sideOffset={sideOffset}
           align="center"
           className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white shadow-lg animate-in fade-in zoom-in duration-200"
           onOpenAutoFocus={(e) => e.preventDefault()}

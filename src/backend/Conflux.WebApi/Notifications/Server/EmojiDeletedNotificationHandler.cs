@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Conflux.WebApi.Notifications.Server;
 
 [Facet(typeof(EmojiDeletedNotification), Include = [
-    nameof(EmojiDeletedNotification.EmojiId),
+    nameof(EmojiDeletedNotification.EmojiIds),
 ])]
 public sealed partial record EmojiDeletedEvent;
 

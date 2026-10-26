@@ -1,6 +1,5 @@
 import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
 import {useEffect, useState} from "react";
-import {Avatar} from "../Avatar.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 
 export default function TypingIndicator() {

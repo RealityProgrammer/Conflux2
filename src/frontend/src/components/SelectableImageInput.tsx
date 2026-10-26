@@ -13,7 +13,8 @@ export default function SelectableImageInput({
   value,
   onChange,
   className,
-  fallback
+  fallback,
+  ...props
 }: AvatarInputProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -35,7 +36,7 @@ export default function SelectableImageInput({
   };
 
   return (
-    <div className={`relative block group overflow-hidden ${className}`}>
+    <div className={`relative block group overflow-hidden ${className}`} {...props}>
       <input
         type="file"
         ref={fileInputRef}
@@ -49,7 +50,7 @@ export default function SelectableImageInput({
         <Avatar.Image
           className="size-full object-cover rounded-[inherit]"
           src={displayUrl ?? undefined}
-          alt="User Avatar"
+          alt="Avatar"
         />
         <Avatar.Fallback
           className="size-full flex items-center justify-center bg-gray-100 text-gray-700 text-2xl font-medium rounded-[inherit]"
