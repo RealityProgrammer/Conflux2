@@ -1,6 +1,6 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
-  EditedMessageDto,
+  EditedMessageDto, EmojiDto,
 } from "./types.ts";
 import type {PinnedMessageDto, PresenceStatus} from "../graphql/types.ts";
 
@@ -168,4 +168,14 @@ export type JoinedServerEvent = {
 
 export type CreatedServerEvent = {
   serverId: string;
+}
+
+export type EmojiCreatedEvent = {
+  serverId: string;
+  emoji: EmojiDto;
+}
+
+export type EmojiDeletedEvent = {
+  serverId: string;
+  emojiIds: string[];
 }

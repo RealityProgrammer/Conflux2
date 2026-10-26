@@ -47,7 +47,7 @@ public sealed partial class CreateEmojiCommandValidator : AbstractValidator<Crea
     private static partial Regex ShortCodeRegex();
 }
 
-public sealed record EmojiCreatedNotification(EmojiDto Emoji) : INotification;
+public sealed record EmojiCreatedNotification(Guid ServerId, EmojiDto Emoji) : INotification;
 
 public sealed partial class CreateEmojiHandler(
     ICurrentUserService currentUserService,
@@ -120,7 +120,7 @@ public sealed partial class CreateEmojiHandler(
         await cacheProvider.Remove(serverId);
 
         EmojiDto dto = new(emoji);
-        await publisher.Publish(new EmojiCreatedNotification(dto), CancellationToken.None);
+        await publisher.Publish(new EmojiCreatedNotification(serverId, dto), CancellationToken.None);
         
         return Result<EmojiDto>.Success(dto);
 

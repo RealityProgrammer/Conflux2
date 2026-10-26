@@ -113,9 +113,11 @@ function Modal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: bool
             </Tabs.Content>
           )}
 
-          <Tabs.Content value="emoji" className="p-2 flex-1 overflow-hidden relative flex flex-col gap-2">
-            <EmojiManagement/>
-          </Tabs.Content>
+          {hasPermission(ServerPermission.ManageEmojis) && (
+            <Tabs.Content value="emoji" className="p-2 flex-1 overflow-hidden relative flex flex-col gap-2">
+              <EmojiManagement/>
+            </Tabs.Content>
+          )}
         </div>
       </Tabs.Root>
     </Dialog>

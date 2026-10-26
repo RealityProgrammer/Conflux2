@@ -1,5 +1,5 @@
 import Container from "../Container.tsx";
-import {useState, useRef, useEffect} from "react";
+import {useEffect, useRef, useState} from "react";
 import {BsEmojiSmileFill, BsEmojiWink, BsExclamationTriangle, BsPlusLg, BsSearch, BsTrashFill} from "react-icons/bs";
 import {Virtuoso} from "react-virtuoso";
 import useEmojisForManagementQuery from "../../hooks/useEmojisForManagementQuery.ts";
@@ -9,7 +9,7 @@ import ModalForm from "../ModalForm.tsx";
 import {Controller, useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Label, ContextMenu} from "radix-ui";
+import {Label} from "radix-ui";
 import SelectableImageInput from "../SelectableImageInput.tsx";
 import ErrorPopover from "../ErrorPopover.tsx";
 import {Avatar} from "../Avatar.tsx";
@@ -18,6 +18,9 @@ import {communityServerService} from "../../api/communityServerService.ts";
 import {toast} from "react-toastify";
 import {ServerPermission} from "../../api/schema.ts";
 import {emojiService} from "../../api/emojiService.ts";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
+import {queryClient} from "../../main.tsx";
+import type {EmojiCreatedEvent, EmojiDeletedEvent} from "../../api/events.ts";
 
 export default function EmojiManagement() {
   return (
@@ -42,6 +45,8 @@ export default function EmojiManagement() {
 
 function ContainerContent() {
   const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const hasDeletePermission = hasPermission(ServerPermission.DeleteEmoji);
+
   const { data, isError, isLoading } = useEmojisForManagementQuery(serverDetails!.id);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,17 +93,40 @@ function ContainerContent() {
     });
   };
 
+  useSignalREvent("EmojiCreated", (event: EmojiCreatedEvent) => {
+    if (event.serverId !== serverDetails!.id) return;
+
+    queryClient.invalidateQueries({
+      queryKey: useEmojisForManagementQuery.getKey(serverDetails!.id),
+    });
+  });
+
+  useSignalREvent("EmojiDeleted", (event: EmojiDeletedEvent) => {
+    if (event.serverId !== serverDetails!.id) return;
+
+    queryClient.setQueryData<EmojiManagementDto[]>(
+      useEmojisForManagementQuery.getKey(serverDetails!.id),
+      (oldData) => {
+        if (!oldData) return oldData;
+
+        return oldData.filter(e => !event.emojiIds.includes(e.id));
+      }
+    )
+  });
+
   return (
     <>
       <div className="flex-none flex flex-row items-center justify-between gap-2 pb-3 border-b border-gray-700/50">
-        <input
-          type="checkbox"
-          ref={headerCheckboxRef}
-          checked={isAllSelected}
-          onChange={handleToggleSelectAll}
-          disabled={isLoading || isError || filteredEmojis.length === 0}
-          className="input-checkbox size-4 flex-none"
-        />
+        {hasDeletePermission && (
+          <input
+            type="checkbox"
+            ref={headerCheckboxRef}
+            checked={isAllSelected}
+            onChange={handleToggleSelectAll}
+            disabled={isLoading || isError || filteredEmojis.length === 0}
+            className="input-checkbox size-4 flex-none"
+          />
+        )}
 
         <div className="flex-1 relative w-full">
           <BsSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
@@ -116,7 +144,7 @@ function ContainerContent() {
           { isLoading || isError ? "???" : data!.length <= 50 ? data!.length : <span className="text-red-500">{data!.length}</span> } / 50
         </p>
 
-        {selectedIds.size > 0 && (
+        {hasDeletePermission && selectedIds.size > 0 && (
           <BulkDeleteButton
             selectedIds={selectedIds}
             serverId={serverDetails!.id}
@@ -144,7 +172,7 @@ function ContainerContent() {
         ) : (
           <Virtuoso
             className="size-full"
-            data={data}
+            data={filteredEmojis}
             itemContent={(_, emoji) => (
               <Row
                 data={emoji}
@@ -196,9 +224,9 @@ function BulkDeleteButton({
     <button
       onClick={() => bulkDeleteMutation.mutate()}
       disabled={bulkDeleteMutation.isPending}
-      className="flex-none button-theme-danger px-3 py-2 rounded-lg button-cursor flex flex-row items-center gap-1 transition-colors text-xs font-semibold"
+      className="flex-none button-theme-danger p-2 rounded-lg button-cursor flex flex-row items-center gap-1 transition-colors text-xs font-semibold"
     >
-      <BsTrashFill className="size-4" />
+      <BsTrashFill className="size-5"/>
 
       <span>{selectedIds.size}</span>
     </button>
@@ -351,16 +379,20 @@ function SkeletonRow() {
 }
 
 function Row({data, isSelected, onToggleSelection}: {data: EmojiManagementDto, isSelected: boolean, onToggleSelection: (id: string) => void;}) {
+  const { hasPermission } = useCommunityServerContext();
+
   return (
     <div className="flex flex-row items-center justify-between py-2 px-3 my-1 rounded-lg hover-highlight group">
       <div className="flex-1 flex items-center gap-3.5">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onToggleSelection(data.id)}
-          onClick={(e) => e.stopPropagation()}
-          className="input-checkbox size-4 flex-none"
-        />
+        {hasPermission(ServerPermission.DeleteEmoji) && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelection(data.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="input-checkbox size-4 flex-none"
+          />
+        )}
 
         <img
           src={emojiService.getImageUrl(data.id)}
