@@ -1,3 +1,4 @@
+using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 
@@ -8,6 +9,14 @@ internal sealed class EmojiRepository(
 ) : IEmojiReadRepository, IEmojiWriteRepository {
     public async Task<int> CountByServerId(Guid serverId, CancellationToken cancellationToken = default) {
         return await dbContext.Emojis.CountAsync(x => x.Id == serverId, cancellationToken);
+    }
+
+    public async Task<List<EmojiEntryDto>> GetEntriesByServerId(Guid serverId, CancellationToken cancellationToken = default) {
+        return await dbContext.Emojis
+            .Where(x => x.ServerId == serverId)
+            .OrderBy(x => x.ShortCode)
+            .Select(x => new EmojiEntryDto(x.Id, x.ShortCode))
+            .ToListAsync(cancellationToken);
     }
 
     public void Add(Emoji value) {

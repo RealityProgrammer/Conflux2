@@ -1,5 +1,6 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Services;
+using Conflux.Domain.Dto;
 using MemoryPack;
 using StackExchange.Redis;
 
@@ -13,7 +14,7 @@ internal sealed class ServerEmojiCacheProvider(
     
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
-    public async Task<List<EmojiListItemDto>?> Get(Guid serverId) {
+    public async Task<List<EmojiEntryDto>?> Get(Guid serverId) {
         var cached = await _database.HashFieldGetAndSetExpiryAsync(
             GetStorageKey(serverId), 
             "emojis",
@@ -23,7 +24,7 @@ internal sealed class ServerEmojiCacheProvider(
         if (cached.IsNullOrEmpty) return null;
 
         try {
-            return MemoryPackSerializer.Deserialize<List<EmojiListItemDto>>(cached);
+            return MemoryPackSerializer.Deserialize<List<EmojiEntryDto>>(cached);
         } catch (Exception e) {
             logger.LogError(e, "Failed to deserialize emojis for server {id}", serverId);
             return null;
@@ -34,7 +35,7 @@ internal sealed class ServerEmojiCacheProvider(
         await _database.HashDeleteAsync(GetStorageKey(serverId), "emojis");
     }
 
-    public async Task Set(Guid serverId, List<EmojiListItemDto> emojis) {
+    public async Task Set(Guid serverId, List<EmojiEntryDto> emojis) {
         await _database.HashFieldSetAndSetExpiryAsync(
             GetStorageKey(serverId), 
             "emojis", 

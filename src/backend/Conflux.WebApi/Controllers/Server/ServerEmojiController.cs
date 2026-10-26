@@ -1,6 +1,7 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Servers;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,11 @@ namespace Conflux.WebApi.Controllers.Server;
 public sealed class ServerEmojiController(
     ISender sender
 ) : ControllerBase {
-    [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<EmojiListItemDto>>>> Get(Guid serverId) {
+    [HttpGet("entries")]
+    public async Task<ActionResult<ApiResponse<List<EmojiEntryDto>>>> Get(Guid serverId) {
         var result = await sender.Send(new QueryEmojiEntries(serverId));
 
-        return Ok(new ApiResponse<List<EmojiListItemDto>>(result, Error.None));
+        return Ok(new ApiResponse<List<EmojiEntryDto>>(result, Error.None));
     }
     
     [HttpGet("management")]
