@@ -9,7 +9,7 @@ import {
   type RangeSelection,
   type LexicalNode,
   $isTextNode,
-  $isElementNode,
+  $isElementNode, $createParagraphNode,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -28,6 +28,23 @@ import {
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {$createTimeNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
+import { ListNode, ListItemNode } from '@lexical/list';
+import { HeadingNode, QuoteNode } from '@lexical/rich-text';
+import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode } from '@lexical/code-core';
+import {
+  registerMarkdownShortcuts,
+  $convertToMarkdownString,
+  HEADING,
+  QUOTE,
+  UNORDERED_LIST,
+  ORDERED_LIST,
+  CHECK_LIST,
+  INLINE_CODE,
+  BOLD_STAR,
+  BOLD_UNDERSCORE,
+  ITALIC_STAR,
+  ITALIC_UNDERSCORE
+} from '@lexical/markdown';
 
 export type SuggestionData =
   { type: 'mode'; startColonIndex: number } |
@@ -40,6 +57,7 @@ export interface MessageTextboxEditorRef {
   focus: () => void;
   insertText: (text: string, startOffset: number, endOffset: number) => void;
   insertEmojiNode: (emojiId: string, startOffset: number, endOffset: number) => void;
+  convertToMarkdownString: () => string;
 }
 
 interface MessageTextboxEditorProps {
@@ -48,6 +66,34 @@ interface MessageTextboxEditorProps {
   onSuggestionChange: (data: SuggestionData | undefined) => void;
   ref?: Ref<MessageTextboxEditorRef>;
 }
+
+const CHAT_MARKDOWN_TRANSFORMERS = [
+  HEADING,
+  QUOTE,
+  UNORDERED_LIST,
+  ORDERED_LIST,
+  CHECK_LIST,
+  INLINE_CODE,
+  BOLD_STAR,
+  BOLD_UNDERSCORE,
+  ITALIC_STAR,
+  ITALIC_UNDERSCORE,
+];
+
+export const MarkdownShortcutsExtension = defineExtension({
+  name: 'MarkdownShortcutsExtension',
+  nodes: () => [
+    HeadingNode,
+    QuoteNode,
+    ListNode,
+    ListItemNode,
+    CodeNode,
+    CodeHighlightNode,
+  ],
+  register(editor) {
+    return registerMarkdownShortcuts(editor, CHAT_MARKDOWN_TRANSFORMERS);
+  },
+});
 
 export const CustomTransformExtension = defineExtension({
   name: 'CustomTransformExtension',
@@ -58,8 +104,34 @@ export const CustomTransformExtension = defineExtension({
 
       const text = textNode.getTextContent();
 
-      const emojiMatch = text.match(/:e([\w\-]+):/);
+      // codeblock match
+      const codeFenceMatch = text.match(/(?:^|\n)```([\w-]*)\s$/);
+      if (codeFenceMatch) {
+        const fullMatch = codeFenceMatch[0];
+        const language = codeFenceMatch[1] || '';
+        const parent = textNode.getParent();
 
+        if (parent) {
+          const paragraphText = parent.getTextContent();
+          const matchIndex = paragraphText.lastIndexOf(fullMatch);
+
+          const codeNode = $createCodeNode(language);
+
+          if (matchIndex > 0) {
+            // Preserve line 1 text above the codeblock
+            const textBefore = paragraphText.slice(0, matchIndex).trimEnd();
+            const precedingParagraph = $createParagraphNode();
+            precedingParagraph.append($createTextNode(textBefore));
+            parent.insertBefore(precedingParagraph);
+          }
+
+          parent.replace(codeNode);
+          codeNode.select();
+          return;
+        }
+      }
+
+      const emojiMatch = text.match(/:e([\w\-]+):/);
       if (emojiMatch) {
         const fullMatch = emojiMatch[0];
         const emojiIdentifier = emojiMatch[1]; // could be either id or shortcode
@@ -113,9 +185,33 @@ const lexicalExtensions = defineExtension({
   dependencies: [
     RichTextExtension,
     HistoryExtension,
+    MarkdownShortcutsExtension,
     CustomTransformExtension,
   ],
-  theme: {},
+  theme: {
+    heading: {
+      h1: "message-h1",
+      h2: "message-h2",
+      h3: "message-h3",
+      h4: "message-h4",
+      h5: "message-h5",
+      h6: "message-h6",
+    },
+    list: {
+      ul: "message-ul",
+      ol: "message-ol",
+      listitem: "message-li",
+      nested: {
+        listitem: 'list-none',
+      },
+    },
+    text: {
+      bold: "message-bold",
+      italic: "message-italic",
+      code: "message-inline-code",
+    },
+    code: "block w-full box-border overflow-x-auto p-3.5 rounded-md bg-[rgb(43,43,43)] border-2 border-gray-600 text-sm font-mono text-white whitespace-pre"
+  },
   onError(error: Error) {
     console.error(error);
   },
@@ -160,6 +256,11 @@ export default function MessageTextboxEditor({
         }
       });
     },
+    convertToMarkdownString: (): string => {
+      return editorRef.current?.read(() => {
+        return $convertToMarkdownString(CHAT_MARKDOWN_TRANSFORMERS);
+      }) ?? "";
+    },
   }), []);
 
   return (
@@ -201,7 +302,74 @@ function TextArea({
     return editor.registerCommand(
       KEY_DOWN_COMMAND,
       (event: KeyboardEvent) => {
+        // handle enter to breakout of codeblock
+        if (event.key === "Escape") {
+          let escaped = false;
+          editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const node = selection.anchor.getNode();
+              const codeNode = $isCodeNode(node) ? node : node.getParents().find($isCodeNode);
+
+              if (codeNode) {
+                const paragraph = $createParagraphNode();
+                codeNode.insertAfter(paragraph);
+                paragraph.select();
+                escaped = true;
+              }
+            }
+          });
+
+          if (escaped) {
+            event.preventDefault();
+            return true;
+          }
+        }
+
+        // handle enter
         if (event.key === "Enter" && !event.shiftKey) {
+          let exitedCodeBlock = false;
+
+          editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection) && selection.isCollapsed()) {
+              const node = selection.anchor.getNode();
+              const codeNode = $isCodeNode(node) ? node : node.getParents().find($isCodeNode);
+
+              if (codeNode) {
+                const textContent = codeNode.getTextContent();
+
+                // If the cursor is at the very end of the code block and the last line is empty (ends with '\n')
+                if (selection.anchor.offset === node.getTextContentSize() && textContent.endsWith('\n')) {
+                  const paragraph = $createParagraphNode();
+                  codeNode.insertAfter(paragraph);
+                  paragraph.select();
+                  exitedCodeBlock = true;
+                }
+              }
+            }
+          });
+
+          if (exitedCodeBlock) {
+            event.preventDefault();
+            return true;
+          }
+
+          let isInsideCodeBlock = false;
+          editor.getEditorState().read(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const node = selection.anchor.getNode();
+              if ($isCodeNode(node) || node.getParents().some($isCodeNode)) {
+                isInsideCodeBlock = true;
+              }
+            }
+          });
+
+          if (isInsideCodeBlock) {
+            return false;
+          }
+
           event.preventDefault(); // prevent insert new line
           onEnterSend();
 

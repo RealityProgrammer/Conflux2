@@ -104,18 +104,19 @@ export default function CodeBlock({ language, code }: CodeBlockProps) {
       isMounted = false;
     };
   }, [language]);
-  
+
   return (
     <div className="relative group my-1">
-      <div className="flex items-center justify-between px-2 py-1.5 bg-gray-800 text-xs text-gray-400 rounded-t-md border-2 border-b-0 border-gray-500">
+      <div className="flex items-center justify-between px-2 py-1.5 bg-gray-800 text-xs text-gray-400 rounded-t-md border-2 border-b-0 border-gray-600">
         <span>{language || "Unknown"}</span>
+
         <IconButton theme="default" onClick={() => navigator.clipboard.writeText(code)}>
           <BsCopy className="size-4" />
         </IconButton>
       </div>
 
       {!isLoaded ? (
-        <pre className="p-3 bg-gray-900 text-gray-400 text-xs font-mono rounded-b-md border-2 border-gray-500 m-0">
+        <pre className="p-3 bg-gray-900 text-gray-400 text-xs font-mono rounded-b-md border-2 border-gray-600 m-0">
           <code>{code}</code>
         </pre>
       ) : (
@@ -123,7 +124,7 @@ export default function CodeBlock({ language, code }: CodeBlockProps) {
           children={code}
           language={lang}
           style={a11yDark}
-          className="mt-0! border-2! border-gray-500! rounded-t-none! rounded-b-md! overflow-hidden w-full"
+          className="mt-0! border-2! border-gray-600! rounded-t-none! rounded-b-md! overflow-hidden w-full"
         />
       )}
     </div>

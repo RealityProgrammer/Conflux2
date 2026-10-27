@@ -48,10 +48,6 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const [suggestion, setSuggestion] = useState<SuggestionData | undefined>(undefined);
 
-  useEffect(() => {
-    console.log("suggestion:", suggestion);
-  }, [suggestion]);
-
   const notifyTyping = useTypingEmitter(conversationId);
 
   const handleAttachmentButtonClick = () => {
@@ -124,8 +120,10 @@ export default function ChatInput({disabled}: ChatInputProps) {
   const handleSend = () => {
     if (!isSendable || !textboxEditorRef.current) return;
 
+    const convertedBody = textboxEditorRef.current.convertToMarkdownString();
+
     handleSendMessage?.({
-      messageBody: messageBody,
+      messageBody: convertedBody,
       attachments: attachments.map(attachment => attachment.file),
       replyingMessage: replyingMessage,
     });
@@ -262,6 +260,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
         <IconButton
           className="flex-none mb-2"
           disabled={!isSendable}
+          isLoading={false}
           onClick={handleSend}
         >
           <BsSend className="size-6"/>

@@ -88,32 +88,32 @@ function remarkCustomTokens() {
 const markdownComponents: Components = {
   // heading
   h1: ({ children, node, ...props }) => (
-    <h1 className="text-2xl font-bold mt-4 mb-2 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h1 className="message-h1 whitespace-pre-wrap wrap-break-word" {...props}>
       {children}
     </h1>
   ),
   h2: ({ children, node, ...props }) => (
-    <h2 className="text-xl font-bold mt-3 mb-2 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h2 className="message-h2 whitespace-pre-wrap wrap-break-word" {...props}>
       {children}
     </h2>
   ),
   h3: ({ children, node, ...props }) => (
-    <h3 className="text-lg font-bold mt-3 mb-1.5 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h3 className="message-h3 whitespace-pre-wrap wrap-break-word" {...props}>
       {children}
     </h3>
   ),
   h4: ({ children, node, ...props }) => (
-    <h4 className="text-base font-bold mt-2 mb-1 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h4 className="message-h4 whitespace-pre-wrap wrap-break-word" {...props}>
       {children}
     </h4>
   ),
   h5: ({ children, node, ...props }) => (
-    <h5 className="text-sm font-bold mt-2 mb-1 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h5 className="message-h5 whitespace-pre-wrap wrap-break-word" {...props}>
       {children}
     </h5>
   ),
   h6: ({ children, node, ...props }) => (
-    <h6 className="text-xs font-bold mt-2 mb-1 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h6 className="message-h6 whitespace-pre-wrap wrap-break-word" {...props}>
       {children}
     </h6>
   ),
@@ -138,7 +138,7 @@ const markdownComponents: Components = {
   code: ({ className, children, node, ...props }) => {
     return (
       <code
-        className={`${className ?? ""} bg-black/8 px-1.5 py-0.5 rounded-md inline-block`}
+        className={`${className ?? ""} message-inline-code inline-block`}
         {...props}
       >
         {children}
@@ -150,14 +150,14 @@ const markdownComponents: Components = {
     const isTaskList = className?.includes('contains-task-list');
 
     return (
-      <ul className={`${isTaskList ? "ml-1 list-none" : "list-disc ml-5"}`} {...props}>
+      <ul className={`${isTaskList ? "ml-1 list-none" : "message-ul"}`} {...props}>
         {children}
       </ul>
     );
   },
   ol: ({ children, className, node, ...props }) => {
     return (
-      <ol className="list-decimal ml-5 my-1" {...props}>
+      <ol className="message-ol" {...props}>
         {children}
       </ol>
     );
