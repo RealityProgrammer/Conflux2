@@ -1,19 +1,19 @@
-import Markdown, { type Components } from "react-markdown";
+import Markdown, {type Components} from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import {isValidElement, lazy} from "react";
 import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.ts";
-import { visit } from "unist-util-visit";
-import type { Node, Parent, Literal } from "unist";
+import {visit} from "unist-util-visit";
+import type {Literal, Node, Parent} from "unist";
 import {formatDate} from "date-fns";
 import {Emoji} from "../Emoji.tsx";
-import {Tooltip, Separator} from "radix-ui";
+import {Separator, Tooltip} from "radix-ui";
 import {Avatar} from "../Avatar.tsx";
 import {useGetEmojiDetailsQuery} from "../../graphql/queries.ts";
-const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 import {BsExclamationTriangle} from "react-icons/bs";
+const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 
 interface MessageContentProps {
   content: string | null;
@@ -60,10 +60,9 @@ function remarkCustomTokens() {
           } as Literal);
         }
         else if (emojiMatch !== undefined) {
-          const emojiName = emojiMatch;
           newChildren.push({
             type: "html",
-            value: `<span data-chat-emoji="${emojiName}"></span>`,
+            value: `<span data-chat-emoji="${emojiMatch}"></span>`,
           } as Literal);
         }
         // TODO: @ mention
@@ -405,5 +404,5 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>
-  )
+  );
 }
