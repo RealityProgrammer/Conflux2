@@ -3,45 +3,76 @@ interface UseExtractInputSuggestionProps {
   cursorPosition: number;
 }
 
-type UseExtractInputSuggestionResult =
-  { type: "none" | "unknown" } | (
-    { suggestionStartPosition: number } & (
-      { type: "mode" } |
-      { type: "emoji", searchTerm?: string } |
-      { type: "time", miliseconds: number }
-    )
-  )
+export type UseExtractInputSuggestionResult = {
+  type: "mode";
+  startColonIndex: number;
+} | {
+  type: "emoji";
+  startColonIndex: number;
+  modeIndex: number;
+  startPayloadIndex: number;
+  searchTerm: string;
+} | {
+  type: "time";
+  startColonIndex: number;
+  modeIndex: number;
+  startPayloadIndex: number;
+  milliseconds: number;
+  rawVal: string;
+} | {
+  type: "unknown";
+  startColonIndex: number;
+};
 
 export default function useExtractInputSuggestion({
   text,
   cursorPosition
-}: UseExtractInputSuggestionProps): UseExtractInputSuggestionResult {
+}: UseExtractInputSuggestionProps): UseExtractInputSuggestionResult | undefined {
   const textBeforeCursor = text.slice(0, cursorPosition);
 
-  // if sliced message end with a ":", show suggestion about the "mode" (could be either emoji, time, etc...)
-  if (textBeforeCursor.endsWith(":")) return { type: "mode", suggestionStartPosition: textBeforeCursor.length - 1 };
-
-  // emoji mode trigger ":e" or ":e[search_term]"
   const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
   if (emojiMatch) {
+    const startColonIndex = emojiMatch.index!;
     return {
       type: "emoji",
-      searchTerm: emojiMatch[1] || undefined,
-      suggestionStartPosition: emojiMatch.index!,
+      startColonIndex,
+      modeIndex: startColonIndex + 1,           // point to the "e"
+      startPayloadIndex: startColonIndex + 2,   // point to the start of the search term
+      searchTerm: emojiMatch[1] || "",
     };
   }
 
-  // time mode trigger ":t" or ":t[value]"
   const timeMatch = textBeforeCursor.match(/:t(\d*)$/);
   if (timeMatch) {
-    const rawVal = timeMatch[1].trim();
-    const miliseconds = rawVal ? Number(rawVal) || 0 : Date.now();
-    return { 
+    const startColonIndex = timeMatch.index!;
+    const rawVal = timeMatch[1];
+    const rawValTrimmed = rawVal.trim();
+    const milliseconds = rawValTrimmed ? Number(rawValTrimmed) || 0 : Date.now();
+
+    return {
       type: "time",
-      miliseconds,
-      suggestionStartPosition: timeMatch.index!,
+      startColonIndex,
+      modeIndex: startColonIndex + 1,           // point to the "t"
+      startPayloadIndex: startColonIndex + 2,   // point to the start of the digits
+      milliseconds,
+      rawVal,
     };
   }
 
-  return { type: "unknown" };
+  if (textBeforeCursor.endsWith(":")) {
+    return {
+      type: "mode",
+      startColonIndex: textBeforeCursor.length - 1
+    };
+  }
+
+  const unknownMatch = textBeforeCursor.match(/:([^:\s]+)$/);
+  if (unknownMatch) {
+    return {
+      type: "unknown",
+      startColonIndex: unknownMatch.index!,
+    };
+  }
+
+  return undefined;
 }

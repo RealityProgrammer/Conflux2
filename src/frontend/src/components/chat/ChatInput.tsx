@@ -53,17 +53,6 @@ export default function ChatInput({disabled}: ChatInputProps) {
     text: messageBody,
     cursorPosition,
   });
-  
-  const handleInsertStringAtCursorPosition = (value: string) => {
-    setMessageBody((prev: string): string => prev.slice(0, cursorPosition) + value + prev.slice(cursorPosition));
-    setCursorPosition((prev: number): number => prev + value.length);
-  };
-  
-  // const handleReplaceStartSuggestion = (value: string) => {
-  //   if (suggestion.type === "none" || suggestion.type === "unknown") return;
-  //
-  //   setMessageBody((prev: string): string => prev.slice(0, suggestion.suggestionStartPosition) + value + prev.slice(cursorPosition));
-  // }
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
@@ -169,34 +158,67 @@ export default function ChatInput({disabled}: ChatInputProps) {
     }
   };
 
+  const handleInsertString = (replacementText: string, replaceFromIndex: number) => {
+    const before = messageBody.slice(0, replaceFromIndex);
+    const after = messageBody.slice(cursorPosition);
+    const newText = before + replacementText + after;
+
+    setMessageBody(newText);
+    const newCursor = before.length + replacementText.length;
+    setCursorPosition(newCursor);
+
+    // Sync textarea DOM value, cursor, and height immediately
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.value = newText;
+        textareaRef.current.selectionStart = newCursor;
+        textareaRef.current.selectionEnd = newCursor;
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        textareaRef.current.focus();
+      }
+    }, 0);
+  };
+
   const setGalleryElements = useMediaGalleryStore(state => state.setElements);
 
   return (
     <footer className="relative flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
-      {suggestion.type === "mode" ? (
-        <Suggestion.Mode
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-          onSelect={(mode) => {
-            handleInsertStringAtCursorPosition(mode);
-          }}
-        />
-      ) : suggestion.type === "emoji" ? (
-        <Suggestion.Emoji
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-          searchTerm={suggestion.searchTerm ?? ""}
-          onSelect={(emojiIds) => {
-            handleInsertStringAtCursorPosition(emojiIds + ": ");
-          }}
-        />
-      ) : suggestion.type === "time" ? (
-        <Suggestion.Time
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-          onSelectSystemTime={() => {
-            handleInsertStringAtCursorPosition(String(new Date().getTime()) + ": ");
-          }}
-        />
-      ) : null}
-      
+      {suggestion && (
+        <>
+          {suggestion.type === "mode" ? (
+            <Suggestion.Mode
+              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+              onSelect={(mode) => {
+                // cursor is after the start colon, insert the mode directly
+                handleInsertString(mode, suggestion.startColonIndex + 1);
+              }}
+            />
+          ) : suggestion.type === "emoji" ? (
+            <Suggestion.Emoji
+              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+              searchTerm={suggestion.searchTerm ?? ""}
+              onSelect={(emojiId) => {
+                // replace from the starting colon with the full formatted emoji tag and a trailing space
+                handleInsertString(`:e${emojiId}: `, suggestion.startColonIndex);
+              }}
+            />
+          ) : suggestion.type === "time" ? (
+            <Suggestion.Time
+              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+              onSelectSystemTime={() => {
+                // replace from the starting colon with the formatted timestamp tag and a trailing space
+                handleInsertString(`:t${new Date().getTime()}: `, suggestion.startColonIndex);
+              }}
+            />
+          ) : (
+            <Suggestion.Unknown
+              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+            />
+          )}
+        </>
+      )}
+
       {replyingMessage && (
         <section className="flex flex-col min-w-0">
           <div className="flex flex-row gap-2 mb-1">
@@ -325,12 +347,13 @@ function AttachmentThumbnail({file, previewUrl, onRemove, onClick}: AttachmentTh
         </div>
       )}
 
-      <IconButton isLoading={false} theme="danger"
-                  className="size-6 absolute top-0 right-0 rounded-md invisible group-hover:visible"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove();
-                  }}
+      <IconButton
+        isLoading={false} theme="danger"
+        className="size-6 absolute top-0 right-0 rounded-md invisible group-hover:visible"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
       >
         <BsTrash className="size-5"/>
       </IconButton>

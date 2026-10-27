@@ -46,7 +46,7 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
 }
 
 interface EmojiProps {
-  onSelect: (emojiIds: string) => void;
+  onSelect: (emojiId: string) => void;
   searchTerm: string;
   className?: string;
 }
@@ -122,7 +122,7 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   }, 1000);
   
   return (
-    <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll ${className}`}>
+    <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll scrollbar-none ${className}`}>
       <ul className="space-y-1 text-sm">
         <li className="px-3 py-1.5 flex flex-row items-center mt-1" onClick={onSelectSystemTime}>
           <p className="flex-1 text-left">Display current time</p>
@@ -145,8 +145,17 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   );
 }
 
+function UnknownMode({ className = "" }: TimeProps) {
+  return (
+    <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll py-2 ${className}`}>
+      <p className="text-center text-sm">Unknown suggestion mode</p>
+    </div>
+  );
+}
+
 export const Suggestion = {
   Mode: SelectMode,
   Emoji: EmojiMode,
   Time: TimeMode,
+  Unknown: UnknownMode,
 }

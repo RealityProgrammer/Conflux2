@@ -3,7 +3,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
-import {isValidElement, lazy} from "react";
+import {isValidElement, lazy, useEffect} from "react";
 import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.ts";
 import {visit} from "unist-util-visit";
 import type {Literal, Node, Parent} from "unist";
@@ -13,6 +13,7 @@ import {Separator, Tooltip} from "radix-ui";
 import {Avatar} from "../Avatar.tsx";
 import {useGetEmojiDetailsQuery} from "../../graphql/queries.ts";
 import {BsExclamationTriangle} from "react-icons/bs";
+import {useDeadEmojiStore} from "../../store/useDeadEmojiStore.ts";
 const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 
 interface MessageContentProps {
@@ -325,13 +326,65 @@ export default function MessageBody({
 }
 
 function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
+  const isKnownDead = useDeadEmojiStore((state) => state.isDead(emojiId));
+  const markAsDead = useDeadEmojiStore((state) => state.markAsDead);
+
   const { data, isLoading, isError } = useGetEmojiDetailsQuery({
     id: emojiId,
   }, {
+    enabled: !isKnownDead,
     staleTime: 30 * 60 * 1000,  // 30 min stale time
     refetchOnWindowFocus: false,
-    retry: false,
+    retry: 3,
   });
+
+  const isNotFound = !isLoading && !isError && data?.emoji === null;
+
+  useEffect(() => {
+    if (isError) {
+      markAsDead(emojiId);
+    }
+  }, [isNotFound, emojiId, markAsDead]);
+
+  if (isKnownDead || isNotFound) {
+    return (
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <Emoji.Root emojiId={emojiId} className="size-6 inline-block align-text-bottom" />
+        </Tooltip.Trigger>
+
+        <Tooltip.Portal>
+          <Tooltip.Content
+            side="top"
+            sideOffset={5}
+            className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm"
+          >
+            <p className="font-mono text-xs text-gray-400">:unknown_emoji:</p>
+            <p className="text-[10px] text-gray-500">This emoji no longer exists.</p>
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <Emoji.Root emojiId={emojiId} className="size-6 inline-block align-text-bottom" />
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            side="top"
+            sideOffset={5}
+            className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm"
+          >
+            <p className="text-xs text-red-400">Failed to load emoji details.</p>
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    );
+  }
 
   return (
     <Tooltip.Root>
@@ -348,59 +401,50 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
           sideOffset={5}
           className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150 space-y-2"
         >
-          {isError ? (
-            <div className="size-full flex flex-col justify-center items-center gap-1">
-              <BsExclamationTriangle className="size-8 fill-white"/>
-              <p className="text-center select-none">Failed to load emoji details.</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-row items-center gap-2">
-                <Emoji.Root
-                  emojiId={emojiId}
-                  className="size-10 flex-none"
-                />
+          <div className="flex flex-row items-center gap-2">
+            <Emoji.Root
+              emojiId={emojiId}
+              className="size-10 flex-none"
+            />
 
+            {data && data.emoji && !isLoading ? (
+              <p className="flex-1 font-mono">:{data.emoji.shortCode}:</p>
+            ) : (
+              <div className="w-1/2 h-5 rounded-full bg-white/10 animate-pulse"></div>
+            )}
+          </div>
+
+          <Separator.Root className="horizontal-separator"/>
+
+          <div className="select-none">
+            <p>This emoji is from:</p>
+
+            <div className="flex flex-row items-center gap-2 mt-2">
+              {data && data.emoji && !isLoading ? (
+                <Avatar.Server
+                  serverId={data.emoji.server.id}
+                  version={data.emoji.server.avatar?.version}
+                  className="flex-none size-10 rounded-full overflow-hidden"
+                />
+              ) : (
+                <Avatar.Skeleton className="flex-none size-10 rounded-full"/>
+              )}
+
+              <div className="flex-1">
                 {data && data.emoji && !isLoading ? (
-                  <p className="flex-1 font-mono">:{data.emoji.shortCode}:</p>
+                  <>
+                    <p className="font-semibold">{data.emoji.server.name}</p>
+                    <p className="text-xs">{data.emoji.server.numMembers} members</p>
+                  </>
                 ) : (
-                  <div className="w-1/2 h-5 rounded-full bg-white/10 animate-pulse"></div>
+                  <>
+                    <div className="h-5 w-1/2 bg-white/10 animate-pulse rounded-full"></div>
+                    <div className="h-4 w-1/3 bg-white/10 animate-pulse rounded-full mt-1"></div>
+                  </>
                 )}
               </div>
-
-              <Separator.Root className="horizontal-separator"/>
-
-              <div className="select-none">
-                <p>This emoji is from:</p>
-
-                <div className="flex flex-row items-center gap-2 mt-2">
-                  {data && data.emoji && !isLoading ? (
-                    <Avatar.Server
-                      serverId={data.emoji.server.id}
-                      version={data.emoji.server.avatar?.version}
-                      className="flex-none size-10 rounded-full overflow-hidden"
-                    />
-                  ) : (
-                    <Avatar.Skeleton className="flex-none size-10 rounded-full"/>
-                  )}
-
-                  <div className="flex-1">
-                    {data && data.emoji && !isLoading ? (
-                      <>
-                        <p className="font-semibold">{data.emoji.server.name}</p>
-                        <p className="text-xs">{data.emoji.server.numMembers} members</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="h-5 w-1/2 bg-white/10 animate-pulse rounded-full"></div>
-                        <div className="h-4 w-1/3 bg-white/10 animate-pulse rounded-full mt-1"></div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>
