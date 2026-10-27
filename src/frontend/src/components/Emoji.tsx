@@ -3,18 +3,18 @@ import type {HTMLAttributes} from "react";
 
 interface EmojiProps extends HTMLAttributes<HTMLDivElement> {
   emojiId: string;
-  shortCode: string;
+  shortCode?: string;
 }
 
 function Root({ emojiId, shortCode, className, ...props }: EmojiProps) {
   return (
-    <div className={`${className}`} {...props}>
+    <span className={`${className}`} {...props}>
       <img
         src={emojiService.getImageUrl(emojiId)}
-        alt={shortCode}
+        alt={shortCode ?? "Emoji"}
         className="size-full object-contain"
       />
-    </div>
+    </span>
   )
 }
 

@@ -1,0 +1,14 @@
+query GetEmojiDetails($id: UUID!) {
+    emoji(id: $id) {
+        shortCode
+        server {
+            id
+            name
+            description
+            avatar {
+                version
+            }
+            numMembers
+        }
+    }
+}

@@ -59,11 +59,11 @@ export default function ChatInput({disabled}: ChatInputProps) {
     setCursorPosition((prev: number): number => prev + value.length);
   };
   
-  const handleReplaceStartSuggestion = (value: string) => {
-    if (suggestion.type === "none") return;
-    
-    setMessageBody((prev: string): string => prev.slice(0, suggestion.suggestionStartPosition) + value + prev.slice(cursorPosition));
-  }
+  // const handleReplaceStartSuggestion = (value: string) => {
+  //   if (suggestion.type === "none" || suggestion.type === "unknown") return;
+  //
+  //   setMessageBody((prev: string): string => prev.slice(0, suggestion.suggestionStartPosition) + value + prev.slice(cursorPosition));
+  // }
 
   const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 

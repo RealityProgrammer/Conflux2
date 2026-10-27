@@ -4,7 +4,7 @@ interface UseExtractInputSuggestionProps {
 }
 
 type UseExtractInputSuggestionResult =
-  { type: "none" } | (
+  { type: "none" | "unknown" } | (
     { suggestionStartPosition: number } & (
       { type: "mode" } |
       { type: "emoji", searchTerm?: string } |
@@ -42,16 +42,6 @@ export default function useExtractInputSuggestion({
       suggestionStartPosition: timeMatch.index!,
     };
   }
-  
-  // fallback to emoji, might remove
-  const fallbackEmojiMatch = textBeforeCursor.match(/:([\w-]{2,}$)/);
-  if (fallbackEmojiMatch) {
-    return {
-      type: "emoji",
-      searchTerm: fallbackEmojiMatch[1],
-      suggestionStartPosition: fallbackEmojiMatch.index!,
-    };
-  }
 
-  return { type: "none" };
+  return { type: "unknown" };
 }

@@ -8,7 +8,12 @@ import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.ts"
 import { visit } from "unist-util-visit";
 import type { Node, Parent, Literal } from "unist";
 import {formatDate} from "date-fns";
+import {Emoji} from "../Emoji.tsx";
+import {Tooltip, Separator} from "radix-ui";
+import {Avatar} from "../Avatar.tsx";
+import {useGetEmojiDetailsQuery} from "../../graphql/queries.ts";
 const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
+import {BsExclamationTriangle} from "react-icons/bs";
 
 interface MessageContentProps {
   content: string | null;
@@ -19,12 +24,13 @@ function remarkCustomTokens() {
   return (tree: Node) => {
     visit(tree, "text", (node: any, index: number | undefined, parent: Parent | undefined) => {
       if (!parent || parent.type === "code" || parent.type === "inlineCode") {
+        // TODO: also ignore quote and blockquote
         return;
       }
 
       const value = node.value;
 
-      const regex = /(:t(\d+):)|:([a-zA-Z0-9_-]+):/g;
+      const regex = /:t(\d+):|:e([\da-f-]+):/g
       if (!regex.test(value)) return;
 
       regex.lastIndex = 0;
@@ -36,7 +42,6 @@ function remarkCustomTokens() {
         const matchStart = match.index;
         const matchEnd = regex.lastIndex;
 
-        // Push regular text found before the match
         if (matchStart > lastIndex) {
           newChildren.push({
             type: "text",
@@ -44,24 +49,24 @@ function remarkCustomTokens() {
           } as Literal);
         }
 
-        // Handle Timestamp (:t<ms>:)
-        if (match[2]) {
-          const ms = Number(match[2]) || 0;
-          
+        const timestampMatch = match[1];
+        const emojiMatch = match[2];
+
+        if (timestampMatch !== undefined) {
+          const ms = Number(timestampMatch) || 0;
           newChildren.push({
             type: "html",
             value: `<span data-chat-timestamp="${ms}"></span>`,
           } as Literal);
         }
-        // Handle Emoji / Shortcode (:pepe:)
-        else if (match[3]) {
-          const emojiName = match[3];
-
+        else if (emojiMatch !== undefined) {
+          const emojiName = emojiMatch;
           newChildren.push({
             type: "html",
             value: `<span data-chat-emoji="${emojiName}"></span>`,
           } as Literal);
         }
+        // TODO: @ mention
 
         lastIndex = matchEnd;
       }
@@ -73,7 +78,6 @@ function remarkCustomTokens() {
         } as Literal);
       }
 
-      // 4. Swap the original text node with our new split nodes in the tree
       if (index !== undefined && parent.children) {
         parent.children.splice(index, 1, ...newChildren);
         return index + newChildren.length;
@@ -293,7 +297,7 @@ const markdownComponents: Components = {
     const emojiAttribute: string = (props as any)["data-chat-emoji"] as string;
     if (emojiAttribute) {
       return (
-        <span>emoji {emojiAttribute} here</span>
+        <EmojiWithTooltip emojiId={emojiAttribute}/>
       );
     }
     
@@ -319,4 +323,87 @@ export default function MessageBody({
       )}
     </>
   );
+}
+
+function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
+  const { data, isLoading, isError } = useGetEmojiDetailsQuery({
+    id: emojiId,
+  }, {
+    staleTime: 30 * 60 * 1000,  // 30 min stale time
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <Emoji.Root
+          emojiId={emojiId}
+          className="size-6 inline-block align-text-bottom"
+        />
+      </Tooltip.Trigger>
+
+      <Tooltip.Portal>
+        <Tooltip.Content
+          side="top"
+          sideOffset={5}
+          className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150 space-y-2"
+        >
+          {isError ? (
+            <div className="size-full flex flex-col justify-center items-center gap-1">
+              <BsExclamationTriangle className="size-8 fill-white"/>
+              <p className="text-center select-none">Failed to load emoji details.</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-row items-center gap-2">
+                <Emoji.Root
+                  emojiId={emojiId}
+                  className="size-10 flex-none"
+                />
+
+                {data && data.emoji && !isLoading ? (
+                  <p className="flex-1 font-mono">:{data.emoji.shortCode}:</p>
+                ) : (
+                  <div className="w-1/2 h-5 rounded-full bg-white/10 animate-pulse"></div>
+                )}
+              </div>
+
+              <Separator.Root className="horizontal-separator"/>
+
+              <div className="select-none">
+                <p>This emoji is from:</p>
+
+                <div className="flex flex-row items-center gap-2 mt-2">
+                  {data && data.emoji && !isLoading ? (
+                    <Avatar.Server
+                      serverId={data.emoji.server.id}
+                      version={data.emoji.server.avatar?.version}
+                      className="flex-none size-10 rounded-full overflow-hidden"
+                    />
+                  ) : (
+                    <Avatar.Skeleton className="flex-none size-10 rounded-full"/>
+                  )}
+
+                  <div className="flex-1">
+                    {data && data.emoji && !isLoading ? (
+                      <>
+                        <p className="font-semibold">{data.emoji.server.name}</p>
+                        <p className="text-xs">{data.emoji.server.numMembers} members</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="h-5 w-1/2 bg-white/10 animate-pulse rounded-full"></div>
+                        <div className="h-4 w-1/3 bg-white/10 animate-pulse rounded-full mt-1"></div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  )
 }
