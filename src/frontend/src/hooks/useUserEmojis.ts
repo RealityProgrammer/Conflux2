@@ -1,6 +1,7 @@
 import {useQuery, type UseQueryResult} from "@tanstack/react-query";
 import type {ServerEmojiGroupDto} from "../api/types.ts";
 import {sessionUserService} from "../api/sessionUserService.ts";
+import {queryClient} from "../main.tsx";
 
 export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   const queryResult = useQuery({
@@ -23,3 +24,25 @@ export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
 }
 
 useUserEmojis.queryKey = ["UserEmojis"];
+
+export function findMatchingEmoji(identifier: string) {
+  // Synchronously grab cached data from React Query
+  const emojiGroups = queryClient.getQueryData<ServerEmojiGroupDto[]>(
+    useUserEmojis.queryKey
+  );
+  if (!emojiGroups) return null;
+
+  for (const group of emojiGroups) {
+    const emojis = group.emojiEntries;
+
+    const matched = emojis.find(
+      (emoji) => emoji.id === identifier || emoji.shortCode === identifier
+    );
+
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return null;
+}

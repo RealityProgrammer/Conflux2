@@ -7,13 +7,12 @@ import {isValidElement, lazy, useEffect} from "react";
 import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.ts";
 import {visit} from "unist-util-visit";
 import type {Literal, Node, Parent} from "unist";
-import {formatDate} from "date-fns";
 import {Emoji} from "../Emoji.tsx";
 import {Separator, Tooltip} from "radix-ui";
 import {Avatar} from "../Avatar.tsx";
 import {useGetEmojiDetailsQuery} from "../../graphql/queries.ts";
-import {BsExclamationTriangle} from "react-icons/bs";
 import {useDeadEmojiStore} from "../../store/useDeadEmojiStore.ts";
+import Timestamp from "./Timestamp.tsx";
 const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 
 interface MessageContentProps {
@@ -286,11 +285,7 @@ const markdownComponents: Components = {
       const timeMillisecond = Number(timestampAttribute);
 
       return (
-        <span
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 bg-white/10 text-white text-sm rounded-md font-mono"
-        >
-          {formatDate(new Date(timeMillisecond), "yyyy/MM/dd HH:mm:ss.SSS")}
-        </span>
+        <Timestamp date={new Date(timeMillisecond)}/>
       );
     }
     

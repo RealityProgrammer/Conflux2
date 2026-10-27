@@ -21,11 +21,13 @@ import {
   KEY_DOWN_COMMAND,
   COMMAND_PRIORITY_LOW,
   type LexicalEditor,
-  type TextNode,
+  TextNode,
   $createRangeSelection,
   $setSelection
 } from "lexical";
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
+import {$createTimeNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
+import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
 
 export type SuggestionData =
   { type: 'mode'; startColonIndex: number } |
@@ -47,14 +49,71 @@ interface MessageTextboxEditorProps {
   ref?: Ref<MessageTextboxEditorRef>;
 }
 
+export const CustomTransformExtension = defineExtension({
+  name: 'CustomTransformExtension',
+  nodes: () => [EmojiDecoratorNode, TimestampDecoratorNode],
+  register(editor) {
+    return editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
+      if (!textNode.isAttached()) return;
+
+      const text = textNode.getTextContent();
+
+      const emojiMatch = text.match(/:e([\w\-]+):/);
+
+      if (emojiMatch) {
+        const fullMatch = emojiMatch[0];
+        const emojiIdentifier = emojiMatch[1]; // could be either id or shortcode
+        const index = emojiMatch.index!;
+
+        const matchedEmoji = findMatchingEmoji(emojiIdentifier);
+
+        if (!matchedEmoji) return;
+
+        let targetNode = textNode;
+
+        // isolate the shortcode by splitting before and after it
+        if (index > 0) {
+          [, targetNode] = targetNode.splitText(index);
+        }
+
+        if (targetNode.getTextContent().length > fullMatch.length) {
+          targetNode.splitText(fullMatch.length);
+        }
+
+        const emojiNode = $createEmojiNode(matchedEmoji.id);
+        targetNode.replace(emojiNode);
+        return;
+      }
+
+      const timeMatch = text.match(/:t(\d*):/);
+      if (timeMatch) {
+        const fullMatch = timeMatch[0];
+        const timestampStr = timeMatch[1].length === 0 ? new Date().getTime() : timeMatch[1];
+        const index = timeMatch.index!;
+
+        let targetNode = textNode;
+
+        if (index > 0) {
+          [, targetNode] = targetNode.splitText(index);
+        }
+        if (targetNode.getTextContent().length > fullMatch.length) {
+          targetNode.splitText(fullMatch.length);
+        }
+
+        const timeNode = $createTimeNode(Number(timestampStr));
+        targetNode.replace(timeNode);
+        return;
+      }
+    });
+  },
+});
+
 const lexicalExtensions = defineExtension({
   name: "ChatInputEditor",
   dependencies: [
     RichTextExtension,
     HistoryExtension,
-  ],
-  nodes: [
-    EmojiDecoratorNode,
+    CustomTransformExtension,
   ],
   theme: {},
   onError(error: Error) {
@@ -325,11 +384,9 @@ function getGlobalOffsetForNodeOffset(targetNode: TextNode, targetOffset: number
 
 function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
   const root = $getRoot();
-  const textNodes = root.getAllTextNodes();
-
   let currentLength = 0;
-  let startPoint: { node: LexicalNode; offset: number } | null = null;
-  let endPoint: { node: LexicalNode; offset: number } | null = null;
+  let startPoint: { node: LexicalNode; offset: number; type: 'text' | 'element' } | null = null;
+  let endPoint: { node: LexicalNode; offset: number; type: 'text' | 'element' } | null = null;
 
   function traverse(node: LexicalNode) {
     if (startPoint && endPoint) return;
@@ -343,19 +400,29 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
       const nodeText = node.getTextContent();
       const nodeLength = nodeText.length;
 
-      if (!startPoint && currentLength + nodeLength >= startOffset) {
-        if ($isTextNode(node)) {
-          startPoint = { node, offset: startOffset - currentLength };
-        } else {
-          startPoint = { node, offset: 0 };
+      if ($isTextNode(node)) {
+        if (!startPoint && currentLength + nodeLength >= startOffset) {
+          startPoint = { node, offset: startOffset - currentLength, type: 'text' };
         }
-      }
-
-      if (!endPoint && currentLength + nodeLength >= endOffset) {
-        if ($isTextNode(node)) {
-          endPoint = { node, offset: endOffset - currentLength };
-        } else {
-          endPoint = { node, offset: nodeLength > 0 ? nodeLength : 0 };
+        if (!endPoint && currentLength + nodeLength >= endOffset) {
+          endPoint = { node, offset: endOffset - currentLength, type: 'text' };
+        }
+      } else {
+        if (!startPoint && currentLength + nodeLength >= startOffset) {
+          const parent = node.getParent();
+          if (parent) {
+            const index = parent.getChildren().indexOf(node);
+            const targetOffset = startOffset <= currentLength ? index : index + 1;
+            startPoint = { node: parent, offset: targetOffset, type: 'element' };
+          }
+        }
+        if (!endPoint && currentLength + nodeLength >= endOffset) {
+          const parent = node.getParent();
+          if (parent) {
+            const index = parent.getChildren().indexOf(node);
+            const targetOffset = endOffset <= currentLength ? index : index + 1;
+            endPoint = { node: parent, offset: targetOffset, type: 'element' };
+          }
         }
       }
 
@@ -365,21 +432,39 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
 
   traverse(root);
 
-  // fallback if offsets land at the very end of the document
-  if (!startPoint && textNodes.length > 0) {
-    const lastNode = textNodes[textNodes.length - 1];
-    startPoint = { node: lastNode, offset: lastNode.getTextContentSize() };
+  // fallbacks if offsets land at the very end of the document
+  if (!startPoint) {
+    const lastNode = root.getLastChild();
+    if (lastNode) {
+      if ($isTextNode(lastNode)) {
+        startPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: 'text' };
+      } else {
+        const parent = lastNode.getParent();
+        if (parent) {
+          startPoint = { node: parent, offset: parent.getChildren().length, type: 'element' };
+        }
+      }
+    }
   }
 
-  if (!endPoint && textNodes.length > 0) {
-    const lastNode = textNodes[textNodes.length - 1];
-    endPoint = { node: lastNode, offset: lastNode.getTextContentSize() };
+  if (!endPoint) {
+    const lastNode = root.getLastChild();
+    if (lastNode) {
+      if ($isTextNode(lastNode)) {
+        endPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: 'text' };
+      } else {
+        const parent = lastNode.getParent();
+        if (parent) {
+          endPoint = { node: parent, offset: parent.getChildren().length, type: 'element' };
+        }
+      }
+    }
   }
 
   if (startPoint && endPoint) {
     const selection = $createRangeSelection();
-    selection.anchor.set(startPoint.node.getKey(), startPoint.offset, 'text');
-    selection.focus.set(endPoint.node.getKey(), endPoint.offset, 'text');
+    selection.anchor.set(startPoint.node.getKey(), startPoint.offset, startPoint.type);
+    selection.focus.set(endPoint.node.getKey(), endPoint.offset, endPoint.type);
     $setSelection(selection);
   }
 }

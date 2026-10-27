@@ -1,28 +1,29 @@
-import {DecoratorNode, type LexicalNode, type NodeKey, type EditorConfig, type SerializedLexicalNode, type Spread} from 'lexical';
-import {type ReactNode} from 'react';
+import {DecoratorNode, type LexicalNode, type NodeKey, type EditorConfig, type SerializedLexicalNode, type Spread} from "lexical";
+import {type ReactNode} from "react";
 import {Emoji} from "../../Emoji.tsx";
 
 export type SerializedEmojiNode = Spread<{ emojiId: string; }, SerializedLexicalNode>;
 
 export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
-  __emojiId: string;
+  _emojiId: string;
 
   static getType(): string {
-    return 'emoji-decorator';
+    return "emoji-decorator";
   }
 
   static clone(node: EmojiDecoratorNode): EmojiDecoratorNode {
-    return new EmojiDecoratorNode(node.__emojiId, node.__key);
+    return new EmojiDecoratorNode(node._emojiId, node.__key);
   }
 
   constructor(emojiId: string, key?: NodeKey) {
     super(key);
-    this.__emojiId = emojiId;
+    this._emojiId = emojiId;
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
-    dom.style.display = 'inline-block';
+    const dom = document.createElement("span");
+    dom.style.display = "inline-block";
+    dom.contentEditable = "false";
     return dom;
   }
 
@@ -35,12 +36,16 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
   }
 
   getTextContent(): string {
-    return `:e${this.__emojiId}:`;
+    return `:e${this._emojiId}:`;
+  }
+
+  getTextContentSize(): number {
+    return 2 + this._emojiId.length;
   }
 
   decorate(): ReactNode {
     return (
-      <Emoji.Root emojiId={this.__emojiId} className="size-6 inline-block align-text-bottom" />
+      <Emoji.Root emojiId={this._emojiId} className="size-5 inline-block align-text-bottom" />
     );
   }
 
@@ -50,9 +55,9 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
 
   exportJSON(): SerializedEmojiNode {
     return {
-      type: 'emoji-decorator',
+      type: "emoji-decorator",
       version: 1,
-      emojiId: this.__emojiId,
+      emojiId: this._emojiId,
     };
   }
 }
