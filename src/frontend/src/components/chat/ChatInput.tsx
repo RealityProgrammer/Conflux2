@@ -11,9 +11,8 @@ import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
-import useExtractInputSuggestion from "../../hooks/useExtractInputSuggestion.ts";
 import {Suggestion} from "./Suggestion.tsx";
-import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
+import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -47,10 +46,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
   const [messageBody, setMessageBody] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  const suggestion = useExtractInputSuggestion({
-    text: messageBody,
-    cursorPosition,
-  });
+  const [suggestion, setSuggestion] = useState<SuggestionData | undefined>(undefined);
 
   useEffect(() => {
     console.log("suggestion:", suggestion);
@@ -260,6 +256,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
           ref={textboxEditorRef}
           onTextChange={handleInput}
           onEnterSend={handleSend}
+          onSuggestionChange={setSuggestion}
         />
 
         <IconButton

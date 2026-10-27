@@ -27,6 +27,12 @@ import {
 } from "lexical";
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
 
+export type SuggestionData =
+  { type: 'mode'; startColonIndex: number } |
+  { type: 'emoji'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string } |
+  { type: 'time'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string } |
+  { type: 'unknown'; startColonIndex: number };
+
 export interface MessageTextboxEditorRef {
   reset: () => void;
   focus: () => void;
@@ -37,6 +43,7 @@ export interface MessageTextboxEditorRef {
 interface MessageTextboxEditorProps {
   onTextChange: (text: string, cursorPosition: number) => void;
   onEnterSend: () => void;
+  onSuggestionChange: (data: SuggestionData | undefined) => void;
   ref?: Ref<MessageTextboxEditorRef>;
 }
 
@@ -55,70 +62,10 @@ const lexicalExtensions = defineExtension({
   },
 });
 
-function $selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
-  const root = $getRoot();
-  const textNodes = root.getAllTextNodes();
-
-  let currentLength = 0;
-  let startPoint: { node: LexicalNode; offset: number } | null = null;
-  let endPoint: { node: LexicalNode; offset: number } | null = null;
-
-  function traverse(node: LexicalNode) {
-    if (startPoint && endPoint) return;
-
-    if ($isElementNode(node)) {
-      const children = node.getChildren();
-      for (const child of children) {
-        traverse(child);
-      }
-    } else {
-      const nodeText = node.getTextContent();
-      const nodeLength = nodeText.length;
-
-      if (!startPoint && currentLength + nodeLength >= startOffset) {
-        if ($isTextNode(node)) {
-          startPoint = { node, offset: startOffset - currentLength };
-        } else {
-          startPoint = { node, offset: 0 };
-        }
-      }
-
-      if (!endPoint && currentLength + nodeLength >= endOffset) {
-        if ($isTextNode(node)) {
-          endPoint = { node, offset: endOffset - currentLength };
-        } else {
-          endPoint = { node, offset: nodeLength > 0 ? nodeLength : 0 };
-        }
-      }
-
-      currentLength += nodeLength;
-    }
-  }
-
-  traverse(root);
-
-  // fallback if offsets land at the very end of the document
-  if (!startPoint && textNodes.length > 0) {
-    const lastNode = textNodes[textNodes.length - 1];
-    startPoint = { node: lastNode, offset: lastNode.getTextContentSize() };
-  }
-
-  if (!endPoint && textNodes.length > 0) {
-    const lastNode = textNodes[textNodes.length - 1];
-    endPoint = { node: lastNode, offset: lastNode.getTextContentSize() };
-  }
-
-  if (startPoint && endPoint) {
-    const selection = $createRangeSelection();
-    selection.anchor.set(startPoint.node.getKey(), startPoint.offset, 'text');
-    selection.focus.set(endPoint.node.getKey(), endPoint.offset, 'text');
-    $setSelection(selection);
-  }
-}
-
 export default function MessageTextboxEditor({
   onTextChange,
   onEnterSend,
+  onSuggestionChange,
   ref,
 }: MessageTextboxEditorProps) {
   const editorRef = useRef<LexicalEditor | null>(null);
@@ -134,7 +81,7 @@ export default function MessageTextboxEditor({
     },
     insertText: (text: string, startOffset: number, endOffset: number) => {
       editorRef.current?.update(() => {
-        $selectRangeByGlobalOffsets(startOffset, endOffset);
+        selectRangeByGlobalOffsets(startOffset, endOffset);
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
@@ -144,7 +91,7 @@ export default function MessageTextboxEditor({
     },
     insertEmojiNode: (emojiId: string, startOffset: number, endOffset: number) => {
       editorRef.current?.update(() => {
-        $selectRangeByGlobalOffsets(startOffset, endOffset);
+        selectRangeByGlobalOffsets(startOffset, endOffset);
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
@@ -162,6 +109,7 @@ export default function MessageTextboxEditor({
         <TextArea
           onTextChange={onTextChange}
           onEnterSend={onEnterSend}
+          onSuggestionChange={onSuggestionChange}
           onEditorReady={(editor) => {
             editorRef.current = editor;
           }}
@@ -175,12 +123,14 @@ interface TextAreaProps {
   onTextChange: (text: string, cursorPosition: number) => void;
   onEnterSend: () => void;
   onEditorReady: (editor: LexicalEditor) => void;
+  onSuggestionChange: (data: SuggestionData | undefined) => void;
 }
 
 function TextArea({
   onTextChange,
   onEnterSend,
   onEditorReady,
+  onSuggestionChange,
 }: TextAreaProps) {
   const [editor] = useLexicalComposerContext();
 
@@ -205,12 +155,84 @@ function TextArea({
     );
   }, [editor, onEnterSend]);
 
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          onSuggestionChange(undefined);
+          return;
+        }
+
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
+
+        // suggestion only occur inside normal text nodes
+        if (!$isTextNode(node)) {
+          onSuggestionChange(undefined);
+          return;
+        }
+
+        const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
+        const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
+        if (emojiMatch) {
+          const localColonIdx = emojiMatch.index!;
+
+          onSuggestionChange({
+            type: "emoji",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
+            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            searchTerm: emojiMatch[1] || "",
+          });
+
+          return;
+        }
+
+        const timeMatch = textBeforeCursor.match(/:t(\d*)$/);
+        if (timeMatch) {
+          const localColonIdx = timeMatch.index!;
+          const rawValue = timeMatch[1];
+          const rawValTrimmed = rawValue.trim();
+          const milliseconds = rawValTrimmed ? Number(rawValTrimmed) || 0 : Date.now();
+
+          onSuggestionChange({
+            type: "time",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
+            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            milliseconds,
+            rawValue,
+          });
+
+          return;
+        }
+
+        if (textBeforeCursor.endsWith(":")) {
+          onSuggestionChange({
+            type: "mode",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, textBeforeCursor.length - 1),
+          });
+          return;
+        }
+
+        const unknownMatch = textBeforeCursor.match(/:([^:\s]+)$/);
+        if (unknownMatch) {
+          onSuggestionChange({
+            type: "unknown",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, unknownMatch.index!),
+          });
+          return;
+        }
+
+        onSuggestionChange(undefined);
+      });
+    });
+  }, [editor, onSuggestionChange]);
+
   return (
     <div className="input-field min-h-10 max-h-36 w-full flex-1 text-sm py-2 px-3 overflow-y-auto leading-relaxed relative">
-      <ContentEditable
-        className="outline-none min-h-full whitespace-pre-wrap break-all"
-      />
-
+      <ContentEditable className="outline-none min-h-full whitespace-pre-wrap break-all"/>
       <LexicalSyncPlugin onTextChange={onTextChange}/>
     </div>
   )
@@ -274,4 +296,90 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
 
   walk(root);
   return globalOffset;
+}
+
+function getGlobalOffsetForNodeOffset(targetNode: TextNode, targetOffset: number): number {
+  const root = $getRoot();
+  let globalOffset = 0;
+
+  function traverse(node: LexicalNode): boolean {
+    if (node === targetNode) {
+      globalOffset += targetOffset;
+      return true;
+    }
+
+    if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        if (traverse(child)) return true;
+      }
+    } else {
+      globalOffset += node.getTextContent().length;
+    }
+
+    return false;
+  }
+
+  traverse(root);
+  return globalOffset;
+}
+
+function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
+  const root = $getRoot();
+  const textNodes = root.getAllTextNodes();
+
+  let currentLength = 0;
+  let startPoint: { node: LexicalNode; offset: number } | null = null;
+  let endPoint: { node: LexicalNode; offset: number } | null = null;
+
+  function traverse(node: LexicalNode) {
+    if (startPoint && endPoint) return;
+
+    if ($isElementNode(node)) {
+      const children = node.getChildren();
+      for (const child of children) {
+        traverse(child);
+      }
+    } else {
+      const nodeText = node.getTextContent();
+      const nodeLength = nodeText.length;
+
+      if (!startPoint && currentLength + nodeLength >= startOffset) {
+        if ($isTextNode(node)) {
+          startPoint = { node, offset: startOffset - currentLength };
+        } else {
+          startPoint = { node, offset: 0 };
+        }
+      }
+
+      if (!endPoint && currentLength + nodeLength >= endOffset) {
+        if ($isTextNode(node)) {
+          endPoint = { node, offset: endOffset - currentLength };
+        } else {
+          endPoint = { node, offset: nodeLength > 0 ? nodeLength : 0 };
+        }
+      }
+
+      currentLength += nodeLength;
+    }
+  }
+
+  traverse(root);
+
+  // fallback if offsets land at the very end of the document
+  if (!startPoint && textNodes.length > 0) {
+    const lastNode = textNodes[textNodes.length - 1];
+    startPoint = { node: lastNode, offset: lastNode.getTextContentSize() };
+  }
+
+  if (!endPoint && textNodes.length > 0) {
+    const lastNode = textNodes[textNodes.length - 1];
+    endPoint = { node: lastNode, offset: lastNode.getTextContentSize() };
+  }
+
+  if (startPoint && endPoint) {
+    const selection = $createRangeSelection();
+    selection.anchor.set(startPoint.node.getKey(), startPoint.offset, 'text');
+    selection.focus.set(endPoint.node.getKey(), endPoint.offset, 'text');
+    $setSelection(selection);
+  }
 }
