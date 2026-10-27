@@ -30,6 +30,11 @@ export default function useExtractInputSuggestion({
 }: UseExtractInputSuggestionProps): UseExtractInputSuggestionResult | undefined {
   const textBeforeCursor = text.slice(0, cursorPosition);
 
+  // prevent suggestion if immediately after a success node
+  if (/:e[\w-]+:$/.test(textBeforeCursor) || /:t\d+:$/.test(textBeforeCursor)) {
+    return undefined;
+  }
+
   const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
   if (emojiMatch) {
     const startColonIndex = emojiMatch.index!;

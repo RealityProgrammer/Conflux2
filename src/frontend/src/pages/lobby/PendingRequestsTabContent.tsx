@@ -74,25 +74,20 @@ export default function PendingRequestsTabContent() {
   };
 
   useSignalREvent("FriendRequestReceived", async (_event: FriendRequestReceivedEvent) => {
-    console.log("FriendRequestReceived", _event);
-    
     queryClient.invalidateQueries({
       queryKey: useInfiniteGetPendingFriendRequestsQuery.getKey({}),
     });
   });
 
   useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
-    console.log("FriendRequestRejected", event);
     removeCacheElement(event.rejecterUserId);
   });
 
   useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
-    console.log("FriendRequestAccepted", event);
     removeCacheElement(event.acceptorUserId);
   });
 
   useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
-    console.log("FriendRequestCanceled", event);
     removeCacheElement(event.senderUserId);
   });
 

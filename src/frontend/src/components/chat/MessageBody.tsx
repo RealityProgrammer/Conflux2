@@ -283,13 +283,13 @@ const markdownComponents: Components = {
     const timestampAttribute: string = (props as any)["data-chat-timestamp"] as string;
     
     if (timestampAttribute) {
-      const timeMilisecond = Number(timestampAttribute);
+      const timeMillisecond = Number(timestampAttribute);
 
       return (
         <span
           className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 bg-white/10 text-white text-sm rounded-md font-mono"
         >
-          {formatDate(new Date(timeMilisecond), "yyyy/MM/dd HH:mm:ss.SSS")}
+          {formatDate(new Date(timeMillisecond), "yyyy/MM/dd HH:mm:ss.SSS")}
         </span>
       );
     }

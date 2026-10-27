@@ -90,8 +90,6 @@ function SuccessfullyLoaded() {
   }
 
   useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
-    console.log("member roles updated");
-    
     if (event.serverId !== serverDetails?.id) return;
     if (event.memberUserId !== serverDetails.authorizeInfo.memberId) return;
 

@@ -131,7 +131,7 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   
         <li className="px-3 py-1.5 flex flex-row items-center" onClick={onSelectSystemTime}>
           <p className="flex-1 text-left">Specific point in time</p>
-          <p className="flex-1 text-right">:t&lt;milisecond&gt;:</p>
+          <p className="flex-1 text-right">:t&lt;millisecond&gt;:</p>
         </li>
         
         <Separator.Root className="horizontal-separator mx-2"></Separator.Root>
