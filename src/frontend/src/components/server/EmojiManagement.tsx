@@ -17,7 +17,6 @@ import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {communityServerService} from "../../api/communityServerService.ts";
 import {toast} from "react-toastify";
 import {ServerPermission} from "../../api/schema.ts";
-import {emojiService} from "../../api/emojiService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import {queryClient} from "../../main.tsx";
 import type {EmojiCreatedEvent, EmojiDeletedEvent} from "../../api/events.ts";

@@ -4,7 +4,6 @@ import {sessionUserService} from "../api/sessionUserService.ts";
 import {queryClient} from "../main.tsx";
 import useSignalREvent from "./useSignalREvent.ts";
 import type {EmojiCreatedEvent, EmojiDeletedEvent} from "../api/events.ts";
-import {toast} from "react-toastify";
 
 export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   const queryClient = useQueryClient();
@@ -72,7 +71,7 @@ export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
     );
   });
 
-  useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
+  useSignalREvent("UnbannedFromServer", (_unbannedServerId: string) => {
     queryClient.invalidateQueries({
       queryKey: useUserEmojis.queryKey,
     });

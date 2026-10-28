@@ -13,7 +13,6 @@ import type {
   ServerRoleDeletedEvent,
   ServerRoleUpdatedEvent
 } from "../../api/events.ts";
-import {useSignalR} from "../../contexts/SignalRContext.tsx";
 
 export default function ServerLayout() {
   const { serverId } = useParams();

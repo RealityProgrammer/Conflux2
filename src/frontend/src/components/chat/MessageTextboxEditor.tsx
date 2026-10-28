@@ -11,7 +11,7 @@ import {
   $isTextNode,
   $isElementNode, $createParagraphNode, $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
-  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, type ElementNode,
+  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
