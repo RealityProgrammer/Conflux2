@@ -16,6 +16,7 @@ var maxBannerSize = builder.AddParameter("Media-Max-Banner-Size");
 var maxMessageAttachmentSize = builder.AddParameter("Media-Max-Message-Attachment-Size");
 
 var s3Endpoint = builder.AddParameter("S3-Endpoint", true);
+var s3PreSignUrl = builder.AddParameter("S3-PreSign-Endpoint", true);
 var s3AccessKey = builder.AddParameter("S3-Access-Key", true);
 var s3SecretKey = builder.AddParameter("S3-Secret-Key", true);
 var s3Region = builder.AddParameter("S3-Region", true);
@@ -108,6 +109,7 @@ if (builder.ExecutionContext.IsPublishMode) {
         .WithEnvironment("Mail__SenderEmail", mailSenderEmail)
         .WithEnvironment("Mail__Password", mailPassword)
 
+        .WithEnvironment("S3__PreSignEndpoint", s3PreSignUrl)
         .WithEnvironment("S3__AccessKey", s3AccessKey)
         .WithEnvironment("S3__SecretKey", s3SecretKey)
         .WithEnvironment("S3__Region", s3Region)
@@ -118,6 +120,7 @@ if (builder.ExecutionContext.IsPublishMode) {
     } else {
         backendApi.WithEnvironment("S3__Endpoint", s3Endpoint);
     }
+    
 
     backendApi.PublishAsDockerComposeService((resource, service) => {
         service.Image = string.Empty;
