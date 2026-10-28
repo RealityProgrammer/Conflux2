@@ -4,6 +4,7 @@ import {sessionUserService} from "../api/sessionUserService.ts";
 import {queryClient} from "../main.tsx";
 import useSignalREvent from "./useSignalREvent.ts";
 import type {EmojiCreatedEvent, EmojiDeletedEvent} from "../api/events.ts";
+import {toast} from "react-toastify";
 
 export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   const queryClient = useQueryClient();
@@ -44,14 +45,37 @@ export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
         if (index === -1) return oldData;
 
         const updatedData = [...oldData];
-        updatedData[index] = {
-          ...updatedData[index],
-          emojiEntries: updatedData[index].emojiEntries.filter(entry => !event.emojiIds.includes(entry.id)),
+        const filteredEmojiEntries = updatedData[index].emojiEntries.filter(entry => !event.emojiIds.includes(entry.id));
+
+        if (filteredEmojiEntries.length > 0) {
+          updatedData[index] = {
+            ...updatedData[index],
+            emojiEntries: filteredEmojiEntries,
+          }
+        } else {
+          updatedData.splice(index);
         }
 
         return updatedData;
       }
     );
+  });
+
+  useSignalREvent(["KickedFromServer", "BannedFromServer"], (serverId: string) => {
+    queryClient.setQueryData<ServerEmojiGroupDto[]>(
+      useUserEmojis.queryKey,
+      (oldData) => {
+        if (!oldData) return oldData;
+
+        return [...oldData.filter(g => g.serverInfo.serverId !== serverId)];
+      }
+    );
+  });
+
+  useSignalREvent("UnbannedFromServer", (unbannedServerId: string) => {
+    queryClient.invalidateQueries({
+      queryKey: useUserEmojis.queryKey,
+    });
   });
 
   return queryResult;
