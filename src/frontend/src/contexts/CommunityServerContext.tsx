@@ -5,7 +5,6 @@ import type {
   ServiceError, ServiceResponse
 } from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
-import useServerConnection from "../hooks/useServerConnection.ts";
 import {type QueryKey, useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
 import {communityServerService} from "../api/communityServerService.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
@@ -39,8 +38,6 @@ export default function CommunityServerContextProvider({
   children,
   serverId,
 }: CommunityServerContextProviderProps) {
-  useServerConnection(serverId);
-  
   const queryClient = useQueryClient();
   const detailsQueryKey: QueryKey = ["serverDetails", serverId];
 
