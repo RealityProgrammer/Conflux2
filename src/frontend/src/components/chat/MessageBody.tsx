@@ -263,7 +263,7 @@ const markdownComponents: Components = {
   // blockquote
   blockquote: ({ children, ...props }) => (
     <blockquote
-      className="border-l-4 border-gray-500 pl-4 py-1 my-2 text-gray-300 italic bg-white/4 rounded-r-md"
+      className="message-quote"
       {...props}
     >
       {children}

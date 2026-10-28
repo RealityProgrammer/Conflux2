@@ -9,7 +9,9 @@ import {
   type RangeSelection,
   type LexicalNode,
   $isTextNode,
-  $isElementNode, $createParagraphNode,
+  $isElementNode, $createParagraphNode, $isParagraphNode, COMMAND_PRIORITY_NORMAL, COMMAND_PRIORITY_HIGH,
+  INSERT_LINE_BREAK_COMMAND, INSERT_PARAGRAPH_COMMAND, COMMAND_PRIORITY_EDITOR, LineBreakNode, KEY_ENTER_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -29,7 +31,7 @@ import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.t
 import {$createTimeNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
 import { ListNode, ListItemNode } from '@lexical/list';
-import { HeadingNode, QuoteNode } from '@lexical/rich-text';
+import { HeadingNode, QuoteNode, $isQuoteNode } from '@lexical/rich-text';
 import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode } from '@lexical/code-core';
 import {
   registerMarkdownShortcuts,
@@ -210,7 +212,8 @@ const lexicalExtensions = defineExtension({
       italic: "message-italic",
       code: "message-inline-code",
     },
-    code: "block w-full box-border overflow-x-auto p-3.5 rounded-md bg-[rgb(43,43,43)] border-2 border-gray-600 text-sm font-mono text-white whitespace-pre"
+    code: "block w-full box-border overflow-x-auto p-3.5 rounded-md bg-[rgb(43,43,43)] border-2 border-gray-600 text-sm font-mono text-white whitespace-pre",
+    quote: "message-quote whitespace-pre-wrap"
   },
   onError(error: Error) {
     console.error(error);
@@ -298,24 +301,34 @@ function TextArea({
     onEditorReady(editor);
   }, [editor, onEditorReady]);
 
+  // handle escape to next paragraph block when user press Escape on codeblock or quoteblock
   useEffect(() => {
     return editor.registerCommand(
       KEY_DOWN_COMMAND,
       (event: KeyboardEvent) => {
-        // handle enter to breakout of codeblock
         if (event.key === "Escape") {
           let escaped = false;
           editor.update(() => {
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
               const node = selection.anchor.getNode();
-              const codeNode = $isCodeNode(node) ? node : node.getParents().find($isCodeNode);
 
-              if (codeNode) {
-                const paragraph = $createParagraphNode();
-                codeNode.insertAfter(paragraph);
-                paragraph.select();
-                escaped = true;
+              const blockContainer = node.getParents().find((p) => $isCodeNode(p) || $isQuoteNode(p)) ||
+                ($isCodeNode(node) || $isQuoteNode(node) ? node : null);
+
+              if (blockContainer) {
+                const nextSibling = blockContainer.getNextSibling();
+
+                // if next sibling is paragraph or text, select it, else create new
+                if ($isParagraphNode(nextSibling)) {
+                  nextSibling.selectStart();
+                  escaped = true;
+                } else {
+                  const paragraph = $createParagraphNode();
+                  blockContainer.insertAfter(paragraph);
+                  paragraph.select();
+                  escaped = true;
+                }
               }
             }
           });
@@ -326,143 +339,51 @@ function TextArea({
           }
         }
 
-        // handle enter
+        return false;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (event: KeyboardEvent) => {
         if (event.key === "Enter" && !event.shiftKey) {
-          let exitedCodeBlock = false;
+          let isCode = false;
+          let isQuote = false;
 
-          editor.update(() => {
-            const selection = $getSelection();
-            if ($isRangeSelection(selection) && selection.isCollapsed()) {
-              const node = selection.anchor.getNode();
-              const codeNode = $isCodeNode(node) ? node : node.getParents().find($isCodeNode);
-
-              if (codeNode) {
-                const textContent = codeNode.getTextContent();
-
-                // If the cursor is at the very end of the code block and the last line is empty (ends with '\n')
-                if (selection.anchor.offset === node.getTextContentSize() && textContent.endsWith('\n')) {
-                  const paragraph = $createParagraphNode();
-                  codeNode.insertAfter(paragraph);
-                  paragraph.select();
-                  exitedCodeBlock = true;
-                }
-              }
-            }
-          });
-
-          if (exitedCodeBlock) {
-            event.preventDefault();
-            return true;
-          }
-
-          let isInsideCodeBlock = false;
           editor.getEditorState().read(() => {
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
               const node = selection.anchor.getNode();
-              if ($isCodeNode(node) || node.getParents().some($isCodeNode)) {
-                isInsideCodeBlock = true;
-              }
+              isCode = $isCodeNode(node) || node.getParents().some($isCodeNode);
+              isQuote = $isQuoteNode(node) || node.getParents().some($isQuoteNode);
             }
           });
 
-          if (isInsideCodeBlock) {
+          // special blocks, let lexical handle new line and escape itself.
+          if (isCode || isQuote) {
             return false;
           }
 
-          event.preventDefault(); // prevent insert new line
+          event.preventDefault();
           onEnterSend();
-
-          return true; // handled
+          return true;
         }
 
-        return false; // propagate to other listener
+        return false;
       },
       COMMAND_PRIORITY_LOW
     );
   }, [editor, onEnterSend]);
-
-  useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          onSuggestionChange(undefined);
-          return;
-        }
-
-        const anchor = selection.anchor;
-        const node = anchor.getNode();
-
-        // suggestion only occur inside normal text nodes
-        if (!$isTextNode(node)) {
-          onSuggestionChange(undefined);
-          return;
-        }
-
-        const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
-        const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
-        if (emojiMatch) {
-          const localColonIdx = emojiMatch.index!;
-
-          onSuggestionChange({
-            type: "emoji",
-            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
-            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
-            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
-            searchTerm: emojiMatch[1] || "",
-          });
-
-          return;
-        }
-
-        const timeMatch = textBeforeCursor.match(/:t(\d*)$/);
-        if (timeMatch) {
-          const localColonIdx = timeMatch.index!;
-          const rawValue = timeMatch[1];
-          const rawValTrimmed = rawValue.trim();
-          const milliseconds = rawValTrimmed ? Number(rawValTrimmed) || 0 : Date.now();
-
-          onSuggestionChange({
-            type: "time",
-            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
-            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
-            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
-            milliseconds,
-            rawValue,
-          });
-
-          return;
-        }
-
-        if (textBeforeCursor.endsWith(":")) {
-          onSuggestionChange({
-            type: "mode",
-            startColonIndex: getGlobalOffsetForNodeOffset(node, textBeforeCursor.length - 1),
-          });
-          return;
-        }
-
-        const unknownMatch = textBeforeCursor.match(/:([^:\s]+)$/);
-        if (unknownMatch) {
-          onSuggestionChange({
-            type: "unknown",
-            startColonIndex: getGlobalOffsetForNodeOffset(node, unknownMatch.index!),
-          });
-          return;
-        }
-
-        onSuggestionChange(undefined);
-      });
-    });
-  }, [editor, onSuggestionChange]);
 
   return (
     <div className="input-field min-h-10 max-h-36 w-full flex-1 text-sm py-2 px-3 overflow-y-auto leading-relaxed relative">
       <ContentEditable className="outline-none min-h-full whitespace-pre-wrap break-all"/>
       <LexicalSyncPlugin onTextChange={onTextChange}/>
     </div>
-  )
+  );
 }
 
 function LexicalSyncPlugin({ onTextChange }: { onTextChange: (text: string, cursor: number) => void }) {
