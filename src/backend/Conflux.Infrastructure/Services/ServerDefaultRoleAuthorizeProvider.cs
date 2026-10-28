@@ -15,7 +15,7 @@ internal sealed class ServerDefaultRoleAuthorizeProvider(
     
     public async Task<RoleAuthorizeInfo?> Get(Guid serverId, CancellationToken cancellationToken = default) {
         string key = $"server:{serverId}";
-        byte[]? cached = (byte[]?)await _database.HashGetAsync(key, "defaultRole");
+        byte[]? cached = (byte[]?)await _database.HashGetAsync(key, "default_role");
 
         if (cached != null) {
             return JsonSerializer.Deserialize<RoleAuthorizeInfo>(cached);
@@ -38,13 +38,13 @@ internal sealed class ServerDefaultRoleAuthorizeProvider(
         );
 
         cached = JsonSerializer.SerializeToUtf8Bytes(roleAuthorizeInfo);
-        await _database.HashSetAsync(key, "defaultRole", cached);
+        await _database.HashSetAsync(key, "default_role", cached);
 
         return roleAuthorizeInfo;
     }
 
     public async Task Remove(Guid serverId) {
         string key = $"server:{serverId}";
-        await _database.HashDeleteAsync(key, "defaultRole");
+        await _database.HashDeleteAsync(key, "default_role");
     }
 }

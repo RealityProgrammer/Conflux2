@@ -11,20 +11,21 @@ internal sealed class PresenceService(
     IMediator mediator
 ) : IPresenceService {
     public async Task<PresenceStatus> UserConnected(Guid userId) {
-        // should only be called once when user connected (connection count go from 0 to 1)
+        // should only be called once when user first connected.
         var oldStatus = await GetCurrentEffectiveStatusOrDefault(userId);
         
         await cacheService.SetSessionStatus(userId, null);
-        var newStatus = await GetEffectivePresenceAsync(userId);
-        await cacheService.SetEffectiveStatus(userId, newStatus);
         
-        await NotifyIfChanged(userId, oldStatus, newStatus);
+        var effectiveStatus = await GetEffectivePresenceAsync(userId);
+        await cacheService.SetEffectiveStatus(userId, effectiveStatus);
         
-        return newStatus;
+        await NotifyIfChanged(userId, oldStatus, effectiveStatus);
+        
+        return effectiveStatus;
     }
 
     public async Task<PresenceStatus> UserDisconnected(Guid userId) {
-        // should only be called once when user finally disconnected everything (connection count go from N to 0)
+        // should only be called once when user finally disconnected.
         var oldStatus = await GetCurrentEffectiveStatusOrDefault(userId);
         
         await cacheService.SetSessionStatus(userId, null);

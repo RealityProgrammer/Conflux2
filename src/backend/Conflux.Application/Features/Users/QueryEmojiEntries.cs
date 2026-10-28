@@ -42,7 +42,9 @@ public sealed class QueryEmojiEntriesHandler(
         
         foreach (var server in joinedServers) {
             if (await serverEmojiCacheProvider.Get(server.ServerId) is { } cached) {
-                resultGroups.Add(new(server, cached));
+                if (cached.Count > 0) { // ignore server with 0 emoji
+                    resultGroups.Add(new(server, cached));
+                }
             } else {
                 cacheMissServers.Add(server);
             }
@@ -72,18 +74,18 @@ public sealed class QueryEmojiEntriesHandler(
             .ToDictionary(
                 g => g.Key, 
                 g => g.Select(x => x.EmojiDto).ToList()
-            );
-
-        foreach ((Guid serverId, List<EmojiEntryDto> entries) in queriedGrouped) {
-            await serverEmojiCacheProvider.Set(serverId, entries);
-        }
+            )
+            .ToDictionary();
         
         foreach (var server in cacheMissServers) {
             // Ensure even servers with 0 emojis get an empty list initialized
             var entries = queriedGrouped.TryGetValue(server.ServerId, out var list) ? list : [];
             
             await serverEmojiCacheProvider.Set(server.ServerId, entries);
-            resultGroups.Add(new(server, entries));
+
+            if (entries.Count > 0) {    // ignore server with 0 emoji
+                resultGroups.Add(new(server, entries));
+            }
         }
         
         return Result<IReadOnlyList<ServerEmojiGroupDto>>.Success(resultGroups);

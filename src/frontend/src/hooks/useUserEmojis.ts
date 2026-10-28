@@ -3,7 +3,7 @@ import type {ServerEmojiGroupDto} from "../api/types.ts";
 import {sessionUserService} from "../api/sessionUserService.ts";
 import {queryClient} from "../main.tsx";
 import useSignalREvent from "./useSignalREvent.ts";
-import type {EmojiDeletedEvent} from "../api/events.ts";
+import type {EmojiCreatedEvent, EmojiDeletedEvent} from "../api/events.ts";
 
 export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   const queryClient = useQueryClient();
@@ -25,6 +25,12 @@ export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   });
 
   const { data, isSuccess } = queryResult;
+
+  useSignalREvent("EmojiCreated", (_event: EmojiCreatedEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: useUserEmojis.queryKey,
+    });
+  });
 
   useSignalREvent("EmojiDeleted", (event: EmojiDeletedEvent) => {
     if (!isSuccess || !data) return;

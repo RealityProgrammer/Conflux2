@@ -1,10 +1,10 @@
 using Conflux.Application.Services;
 
-namespace Conflux.WebApi.Jobs;
+namespace Conflux.WebApi.Workers;
 
-internal sealed class PurgePendingDeleteAccountsWorker(
+internal sealed partial class LoginSessionCleanupWorker(
     IServiceScopeFactory scopeFactory,
-    ILogger<PurgePendingDeleteAccountsWorker> logger
+    ILogger<LoginSessionCleanupWorker> logger
 ) : BackgroundService {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         logger.LogInformation("Started.");
@@ -13,21 +13,23 @@ internal sealed class PurgePendingDeleteAccountsWorker(
 
         try {
             while (await timer.WaitForNextTickAsync(stoppingToken)) {
-                logger.LogInformation("Start purging pending delete accounts...");
-                
                 try {
                     using var scope = scopeFactory.CreateScope();
-                    var purgingService = scope.ServiceProvider.GetRequiredService<IAccountPurgingService>();
-                    
-                    await purgingService.PurgePendingDeleteAccounts();
+                    var jwtStorage = scope.ServiceProvider.GetRequiredService<IJwtStorage>();
+
+                    int cleanAmount = await jwtStorage.CleanupExpiredTokens(stoppingToken);
+                    LogSuccessfullyCleanedUp(logger, cleanAmount);
                 } catch (OperationCanceledException) {
                     throw;
                 } catch (Exception e) {
-                    logger.LogError(e, "Exception thrown while deleting accounts.");
+                    logger.LogError(e, "Exception thrown while cleaning session.");
                 }
             }
         } catch (OperationCanceledException) {
             logger.LogInformation("Stopping...");
         }
     }
+    
+    [LoggerMessage(LogLevel.Information, "Successfully cleaned up {count} rows.")]
+    private static partial void LogSuccessfullyCleanedUp(ILogger logger, int count);
 }

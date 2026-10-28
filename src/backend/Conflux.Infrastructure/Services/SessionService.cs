@@ -135,5 +135,5 @@ internal sealed class SessionService(
         })];
     }
 
-    private static RedisKey GetSessionsKey(Guid userId) => $"user:{userId}:sessions";
+    private static RedisKey GetSessionsKey(Guid userId) => $"user:{{{userId}}}:login_sessions";
 }

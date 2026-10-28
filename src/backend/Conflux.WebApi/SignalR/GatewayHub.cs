@@ -17,7 +17,7 @@ namespace Conflux.WebApi.SignalR;
 [Authorize]
 public sealed partial class GatewayHub(
     JoinTracker joinTracker,
-    SignalRConnectionTracker connectionTracker,
+    ISignalRConnectionTracker connectionTracker,
     IServerPermissionsProvider serverPermissionsProvider,
     IServerMemberReadRepository serverMemberReadRepository,
     ITypingIndicatorService typingIndicatorService,
@@ -32,9 +32,9 @@ public sealed partial class GatewayHub(
         }
         
         // track connection
-        bool isFirstConnection = await connectionTracker.TrackConnection(userId, Context.ConnectionId);
+        int totalConnectionCount = await connectionTracker.AddConnection(userId, Context.ConnectionId);
         
-        if (isFirstConnection) {
+        if (totalConnectionCount == 1) {
             await presenceService.UserConnected(userId);
         }
         
@@ -60,13 +60,14 @@ public sealed partial class GatewayHub(
             return;
         }
         
-        bool isLastConnection = await connectionTracker.UntrackConnection(userId, Context.ConnectionId);
+        // untrack connection
+        int totalConnectionCount = await connectionTracker.RemoveConnection(userId, Context.ConnectionId);
 
-        if (isLastConnection) {
+        if (totalConnectionCount == 0) {
             await presenceService.UserDisconnected(userId);
         }
 
-        await sender.Send(new DropCallCommand(userId, Context.ConnectionId, isLastConnection));
+        await sender.Send(new DropCallCommand(userId, Context.ConnectionId, totalConnectionCount == 0));
 
         await base.OnDisconnectedAsync(exception);
     }

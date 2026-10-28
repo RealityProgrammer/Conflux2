@@ -12,14 +12,12 @@ using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Converters;
 using Conflux.Application.Dto;
-using Conflux.Application.Enums;
 using Conflux.Application.Features.Servers;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Options;
 using Conflux.Application.Pipelines;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
-using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -30,16 +28,14 @@ using Conflux.WebApi;
 using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.GraphQL;
-using Conflux.WebApi.GraphQL.Middlewares;
-using Conflux.WebApi.Jobs;
+using Conflux.WebApi.Workers;
 using Conflux.WebApi.Miscs;
-using Conflux.WebApi.Notifications;
 using Conflux.WebApi.Notifications.Conversation;
-using Conflux.WebApi.Notifications.Users;
 using Conflux.WebApi.Schema;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
+using Conflux.WebApi.Workers;
 using FileSignatures;
 using FileSignatures.Formats;
 using FluentValidation;
@@ -64,6 +60,7 @@ using System.Threading.RateLimiting;
 using UAParser.Extensions;
 using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
+using InvitationCleanupWorker = Conflux.WebApi.Workers.InvitationCleanupWorker;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -283,7 +280,7 @@ builder.Services.AddMediator(options => {
 builder.Services.AddValidatorsFromAssemblyContaining(typeof(CreateEmojiCommandValidator));
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<SignalRConnectionTracker>()
+    .AddSingleton<ISignalRConnectionTracker, SignalRConnectionTracker>()
     .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()
@@ -652,11 +649,11 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 // jobs/workers
 builder.Services
     .AddHostedService<InvitationCleanupWorker>()
-    .AddHostedService<GhostConnectionCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
     .AddHostedService<EmailBackgroundWorker>()
-    .AddHostedService<SessionCleanupWorker>()
-    .AddHostedService<PurgePendingDeleteAccountsWorker>();
+    .AddHostedService<LoginSessionCleanupWorker>()
+    .AddHostedService<PurgePendingDeleteAccountsWorker>()
+    .AddHostedService<ConnectionCleanupWorker>();
 
 var app = builder.Build();
 
