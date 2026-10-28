@@ -11,7 +11,7 @@ import {
   $isTextNode,
   $isElementNode, $createParagraphNode, $isParagraphNode, COMMAND_PRIORITY_NORMAL, COMMAND_PRIORITY_HIGH,
   INSERT_LINE_BREAK_COMMAND, INSERT_PARAGRAPH_COMMAND, COMMAND_PRIORITY_EDITOR, LineBreakNode, KEY_ENTER_COMMAND,
-  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_CRITICAL, SELECTION_CHANGE_COMMAND, rawValue,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -32,7 +32,7 @@ import {$createTimeNode, TimestampDecoratorNode} from "./nodes/TimestampDecorato
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
 import { ListNode, ListItemNode } from '@lexical/list';
 import { HeadingNode, QuoteNode, $isQuoteNode } from '@lexical/rich-text';
-import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode } from '@lexical/code-core';
+import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension } from '@lexical/code-core';
 import {
   registerMarkdownShortcuts,
   $convertToMarkdownString,
@@ -186,6 +186,7 @@ const lexicalExtensions = defineExtension({
   name: "ChatInputEditor",
   dependencies: [
     RichTextExtension,
+    CodeExtension,
     HistoryExtension,
     MarkdownShortcutsExtension,
     CustomTransformExtension,
@@ -362,6 +363,8 @@ function TextArea({
             }
           });
 
+          console.log("isCode", isCode, "isQuote", isQuote);
+
           // special blocks, let lexical handle new line and escape itself.
           if (isCode || isQuote) {
             return false;
@@ -377,6 +380,109 @@ function TextArea({
       COMMAND_PRIORITY_LOW
     );
   }, [editor, onEnterSend]);
+
+  // reset format when text node is empty (removing sticky formatting)
+  useEffect(() => {
+    return editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && selection.isCollapsed()) {
+            const node = selection.anchor.getNode();
+
+            // Find the parent paragraph
+            const paragraph = $isParagraphNode(node)
+              ? node
+              : node.getParents().find($isParagraphNode);
+
+            if (paragraph && paragraph.getTextContentSize() === 0) {
+              selection.format = 0;
+            }
+          }
+        });
+        return false;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
+
+  // suggestion listener
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          onSuggestionChange(undefined);
+          return;
+        }
+
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
+
+        // Suggestions only occur inside normal text nodes
+        if (!$isTextNode(node)) {
+          onSuggestionChange(undefined);
+          return;
+        }
+
+        const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
+
+        // 1. Emoji Match
+        const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
+        if (emojiMatch) {
+          const localColonIdx = emojiMatch.index!;
+          onSuggestionChange({
+            type: "emoji",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
+            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            searchTerm: emojiMatch[1] || "",
+          });
+          return;
+        }
+
+        // 2. Time Match
+        const timeMatch = textBeforeCursor.match(/:t(\d*)$/);
+        if (timeMatch) {
+          const localColonIdx = timeMatch.index!;
+          const rawValue = timeMatch[1];
+          const rawValTrimmed = rawValue.trim();
+          const milliseconds = rawValTrimmed ? Number(rawValTrimmed) || 0 : Date.now();
+          onSuggestionChange({
+            type: "time",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
+            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            milliseconds,
+            rawValue,
+          });
+          return;
+        }
+
+        // 3. Mode Match
+        if (textBeforeCursor.endsWith(":")) {
+          onSuggestionChange({
+            type: "mode",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, textBeforeCursor.length - 1),
+          });
+          return;
+        }
+
+        // 4. Unknown Match
+        const unknownMatch = textBeforeCursor.match(/:([^:\s]+)$/);
+        if (unknownMatch) {
+          onSuggestionChange({
+            type: "unknown",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, unknownMatch.index!),
+          });
+          return;
+        }
+
+        onSuggestionChange(undefined);
+      });
+    });
+  }, [editor, onSuggestionChange]);
 
   return (
     <div className="input-field min-h-10 max-h-36 w-full flex-1 text-sm py-2 px-3 overflow-y-auto leading-relaxed relative">
