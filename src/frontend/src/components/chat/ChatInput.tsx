@@ -168,11 +168,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
                 textboxEditorRef.current?.insertText(`:t${new Date().getTime()}: `, suggestion.startColonIndex, cursorPosition);
               }}
             />
-          ) : (
-            <Suggestion.Unknown
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-            />
-          )}
+          ) : null}
         </>
       )}
 

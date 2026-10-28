@@ -145,17 +145,8 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   );
 }
 
-function UnknownMode({ className = "" }: TimeProps) {
-  return (
-    <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll py-2 ${className}`}>
-      <p className="text-center text-sm">Unknown suggestion mode</p>
-    </div>
-  );
-}
-
 export const Suggestion = {
   Mode: SelectMode,
   Emoji: EmojiMode,
   Time: TimeMode,
-  Unknown: UnknownMode,
 }

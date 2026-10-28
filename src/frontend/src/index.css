@@ -321,14 +321,35 @@
     }
 
     .message-ul {
-        @apply list-disc ml-5;
+        @apply list-disc list-outside pl-5;
     }
 
     .message-ol {
-        @apply list-decimal ml-5;
+        @apply list-decimal list-outside pl-5;
     }
 
     .message-li {
+        @apply pl-0;
+    }
+
+    .message-task-li {
+        @apply relative list-none pl-0;
+    }
+
+    .message-task-li input[type="checkbox"] {
+        @apply absolute -left-6 size-3.5 accent-[#626878] rounded-sm;
+    }
+
+    .message-li-unchecked, .message-li-checked {
+        @apply relative list-none;
+    }
+
+    .message-li-unchecked:not(:has(> ul))::before {
+        @apply content-[''] absolute -left-5 top-1 size-3.5 border border-gray-600 bg-[#a3a8b0] rounded-sm;
+    }
+
+    .message-li-checked:not(:has(> ul))::before {
+        @apply content-['\2713'] absolute -left-5 top-1 p-0 text-xs size-3.5 bg-[#626878] border-none text-white rounded-sm flex items-center justify-center leading-none;
     }
 
     .message-bold {

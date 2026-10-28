@@ -9,9 +9,9 @@ import {
   type RangeSelection,
   type LexicalNode,
   $isTextNode,
-  $isElementNode, $createParagraphNode, $isParagraphNode, COMMAND_PRIORITY_NORMAL, COMMAND_PRIORITY_HIGH,
-  INSERT_LINE_BREAK_COMMAND, INSERT_PARAGRAPH_COMMAND, COMMAND_PRIORITY_EDITOR, LineBreakNode, KEY_ENTER_COMMAND,
-  COMMAND_PRIORITY_CRITICAL, SELECTION_CHANGE_COMMAND, rawValue,
+  $isElementNode, $createParagraphNode, $isParagraphNode,
+  SELECTION_CHANGE_COMMAND,
+  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -30,7 +30,7 @@ import {
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {$createTimeNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
-import { ListNode, ListItemNode } from '@lexical/list';
+import { ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList } from '@lexical/list';
 import { HeadingNode, QuoteNode, $isQuoteNode } from '@lexical/rich-text';
 import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension } from '@lexical/code-core';
 import {
@@ -38,9 +38,9 @@ import {
   $convertToMarkdownString,
   HEADING,
   QUOTE,
+  CHECK_LIST,
   UNORDERED_LIST,
   ORDERED_LIST,
-  CHECK_LIST,
   INLINE_CODE,
   BOLD_STAR,
   BOLD_UNDERSCORE,
@@ -51,8 +51,7 @@ import {
 export type SuggestionData =
   { type: 'mode'; startColonIndex: number } |
   { type: 'emoji'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string } |
-  { type: 'time'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string } |
-  { type: 'unknown'; startColonIndex: number };
+  { type: 'time'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string };
 
 export interface MessageTextboxEditorRef {
   reset: () => void;
@@ -72,9 +71,9 @@ interface MessageTextboxEditorProps {
 const CHAT_MARKDOWN_TRANSFORMERS = [
   HEADING,
   QUOTE,
+  CHECK_LIST,       // must be before UNORDERED_LIST and ORDERED_LIST
   UNORDERED_LIST,
   ORDERED_LIST,
-  CHECK_LIST,
   INLINE_CODE,
   BOLD_STAR,
   BOLD_UNDERSCORE,
@@ -93,7 +92,11 @@ export const MarkdownShortcutsExtension = defineExtension({
     CodeHighlightNode,
   ],
   register(editor) {
-    return registerMarkdownShortcuts(editor, CHAT_MARKDOWN_TRANSFORMERS);
+    return mergeRegister(
+      registerCheckList(editor),
+      registerList(editor),
+      registerMarkdownShortcuts(editor, CHAT_MARKDOWN_TRANSFORMERS),
+    );
   },
 });
 
@@ -204,6 +207,8 @@ const lexicalExtensions = defineExtension({
       ul: "message-ul",
       ol: "message-ol",
       listitem: "message-li",
+      listitemChecked: "message-li-checked",
+      listitemUnchecked: "message-li-unchecked",
       nested: {
         listitem: 'list-none',
       },
@@ -268,7 +273,7 @@ export default function MessageTextboxEditor({
   }), []);
 
   return (
-    <LexicalExtensionComposer extension={lexicalExtensions}>
+    <LexicalExtensionComposer extension={lexicalExtensions} contentEditable={null}>
       <div className="flex-1 relative flex flex-row items-end gap-2">
         <TextArea
           onTextChange={onTextChange}
@@ -346,27 +351,34 @@ function TextArea({
     );
   }, [editor]);
 
+  // enter handling to send message or linebreak in certain node
   useEffect(() => {
     return editor.registerCommand(
       KEY_DOWN_COMMAND,
       (event: KeyboardEvent) => {
-        if (event.key === "Enter" && !event.shiftKey) {
+        if (event.key === "Enter") {
+          // soft line break
+          if (event.shiftKey) {
+            return false;
+          }
+
           let isCode = false;
           let isQuote = false;
+          let isListItem = false;
 
           editor.getEditorState().read(() => {
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
               const node = selection.anchor.getNode();
+
               isCode = $isCodeNode(node) || node.getParents().some($isCodeNode);
               isQuote = $isQuoteNode(node) || node.getParents().some($isQuoteNode);
+              isListItem = $isListItemNode(node) || node.getParents().some($isListItemNode);
             }
           });
 
-          console.log("isCode", isCode, "isQuote", isQuote);
-
-          // special blocks, let lexical handle new line and escape itself.
-          if (isCode || isQuote) {
+          // special blocks, let lexical handle new line and escape the node.
+          if (isCode || isQuote || isListItem) {
             return false;
           }
 
@@ -380,6 +392,36 @@ function TextArea({
       COMMAND_PRIORITY_LOW
     );
   }, [editor, onEnterSend]);
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_TAB_COMMAND,
+      (event: KeyboardEvent) => {
+        let isListItem = false;
+
+        editor.getEditorState().read(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const node = selection.anchor.getNode();
+            isListItem = $isListItemNode(node) || node.getParents().some($isListItemNode);
+          }
+        });
+
+        // If we are inside a list item, Tab indents/nests, Shift+Tab outdents
+        if (isListItem) {
+          event.preventDefault();
+          editor.dispatchCommand(
+            event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND,
+            undefined
+          );
+          return true;
+        }
+
+        return false; // Let standard tab behavior happen elsewhere
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
 
   // reset format when text node is empty (removing sticky formatting)
   useEffect(() => {
@@ -472,10 +514,7 @@ function TextArea({
         // 4. Unknown Match
         const unknownMatch = textBeforeCursor.match(/:([^:\s]+)$/);
         if (unknownMatch) {
-          onSuggestionChange({
-            type: "unknown",
-            startColonIndex: getGlobalOffsetForNodeOffset(node, unknownMatch.index!),
-          });
+          onSuggestionChange(undefined);
           return;
         }
 
@@ -486,7 +525,10 @@ function TextArea({
 
   return (
     <div className="input-field min-h-10 max-h-36 w-full flex-1 text-sm py-2 px-3 overflow-y-auto leading-relaxed relative">
-      <ContentEditable className="outline-none min-h-full whitespace-pre-wrap break-all"/>
+      <div style={{ display: "block" }} className="w-full min-h-full">
+        <ContentEditable className="outline-none min-h-full whitespace-pre-wrap break-all"/>
+      </div>
+
       <LexicalSyncPlugin onTextChange={onTextChange}/>
     </div>
   );

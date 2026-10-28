@@ -135,10 +135,10 @@ const markdownComponents: Components = {
     return <pre {...props}>{children}</pre>;
   },
 
-  code: ({ className, children, node, ...props }) => {
+  code: ({ className = "", children, node, ...props }) => {
     return (
       <code
-        className={`${className ?? ""} message-inline-code inline-block`}
+        className={`${className} message-inline-code inline-block`}
         {...props}
       >
         {children}
@@ -146,11 +146,11 @@ const markdownComponents: Components = {
     );
   },
 
-  ul: ({ children, className, node, ...props }) => {
+  ul: ({ children, className = "", node, ...props }) => {
     const isTaskList = className?.includes('contains-task-list');
 
     return (
-      <ul className={`${isTaskList ? "ml-1 list-none" : "message-ul"}`} {...props}>
+      <ul className={`${isTaskList ? "list-none ml-1 pl-5" : "message-ul"} ${className}`} {...props}>
         {children}
       </ul>
     );
@@ -162,12 +162,11 @@ const markdownComponents: Components = {
       </ol>
     );
   },
-
-  li: ({ children, className, node, ...props }) => {
+  li: ({ children, className = "", node, ...props }) => {
     const isTaskListItem = className?.includes('task-list-item');
 
     return (
-      <li className={`${isTaskListItem ? "flex items-start gap-2" : ""} whitespace-pre-wrap wrap-break-word ${className ?? ""}`} {...props}>
+      <li className={`${isTaskListItem ? "message-task-li" : "message-li"} wrap-break-word ${className}`} {...props}>
         {children}
       </li>
     );
@@ -180,11 +179,11 @@ const markdownComponents: Components = {
   ),
 
   // link
-  a: ({children, node, className, href, ...props}) => {
+  a: ({children, node, className = "", href, ...props}) => {
     if (href?.startsWith("#")) {
       return (
         <a
-          className={`${className ?? ""} text-blue-400 cursor-pointer`}
+          className={`${className} text-blue-400 cursor-pointer`}
           {...props}
         >
           {children}
@@ -194,7 +193,7 @@ const markdownComponents: Components = {
       return (
         <a
           target="_blank"
-          className={`${className ?? ""} text-blue-400 cursor-pointer`}
+          className={`${className} text-blue-400 cursor-pointer`}
           onClick={(e) => {
             e.preventDefault();
             if (!href) return;
@@ -227,11 +226,11 @@ const markdownComponents: Components = {
   ),
 
   // section
-  section: ({ children, node, className, ...props }) => {
+  section: ({ children, node, className = "", ...props }) => {
     if (className?.includes("footnotes")) {
       return (
         <section
-          className={`border-t border-gray-500 text-xs text-gray-300 mt-4 pt-3 ${className ?? ""}`}
+          className={`border-t border-gray-500 text-xs text-gray-300 mt-4 pt-3 ${className}`}
         >
           {children}
         </section>
@@ -244,7 +243,7 @@ const markdownComponents: Components = {
   },
 
   // input
-  input: ({ type, checked, ...props }) => {
+  input: ({ type, checked, node, ...props }) => {
     if (type === 'checkbox') {
       return (
         <input
@@ -302,7 +301,7 @@ const markdownComponents: Components = {
 
 export default function MessageBody({
   content,
-  className,
+  className = "",
 }: MessageContentProps) {
   return (
     <>
