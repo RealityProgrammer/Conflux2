@@ -23,7 +23,7 @@ public sealed record ServerCreatedNotification(
 
 public sealed class CreateServerHandler(
     ICurrentUserService currentUserService,
-    ICommunityServerRepository communityServerRepository,
+    ICommunityServerWriteRepository communityServerWriteRepository,
     IUnitOfWork unitOfWork,
     IServerMediaService serverMediaService,
     IMediaItemWriteRepository mediaItemWriteRepository,
@@ -82,7 +82,7 @@ public sealed class CreateServerHandler(
 
         server.Members.Add(ownerMember);
 
-        communityServerRepository.Add(server);
+        communityServerWriteRepository.Add(server);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);

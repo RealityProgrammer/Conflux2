@@ -2,7 +2,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.WebApi.SignalR;
 
-internal static class NameProvider {
+internal static class SignalRGroupNameProvider {
     public static string GetServerGroupName(Guid serverId) => $"server:{serverId:N}";
     
     public static string GetServerPermissionGroupName(Guid serverId, ServerPermission permission) => 
@@ -12,6 +12,4 @@ internal static class NameProvider {
         $"server:{serverId:N}:perm:ViewRole";
     
     public static string GetConversationGroupName(Guid conversationId) => $"conversation:{conversationId}";
-
-    public static string GetUserGroupName(Guid userId) => $"user:{userId}";
 }

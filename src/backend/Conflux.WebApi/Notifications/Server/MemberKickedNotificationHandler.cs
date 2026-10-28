@@ -28,7 +28,7 @@ internal sealed class MemberKickedNotificationHandler(
             .KickedFromServer(notification.ServerId, cancellationToken);
         
         // broadcast the notification to members with ManageMembers role (except the executor connection).
-        string groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);
+        string groupName = SignalRGroupNameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);
         
         IConfluxClient target = string.IsNullOrEmpty(connectionId) ?
             hubContext.Clients.Group(groupName) :
@@ -37,7 +37,7 @@ internal sealed class MemberKickedNotificationHandler(
         await target.ServerMemberKicked(new(notification), cancellationToken);
 
         // broadcast the notification to update moderation log
-        groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
+        groupName = SignalRGroupNameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
         await hubContext.Clients
             .Group(groupName)
             .UpdateModerationLog(cancellationToken);

@@ -14,9 +14,6 @@ import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {Virtuoso, type VirtuosoHandle} from "react-virtuoso";
-import {useAuth} from "../../contexts/AuthContext.tsx";
-import useTypingIndicator from "../../hooks/useTypingIndicator.ts";
-import TypingIndicator from "./TypingIndicator.tsx";
 import useTimelineMessagesQuery from "../../hooks/useTimelineMessagesQuery.ts";
 import {MessageRow} from "./MessageRow.tsx";
 import {MessageItem} from "./MessageItem.tsx";
@@ -110,7 +107,6 @@ export function ChatView({
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   const userAtBottomRef = useRef(true);
-  const prevListHeightRef = useRef(0);
 
   useEffect(() => {
     if (!highlightedMessageId) return;
@@ -147,20 +143,6 @@ export function ChatView({
       }
 
       updateScrollBottomVisibility();
-    });
-  };
-
-  const handleTotalListHeightChanged = (height: number) => {
-    const prev = prevListHeightRef.current;
-    prevListHeightRef.current = height;
-
-    if (height <= prev) return;
-    if (!userAtBottomRef.current) return;
-
-    virtuosoRef.current?.scrollToIndex({
-      index: "LAST",
-      align: "end",
-      behavior: "auto",
     });
   };
 
@@ -359,10 +341,6 @@ export function ChatView({
     handleEditMessage(editingMessage, newBody?.trim() ?? null);
   };
 
-  // typing indicator
-  const { userProfile } = useAuth();
-  const { typingUsers } = useTypingIndicator(userProfile?.id ?? "");
-
   // signalr events
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
     if (event.message.conversationId !== conversationId) return;
@@ -475,7 +453,7 @@ export function ChatView({
           </div>
         </div>
       ) : (
-        <div className="relative flex-1 min-h-0 mb-2">
+        <div className="relative flex-1 min-h-0">
           <div
             ref={topLoaderRef}
             className="pointer-events-none z-10 absolute top-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out opacity-0 -translate-y-2"
@@ -510,7 +488,7 @@ export function ChatView({
                 hasUserScrolledRef.current = true;
               }
             }}
-            totalListHeightChanged={handleTotalListHeightChanged}
+            // totalListHeightChanged={handleTotalListHeightChanged}
             overscan={10}
             className="h-full"
             scrollerRef={(ref) => {
@@ -531,8 +509,6 @@ export function ChatView({
           </IconButton>
         </div>
       )}
-
-      <TypingIndicator displayUsers={typingUsers.slice(0, 4)}/>
 
       <DeleteMessageConfirmationDialog
         open={!!deletingMessage}

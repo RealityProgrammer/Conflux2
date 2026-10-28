@@ -49,6 +49,7 @@ internal sealed class PresenceCacheService(
     
     public async Task SetSessionStatus(Guid userId, PresenceStatus? status) {
         var key = $"presence:session:{userId}";
+        
         if (status == null) {
             await _database.KeyDeleteAsync(key);
         } else {

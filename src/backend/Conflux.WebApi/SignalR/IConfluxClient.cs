@@ -44,6 +44,8 @@ public interface IConfluxClient {
     Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
     Task JoinedServer(JoinedServerEvent data, CancellationToken cancellationToken = default);
     Task CreatedServer(CreatedServerEvent data, CancellationToken cancellationToken = default);
+    Task EmojiCreated(EmojiCreatedEvent data, CancellationToken cancellationToken = default);
+    Task EmojiDeleted(EmojiDeletedEvent data, CancellationToken cancellationToken = default);
 
     Task UpdateModerationLog(CancellationToken cancellationToken = default);
     

@@ -263,6 +263,7 @@ export type CommunityServerFilterInput = {
   creatorUser?: InputMaybe<ApplicationUserFilterInput>;
   creatorUserId?: InputMaybe<UuidOperationFilterInput>;
   description?: InputMaybe<StringOperationFilterInput>;
+  emojis?: InputMaybe<ListFilterInputTypeOfEmojiFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   invitations?: InputMaybe<ListFilterInputTypeOfInvitationFilterInput>;
   members?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberFilterInput>;
@@ -515,6 +516,27 @@ export type DurationOperationFilterInput = {
   nlte?: InputMaybe<Scalars['Duration']['input']>;
 };
 
+export type Emoji = {
+  __typename?: 'Emoji';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  server: CommunityServer;
+  serverId: Scalars['UUID']['output'];
+  shortCode: Scalars['String']['output'];
+};
+
+export type EmojiFilterInput = {
+  and?: InputMaybe<Array<EmojiFilterInput>>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  creator?: InputMaybe<ApplicationUserFilterInput>;
+  creatorId?: InputMaybe<UuidOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<EmojiFilterInput>>;
+  server?: InputMaybe<CommunityServerFilterInput>;
+  serverId?: InputMaybe<UuidOperationFilterInput>;
+  shortCode?: InputMaybe<StringOperationFilterInput>;
+};
+
 export type FriendRequest = {
   __typename?: 'FriendRequest';
   createdAt: Scalars['DateTime']['output'];
@@ -689,6 +711,13 @@ export type ListFilterInputTypeOfConversationParticipantFilterInput = {
   any?: InputMaybe<Scalars['Boolean']['input']>;
   none?: InputMaybe<ConversationParticipantFilterInput>;
   some?: InputMaybe<ConversationParticipantFilterInput>;
+};
+
+export type ListFilterInputTypeOfEmojiFilterInput = {
+  all?: InputMaybe<EmojiFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<EmojiFilterInput>;
+  some?: InputMaybe<EmojiFilterInput>;
 };
 
 export type ListFilterInputTypeOfFriendRequestFilterInput = {
@@ -1029,6 +1058,7 @@ export type Query = {
   communityServerRole?: Maybe<CommunityServerRole>;
   communityServerRoles: CommunityServerRoleConnection;
   directConversations: ConversationConnection;
+  emoji?: Maybe<Emoji>;
   friendRequests: FriendRequestConnection;
   friends: FriendRequestConnection;
   invitation?: Maybe<Invitation>;
@@ -1094,6 +1124,11 @@ export type QueryDirectConversationsArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   order?: InputMaybe<Array<ConversationSortInput>>;
   where?: InputMaybe<ConversationFilterInput>;
+};
+
+
+export type QueryEmojiArgs = {
+  id: Scalars['UUID']['input'];
 };
 
 
@@ -1273,13 +1308,16 @@ export type ServerModerationLogSortInput = {
 export enum ServerPermission {
   BanMembers = 'BanMembers',
   CreateChannel = 'CreateChannel',
+  CreateEmoji = 'CreateEmoji',
   CreateInvitation = 'CreateInvitation',
   CreateRole = 'CreateRole',
   DeleteChannel = 'DeleteChannel',
+  DeleteEmoji = 'DeleteEmoji',
   DeleteMessages = 'DeleteMessages',
   DeleteRole = 'DeleteRole',
   EditMessages = 'EditMessages',
   KickMembers = 'KickMembers',
+  ManageEmojis = 'ManageEmojis',
   ManageMembers = 'ManageMembers',
   ReadModerationLogs = 'ReadModerationLogs',
   SendMessage = 'SendMessage',

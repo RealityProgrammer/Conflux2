@@ -67,7 +67,6 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
 
     // Start connection
     const startPromise = newConnection.start();
-    let heartbeatInterval: number | undefined;
 
     startPromise.then(() => {
       if (isMounted && activeConnectionRef.current === newConnection) {
@@ -77,16 +76,6 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
           apiClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
           graphqlClient.defaults.headers.common['X-SignalR-Connection-Id'] = newConnection.connectionId;
         }
-
-        heartbeatInterval = setInterval(() => {
-          if (newConnection.state === "Connected") {
-            newConnection.invoke("Heartbeat").catch(err => console.error("Heartbeat failed", err));
-          }
-        }, 60000);
-
-        newConnection.onclose(() => {
-          clearInterval(heartbeatInterval);
-        })
       }
     }).catch((err) => {
       console.error("failed to connect to SignalR:", err);

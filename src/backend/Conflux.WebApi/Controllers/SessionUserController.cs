@@ -51,6 +51,7 @@ public sealed class SessionUserController(
 
         return result.Error.Code switch {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -72,6 +73,7 @@ public sealed class SessionUserController(
         return result.Error.Code switch {
             nameof(Errors.ResourceNotFound) => NoContent(),
             nameof(Errors.NoUserFoundFromId) => BadRequest(result.Error),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
         };
     }
@@ -89,6 +91,7 @@ public sealed class SessionUserController(
         
         return result.Error.Code switch {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -103,6 +106,7 @@ public sealed class SessionUserController(
         
         return result.Error.Code switch {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -148,6 +152,7 @@ public sealed class SessionUserController(
 
         return result.Error.Code switch {
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -162,6 +167,21 @@ public sealed class SessionUserController(
         
         return result.Error.Code switch {
             nameof(Errors.NoPendingAccountDeletion) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpGet("emojis/entries")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<ServerEmojiGroupDto>>>> GetEmojiEntryGroups() {
+        var result = await sender.Send(new QueryEmojiEntries());
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<IReadOnlyList<ServerEmojiGroupDto>>(result.Value!, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

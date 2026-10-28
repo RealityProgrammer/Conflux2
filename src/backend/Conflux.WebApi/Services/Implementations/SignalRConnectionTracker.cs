@@ -1,95 +1,65 @@
-using Conflux.Application.Services;
 using StackExchange.Redis;
 
 namespace Conflux.WebApi.Services.Implementations;
 
-public sealed partial class SignalRConnectionTracker(
-    IConnectionMultiplexer connectionMultiplexer,
-    TimeProvider timeProvider,
-    ILogger<SignalRConnectionTracker> logger,
-    IServiceProvider serviceProvider
-) {
-    public const int TimeToLive = 120;  // in seconds
-    
+internal sealed class SignalRConnectionTracker(
+    IConnectionMultiplexer connectionMultiplexer
+) : ISignalRConnectionTracker {
+    private static readonly LuaScript AddConnectionScript = LuaScript.Prepare(
+        """
+        redis.call("SADD", @key, @connectionId);
+        return redis.call("SCARD", @key);
+        """
+    );
+
+    private static readonly LuaScript RemoveConnectionScript = LuaScript.Prepare(
+        """
+        redis.call("SREM", @key, @connectionId);
+        return redis.call("SCARD", @key);
+        """
+    );
+
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     
-    public async Task<bool> TrackConnection(Guid userId, string connectionId) {
-        long expireTime = (timeProvider.GetUtcNow() + TimeSpan.FromSeconds(TimeToLive)).ToUnixTimeSeconds();
-        var userConnectionsKey = GetConnectionsKey(userId);
-        
-        // if anything happen, check if React strictmode cause race-condition
-        await _database.SortedSetAddAsync(userConnectionsKey, connectionId, expireTime);
-        await _database.SortedSetAddAsync("presence:active_users", userId.ToString(), expireTime);
-        
-        await PruneExpiredConnections(userId);
-        
-        // likely to be hit with react strict-mode race-condition here, caused by useEffect invoked twice
-        long count = await _database.SortedSetLengthAsync(userConnectionsKey);
-        return count == 1;
+    public async Task<int> AddConnection(Guid userId, string connectionId) {
+        RedisResult setCount = await _database.ScriptEvaluateAsync(AddConnectionScript, new {
+            key = GetConnectionsKey(userId),
+            connectionId,
+        });
+
+        return (int)setCount;
     }
 
-    public async Task<bool> UntrackConnection(Guid userId, string connectionId) {
-        var userConnectionsKey = GetConnectionsKey(userId);
-        
-        await _database.SortedSetRemoveAsync(userConnectionsKey, connectionId);
-        await PruneExpiredConnections(userId);
-        
-        long count = await _database.SortedSetLengthAsync(userConnectionsKey);
+    public async Task<int> RemoveConnection(Guid userId, string connectionId) {
+        RedisResult setCount = await _database.ScriptEvaluateAsync(RemoveConnectionScript, new {
+            key = GetConnectionsKey(userId),
+            connectionId,
+        });
 
-        if (count == 0) {
-            await _database.SortedSetRemoveAsync("presence:active_users", userId.ToString());
-            return true;
-        }
-
-        return false;
-    }
-    
-    public async Task Heartbeat(Guid userId, string connectionId) {
-        long expireTime = (timeProvider.GetUtcNow() + TimeSpan.FromSeconds(TimeToLive)).ToUnixTimeSeconds();
-        
-        await _database.SortedSetAddAsync(GetConnectionsKey(userId), connectionId, expireTime);
-        await _database.SortedSetAddAsync("presence:active_users", userId.ToString(), expireTime);
+        return (int)setCount;
     }
 
-    public async Task PruneConnections() {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        
-        // get all users whose last heartbeat is older than NOW
-        var expiredUserIds = await _database.SortedSetRangeByScoreAsync("presence:active_users", start: 0, stop: now - 1);
-        
-        if (expiredUserIds.Length > 0) {
-            using var scope = serviceProvider.CreateScope();
-            var presenceService = scope.ServiceProvider.GetRequiredService<IPresenceService>();
+    public async Task<int> GetConnectionsCount(Guid userId) {
+        return (int)await _database.SetLengthAsync(GetConnectionsKey(userId));
+    }
 
-            foreach (RedisValue redisVal in expiredUserIds) {
-                if (Guid.TryParse(redisVal.ToString(), out var userId)) {
-                    var userConnectionsKey = GetConnectionsKey(userId);
-                    
-                    // double check just to be safe
-                    await _database.SortedSetRemoveRangeByScoreAsync(userConnectionsKey, 0, now - 1);
-                    long activeConnections = await _database.SortedSetLengthAsync(userConnectionsKey);
+    public async Task RemoveAllConnections(Guid userId) {
+        await _database.KeyDeleteAsync(GetConnectionsKey(userId), CommandFlags.FireAndForget);
+    }
 
-                    if (activeConnections == 0) {
-                        await presenceService.UserDisconnected(userId);
-                        await _database.SortedSetRemoveAsync("presence:active_users", redisVal);
-                        PruneConnectionForUser(logger, userId);
-                    } else {
-                        await _database.SortedSetAddAsync("presence:active_users", redisVal, now + TimeToLive);
-                    }
-                }
-            }
+    public async Task<List<string>> GetConnections(Guid userId) {
+        return [..(await _database.SetMembersAsync(GetConnectionsKey(userId))).Select(v => (string)v!)];
+    }
+
+    public async Task PruneAllConnections() {
+        var endpoint = connectionMultiplexer.GetEndPoints().First();
+        var server = connectionMultiplexer.GetServer(endpoint);
+        var db = connectionMultiplexer.GetDatabase();
+
+        await foreach (var key in server.KeysAsync(pattern: "user:*:connections")) {
+            db.KeyDelete(key);
         }
     }
 
-    private async Task PruneExpiredConnections(Guid userId) {
-        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        await _database.SortedSetRemoveRangeByScoreAsync(GetConnectionsKey(userId), 0, now - 1);
-    }
-
-    private static string GetConnectionsKey(Guid userId) {
-        return $"presence:connections:{userId}";
-    }
-    
-    [LoggerMessage(LogLevel.Debug, "Prune connection for user {UserId}")]
-    private static partial void PruneConnectionForUser(ILogger logger, Guid userId);
+    private static string GetConnectionsKey(Guid userId) => $"user:{{{userId}}}:connections";
 }

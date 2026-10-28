@@ -10,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 public sealed record GetServerDetailsQuery(Guid ServerId, Guid UserId) : IQuery<Result<ServerDetailsDto>>;
 
 public sealed class GetServerDetailsHandler(
-    ICommunityServerRepository repository,
+    ICommunityServerWriteRepository repository,
     IServerPermissionsProvider permissionsProvider
 ) : IQueryHandler<GetServerDetailsQuery, Result<ServerDetailsDto>> {
     public async ValueTask<Result<ServerDetailsDto>> Handle(

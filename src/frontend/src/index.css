@@ -247,6 +247,10 @@
         transition duration-300;
     }
 
+    .input-checkbox {
+        @apply appearance-none checked:appearance-auto indeterminate:appearance-auto bg-gray-300 border-2 border-gray-600 rounded-sm;
+    }
+
     .panel-accent-color-1 {
         @apply bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500;
     }
@@ -290,6 +294,78 @@
 
     .horizontal-separator {
         @apply h-px bg-gray-500;
+    }
+
+    .message-h1 {
+        @apply text-2xl font-bold mt-4 mb-2;
+    }
+
+    .message-h2 {
+        @apply text-xl font-bold mt-3 mb-2;
+    }
+
+    .message-h3 {
+        @apply text-lg font-bold mt-3 mb-1.5;
+    }
+
+    .message-h4 {
+        @apply text-base font-bold mt-2 mb-1;
+    }
+
+    .message-h5 {
+        @apply text-sm font-bold mt-2 mb-1;
+    }
+
+    .message-h6 {
+        @apply text-xs font-bold mt-2 mb-1;
+    }
+
+    .message-ul {
+        @apply list-disc list-outside pl-5;
+    }
+
+    .message-ol {
+        @apply list-decimal list-outside pl-5;
+    }
+
+    .message-li {
+        @apply pl-0;
+    }
+
+    .message-task-li {
+        @apply relative list-none pl-0;
+    }
+
+    .message-task-li input[type="checkbox"] {
+        @apply absolute -left-6 size-3.5 accent-[#626878] rounded-sm;
+    }
+
+    .message-li-unchecked, .message-li-checked {
+        @apply relative list-none;
+    }
+
+    .message-li-unchecked:not(:has(> ul))::before {
+        @apply content-[''] absolute -left-5 top-1 size-3.5 border border-gray-600 bg-[#a3a8b0] rounded-sm;
+    }
+
+    .message-li-checked:not(:has(> ul))::before {
+        @apply content-['\2713'] absolute -left-5 top-1 p-0 text-xs size-3.5 bg-[#626878] border-none text-white rounded-sm flex items-center justify-center leading-none;
+    }
+
+    .message-bold {
+        @apply font-bold;
+    }
+
+    .message-italic {
+        @apply italic;
+    }
+
+    .message-inline-code {
+        @apply bg-black/8 px-1.5 py-0.5 rounded-md;
+    }
+
+    .message-quote {
+        @apply border-l-4 border-gray-500 pl-4 py-1 my-2 text-gray-300 italic bg-white/4 rounded-r-md;
     }
 }
 

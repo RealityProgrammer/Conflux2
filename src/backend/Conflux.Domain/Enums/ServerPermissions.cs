@@ -21,4 +21,8 @@ public enum ServerPermission {
     SendMessage,
     EditMessages,
     DeleteMessages,
+    
+    ManageEmojis,
+    CreateEmoji,
+    DeleteEmoji,
 }

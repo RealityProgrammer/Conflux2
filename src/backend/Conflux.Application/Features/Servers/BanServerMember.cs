@@ -4,6 +4,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -19,29 +20,18 @@ public sealed record BanServerMemberCommand(
     ];
 }
 
-public sealed class BanServerMemberValidationPipeline : IPipelineBehavior<BanServerMemberCommand, Result> {
-    public async ValueTask<Result> Handle(
-        BanServerMemberCommand message, 
-        MessageHandlerDelegate<BanServerMemberCommand, Result> next, 
-        CancellationToken cancellationToken
-    ) {
-        if (message.Reason is { Length: > 256 }) {
-            return Errors.ValidationErrorsOccurred(new() {
-                ["reason"] = [
-                    "Reason can only have maximum length of 256 characters.",
-                ],
-            });
-        }
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+public sealed class BanServerMemberCommandValidator : AbstractValidator<BanServerMemberCommand> {
+    public BanServerMemberCommandValidator() {
+        RuleFor(c => c.Reason)
+            .Length(256)
+            .When(c => !string.IsNullOrEmpty(c.Reason))
+            .WithMessage("Reason cannot exceed 256 characters.");
 
-        if (message.Duration is { } duration && duration <= TimeSpan.Zero) {
-            return Errors.ValidationErrorsOccurred(new() {
-                ["duration"] = [
-                    "Duration can only be greater than zero.",
-                ],
-            });
-        }
-        
-        return await next(message, cancellationToken);
+        RuleFor(c => c.Duration)
+            .GreaterThan(TimeSpan.Zero)
+            .When(c => c.Duration != null)
+            .WithMessage("Duration must be a positive time span.");
     }
 }
 

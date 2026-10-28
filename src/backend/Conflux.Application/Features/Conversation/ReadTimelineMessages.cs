@@ -9,7 +9,7 @@ public sealed record ReadTimelineMessagesQuery(
     Guid ConversationId,
     MessageReadStrategy ReadStrategy,
     int Count
-) : IQuery<Result<TimelineMessagePage>>;
+) : IQuery<Result<TimelineMessagePage>>, IConversationCommand;
 
 public sealed class ReadTimelineMessagesHandler(
     ICurrentUserService currentUserService,

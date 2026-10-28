@@ -25,6 +25,7 @@ public class ApplicationDbContext(
     public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<ServerModerationLog> ServerModerationLogs { get; set; }
     public DbSet<UserAccountDeletion> UserAccountDeletions { get; set; }
+    public DbSet<Emoji> Emojis { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);
@@ -44,5 +45,6 @@ public class ApplicationDbContext(
         new ChannelCategoryConfiguration().Configure(builder.Entity<ChannelCategory>());
         new ConversationParticipantConfiguration().Configure(builder.Entity<ConversationParticipant>());
         new UserAccountDeletionConfiguration().Configure(builder.Entity<UserAccountDeletion>());
+        new EmojiConfiguration().Configure(builder.Entity<Emoji>());
     }
 }

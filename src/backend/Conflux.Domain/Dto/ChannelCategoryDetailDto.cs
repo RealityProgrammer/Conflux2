@@ -14,5 +14,5 @@ namespace Conflux.Domain.Dto;
 public sealed partial record ChannelCategoryDetailDto {
     [Required] public Guid? Id { get; set; } = Id;
     [Required] public string? Name { get; set; } = Name;
-    [Required] public ICollection<ServerChannelIdentityDto> Channels { get; set; } = Channels;
+    [Required] public ICollection<ServerChannelIdentityDto> Channels { get; set; } = Channels ?? [];
 }

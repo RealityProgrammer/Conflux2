@@ -5,6 +5,7 @@ import {communityServerService} from "../api/communityServerService.ts";
 import type {RefObject} from "react";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 import type {PresenceStatus} from "../api/schema.ts";
+import {type HTMLAttributes} from "react";
 
 export interface PresenceProps {
   status: PresenceStatus;
@@ -84,7 +85,17 @@ function Server({
   );
 }
 
+function Skeleton({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={`bg-white/10 animate-pulse ${className}`} {...props}></div>
+  );
+}
+
 export const Avatar = {
   User,
   Server,
+  Skeleton,
 }

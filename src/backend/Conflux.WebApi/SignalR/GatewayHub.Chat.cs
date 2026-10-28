@@ -14,7 +14,7 @@ partial class GatewayHub {
         if (dto == null) return;
         
         await Clients
-            .OthersInGroup(NameProvider.GetConversationGroupName(channelIdGuid))
+            .OthersInGroup(SignalRGroupNameProvider.GetConversationGroupName(channelIdGuid))
             .UserTyping(new(dto.UserId, dto.DisplayName, dto.AvatarVersion), Context.ConnectionAborted);
     }
 }

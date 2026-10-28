@@ -10,16 +10,16 @@ import {
 } from "../graphql/infiniteQueries.ts";
 import type {PinnedMessageDto} from "../graphql/types.ts";
 
-interface UsePinnedMessagesResult {
+interface UseQueryPinnedMessagesResult {
   queryResult: UseInfiniteQueryResult<InfiniteData<GetConversationPinnedMessagesQuery, unknown>, Error>;
   append: (message: PinnedMessageDto) => void;
   remove: (messageId: string) => void;
 }
 
-export default function usePinnedMessages(
+export default function useQueryPinnedMessages(
   conversationId: string,
   options?: Omit<Omit<UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, Error, InfiniteData<GetConversationPinnedMessagesQuery>>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, Error, InfiniteData<GetConversationPinnedMessagesQuery>>['queryKey'] }, "queryFn" | "initialPageParam" | "getNextPageParam">
-): UsePinnedMessagesResult {
+): UseQueryPinnedMessagesResult {
   const queryResult: UseInfiniteQueryResult<InfiniteData<GetConversationPinnedMessagesQuery, unknown>, Error> = useInfiniteGetConversationPinnedMessagesQuery(
     {
       conversationId,

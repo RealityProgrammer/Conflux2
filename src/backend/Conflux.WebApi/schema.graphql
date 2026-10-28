@@ -12,6 +12,7 @@ type Query
   @authorize
   @authorize
   @authorize
+  @authorize
   @authorize {
   communityServerMembers(
     "Returns the first _n_ elements from the list."
@@ -137,6 +138,7 @@ type Query
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
+  emoji(id: UUID!): Emoji @cost(weight: "10")
   friendRequests(
     "Returns the first _n_ elements from the list."
     first: Int
@@ -408,6 +410,14 @@ type ConversationEdge {
   node: Conversation!
   "A cursor for use in pagination."
   cursor: String!
+}
+
+type Emoji {
+  id: UUID!
+  createdAt: DateTime!
+  shortCode: String!
+  serverId: UUID!
+  server: CommunityServer!
 }
 
 type FriendRequest {
@@ -749,6 +759,7 @@ input CommunityServerFilterInput {
   invitations: ListFilterInputTypeOfInvitationFilterInput
   roles: ListFilterInputTypeOfCommunityServerRoleFilterInput
   moderationLogs: ListFilterInputTypeOfServerModerationLogFilterInput
+  emojis: ListFilterInputTypeOfEmojiFilterInput
 }
 
 input CommunityServerMemberFilterInput {
@@ -886,6 +897,18 @@ input DurationOperationFilterInput {
   nlte: Duration @cost(weight: "10")
 }
 
+input EmojiFilterInput {
+  and: [EmojiFilterInput!]
+  or: [EmojiFilterInput!]
+  id: UuidOperationFilterInput
+  shortCode: StringOperationFilterInput
+  serverId: UuidOperationFilterInput
+  server: CommunityServerFilterInput
+  creatorId: UuidOperationFilterInput
+  creator: ApplicationUserFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
 input FriendRequestFilterInput {
   and: [FriendRequestFilterInput!]
   or: [FriendRequestFilterInput!]
@@ -993,6 +1016,13 @@ input ListFilterInputTypeOfConversationParticipantFilterInput {
   all: ConversationParticipantFilterInput @cost(weight: "10")
   none: ConversationParticipantFilterInput @cost(weight: "10")
   some: ConversationParticipantFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfEmojiFilterInput {
+  all: EmojiFilterInput @cost(weight: "10")
+  none: EmojiFilterInput @cost(weight: "10")
+  some: EmojiFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 
@@ -1417,6 +1447,9 @@ enum ServerPermission {
   SendMessage
   EditMessages
   DeleteMessages
+  ManageEmojis
+  CreateEmoji
+  DeleteEmoji
 }
 
 enum SortEnumType {

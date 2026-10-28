@@ -1,6 +1,6 @@
 using Conflux.Domain.Repositories;
 
-namespace Conflux.WebApi.Jobs;
+namespace Conflux.WebApi.Workers;
 
 internal sealed partial class InvitationCleanupWorker(
     IServiceScopeFactory scopeFactory,

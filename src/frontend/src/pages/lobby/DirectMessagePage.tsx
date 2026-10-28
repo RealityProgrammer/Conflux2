@@ -17,6 +17,7 @@ import ChatInput from "../../components/chat/ChatInput.tsx";
 import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 import {Avatar} from "../../components/Avatar.tsx";
+import TypingIndicator from "../../components/chat/TypingIndicator.tsx";
 
 export default function DirectMessagePage() {
   useDocumentTitle("Conflux - DM");
@@ -110,14 +111,14 @@ function SuccessPage({
             className="size-8 flex-none rounded-full"
           />
 
-          <span className="flex-1 select-none">
+          <p className="flex-1 select-none">
             {peerProfile.displayName}
             {" "}
             <span className="text-slate-300 text-sm">(@{peerProfile.userName})</span>
-          </span>
+          </p>
 
           <div className="flex-none flex flex-row items-center gap-2">
-            <ShowPinnedMessagesButton conversationId={conversationId}/>
+            <ShowPinnedMessagesButton/>
 
             <IconButton
               isLoading={false}
@@ -137,10 +138,11 @@ function SuccessPage({
         </header>
 
         <div className="flex-1 min-h-0 flex flex-row relative gap-0">
-            <div className="flex flex-col flex-1">
-              <ChatView/>
-              <ChatInput/>
-            </div>
+          <div className="flex flex-col flex-1 min-h-0">
+            <ChatView/>
+            <TypingIndicator/>
+            <ChatInput/>
+          </div>
 
           {showProfile && (
             <UserProfilePanel

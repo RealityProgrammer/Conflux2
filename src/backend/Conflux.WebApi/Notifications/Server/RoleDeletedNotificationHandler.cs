@@ -20,7 +20,7 @@ internal sealed class RoleDeletedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
-        string groupName = NameProvider.GetServerGroupName(notification.ServerId);
+        string groupName = SignalRGroupNameProvider.GetServerGroupName(notification.ServerId);
 
         var target = string.IsNullOrEmpty(connectionId)
             ? hubContext.Clients.Group(groupName)

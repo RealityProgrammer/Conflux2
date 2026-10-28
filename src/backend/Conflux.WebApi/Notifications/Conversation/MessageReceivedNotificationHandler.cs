@@ -19,7 +19,7 @@ internal sealed class MessageReceivedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
         
-        string groupName = NameProvider.GetConversationGroupName(notification.ConversationId);
+        string groupName = SignalRGroupNameProvider.GetConversationGroupName(notification.ConversationId);
         
         var target = string.IsNullOrEmpty(connectionId)
             ? hubContext.Clients.Group(groupName)

@@ -9,29 +9,32 @@ import MessageAttachments from "./chat/MessageAttachments.tsx";
 import {
   type GetConversationPinnedMessagesQuery,
 } from "../graphql/infiniteQueries.ts";
-import usePinnedMessages from "../hooks/usePinnedMessages.ts";
+import useQueryPinnedMessages from "../hooks/useQueryPinnedMessages.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {MessageDeletedEvent, MessagePinnedEvent, MessageUnpinnedEvent} from "../api/events.ts";
 import {useState} from "react";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 
 interface ShowPinnedMessagesButtonProps {
-  conversationId: string;
 }
 
 export default function ShowPinnedMessagesButton({
-  conversationId,
 }: ShowPinnedMessagesButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
-  const { requestJump } = useChatContainerContext();
+  const { requestJump, conversationId } = useChatContainerContext();
 
   const {
     queryResult: { data, isLoading, isError },
     append: appendPinnedMessage,
     remove: removePinnedMessage,
-  } = usePinnedMessages(conversationId, { enabled: hasBeenOpened, staleTime: 1000 * 60 * 15 });
+  } = useQueryPinnedMessages(conversationId, {
+    enabled: hasBeenOpened,
+    staleTime: 1000 * 60 * 15,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
   const allElements = data?.pages.flatMap((page) => page?.pinnedMessages.nodes ?? []) ?? [];
 

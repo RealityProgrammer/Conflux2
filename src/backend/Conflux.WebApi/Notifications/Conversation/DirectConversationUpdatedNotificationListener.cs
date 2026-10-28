@@ -16,10 +16,8 @@ public sealed class DirectConversationUpdatedNotificationListener(
         DirectConversationUpdatedEvent @event = new(notification);
         
         foreach (var userId in notification.ParticipantUserIds) {
-            string userGroupName = NameProvider.GetUserGroupName(userId);
-
             await hubContext.Clients
-                .Group(userGroupName)
+                .User(userId.ToString())
                 .DirectConversationUpdated(@event, cancellationToken);
         }
     }

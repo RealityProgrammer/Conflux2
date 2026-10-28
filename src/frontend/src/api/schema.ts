@@ -923,6 +923,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/emojis/{emojiId}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    emojiId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/friend/requests/{toUserId}": {
         parameters: {
             query?: never;
@@ -1530,6 +1565,43 @@ export interface paths {
                         "text/plain": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
                         "application/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
                         "text/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/me/emojis/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
+                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
+                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
                     };
                 };
             };
@@ -2183,6 +2255,175 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communities/{serverId}/emojis/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
+                        "application/json": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
+                        "text/json": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/emojis/management": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
+                        "application/json": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
+                        "text/json": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/emojis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/x-www-form-urlencoded": {
+                        ShortCode?: string;
+                        Image?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfEmojiDto"];
+                        "application/json": components["schemas"]["ApiResponseOfEmojiDto"];
+                        "text/json": components["schemas"]["ApiResponseOfEmojiDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communities/{serverId}/emojis/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkDeleteEmojiRequest"];
+                    "text/json": components["schemas"]["BulkDeleteEmojiRequest"];
+                    "application/*+json": components["schemas"]["BulkDeleteEmojiRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations/{conversationId}/messages": {
         parameters: {
             query?: never;
@@ -2492,6 +2733,10 @@ export interface components {
             data: null | components["schemas"]["DirectConversationSummary"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfEmojiDto: {
+            data: null | components["schemas"]["EmojiDto"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfGetIncomingDirectCallQueryResult: {
             data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
             error: components["schemas"]["Error"];
@@ -2503,6 +2748,18 @@ export interface components {
         };
         ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
             data: null | components["schemas"]["ChannelCategoryDetailDto"][];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfIReadOnlyListOfServerEmojiGroupDto: {
+            data: null | components["schemas"]["ServerEmojiGroupDto"][];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfListOfEmojiEntryDto: {
+            data: null | components["schemas"]["EmojiEntryDto"][];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfListOfEmojiManagementDto: {
+            data: null | components["schemas"]["EmojiManagementDto"][];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfLoginResponse: {
@@ -2573,6 +2830,9 @@ export interface components {
             data: components["schemas"]["UserRelationshipStatus"];
             error: components["schemas"]["Error"];
         };
+        BulkDeleteEmojiRequest: {
+            ids: string[];
+        };
         ChangePasswordRequest: {
             oldPassword: string;
             newPassword: string;
@@ -2641,6 +2901,37 @@ export interface components {
             /** Format: int32 */
             avatarVersion: null | number;
             status: components["schemas"]["UserRelationshipStatus"];
+        };
+        EmojiDto: {
+            /** Format: uuid */
+            id: string;
+            shortCode: string;
+            /** Format: uuid */
+            serverId: string;
+            /** Format: uuid */
+            creatorId: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        EmojiEntryDto: {
+            /** Format: uuid */
+            id: string;
+            shortCode: string;
+        };
+        EmojiManagementCreatorDto: {
+            /** Format: uuid */
+            userId: string;
+            displayName: string;
+            /** Format: int32 */
+            avatarVersion: null | number;
+        };
+        EmojiManagementDto: {
+            /** Format: uuid */
+            id: string;
+            shortCode: string;
+            /** Format: date-time */
+            createdAt: string;
+            creator: components["schemas"]["EmojiManagementCreatorDto"];
         };
         Error: {
             code?: null | string;
@@ -2777,6 +3068,15 @@ export interface components {
             channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
             authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
         };
+        ServerEmojiGroupDto: {
+            serverInfo: components["schemas"]["ServerEmojiGroupInfoDto"];
+            emojiEntries: components["schemas"]["EmojiEntryDto"][];
+        };
+        ServerEmojiGroupInfoDto: {
+            /** Format: uuid */
+            serverId: string;
+            name: string;
+        };
         ServerIdentityDto: {
             /** Format: uuid */
             id: string;
@@ -2816,6 +3116,9 @@ export interface components {
                 SendMessage?: components["schemas"]["PermissionState"];
                 EditMessages?: components["schemas"]["PermissionState"];
                 DeleteMessages?: components["schemas"]["PermissionState"];
+                ManageEmojis?: components["schemas"]["PermissionState"];
+                CreateEmoji?: components["schemas"]["PermissionState"];
+                DeleteEmoji?: components["schemas"]["PermissionState"];
             };
             /** Format: int32 */
             authorizeLevel: number;
@@ -3046,7 +3349,10 @@ export enum ServerPermission {
     CreateInvitation = "CreateInvitation",
     SendMessage = "SendMessage",
     EditMessages = "EditMessages",
-    DeleteMessages = "DeleteMessages"
+    DeleteMessages = "DeleteMessages",
+    ManageEmojis = "ManageEmojis",
+    CreateEmoji = "CreateEmoji",
+    DeleteEmoji = "DeleteEmoji"
 }
 export enum SessionDevice {
     Desktop = "Desktop",

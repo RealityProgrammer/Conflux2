@@ -17,6 +17,13 @@ export type BanServerMemberMutationVariables = Exact<{
 
 export type BanServerMemberMutation = { banCommunityServerMember: { memberId: string } };
 
+export type GetEmojiDetailsQueryVariables = Exact<{
+  id: string;
+}>;
+
+
+export type GetEmojiDetailsQuery = { emoji: { shortCode: string, server: { id: string, name: string, description: string | null, numMembers: number, avatar: { version: number } | null } } | null };
+
 export type GetInvitationSummaryQueryVariables = Exact<{
   id: string;
 }>;
@@ -147,6 +154,44 @@ export const useBanServerMemberMutation = <
 
 
 useBanServerMemberMutation.fetcher = (variables: BanServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(BanServerMemberDocument, variables, options);
+
+export const GetEmojiDetailsDocument = new TypedDocumentString(`
+    query GetEmojiDetails($id: UUID!) {
+  emoji(id: $id) {
+    shortCode
+    server {
+      id
+      name
+      description
+      avatar {
+        version
+      }
+      numMembers
+    }
+  }
+}
+    `);
+
+export const useGetEmojiDetailsQuery = <
+      TData = GetEmojiDetailsQuery,
+      TError = unknown
+    >(
+      variables: GetEmojiDetailsQueryVariables,
+      options?: Omit<UseQueryOptions<GetEmojiDetailsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetEmojiDetailsQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetEmojiDetailsQuery, TError, TData>(
+      {
+    queryKey: ['GetEmojiDetails', variables],
+    queryFn: graphqlFetcher<GetEmojiDetailsQuery, GetEmojiDetailsQueryVariables>(GetEmojiDetailsDocument, variables),
+    ...options
+  }
+    )};
+
+useGetEmojiDetailsQuery.getKey = (variables: GetEmojiDetailsQueryVariables) => ['GetEmojiDetails', variables];
+
+
+useGetEmojiDetailsQuery.fetcher = (variables: GetEmojiDetailsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetEmojiDetailsQuery, GetEmojiDetailsQueryVariables>(GetEmojiDetailsDocument, variables, options);
 
 export const GetInvitationSummaryDocument = new TypedDocumentString(`
     query GetInvitationSummary($id: String!) {

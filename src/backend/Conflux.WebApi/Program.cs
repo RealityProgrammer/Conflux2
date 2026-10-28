@@ -12,14 +12,12 @@ using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Converters;
 using Conflux.Application.Dto;
-using Conflux.Application.Enums;
 using Conflux.Application.Features.Servers;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Options;
 using Conflux.Application.Pipelines;
 using Conflux.Application.Services;
 using Conflux.Application.Services.Implementations;
-using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
@@ -30,18 +28,17 @@ using Conflux.WebApi;
 using Conflux.WebApi.Controllers;
 using Conflux.WebApi.Filters;
 using Conflux.WebApi.GraphQL;
-using Conflux.WebApi.GraphQL.Middlewares;
-using Conflux.WebApi.Jobs;
+using Conflux.WebApi.Workers;
 using Conflux.WebApi.Miscs;
-using Conflux.WebApi.Notifications;
 using Conflux.WebApi.Notifications.Conversation;
-using Conflux.WebApi.Notifications.Users;
 using Conflux.WebApi.Schema;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
+using Conflux.WebApi.Workers;
 using FileSignatures;
 using FileSignatures.Formats;
+using FluentValidation;
 using HotChocolate.Execution;
 using HotChocolate.Types.Descriptors;
 using Mediator;
@@ -63,6 +60,7 @@ using System.Threading.RateLimiting;
 using UAParser.Extensions;
 using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
+using InvitationCleanupWorker = Conflux.WebApi.Workers.InvitationCleanupWorker;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -269,19 +267,18 @@ builder.Services.AddMediator(options => {
         typeof(MessageReceivedNotificationHandler),
     ];
     options.PipelineBehaviors = [
-        typeof(ServerAuthorizationPipelineBehaviour<,>),
-        typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
+        typeof(ValidationBehavior<,>),
+        typeof(ServerAuthorizationBehaviour<,>),
+        typeof(ServerMemberInteractAuthorizationBehaviour<,>),
+        typeof(EnsureConversationParticipantBehavior<,>),
         typeof(RequiresActiveAccountBehavior<,>),
-        typeof(KickServerMemberValidationPipeline),
-        typeof(WarnServerMemberValidationPipeline),
-        typeof(BanServerMemberValidationPipeline),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
-
+builder.Services.AddValidatorsFromAssemblyContaining(typeof(CreateEmojiCommandValidator));
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<SignalRConnectionTracker>()
+    .AddSingleton<ISignalRConnectionTracker, SignalRConnectionTracker>()
     .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()
@@ -323,6 +320,8 @@ builder.Services
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
     
+    .AddScoped<IServerEmojiCacheProvider, ServerEmojiCacheProvider>()
+    
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>
         (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
@@ -339,7 +338,10 @@ builder.Services
         (MediaItemRepository)services.GetRequiredService<IMediaItemReadRepository>()
     )
     
-    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
+    .AddScoped<ICommunityServerReadRepository, CommunityServerRepository>()
+    .AddScoped<ICommunityServerWriteRepository>(services =>
+        (CommunityServerRepository)services.GetRequiredService<ICommunityServerReadRepository>())
+    
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>()
@@ -353,6 +355,11 @@ builder.Services
     .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
     .AddScoped<IUserAccountDeletionWriteRepository>(services => 
         (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
+    )
+    
+    .AddScoped<IEmojiReadRepository, EmojiRepository>()
+    .AddScoped<IEmojiWriteRepository>(services => 
+        (EmojiRepository)services.GetRequiredService<IEmojiReadRepository>()
     );
 
 // blob service.
@@ -363,6 +370,20 @@ builder.Services.AddSingleton<IAmazonS3>((services) => {
         ServiceURL = s3Options.Endpoint,
         ForcePathStyle = true,
         AuthenticationRegion = s3Options.Region,
+        UseHttp = !s3Options.Endpoint.StartsWith("https"),
+    };
+    
+    return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
+});
+
+builder.Services.AddKeyedSingleton<IAmazonS3>("PreSignS3", (services, key) => {
+    var s3Options = services.GetRequiredService<IOptions<S3Options>>().Value;
+    
+    var config = new AmazonS3Config {
+        ServiceURL = s3Options.PreSignEndpoint,
+        ForcePathStyle = true,
+        AuthenticationRegion = s3Options.Region,
+        UseHttp = !s3Options.PreSignEndpoint.StartsWith("https"),
     };
     
     return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
@@ -372,7 +393,8 @@ builder.Services
     .AddSingleton<IBlobStorage, StorageService>()
     .AddScoped<IUserMediaService, UserMediaService>()
     .AddScoped<IServerMediaService, ServerMediaService>()
-    .AddScoped<IMessageMediaService, MessageMediaService>();
+    .AddScoped<IMessageMediaService, MessageMediaService>()
+    .AddScoped<IEmojiMediaService, EmojiMediaService>();
 
 // only AddControllersWithViews support for antiforgery for some reason.
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
@@ -625,11 +647,11 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 // jobs/workers
 builder.Services
     .AddHostedService<InvitationCleanupWorker>()
-    .AddHostedService<GhostConnectionCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
     .AddHostedService<EmailBackgroundWorker>()
-    .AddHostedService<SessionCleanupWorker>()
-    .AddHostedService<PurgePendingDeleteAccountsWorker>();
+    .AddHostedService<LoginSessionCleanupWorker>()
+    .AddHostedService<PurgePendingDeleteAccountsWorker>()
+    .AddHostedService<ConnectionCleanupWorker>();
 
 var app = builder.Build();
 

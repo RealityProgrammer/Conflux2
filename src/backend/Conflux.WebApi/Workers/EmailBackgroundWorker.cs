@@ -1,6 +1,6 @@
 using Conflux.Application.Services;
 
-namespace Conflux.WebApi.Jobs;
+namespace Conflux.WebApi.Workers;
 
 internal sealed class EmailBackgroundWorker(
     IEmailQueue emailQueue,

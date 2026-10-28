@@ -28,7 +28,7 @@ internal sealed class MemberBannedNotificationHandler(
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
         // broadcast the banned notification to whoever has the ability to manage member
-        string groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);
+        string groupName = SignalRGroupNameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);
 
         IConfluxClient target = string.IsNullOrEmpty(connectionId) ?
             hubContext.Clients.Group(groupName) :
@@ -37,7 +37,7 @@ internal sealed class MemberBannedNotificationHandler(
         await target.ServerMemberBanned(new(notification), cancellationToken);
         
         // broadcast the notification to update moderation log
-        groupName = NameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
+        groupName = SignalRGroupNameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ReadModerationLogs);
         await hubContext.Clients
             .Group(groupName)
             .UpdateModerationLog(cancellationToken);

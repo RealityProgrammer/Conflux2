@@ -5,7 +5,7 @@ partial class GatewayHub {
     public async Task JoinConversation(Guid conversationId) {
         string connectionId = Context.ConnectionId;
         
-        await Groups.AddToGroupAsync(connectionId, NameProvider.GetConversationGroupName(conversationId));
+        await Groups.AddToGroupAsync(connectionId, SignalRGroupNameProvider.GetConversationGroupName(conversationId));
         await joinTracker.IncrementConversationJoinCount(connectionId, conversationId);
     }
 
@@ -13,7 +13,7 @@ partial class GatewayHub {
     public async Task LeaveConversation(Guid conversationId) {
         string connectionId = Context.ConnectionId;
         
-        await Groups.RemoveFromGroupAsync(connectionId, NameProvider.GetConversationGroupName(conversationId));
+        await Groups.RemoveFromGroupAsync(connectionId, SignalRGroupNameProvider.GetConversationGroupName(conversationId));
         await joinTracker.DecrementConversationJoinCount(connectionId, conversationId);
     }
 }

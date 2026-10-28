@@ -5,7 +5,6 @@ import type {
   ServiceError, ServiceResponse
 } from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
-import useServerConnection from "../hooks/useServerConnection.ts";
 import {type QueryKey, useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
 import {communityServerService} from "../api/communityServerService.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
@@ -39,8 +38,6 @@ export default function CommunityServerContextProvider({
   children,
   serverId,
 }: CommunityServerContextProviderProps) {
-  useServerConnection(serverId);
-  
   const queryClient = useQueryClient();
   const detailsQueryKey: QueryKey = ["serverDetails", serverId];
 
@@ -128,6 +125,16 @@ export default function CommunityServerContextProvider({
   
   const appendChannel = (channel: ServerChannelIdentityDto) => {
     updateServerDetails((oldData) => {
+      if (oldData.channelCategories.length === 0) {
+        return {
+          channelCategories: [{
+            id: null,
+            name: null,
+            channels: [channel],
+          }],
+        };
+      }
+
       return {
         channelCategories: oldData.channelCategories.map(category => {
           if (category.id !== channel.categoryId) return category;
@@ -228,21 +235,11 @@ export default function CommunityServerContextProvider({
     if (event.serverId !== serverId) {
       return;
     }
-    
-    const response = await communityServerService.getChannelCategories(event.serverId);
-    
-    if (response.success && response.data) {
-      updateServerDetails(() => {
-        return {
-          channelCategories: response.data! ?? undefined,
-        }
-      });
-    }
+
+    appendChannel(event.channel);
   });
 
   useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
-    console.log("ServerChannelDeleted");
-    
     if (event.serverId !== serverId) {
       return;
     }

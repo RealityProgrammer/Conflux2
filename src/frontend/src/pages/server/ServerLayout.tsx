@@ -78,37 +78,28 @@ function PageOutlet() {
 
 function SuccessfullyLoaded() {
   const { detailsQueryResult: { data: serverDetails }, updatePermission, refreshPermission } = useCommunityServerContext();
-  const { invokeSafely } = useSignalR();
   const [showKickedDialog, setShowKickedDialog] = useState(false);
-  
-  // invokes leave server and rejoin so that backend can correctly track connection joined groups
-  const refreshPermissionWithGroup = async () => {
-    await invokeSafely("LeaveServer", serverDetails!.id);
-    await invokeSafely("JoinServer", serverDetails!.id);
-
-    await refreshPermission();
-  }
 
   useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
-    console.log("member roles updated");
-    
     if (event.serverId !== serverDetails?.id) return;
     if (event.memberUserId !== serverDetails.authorizeInfo.memberId) return;
 
-    await refreshPermissionWithGroup();
+    await refreshPermission();
   });
 
   useSignalREvent("ServerDefaultRoleUpdated", async (event: ServerDefaultRoleUpdatedEvent) => {
     if (serverDetails?.id !== event.serverId) return;
 
-    await refreshPermissionWithGroup();
+    await refreshPermission();
   });
 
   useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], async (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
+    console.log("ServerRoleUpdated");
+
     if (serverDetails?.id !== event.serverId) return;
     if (!serverDetails.authorizeInfo.roles.some(r => r.id === event.roleId)) return;
 
-    await refreshPermissionWithGroup();
+    await refreshPermission();
   });
   
   useSignalREvent("KickedFromServer", (kickedServerId: string) => {

@@ -11,7 +11,7 @@ public sealed record EditMessageCommand(
     Guid ConversationId,
     Guid MessageId, 
     string? Body
-) : ICommand<Result>;
+) : ICommand<Result>, IConversationCommand;
 
 public sealed record MessageEditedNotification(Guid ConversationId, EditedMessageDto Message) : INotification;
 
