@@ -308,7 +308,7 @@ export default function MessageBody({
       {content && content.length > 0 && (
         <div className={`text-sm leading-6 w-full ${className}`}>
           <Markdown
-            remarkPlugins={[remarkGfm, remarkMath, remarkCustomTokens]}
+            remarkPlugins={[[remarkGfm, {  }], remarkMath, remarkCustomTokens]}
             rehypePlugins={[rehypeRaw, [ rehypeKatex, { strict: "warn" }]]}
             children={content}
             components={markdownComponents}

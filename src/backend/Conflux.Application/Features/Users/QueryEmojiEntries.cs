@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +27,7 @@ public sealed class QueryEmojiEntriesHandler(
         // get joined server ids
         List<ServerEmojiGroupInfoDto> joinedServers = await serverMemberReadRepository
             .AsQueryable()
-            .Where(m => m.UserId == userId)
+            .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.CommunityServer)
             .Select(m => new ServerEmojiGroupInfoDto(m.CommunityServerId, m.CommunityServer.Name))
             .ToListAsync(cancellationToken);

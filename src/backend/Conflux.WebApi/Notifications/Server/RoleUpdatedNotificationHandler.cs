@@ -23,13 +23,13 @@ internal sealed class RoleUpdatedNotificationHandler(
     public async ValueTask Handle(ServerRoleUpdatedNotification notification, CancellationToken cancellationToken) {
         // not filter connection id just in case some server-side computed field pop up.
         await hubContext.Clients
-            .Group(NameProvider.GetServerGroupName(notification.ServerId))
+            .Group(SignalRGroupNameProvider.GetServerGroupName(notification.ServerId))
             .ServerRoleUpdated(new(notification), cancellationToken);
     }
 
     public async ValueTask Handle(ServerDefaultRoleUpdatedNotification notification, CancellationToken cancellationToken) {
         await hubContext.Clients
-            .Group(NameProvider.GetServerGroupName(notification.ServerId))
+            .Group(SignalRGroupNameProvider.GetServerGroupName(notification.ServerId))
             .ServerDefaultRoleUpdated(new(notification), cancellationToken);
     }
 }

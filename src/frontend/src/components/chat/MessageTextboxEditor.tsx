@@ -11,7 +11,7 @@ import {
   $isTextNode,
   $isElementNode, $createParagraphNode, $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
-  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND,
+  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, type ElementNode,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -47,6 +47,13 @@ import {
   ITALIC_STAR,
   ITALIC_UNDERSCORE
 } from '@lexical/markdown';
+import {
+  LinkNode,
+  AutoLinkNode,
+  registerAutoLink,
+  type LinkMatcher,
+  createLinkMatcherWithRegExp
+} from '@lexical/link';
 
 export type SuggestionData =
   { type: 'mode'; startColonIndex: number } |
@@ -67,6 +74,15 @@ interface MessageTextboxEditorProps {
   onSuggestionChange: (data: SuggestionData | undefined) => void;
   ref?: Ref<MessageTextboxEditorRef>;
 }
+
+const URL_MATCHER = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)([A-Za-z0-9.-]+\.[a-z]{2,}(?:\/[+~%\/.\w-_]*)?\??[-+=&;%@.\w_]*#?\w*)?)/i;
+
+const LINK_MATCHERS: LinkMatcher[] = [
+  createLinkMatcherWithRegExp(URL_MATCHER, (text) => {
+    // prepend https:// if missing from a domain link like "google.com"
+    return text.startsWith('http') ? text : `https://${text}`;
+  }),
+];
 
 const CHAT_MARKDOWN_TRANSFORMERS = [
   HEADING,
@@ -185,6 +201,23 @@ export const CustomTransformExtension = defineExtension({
   },
 });
 
+export const LinkExtension = defineExtension({
+  name: 'LinkExtension',
+  nodes: () => [LinkNode, AutoLinkNode],
+  register(editor) {
+    return mergeRegister(
+      registerAutoLink(editor, {
+        matchers: LINK_MATCHERS,
+        changeHandlers: [],
+        excludeParents: [
+          $isCodeNode,
+          $isQuoteNode,
+        ]
+      }),
+    );
+  },
+});
+
 const lexicalExtensions = defineExtension({
   name: "ChatInputEditor",
   dependencies: [
@@ -193,6 +226,7 @@ const lexicalExtensions = defineExtension({
     HistoryExtension,
     MarkdownShortcutsExtension,
     CustomTransformExtension,
+    LinkExtension,
   ],
   theme: {
     heading: {
@@ -219,7 +253,8 @@ const lexicalExtensions = defineExtension({
       code: "message-inline-code",
     },
     code: "block w-full box-border overflow-x-auto p-3.5 rounded-md bg-[rgb(43,43,43)] border-2 border-gray-600 text-sm font-mono text-white whitespace-pre",
-    quote: "message-quote whitespace-pre-wrap"
+    quote: "message-quote whitespace-pre-wrap",
+    link: "text-blue-400",
   },
   onError(error: Error) {
     console.error(error);

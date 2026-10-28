@@ -21,7 +21,7 @@ internal sealed class EmojiCreatedNotificationHandler(
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
-        string groupName = NameProvider.GetServerGroupName(notification.Emoji.ServerId);
+        string groupName = SignalRGroupNameProvider.GetServerGroupName(notification.Emoji.ServerId);
         
         var target = string.IsNullOrEmpty(connectionId)
             ? hubContext.Clients.Group(groupName)

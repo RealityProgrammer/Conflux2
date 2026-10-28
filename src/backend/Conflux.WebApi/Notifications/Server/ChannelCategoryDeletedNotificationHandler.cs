@@ -19,7 +19,7 @@ internal sealed class ChannelCategoryDeletedNotificationHandler(
         ServerChannelCategoryDeletedNotification notification, 
         CancellationToken cancellationToken
     ) {
-        string groupName = NameProvider.GetServerGroupName(notification.ServerId);
+        string groupName = SignalRGroupNameProvider.GetServerGroupName(notification.ServerId);
 
         await hubContext
             .Clients

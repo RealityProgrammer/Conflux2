@@ -16,7 +16,7 @@ internal sealed class MessagePinnedNotificationHandler(
 ) : INotificationHandler<MessagePinnedNotification> {
     public async ValueTask Handle(MessagePinnedNotification notification, CancellationToken cancellationToken) {
         await hubContext.Clients
-            .Group(NameProvider.GetConversationGroupName(notification.ConversationId))
+            .Group(SignalRGroupNameProvider.GetConversationGroupName(notification.ConversationId))
             .MessagePinned(new(notification), cancellationToken);
     }
 }

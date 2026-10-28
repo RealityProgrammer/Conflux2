@@ -243,8 +243,6 @@ export default function CommunityServerContextProvider({
   });
 
   useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
-    console.log("ServerChannelDeleted");
-    
     if (event.serverId !== serverId) {
       return;
     }
