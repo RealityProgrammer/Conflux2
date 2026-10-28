@@ -538,18 +538,18 @@ function RoleDetails({
           <li className="flex items-center justify-between gap-2 px-2.5">
             <span>Created By</span>
 
-            <div className="flex items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
+            <div className="flex flex-row items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
               <Avatar.User
                 userId={role.creatorUser!.id}
                 version={role.creatorUser?.avatar?.version}
-                className="size-5 rounded-full overflow-hidden"
+                className="flex-none size-5 rounded-full overflow-hidden"
               />
 
-              <span className="text-sm font-medium text-zinc-200">
+              <span className="flex-1 text-sm font-medium text-zinc-200">
                 {role.creatorUser?.displayName ?? "Deleted User"}
               </span>
 
-              <span className="text-xs text-zinc-500 ml-1 border-l border-zinc-700 pl-2">
+              <span className="flex-1 text-xs text-zinc-500 ml-1 border-l border-zinc-700 pl-2">
                 <DateTimeText value={new Date(role.createdAt)} />
               </span>
             </div>
