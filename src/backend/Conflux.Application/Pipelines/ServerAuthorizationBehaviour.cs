@@ -6,7 +6,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Pipelines;
 
-public sealed class ServerAuthorizationPipelineBehaviour<TMessage, TResponse>(
+public sealed class ServerAuthorizationBehaviour<TMessage, TResponse>(
     ICurrentUserService currentUserService,
     IServerPermissionsProvider permissionsProvider
 ) : IPipelineBehavior<TMessage, TResponse> where TMessage : IServerCommand where TResponse : IResult<TResponse> {

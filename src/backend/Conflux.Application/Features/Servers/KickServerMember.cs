@@ -4,6 +4,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -18,21 +19,13 @@ public sealed record KickServerMemberCommand(
     ];
 }
 
-public sealed class KickServerMemberValidationPipeline : IPipelineBehavior<KickServerMemberCommand, Result> {
-    public async ValueTask<Result> Handle(
-        KickServerMemberCommand message, 
-        MessageHandlerDelegate<KickServerMemberCommand, Result> next, 
-        CancellationToken cancellationToken
-    ) {
-        if (message.Reason is { Length: > 256 }) {
-            return Errors.ValidationErrorsOccurred(new() {
-                ["reason"] = [
-                    "Reason can only have maximum length of 256 characters.",
-                ],
-            });
-        }
-        
-        return await next(message, cancellationToken);
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+public sealed class KickServerMemberCommandValidator : AbstractValidator<KickServerMemberCommand> {
+    public KickServerMemberCommandValidator() {
+        RuleFor(c => c.Reason)
+            .Length(256)
+            .When(c => !string.IsNullOrEmpty(c.Reason))
+            .WithMessage("Reason cannot exceed 256 characters.");
     }
 }
 

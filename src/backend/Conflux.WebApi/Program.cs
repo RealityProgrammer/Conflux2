@@ -268,12 +268,10 @@ builder.Services.AddMediator(options => {
     ];
     options.PipelineBehaviors = [
         typeof(ValidationBehavior<,>),
-        typeof(ServerAuthorizationPipelineBehaviour<,>),
-        typeof(ServerMemberInteractAuthorizationPipelineBehaviour<,>),
+        typeof(ServerAuthorizationBehaviour<,>),
+        typeof(ServerMemberInteractAuthorizationBehaviour<,>),
+        typeof(EnsureConversationParticipantBehavior<,>),
         typeof(RequiresActiveAccountBehavior<,>),
-        typeof(KickServerMemberValidationPipeline),
-        typeof(WarnServerMemberValidationPipeline),
-        typeof(BanServerMemberValidationPipeline),
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });

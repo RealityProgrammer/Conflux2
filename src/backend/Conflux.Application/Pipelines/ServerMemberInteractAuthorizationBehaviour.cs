@@ -5,7 +5,7 @@ using Conflux.Domain;
 
 namespace Conflux.Application.Pipelines;
 
-public class ServerMemberInteractAuthorizationPipelineBehaviour<TMessage, TResponse>(
+public class ServerMemberInteractAuthorizationBehaviour<TMessage, TResponse>(
     ICurrentUserService currentUserService,
     IServerPermissionsProvider permissionsProvider
 ) : IPipelineBehavior<TMessage, TResponse> where TMessage : IServerMemberInteractCommand where TResponse : IResult<TResponse> {

@@ -1,3 +1,4 @@
+using Conflux.Application.Features.Servers;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Repositories;
@@ -6,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record DeleteMessageCommand(
-    Guid ConversationId, 
+    Guid ConversationId,
     Guid MessageId
-) : ICommand<Result>;
+) : ICommand<Result>, IConversationCommand;
 
 public sealed record MessageDeletedNotification(Guid ConversationId, Guid MessageId) : INotification;
 

@@ -14,6 +14,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerChannelDeletedEvent} from "../../api/events.ts";
 import {useState} from "react";
 import TypingIndicator from "../../components/chat/TypingIndicator.tsx";
+import ShowPinnedMessagesButton from "../../components/ShowPinnedMessagesButton.tsx";
 
 export default function ChannelPage() {
   const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
@@ -81,31 +82,37 @@ function SuccessLayout() {
   
   return (
     <section className="size-full flex flex-col">
-      <header className="flex-none basis-10 bg-gray-750 border-b-2 border-b-gray-600 flex flex-row items-center gap-2 px-2 select-none">
-        {disappearTexts ? (
-          <span className="text-white">{disappearTexts.header}</span>
-        ) : (
-          <>
-            { channelDetails.type === ChannelType.Text ? (
-              <BsChatText className="size-6 fill-white"/>
-            ) : (
-              <BsVolumeUp className="size-6 fill-white"/>
-            )}
+      <ChatContainerContextProvider
+        conversationId={channelDetails!.conversationId}
+      >
+        <header
+          className="flex-none basis-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2"
+        >
+          {disappearTexts ? (
+            <span className="text-white">{disappearTexts.header}</span>
+          ) : (
+            <>
+              { channelDetails.type === ChannelType.Text ? (
+                <BsChatText className="size-6 fill-slate-300"/>
+              ) : (
+                <BsVolumeUp className="size-6 fill-slate-300"/>
+              )}
 
-            <span className="text-white">{channelDetails!.name}</span>
-          </>
-        )}
-      </header>
+              <p className="flex-1 text-white">{channelDetails!.name}</p>
 
-      <main className="flex-1 min-h-0 flex flex-row relative gap-0">
-        {disappearTexts ? (
-          <div className="size-full text-sm flex flex-col justify-center items-center gap-2 text-center">
-            <span className="text-gray-400">{disappearTexts.body}</span>
-          </div>
-        ) : (
-          <ChatContainerContextProvider
-            conversationId={channelDetails!.conversationId}
-          >
+              <div className="flex-none flex flex-row items-center gap-2">
+                <ShowPinnedMessagesButton/>
+              </div>
+            </>
+          )}
+        </header>
+
+        <main className="flex-1 min-h-0 flex flex-row relative gap-0">
+          {disappearTexts ? (
+            <div className="size-full text-sm flex flex-col justify-center items-center gap-2 text-center">
+              <span className="text-gray-400">{disappearTexts.body}</span>
+            </div>
+          ) : (
             <div className="flex flex-col flex-1">
               <ChatView
                 allowEditMessage={hasPermission(ServerPermission.EditMessages)}
@@ -119,9 +126,9 @@ function SuccessLayout() {
                 </>
               )}
             </div>
-          </ChatContainerContextProvider>
-        )}
-      </main>
+          )}
+        </main>
+      </ChatContainerContextProvider>
     </section>
   );
 }

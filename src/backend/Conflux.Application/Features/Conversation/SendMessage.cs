@@ -15,7 +15,7 @@ public sealed record SendMessageCommand(
     string? Body,
     IReadOnlyList<UploadFile> Attachments,
     Guid? ReplyToId
-) : ICommand<Result<TimelineMessageDto>>;
+) : ICommand<Result<TimelineMessageDto>>, IConversationCommand;
 
 public sealed record MessageReceivedNotification(
     Guid ConversationId, 

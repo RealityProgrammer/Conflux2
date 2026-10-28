@@ -111,14 +111,14 @@ function SuccessPage({
             className="size-8 flex-none rounded-full"
           />
 
-          <span className="flex-1 select-none">
+          <p className="flex-1 select-none">
             {peerProfile.displayName}
             {" "}
             <span className="text-slate-300 text-sm">(@{peerProfile.userName})</span>
-          </span>
+          </p>
 
           <div className="flex-none flex flex-row items-center gap-2">
-            <ShowPinnedMessagesButton conversationId={conversationId}/>
+            <ShowPinnedMessagesButton/>
 
             <IconButton
               isLoading={false}

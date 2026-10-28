@@ -12,7 +12,7 @@ namespace Conflux.Application.Features.Conversation;
 public sealed record PinMessageCommand(
     Guid ConversationId, 
     Guid MessageId
-) : ICommand<Result<TimelineMessageDto>>;
+) : ICommand<Result<TimelineMessageDto>>, IConversationCommand;
 
 public sealed record MessagePinnedNotification(Guid ConversationId, PinnedMessageDto Message) : INotification;
 
