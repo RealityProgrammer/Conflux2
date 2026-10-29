@@ -7,6 +7,7 @@ import useUserEmojis from "../../hooks/useUserEmojis.ts";
 import Spinner from "../Spinner.tsx";
 import type {ServerEmojiGroupDto} from "../../api/types.ts";
 import {Emoji} from "../Emoji.tsx";
+import {EmojiGroup} from "./EmojiGroup.tsx";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t") => void;
@@ -82,27 +83,11 @@ function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
           data={filteredData}
           computeItemKey={(index) => filteredData[index].serverInfo.serverId}
           itemContent={(_, emojiGroup: ServerEmojiGroupDto) => (
-            <div className="mb-4 px-2">
-              <div className="sticky top-0 bg-gray-725 backdrop-blur-sm py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                {emojiGroup.serverInfo.name}
-              </div>
-
-              <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-1 justify-center mt-1">
-                {emojiGroup.emojiEntries.map((emojiEntry) => (
-                  <button
-                    key={emojiEntry.id}
-                    className="size-10 p-1 rounded-md hover-highlight cursor-pointer"
-                    onClick={() => onSelect(emojiEntry.id)}
-                  >
-                    <Emoji.Root
-                      emojiId={emojiEntry.id}
-                      shortCode={emojiEntry.shortCode}
-                      className="size-full block"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
+            <EmojiGroup.Root
+              groupName={emojiGroup.serverInfo.name}
+              emojiEntries={emojiGroup.emojiEntries}
+              onSelected={(entry) => onSelect(entry.id)}
+            />
           )}
         />
       )}

@@ -19,7 +19,7 @@ import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect, type Ref, useRef, useImperativeHandle} from "react";
+import {useEffect, type Ref, useRef, useImperativeHandle, type RefObject} from "react";
 import {
   KEY_DOWN_COMMAND,
   COMMAND_PRIORITY_LOW,
@@ -65,6 +65,7 @@ export interface MessageTextboxEditorRef {
   insertText: (text: string, startOffset: number, endOffset: number) => void;
   insertEmojiNode: (emojiId: string, startOffset: number, endOffset: number) => void;
   convertToMarkdownString: () => string;
+  insertAtLastSelection: (content: string | (() => LexicalNode)) => void;
 }
 
 interface MessageTextboxEditorProps {
@@ -549,6 +550,7 @@ export default function MessageTextboxEditor({
   ref,
 }: MessageTextboxEditorProps) {
   const editorRef = useRef<LexicalEditor | null>(null);
+  const lastSelectionRef = useRef<{ nodeKey: string; offset: number } | null>(null);
 
   useImperativeHandle(ref, () => ({
     reset: () => {
@@ -586,6 +588,40 @@ export default function MessageTextboxEditor({
         return $convertToMarkdownString(CHAT_MARKDOWN_TRANSFORMERS);
       }) ?? "";
     },
+    insertAtLastSelection: (content: string | (() => LexicalNode)) => {
+      editorRef.current?.update(() => {
+        const saved = lastSelectionRef.current;
+
+        if (saved) {
+          const node = $getNodeByKey(saved.nodeKey);
+
+          if (node && $isTextNode(node)) {
+            const selection = $createRangeSelection();
+
+            selection.anchor.set(node.__key, saved.offset, 'text');
+            selection.focus.set(node.__key, saved.offset, 'text');
+            $setSelection(selection);
+
+            if (typeof content === 'string') {
+              selection.insertText(content);
+            } else {
+              selection.insertNodes([content()]);
+            }
+            return;
+          }
+        }
+
+        editorRef.current?.focus();
+        const fallbackSelection = $getSelection();
+        if ($isRangeSelection(fallbackSelection)) {
+          if (typeof content === 'string') {
+            fallbackSelection.insertText(content);
+          } else {
+            fallbackSelection.insertNodes([content()]);
+          }
+        }
+      });
+    },
   }), []);
 
   return (
@@ -599,6 +635,7 @@ export default function MessageTextboxEditor({
             editorRef.current = editor;
           }}
           onImagePaste={onImagePaste}
+          lastSelectionRef={lastSelectionRef}
         />
       </div>
     </LexicalExtensionComposer>
@@ -611,6 +648,7 @@ interface TextAreaProps {
   onEditorReady: (editor: LexicalEditor) => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
   onImagePaste: (file: File) => void;
+  lastSelectionRef: RefObject<{ nodeKey: string; offset: number } | null>; // 👈 Added prop type
 }
 
 function TextArea({
@@ -619,6 +657,7 @@ function TextArea({
   onEditorReady,
   onSuggestionChange,
   onImagePaste,
+  lastSelectionRef,
 }: TextAreaProps) {
   const [editor] = useLexicalComposerContext();
 
@@ -816,7 +855,7 @@ function TextArea({
         const anchor = selection.anchor;
         const node = anchor.getNode();
 
-        // Suggestions only occur inside normal text nodes
+        // suggestions only occur inside normal text nodes
         if (!$isTextNode(node)) {
           onSuggestionChange(undefined);
           return;
@@ -837,7 +876,6 @@ function TextArea({
           return;
         }
 
-        // 2. Time Match
         const timeMatch = textBeforeCursor.match(/:t(\d*)$/);
         if (timeMatch) {
           const localColonIdx = timeMatch.index!;
@@ -855,7 +893,6 @@ function TextArea({
           return;
         }
 
-        // 3. Mode Match
         if (textBeforeCursor.endsWith(":")) {
           onSuggestionChange({
             type: "mode",
@@ -864,17 +901,27 @@ function TextArea({
           return;
         }
 
-        // 4. Unknown Match
-        const unknownMatch = textBeforeCursor.match(/:([^:\s]+)$/);
-        if (unknownMatch) {
-          onSuggestionChange(undefined);
-          return;
-        }
-
         onSuggestionChange(undefined);
       });
     });
   }, [editor, onSuggestionChange]);
+
+  // track last known cursor position
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection) && selection.isCollapsed()) {
+          const anchor = selection.anchor;
+          lastSelectionRef.current = {
+            nodeKey: anchor.key,
+            offset: anchor.offset,
+          };
+        }
+      });
+    });
+  }, [editor, lastSelectionRef]);
 
   return (
     <div className="input-field min-h-10 max-h-36 w-full flex-1 text-sm py-2 px-3 overflow-y-auto leading-relaxed relative">
