@@ -5,19 +5,19 @@ import {Emoji} from "../../Emoji.tsx";
 export type SerializedEmojiNode = Spread<{ emojiId: string; }, SerializedLexicalNode>;
 
 export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
-  _emojiId: string;
+  __emojiId: string;
 
   static getType(): string {
     return "emoji-decorator";
   }
 
   static clone(node: EmojiDecoratorNode): EmojiDecoratorNode {
-    return new EmojiDecoratorNode(node._emojiId, node.__key);
+    return new EmojiDecoratorNode(node.__emojiId, node.__key);
   }
 
   constructor(emojiId: string, key?: NodeKey) {
     super(key);
-    this._emojiId = emojiId;
+    this.__emojiId = emojiId;
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
@@ -36,16 +36,16 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
   }
 
   getTextContent(): string {
-    return `:e${this._emojiId}:`;
+    return `:e${this.__emojiId}:`;
   }
 
   getTextContentSize(): number {
-    return 2 + this._emojiId.length;
+    return 3 + this.__emojiId.length;
   }
 
   decorate(): ReactNode {
     return (
-      <Emoji.Root emojiId={this._emojiId} className="size-5 inline-block align-text-bottom" />
+      <Emoji.Root emojiId={this.__emojiId} className="size-5 inline-block align-text-bottom" />
     );
   }
 
@@ -55,14 +55,13 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
 
   exportJSON(): SerializedEmojiNode {
     return {
-      type: "emoji-decorator",
+      type: EmojiDecoratorNode.getType(),
       version: 1,
-      emojiId: this._emojiId,
+      emojiId: this.__emojiId,
     };
   }
 }
 
-// do what the roman do
 export function $createEmojiNode(emojiId: string): EmojiDecoratorNode {
   return new EmojiDecoratorNode(emojiId);
 }

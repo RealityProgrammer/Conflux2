@@ -13,6 +13,7 @@ import {Avatar} from "../Avatar.tsx";
 import {useGetEmojiDetailsQuery} from "../../graphql/queries.ts";
 import {useDeadEmojiStore} from "../../store/useDeadEmojiStore.ts";
 import Timestamp from "./Timestamp.tsx";
+import Mention from "./Mention.tsx";
 const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 
 interface MessageContentProps {
@@ -30,7 +31,7 @@ function remarkCustomTokens() {
 
       const value = node.value;
 
-      const regex = /:t(\d+):|:e([\da-f-]+):/g
+      const regex = /:t(\d+):|:e([\da-f\-]+):|:m([\da-f\-]+):/g
       if (!regex.test(value)) return;
 
       regex.lastIndex = 0;
@@ -51,21 +52,25 @@ function remarkCustomTokens() {
 
         const timestampMatch = match[1];
         const emojiMatch = match[2];
+        const mentionMatch = match[3];
 
-        if (timestampMatch !== undefined) {
+        if (timestampMatch) {
           const ms = Number(timestampMatch) || 0;
           newChildren.push({
             type: "html",
             value: `<span data-chat-timestamp="${ms}"></span>`,
           } as Literal);
-        }
-        else if (emojiMatch !== undefined) {
+        } else if (emojiMatch) {
           newChildren.push({
             type: "html",
             value: `<span data-chat-emoji="${emojiMatch}"></span>`,
           } as Literal);
+        } else if (mentionMatch) {
+          newChildren.push({
+            type: "html",
+            value: `<span data-chat-mention-userid="${mentionMatch}"></span>`,
+          } as Literal);
         }
-        // TODO: @ mention
 
         lastIndex = matchEnd;
       }
@@ -292,6 +297,13 @@ const markdownComponents: Components = {
     if (emojiAttribute) {
       return (
         <EmojiWithTooltip emojiId={emojiAttribute}/>
+      );
+    }
+
+    const mentionUserIdAttribute: string = (props as any)["data-chat-mention-userid"] as string;
+    if (mentionUserIdAttribute) {
+      return (
+        <Mention>{mentionUserIdAttribute}</Mention>
       );
     }
     

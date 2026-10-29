@@ -29,7 +29,7 @@ import {
   $setSelection
 } from "lexical";
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
-import {$createTimeNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
+import {$createTimestampNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
 import { ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList } from '@lexical/list';
 import { HeadingNode, QuoteNode, $isQuoteNode } from '@lexical/rich-text';
@@ -53,11 +53,13 @@ import {
   createLinkMatcherWithRegExp
 } from '@lexical/link';
 import {$createMarkdownMarkerNode, $isMarkdownMarkerNode, MarkdownMarkerNode} from "./nodes/MarkdownMarkerNode.tsx";
+import {$createMentionNode, MentionDecoratorNode} from "./nodes/MentionDecoratorNode.tsx";
 
 export type SuggestionData =
-  { type: 'mode'; startColonIndex: number } |
-  { type: 'emoji'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string } |
-  { type: 'time'; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string };
+  { type: "mode"; startColonIndex: number } |
+  { type: "emoji"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; } |
+  { type: "time"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string; } |
+  { type: "mention", startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; };
 
 export interface MessageTextboxEditorRef {
   reset: () => void;
@@ -395,7 +397,7 @@ export const MarkdownSyntaxExtension = defineExtension({
 
 export const CustomTransformExtension = defineExtension({
   name: 'CustomTransformExtension',
-  nodes: () => [EmojiDecoratorNode, TimestampDecoratorNode],
+  nodes: () => [EmojiDecoratorNode, TimestampDecoratorNode, MentionDecoratorNode],
   register(editor) {
     return editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
       if (!textNode.isAttached()) return;
@@ -429,13 +431,13 @@ export const CustomTransformExtension = defineExtension({
         }
       }
 
-      const emojiMatch = text.match(/:e([\w\-]+):/);
+      const emojiMatch = text.match(/:e([\da-f\-]+):/);
       if (emojiMatch) {
         const fullMatch = emojiMatch[0];
-        const emojiIdentifier = emojiMatch[1]; // could be either id or shortcode
+        const searchTerm = emojiMatch[1];
         const index = emojiMatch.index!;
 
-        const matchedEmoji = findMatchingEmoji(emojiIdentifier);
+        const matchedEmoji = findMatchingEmoji(searchTerm);
 
         if (!matchedEmoji) return;
 
@@ -470,8 +472,29 @@ export const CustomTransformExtension = defineExtension({
           targetNode.splitText(fullMatch.length);
         }
 
-        const timeNode = $createTimeNode(Number(timestampStr));
+        const timeNode = $createTimestampNode(Number(timestampStr));
         targetNode.replace(timeNode);
+        return;
+      }
+
+      const mentionMatch = text.match(/:m([\da-f\-]+):/);
+      if (mentionMatch) {
+        const fullMatch = mentionMatch[0];
+        const searchTerm = mentionMatch[1]; // could be either id or shortcode
+        const index = mentionMatch.index!;
+
+        let targetNode = textNode;
+
+        if (index > 0) {
+          [, targetNode] = targetNode.splitText(index);
+        }
+
+        if (targetNode.getTextContentSize() > fullMatch.length) {
+          targetNode.splitText(fullMatch.length);
+        }
+
+        const mentionNode = $createMentionNode(searchTerm);
+        targetNode.replace(mentionNode);
         return;
       }
     });
@@ -863,7 +886,7 @@ function TextArea({
 
         const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
 
-        const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
+        const emojiMatch = textBeforeCursor.match(/:e([\da-f\-]*)$/);
         if (emojiMatch) {
           const localColonIdx = emojiMatch.index!;
           onSuggestionChange({
