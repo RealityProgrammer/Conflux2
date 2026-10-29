@@ -12,7 +12,7 @@ import {
   $isElementNode, $createParagraphNode, $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
   mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, $getNodeByKey, ParagraphNode,
-  type UpdateListenerPayload,
+  type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -71,6 +71,7 @@ interface MessageTextboxEditorProps {
   onTextChange: (text: string, cursorPosition: number) => void;
   onEnterSend: () => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
+  onImagePaste: (file: File) => void;
   ref?: Ref<MessageTextboxEditorRef>;
 }
 
@@ -82,16 +83,6 @@ const LINK_MATCHERS: LinkMatcher[] = [
     return text.startsWith('http') ? text : `https://${text}`;
   }),
 ];
-
-function hasAnyFormat(node: TextNode): boolean {
-  return (
-    node.hasFormat('bold') ||
-    node.hasFormat('italic') ||
-    node.hasFormat('strikethrough') ||
-    node.hasFormat('underline') ||
-    node.hasFormat('code')
-  );
-}
 
 export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
   return editor.registerUpdateListener(({ editorState, dirtyElements, tags }: UpdateListenerPayload) => {
@@ -554,6 +545,7 @@ export default function MessageTextboxEditor({
   onTextChange,
   onEnterSend,
   onSuggestionChange,
+  onImagePaste,
   ref,
 }: MessageTextboxEditorProps) {
   const editorRef = useRef<LexicalEditor | null>(null);
@@ -606,6 +598,7 @@ export default function MessageTextboxEditor({
           onEditorReady={(editor) => {
             editorRef.current = editor;
           }}
+          onImagePaste={onImagePaste}
         />
       </div>
     </LexicalExtensionComposer>
@@ -617,6 +610,7 @@ interface TextAreaProps {
   onEnterSend: () => void;
   onEditorReady: (editor: LexicalEditor) => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
+  onImagePaste: (file: File) => void;
 }
 
 function TextArea({
@@ -624,6 +618,7 @@ function TextArea({
   onEnterSend,
   onEditorReady,
   onSuggestionChange,
+  onImagePaste,
 }: TextAreaProps) {
   const [editor] = useLexicalComposerContext();
 
@@ -771,6 +766,41 @@ function TextArea({
       },
       COMMAND_PRIORITY_LOW
     );
+  }, [editor]);
+
+  // paste image command
+  useEffect(() => {
+    return editor.registerCommand(
+      PASTE_COMMAND,
+      (event: PasteCommandType) => {
+        if (!(event instanceof ClipboardEvent) || !event.clipboardData) {
+          return false;
+        }
+
+        const items = event.clipboardData.items;
+        if (!items) return false;
+
+        let hasHandledImage = false;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+
+          // Check if the pasted item is an image
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+
+            if (file) {
+              event.preventDefault();
+              onImagePaste(file);
+              hasHandledImage = true;
+            }
+          }
+        }
+
+        return hasHandledImage;
+      },
+      COMMAND_PRIORITY_HIGH
+    )
   }, [editor]);
 
   // suggestion listener

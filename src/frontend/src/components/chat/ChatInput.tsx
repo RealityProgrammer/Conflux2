@@ -1,5 +1,5 @@
 import IconButton from "../IconButton.tsx";
-import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
+import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsTrashFill, BsX} from "react-icons/bs";
 import {
   type ChangeEvent,
   useEffect,
@@ -197,8 +197,8 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
       {attachments.length > 0 && (
         <ScrollArea.Root className="h-32 w-full overflow-hidden">
-          <ScrollArea.Viewport className="size-full min-h-0">
-            <div className="flex flex-row gap-2 w-max h-32 pr-4 pb-3">
+          <ScrollArea.Viewport className="size-full min-h-0 py-2">
+            <div className="flex flex-row gap-3 items-center h-28 px-2 w-max">
               {attachments.map((item, index) => (
                 <AttachmentThumbnail
                   key={item.id}
@@ -251,6 +251,16 @@ export default function ChatInput({disabled}: ChatInputProps) {
           onTextChange={handleInput}
           onEnterSend={handleSend}
           onSuggestionChange={setSuggestion}
+          onImagePaste={(file) => {
+            setAttachments((prev: AttachmentItem[]): AttachmentItem[] => {
+              const objectUrl = URL.createObjectURL(file);
+
+              return [
+                ...prev,
+                { id: crypto.randomUUID(), file, previewUrl: objectUrl },
+              ];
+            });
+          }}
         />
 
         <IconButton
@@ -268,41 +278,51 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
 function AttachmentThumbnail({file, previewUrl, onRemove, onClick}: AttachmentThumbnailProps) {
   return (
-    <div
-      className={`flex-none overflow-hidden h-full aspect-square rounded-md relative group ${file.type.startsWith('image/') ? "" : "border border-gray-500 hover:border-gray-400 transition-colors duration-200"}`}>
-      {file.type.startsWith("image") && previewUrl ? (
-        <img
-          src={previewUrl}
-          alt={file.name}
-          onClick={onClick}
-          className="size-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-        />
-      ) : file.type.startsWith("video") ? (
-        <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
-          <BsCameraVideo className="size-6 fill-white"/>
-        </div>
-      ) : file.type.startsWith("audio") ? (
-        <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
-          <BsMusicNote className="size-6 fill-white"/>
-        </div>
-      ) : (
-        <div
-          onClick={onClick}
-          className="size-full flex flex-col items-center justify-center p-2 text-xs text-center text-gray-300 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
-        >
-          <span className="truncate w-full font-medium">{file.name}</span>
-        </div>
-      )}
+    <div className="flex-none h-full aspect-square relative group">
 
+      {/* Inner wrapper handles rounding and clipping ONLY for the image/content */}
+      <div className={`size-full rounded-md overflow-hidden ${
+        file.type.startsWith('image/')
+          ? ""
+          : "border border-gray-500 hover:border-gray-400 transition-colors duration-200 bg-gray-800"
+      }`}>
+        {file.type.startsWith("image") && previewUrl ? (
+          <div className="size-full cursor-pointer" onClick={onClick}>
+            <img
+              src={previewUrl}
+              alt={file.name}
+              className="size-full object-cover hover:opacity-80 transition-opacity"
+            />
+          </div>
+        ) : file.type.startsWith("video") ? (
+          <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
+            <BsCameraVideo className="size-6 fill-white"/>
+          </div>
+        ) : file.type.startsWith("audio") ? (
+          <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
+            <BsMusicNote className="size-6 fill-white"/>
+          </div>
+        ) : (
+          <div
+            onClick={onClick}
+            className="size-full flex flex-col items-center justify-center p-2 text-xs text-center text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+          >
+            <span className="truncate w-full font-medium">{file.name}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Delete button sits safely outside the clipped image wrapper */}
       <IconButton
-        isLoading={false} theme="danger"
-        className="size-6 absolute top-0 right-0 rounded-md invisible group-hover:visible"
+        isLoading={false}
+        theme="danger"
+        className="absolute -top-2 -right-2 rounded-md invisible group-hover:visible p-1 bg-gray-700 border-2 border-gray-600 z-20 shadow-md"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();
         }}
       >
-        <BsTrash className="size-5"/>
+        <BsTrashFill className="size-4"/>
       </IconButton>
     </div>
   );
