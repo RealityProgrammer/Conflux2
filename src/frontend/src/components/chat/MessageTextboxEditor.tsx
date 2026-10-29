@@ -11,7 +11,8 @@ import {
   $isTextNode,
   $isElementNode, $createParagraphNode, $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
-  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND,
+  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, $getNodeByKey, ParagraphNode,
+  type UpdateListenerPayload,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from '@lexical/history';
@@ -42,10 +43,7 @@ import {
   UNORDERED_LIST,
   ORDERED_LIST,
   INLINE_CODE,
-  BOLD_STAR,
-  BOLD_UNDERSCORE,
-  ITALIC_STAR,
-  ITALIC_UNDERSCORE
+  CODE,
 } from '@lexical/markdown';
 import {
   LinkNode,
@@ -54,6 +52,7 @@ import {
   type LinkMatcher,
   createLinkMatcherWithRegExp
 } from '@lexical/link';
+import {$createMarkdownMarkerNode, $isMarkdownMarkerNode, MarkdownMarkerNode} from "./nodes/MarkdownMarkerNode.tsx";
 
 export type SuggestionData =
   { type: 'mode'; startColonIndex: number } |
@@ -84,6 +83,287 @@ const LINK_MATCHERS: LinkMatcher[] = [
   }),
 ];
 
+function hasAnyFormat(node: TextNode): boolean {
+  return (
+    node.hasFormat('bold') ||
+    node.hasFormat('italic') ||
+    node.hasFormat('strikethrough') ||
+    node.hasFormat('underline') ||
+    node.hasFormat('code')
+  );
+}
+
+export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
+  return editor.registerUpdateListener(({ editorState, dirtyElements, tags }: UpdateListenerPayload) => {
+    if (tags.has('markdown-highlight')) {
+      return;
+    }
+
+    let hasParagraphChanges = false;
+    editorState.read(() => {
+      for (const [nodeKey] of dirtyElements) {
+        const node = $getNodeByKey(nodeKey);
+        if ($isParagraphNode(node)) {
+          hasParagraphChanges = true;
+          break;
+        }
+      }
+    });
+
+    if (!hasParagraphChanges) return;
+
+    editor.update(() => {
+      const selection = $getSelection();
+      let savedAnchorOffset = -1;
+      let savedFocusOffset = -1;
+
+      if ($isRangeSelection(selection)) {
+        const anchorNode = selection.anchor.getNode();
+        const focusNode = selection.focus.getNode();
+
+        for (const [nodeKey] of dirtyElements) {
+          const paragraph = $getNodeByKey(nodeKey);
+          if ($isParagraphNode(paragraph)) {
+            if (paragraph.isParentOf(anchorNode) || paragraph === anchorNode) {
+              savedAnchorOffset = getAbsoluteOffset(paragraph, anchorNode, selection.anchor.offset);
+            }
+            if (paragraph.isParentOf(focusNode) || paragraph === focusNode) {
+              savedFocusOffset = getAbsoluteOffset(paragraph, focusNode, selection.focus.offset);
+            }
+          }
+        }
+      }
+
+      for (const [nodeKey] of dirtyElements) {
+        const paragraph = $getNodeByKey(nodeKey);
+
+        if (!$isParagraphNode(paragraph) || !paragraph.isAttached()) {
+          continue;
+        }
+
+        processParagraph(paragraph);
+      }
+
+      if (savedAnchorOffset !== -1 && $isRangeSelection(selection)) {
+        for (const [nodeKey] of dirtyElements) {
+          const paragraph = $getNodeByKey(nodeKey);
+          if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
+            restoreSelection(paragraph, savedAnchorOffset, savedFocusOffset !== -1 ? savedFocusOffset : savedAnchorOffset);
+            break;
+          }
+        }
+      }
+    }, { tag: 'markdown-highlight' });
+  });
+}
+
+function getAbsoluteOffset(paragraph: ParagraphNode, targetNode: LexicalNode, localOffset: number): number {
+  let offset = 0;
+  let found = false;
+  for (const child of paragraph.getChildren()) {
+    if (child === targetNode) {
+      offset += localOffset;
+      found = true;
+      break;
+    }
+    offset += child.getTextContentSize();
+  }
+  return found ? offset : 0;
+}
+
+function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, targetFocusOffset: number) {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) return;
+
+  const children = paragraph.getChildren();
+  if (children.length === 0) return;
+
+  let anchorNode: TextNode | null = null;
+  let anchorLocal = 0;
+  let focusNode: TextNode | null = null;
+  let focusLocal = 0;
+
+  let currentOffset = 0;
+  for (const child of children) {
+    if (!$isTextNode(child)) continue;
+    const size = child.getTextContentSize();
+
+    if (!anchorNode && targetAnchorOffset <= currentOffset + size) {
+      anchorNode = child;
+      anchorLocal = targetAnchorOffset - currentOffset;
+    }
+    if (!focusNode && targetFocusOffset <= currentOffset + size) {
+      focusNode = child;
+      focusLocal = targetFocusOffset - currentOffset;
+    }
+    currentOffset += size;
+  }
+
+  // Fallback to end of paragraph if offsets exceed bounds
+  if (!anchorNode && children.length > 0) {
+    const last = children[children.length - 1];
+    if ($isTextNode(last)) {
+      anchorNode = last;
+      anchorLocal = last.getTextContentSize();
+    }
+  }
+  if (!focusNode && children.length > 0) {
+    const last = children[children.length - 1];
+    if ($isTextNode(last)) {
+      focusNode = last;
+      focusLocal = last.getTextContentSize();
+    }
+  }
+
+  if (anchorNode && focusNode) {
+    selection.anchor.set(anchorNode.__key, anchorLocal, 'text');
+    selection.focus.set(focusNode.__key, focusLocal, 'text');
+  }
+}
+
+function processParagraph(paragraph: ParagraphNode) {
+  // clean everything
+  const children = paragraph.getChildren();
+  children.forEach((child) => {
+    if ($isMarkdownMarkerNode(child)) {
+      const normalTextNode = new TextNode(child.getTextContent());
+      child.replace(normalTextNode);
+    } else if ($isTextNode(child)) {
+      child.setStyle('');
+      if (child.hasFormat('bold')) child.toggleFormat('bold');
+      if (child.hasFormat('italic')) child.toggleFormat('italic');
+      if (child.hasFormat('strikethrough')) child.toggleFormat('strikethrough');
+      if (child.hasFormat('underline')) child.toggleFormat('underline');
+      if (child.hasFormat('code')) child.toggleFormat('code');
+    }
+  });
+
+  // merge everything into 1 unify text node
+  let updatedChildren = paragraph.getChildren();
+  while (updatedChildren.length > 1) {
+    let merged = false;
+    for (let i = 0; i < updatedChildren.length - 1; i++) {
+      const current = updatedChildren[i];
+      const next = updatedChildren[i + 1];
+      if ($isTextNode(current) && $isTextNode(next)) {
+        current.setTextContent(current.getTextContent() + next.getTextContent());
+        next.remove();
+        merged = true;
+        break;
+      }
+    }
+    if (!merged) break;
+    updatedChildren = paragraph.getChildren();
+  }
+
+  // begin parsing
+  const fullText = paragraph.getTextContent();
+  if (fullText.trim() === '') {
+    return;
+  }
+
+  const pattern = /(?<!\\)(\*\*\*|___|\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))(.*?)(\1)/g;
+  const matches = [...fullText.matchAll(pattern)];
+
+  if (matches.length === 0) {
+    return;
+  }
+
+  // sort matches from right to left (descending index) so splits don't shift earlier indices
+  matches.sort((a, b) => b.index! - a.index!);
+
+  for (const match of matches) {
+    const marker = match[1];
+    const innerText = match[2];
+
+    if (!innerText || innerText.trim() === '') {
+      continue;
+    }
+
+    const fullMatch = match[0];
+    const index = match.index!;
+
+    if (index > 0 && fullText[index - 1] === '\\') {
+      continue;
+    }
+
+    const formatsToApply: ('bold' | 'italic' | 'strikethrough' | 'underline')[] = [];
+    if (marker === '*' || marker === '_') {
+      formatsToApply.push('italic');
+    } else if (marker === '**') {
+      formatsToApply.push('bold');
+    } else if (marker === '__') {
+      formatsToApply.push('underline');
+    } else if (marker === '~~') {
+      formatsToApply.push('strikethrough');
+    } else if (marker === '***' || marker === '___') {
+      formatsToApply.push('bold', 'italic');
+    }
+
+    // locate the target node covering the match index
+    let currentLength = 0;
+    let targetNode: TextNode | null = null;
+    let matchOffset = 0;
+
+    const currentParagraphChildren = paragraph.getChildren();
+    for (const child of currentParagraphChildren) {
+      if (!$isTextNode(child)) continue;
+      const nodeLength = child.getTextContentSize();
+      if (index >= currentLength && index < currentLength + nodeLength) {
+        targetNode = child;
+        matchOffset = index - currentLength;
+        break;
+      }
+      currentLength += nodeLength;
+    }
+
+    if (!targetNode || $isMarkdownMarkerNode(targetNode)) {
+      continue;
+    }
+
+    if (matchOffset > 0) {
+      const splitBefore = targetNode.splitText(matchOffset);
+      if (splitBefore.length < 2) continue;
+      targetNode = splitBefore[1];
+    }
+
+    if (targetNode.getTextContentSize() > fullMatch.length) {
+      const splitAfter = targetNode.splitText(fullMatch.length);
+      if (splitAfter.length < 1) continue;
+      targetNode = splitAfter[0];
+    }
+
+    // split into [open marker][inner text][close marker]
+    const markerLen = marker.length;
+    const split1 = targetNode.splitText(markerLen);
+    if (split1.length < 2) continue;
+    const openMarkerTextNode = split1[0];
+    const innerAndClose = split1[1];
+
+    const innerLen = innerText.length;
+    const split2 = innerAndClose.splitText(innerLen);
+    if (split2.length < 2) continue;
+    const innerNode = split2[0];
+    const closeMarkerTextNode = split2[1];
+
+    if (!openMarkerTextNode || !innerNode || !closeMarkerTextNode) {
+      continue;
+    }
+
+    const openMarkerNode = $createMarkdownMarkerNode(marker);
+    const closeMarkerNode = $createMarkdownMarkerNode(marker);
+
+    openMarkerTextNode.replace(openMarkerNode);
+    closeMarkerTextNode.replace(closeMarkerNode);
+
+    for (const fmt of formatsToApply) {
+      if (!innerNode.hasFormat(fmt)) {
+        innerNode.toggleFormat(fmt);
+      }
+    }
+  }
+}
+
 const CHAT_MARKDOWN_TRANSFORMERS = [
   HEADING,
   QUOTE,
@@ -91,10 +371,7 @@ const CHAT_MARKDOWN_TRANSFORMERS = [
   UNORDERED_LIST,
   ORDERED_LIST,
   INLINE_CODE,
-  BOLD_STAR,
-  BOLD_UNDERSCORE,
-  ITALIC_STAR,
-  ITALIC_UNDERSCORE,
+  CODE,
 ];
 
 export const MarkdownShortcutsExtension = defineExtension({
@@ -106,6 +383,7 @@ export const MarkdownShortcutsExtension = defineExtension({
     ListItemNode,
     CodeNode,
     CodeHighlightNode,
+    MarkdownMarkerNode,
   ],
   register(editor) {
     return mergeRegister(
@@ -113,6 +391,13 @@ export const MarkdownShortcutsExtension = defineExtension({
       registerList(editor),
       registerMarkdownShortcuts(editor, CHAT_MARKDOWN_TRANSFORMERS),
     );
+  },
+});
+
+export const MarkdownSyntaxExtension = defineExtension({
+  name: 'MarkdownSyntaxExtension',
+  register(editor) {
+    return registerMarkdownSyntaxHighlighter(editor);
   },
 });
 
@@ -169,7 +454,7 @@ export const CustomTransformExtension = defineExtension({
           [, targetNode] = targetNode.splitText(index);
         }
 
-        if (targetNode.getTextContent().length > fullMatch.length) {
+        if (targetNode.getTextContentSize() > fullMatch.length) {
           targetNode.splitText(fullMatch.length);
         }
 
@@ -189,7 +474,7 @@ export const CustomTransformExtension = defineExtension({
         if (index > 0) {
           [, targetNode] = targetNode.splitText(index);
         }
-        if (targetNode.getTextContent().length > fullMatch.length) {
+        if (targetNode.getTextContentSize() > fullMatch.length) {
           targetNode.splitText(fullMatch.length);
         }
 
@@ -225,6 +510,7 @@ const lexicalExtensions = defineExtension({
     CodeExtension,
     HistoryExtension,
     MarkdownShortcutsExtension,
+    MarkdownSyntaxExtension,
     CustomTransformExtension,
     LinkExtension,
   ],
@@ -251,6 +537,9 @@ const lexicalExtensions = defineExtension({
       bold: "message-bold",
       italic: "message-italic",
       code: "message-inline-code",
+      strikethrough: "line-through",
+      underline: "underline",
+      underlineStrikethrough: "underline line-through",
     },
     code: "block w-full box-border overflow-x-auto p-3.5 rounded-md bg-[rgb(43,43,43)] border-2 border-gray-600 text-sm font-mono text-white whitespace-pre",
     quote: "message-quote whitespace-pre-wrap",
@@ -505,7 +794,6 @@ function TextArea({
 
         const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
 
-        // 1. Emoji Match
         const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
         if (emojiMatch) {
           const localColonIdx = emojiMatch.index!;
@@ -605,7 +893,7 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
         const children = node.getChildren();
 
         for (let i = 0; i < anchorOffset && i < children.length; i++) {
-          globalOffset += children[i].getTextContent().length;
+          globalOffset += children[i].getTextContentSize();
         }
       }
 
@@ -619,7 +907,7 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
         if (walk(child)) return true;
       }
     } else {
-      globalOffset += node.getTextContent().length;
+      globalOffset += node.getTextContentSize();
     }
 
     return false;
@@ -644,7 +932,7 @@ function getGlobalOffsetForNodeOffset(targetNode: TextNode, targetOffset: number
         if (traverse(child)) return true;
       }
     } else {
-      globalOffset += node.getTextContent().length;
+      globalOffset += node.getTextContentSize();
     }
 
     return false;

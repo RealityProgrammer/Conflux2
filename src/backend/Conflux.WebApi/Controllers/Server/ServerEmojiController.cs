@@ -44,8 +44,7 @@ public sealed class ServerEmojiController(
         }
 
         return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => BadRequest(new ApiResponse(result.Error)),
-            nameof(Errors.ServerEmojiLimit) => BadRequest(new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) or nameof(Errors.ServerEmojiLimit) or nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
