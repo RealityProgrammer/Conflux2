@@ -18,6 +18,7 @@ public interface IConfluxClient {
     Task MessageDeleted(MessageDeletedEvent data, CancellationToken cancellationToken = default);
     Task MessagePinned(MessagePinnedEvent data, CancellationToken cancellationToken = default);
     Task MessageUnpinned(MessageUnpinnedEvent data, CancellationToken cancellationToken = default);
+    Task MessageMentionReceived(MessageMentionReceivedData data, CancellationToken cancellationToken = default);
     
     Task DirectConversationUpdated(DirectConversationUpdatedEvent data, CancellationToken cancellationToken = default);
     

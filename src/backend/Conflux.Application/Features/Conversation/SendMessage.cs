@@ -6,7 +6,11 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
+using Markdig;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace Conflux.Application.Features.Conversation;
 
@@ -22,7 +26,12 @@ public sealed record MessageReceivedNotification(
     TimelineMessageDto Message
 ) : INotification;
 
-public sealed class SendMessageHandler(
+public sealed record MessageMentioningNotification(
+    Guid MessageId,
+    IReadOnlySet<Guid> MentioningUserIds
+) : INotification;
+
+public sealed partial class SendMessageHandler(
     ICurrentUserService currentUserService,
     IUserRepository userRepository,
     IMessageRepository messageRepository,
@@ -103,6 +112,7 @@ public sealed class SendMessageHandler(
             return Errors.OperationFailure("send message.");
         }
 
+        // publish message received notification
         TimelineMessageDto dto = new(message) {
             ReplyTo = await messageRepository
                 .AsQueryable()
@@ -121,7 +131,13 @@ public sealed class SendMessageHandler(
             new MessageReceivedNotification(conversationId, dto), 
             CancellationToken.None
         );
-
+        
+        // publish mentioning notification
+        if (!string.IsNullOrEmpty(message.Body)) {
+            await PublishMentionNotification(message.Id, message.Body, senderUserId);
+        }
+        
+        // update direct conversation
         if (conversation.Type == ConversationType.Direct) {
             IReadOnlyCollection<Guid> directConversationParticipantIds = 
                 await conversationParticipantsProvider.GetDirectConversationParticipantIds(conversationId, CancellationToken.None);
@@ -134,4 +150,59 @@ public sealed class SendMessageHandler(
 
         return Result<TimelineMessageDto>.Success(dto);
     }
+
+    private async Task PublishMentionNotification(Guid messageId, string messageBody, Guid senderId) {
+        var document = Markdown.Parse(messageBody);
+        var userIds = new HashSet<Guid>();
+
+        foreach (Block block in document) {
+            TraverseObject(block, userIds);
+        }
+
+        userIds.Remove(senderId);   // prevent self-pinging
+        await publisher.Publish(new MessageMentioningNotification(messageId, userIds));
+        return;
+
+        static void TraverseObject(MarkdownObject markdownObject, HashSet<Guid> userIds) {
+            // skip these blocks
+            if (markdownObject is CodeBlock or FencedCodeBlock or CodeInline or QuoteBlock) {
+                return;
+            }
+
+            switch (markdownObject) {
+                case ContainerBlock containerBlock:
+                    foreach (var children in containerBlock) {
+                        TraverseObject(children, userIds);
+                    }
+                    break;
+                
+                case LeafBlock leafBlock:
+                    if (leafBlock.Inline is { } inline) {
+                        TraverseObject(inline, userIds);
+                    }
+                    break;
+                
+                case ContainerInline containerInline:
+                    foreach (var children in containerInline) {
+                        TraverseObject(children, userIds);
+                    }
+                    break;
+                
+                case LiteralInline literalInline:
+                    var text = literalInline.Content.AsSpan();
+                    
+                    foreach (var match in MentionUserRegex().EnumerateMatches(text)) {
+                        ReadOnlySpan<char> userIdSlice = text.Slice(match.Index + 2, match.Length - 3);
+                        
+                        if (Guid.TryParse(userIdSlice, out Guid userId)) {
+                            userIds.Add(userId);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    [GeneratedRegex(@":m([\da-f\-]+):", RegexOptions.Compiled)]
+    private static partial Regex MentionUserRegex();
 }
