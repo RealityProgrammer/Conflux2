@@ -31,7 +31,7 @@ function remarkCustomTokens() {
 
       const value = node.value;
 
-      const regex = /:t(\d+):|:e([\da-f\-]+):|:m([\da-f\-]+):/g
+      const regex = /:t(\d+):|:e([\da-f\-]+):|:m(.+):/g
       if (!regex.test(value)) return;
 
       regex.lastIndex = 0;
@@ -303,7 +303,7 @@ const markdownComponents: Components = {
     const mentionUserIdAttribute: string = (props as any)["data-chat-mention-userid"] as string;
     if (mentionUserIdAttribute) {
       return (
-        <Mention>{mentionUserIdAttribute}</Mention>
+        <Mention>@{mentionUserIdAttribute}</Mention>
       );
     }
     

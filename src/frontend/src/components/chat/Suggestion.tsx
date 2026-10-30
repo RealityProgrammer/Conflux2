@@ -1,4 +1,4 @@
-import {BsClockFill, BsEmojiSmileFill, BsExclamationTriangle} from "react-icons/bs";
+import {BsAt, BsClockFill, BsEmojiSmileFill, BsExclamationTriangle} from "react-icons/bs";
 import {useInterval} from "usehooks-ts";
 import {useState} from "react";
 import {Separator} from "radix-ui";
@@ -6,11 +6,10 @@ import {Virtuoso} from "react-virtuoso";
 import useUserEmojis from "../../hooks/useUserEmojis.ts";
 import Spinner from "../Spinner.tsx";
 import type {ServerEmojiGroupDto} from "../../api/types.ts";
-import {Emoji} from "../Emoji.tsx";
 import {EmojiGroup} from "./EmojiGroup.tsx";
 
 interface ModeProps {
-  onSelect: (mode: "e" | "t") => void;
+  onSelect: (mode: "e" | "t" | "m") => void;
   className?: string;
 }
 
@@ -39,6 +38,18 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
           <div className="flex-1">
             <p>Time (t)</p>
             <p className="text-gray-400">What time is it?</p>
+          </div>
+        </li>
+
+        <li
+          className="px-3 py-1.5 hover-highlight flex flex-row justify-center items-center gap-2 cursor-pointer"
+          onClick={() => onSelect("m")}
+        >
+          <BsAt className="flex-none size-8 fill-white"/>
+
+          <div className="flex-1">
+            <p>Mention (m)</p>
+            <p className="text-gray-400">Specifically mention an user to draw their attention.</p>
           </div>
         </li>
       </ul>
@@ -130,8 +141,32 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   );
 }
 
+interface MentionProps {
+  className?: string;
+  searchTerm: string;
+}
+
+function MentionMode({className, searchTerm = ""}: MentionProps) {
+  return (
+    <div
+      className={`p-1 max-h-96 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 text-sm ${className}`}
+    >
+      {searchTerm.length >= 3 ? (
+        <div>
+          Display users here
+        </div>
+      ) : (
+        <div className="p-2 flex flex-row justify-center items-center">
+          To search user, type at least 3 characters of their name.
+        </div>
+      )}
+    </div>
+  )
+}
+
 export const Suggestion = {
   Mode: SelectMode,
   Emoji: EmojiMode,
   Time: TimeMode,
+  Mention: MentionMode,
 }

@@ -10,7 +10,7 @@ export default function Mention({
 }: MentionProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-400/30 hover:bg-blue-400/60 cursor-default text-white text-sm rounded-md ${className}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-400/25 hover:bg-blue-400/60 font-semibold text-blue-100 cursor-default text-sm rounded-md ${className}`}
       {...props}
     >
       {children}

@@ -431,7 +431,7 @@ export const CustomTransformExtension = defineExtension({
         }
       }
 
-      const emojiMatch = text.match(/:e([\da-f\-]+):/);
+      const emojiMatch = text.match(/:e([\w-]+):/);
       if (emojiMatch) {
         const fullMatch = emojiMatch[0];
         const searchTerm = emojiMatch[1];
@@ -477,7 +477,7 @@ export const CustomTransformExtension = defineExtension({
         return;
       }
 
-      const mentionMatch = text.match(/:m([\da-f\-]+):/);
+      const mentionMatch = text.match(/:m(.+):/);
       if (mentionMatch) {
         const fullMatch = mentionMatch[0];
         const searchTerm = mentionMatch[1]; // could be either id or shortcode
@@ -886,7 +886,7 @@ function TextArea({
 
         const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
 
-        const emojiMatch = textBeforeCursor.match(/:e([\da-f\-]*)$/);
+        const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
         if (emojiMatch) {
           const localColonIdx = emojiMatch.index!;
           onSuggestionChange({
@@ -912,6 +912,19 @@ function TextArea({
             startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
             milliseconds,
             rawValue,
+          });
+          return;
+        }
+
+        const mentionMatch = textBeforeCursor.match(/:m(.+)$/);
+        if (mentionMatch) {
+          const localColonIdx = mentionMatch.index!;
+          onSuggestionChange({
+            type: "mention",
+            startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
+            modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            searchTerm: mentionMatch[1] || "",
           });
           return;
         }
