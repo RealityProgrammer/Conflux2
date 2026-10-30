@@ -27,7 +27,7 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
     return dom;
   }
 
-  updateDOM(): false {
+  updateDOM(): boolean {
     return false;
   }
 

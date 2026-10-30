@@ -477,7 +477,7 @@ export const CustomTransformExtension = defineExtension({
         return;
       }
 
-      const mentionMatch = text.match(/:m(.+):/);
+      const mentionMatch = text.match(/:m([\da-f\-]+):/);
       if (mentionMatch) {
         const fullMatch = mentionMatch[0];
         const searchTerm = mentionMatch[1]; // could be either id or shortcode

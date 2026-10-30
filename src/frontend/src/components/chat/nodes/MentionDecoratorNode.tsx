@@ -20,7 +20,7 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
   }
 
   static clone(node: MentionDecoratorNode): MentionDecoratorNode {
-    return new MentionDecoratorNode(node.__userId, node.__key);
+    return new MentionDecoratorNode(node.__userId, node.__displayName, node.__key);
   }
 
   constructor(userId: string, displayName: string | null = null, key?: NodeKey) {
@@ -34,6 +34,14 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
     dom.style.display = "inline-block";
     dom.contentEditable = "false";
     return dom;
+  }
+
+  updateDOM(): boolean {
+    return false;
+  }
+
+  isInline(): boolean {
+    return true;
   }
 
   getTextContent(): string {

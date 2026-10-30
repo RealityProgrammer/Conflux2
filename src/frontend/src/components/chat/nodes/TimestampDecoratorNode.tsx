@@ -33,7 +33,7 @@ export class TimestampDecoratorNode extends DecoratorNode<ReactNode> {
     return dom;
   }
 
-  updateDOM(): false {
+  updateDOM(): boolean {
     return false;
   }
 
