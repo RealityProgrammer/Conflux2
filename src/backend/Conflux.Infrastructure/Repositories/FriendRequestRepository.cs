@@ -100,7 +100,7 @@ internal sealed class FriendRequestRepository(
                 u.Id,
                 u.UserName!, 
                 u.DisplayName!, 
-                u.Avatar == null ? null : u.Avatar.Version,
+                u.AvatarVersion,
                 dbContext.FriendRequests
                     .Where(fr => 
                         (fr.SenderUserId == searcherId && fr.ReceiverUserId == u.Id || fr.SenderUserId == u.Id && fr.ReceiverUserId == searcherId) &&

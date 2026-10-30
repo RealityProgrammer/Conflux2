@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerMediaService(
-    ICommunityServerWriteRepository communityServerWriteRepository,
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector
 ) : IServerMediaService {
@@ -53,43 +52,15 @@ internal sealed class ServerMediaService(
         string key = GetBannerKey(serverId);
         return await blobStorage.Delete(key, cancellationToken);
     }
-    
-    public async Task<AvatarMediaItemInfo?> GetAvatar(Guid serverId, CancellationToken cancellationToken = default) {
-        Stream? attachmentStream = await blobStorage.GetStream(GetAvatarKey(serverId), cancellationToken);
-        if (attachmentStream == null) return null;
-        
-        var info = await communityServerWriteRepository
-            .AsQueryable()
-            .Where(u => u.Id == serverId)
-            .Select(u => u.Avatar != null ? new { u.Avatar.ContentType, u.Avatar.Version } : null)
-            .FirstOrDefaultAsync(cancellationToken);
 
-        if (info == null) {
-            await blobStorage.Delete(GetAvatarKey(serverId), cancellationToken);
-            return null;
-        }
-
-        return new(attachmentStream, info.ContentType, info.Version);
+    public string GetAvatarPreSignedUrl(Guid serverId, TimeSpan expireIn) {
+        return blobStorage.GeneratePreSignedUrl(GetAvatarKey(serverId), expireIn);
     }
 
-    public async Task<BannerMediaItemInfo?> GetBanner(Guid serverId, CancellationToken cancellationToken = default) {
-        Stream? attachmentStream = await blobStorage.GetStream(GetBannerKey(serverId), cancellationToken);
-        if (attachmentStream == null) return null;
-        
-        var info = await communityServerWriteRepository
-            .AsQueryable()
-            .Where(u => u.Id == serverId)
-            .Select(u => u.Banner != null ? new { u.Banner.ContentType, u.Banner.Version } : null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (info == null) {
-            await blobStorage.Delete(GetAvatarKey(serverId), cancellationToken);
-            return null;
-        }
-
-        return new(attachmentStream, info.ContentType, info.Version);
+    public string GetBannerPreSignedUrl(Guid serverId, TimeSpan expireIn) {
+        return blobStorage.GeneratePreSignedUrl(GetBannerKey(serverId), expireIn);
     }
-    
+
     private Result<Image> ValidateImageFormat(Stream stream) {
         if (fileFormatInspector.DetermineFileFormat(stream) is not { } fileFormat) {
             return Errors.ValidationErrorsOccurred(new() {

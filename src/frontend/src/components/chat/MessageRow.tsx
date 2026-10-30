@@ -53,7 +53,7 @@ function Reply({
 interface RowProps {
   header: {
     senderId?: string;
-    senderAvatarVersion?: number;
+    senderAvatarVersion: number | null | undefined;
     senderDisplayName: string;
     avatarAlt?: string;
   } | undefined;

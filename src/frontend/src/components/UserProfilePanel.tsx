@@ -33,9 +33,9 @@ export default function UserProfilePanel({
           <AvatarAndBanner.User
             userId={userId}
             avatarAlt={`Avatar of ${data.user.displayName ?? "???"}`}
-            avatarVersion={data.user.avatar?.version}
+            avatarVersion={data.user.avatarVersion}
             bannerAlt={`Banner of ${data.user.displayName ?? "???"}`}
-            bannerVersion={data.user.banner?.version}
+            bannerVersion={data.user.bannerVersion}
             bannerFallbackColor={`hsl(${Math.abs(hash(data.user.id)) % 360}, 60%, 40%)`}
             presence={{status: data.user.effectivePresenceStatus, className: "size-8 border-4!"}}
             avatarClassName={avatarClassName}

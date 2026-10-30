@@ -9,10 +9,11 @@ import {
 import type {ReactNode} from "react";
 import Mention from "../Mention.tsx";
 
-export type SerializedMentionNode = Spread<{ userId: string; }, SerializedLexicalNode>;
+export type SerializedMentionNode = Spread<{ userId: string; displayName: string | null; }, SerializedLexicalNode>;
 
 export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
   __userId: string;
+  __displayName: string | null;
 
   static getType(): string {
     return "mention-decorator";
@@ -22,9 +23,10 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
     return new MentionDecoratorNode(node.__userId, node.__key);
   }
 
-  constructor(userId: string, key?: NodeKey) {
+  constructor(userId: string, displayName: string | null = null, key?: NodeKey) {
     super(key);
     this.__userId = userId;
+    this.__displayName = displayName;
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
@@ -44,9 +46,7 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
 
   decorate(): ReactNode {
     return (
-      <Mention>
-        {this.__userId}
-      </Mention>
+      <Mention userId={this.__userId} fallbackDisplayName={this.__displayName}/>
     );
   }
 
@@ -59,12 +59,13 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
       type: MentionDecoratorNode.getType(),
       version: 1,
       userId: this.__userId,
+      displayName: this.__displayName,
     };
   }
 }
 
-export function $createMentionNode(userId: string): MentionDecoratorNode {
-  return new MentionDecoratorNode(userId);
+export function $createMentionNode(userId: string, displayName: string | null = null): MentionDecoratorNode {
+  return new MentionDecoratorNode(userId, displayName);
 }
 
 export function $isMentionNode(node: LexicalNode | null | undefined): node is MentionDecoratorNode {

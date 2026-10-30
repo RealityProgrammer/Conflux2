@@ -93,9 +93,7 @@ function AvatarPanel({
           reset(data);
           
           auth.updateUserProfile({
-            avatar: {
-              version: response.data!,
-            }
+            avatarVersion: response.data,
           });
         } else {
           if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {

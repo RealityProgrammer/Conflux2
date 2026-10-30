@@ -68,13 +68,13 @@ internal sealed class StartDirectCallHandler(
                         Id = r.Sender.Id,
                         UserName = r.Sender.UserName,
                         DisplayName = r.Sender.DisplayName,
-                        AvatarVersion = r.Sender.Avatar == null ? null : r.Sender.Avatar.Version,
+                        AvatarVersion = r.Sender.AvatarVersion,
                     },
                     Receiver = new UserIdentityProfileDto {
                         Id = r.Receiver.Id,
                         UserName = r.Receiver.UserName,
                         DisplayName = r.Receiver.DisplayName,
-                        AvatarVersion = r.Receiver.Avatar == null ? null : r.Receiver.Avatar.Version,
+                        AvatarVersion = r.Receiver.AvatarVersion,
                     },
                 })
                 .FirstOrDefaultAsync(cancellationToken);

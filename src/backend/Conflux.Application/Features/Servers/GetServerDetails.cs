@@ -30,7 +30,7 @@ public sealed class GetServerDetailsHandler(
             .Select(s => new {
                 s.Id,
                 s.Name,
-                AvatarVersion = s.Avatar == null ? (int?)null : s.Avatar.Version,
+                s.AvatarVersion,
             })
             .FirstOrDefaultAsync(cancellationToken);
 

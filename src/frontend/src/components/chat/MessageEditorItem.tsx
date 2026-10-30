@@ -93,7 +93,7 @@ function MessageEditorView({
         header={showHeader ? {
           senderDisplayName: message.sender!.displayName ?? "???",
           senderId: message.sender?.id,
-          senderAvatarVersion: message.sender!.avatar?.version,
+          senderAvatarVersion: message.sender!.avatarVersion,
           avatarAlt: `Avatar of ${message.sender!.displayName ?? "???"}`,
         } : undefined}
         date={new Date(message.createdAt)}

@@ -170,7 +170,7 @@ function Row({
   return (
     <UserNameplate.Root
       userId={element.otherUser!.id}
-      avatarVersion={element.otherUser?.avatar?.version}
+      avatarVersion={element.otherUser?.avatarVersion}
       userName={element.otherUser!.userName!}
       displayName={element.otherUser!.displayName!}
       className="w-full p-1.5 hover-highlight"

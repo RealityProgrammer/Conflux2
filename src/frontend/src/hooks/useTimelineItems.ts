@@ -124,7 +124,7 @@ export default function useTimelineItems(
               id: message.id,
               senderDisplayName: message.sender?.displayName ?? "???",
               senderId: message.sender?.id,
-              senderAvatarVersion: message.sender?.avatar?.version,
+              senderAvatarVersion: message.sender?.avatarVersion,
               action: message.type === MessageType.Pin ? "pin" : "unpin",
             }));
             break;

@@ -1,12 +1,10 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Friends;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
-using Conflux.WebApi.Attributes;
 using Conflux.WebApi.Dto;
 using Humanizer;
 using Mediator;
@@ -14,7 +12,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
@@ -53,28 +50,6 @@ public sealed class SessionUserController(
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
-        };
-    }
-    
-    [HttpDelete("avatar")]
-    public async Task<ActionResult<ApiResponse>> DeleteAvatar() {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await sender.Send(new DeleteUserAvatarCommand(userId));
-        
-        if (result.IsSuccess) {
-            return NoContent();
-        }
-
-        return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NoContent(),
-            nameof(Errors.NoUserFoundFromId) => BadRequest(result.Error),
-            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
         };
     }
     

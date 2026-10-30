@@ -31,7 +31,7 @@ function remarkCustomTokens() {
 
       const value = node.value;
 
-      const regex = /:t(\d+):|:e([\da-f\-]+):|:m(.+):/g
+      const regex = /:t(\d+):|:e([\da-f\-]+):|:m([\da-f\-]+):/g
       if (!regex.test(value)) return;
 
       regex.lastIndex = 0;
@@ -303,7 +303,7 @@ const markdownComponents: Components = {
     const mentionUserIdAttribute: string = (props as any)["data-chat-mention-userid"] as string;
     if (mentionUserIdAttribute) {
       return (
-        <Mention>@{mentionUserIdAttribute}</Mention>
+        <Mention userId={mentionUserIdAttribute}/>
       );
     }
     
@@ -429,7 +429,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
               {data && data.emoji && !isLoading ? (
                 <Avatar.Server
                   serverId={data.emoji.server.id}
-                  version={data.emoji.server.avatar?.version}
+                  version={data.emoji.server.avatarVersion}
                   className="flex-none size-10 rounded-full overflow-hidden"
                 />
               ) : (

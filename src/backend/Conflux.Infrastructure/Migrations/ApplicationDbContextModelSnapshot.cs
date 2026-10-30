@@ -31,11 +31,11 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("AvatarId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("AvatarVersion")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("BannerId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("BannerVersion")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Biography")
                         .HasMaxLength(255)
@@ -109,10 +109,6 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AvatarId");
-
-                    b.HasIndex("BannerId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -192,11 +188,11 @@ namespace Conflux.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AvatarId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("AvatarVersion")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("BannerId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("BannerVersion")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -217,10 +213,6 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AvatarId");
-
-                    b.HasIndex("BannerId");
 
                     b.HasIndex("CreatorUserId");
 
@@ -748,21 +740,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Conflux.Domain.Entities.ApplicationUser", b =>
-                {
-                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Avatar")
-                        .WithMany()
-                        .HasForeignKey("AvatarId");
-
-                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Banner")
-                        .WithMany()
-                        .HasForeignKey("BannerId");
-
-                    b.Navigation("Avatar");
-
-                    b.Navigation("Banner");
-                });
-
             modelBuilder.Entity("Conflux.Domain.Entities.Channel", b =>
                 {
                     b.HasOne("Conflux.Domain.Entities.ChannelCategory", "ChannelCategory")
@@ -802,16 +779,6 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.CommunityServer", b =>
                 {
-                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Avatar")
-                        .WithMany()
-                        .HasForeignKey("AvatarId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Conflux.Domain.Entities.MediaItem", "Banner")
-                        .WithMany()
-                        .HasForeignKey("BannerId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "CreatorUser")
                         .WithMany()
                         .HasForeignKey("CreatorUserId")
@@ -823,10 +790,6 @@ namespace Conflux.Infrastructure.Migrations
                         .HasForeignKey("OwnerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Avatar");
-
-                    b.Navigation("Banner");
 
                     b.Navigation("CreatorUser");
 

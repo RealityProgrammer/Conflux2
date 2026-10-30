@@ -134,7 +134,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
         <Avatar.User
           ref={callerAvatarRef}
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
           style={{ transform: "scale(1)"}}
@@ -175,7 +175,7 @@ function CanceledPhase({call}: {call: IncomingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version} 
+          version={call.callerProfile.avatarVersion} 
           alt="Caller avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
@@ -198,7 +198,7 @@ function RejectedPhase({call}: {call: IncomingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
@@ -221,7 +221,7 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
@@ -304,7 +304,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
               stream={stream}
               isLocal
               peerId={userProfile?.id}
-              peerAvatarVersion={userProfile?.avatar?.version}
+              peerAvatarVersion={userProfile?.avatarVersion}
               isVideoEnabled={!isVideoDisabled}
             />
           )}
@@ -314,7 +314,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
         <MediaFeed
           stream={remoteStream}
           peerId={callerId}
-          peerAvatarVersion={call.callerProfile.avatar?.version}
+          peerAvatarVersion={call.callerProfile.avatarVersion}
           displayName={call.callerProfile.displayName ?? "???"}
           className="object-contain size-full"
           audioOutputDeviceId={selectedAudioDeviceOutputId}
@@ -358,7 +358,7 @@ function EndedPhase({call}: {call: IncomingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />

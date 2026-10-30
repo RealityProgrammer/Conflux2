@@ -140,7 +140,7 @@ function MessageView({
             <MessageRow.Row
               header={showHeader ? {
                 senderId: message.sender?.id,
-                senderAvatarVersion: message.sender!.avatar?.version,
+                senderAvatarVersion: message.sender!.avatarVersion,
                 avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
                 senderDisplayName: message.sender?.displayName ?? "???",
               } : undefined}

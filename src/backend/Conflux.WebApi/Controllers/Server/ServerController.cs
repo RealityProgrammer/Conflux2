@@ -36,40 +36,15 @@ public sealed class ServerController(
     }
     
     [HttpGet("{serverId:guid}/avatar")]
-    public async Task<ActionResult> GetAvatarUrl(Guid serverId, CancellationToken cancellationToken) {
-        var mediaInfo = await serverMediaService.GetAvatar(serverId, cancellationToken);
-        if (mediaInfo == null) return NotFound();
-        
-        Response.GetTypedHeaders().CacheControl = new() {
-            Public = true,
-            MaxAge = TimeSpan.FromDays(30),
-        };
-        
-        return File(
-            mediaInfo.Stream, 
-            mediaInfo.ContentType, 
-            null, 
-            new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{mediaInfo.Version}\"")
-        );
+    public RedirectResult GetAvatarMediaRedirect(Guid serverId, CancellationToken cancellationToken) {
+        string preSignedUrl = serverMediaService.GetAvatarPreSignedUrl(serverId, TimeSpan.FromHours(3));
+        return Redirect(preSignedUrl);
     }
     
     [HttpGet("{serverId:guid}/banner")]
-    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetBannerUrl(Guid serverId, CancellationToken cancellationToken) {
-        var mediaInfo = await serverMediaService.GetBanner(serverId, cancellationToken);
-        if (mediaInfo == null) return NotFound();
-        
-        Response.GetTypedHeaders().CacheControl = new() {
-            Public = true,
-            MaxAge = TimeSpan.FromDays(30),
-        };
-        
-        return File(
-            mediaInfo.Stream, 
-            mediaInfo.ContentType, 
-            null, 
-            new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{mediaInfo.Version}\"")
-        );
+    public RedirectResult GetBannerMediaRedirect(Guid serverId, CancellationToken cancellationToken) {
+        string preSignedUrl = serverMediaService.GetBannerPreSignedUrl(serverId, TimeSpan.FromHours(3));
+        return Redirect(preSignedUrl);
     }
 
     [HttpGet("{serverId:guid}/details")]

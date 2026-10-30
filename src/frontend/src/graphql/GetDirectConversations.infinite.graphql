@@ -14,9 +14,7 @@ query GetDirectConversations($after: String) {
             id
             peerUser {
                 id
-                avatar {
-                    version
-                }
+                avatarVersion
                 displayName
                 userName
                 effectivePresenceStatus

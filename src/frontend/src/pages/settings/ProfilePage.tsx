@@ -132,9 +132,7 @@ function ProfileForm() {
       
       if (response.data?.avatarVersion !== undefined) {
         auth.updateUserProfile({
-          avatar: response.data?.avatarVersion === null ? null : {
-            version: response.data.avatarVersion,
-          }
+          avatarVersion: response.data.avatarVersion,
         });
       }
       
@@ -207,7 +205,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full justify-center">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : null : field.value : undefined}
+                  value={userData ? field.value === undefined ? userData.avatarVersion ? userService.getAvatarUrl(userData.id, userData.avatarVersion) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
                   fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
@@ -238,7 +236,7 @@ function FormFields({
             render={({ field }) => (
               <div className="flex flex-row gap-2 w-full">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : null : field.value : undefined}
+                  value={userData ? field.value === undefined ? userData.bannerVersion ? userService.getBannerUrl(userData.id, userData.bannerVersion) : null : field.value : undefined}
                   onChange={field.onChange}
                   className="flex-1 aspect-video"
                   fallback={() => {
@@ -436,8 +434,8 @@ function Displayer({
   const { control } = useFormContext<UpdateProfileFormValues>();
   const watchedValues = useWatch({ control });
 
-  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : undefined);
-  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : undefined);
+  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatarVersion ? userService.getAvatarUrl(userData.id, userData.avatarVersion) : undefined);
+  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.bannerVersion ? userService.getBannerUrl(userData.id, userData.bannerVersion) : undefined);
 
   return (
     <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container overflow-y-auto scrollbar-none pb-2">

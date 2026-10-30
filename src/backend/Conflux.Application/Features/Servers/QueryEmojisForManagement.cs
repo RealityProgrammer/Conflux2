@@ -22,12 +22,11 @@ public sealed class QueryEmojisForManagementHandler(
             .Where(e => e.ServerId == query.ServerId)
             .OrderBy(e => e.ShortCode)
             .Include(e => e.Creator)
-            .ThenInclude(e => e.Avatar)
             .Select(e => new EmojiManagementDto(
                 e.Id,
                 e.ShortCode,
                 e.CreatedAt,
-                new(e.CreatorId, e.Creator.DisplayName!, e.Creator.Avatar == null ? null : e.Creator.Avatar.Version)
+                new(e.CreatorId, e.Creator.DisplayName!, e.Creator.AvatarVersion)
             ))
             .ToListAsync(cancellationToken);
         

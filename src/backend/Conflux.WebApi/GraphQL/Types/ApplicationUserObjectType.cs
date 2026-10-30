@@ -17,16 +17,14 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.Id).IsProjected();
         descriptor.Field(u => u.UserName);
         descriptor.Field(u => u.DisplayName);
-        descriptor.Field(u => u.AvatarId);
-        descriptor.Field(u => u.Avatar).Type<MediaItemObjectType>();
-        descriptor.Field(u => u.BannerId);
-        descriptor.Field(u => u.Banner).Type<MediaItemObjectType>();
+        descriptor.Field(u => u.AvatarVersion);
+        descriptor.Field(u => u.BannerVersion);
         descriptor.Field(u => u.Biography);
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);
         descriptor.Field(u => u.LastSeenAt);
         descriptor.Field("email")
-            .ParentRequires<ApplicationUser>(u => u.Email)
+            .ParentRequires<ApplicationUser>(u => u.Email!)
             .Type<StringType>()
             .Resolve((context, _) => {
                 var user = context.Parent<ApplicationUser>();
@@ -39,7 +37,7 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
                 return null;
             });
         descriptor.Field("phoneNumber")
-            .ParentRequires<ApplicationUser>(u => u.PhoneNumber)
+            .ParentRequires<ApplicationUser>(u => u.PhoneNumber!)
             .Type<StringType>()
             .Resolve((context, _) => {
                 var user = context.Parent<ApplicationUser>();

@@ -54,7 +54,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
         <span className="flex flex-row justify-center items-center gap-2">
           <Avatar.User
             userId={executor.id}
-            version={executor.avatar?.version}
+            version={executor.avatarVersion}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 
@@ -86,7 +86,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
         <span className="flex flex-row justify-center items-center gap-2">
           <Avatar.User
             userId={affected.id}
-            version={affected.avatar?.version}
+            version={affected.avatarVersion}
             className="size-6 overflow-hidden rounded-full hidden lg:inline"
           />
 

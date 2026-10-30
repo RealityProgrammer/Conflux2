@@ -4,7 +4,7 @@ import {Avatar, type PresenceProps} from "./Avatar.tsx";
 
 interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
   userId: string;
-  avatarVersion?: number;
+  avatarVersion: number | null | undefined;
   avatarAlt?: string;
   displayName: string;
   userName?: string;

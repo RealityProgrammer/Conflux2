@@ -1,5 +1,5 @@
 import {Emoji} from "../Emoji.tsx";
-import {type HTMLAttributes, useId} from "react";
+import {type HTMLAttributes} from "react";
 import usePositionBasedRandom from "../../hooks/usePositionBasedRandom.ts";
 
 interface EmojiGroupProps extends HTMLAttributes<HTMLDivElement> {

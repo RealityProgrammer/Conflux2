@@ -5,7 +5,7 @@ import {Avatar} from "../Avatar.tsx";
 interface StreamVideoProps {
   stream: MediaStream | null;
   peerId?: string;
-  peerAvatarVersion?: number;
+  peerAvatarVersion: number | null | undefined;
   displayName?: string;
   isLocal?: boolean;
   className?: string;

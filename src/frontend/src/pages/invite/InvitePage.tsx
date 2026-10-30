@@ -86,7 +86,7 @@ function Invitation({summary, invitationId}: {
     <div className="flex flex-row items-center gap-4">
       <Avatar.Server
         serverId={summary.communityServer?.id}
-        version={summary.communityServer?.avatar?.version}
+        version={summary.communityServer?.avatarVersion}
         className="flex-none size-48 overflow-hidden rounded-full"
       />
       

@@ -1,11 +1,8 @@
 import IconButton from "../IconButton.tsx";
 import {
   BsCameraVideo,
-  BsEmojiWinkFill,
   BsMusicNote,
   BsPaperclip,
-  BsSend,
-  BsTrash,
   BsTrashFill,
   BsX
 } from "react-icons/bs";
@@ -15,16 +12,14 @@ import {
   useRef,
   useState
 } from "react";
-import {Popover, ScrollArea} from "radix-ui";
-import type {ServerEmojiGroupDto, TimelineMessageDto} from "../../api/types.ts";
+import {ScrollArea} from "radix-ui";
+import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import {Suggestion} from "./Suggestion.tsx";
 import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
 import {FaPaperPlane} from "react-icons/fa6";
-import {Virtuoso} from "react-virtuoso";
-import {Avatar} from "../Avatar.tsx";
 import EmojiPanelButton from "./EmojiPanelButton.tsx";
 import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
 

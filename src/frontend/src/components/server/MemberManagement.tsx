@@ -166,7 +166,7 @@ export default function MemberManagement() {
                     <UserNameplate.Root
                       key={member.id}
                       userId={member.user.id}
-                      avatarVersion={member.user.avatar?.version}
+                      avatarVersion={member.user.avatarVersion}
                       displayName={member.user.displayName ?? "???"}
                       userName={member.user.userName ?? "???"}
                       className="p-1 hover-highlight cursor-pointer w-full"
@@ -420,7 +420,7 @@ function MemberInformationContent() {
             <div className="flex flex-row items-center gap-2">
               <Avatar.User
                 userId={inspectingMemberInfo.user.id}
-                version={inspectingMemberInfo.user.avatar?.version}
+                version={inspectingMemberInfo.user.avatarVersion}
                 className="flex-none size-10 rounded-full overflow-hidden"
               />
 

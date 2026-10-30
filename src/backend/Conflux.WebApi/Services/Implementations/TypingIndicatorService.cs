@@ -30,7 +30,7 @@ internal sealed partial class TypingIndicatorService(
             .Select(u => new TypingUserDto(
                 u.Id,
                 u.DisplayName ?? "Someone", 
-                u.Avatar == null ? null : u.Avatar.Version
+                u.AvatarVersion
             ))
             .FirstOrDefaultAsync(cancellationToken);
 

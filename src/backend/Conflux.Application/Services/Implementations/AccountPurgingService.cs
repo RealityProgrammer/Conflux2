@@ -12,8 +12,7 @@ internal sealed partial class AccountPurgingService(
     ILogger<AccountPurgingService> logger,
     IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
     IUserMediaService userMediaService,
-    ISessionService sessionService,
-    IMediaItemWriteRepository mediaItemWriteRepository
+    ISessionService sessionService
 ) : IAccountPurgingService {
     public async Task PurgePendingDeleteAccounts() {
         var now = timeProvider.GetUtcNow();
@@ -33,30 +32,9 @@ internal sealed partial class AccountPurgingService(
         // extract ids
         List<Guid> expiredUserIds = [.. expiredIds.Select(ids => ids.UserId)];
         List<Guid> deleteRequestIds = [.. expiredIds.Select(ids => ids.Id)];
-        
-        var userMediaPairs = await userRepository
-            .AsQueryable()
-            .Where(u => expiredUserIds.Contains(u.Id))
-            .Select(u => new { u.AvatarId, u.BannerId })
-            .ToListAsync();
-        
-        List<Guid> mediaIdsToDelete = [
-            ..userMediaPairs
-                .SelectMany(u => new[] { u.AvatarId, u.BannerId })
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
-        ];
-        
+
         // delete physical avatar and banner files on file storage
         await userMediaService.Purge(expiredUserIds);
-        
-        // delete media items (avatar and banners) of deleting users
-        if (mediaIdsToDelete.Count > 0) {
-            await mediaItemWriteRepository
-                .AsQueryable()
-                .Where(m => mediaIdsToDelete.Contains(m.Id))
-                .ExecuteDeleteAsync();
-        }
         
         // purge user data (must be after media removal)
         await userRepository.AnonymizeUsers(expiredUserIds);

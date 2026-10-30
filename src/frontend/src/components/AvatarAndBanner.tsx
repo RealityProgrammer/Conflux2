@@ -49,11 +49,11 @@ export function Template({
 interface UserProps {
   userId: string;
   bannerClassName?: string;
-  bannerVersion?: number;
+  bannerVersion: number | null | undefined;
   bannerAlt?: string;
   bannerFallbackColor?: CSSProperties["backgroundColor"];
   avatarClassName?: string;
-  avatarVersion?: number;
+  avatarVersion: number | null | undefined;
   avatarAlt?: string;
   presence?: PresenceProps;
 }

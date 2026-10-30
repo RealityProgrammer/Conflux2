@@ -188,7 +188,7 @@ function DirectMessagesList() {
         return (
           <UserNameplate.Root
             userId={item.peerUser!.id}
-            avatarVersion={item.peerUser?.avatar?.version}
+            avatarVersion={item.peerUser?.avatarVersion}
             displayName={item.peerUser?.displayName ?? "???"}
             className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
             presence={item.peerUser?.effectivePresenceStatus ? {

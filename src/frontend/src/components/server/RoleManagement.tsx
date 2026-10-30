@@ -541,7 +541,7 @@ function RoleDetails({
             <div className="flex flex-row items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
               <Avatar.User
                 userId={role.creatorUser!.id}
-                version={role.creatorUser?.avatar?.version}
+                version={role.creatorUser?.avatarVersion}
                 className="flex-none size-5 rounded-full overflow-hidden"
               />
 

@@ -8,7 +8,7 @@ type PinMessageProps = {
   id: string;
   senderDisplayName: string;
   senderId?: string;
-  senderAvatarVersion?: number;
+  senderAvatarVersion: number | undefined | null;
   action: "pin" | "unpin";
 }
 

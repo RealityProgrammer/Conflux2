@@ -3,12 +3,8 @@ query GetUserFullProfile($id: UUID!) {
         id
         userName
         displayName
-        avatar {
-            version
-        }
-        banner {
-            version
-        }
+        avatarVersion
+        bannerVersion
         biography
         pronouns
         createdAt

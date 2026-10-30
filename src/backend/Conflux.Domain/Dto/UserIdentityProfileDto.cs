@@ -8,10 +8,11 @@ namespace Conflux.Domain.Dto;
     nameof(ApplicationUser.Id),
     nameof(ApplicationUser.UserName),
     nameof(ApplicationUser.DisplayName),
+    nameof(ApplicationUser.AvatarVersion),
 ], PreserveRequiredProperties = false, CopyDocs = false)]
 public sealed partial record UserIdentityProfileDto {
     [Required] public Guid Id { get; set; } = Id;
     [Required] public string? UserName { get; set; } = UserName;
     [Required] public string? DisplayName { get; set; } = DisplayName;
-    [Required, MapFrom("Avatar == null ? null : Avatar.Version")] public int? AvatarVersion { get; set; }
+    [Required] public int? AvatarVersion { get; set; } = AvatarVersion;
 }

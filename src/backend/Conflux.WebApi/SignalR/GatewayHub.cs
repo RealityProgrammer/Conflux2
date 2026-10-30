@@ -18,11 +18,9 @@ namespace Conflux.WebApi.SignalR;
 public sealed partial class GatewayHub(
     JoinTracker joinTracker,
     ISignalRConnectionTracker connectionTracker,
-    IServerPermissionsProvider serverPermissionsProvider,
     IServerMemberReadRepository serverMemberReadRepository,
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,
-    ILogger<GatewayHub> logger,
     ISender sender
 ) : Hub<IConfluxClient> {
     public override async Task OnConnectedAsync() {

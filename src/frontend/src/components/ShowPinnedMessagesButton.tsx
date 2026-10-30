@@ -153,7 +153,7 @@ function ContentDisplay({
                   header={{
                     senderDisplayName: message.sender?.displayName ?? "???",
                     senderId: message.sender?.id,
-                    senderAvatarVersion: message.sender?.avatar?.version,
+                    senderAvatarVersion: message.sender?.avatarVersion,
                     avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
                   }}
                   date={new Date(message.createdAt)}

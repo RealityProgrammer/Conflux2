@@ -22,14 +22,14 @@ export type GetEmojiDetailsQueryVariables = Exact<{
 }>;
 
 
-export type GetEmojiDetailsQuery = { emoji: { shortCode: string, server: { id: string, name: string, description: string | null, numMembers: number, avatar: { version: number } | null } } | null };
+export type GetEmojiDetailsQuery = { emoji: { shortCode: string, server: { id: string, name: string, description: string | null, avatarVersion: number | null, numMembers: number } } | null };
 
 export type GetInvitationSummaryQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, numMembers: number, avatar: { version: number } | null } | null } | null };
+export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, avatarVersion: number | null, numMembers: number } | null } | null };
 
 export type GetSessionUserAccountInfoQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -44,28 +44,28 @@ export type GetSessionUserManualPresenceStatusQuery = { sessionUser: { manualPre
 export type GetSessionUserProfileSettingInfoQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null, avatar: { version: number } | null, banner: { version: number } | null } | null };
+export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, avatarVersion: number | null, bannerVersion: number | null, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null } | null };
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number, effectivePresenceStatus: Types.PresenceStatus, avatar: { version: number } | null, banner: { version: number } | null } | null };
+export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarVersion: number | null, bannerVersion: number | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number, effectivePresenceStatus: Types.PresenceStatus } | null };
 
 export type GetUserIdentityProfileQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } | null };
+export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatarVersion: number | null } | null };
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
 }>;
 
 
-export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
+export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, avatarVersion: number | null }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -163,9 +163,7 @@ export const GetEmojiDetailsDocument = new TypedDocumentString(`
       id
       name
       description
-      avatar {
-        version
-      }
+      avatarVersion
       numMembers
     }
   }
@@ -199,9 +197,7 @@ export const GetInvitationSummaryDocument = new TypedDocumentString(`
     communityServer {
       id
       name
-      avatar {
-        version
-      }
+      avatarVersion
       numMembers
     }
     status
@@ -295,12 +291,8 @@ export const GetSessionUserProfileSettingInfoDocument = new TypedDocumentString(
     id
     userName
     displayName
-    avatar {
-      version
-    }
-    banner {
-      version
-    }
+    avatarVersion
+    bannerVersion
     biography
     pronouns
     createdAt
@@ -336,12 +328,8 @@ export const GetUserFullProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    avatar {
-      version
-    }
-    banner {
-      version
-    }
+    avatarVersion
+    bannerVersion
     biography
     pronouns
     createdAt
@@ -378,9 +366,7 @@ export const GetUserIdentityProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    avatar {
-      version
-    }
+    avatarVersion
   }
 }
     `);
@@ -415,9 +401,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
       id
       userName
       displayName
-      avatar {
-        version
-      }
+      avatarVersion
     }
     roles {
       id

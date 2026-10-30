@@ -27,7 +27,7 @@ internal sealed class StorageService(
             ContentType = contentType,
             UseChunkEncoding = false,
         };
-        
+
         try {
             PutObjectResponse response = await s3Client.PutObjectAsync(uploadRequest, cancellationToken);
 

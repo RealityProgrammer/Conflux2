@@ -22,9 +22,7 @@ query GetConversationPinnedMessages($conversationId: UUID!, $after: String) {
             sender {
                 id
                 displayName
-                avatar {
-                    version
-                }
+                avatarVersion
             }
         }
     }

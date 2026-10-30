@@ -10,6 +10,6 @@ public interface IServerMediaService {
     Task<Result> UploadBanner(Guid serverId, Stream stream, CancellationToken cancellationToken = default);
     Task<Result> DeleteBanner(Guid serverId, CancellationToken cancellationToken = default);
 
-    Task<AvatarMediaItemInfo?> GetAvatar(Guid serverId, CancellationToken cancellationToken = default);
-    Task<BannerMediaItemInfo?> GetBanner(Guid serverId, CancellationToken cancellationToken = default);
+    string GetAvatarPreSignedUrl(Guid serverId, TimeSpan expireIn);
+    string GetBannerPreSignedUrl(Guid serverId, TimeSpan expireIn);
 }

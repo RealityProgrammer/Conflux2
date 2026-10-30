@@ -26,7 +26,6 @@ public sealed class CreateServerHandler(
     ICommunityServerWriteRepository communityServerWriteRepository,
     IUnitOfWork unitOfWork,
     IServerMediaService serverMediaService,
-    IMediaItemWriteRepository mediaItemWriteRepository,
     ILogger<CreateServerHandler> logger,
     IPublisher publisher
 ) : ICommandHandler<CreateServerCommand, Result<ServerIdentityDto>> {
@@ -102,14 +101,7 @@ public sealed class CreateServerHandler(
                 await serverMediaService.UploadAvatar(server.Id, avatarStream, CancellationToken.None);
 
             if (avatarUploadResult.IsSuccess) {
-                MediaItem mediaItem = new() {
-                    ContentType = avatarUploadResult.Value!.Format.MediaType,
-                    Type = MediaItemType.ServerAvatar,
-                    Version = 1,
-                };
-                
-                mediaItemWriteRepository.Add(mediaItem);
-                server.Avatar = mediaItem;
+                server.AvatarVersion = 1;
                 
                 try {
                     await unitOfWork.SaveChangesAsync(cancellationToken);

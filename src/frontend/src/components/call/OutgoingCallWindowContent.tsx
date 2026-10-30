@@ -122,7 +122,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
         <div className="size-full flex flex-row justify-center items-center gap-[10%]">
           <Avatar.User
             userId={userProfile?.id}
-            version={userProfile?.avatar?.version}
+            version={userProfile?.avatarVersion}
             alt="Caller avatar"
             className="w-[min(calc(50cqw-0.75rem),50cqh)] aspect-square border-2 border-gray-600 select-none rounded-full"
           />
@@ -132,7 +132,7 @@ function DialingPhase({call}: {call: OutgoingDirectCall}) {
           <Avatar.User
             ref={calleeAvatarRef}
             userId={call.calleeProfile.id}
-            version={call.calleeProfile?.avatar?.version}
+            version={call.calleeProfile?.avatarVersion}
             alt="Callee avatar"
             className="w-[min(calc(50cqw-0.75rem),50cqh)] aspect-square border-2 border-gray-600 rounded-full"
           />
@@ -162,7 +162,7 @@ function CanceledPhase({call}: {call: OutgoingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.calleeProfile.id}
-          version={call.calleeProfile.avatar?.version}
+          version={call.calleeProfile.avatarVersion}
           alt="Callee avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
@@ -185,7 +185,7 @@ function RejectedPhase({call}: {call: OutgoingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.calleeProfile.id}
-          version={call.calleeProfile.avatar?.version}
+          version={call.calleeProfile.avatarVersion}
           alt="Callee avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
@@ -208,7 +208,7 @@ function DroppedPhase({call}: {call: OutgoingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.calleeProfile.id}
-          version={call.calleeProfile.avatar?.version}
+          version={call.calleeProfile.avatarVersion}
           alt="Callee avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />
@@ -297,7 +297,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
               stream={stream}
               isLocal
               peerId={userProfile!.id}
-              peerAvatarVersion={userProfile?.avatar?.version}
+              peerAvatarVersion={userProfile?.avatarVersion}
               isVideoEnabled={!isVideoDisabled}
               className="size-full"
             />
@@ -308,7 +308,7 @@ function ActivePhase({call}: {call: OutgoingDirectCall}) {
         <MediaFeed
           stream={remoteStream}
           peerId={calleeId}
-          peerAvatarVersion={call.calleeProfile.avatar?.version}
+          peerAvatarVersion={call.calleeProfile.avatarVersion}
           displayName={call.calleeProfile.displayName ?? "???"}
           className="object-contain size-full"
           audioOutputDeviceId={selectedAudioDeviceOutputId}
@@ -352,7 +352,7 @@ function EndedPhase({call}: {call: OutgoingDirectCall}) {
       <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
         <Avatar.User
           userId={call.calleeProfile.id}
-          version={call.calleeProfile.avatar?.version}
+          version={call.calleeProfile.avatarVersion}
           alt="Callee avatar"
           className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
         />

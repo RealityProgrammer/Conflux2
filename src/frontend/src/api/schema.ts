@@ -1379,28 +1379,7 @@ export interface paths {
                 };
             };
         };
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1678,6 +1657,49 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/get-identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GetIdentitiesRequest"];
+                    "text/json": components["schemas"]["GetIdentitiesRequest"];
+                    "application/*+json": components["schemas"]["GetIdentitiesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
+                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
+                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2754,6 +2776,10 @@ export interface components {
             data: null | components["schemas"]["ServerEmojiGroupDto"][];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfIReadOnlyListOfUserIdentityProfileDto: {
+            data: null | components["schemas"]["UserIdentityProfileDto"][];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfListOfEmojiEntryDto: {
             data: null | components["schemas"]["EmojiEntryDto"][];
             error: components["schemas"]["Error"];
@@ -2943,6 +2969,9 @@ export interface components {
         ForgotPasswordRequest: {
             email: string;
         };
+        GetIdentitiesRequest: {
+            ids: string[];
+        };
         GetIncomingDirectCallQueryResult: {
             /** Format: uuid */
             callId: string;
@@ -2960,11 +2989,6 @@ export interface components {
             authorization: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
             accessToken: string;
-        };
-        MediaItemDto: {
-            /** Format: int32 */
-            version: number;
-            contentType: string;
         };
         MemberRoleDto: {
             /** Format: uuid */
@@ -3180,7 +3204,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             displayName: null | string;
-            avatar?: null | components["schemas"]["MediaItemDto"];
+            /** Format: int32 */
+            avatarVersion?: null | number;
         };
         UpdateProfileResult: {
             avatarVersion?: components["schemas"]["OptionalOfint"];

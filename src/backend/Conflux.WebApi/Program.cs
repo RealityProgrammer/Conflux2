@@ -275,7 +275,7 @@ builder.Services.AddMediator(options => {
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
-builder.Services.AddValidatorsFromAssemblyContaining(typeof(CreateEmojiCommandValidator));
+builder.Services.AddValidatorsFromAssemblyContaining(typeof(KickServerMemberCommandValidator));
 builder.Services
     .AddSingleton<JoinTracker>()
     .AddSingleton<ISignalRConnectionTracker, SignalRConnectionTracker>()

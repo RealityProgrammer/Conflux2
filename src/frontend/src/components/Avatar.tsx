@@ -14,7 +14,7 @@ export interface PresenceProps {
 
 interface UserAvatarProps extends RadixAvatar.AvatarProps {
   userId?: string;
-  version?: number;
+  version: number | null | undefined;
   alt?: string;
   ref?: RefObject<HTMLDivElement | null>;
   presence?: PresenceProps;
@@ -59,7 +59,7 @@ function User({
 
 interface ServerAvatarProps extends RadixAvatar.AvatarProps {
   serverId?: string;
-  version?: number;
+  version: number | null | undefined;
   alt?: string;
 }
 

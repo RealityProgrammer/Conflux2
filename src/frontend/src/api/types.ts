@@ -36,7 +36,6 @@ export type RefreshResponse = components["schemas"]["RefreshResponse"];
 
 export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
 export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
-export type MediaItemDto = components["schemas"]["MediaItemDto"];
 export type StartCallResult = components["schemas"]["StartCallResult"];
 export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];

@@ -64,7 +64,7 @@ export default function useQueryPinnedMessages(
                     sender: {
                       id: message.sender!.id,
                       displayName: message.sender!.displayName,
-                      avatar: message.sender!.avatar ?? null,
+                      avatarVersion: message.sender!.avatarVersion ?? null,
                     },
                   },
                   ...page.pinnedMessages.nodes,

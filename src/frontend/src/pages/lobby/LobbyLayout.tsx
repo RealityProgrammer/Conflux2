@@ -47,7 +47,7 @@ function Sidebar() {
         }}>
           <Avatar.User
             userId={auth.userProfile?.id}
-            version={auth.userProfile?.avatar?.version}
+            version={auth.userProfile?.avatarVersion}
             className="size-10 cursor-pointer rounded-full"
             presence={{status: effectiveStatus, className: "size-4"}}
           />
@@ -156,7 +156,7 @@ function JoinedCommunityServerScrollList() {
               <Tooltip.Trigger asChild>
                 <Avatar.Server
                   serverId={item.id}
-                  version={item.avatar?.version}
+                  version={item.avatarVersion}
                   className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
                   onClick={() => {
                     const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
