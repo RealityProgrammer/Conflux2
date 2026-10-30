@@ -886,6 +886,7 @@ function TextArea({
 
         const textBeforeCursor = node.getTextContent().slice(0, anchor.offset);
 
+        // TODO: Prevent suggestion inside Codeblock
         const emojiMatch = textBeforeCursor.match(/:e([\w-]*)$/);
         if (emojiMatch) {
           const localColonIdx = emojiMatch.index!;

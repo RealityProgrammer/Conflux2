@@ -23,7 +23,7 @@ export default function MessageAttachments({
             >
               {attachment.type.startsWith("image") ? (
                 <img
-                  src={conversationService.getAttachmentUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentImageUrl(attachment.id, false)}
                   alt="attachment"
                   className="object-cover size-full"
                   loading="lazy"
@@ -31,7 +31,7 @@ export default function MessageAttachments({
                 />
               ) : attachment.type.startsWith("video") ? (
                 <video
-                  src={conversationService.getAttachmentUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentImageUrl(attachment.id, false)}
                   className="object-cover size-full"
                   autoPlay={false}
                   onClick={() => onAttachmentClick(index)}

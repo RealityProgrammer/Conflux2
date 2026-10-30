@@ -30,6 +30,7 @@ import {FaGears, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {Avatar} from "../../components/Avatar.tsx";
 import type {CreatedServerEvent, JoinedServerEvent} from "../../api/events.ts";
+import {requestNotificationPermission} from "../../permissions.ts";
 
 function Sidebar() {
   const auth = useAuth();
@@ -402,6 +403,10 @@ function CreateServerDialogForm({
 
 export default function LobbyLayout() {
   useDocumentTitle("Conflux - Lobby");
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   return (
     <div className="h-dvh w-dvw overflow-hidden flex flex-row">

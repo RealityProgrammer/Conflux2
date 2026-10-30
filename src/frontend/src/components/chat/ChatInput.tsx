@@ -22,6 +22,7 @@ import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData}
 import {FaPaperPlane} from "react-icons/fa6";
 import EmojiPanelButton from "./EmojiPanelButton.tsx";
 import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
+import {playMentionSound} from "../../sfx.ts";
 
 export interface ChatInputProps {
   disabled?: boolean;

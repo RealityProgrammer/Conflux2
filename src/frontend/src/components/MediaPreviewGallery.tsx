@@ -67,6 +67,7 @@ export default function MediaPreviewGallery() {
               theme="default"
               className="cursor-pointer"
               onClick={handleDownload}
+              isLoading={false}
             >
               <FaDownload className="size-7"/>
             </IconButton>

@@ -109,7 +109,7 @@ export const conversationService = {
     }
   },
 
-  getAttachmentUrl: (attachmentId: string, forceRefresh: boolean): string => {
+  getAttachmentImageUrl: (attachmentId: string, forceRefresh: boolean): string => {
     let refreshParam: string;
 
     if (forceRefresh) {
@@ -120,14 +120,11 @@ export const conversationService = {
       refreshParam = "";
     }
 
-    return `/api/attachments/${encodeURIComponent(attachmentId)}${refreshParam}`;
+    return `/api/attachments/${encodeURIComponent(attachmentId)}/image${refreshParam}`;
   },
 
   getAttachmentDownloadUrl: (attachmentId: string): string => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("download", "true");
-
-    return `/api/attachments/${encodeURIComponent(attachmentId)}?${searchParams.toString()}`;
+    return `/api/attachments/${encodeURIComponent(attachmentId)}/download`;
   },
 
   pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<ServiceResponse<TimelineMessageDto>> => {

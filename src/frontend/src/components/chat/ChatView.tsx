@@ -373,7 +373,7 @@ export function ChatView({
       onAttachmentClick: (messageAttachments: MessageAttachmentDto[], clickedIndex: number) => {
         setMediaElements(messageAttachments.map(attachment => ({
           id: attachment.id,
-          src: conversationService.getAttachmentUrl(attachment.id, false),
+          src: conversationService.getAttachmentImageUrl(attachment.id, false),
           fileName: attachment.name,
           mediaType: attachment.type,
         })), clickedIndex, {
