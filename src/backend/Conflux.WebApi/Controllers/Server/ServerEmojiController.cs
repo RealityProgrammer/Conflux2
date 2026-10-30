@@ -36,7 +36,7 @@ public sealed class ServerEmojiController(
     
     [HttpPost]
     public async Task<ActionResult<ApiResponse<EmojiDto>>> Create(Guid serverId, [FromForm] CreateEmojiRequest request) {
-        using var stream = request.Image.OpenReadStream();
+        await using var stream = request.Image.OpenReadStream();
         var result = await sender.Send(new CreateEmojiCommand(serverId, request.ShortCode, stream));
 
         if (result.IsSuccess) {

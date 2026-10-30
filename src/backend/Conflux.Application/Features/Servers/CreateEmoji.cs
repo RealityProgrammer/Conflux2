@@ -114,7 +114,7 @@ public sealed partial class CreateEmojiHandler(
 
         if (!uploadResult.IsSuccess) {
             await RollbackDatabase();
-            return Errors.OperationFailure("create emoji");
+            return uploadResult.Error;
         }
         
         await cacheProvider.Remove(serverId);
