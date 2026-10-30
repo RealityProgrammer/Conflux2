@@ -83,7 +83,7 @@ export default function MediaPreviewGallery() {
           </Dialog.Close>
         </div>
 
-        {attachments && attachments.length > 0 && (
+        {attachments && attachments.length > 1 && (
           <>
               <IconButton
                 isLoading={false}
