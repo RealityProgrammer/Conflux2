@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {RefreshResponse, ServiceResponse, UserAuthorizationInfo} from "../api/types.ts";
 
-interface AuthState {
+interface AuthStoreType {
   cachedAuthorization: UserAuthorizationInfo | null;
   activeRefreshPromise: Promise<ServiceResponse<RefreshResponse>> | null;
   activeGetAuthorizationInfoPromise: Promise<ServiceResponse<UserAuthorizationInfo>> | null;
@@ -14,7 +14,7 @@ interface AuthState {
   clearSession: () => void;
 }
 
-export const useAuthStore = create<AuthState>(
+export const useAuthStore = create<AuthStoreType>(
   // @ts-ignore
   persist(
     (set) => ({

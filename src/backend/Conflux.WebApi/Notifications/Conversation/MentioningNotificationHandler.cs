@@ -6,15 +6,18 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications.Conversation;
 
-[Facet(typeof(MessageMentioningNotification), Include = [
-    nameof(MessageMentioningNotification.MessageId),
+[Facet(typeof(MentioningNotification), Include = [
+    nameof(MentioningNotification.ConversationType),
+    nameof(MentioningNotification.ConversationId),
+    nameof(MentioningNotification.MessageId),
+    nameof(MentioningNotification.ServerId),
 ])]
 public sealed partial class MessageMentionReceivedData;
 
-public sealed class MessageMentioningNotificationHandler(
+public sealed class MentioningNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
-) : INotificationHandler<MessageMentioningNotification> {
-    public async ValueTask Handle(MessageMentioningNotification notification, CancellationToken cancellationToken) {
+) : INotificationHandler<MentioningNotification> {
+    public async ValueTask Handle(MentioningNotification notification, CancellationToken cancellationToken) {
         await hubContext.Clients
             .Users(notification.MentioningUserIds.Select(uid => uid.ToString()))
             .MessageMentionReceived(new(notification), cancellationToken);

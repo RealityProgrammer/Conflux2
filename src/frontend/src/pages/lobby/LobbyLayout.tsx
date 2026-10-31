@@ -29,30 +29,17 @@ import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {Avatar} from "../../components/Avatar.tsx";
-import type {CreatedServerEvent, JoinedServerEvent} from "../../api/events.ts";
+import type {CreatedServerEvent, JoinedServerEvent, MessageMentionReceivedEvent} from "../../api/events.ts";
 import {requestNotificationPermission} from "../../permissions.ts";
+import {toast} from "react-toastify";
+import {useMentionStore} from "../../store/useMentionCountStore.ts";
+import {playMentionAudio} from "../../sfx.ts";
 
 function Sidebar() {
-  const auth = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { effectiveStatus } = usePresence();
-
   return (
     <aside className="flex-none flex flex-col py-1.5 w-14 gap-1 h-full bg-gray-775 border-r-2 border-r-gray-600">
       <div className="flex justify-center items-center">
-        <div className="flex-none size-10 relative rounded-full" onClick={() => {
-          if (location.pathname !== "/lobby/me") {
-            navigate("/lobby/me");
-          }
-        }}>
-          <Avatar.User
-            userId={auth.userProfile?.id}
-            version={auth.userProfile?.avatarVersion}
-            className="size-10 cursor-pointer rounded-full"
-            presence={{status: effectiveStatus, className: "size-4"}}
-          />
-        </div>
+        <UserHomePageButton/>
       </div>
 
       <Separator.Root orientation="horizontal" decorative className="h-px bg-gray-600 my-1"/>
@@ -68,7 +55,50 @@ function Sidebar() {
   );
 }
 
+function UserHomePageButton() {
+  const dmMentions = useMentionStore(state => state.dmMentions);
+  const incrementDmMention = useMentionStore(state => state.incrementDmMention);
+
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { effectiveStatus } = usePresence();
+
+  useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
+    if (event.conversationType !== "Direct") return;
+
+    playMentionAudio();
+    incrementDmMention(event.conversationId);
+  });
+
+  const sumDmMentions = Object.values(dmMentions).reduce((a, b) => a + b, 0);
+
+  return (
+    <div className="flex-none size-10 relative" onClick={() => {
+      if (location.pathname !== "/lobby/me") {
+        navigate("/lobby/me");
+      }
+    }}>
+      {sumDmMentions > 0 && (
+        <span className="z-1 absolute -top-1 -right-1 bg-red-500 text-xs text-white font-bold px-1 py-0.5 rounded-lg">
+          {sumDmMentions > 99 ? "99+" : sumDmMentions}
+        </span>
+      )}
+
+      <Avatar.User
+        userId={auth.userProfile?.id}
+        version={auth.userProfile?.avatarVersion}
+        className="size-10 cursor-pointer rounded-full"
+        presence={{status: effectiveStatus, className: "size-4"}}
+      />
+    </div>
+  )
+}
+
 function JoinedCommunityServerScrollList() {
+  const serverMentions = useMentionStore(state => state.serverMentions);
+  const incrementServerMention = useMentionStore(state => state.incrementServerMention);
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -128,6 +158,13 @@ function JoinedCommunityServerScrollList() {
     );
   });
 
+  useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
+    if (event.conversationType !== "Server" || !event.serverId) return;
+
+    playMentionAudio();
+    incrementServerMention(event.serverId);
+  });
+
   return (
     <VirtualizedScrollList
       overscan={10}
@@ -150,23 +187,32 @@ function JoinedCommunityServerScrollList() {
       hideVerticalScrollbar={true}
       renderItem={(itemIndex, virtualItem) => {
         const item = allElements[itemIndex];
+        const mentionCount: number | undefined = serverMentions[item.id];
 
         return (
           <div className="size-full aspect-square flex justify-center items-center" key={virtualItem.key}>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
-                <Avatar.Server
-                  serverId={item.id}
-                  version={item.avatarVersion}
-                  className="flex-none h-10 aspect-square overflow-hidden rounded-full align-middle cursor-pointer"
-                  onClick={() => {
-                    const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
+                <div className="relative flex-none size-10">
+                  {mentionCount && mentionCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-xs text-white font-bold px-1 py-0.5 rounded-lg">
+                      {mentionCount > 99 ? "99+" : mentionCount}
+                    </span>
+                  )}
 
-                    if (location.pathname !== dest) {
-                      navigate(dest);
-                    }
-                  }}
-                />
+                  <Avatar.Server
+                    serverId={item.id}
+                    version={item.avatarVersion}
+                    className="size-full overflow-hidden rounded-full align-middle cursor-pointer"
+                    onClick={() => {
+                      const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
+
+                      if (location.pathname !== dest) {
+                        navigate(dest);
+                      }
+                    }}
+                  />
+                </div>
               </Tooltip.Trigger>
 
               <Tooltip.Portal>

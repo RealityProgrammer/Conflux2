@@ -1,4 +1,4 @@
-import {createContext, type ReactNode, useContext, useState} from "react";
+import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import type {
   ServiceResponse,
@@ -9,6 +9,7 @@ import {conversationService} from "../api/conversationService.ts";
 import {toast} from "react-toastify";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
+import {useActiveConversationStore} from "../store/useActiveConversationStore.ts";
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
 type EditMessagePayload = { messageId: string, newBody: string | null };
@@ -46,6 +47,16 @@ export default function ChatContainerContextProvider({
   conversationId,
   children,
 }: ChatContainerContextProviderProps) {
+  const setActiveConversationId = useActiveConversationStore((state) => state.setActiveConversationId);
+
+  useEffect(() => {
+    setActiveConversationId(conversationId);
+
+    return () => {
+      setActiveConversationId(null);
+    };
+  }, [conversationId, setActiveConversationId]);
+
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
   const [jumpMessageId, setJumpMessageId] = useState<string | null>(null);
 

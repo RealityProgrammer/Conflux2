@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Enums;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -26,8 +27,11 @@ public sealed record MessageReceivedNotification(
     TimelineMessageDto Message
 ) : INotification;
 
-public sealed record MessageMentioningNotification(
+public sealed record MentioningNotification(
+    ConversationType ConversationType,
+    Guid ConversationId,
     Guid MessageId,
+    Guid? ServerId,
     IReadOnlySet<Guid> MentioningUserIds
 ) : INotification;
 
@@ -54,6 +58,7 @@ public sealed partial class SendMessageHandler(
         Domain.Entities.Conversation? conversation = await conversationRepository
             .AsQueryable()
             .Where(c => c.Id == conversationId)
+            .Include(c => c.Channel)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (conversation == null) {
@@ -133,8 +138,16 @@ public sealed partial class SendMessageHandler(
         );
         
         // publish mentioning notification
-        if (!string.IsNullOrEmpty(message.Body)) {
-            await PublishMentionNotification(message.Id, message.Body, senderUserId);
+        // check regex isMatch to quickly discard any message that doesn't have any mentioning token
+        if (!string.IsNullOrEmpty(message.Body) && MentionUserRegex().IsMatch(message.Body)) {
+            await PublishMentionNotification(
+                conversation.Type,
+                conversationId, 
+                message.Id, 
+                conversation.Type == ConversationType.Server ? conversation.Channel!.CommunityServerId : null,
+                message.Body,
+                senderUserId
+            );
         }
         
         // update direct conversation
@@ -150,8 +163,15 @@ public sealed partial class SendMessageHandler(
 
         return Result<TimelineMessageDto>.Success(dto);
     }
-
-    private async Task PublishMentionNotification(Guid messageId, string messageBody, Guid senderId) {
+    
+    private async Task PublishMentionNotification(
+        ConversationType conversationType, 
+        Guid conversationId, 
+        Guid messageId,
+        Guid? serverId,
+        string messageBody, 
+        Guid senderId
+    ) {
         var document = Markdown.Parse(messageBody);
         var userIds = new HashSet<Guid>();
 
@@ -160,7 +180,17 @@ public sealed partial class SendMessageHandler(
         }
 
         userIds.Remove(senderId);   // prevent self-pinging
-        await publisher.Publish(new MessageMentioningNotification(messageId, userIds));
+
+        if (userIds.Count > 0) {
+            await publisher.Publish(new MentioningNotification(
+                conversationType, 
+                conversationId, 
+                messageId,
+                serverId,
+                userIds
+            ));
+        }
+        
         return;
 
         static void TraverseObject(MarkdownObject markdownObject, HashSet<Guid> userIds) {

@@ -2,7 +2,7 @@ import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
   EditedMessageDto, EmojiDto,
 } from "./types.ts";
-import type {PinnedMessageDto, PresenceStatus} from "../graphql/types.ts";
+import {ConversationType, type PinnedMessageDto, type PresenceStatus} from "../graphql/types.ts";
 
 export type FriendRequestReceivedEvent = {
   senderUserId: string;
@@ -178,4 +178,11 @@ export type EmojiCreatedEvent = {
 export type EmojiDeletedEvent = {
   serverId: string;
   emojiIds: string[];
+}
+
+export type MessageMentionReceivedEvent = {
+  conversationType: ConversationType;
+  conversationId: string;
+  messageId: string;
+  serverId: string | undefined;
 }

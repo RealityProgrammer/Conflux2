@@ -1,8 +1,9 @@
-const mentionAudio = new Audio("/audio/aeugh.mp3");
+const mentionAudio = new Audio("/audio/mention.wav");
+mentionAudio.preload = "auto";
 
-export function playMentionSound() {
+export function playMentionAudio() {
   mentionAudio.currentTime = 0;
   mentionAudio.play().catch((err) => {
-    console.warn("Audio autoplay blocked by browser policy:", err);
+    console.warn("Mention audio blocked:", err);
   });
 }

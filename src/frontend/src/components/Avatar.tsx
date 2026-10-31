@@ -31,7 +31,6 @@ function User({
 }: UserAvatarProps) {
   return (
     <div className={`relative ${className}`} ref={ref} {...props}>
-      {/* Inner wrapper strictly clips the avatar to its rounded shape */}
       <div className="size-full rounded-[inherit] overflow-hidden">
         <RadixAvatar.Root className="size-full">
           <RadixAvatar.Image
@@ -41,7 +40,7 @@ function User({
             draggable={false}
           />
 
-          <RadixAvatar.Fallback className="flex size-full items-center justify-center bg-gray-100">
+          <RadixAvatar.Fallback className="flex size-full rounded-[inherit] items-center justify-center bg-gray-100">
             <BsPerson className="size-5/6 fill-black" />
           </RadixAvatar.Fallback>
         </RadixAvatar.Root>
@@ -78,7 +77,7 @@ function Server({
         draggable={false}
       />
 
-      <RadixAvatar.Fallback className="flex size-full items-center justify-center bg-gray-100">
+      <RadixAvatar.Fallback className="flex size-full rounded-[inherit] items-center justify-center bg-gray-100">
         <BsPeople className="size-5/6 fill-black" />
       </RadixAvatar.Fallback>
     </RadixAvatar.Root>
