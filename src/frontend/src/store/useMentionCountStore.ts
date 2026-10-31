@@ -4,6 +4,8 @@ interface MentionCountStoreType {
   serverMentions: Record<string, Record<string, number>>; // Record<serverId, Record<channelId, number>>
   dmMentions: Record<string, number>; // Record<peerUserId, number>
 
+  setInitialMentions: (serverMentions: Record<string, Record<string, number>>, dmMentions: Record<string, number>) => void;
+
   incrementServerMention: (serverId: string, channelId: string) => void;
   clearServerMentions: (serverId: string) => void;
   clearServerChannelMentions: (serverId: string, channelId: string) => void;
@@ -15,6 +17,10 @@ interface MentionCountStoreType {
 export const useMentionCountStore = create<MentionCountStoreType>((set) => ({
   serverMentions: {},
   dmMentions: {},
+
+  setInitialMentions: (serverMentions: Record<string, Record<string, number>>, dmMentions: Record<string, number>) => set((state) => {
+    return { serverMentions, dmMentions };
+  }),
 
   incrementServerMention: (serverId: string, channelId: string) => set((state) => {
     const existingChannels = state.serverMentions[serverId] || {};

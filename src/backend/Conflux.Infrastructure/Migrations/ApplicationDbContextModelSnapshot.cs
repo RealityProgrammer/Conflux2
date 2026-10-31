@@ -520,6 +520,35 @@ namespace Conflux.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.RolePermission", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -965,6 +994,17 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("Conflux.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.RolePermission", b =>
                 {
                     b.HasOne("Conflux.Domain.Entities.CommunityServerRole", "Role")
@@ -1070,6 +1110,8 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("ConversationParticipants");
 
                     b.Navigation("JoinedCommunityServers");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("ReceivedFriendRequests");
 

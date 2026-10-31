@@ -205,10 +205,16 @@ public sealed partial class SendMessageHandler(
                     break;
             }
 
+            var filteredUserIds = await userRepository
+                .AsQueryable()
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToHashSetAsync();
+
             if (mentionSource != null) {
                 await publisher.Publish(new MentioningNotification(
                     mentionSource,
-                    userIds
+                    filteredUserIds
                 ));
             }
         }

@@ -1,6 +1,7 @@
+using Conflux.Application.Features.Identity;
 using Conflux.Application.Services;
 
-namespace Conflux.Application.Features.Identity;
+namespace Conflux.Application.Notifications;
 
 public sealed class SendConfirmationEmailOnRegisteredHandler(
     IAuthMailService authMailService

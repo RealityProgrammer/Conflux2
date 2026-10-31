@@ -614,6 +614,7 @@ input ApplicationUserFilterInput {
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
   conversationParticipants: ListFilterInputTypeOfConversationParticipantFilterInput
   accountDeletions: ListFilterInputTypeOfUserAccountDeletionFilterInput
+  notifications: ListFilterInputTypeOfNotificationFilterInput
   id: UuidOperationFilterInput
   userName: StringOperationFilterInput
   normalizedUserName: StringOperationFilterInput
@@ -1037,6 +1038,13 @@ input ListFilterInputTypeOfMessageFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
+input ListFilterInputTypeOfNotificationFilterInput {
+  all: NotificationFilterInput @cost(weight: "10")
+  none: NotificationFilterInput @cost(weight: "10")
+  some: NotificationFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
 input ListFilterInputTypeOfRolePermissionFilterInput {
   all: RolePermissionFilterInput @cost(weight: "10")
   none: RolePermissionFilterInput @cost(weight: "10")
@@ -1115,6 +1123,30 @@ input MessageTypeOperationFilterInput {
   neq: MessageType @cost(weight: "10")
   in: [MessageType!] @cost(weight: "10")
   nin: [MessageType!] @cost(weight: "10")
+}
+
+input NotificationFilterInput {
+  and: [NotificationFilterInput!]
+  or: [NotificationFilterInput!]
+  id: UuidOperationFilterInput
+  userId: UuidOperationFilterInput
+  user: ApplicationUserFilterInput
+  type: NotificationTypeOperationFilterInput
+  payload: NotificationPayloadFilterInput
+  isRead: BooleanOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+}
+
+input NotificationPayloadFilterInput {
+  and: [NotificationPayloadFilterInput!]
+  or: [NotificationPayloadFilterInput!]
+}
+
+input NotificationTypeOperationFilterInput {
+  eq: NotificationType @cost(weight: "10")
+  neq: NotificationType @cost(weight: "10")
+  in: [NotificationType!] @cost(weight: "10")
+  nin: [NotificationType!] @cost(weight: "10")
 }
 
 input PermissionStateOperationFilterInput {
@@ -1355,6 +1387,10 @@ enum MessageType {
   CallEnd
   Pin
   Unpin
+}
+
+enum NotificationType {
+  Mention
 }
 
 enum PermissionState {

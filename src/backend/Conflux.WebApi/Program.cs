@@ -357,6 +357,11 @@ builder.Services
         (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
     )
     
+    .AddScoped<INotificationReadRepository, NotificationRepository>()
+    .AddScoped<INotificationWriteRepository>(services => 
+        (NotificationRepository)services.GetRequiredService<INotificationReadRepository>()
+    )
+    
     .AddScoped<IEmojiReadRepository, EmojiRepository>()
     .AddScoped<IEmojiWriteRepository>(services => 
         (EmojiRepository)services.GetRequiredService<IEmojiReadRepository>()

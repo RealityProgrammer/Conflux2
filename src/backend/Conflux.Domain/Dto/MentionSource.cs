@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Conflux.Application.Dto;
+namespace Conflux.Domain.Dto;
 
 [JsonDerivedType(typeof(MentionFromDm), "dm")]
 [JsonDerivedType(typeof(MentionFromServer), "server")]
