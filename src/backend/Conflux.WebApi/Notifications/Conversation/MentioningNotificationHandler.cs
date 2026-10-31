@@ -7,10 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Conflux.WebApi.Notifications.Conversation;
 
 [Facet(typeof(MentioningNotification), Include = [
-    nameof(MentioningNotification.ConversationType),
-    nameof(MentioningNotification.ConversationId),
-    nameof(MentioningNotification.MessageId),
-    nameof(MentioningNotification.ServerId),
+    nameof(MentioningNotification.Source),
 ])]
 public sealed partial class MessageMentionReceivedData;
 

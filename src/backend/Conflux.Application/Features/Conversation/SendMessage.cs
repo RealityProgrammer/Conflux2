@@ -28,10 +28,7 @@ public sealed record MessageReceivedNotification(
 ) : INotification;
 
 public sealed record MentioningNotification(
-    ConversationType ConversationType,
-    Guid ConversationId,
-    Guid MessageId,
-    Guid? ServerId,
+    MentionSource Source,
     IReadOnlySet<Guid> MentioningUserIds
 ) : INotification;
 
@@ -58,7 +55,6 @@ public sealed partial class SendMessageHandler(
         Domain.Entities.Conversation? conversation = await conversationRepository
             .AsQueryable()
             .Where(c => c.Id == conversationId)
-            .Include(c => c.Channel)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (conversation == null) {
@@ -144,7 +140,6 @@ public sealed partial class SendMessageHandler(
                 conversation.Type,
                 conversationId, 
                 message.Id, 
-                conversation.Type == ConversationType.Server ? conversation.Channel!.CommunityServerId : null,
                 message.Body,
                 senderUserId
             );
@@ -168,7 +163,6 @@ public sealed partial class SendMessageHandler(
         ConversationType conversationType, 
         Guid conversationId, 
         Guid messageId,
-        Guid? serverId,
         string messageBody, 
         Guid senderId
     ) {
@@ -182,13 +176,41 @@ public sealed partial class SendMessageHandler(
         userIds.Remove(senderId);   // prevent self-pinging
 
         if (userIds.Count > 0) {
-            await publisher.Publish(new MentioningNotification(
-                conversationType, 
-                conversationId, 
-                messageId,
-                serverId,
-                userIds
-            ));
+            MentionSource? mentionSource = null;
+
+            switch (conversationType) {
+                case ConversationType.Direct:
+                    var peerId = await conversationRepository
+                        .AsQueryable()
+                        .Where(c => c.Id == conversationId)
+                        .Include(c => c.FriendRequest)
+                        .Select(c => c.FriendRequest!.SenderUserId == senderId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId)
+                        .SingleAsync();
+
+                    mentionSource = new MentionFromDm(peerId, messageId);
+                    break;
+                
+                case ConversationType.Server:
+                    var channelIds = await conversationRepository
+                        .AsQueryable()
+                        .Where(c => c.Id == conversationId)
+                        .Include(c => c.Channel)
+                        .Select(c => new {
+                            c.Channel!.Id,
+                            c.Channel.CommunityServerId,
+                        })
+                        .SingleAsync();
+
+                    mentionSource = new MentionFromServer(channelIds.CommunityServerId, channelIds.Id, messageId);
+                    break;
+            }
+
+            if (mentionSource != null) {
+                await publisher.Publish(new MentioningNotification(
+                    mentionSource,
+                    userIds
+                ));
+            }
         }
         
         return;

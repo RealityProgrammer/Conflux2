@@ -26,6 +26,7 @@ import {toast} from "react-toastify";
 import {useChannelCategoryDeleteMutation} from "../../hooks/useChannelCategoryDeleteMutation.ts";
 import CreateInvitationDialog from "./CreateInvitationDialog.tsx";
 import {ServerManagementModal} from "./ServerManagementModal.tsx";
+import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 
 type CreateModalState = {
   categoryId: string | null;
@@ -535,6 +536,8 @@ function ChannelButton({
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const mentionCount = useMentionCountStore((state) => state.serverMentions[serverDetails?.id!]?.[id] || 0);
+
   return (
     <div
       className="px-1 py-1.5 hover-highlight w-full rounded-md cursor-pointer text-left gap-2 flex flex-row items-center group"
@@ -550,6 +553,12 @@ function ChannelButton({
       )}
 
       <span className="flex-1 truncate text-sm min-w-0">{name}</span>
+
+      {mentionCount > 0 ? (
+        <span className="flex-none bg-red-500 text-xs text-white font-bold px-1 py-0.5 rounded-lg">
+          {mentionCount}
+        </span>
+      ) : null}
 
       {hasPermission(ServerPermission.DeleteChannel) && (
         <div

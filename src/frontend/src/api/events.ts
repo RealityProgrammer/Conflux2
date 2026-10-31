@@ -180,9 +180,12 @@ export type EmojiDeletedEvent = {
   emojiIds: string[];
 }
 
+export type MentionSource =
+  { messageId: string } & (
+    { $type: "dm"; peerUserId: string; } |
+    { $type: "server"; serverId: string; channelId: string; }
+  );
+
 export type MessageMentionReceivedEvent = {
-  conversationType: ConversationType;
-  conversationId: string;
-  messageId: string;
-  serverId: string | undefined;
+  source: MentionSource;
 }

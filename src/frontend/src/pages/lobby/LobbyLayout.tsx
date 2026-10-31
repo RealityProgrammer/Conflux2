@@ -31,8 +31,7 @@ import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {Avatar} from "../../components/Avatar.tsx";
 import type {CreatedServerEvent, JoinedServerEvent, MessageMentionReceivedEvent} from "../../api/events.ts";
 import {requestNotificationPermission} from "../../permissions.ts";
-import {toast} from "react-toastify";
-import {useMentionStore} from "../../store/useMentionCountStore.ts";
+import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 import {playMentionAudio} from "../../sfx.ts";
 
 function Sidebar() {
@@ -56,20 +55,12 @@ function Sidebar() {
 }
 
 function UserHomePageButton() {
-  const dmMentions = useMentionStore(state => state.dmMentions);
-  const incrementDmMention = useMentionStore(state => state.incrementDmMention);
+  const dmMentions = useMentionCountStore(state => state.dmMentions);
 
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { effectiveStatus } = usePresence();
-
-  useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
-    if (event.conversationType !== "Direct") return;
-
-    playMentionAudio();
-    incrementDmMention(event.conversationId);
-  });
 
   const sumDmMentions = Object.values(dmMentions).reduce((a, b) => a + b, 0);
 
@@ -96,10 +87,6 @@ function UserHomePageButton() {
 }
 
 function JoinedCommunityServerScrollList() {
-  const serverMentions = useMentionStore(state => state.serverMentions);
-  const incrementServerMention = useMentionStore(state => state.incrementServerMention);
-
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {
@@ -158,13 +145,6 @@ function JoinedCommunityServerScrollList() {
     );
   });
 
-  useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
-    if (event.conversationType !== "Server" || !event.serverId) return;
-
-    playMentionAudio();
-    incrementServerMention(event.serverId);
-  });
-
   return (
     <VirtualizedScrollList
       overscan={10}
@@ -185,48 +165,54 @@ function JoinedCommunityServerScrollList() {
         fetchNextPage()
       }}
       hideVerticalScrollbar={true}
-      renderItem={(itemIndex, virtualItem) => {
-        const item = allElements[itemIndex];
-        const mentionCount: number | undefined = serverMentions[item.id];
-
-        return (
-          <div className="size-full aspect-square flex justify-center items-center" key={virtualItem.key}>
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <div className="relative flex-none size-10">
-                  {mentionCount && mentionCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-xs text-white font-bold px-1 py-0.5 rounded-lg">
-                      {mentionCount > 99 ? "99+" : mentionCount}
-                    </span>
-                  )}
-
-                  <Avatar.Server
-                    serverId={item.id}
-                    version={item.avatarVersion}
-                    className="size-full overflow-hidden rounded-full align-middle cursor-pointer"
-                    onClick={() => {
-                      const dest = `/lobby/servers/${encodeURIComponent(item.id)}`;
-
-                      if (location.pathname !== dest) {
-                        navigate(dest);
-                      }
-                    }}
-                  />
-                </div>
-              </Tooltip.Trigger>
-
-              <Tooltip.Portal>
-                <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
-                  <p className="text-white font-semibold px-3 py-1">{item.name}</p>
-
-                  <Tooltip.Arrow className="fill-gray-600"/>
-                </Tooltip.Content>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          </div>
-        );
+      renderItem={(itemIndex) => {
+        return <ServerIcon server={allElements[itemIndex]}/>;
       }}
     />
+  );
+}
+
+function ServerIcon({server}: { server: ServerIdentityDto }) {
+  const navigate = useNavigate();
+  const channelMentions = useMentionCountStore((state) => state.serverMentions[server.id]) ?? {};
+
+  const sumMentionCount = Object.values(channelMentions).reduce((a, b) => a + b, 0);
+
+  return (
+    <div className="size-full aspect-square flex justify-center items-center">
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <div className="relative flex-none size-10">
+            {sumMentionCount && sumMentionCount > 0 ? (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-xs text-white font-bold px-1 py-0.5 rounded-lg">
+                {sumMentionCount > 99 ? "99+" : sumMentionCount}
+              </span>
+            ) : null}
+
+            <Avatar.Server
+              serverId={server.id}
+              version={server.avatarVersion}
+              className="size-full overflow-hidden rounded-full align-middle cursor-pointer"
+              onClick={() => {
+                const dest = `/lobby/servers/${encodeURIComponent(server.id)}`;
+
+                if (location.pathname !== dest) {
+                  navigate(dest);
+                }
+              }}
+            />
+          </div>
+        </Tooltip.Trigger>
+
+        <Tooltip.Portal>
+          <Tooltip.Content side="right" sideOffset={8} className="select-none rounded-lg bg-gray-600 shadow-xl">
+            <p className="text-white font-semibold px-3 py-1">{server.name}</p>
+
+            <Tooltip.Arrow className="fill-gray-600"/>
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </div>
   );
 }
 
@@ -450,9 +436,26 @@ function CreateServerDialogForm({
 export default function LobbyLayout() {
   useDocumentTitle("Conflux - Lobby");
 
+  const incrementServerMention = useMentionCountStore((state) => state.incrementServerMention);
+  const incrementDmMention = useMentionCountStore((state) => state.incrementDmMention);
+
   useEffect(() => {
     requestNotificationPermission();
   }, []);
+
+  useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
+    playMentionAudio();
+
+    switch (event.source.$type) {
+      case "dm":
+        incrementDmMention(event.source.peerUserId);
+        break;
+
+      case "server":
+        incrementServerMention(event.source.serverId, event.source.channelId);
+        break;
+    }
+  });
 
   return (
     <div className="h-dvh w-dvw overflow-hidden flex flex-row">
