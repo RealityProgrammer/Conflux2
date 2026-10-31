@@ -187,7 +187,7 @@ public sealed partial class SendMessageHandler(
                         .Select(c => c.FriendRequest!.SenderUserId == senderId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId)
                         .SingleAsync();
 
-                    mentionSource = new MentionFromDm(peerId, messageId);
+                    mentionSource = new MentionFromDm(conversationId, messageId, peerId);
                     break;
                 
                 case ConversationType.Server:
@@ -201,7 +201,7 @@ public sealed partial class SendMessageHandler(
                         })
                         .SingleAsync();
 
-                    mentionSource = new MentionFromServer(channelIds.CommunityServerId, channelIds.Id, messageId);
+                    mentionSource = new MentionFromServer(conversationId, messageId, channelIds.CommunityServerId, channelIds.Id);
                     break;
             }
 

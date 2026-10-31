@@ -13,6 +13,7 @@ import {
   type GetDirectConversationsQuery,
   useInfiniteGetDirectConversationsQuery
 } from "../../graphql/infiniteQueries.ts";
+import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 
 export default function UserLobbyLayout() {
   return (
@@ -61,7 +62,6 @@ function Sidebar() {
 
 function DirectMessagesList() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const {
     data,
@@ -185,25 +185,38 @@ function DirectMessagesList() {
       renderItem={(itemIndex) => {
         const item = allElements[itemIndex];
 
-        return (
-          <UserNameplate.Root
-            userId={item.peerUser!.id}
-            avatarVersion={item.peerUser?.avatarVersion}
-            displayName={item.peerUser?.displayName ?? "???"}
-            className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
-            presence={item.peerUser?.effectivePresenceStatus ? {
-              status: item.peerUser.effectivePresenceStatus,
-              className: "size-4 border-2 border-gray-725 bg-gray-725",
-            } : undefined}
-            onClick={() => {
-              const otherUserId = item.peerUser?.id;
-              if (!otherUserId) return;
-
-              navigate(`/lobby/me/dm/${encodeURIComponent(otherUserId)}`);
-            }}
-          />
-        );
+        return <DmNameplate dm={item}/>;
       }}
     />
+  );
+}
+
+function DmNameplate({dm}: {dm: NonNullable<GetDirectConversationsQuery["directConversations"]["nodes"]>[number]}) {
+  const navigate = useNavigate();
+  const mentionCount = useMentionCountStore((state) => state.dmMentions[dm.peerUser?.id!] || 0);
+
+  return (
+    <UserNameplate.Root
+      userId={dm.peerUser!.id}
+      avatarVersion={dm.peerUser?.avatarVersion}
+      displayName={dm.peerUser?.displayName ?? "???"}
+      className="w-full p-1.5 hover-highlight rounded-md cursor-pointer"
+      presence={dm.peerUser?.effectivePresenceStatus ? {
+        status: dm.peerUser.effectivePresenceStatus,
+        className: "size-4 border-2 border-gray-725 bg-gray-725",
+      } : undefined}
+      onClick={() => {
+        const otherUserId = dm.peerUser?.id;
+        if (!otherUserId) return;
+
+        navigate(`/lobby/me/dm/${encodeURIComponent(otherUserId)}`);
+      }}
+    >
+      {mentionCount > 0 ? (
+        <span className="flex-none bg-red-500 text-xs text-white font-bold px-1 py-0.5 rounded-lg">
+          {mentionCount}
+        </span>
+      ) : null}
+    </UserNameplate.Root>
   );
 }

@@ -181,7 +181,7 @@ export type EmojiDeletedEvent = {
 }
 
 export type MentionSource =
-  { messageId: string } & (
+  { conversationId: string; messageId: string; } & (
     { $type: "dm"; peerUserId: string; } |
     { $type: "server"; serverId: string; channelId: string; }
   );

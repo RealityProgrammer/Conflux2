@@ -33,6 +33,7 @@ import type {CreatedServerEvent, JoinedServerEvent, MessageMentionReceivedEvent}
 import {requestNotificationPermission} from "../../permissions.ts";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 import {playMentionAudio} from "../../sfx.ts";
+import {useActiveConversationStore} from "../../store/useActiveConversationStore.ts";
 
 function Sidebar() {
   return (
@@ -436,6 +437,7 @@ function CreateServerDialogForm({
 export default function LobbyLayout() {
   useDocumentTitle("Conflux - Lobby");
 
+  const activeConversationId = useActiveConversationStore((state) => state.activeConversationId);
   const incrementServerMention = useMentionCountStore((state) => state.incrementServerMention);
   const incrementDmMention = useMentionCountStore((state) => state.incrementDmMention);
 
@@ -444,6 +446,8 @@ export default function LobbyLayout() {
   }, []);
 
   useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
+    if (activeConversationId === event.source.conversationId) return;
+
     playMentionAudio();
 
     switch (event.source.$type) {
