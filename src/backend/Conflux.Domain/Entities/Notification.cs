@@ -5,9 +5,11 @@ using System.Text.Json.Serialization;
 namespace Conflux.Domain.Entities;
 
 [JsonDerivedType(typeof(MentionNotificationPayload), "mention")]
-public abstract record NotificationPayload;
+public interface INotificationPayload {
+    public string TypeName => GetType().Name;   // to make HotChocolate shut up about INotificationPayload has to at least define one field
+}
 
-public sealed record MentionNotificationPayload(MentionSource Source) : NotificationPayload;
+public sealed record MentionNotificationPayload(MentionSource Source) : INotificationPayload;
 
 public class Notification : IHasCreatedAt {
     public Guid Id { get; set; }
@@ -16,7 +18,7 @@ public class Notification : IHasCreatedAt {
     public ApplicationUser User { get; set; } = null!;
     
     public NotificationType Type { get; set; }
-    public NotificationPayload Payload { get; set; } = null!;
+    public INotificationPayload Payload { get; set; } = null!;
     
     public bool IsRead { get; set; }
     

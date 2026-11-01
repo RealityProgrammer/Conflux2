@@ -15,28 +15,28 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.9" />
-        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.6.9" />
-        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.6.9" />
-        <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.9" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="16.7.3" />
+        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.7.3" />
+        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.7.3" />
+        <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.7.3" />
         <PackageReference Include="Mediator.SourceGenerator" Version="3.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
         
         <PackageReference Include="RedLock.net" Version="2.3.2" />
         
         <PackageReference Include="ScottBrady91.AspNetCore.Identity.Argon2PasswordHasher" Version="2.0.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.3.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.0" />
-        <PackageReference Include="UAParser.Core" Version="4.0.6" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.3.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.1" />
+        <PackageReference Include="UAParser.Core" Version="4.0.7" />
     </ItemGroup>
 
     <ItemGroup>

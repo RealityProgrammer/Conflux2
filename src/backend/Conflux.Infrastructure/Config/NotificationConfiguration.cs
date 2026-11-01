@@ -26,7 +26,7 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
             .HasColumnType("jsonb")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, JsonOptions),
-                v => JsonSerializer.Deserialize<NotificationPayload>(v, JsonOptions)!
+                v => JsonSerializer.Deserialize<INotificationPayload>(v, JsonOptions)!
             )
             .IsRequired();
     }
