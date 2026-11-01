@@ -46,6 +46,6 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
         });
         
         // filters
-        builder.HasQueryFilter("SoftDeletionFilter", b => b.DeletedAt == null);
+        builder.HasQueryFilter("IgnoreDeletedMessages", b => b.DeletedAt == null);
     }
 }

@@ -1,3 +1,4 @@
+using Conflux.Application.Extensions;
 using Conflux.Application.Features.Servers;
 using Conflux.Application.Services;
 using Conflux.Domain;
@@ -31,6 +32,7 @@ public sealed class DeleteMessageHandler(
         
         var messageInfo = await messageRepository
             .AsQueryable()
+            .IncludeDeletedMessages()
             .Where(m => m.Id == messageId && m.ConversationId == conversationId)
             .Select(m => new { m.Id, m.ConversationId, m.SenderUserId, m.DeletedAt })
             .FirstOrDefaultAsync(cancellationToken);
