@@ -9,8 +9,6 @@ using GreenDonut.Data;
 using HotChocolate.Authorization;
 using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Queries;
 
@@ -39,22 +37,51 @@ public static partial class ConversationQuery {
         Guid conversationId,
         QueryContext<ApplicationUser> queryContext,
         PagingArguments pagingArgs,
+        [Service] ICurrentUserService currentUserService,
         [Service] IConversationRepository conversationRepository,
+        [Service] IServerMemberReadRepository serverMemberReadRepository,
         CancellationToken cancellationToken
     ) {
-        var conversationType = await conversationRepository
+        if (currentUserService.UserId is not { } userId) {
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
+        }
+        
+        var conversationData = await conversationRepository
             .AsQueryable()
             .Where(c => c.Id == conversationId)
-            .Select(c => (ConversationType?)c.Type)
+            .Select(c => new {
+                c.Type,
+                ServerId = c.Channel != null ? (Guid?)c.Channel.CommunityServer.Id : null,
+                IsParticipant = c.Participants.Any(p => p.UserId == userId)
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (conversationType is null) {
+        if (conversationData is null) {
             throw new GraphQLException(Errors.ResourceNotFound("Conversation").ToHotChocolateError());
         }
         
-        IQueryable<ApplicationUser> query = conversationType.Value == ConversationType.Server
+        bool hasAccess = conversationData.Type switch {
+            ConversationType.Server => conversationData.ServerId.HasValue && 
+               await serverMemberReadRepository
+                   .AsQueryable()
+                   .AnyAsync(
+                       sm => sm.CommunityServerId == conversationData.ServerId.Value && sm.UserId == userId, 
+                       cancellationToken
+                    ),
+            
+            ConversationType.Direct => conversationData.IsParticipant,
+            
+            _ => false,
+        };
+        
+        if (!hasAccess) {
+            throw new GraphQLException(Errors.ResourceNotFound("Conversation").ToHotChocolateError());
+        }
+        
+        IQueryable<ApplicationUser> query = conversationData.Type == ConversationType.Server
             ? conversationRepository
                 .AsQueryable()
+                .TagWith("E")
                 .Where(c => c.Id == conversationId)
                 .SelectMany(c => c.Channel!.CommunityServer.Members.Select(m => m.User))
             : conversationRepository
