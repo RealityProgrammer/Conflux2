@@ -44,7 +44,6 @@ internal sealed class DirectConversationProvider(
         }
         
         Conversation conversation = new() {
-            Id = Guid.NewGuid(),
             Type = ConversationType.Direct,
             Participants = [
                 new() { UserId = user1Id },

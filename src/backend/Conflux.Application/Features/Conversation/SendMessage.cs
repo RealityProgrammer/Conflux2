@@ -164,7 +164,7 @@ public sealed partial class SendMessageHandler(
         Guid conversationId, 
         Guid messageId,
         string messageBody, 
-        Guid senderId
+        Guid messageSenderId
     ) {
         var document = Markdown.Parse(messageBody);
         var userIds = new HashSet<Guid>();
@@ -173,21 +173,14 @@ public sealed partial class SendMessageHandler(
             TraverseObject(block, userIds);
         }
 
-        userIds.Remove(senderId);   // prevent self-pinging
+        userIds.Remove(messageSenderId);   // prevent self-pinging
 
         if (userIds.Count > 0) {
             MentionSource? mentionSource = null;
 
             switch (conversationType) {
                 case ConversationType.Direct:
-                    var peerId = await conversationRepository
-                        .AsQueryable()
-                        .Where(c => c.Id == conversationId)
-                        .Include(c => c.FriendRequest)
-                        .Select(c => c.FriendRequest!.SenderUserId == senderId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId)
-                        .SingleAsync();
-
-                    mentionSource = new MentionFromDm(conversationId, messageId, peerId);
+                    mentionSource = new MentionFromDm(conversationId, messageId, messageSenderId);
                     break;
                 
                 case ConversationType.Server:

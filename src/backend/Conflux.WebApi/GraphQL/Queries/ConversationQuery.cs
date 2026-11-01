@@ -1,6 +1,8 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using Conflux.WebApi.Helpers;
 using GreenDonut.Data;
@@ -16,15 +18,13 @@ namespace Conflux.WebApi.GraphQL.Queries;
 public static partial class ConversationQuery {
     [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
     public static async Task<PageConnection<Conversation>> GetDirectConversations(
-        ClaimsPrincipal claimsPrincipal,
         QueryContext<Conversation> queryContext,
         PagingArguments pagingArgs,
+        [Service] ICurrentUserService currentUserService,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
     ) {
-        var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+        if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
@@ -32,6 +32,39 @@ public static partial class ConversationQuery {
             .Where(c => c.Type == ConversationType.Direct)
             .Where(c => c.Participants.Any(p => p.UserId == userId))
             .With(queryContext)
+            .ToPageAsync(pagingArgs, cancellationToken);
+    }
+
+    public static async Task<PageConnection<ApplicationUser>> GetMentionableUsers(
+        Guid conversationId,
+        QueryContext<ApplicationUser> queryContext,
+        PagingArguments pagingArgs,
+        [Service] IConversationRepository conversationRepository,
+        CancellationToken cancellationToken
+    ) {
+        var conversationType = await conversationRepository
+            .AsQueryable()
+            .Where(c => c.Id == conversationId)
+            .Select(c => (ConversationType?)c.Type)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (conversationType is null) {
+            throw new GraphQLException(Errors.ResourceNotFound("Conversation").ToHotChocolateError());
+        }
+        
+        IQueryable<ApplicationUser> query = conversationType.Value == ConversationType.Server
+            ? conversationRepository
+                .AsQueryable()
+                .Where(c => c.Id == conversationId)
+                .SelectMany(c => c.Channel!.CommunityServer.Members.Select(m => m.User))
+            : conversationRepository
+                .AsQueryable()
+                .Where(c => c.Id == conversationId)
+                .SelectMany(c => c.Participants.Select(p => p.User));
+        
+        return await query
+            .With(queryContext)
+            .OrderBy(u => u.UserName)
             .ToPageAsync(pagingArgs, cancellationToken);
     }
 }

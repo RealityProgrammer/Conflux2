@@ -1,6 +1,7 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Conflux.WebApi.Helpers;
 using GreenDonut.Data;
@@ -29,7 +30,7 @@ public static partial class NotificationQuery {
             .FirstOrDefaultAsync(cancellationToken);
     }
     
-    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering]
+    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50, IncludeTotalCount = true), UseFiltering]
     public static async Task<PageConnection<Notification>> GetNotifications(
         QueryContext<Notification> queryContext,
         PagingArguments pagingArgs,

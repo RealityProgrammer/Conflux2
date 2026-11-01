@@ -2,7 +2,7 @@ using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Repositories;
 
-namespace Conflux.Application.Features.Users;
+namespace Conflux.Application.Features.Users.Notifications;
 
 public sealed class MarkMentionNotificationsAsRead : ICommand<Result>;
 

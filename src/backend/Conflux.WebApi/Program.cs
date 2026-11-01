@@ -35,7 +35,6 @@ using Conflux.WebApi.Schema;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
-using Conflux.WebApi.Workers;
 using FileSignatures;
 using FileSignatures.Formats;
 using FluentValidation;
