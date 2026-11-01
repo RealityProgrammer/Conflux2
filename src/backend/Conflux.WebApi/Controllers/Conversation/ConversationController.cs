@@ -15,14 +15,11 @@ using TimelineMessageDto = Conflux.Domain.Dto.TimelineMessageDto;
 
 namespace Conflux.WebApi.Controllers.Conversation;
 
-[ApiController]
-[Route("api/conversations")]
-[Authorize]
+[ApiController, Route("api/conversations/{conversationId:guid}"), Authorize]
 public sealed class ConversationController(
     IMediator mediator
 ) : ControllerBase {
-    [HttpPost("{conversationId:guid}/messages")]
-    [Idempotent(20)]
+    [HttpPost("messages"), Idempotent(30), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> SendMessage(
         Guid conversationId,
         [FromForm] SendMessageRequest request,
@@ -81,7 +78,7 @@ public sealed class ConversationController(
         }
     }
 
-    [HttpPatch("{conversationId:guid}/messages/{messageId:guid}")]
+    [HttpPatch("messages/{messageId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse>> EditMessage(
         Guid conversationId,
         Guid messageId,
@@ -103,7 +100,7 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpDelete("{conversationId:guid}/messages/{messageId:guid}")]
+    [HttpDelete("messages/{messageId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult> DeleteMessage(Guid conversationId, Guid messageId) {
         Result result = await mediator.Send(new DeleteMessageCommand(conversationId, messageId));
 
@@ -120,7 +117,7 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpPost("{conversationId:guid}/messages/read")]
+    [HttpPost("messages/read")]
     public async Task<ActionResult<ApiResponse<TimelineMessagePage>>> GetMessages(
         Guid conversationId,
         [FromBody] ReadMessageRequest request,
@@ -144,8 +141,7 @@ public sealed class ConversationController(
         };
     }
 
-    [HttpPost("{conversationId:guid}/messages/{messageId:guid}/pin")]
-    [Idempotent(15)]
+    [HttpPost("messages/{messageId:guid}/pin"), Idempotent(5), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> PinMessage(
         Guid conversationId,
         Guid messageId
@@ -165,8 +161,7 @@ public sealed class ConversationController(
         };
     }
     
-    [HttpPost("{conversationId:guid}/messages/{messageId:guid}/unpin")]
-    [Idempotent(15)]
+    [HttpPost("messages/{messageId:guid}/unpin"), Idempotent(5), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> UnpinMessage(
         Guid conversationId,
         Guid messageId

@@ -2,6 +2,7 @@ using Conflux.Application.Dto;
 using Conflux.Application.Features.Servers;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Server;
 
-[Authorize, ApiController, Route("api/communities/{serverId:guid}/emojis")]
+[ApiController, Route("api/communities/{serverId:guid}/emojis"), Authorize]
 public sealed class ServerEmojiController(
     ISender sender
 ) : ControllerBase {
@@ -34,7 +35,7 @@ public sealed class ServerEmojiController(
         };
     }
     
-    [HttpPost]
+    [HttpPost, Idempotent(30), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<EmojiDto>>> Create(Guid serverId, [FromForm] CreateEmojiRequest request) {
         await using var stream = request.Image.OpenReadStream();
         var result = await sender.Send(new CreateEmojiCommand(serverId, request.ShortCode, stream));

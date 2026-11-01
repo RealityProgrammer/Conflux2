@@ -9,9 +9,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Conversation;
 
-[ApiController]
-[Route("api/conversations/direct")]
-[Authorize]
+[ApiController, Route("api/conversations/direct"), Authorize]
 public sealed class DirectConversationController(
     ISender sender
 ) : ControllerBase {

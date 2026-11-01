@@ -9,9 +9,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
-[ApiController]
-[Route("api/users")]
-[Authorize]
+[ApiController, Route("api/users"), Authorize]
 public sealed class UserController(
     IUserMediaService userMediaService,
     ISender sender

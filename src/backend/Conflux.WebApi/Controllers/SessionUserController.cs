@@ -16,9 +16,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
-[ApiController]
-[Route("api/users/me")]
-[Authorize]
+[ApiController, Route("api/users/me"), Authorize]
 public sealed class SessionUserController(
     ISender sender
 ) : ControllerBase {

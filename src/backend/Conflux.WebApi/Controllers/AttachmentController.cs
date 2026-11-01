@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conflux.WebApi.Controllers;
 
-[ApiController]
-[Route("api/attachments/{attachmentId:guid}")]
-[Authorize]
+[ApiController, Route("api/attachments/{attachmentId:guid}"), Authorize]
 public sealed class AttachmentController(
     IMessageMediaService messageMediaService
 ) : ControllerBase {

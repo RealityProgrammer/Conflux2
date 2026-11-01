@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conflux.WebApi.Controllers;
 
-[Authorize, ApiController, Route("api/emojis")]
+[ApiController, Route("api/emojis"), Authorize]
 public sealed class EmojiController(
     IEmojiMediaService emojiMediaService
 ) : ControllerBase {

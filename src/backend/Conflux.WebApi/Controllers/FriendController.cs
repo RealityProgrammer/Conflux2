@@ -10,9 +10,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
-[ApiController]
-[Route("api/friend")]
-[Authorize]
+[ApiController, Route("api/friend"), Authorize]
 public sealed class FriendController(
     IMediator mediator
 ) : ControllerBase {

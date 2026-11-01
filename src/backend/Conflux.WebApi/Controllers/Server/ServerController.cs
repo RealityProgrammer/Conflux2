@@ -15,15 +15,12 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Server;
 
-[ApiController]
-[Route("api/communities")]
-[Authorize]
+[ApiController, Route("api/communities"), Authorize]
 public sealed class ServerController(
     IMediator mediator,
     IServerMediaService serverMediaService
 ) : ControllerBase {
-    [HttpPost]
-    [Idempotent(360)]
+    [HttpPost, Idempotent(120), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<ServerIdentityDto>>> CreateCommunityServer([FromForm] CreateServerRequest serverRequest) {
         await using var stream = serverRequest.Avatar?.OpenReadStream();
         var result = await mediator.Send(new CreateServerCommand(serverRequest.Name, stream));

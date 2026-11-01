@@ -4,19 +4,18 @@ using Conflux.Domain;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Mediator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Server;
 
-[ApiController]
-[Route("api/communities/{serverId:guid}/roles")]
+[ApiController, Route("api/communities/{serverId:guid}/roles"), Authorize]
 public sealed class RoleController(
     ISender sender
 ) : ControllerBase {
-    [HttpPost]
-    [Idempotent(30)]
+    [HttpPost, Idempotent(30), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<ServerRoleDto>>> CreateRole(
         Guid serverId, 
         [FromBody] CreateRoleRequest request
@@ -34,7 +33,7 @@ public sealed class RoleController(
         };
     }
 
-    [HttpPatch("{roleId:guid}")]
+    [HttpPatch("{roleId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<ServerRoleDto>>> UpdateRole(
         Guid serverId, 
         Guid roleId, 
@@ -59,7 +58,7 @@ public sealed class RoleController(
         };
     }
 
-    [HttpDelete("{roleId:guid}")]
+    [HttpDelete("{roleId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse>> DeleteRole(Guid serverId, Guid roleId) {
         var result = await sender.Send(new DeleteServerRoleCommand(serverId, roleId));
         

@@ -15,7 +15,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
-[Authorize, ApiController, Route("api/auth")]
+[ApiController, Route("api/auth"), Authorize]
 public sealed class AuthenticateController(
     ISender sender,
     IUserAgentParser userAgentParser,

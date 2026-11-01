@@ -3,18 +3,17 @@ using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.WebApi.Attributes;
 using Mediator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.Controllers.Server;
 
-[ApiController]
-[Route("api/communities/{serverId:guid}/channel-categories")]
+[ApiController, Route("api/communities/{serverId:guid}/channel-categories"), Authorize]
 public sealed class ChannelCategoryController(
     ISender sender
 ) : ControllerBase {
-    [HttpPost]
-    [Idempotent(15)]
+    [HttpPost, Idempotent(15), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<ChannelCategoryIdentityDto>>> CreateChannelCategory(
         Guid serverId, 
         [FromBody] CreateChannelCategoryRequest request
@@ -33,7 +32,7 @@ public sealed class ChannelCategoryController(
         };
     }
     
-    [HttpDelete("{categoryId:guid}")]
+    [HttpDelete("{categoryId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult> DeleteChannelCategory(Guid serverId, Guid categoryId) {
         var result = await sender.Send(new DeleteServerChannelCategoryCommand(serverId, categoryId));
         
