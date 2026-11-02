@@ -1,0 +1,21 @@
+query GetMentionableUsers($conversationId: UUID!, $nameFilter: String, $after: String) {
+    mentionableUsers(
+        conversationId: $conversationId
+        where: {
+            displayName: { ilike: $nameFilter }
+        }
+        after: $after
+    ) {
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+
+        nodes {
+            id
+            displayName
+            userName
+            avatarVersion
+        }
+    }
+}

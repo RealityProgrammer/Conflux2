@@ -182,6 +182,9 @@ export default function ChatInput({disabled}: ChatInputProps) {
             <Suggestion.Mention
               className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
               searchTerm={suggestion.searchTerm ?? ""}
+              onSelect={(user) => {
+                textboxEditorRef.current?.insertMentionNode({id: user.id, name: user.displayName ?? "???"}, suggestion.startColonIndex, cursorPosition);
+              }}
             />
           ) : null}
         </>

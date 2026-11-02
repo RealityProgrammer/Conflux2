@@ -148,9 +148,10 @@ type Query
     "Returns the elements in the list that come before the specified cursor."
     before: String
     conversationId: UUID!
+    where: ApplicationUserFilterInput @cost(weight: "10")
   ): ApplicationUserConnection!
     @listSize(
-      assumedSize: 100
+      assumedSize: 50
       slicingArguments: ["first", "last"]
       slicingArgumentDefaultValue: 20
       sizedFields: ["edges", "nodes"]

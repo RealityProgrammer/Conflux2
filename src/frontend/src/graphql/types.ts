@@ -35,6 +35,27 @@ export type ApplicationUser = {
   userName?: Maybe<Scalars['String']['output']>;
 };
 
+/** A connection to a list of items. */
+export type ApplicationUserConnection = {
+  __typename?: 'ApplicationUserConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<ApplicationUserEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<ApplicationUser>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type ApplicationUserEdge = {
+  __typename?: 'ApplicationUserEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: ApplicationUser;
+};
+
 export type ApplicationUserFilterInput = {
   accessFailedCount?: InputMaybe<IntOperationFilterInput>;
   accountDeletions?: InputMaybe<ListFilterInputTypeOfUserAccountDeletionFilterInput>;
@@ -58,6 +79,7 @@ export type ApplicationUserFilterInput = {
   manualPresenceStatus?: InputMaybe<PresenceStatusOperationFilterInput>;
   normalizedEmail?: InputMaybe<StringOperationFilterInput>;
   normalizedUserName?: InputMaybe<StringOperationFilterInput>;
+  notifications?: InputMaybe<ListFilterInputTypeOfNotificationFilterInput>;
   or?: InputMaybe<Array<ApplicationUserFilterInput>>;
   passwordHash?: InputMaybe<StringOperationFilterInput>;
   phoneNumber?: InputMaybe<StringOperationFilterInput>;
@@ -600,6 +622,16 @@ export type FriendRequestStatusOperationFilterInput = {
   nin?: InputMaybe<Array<FriendRequestStatus>>;
 };
 
+export type INotificationPayload = {
+  typeName: Scalars['String']['output'];
+};
+
+export type INotificationPayloadFilterInput = {
+  and?: InputMaybe<Array<INotificationPayloadFilterInput>>;
+  or?: InputMaybe<Array<INotificationPayloadFilterInput>>;
+  typeName?: InputMaybe<StringOperationFilterInput>;
+};
+
 export type IntOperationFilterInput = {
   eq?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
@@ -736,6 +768,13 @@ export type ListFilterInputTypeOfMessageFilterInput = {
   some?: InputMaybe<MessageFilterInput>;
 };
 
+export type ListFilterInputTypeOfNotificationFilterInput = {
+  all?: InputMaybe<NotificationFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<NotificationFilterInput>;
+  some?: InputMaybe<NotificationFilterInput>;
+};
+
 export type ListFilterInputTypeOfRolePermissionFilterInput = {
   all?: InputMaybe<RolePermissionFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -806,6 +845,18 @@ export type MembershipStatusOperationFilterInput = {
   in?: InputMaybe<Array<MembershipStatus>>;
   neq?: InputMaybe<MembershipStatus>;
   nin?: InputMaybe<Array<MembershipStatus>>;
+};
+
+export type MentionNotificationPayload = INotificationPayload & {
+  __typename?: 'MentionNotificationPayload';
+  source: MentionSource;
+  typeName: Scalars['String']['output'];
+};
+
+export type MentionSource = {
+  __typename?: 'MentionSource';
+  conversationId: Scalars['UUID']['output'];
+  messageId: Scalars['UUID']['output'];
 };
 
 export type MessageAttachmentDto = {
@@ -896,6 +947,59 @@ export type MutationUpdateManualPresenceStatusArgs = {
 
 export type MutationWarnCommunityServerMemberArgs = {
   input: WarnCommunityServerMemberInput;
+};
+
+export type Notification = {
+  __typename?: 'Notification';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['UUID']['output'];
+  isRead: Scalars['Boolean']['output'];
+  payload?: Maybe<INotificationPayload>;
+  type: NotificationType;
+};
+
+/** A connection to a list of items. */
+export type NotificationConnection = {
+  __typename?: 'NotificationConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<NotificationEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<Notification>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type NotificationEdge = {
+  __typename?: 'NotificationEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: Notification;
+};
+
+export type NotificationFilterInput = {
+  and?: InputMaybe<Array<NotificationFilterInput>>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  isRead?: InputMaybe<BooleanOperationFilterInput>;
+  or?: InputMaybe<Array<NotificationFilterInput>>;
+  payload?: InputMaybe<INotificationPayloadFilterInput>;
+  type?: InputMaybe<NotificationTypeOperationFilterInput>;
+  user?: InputMaybe<ApplicationUserFilterInput>;
+  userId?: InputMaybe<UuidOperationFilterInput>;
+};
+
+export enum NotificationType {
+  Mention = 'Mention'
+}
+
+export type NotificationTypeOperationFilterInput = {
+  eq?: InputMaybe<NotificationType>;
+  in?: InputMaybe<Array<NotificationType>>;
+  neq?: InputMaybe<NotificationType>;
+  nin?: InputMaybe<Array<NotificationType>>;
 };
 
 /** A cursor that points to a specific page. */
@@ -1010,6 +1114,9 @@ export type Query = {
   friends: FriendRequestConnection;
   invitation?: Maybe<Invitation>;
   joinedServers: CommunityServerConnection;
+  mentionableUsers: ApplicationUserConnection;
+  notification?: Maybe<Notification>;
+  notifications: NotificationConnection;
   pinnedMessages: PinnedMessageDtoConnection;
   serverMemberSearch: CommunityServerMemberConnection;
   serverMemberSearchForAdmin: CommunityServerMemberConnection;
@@ -1109,6 +1216,30 @@ export type QueryJoinedServersArgs = {
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryMentionableUsersArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  conversationId: Scalars['UUID']['input'];
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<ApplicationUserFilterInput>;
+};
+
+
+export type QueryNotificationArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
+export type QueryNotificationsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<NotificationFilterInput>;
 };
 
 

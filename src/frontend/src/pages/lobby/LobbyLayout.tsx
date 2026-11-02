@@ -34,6 +34,7 @@ import {requestNotificationPermission} from "../../permissions.ts";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 import {playMentionAudio} from "../../sfx.ts";
 import {useActiveConversationStore} from "../../store/useActiveConversationStore.ts";
+import {notificationService} from "../../api/notificationService.ts";
 
 function Sidebar() {
   return (
@@ -438,11 +439,36 @@ export default function LobbyLayout() {
   useDocumentTitle("Conflux - Lobby");
 
   const activeConversationId = useActiveConversationStore((state) => state.activeConversationId);
+  const setInitialMentions = useMentionCountStore((state) => state.setInitialMentions);
   const incrementServerMention = useMentionCountStore((state) => state.incrementServerMention);
   const incrementDmMention = useMentionCountStore((state) => state.incrementDmMention);
 
+  // request notification permission on start
   useEffect(() => {
     requestNotificationPermission();
+  }, []);
+
+  // fetch unread notification counts on start
+  useEffect(() => {
+    (async () => {
+      const response = await notificationService.getUnreadNotificationsCount();
+
+      if (response.success && response.data) {
+        const serverMentions: Record<string, Record<string, number>> = {};
+
+        for (const [serverId, channels] of Object.entries(response.data.servers)) {
+          const channelMentions: Record<string, number> = {};
+
+          for (const [channelId, value] of Object.entries(channels)) {
+            channelMentions[channelId] = value.mentionsCount;
+          }
+
+          serverMentions[serverId] = channelMentions;
+        }
+
+        setInitialMentions(serverMentions, response.data.dmMentionCounts);
+      }
+    })();
   }, []);
 
   useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {

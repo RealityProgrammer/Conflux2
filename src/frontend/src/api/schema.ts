@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/attachments/{attachmentId}": {
+    "/api/attachments/{attachmentId}/image": {
         parameters: {
             query?: never;
             header?: never;
@@ -13,9 +13,42 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: {
-                    download?: boolean;
+                query?: never;
+                header?: never;
+                path: {
+                    attachmentId: string;
                 };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{attachmentId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
                 header?: never;
                 path: {
                     attachmentId: string;
@@ -1336,6 +1369,80 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
+                        "application/json": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
+                        "text/json": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2844,6 +2951,10 @@ export interface components {
             data: null | components["schemas"]["TimelineMessagePage"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfUnreadNotificationCounts: {
+            data: null | components["schemas"]["UnreadNotificationCounts"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfUpdateProfileResult: {
             data: null | components["schemas"]["UpdateProfileResult"];
             error: components["schemas"]["Error"];
@@ -3083,6 +3194,10 @@ export interface components {
             /** Format: uuid */
             categoryId: null | string;
         };
+        ServerChannelNotificationCounts: {
+            /** Format: int32 */
+            mentionsCount: number;
+        };
         ServerDetailsDto: {
             /** Format: uuid */
             id: string;
@@ -3206,6 +3321,16 @@ export interface components {
             displayName: null | string;
             /** Format: int32 */
             avatarVersion?: null | number;
+        };
+        UnreadNotificationCounts: {
+            dmMentionCounts: {
+                [key: string]: number;
+            };
+            servers: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["ServerChannelNotificationCounts"];
+                };
+            };
         };
         UpdateProfileResult: {
             avatarVersion?: components["schemas"]["OptionalOfint"];

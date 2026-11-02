@@ -193,6 +193,7 @@ function DirectMessagesList() {
 
 function DmNameplate({dm}: {dm: NonNullable<GetDirectConversationsQuery["directConversations"]["nodes"]>[number]}) {
   const navigate = useNavigate();
+
   const mentionCount = useMentionCountStore((state) => state.dmMentions[dm.peerUser?.id!] || 0);
 
   return (

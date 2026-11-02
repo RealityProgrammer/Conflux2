@@ -47,6 +47,15 @@ export type GetJoinedCommunityServerQueryVariables = Exact<{
 
 export type GetJoinedCommunityServerQuery = { joinedServers: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, name: string, avatarVersion: number | null }> | null } };
 
+export type GetMentionableUsersQueryVariables = Exact<{
+  conversationId: string;
+  nameFilter?: string | null | undefined;
+  after?: string | null | undefined;
+}>;
+
+
+export type GetMentionableUsersQuery = { mentionableUsers: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, displayName: string | null, userName: string | null, avatarVersion: number | null }> | null } };
+
 export type GetPendingFriendRequestsQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
@@ -426,6 +435,69 @@ useInfiniteGetJoinedCommunityServerQuery.getKey = (variables?: GetJoinedCommunit
 
 
 useGetJoinedCommunityServerQuery.fetcher = (variables?: GetJoinedCommunityServerQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetJoinedCommunityServerQuery, GetJoinedCommunityServerQueryVariables>(GetJoinedCommunityServerDocument, variables, options);
+
+export const GetMentionableUsersDocument = new TypedDocumentString(`
+    query GetMentionableUsers($conversationId: UUID!, $nameFilter: String, $after: String) {
+  mentionableUsers(
+    conversationId: $conversationId
+    where: {displayName: {ilike: $nameFilter}}
+    after: $after
+  ) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      displayName
+      userName
+      avatarVersion
+    }
+  }
+}
+    `);
+
+export const useGetMentionableUsersQuery = <
+      TData = GetMentionableUsersQuery,
+      TError = unknown
+    >(
+      variables: GetMentionableUsersQueryVariables,
+      options?: Omit<UseQueryOptions<GetMentionableUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetMentionableUsersQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetMentionableUsersQuery, TError, TData>(
+      {
+    queryKey: ['GetMentionableUsers', variables],
+    queryFn: graphqlFetcher<GetMentionableUsersQuery, GetMentionableUsersQueryVariables>(GetMentionableUsersDocument, variables),
+    ...options
+  }
+    )};
+
+useGetMentionableUsersQuery.getKey = (variables: GetMentionableUsersQueryVariables) => ['GetMentionableUsers', variables];
+
+export const useInfiniteGetMentionableUsersQuery = <
+      TData = InfiniteData<GetMentionableUsersQuery>,
+      TError = unknown
+    >(
+      variables: GetMentionableUsersQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetMentionableUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetMentionableUsersQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetMentionableUsersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['GetMentionableUsers.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetMentionableUsersQuery, GetMentionableUsersQueryVariables>(GetMentionableUsersDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetMentionableUsersQuery.getKey = (variables: GetMentionableUsersQueryVariables) => ['GetMentionableUsers.infinite', variables];
+
+
+useGetMentionableUsersQuery.fetcher = (variables: GetMentionableUsersQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetMentionableUsersQuery, GetMentionableUsersQueryVariables>(GetMentionableUsersDocument, variables, options);
 
 export const GetPendingFriendRequestsDocument = new TypedDocumentString(`
     query GetPendingFriendRequests($after: String) {

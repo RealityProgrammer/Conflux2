@@ -5,8 +5,12 @@ import {Separator} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 import useUserEmojis from "../../hooks/useUserEmojis.ts";
 import Spinner from "../Spinner.tsx";
-import type {ServerEmojiGroupDto} from "../../api/types.ts";
+import type {ServerEmojiGroupDto, UserIdentityProfileDto} from "../../api/types.ts";
 import {EmojiGroup} from "./EmojiGroup.tsx";
+import {useInfiniteGetMentionableUsersQuery} from "../../graphql/infiniteQueries.ts";
+import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import {UserNameplate} from "../UserNameplate.tsx";
+import {useUserIdentityStore} from "../../store/useUserIdentityStore.tsx";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t" | "m") => void;
@@ -144,24 +148,82 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
 interface MentionProps {
   className?: string;
   searchTerm: string;
+  onSelect?: (userIdentity: UserIdentityProfileDto) => void;
 }
 
-function MentionMode({className, searchTerm = ""}: MentionProps) {
+function MentionMode({className, searchTerm = "", onSelect}: MentionProps) {
+  const { conversationId } = useChatContainerContext();
+  const setUsers = useUserIdentityStore((state) => state.setUsers);
+
+  const { data, isLoading, isError, isEnabled } = useInfiniteGetMentionableUsersQuery(
+    { conversationId, nameFilter: searchTerm },
+    {
+      enabled: searchTerm.length >= 3,
+      refetchOnWindowFocus: false,
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage) => {
+        const pageInfo = lastPage?.mentionableUsers?.pageInfo;
+
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
+        }
+
+        return undefined;
+      },
+    }
+  );
+
+  const allElements = data?.pages.flatMap((page) => page?.mentionableUsers.nodes ?? []) ?? [];
+  const [listHeight, setListHeight] = useState(150);
+
+  const commonClassName = `bg-gray-725 ring-2 ring-gray-600 rounded-lg flex flex-col justify-center items-center gap-1 text-sm ${className}`;
+
   return (
-    <div
-      className={`p-1 max-h-96 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 text-sm ${className}`}
-    >
-      {searchTerm.length >= 3 ? (
-        <div>
-          Display users here
+    <>
+      {!isEnabled ? (
+        <div className={`text-center py-3 ${commonClassName}`}>
+          To search user, type at least 3 characters in their name.
+        </div>
+      ) : isLoading ? (
+        <div className={`max-h-80 text-center p-1 ${commonClassName}`}>
+          <>
+            {Array.from({length: 6}, (_, i) => (
+              <UserNameplate.Skeleton key={i} className="p-1"/>
+            ))}
+          </>
+        </div>
+      ) : isError || !data ? (
+        <div className={`py-3 ${commonClassName}`}>
+          <BsExclamationTriangle className="size-8 fill-white"/>
+          <p className="text-center select-none">Failed to load mentionable users.</p>
         </div>
       ) : (
-        <div className="p-2 flex flex-row justify-center items-center">
-          To search user, type at least 3 characters of their name.
+        <div className={`p-1 ${commonClassName}`}>
+          <Virtuoso
+            className="w-full"
+            style={{
+              height: Math.min(listHeight, 320),
+            }}
+            totalListHeightChanged={setListHeight}
+            data={allElements}
+            computeItemKey={(index) => allElements[index].id}
+            itemContent={(_, item) => (
+              <UserNameplate.Root
+                className="p-1.5 hover-highlight rounded-md cursor-pointer"
+                userId={item.id}
+                avatarVersion={item.avatarVersion}
+                displayName={item.displayName ?? "???"}
+                onClick={() => {
+                  setUsers([item]);
+                  onSelect?.(item);
+                }}
+              />
+            )}
+          />
         </div>
       )}
-    </div>
-  )
+    </>
+  );
 }
 
 export const Suggestion = {

@@ -33,6 +33,7 @@ public static partial class ConversationQuery {
             .ToPageAsync(pagingArgs, cancellationToken);
     }
 
+    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering]
     public static async Task<PageConnection<ApplicationUser>> GetMentionableUsers(
         Guid conversationId,
         QueryContext<ApplicationUser> queryContext,

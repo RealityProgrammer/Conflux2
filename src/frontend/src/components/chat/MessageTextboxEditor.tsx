@@ -15,10 +15,10 @@ import {
   type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
-import {HistoryExtension} from '@lexical/history';
-import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {HistoryExtension} from "@lexical/history";
+import {ContentEditable} from "@lexical/react/LexicalContentEditable";
+import {OnChangePlugin} from "@lexical/react/LexicalOnChangePlugin";
+import {useLexicalComposerContext} from "@lexical/react/LexicalComposerContext";
 import {useEffect, type Ref, useRef, useImperativeHandle, type RefObject} from "react";
 import {
   KEY_DOWN_COMMAND,
@@ -31,9 +31,9 @@ import {
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {$createTimestampNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
-import { ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList } from '@lexical/list';
-import { HeadingNode, QuoteNode, $isQuoteNode } from '@lexical/rich-text';
-import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension } from '@lexical/code-core';
+import { ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList } from "@lexical/list";
+import { HeadingNode, QuoteNode, $isQuoteNode } from "@lexical/rich-text";
+import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension } from "@lexical/code-core";
 import {
   registerMarkdownShortcuts,
   $convertToMarkdownString,
@@ -44,14 +44,14 @@ import {
   ORDERED_LIST,
   INLINE_CODE,
   CODE,
-} from '@lexical/markdown';
+} from "@lexical/markdown";
 import {
   LinkNode,
   AutoLinkNode,
   registerAutoLink,
   type LinkMatcher,
   createLinkMatcherWithRegExp
-} from '@lexical/link';
+} from "@lexical/link";
 import {$createMarkdownMarkerNode, $isMarkdownMarkerNode, MarkdownMarkerNode} from "./nodes/MarkdownMarkerNode.tsx";
 import {$createMentionNode, MentionDecoratorNode} from "./nodes/MentionDecoratorNode.tsx";
 
@@ -66,6 +66,7 @@ export interface MessageTextboxEditorRef {
   focus: () => void;
   insertText: (text: string, startOffset: number, endOffset: number) => void;
   insertEmojiNode: (emojiId: string, startOffset: number, endOffset: number) => void;
+  insertMentionNode: (user: { id: string; name: string }, startOffset: number, endOffset: number) => void;
   convertToMarkdownString: () => string;
   insertAtLastSelection: (content: string | (() => LexicalNode)) => void;
 }
@@ -83,13 +84,13 @@ const URL_MATCHER = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]
 const LINK_MATCHERS: LinkMatcher[] = [
   createLinkMatcherWithRegExp(URL_MATCHER, (text) => {
     // prepend https:// if missing from a domain link like "google.com"
-    return text.startsWith('http') ? text : `https://${text}`;
+    return text.startsWith("http") ? text : `https://${text}`;
   }),
 ];
 
 export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
   return editor.registerUpdateListener(({ editorState, dirtyElements, tags }: UpdateListenerPayload) => {
-    if (tags.has('markdown-highlight')) {
+    if (tags.has("markdown-highlight")) {
       return;
     }
 
@@ -147,7 +148,7 @@ export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
           }
         }
       }
-    }, { tag: 'markdown-highlight' });
+    }, { tag: "markdown-highlight" });
   });
 }
 
@@ -210,8 +211,8 @@ function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, 
   }
 
   if (anchorNode && focusNode) {
-    selection.anchor.set(anchorNode.__key, anchorLocal, 'text');
-    selection.focus.set(focusNode.__key, focusLocal, 'text');
+    selection.anchor.set(anchorNode.__key, anchorLocal, "text");
+    selection.focus.set(focusNode.__key, focusLocal, "text");
   }
 }
 
@@ -223,12 +224,12 @@ function processParagraph(paragraph: ParagraphNode) {
       const normalTextNode = new TextNode(child.getTextContent());
       child.replace(normalTextNode);
     } else if ($isTextNode(child)) {
-      child.setStyle('');
-      if (child.hasFormat('bold')) child.toggleFormat('bold');
-      if (child.hasFormat('italic')) child.toggleFormat('italic');
-      if (child.hasFormat('strikethrough')) child.toggleFormat('strikethrough');
-      if (child.hasFormat('underline')) child.toggleFormat('underline');
-      if (child.hasFormat('code')) child.toggleFormat('code');
+      child.setStyle("");
+      if (child.hasFormat("bold")) child.toggleFormat("bold");
+      if (child.hasFormat("italic")) child.toggleFormat("italic");
+      if (child.hasFormat("strikethrough")) child.toggleFormat("strikethrough");
+      if (child.hasFormat("underline")) child.toggleFormat("underline");
+      if (child.hasFormat("code")) child.toggleFormat("code");
     }
   });
 
@@ -252,7 +253,7 @@ function processParagraph(paragraph: ParagraphNode) {
 
   // begin parsing
   const fullText = paragraph.getTextContent();
-  if (fullText.trim() === '') {
+  if (fullText.trim() === "") {
     return;
   }
 
@@ -270,28 +271,28 @@ function processParagraph(paragraph: ParagraphNode) {
     const marker = match[1];
     const innerText = match[2];
 
-    if (!innerText || innerText.trim() === '') {
+    if (!innerText || innerText.trim() === "") {
       continue;
     }
 
     const fullMatch = match[0];
     const index = match.index!;
 
-    if (index > 0 && fullText[index - 1] === '\\') {
+    if (index > 0 && fullText[index - 1] === "\\") {
       continue;
     }
 
-    const formatsToApply: ('bold' | 'italic' | 'strikethrough' | 'underline')[] = [];
-    if (marker === '*' || marker === '_') {
-      formatsToApply.push('italic');
-    } else if (marker === '**') {
-      formatsToApply.push('bold');
-    } else if (marker === '__') {
-      formatsToApply.push('underline');
-    } else if (marker === '~~') {
-      formatsToApply.push('strikethrough');
-    } else if (marker === '***' || marker === '___') {
-      formatsToApply.push('bold', 'italic');
+    const formatsToApply: ("bold" | "italic" | "strikethrough" | "underline")[] = [];
+    if (marker === "*" || marker === "_") {
+      formatsToApply.push("italic");
+    } else if (marker === "**") {
+      formatsToApply.push("bold");
+    } else if (marker === "__") {
+      formatsToApply.push("underline");
+    } else if (marker === "~~") {
+      formatsToApply.push("strikethrough");
+    } else if (marker === "***" || marker === "___") {
+      formatsToApply.push("bold", "italic");
     }
 
     // locate the target node covering the match index
@@ -369,7 +370,7 @@ const CHAT_MARKDOWN_TRANSFORMERS = [
 ];
 
 export const MarkdownShortcutsExtension = defineExtension({
-  name: 'MarkdownShortcutsExtension',
+  name: "MarkdownShortcutsExtension",
   nodes: () => [
     HeadingNode,
     QuoteNode,
@@ -389,14 +390,14 @@ export const MarkdownShortcutsExtension = defineExtension({
 });
 
 export const MarkdownSyntaxExtension = defineExtension({
-  name: 'MarkdownSyntaxExtension',
+  name: "MarkdownSyntaxExtension",
   register(editor) {
     return registerMarkdownSyntaxHighlighter(editor);
   },
 });
 
 export const CustomTransformExtension = defineExtension({
-  name: 'CustomTransformExtension',
+  name: "CustomTransformExtension",
   nodes: () => [EmojiDecoratorNode, TimestampDecoratorNode, MentionDecoratorNode],
   register(editor) {
     return editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
@@ -408,7 +409,7 @@ export const CustomTransformExtension = defineExtension({
       const codeFenceMatch = text.match(/(?:^|\n)```([\w-]*)\s$/);
       if (codeFenceMatch) {
         const fullMatch = codeFenceMatch[0];
-        const language = codeFenceMatch[1] || '';
+        const language = codeFenceMatch[1] || "";
         const parent = textNode.getParent();
 
         if (parent) {
@@ -502,7 +503,7 @@ export const CustomTransformExtension = defineExtension({
 });
 
 export const LinkExtension = defineExtension({
-  name: 'LinkExtension',
+  name: "LinkExtension",
   nodes: () => [LinkNode, AutoLinkNode],
   register(editor) {
     return mergeRegister(
@@ -545,7 +546,7 @@ const lexicalExtensions = defineExtension({
       listitemChecked: "message-li-checked",
       listitemUnchecked: "message-li-unchecked",
       nested: {
-        listitem: 'list-none',
+        listitem: "list-none",
       },
     },
     text: {
@@ -602,7 +603,19 @@ export default function MessageTextboxEditor({
         if ($isRangeSelection(selection)) {
           const emojiNode = $createEmojiNode(emojiId);
           selection.insertNodes([emojiNode]);
-          emojiNode.insertAfter($createTextNode(' '));
+          emojiNode.insertAfter($createTextNode(" "));
+        }
+      });
+    },
+    insertMentionNode: (user: { id: string; name: string }, startOffset: number, endOffset: number) => {
+      editorRef.current?.update(() => {
+        selectRangeByGlobalOffsets(startOffset, endOffset);
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          const mentionNode = $createMentionNode(user.id, user.name);
+          selection.insertNodes([mentionNode]);
+          mentionNode.insertAfter($createTextNode(" "));
         }
       });
     },
@@ -621,11 +634,11 @@ export default function MessageTextboxEditor({
           if (node && $isTextNode(node)) {
             const selection = $createRangeSelection();
 
-            selection.anchor.set(node.__key, saved.offset, 'text');
-            selection.focus.set(node.__key, saved.offset, 'text');
+            selection.anchor.set(node.__key, saved.offset, "text");
+            selection.focus.set(node.__key, saved.offset, "text");
             $setSelection(selection);
 
-            if (typeof content === 'string') {
+            if (typeof content === "string") {
               selection.insertText(content);
             } else {
               selection.insertNodes([content()]);
@@ -637,7 +650,7 @@ export default function MessageTextboxEditor({
         editorRef.current?.focus();
         const fallbackSelection = $getSelection();
         if ($isRangeSelection(fallbackSelection)) {
-          if (typeof content === 'string') {
+          if (typeof content === "string") {
             fallbackSelection.insertText(content);
           } else {
             fallbackSelection.insertNodes([content()]);
@@ -917,7 +930,7 @@ function TextArea({
           return;
         }
 
-        const mentionMatch = textBeforeCursor.match(/:m(.+)$/);
+        const mentionMatch = textBeforeCursor.match(/:m(.*)$/);
         if (mentionMatch) {
           const localColonIdx = mentionMatch.index!;
           onSuggestionChange({
@@ -1059,8 +1072,8 @@ function getGlobalOffsetForNodeOffset(targetNode: TextNode, targetOffset: number
 function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
   const root = $getRoot();
   let currentLength = 0;
-  let startPoint: { node: LexicalNode; offset: number; type: 'text' | 'element' } | null = null;
-  let endPoint: { node: LexicalNode; offset: number; type: 'text' | 'element' } | null = null;
+  let startPoint: { node: LexicalNode; offset: number; type: "text" | "element" } | null = null;
+  let endPoint: { node: LexicalNode; offset: number; type: "text" | "element" } | null = null;
 
   function traverse(node: LexicalNode) {
     if (startPoint && endPoint) return;
@@ -1076,10 +1089,10 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
 
       if ($isTextNode(node)) {
         if (!startPoint && currentLength + nodeLength >= startOffset) {
-          startPoint = { node, offset: startOffset - currentLength, type: 'text' };
+          startPoint = { node, offset: startOffset - currentLength, type: "text" };
         }
         if (!endPoint && currentLength + nodeLength >= endOffset) {
-          endPoint = { node, offset: endOffset - currentLength, type: 'text' };
+          endPoint = { node, offset: endOffset - currentLength, type: "text" };
         }
       } else {
         if (!startPoint && currentLength + nodeLength >= startOffset) {
@@ -1087,7 +1100,7 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
           if (parent) {
             const index = parent.getChildren().indexOf(node);
             const targetOffset = startOffset <= currentLength ? index : index + 1;
-            startPoint = { node: parent, offset: targetOffset, type: 'element' };
+            startPoint = { node: parent, offset: targetOffset, type: "element" };
           }
         }
         if (!endPoint && currentLength + nodeLength >= endOffset) {
@@ -1095,7 +1108,7 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
           if (parent) {
             const index = parent.getChildren().indexOf(node);
             const targetOffset = endOffset <= currentLength ? index : index + 1;
-            endPoint = { node: parent, offset: targetOffset, type: 'element' };
+            endPoint = { node: parent, offset: targetOffset, type: "element" };
           }
         }
       }
@@ -1111,11 +1124,11 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
     const lastNode = root.getLastChild();
     if (lastNode) {
       if ($isTextNode(lastNode)) {
-        startPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: 'text' };
+        startPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: "text" };
       } else {
         const parent = lastNode.getParent();
         if (parent) {
-          startPoint = { node: parent, offset: parent.getChildren().length, type: 'element' };
+          startPoint = { node: parent, offset: parent.getChildren().length, type: "element" };
         }
       }
     }
@@ -1125,11 +1138,11 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
     const lastNode = root.getLastChild();
     if (lastNode) {
       if ($isTextNode(lastNode)) {
-        endPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: 'text' };
+        endPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: "text" };
       } else {
         const parent = lastNode.getParent();
         if (parent) {
-          endPoint = { node: parent, offset: parent.getChildren().length, type: 'element' };
+          endPoint = { node: parent, offset: parent.getChildren().length, type: "element" };
         }
       }
     }
