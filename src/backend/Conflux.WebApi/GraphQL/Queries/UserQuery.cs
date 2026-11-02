@@ -1,3 +1,4 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Infrastructure;
@@ -5,8 +6,6 @@ using Conflux.WebApi.Helpers;
 using GreenDonut.Data;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Queries;
 
@@ -26,14 +25,12 @@ internal static partial class Query {
     }
 
     public static async Task<ApplicationUser?> GetSessionUser(
-        ClaimsPrincipal claimsPrincipal,
-        QueryContext<ApplicationUser > queryContext,
+        QueryContext<ApplicationUser> queryContext,
+        [Service] ICurrentUserService currentUserService,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
     ) {
-        var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+        if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
         
