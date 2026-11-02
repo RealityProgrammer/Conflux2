@@ -1,5 +1,4 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Enums;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -38,6 +37,7 @@ public sealed partial class SendMessageHandler(
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
     IConversationParticipantsProvider conversationParticipantsProvider,
+    IServerMemberReadRepository serverMemberReadRepository,
     IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
@@ -177,10 +177,22 @@ public sealed partial class SendMessageHandler(
 
         if (userIds.Count > 0) {
             MentionSource? mentionSource = null;
+            HashSet<Guid> filteredUserIds = [];
+            
+            // get mentioning source and remove all unmentionable users:
+            // - for non-server, only allow participants
+            // - for server, only allow user members
 
             switch (conversationType) {
                 case ConversationType.Direct:
                     mentionSource = new MentionFromDm(conversationId, messageId, messageSenderId);
+                    filteredUserIds = await conversationRepository
+                        .AsQueryable()
+                        .Where(c => c.Id == conversationId)
+                        .SelectMany(c => c.Participants.Select(p => p.User))
+                        .Where(u => userIds.Contains(u.Id))
+                        .Select(u => u.Id)
+                        .ToHashSetAsync();
                     break;
                 
                 case ConversationType.Server:
@@ -195,16 +207,17 @@ public sealed partial class SendMessageHandler(
                         .SingleAsync();
 
                     mentionSource = new MentionFromServer(conversationId, messageId, channelIds.CommunityServerId, channelIds.Id);
+                    filteredUserIds = await conversationRepository
+                        .AsQueryable()
+                        .Where(c => c.Id == conversationId)
+                        .SelectMany(c => c.Channel!.CommunityServer.Members.Select(m => m.User))
+                        .Where(u => userIds.Contains(u.Id))
+                        .Select(u => u.Id)
+                        .ToHashSetAsync();
                     break;
             }
 
-            var filteredUserIds = await userRepository
-                .AsQueryable()
-                .Where(u => userIds.Contains(u.Id))
-                .Select(u => u.Id)
-                .ToHashSetAsync();
-
-            if (mentionSource != null) {
+            if (filteredUserIds.Count > 0 && mentionSource != null) {
                 await publisher.Publish(new MentioningNotification(
                     mentionSource,
                     filteredUserIds

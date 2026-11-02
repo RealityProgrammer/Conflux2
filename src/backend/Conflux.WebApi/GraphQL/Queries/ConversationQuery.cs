@@ -82,7 +82,6 @@ public static partial class ConversationQuery {
         IQueryable<ApplicationUser> query = conversationData.Type == ConversationType.Server
             ? conversationRepository
                 .AsQueryable()
-                .TagWith("E")
                 .Where(c => c.Id == conversationId)
                 .SelectMany(c => c.Channel!.CommunityServer.Members.Select(m => m.User))
             : conversationRepository
