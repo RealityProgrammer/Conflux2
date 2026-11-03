@@ -3,5 +3,5 @@ using Conflux.Domain.Entities;
 namespace Conflux.Domain.Repositories;
 
 public interface INotificationWriteRepository : IWriteRepository<Notification> {
-    Task MarkMentionsAsReadAsync(Guid userId, CancellationToken cancellationToken);
+    Task<int> MarkMentionsAsReadAsync(Guid conversationId, Guid userId, CancellationToken cancellationToken);
 }

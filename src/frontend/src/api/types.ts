@@ -24,9 +24,6 @@ export type ServiceResponse<T = void> = {
   error?: ServiceError | null;
 } & (T extends void ? {} : { data?: T | null });
 
-export type PaginatedResult<T> =
-  Omit<components["schemas"]["PaginatedResultOfDiscoverFriendSummary"], "elements"> & { elements: T[] };
-
 export type UserAuthorizationInfo = components["schemas"]["UserAuthorizationInfo"];
 
 export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['user']>;
@@ -34,8 +31,6 @@ export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['us
 export type LoginResponse = components["schemas"]["LoginResponse"];
 export type RefreshResponse = components["schemas"]["RefreshResponse"];
 
-export type DiscoverFriendSummary = components["schemas"]["DiscoverFriendSummary"];
-export type DirectConversationSummary = components["schemas"]["DirectConversationSummary"];
 export type StartCallResult = components["schemas"]["StartCallResult"];
 export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
@@ -62,6 +57,8 @@ export type EmojiManagementDto = components["schemas"]["EmojiManagementDto"];
 export type EmojiDto = components["schemas"]["EmojiDto"];
 export type ServerEmojiGroupDto = components["schemas"]["ServerEmojiGroupDto"];
 export type UnreadNotificationCounts = components["schemas"]["UnreadNotificationCounts"];
+export type FriendSearchResponse = components["schemas"]["FriendSearchResponse"];
+export type SendFriendRequestResult = components["schemas"]["SendFriendRequestResult"];
 
 export type EditedMessageDto = {
   id: string;

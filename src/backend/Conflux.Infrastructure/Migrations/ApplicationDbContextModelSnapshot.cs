@@ -17,7 +17,7 @@ namespace Conflux.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -132,9 +132,6 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<Guid>("CommunityServerId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ConversationId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -152,10 +149,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("CommunityServerId");
 
-                    b.HasIndex("ConversationId")
-                        .IsUnique();
-
-                    b.ToTable("Channels", (string)null);
+                    b.ToTable("Channels");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.ChannelCategory", b =>
@@ -179,7 +173,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("CommunityServerId");
 
-                    b.ToTable("ChannelCategories", (string)null);
+                    b.ToTable("ChannelCategories");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.CommunityServer", b =>
@@ -218,7 +212,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("OwnerUserId");
 
-                    b.ToTable("CommunityServers", (string)null);
+                    b.ToTable("CommunityServers");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.CommunityServerMember", b =>
@@ -248,7 +242,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CommunityServerMembers", (string)null);
+                    b.ToTable("CommunityServerMembers");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.CommunityServerMemberRole", b =>
@@ -263,7 +257,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("CommunityServerMemberRoles", (string)null);
+                    b.ToTable("CommunityServerMemberRoles");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.CommunityServerRole", b =>
@@ -298,13 +292,16 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("CreatorUserId");
 
-                    b.ToTable("CommunityServerRoles", (string)null);
+                    b.ToTable("CommunityServerRoles");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Conversation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ChannelId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("FriendRequestId")
@@ -318,10 +315,13 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ChannelId")
+                        .IsUnique();
+
                     b.HasIndex("FriendRequestId")
                         .IsUnique();
 
-                    b.ToTable("Conversations", (string)null);
+                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.ConversationParticipant", b =>
@@ -336,7 +336,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ConversationParticipants", (string)null);
+                    b.ToTable("ConversationParticipants");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Emoji", b =>
@@ -365,7 +365,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("Emojis", (string)null);
+                    b.ToTable("Emojis");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
@@ -395,7 +395,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("SenderUserId");
 
-                    b.ToTable("FriendRequests", null, t =>
+                    b.ToTable("FriendRequests", t =>
                         {
                             t.HasCheckConstraint("CK_FriendRequest_NotSelf", "\"SenderUserId\" <> \"ReceiverUserId\"");
                         });
@@ -435,7 +435,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("CommunityServerId");
 
-                    b.ToTable("Invitations", (string)null);
+                    b.ToTable("Invitations");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.MediaItem", b =>
@@ -466,7 +466,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("MessageId");
 
-                    b.ToTable("MediaItems", (string)null);
+                    b.ToTable("MediaItems");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>
@@ -514,7 +514,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("SenderUserId");
 
-                    b.ToTable("Messages", null, t =>
+                    b.ToTable("Messages", t =>
                         {
                             t.HasCheckConstraint("CK_Message_CannotReplyToSelf", "\"Id\" <> \"ReplyToId\"");
                         });
@@ -546,7 +546,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("UserId", "IsRead");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.RolePermission", b =>
@@ -562,7 +562,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasKey("RoleId", "Permission");
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.ServerModerationLog", b =>
@@ -601,7 +601,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("ExecutorMemberId");
 
-                    b.ToTable("ServerModerationLogs", (string)null);
+                    b.ToTable("ServerModerationLogs");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.UserAccountDeletion", b =>
@@ -636,7 +636,7 @@ namespace Conflux.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserAccountDeletions", (string)null);
+                    b.ToTable("UserAccountDeletions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -782,17 +782,9 @@ namespace Conflux.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Conflux.Domain.Entities.Conversation", "Conversation")
-                        .WithOne("Channel")
-                        .HasForeignKey("Conflux.Domain.Entities.Channel", "ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("ChannelCategory");
 
                     b.Navigation("CommunityServer");
-
-                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.ChannelCategory", b =>
@@ -883,10 +875,17 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.Conversation", b =>
                 {
+                    b.HasOne("Conflux.Domain.Entities.Channel", "Channel")
+                        .WithOne("Conversation")
+                        .HasForeignKey("Conflux.Domain.Entities.Conversation", "ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Conflux.Domain.Entities.FriendRequest", "FriendRequest")
-                        .WithOne("DirectConversation")
+                        .WithOne("Conversation")
                         .HasForeignKey("Conflux.Domain.Entities.Conversation", "FriendRequestId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Channel");
 
                     b.Navigation("FriendRequest");
                 });
@@ -1118,6 +1117,12 @@ namespace Conflux.Infrastructure.Migrations
                     b.Navigation("SentFriendRequests");
                 });
 
+            modelBuilder.Entity("Conflux.Domain.Entities.Channel", b =>
+                {
+                    b.Navigation("Conversation")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Conflux.Domain.Entities.ChannelCategory", b =>
                 {
                     b.Navigation("Channels");
@@ -1154,8 +1159,6 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.Conversation", b =>
                 {
-                    b.Navigation("Channel");
-
                     b.Navigation("Messages");
 
                     b.Navigation("Participants");
@@ -1163,7 +1166,7 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.FriendRequest", b =>
                 {
-                    b.Navigation("DirectConversation");
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Message", b =>

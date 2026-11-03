@@ -1,4 +1,4 @@
-import {useUserIdentityStore} from "../../store/useUserIdentityStore.tsx";
+import {useUserIdentityStore} from "../../store/useUserIdentityStore.ts";
 import {useEffect} from "react";
 
 interface MentionProps {

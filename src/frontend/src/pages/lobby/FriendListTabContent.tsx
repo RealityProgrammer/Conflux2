@@ -7,12 +7,14 @@ import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import type {FriendRequestAcceptedEvent, UnfriendedEvent} from "../../api/events.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
-import useFriendActions from "../../hooks/useFriendActions.ts";
+import useFriendRequestActions from "../../hooks/useFriendRequestActions.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
 import {type GetFriendsQuery, useInfiniteGetFriendsQuery} from "../../graphql/infiniteQueries.ts";
+import useUnfriendMutation from "../../hooks/useUnfriendMutation.ts";
+import {toast} from "react-toastify";
 
 const ITEM_HEIGHT: number = 52;
 
@@ -46,8 +48,8 @@ export default function FriendListTabContent() {
   const allElements = data?.pages.flatMap((page) => page?.friends.nodes ?? []) ?? [];
 
   const removeUser = (userId: string) => {
-    queryClient.setQueryData<InfiniteData<GetFriendsQuery>>(
-      useInfiniteGetFriendsQuery.getKey({ after: null }),
+    queryClient.setQueriesData<InfiniteData<GetFriendsQuery>>(
+      { queryKey: useInfiniteGetFriendsQuery.getKey() },
       (oldData) => {
         if (!oldData) return oldData;
 
@@ -56,6 +58,7 @@ export default function FriendListTabContent() {
         );
 
         if (!elementExists) return oldData;
+
 
         return {
           ...oldData,
@@ -74,6 +77,7 @@ export default function FriendListTabContent() {
   };
 
   useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
+    console.log("unfriended", event);
     removeUser(event.invokerUserId);
   });
 
@@ -140,16 +144,6 @@ interface RowProps {
 }
 
 function Row({element, removeFriend, navigateToDirectMessage}: RowProps) {
-  const {mutation, activeAction} = useFriendActions(element.otherUser!.id);
-
-  const handleUnfriend = () => mutation.mutate('unfriend', {
-    onSuccess: (response: ServiceResponse) => {
-      if (response.success) {
-        removeFriend(element.otherUser!.id)
-      }
-    }
-  });
-
   const toDirectMessage = () => navigateToDirectMessage(element.otherUser!.id);
 
   return (
@@ -165,10 +159,19 @@ function Row({element, removeFriend, navigateToDirectMessage}: RowProps) {
         <BsChatSquareText className="size-6"/>
       </IconButton>
 
-      <FriendActionButtons.Unfriend isExecuting={!!activeAction} className="size-6" onClick={handleUnfriend}/>
+      <FriendActionButtons.Unfriend
+        friendId={element.otherUser!.id}
+        className="size-6"
+        onSuccess={() => {
+          removeFriend(element.otherUser!.id);
+        }}
+        onError={() => {
+          toast.error("Failed to unfriend user.");
+        }}
+      />
 
       <MoreActionsButton>
-        <DropdownMenu.Item className="dropdown-item-default">
+        <DropdownMenu.Item disabled className="dropdown-item-default">
           Visit Profile
         </DropdownMenu.Item>
 
@@ -178,17 +181,11 @@ function Row({element, removeFriend, navigateToDirectMessage}: RowProps) {
 
         <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
 
-        <DropdownMenu.Item className="dropdown-item-danger" disabled={!!activeAction} onSelect={handleUnfriend}>
-          Unfriend
-        </DropdownMenu.Item>
-
-        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
-
-        <DropdownMenu.Item className="dropdown-item-danger">
+        <DropdownMenu.Item disabled className="dropdown-item-danger">
           Block
         </DropdownMenu.Item>
 
-        <DropdownMenu.Item className="dropdown-item-danger">
+        <DropdownMenu.Item disabled className="dropdown-item-danger">
           Report User
         </DropdownMenu.Item>
       </MoreActionsButton>

@@ -8,7 +8,6 @@ namespace Conflux.Application.Notifications;
 
 public sealed class PersistMentioningNotificationHandler(
     INotificationWriteRepository notificationWriteRepository,
-    IUserRepository userRepository,
     IUnitOfWork unitOfWork,
     ILogger<PersistMentioningNotificationHandler> logger
 ) : INotificationHandler<MentioningNotification> {

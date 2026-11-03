@@ -17,5 +17,22 @@ export const notificationService = {
       const axiosError = error as AxiosError<BackendResponse<UnreadNotificationCounts>>;
       return handleAxiosError(axiosError);
     }
-  }
+  },
+
+  markMentionNotificationsAsRead: async (conversationId: string): Promise<ServiceResponse> => {
+    try {
+      const response: AxiosResponse<BackendResponse> = await apiClient.post(
+        "/notifications/read-mentions",
+        {conversationId}
+      );
+
+      return {
+        success: true,
+        statusCode: response.status,
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<BackendResponse>;
+      return handleAxiosError(axiosError);
+    }
+  },
 }

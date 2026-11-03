@@ -10,7 +10,7 @@ import {EmojiGroup} from "./EmojiGroup.tsx";
 import {useInfiniteGetMentionableUsersQuery} from "../../graphql/infiniteQueries.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
-import {useUserIdentityStore} from "../../store/useUserIdentityStore.tsx";
+import {useUserIdentityStore} from "../../store/useUserIdentityStore.ts";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t" | "m") => void;

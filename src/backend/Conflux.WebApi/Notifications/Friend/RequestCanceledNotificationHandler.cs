@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications.Friend;
 
-[Facet(typeof(FriendRequestCanceledNotification), Include = [nameof(FriendRequestCanceledNotification.SenderUserId)])]
+[Facet(typeof(FriendRequestCanceledNotification), Include = [
+    nameof(FriendRequestCanceledNotification.RequestId),
+    nameof(FriendRequestCanceledNotification.SenderUserId),
+])]
 public sealed partial record FriendRequestCanceledEvent;
 
 internal sealed class RequestCanceledNotificationHandler(

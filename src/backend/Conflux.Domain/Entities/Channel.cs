@@ -9,7 +9,6 @@ public class Channel : IHasCreatedAt {
 
     public string Name { get; set; } = null!;
     
-    public Guid ConversationId { get; set; }
     public Conversation Conversation { get; set; } = null!;
     
     public Guid CommunityServerId { get; set; }

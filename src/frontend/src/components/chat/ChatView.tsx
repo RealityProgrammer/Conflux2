@@ -24,6 +24,7 @@ import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import Spinner from "../Spinner.tsx";
 import {FaArrowDown} from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
+import {notificationService} from "../../api/notificationService.ts";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -65,7 +66,21 @@ export function ChatView({
     hasNextPage,
     fetchNextPage,
     isLoading,
+    isSuccess,
   } = useTimelineMessagesQuery(conversationId, anchorId);
+
+  // mark mention notifications as read
+  useEffect(() => {
+    if (isSuccess) {
+      (async () => {
+        const response = await notificationService.markMentionNotificationsAsRead(conversationId);
+
+        if (response.success) {
+
+        }
+      })();
+    }
+  }, [conversationId, isSuccess]);
 
   const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 

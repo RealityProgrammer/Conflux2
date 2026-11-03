@@ -1,3 +1,4 @@
+using Conflux.Application.Dto;
 using Conflux.Application.Features.Users;
 using Conflux.Application.Services;
 using Conflux.Domain;
@@ -41,6 +42,26 @@ public sealed class UserController(
 
         return result.Error.Code switch {
             nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpGet("discover-friend")]
+    public async Task<ActionResult<ApiResponse<FriendSearchResponse>>> SearchFriend(
+        [FromQuery(Name = "search")] string search
+    ) {
+        var result = await sender.Send(new DiscoverFriend(search));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<FriendSearchResponse>(result.Value, Error.None));
+        }
+        
+        return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) or nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.DisallowSelfAction) => BadRequest(new ApiResponse(Errors.ValidationErrorsOccurred(new() {
+                [nameof(search)] = [result.Error.Message],
+            }))),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

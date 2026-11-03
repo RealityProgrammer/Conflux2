@@ -296,6 +296,7 @@ type ApplicationUser {
   manualPresenceStatus: PresenceStatus @cost(weight: "10")
   effectivePresenceStatus: PresenceStatus! @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
+  friendRelationship: UserRelationshipStatus @cost(weight: "10")
 }
 
 "A connection to a list of items."
@@ -326,7 +327,6 @@ type Channel {
   name: String!
   createdAt: DateTime!
   conversation: Conversation!
-  conversationId: UUID!
   channelCategoryId: UUID
   channelCategory: ChannelCategory
 }
@@ -477,7 +477,7 @@ type Emoji {
 
 type FriendRequest {
   id: UUID!
-  directConversation: Conversation
+  conversation: Conversation
   createdAt: DateTime!
   receiver: ApplicationUser!
   receiverUserId: UUID!
@@ -797,7 +797,6 @@ input ChannelFilterInput {
   id: UuidOperationFilterInput
   type: ChannelTypeOperationFilterInput
   name: StringOperationFilterInput
-  conversationId: UuidOperationFilterInput
   conversation: ConversationFilterInput
   communityServerId: UuidOperationFilterInput
   communityServer: CommunityServerFilterInput
@@ -810,7 +809,6 @@ input ChannelSortInput {
   id: SortEnumType @cost(weight: "10")
   type: SortEnumType @cost(weight: "10")
   name: SortEnumType @cost(weight: "10")
-  conversationId: SortEnumType @cost(weight: "10")
   conversation: ConversationSortInput @cost(weight: "10")
   communityServerId: SortEnumType @cost(weight: "10")
   communityServer: CommunityServerSortInput @cost(weight: "10")
@@ -920,10 +918,11 @@ input ConversationFilterInput {
   type: ConversationTypeOperationFilterInput
   latestMessageAt: DateTimeOperationFilterInput
   messages: ListFilterInputTypeOfMessageFilterInput
-  channel: ChannelFilterInput
   participants: ListFilterInputTypeOfConversationParticipantFilterInput
   friendRequestId: UuidOperationFilterInput
   friendRequest: FriendRequestFilterInput
+  channelId: UuidOperationFilterInput
+  channel: ChannelFilterInput
 }
 
 input ConversationParticipantFilterInput {
@@ -939,9 +938,10 @@ input ConversationSortInput {
   id: SortEnumType @cost(weight: "10")
   type: SortEnumType @cost(weight: "10")
   latestMessageAt: SortEnumType @cost(weight: "10")
-  channel: ChannelSortInput @cost(weight: "10")
   friendRequestId: SortEnumType @cost(weight: "10")
   friendRequest: FriendRequestSortInput @cost(weight: "10")
+  channelId: SortEnumType @cost(weight: "10")
+  channel: ChannelSortInput @cost(weight: "10")
 }
 
 input ConversationTypeOperationFilterInput {
@@ -1004,7 +1004,7 @@ input FriendRequestFilterInput {
   status: FriendRequestStatusOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   updatedAt: DateTimeOperationFilterInput
-  directConversation: ConversationFilterInput
+  conversation: ConversationFilterInput
 }
 
 input FriendRequestSortInput {
@@ -1016,7 +1016,7 @@ input FriendRequestSortInput {
   status: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
   updatedAt: SortEnumType @cost(weight: "10")
-  directConversation: ConversationSortInput @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
 }
 
 input FriendRequestStatusOperationFilterInput {
@@ -1559,6 +1559,13 @@ enum UserAccountDeleteStatus {
   Pending
   Canceled
   Deleted
+}
+
+enum UserRelationshipStatus {
+  Stranger
+  OutcomingRequest
+  IncomingRequest
+  Friended
 }
 
 "The `DateTime` scalar type represents a date and time with time zone offset information."

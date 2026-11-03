@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class UserMediaService(
-    IUserRepository userRepository,
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector
 ) : IUserMediaService {

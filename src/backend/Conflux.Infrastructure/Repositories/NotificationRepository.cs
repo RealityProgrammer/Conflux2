@@ -27,9 +27,14 @@ internal sealed class NotificationRepository(
             .CountAsync(cancellationToken);
     }
 
-    public async Task MarkMentionsAsReadAsync(Guid userId, CancellationToken cancellationToken) {
-        await dbContext.Notifications
-            .Where(n => n.Type == NotificationType.Mention && n.UserId == userId && !n.IsRead)
+    public async Task<int> MarkMentionsAsReadAsync(Guid conversationId, Guid userId, CancellationToken cancellationToken) {
+        return await dbContext.Notifications
+            .Where(n => 
+                n.Type == NotificationType.Mention && 
+                ((MentionNotificationPayload)n.Payload).Source.ConversationId == conversationId && 
+                n.UserId == userId && 
+                !n.IsRead
+            )
             .ExecuteUpdateAsync(s => {
                 s.SetProperty(n => n.IsRead, true);
             }, cancellationToken);

@@ -1,4 +1,4 @@
-import type {BackendResponse, ServiceResponse, UserIdentityProfileDto} from "./types.ts";
+import type {BackendResponse, FriendSearchResponse, ServiceResponse, UserIdentityProfileDto} from "./types.ts";
 import {type AxiosError, type AxiosResponse} from "axios";
 import {apiClient} from "./client.ts";
 import {csrfService} from "./csrfService.ts";
@@ -39,5 +39,15 @@ export const userService = {
       const axiosError = error as AxiosError<BackendResponse<UserIdentityProfileDto[]>>;
       return handleAxiosError(axiosError);
     }
+  },
+
+  discoverFriend: async (searchTerm: string): Promise<FriendSearchResponse | null> => {
+    const params = new URLSearchParams();
+    params.set("search", searchTerm);
+
+    const response: AxiosResponse<BackendResponse<FriendSearchResponse>> =
+      await apiClient.get(`/users/discover-friend?${params.toString()}`);
+
+    return response.data.data ?? null;
   },
 }

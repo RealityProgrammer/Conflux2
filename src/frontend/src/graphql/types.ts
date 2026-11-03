@@ -26,6 +26,7 @@ export type ApplicationUser = {
   displayName?: Maybe<Scalars['String']['output']>;
   effectivePresenceStatus: PresenceStatus;
   email?: Maybe<Scalars['String']['output']>;
+  friendRelationship?: Maybe<UserRelationshipStatus>;
   id: Scalars['UUID']['output'];
   lastSeenAt: Scalars['DateTime']['output'];
   manualPresenceStatus?: Maybe<PresenceStatus>;
@@ -152,7 +153,6 @@ export type Channel = {
   channelCategory?: Maybe<ChannelCategory>;
   channelCategoryId?: Maybe<Scalars['UUID']['output']>;
   conversation: Conversation;
-  conversationId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['UUID']['output'];
   name: Scalars['String']['output'];
@@ -194,7 +194,6 @@ export type ChannelFilterInput = {
   communityServer?: InputMaybe<CommunityServerFilterInput>;
   communityServerId?: InputMaybe<UuidOperationFilterInput>;
   conversation?: InputMaybe<ConversationFilterInput>;
-  conversationId?: InputMaybe<UuidOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   name?: InputMaybe<StringOperationFilterInput>;
@@ -208,7 +207,6 @@ export type ChannelSortInput = {
   communityServer?: InputMaybe<CommunityServerSortInput>;
   communityServerId?: InputMaybe<SortEnumType>;
   conversation?: InputMaybe<ConversationSortInput>;
-  conversationId?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   name?: InputMaybe<SortEnumType>;
@@ -456,6 +454,7 @@ export type ConversationEdge = {
 export type ConversationFilterInput = {
   and?: InputMaybe<Array<ConversationFilterInput>>;
   channel?: InputMaybe<ChannelFilterInput>;
+  channelId?: InputMaybe<UuidOperationFilterInput>;
   friendRequest?: InputMaybe<FriendRequestFilterInput>;
   friendRequestId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
@@ -477,6 +476,7 @@ export type ConversationParticipantFilterInput = {
 
 export type ConversationSortInput = {
   channel?: InputMaybe<ChannelSortInput>;
+  channelId?: InputMaybe<SortEnumType>;
   friendRequest?: InputMaybe<FriendRequestSortInput>;
   friendRequestId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
@@ -549,8 +549,8 @@ export type EmojiFilterInput = {
 
 export type FriendRequest = {
   __typename?: 'FriendRequest';
+  conversation?: Maybe<Conversation>;
   createdAt: Scalars['DateTime']['output'];
-  directConversation?: Maybe<Conversation>;
   id: Scalars['UUID']['output'];
   otherUser?: Maybe<ApplicationUser>;
   receiver: ApplicationUser;
@@ -583,8 +583,8 @@ export type FriendRequestEdge = {
 
 export type FriendRequestFilterInput = {
   and?: InputMaybe<Array<FriendRequestFilterInput>>;
+  conversation?: InputMaybe<ConversationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
-  directConversation?: InputMaybe<ConversationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<FriendRequestFilterInput>>;
   receiver?: InputMaybe<ApplicationUserFilterInput>;
@@ -596,8 +596,8 @@ export type FriendRequestFilterInput = {
 };
 
 export type FriendRequestSortInput = {
+  conversation?: InputMaybe<ConversationSortInput>;
   createdAt?: InputMaybe<SortEnumType>;
-  directConversation?: InputMaybe<ConversationSortInput>;
   id?: InputMaybe<SortEnumType>;
   receiver?: InputMaybe<ApplicationUserSortInput>;
   receiverUserId?: InputMaybe<SortEnumType>;
@@ -1545,6 +1545,13 @@ export type UserAccountDeletionFilterInput = {
   user?: InputMaybe<ApplicationUserFilterInput>;
   userId?: InputMaybe<UuidOperationFilterInput>;
 };
+
+export enum UserRelationshipStatus {
+  Friended = 'Friended',
+  IncomingRequest = 'IncomingRequest',
+  OutcomingRequest = 'OutcomingRequest',
+  Stranger = 'Stranger'
+}
 
 export type UuidOperationFilterInput = {
   eq?: InputMaybe<Scalars['UUID']['input']>;

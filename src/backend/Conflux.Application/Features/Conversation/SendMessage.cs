@@ -37,7 +37,6 @@ public sealed partial class SendMessageHandler(
     IMessageRepository messageRepository,
     IConversationRepository conversationRepository,
     IConversationParticipantsProvider conversationParticipantsProvider,
-    IServerMemberReadRepository serverMemberReadRepository,
     IConversationAuthorizeService conversationAuthorizeService,
     IUnitOfWork unitOfWork,
     IPublisher publisher,

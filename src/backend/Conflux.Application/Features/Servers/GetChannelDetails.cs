@@ -38,7 +38,6 @@ public sealed class GetChannelDetailsHandler(
                 c.Id,
                 c.Name,
                 c.Type,
-                c.ConversationId,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -49,6 +48,6 @@ public sealed class GetChannelDetailsHandler(
             ]);
         }
         
-        return Result<ChannelDetailsDto>.Success(new(channelInfo.Id, channelInfo.Name, channelInfo.Type, channelInfo.ConversationId, authorizeResult.Value!));
+        return Result<ChannelDetailsDto>.Success(new(channelInfo.Id, channelInfo.Name, channelInfo.Type, authorizeResult.Value!));
     }
 }
