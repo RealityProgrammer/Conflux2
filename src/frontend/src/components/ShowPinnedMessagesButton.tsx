@@ -15,15 +15,11 @@ import type {MessageDeletedEvent, MessagePinnedEvent, MessageUnpinnedEvent} from
 import {useState} from "react";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 
-interface ShowPinnedMessagesButtonProps {
-}
+export default function ShowPinnedMessagesButton() {
+  const { requestJump, conversationId } = useChatContainerContext();
 
-export default function ShowPinnedMessagesButton({
-}: ShowPinnedMessagesButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
-
-  const { requestJump, conversationId } = useChatContainerContext();
 
   const {
     queryResult: { data, isLoading, isError },

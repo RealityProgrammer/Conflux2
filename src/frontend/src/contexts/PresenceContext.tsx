@@ -37,7 +37,7 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
     onMutate: async () => {
       // optimistic update
     },
-    onError: (_error: Error) => {
+    onError: () => {
       toast.error("Failed to update presence status.");
     },
   });

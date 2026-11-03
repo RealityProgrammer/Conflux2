@@ -10,6 +10,7 @@ import {toast} from "react-toastify";
 import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
 import {useActiveConversationStore} from "../store/useActiveConversationStore.ts";
+import {useConversationContext} from "./ConversationContext.tsx";
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
 type EditMessagePayload = { messageId: string, newBody: string | null };
@@ -38,24 +39,31 @@ interface ChatContainerContextType {
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
 
-interface ChatContainerContextProviderProps {
-  conversationId: string;
-  children: ReactNode;
-}
-
 export default function ChatContainerContextProvider({
-  conversationId,
   children,
-}: ChatContainerContextProviderProps) {
+}: {children: ReactNode}) {
+  const { detailsQuery } = useConversationContext();
+
+  if (!detailsQuery!.isSuccess) {
+    throw new Error("ChatContainerContextProvider can only be used if conversation details query has success query.");
+  }
+
+  const conversationId = detailsQuery?.data?.conversationId!;
+
   const setActiveConversationId = useActiveConversationStore((state) => state.setActiveConversationId);
 
   useEffect(() => {
-    setActiveConversationId(conversationId);
+    if (!detailsQuery || !detailsQuery.data) {
+      setActiveConversationId(null);
+      return;
+    }
+
+    setActiveConversationId(detailsQuery.data.conversationId);
 
     return () => {
       setActiveConversationId(null);
     };
-  }, [conversationId, setActiveConversationId]);
+  }, [detailsQuery, setActiveConversationId]);
 
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
   const [jumpMessageId, setJumpMessageId] = useState<string | null>(null);

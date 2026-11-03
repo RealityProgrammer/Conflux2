@@ -3,9 +3,8 @@ import type {
   SendFriendRequestResult,
   ServiceResponse,
 } from "./types.ts";
-import type {AxiosError, AxiosResponse} from "axios";
+import type {AxiosResponse} from "axios";
 import {apiClient} from "./client.ts";
-import {handleAxiosError} from "./errorHandling.ts";
 
 export const friendService = {
   sendFriendRequest: async (recipientId: string): Promise<ServiceResponse<SendFriendRequestResult>> => {

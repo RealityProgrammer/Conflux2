@@ -1,6 +1,6 @@
 import type {
   BackendResponse,
-  DirectConversationSummary, GetIncomingDirectCallQueryResult,
+  GetIncomingDirectCallQueryResult,
   ServiceResponse,
   StartCallResult,
   TimelineMessageDto,
@@ -10,24 +10,6 @@ import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 
 export const directConversationService = {
-  getDirectConversationSummary: async (peerId: string): Promise<ServiceResponse<DirectConversationSummary>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<DirectConversationSummary>> =
-        await apiClient.post<BackendResponse<DirectConversationSummary>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}`
-        );
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<DirectConversationSummary>>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
   getIncomingCall: async (): Promise<ServiceResponse<GetIncomingDirectCallQueryResult>> => {
     try {
       const response: AxiosResponse<BackendResponse<GetIncomingDirectCallQueryResult>> =

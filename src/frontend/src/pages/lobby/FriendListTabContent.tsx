@@ -2,18 +2,15 @@ import {useDebounceValue} from "usehooks-ts";
 import {BsChatSquareText, BsSearch} from "react-icons/bs";
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
-import {type ServiceResponse} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import type {FriendRequestAcceptedEvent, UnfriendedEvent} from "../../api/events.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
-import useFriendRequestActions from "../../hooks/useFriendRequestActions.ts";
 import IconButton from "../../components/IconButton.tsx";
 import {useNavigate} from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
 import {type GetFriendsQuery, useInfiniteGetFriendsQuery} from "../../graphql/infiniteQueries.ts";
-import useUnfriendMutation from "../../hooks/useUnfriendMutation.ts";
 import {toast} from "react-toastify";
 
 const ITEM_HEIGHT: number = 52;

@@ -2561,7 +2561,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/conversations/{conversationId}": {
+    "/api/conversations/dm/{peerId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2573,7 +2573,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    conversationId: string;
+                    peerId: string;
                 };
                 cookie?: never;
             };
@@ -2585,9 +2585,49 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponseOfConversationDetails"];
-                        "application/json": components["schemas"]["ApiResponseOfConversationDetails"];
-                        "text/json": components["schemas"]["ApiResponseOfConversationDetails"];
+                        "text/plain": components["schemas"]["ApiResponseOfDmConversationDetails"];
+                        "application/json": components["schemas"]["ApiResponseOfDmConversationDetails"];
+                        "text/json": components["schemas"]["ApiResponseOfDmConversationDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/servers/{serverId}/channels/{channelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    channelId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
+                        "application/json": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
+                        "text/json": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
                     };
                 };
             };
@@ -2866,8 +2906,8 @@ export interface components {
             data: null | components["schemas"]["ChannelDetailsDto"];
             error: components["schemas"]["Error"];
         };
-        ApiResponseOfConversationDetails: {
-            data: null | components["schemas"]["ConversationDetails"];
+        ApiResponseOfDmConversationDetails: {
+            data: null | components["schemas"]["DmConversationDetails"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfEmojiDto: {
@@ -2921,6 +2961,10 @@ export interface components {
         };
         ApiResponseOfSendFriendRequestResult: {
             data: null | components["schemas"]["SendFriendRequestResult"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfServerChannelConversationDetails: {
+            data: null | components["schemas"]["ServerChannelConversationDetails"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfServerChannelIdentityDto: {
@@ -3006,17 +3050,6 @@ export interface components {
             email: string;
             confirmationCode: string;
         };
-        ConversationDetails: components["schemas"]["ConversationDetailsDirectConversationDetails"] | components["schemas"]["ConversationDetailsServerConversationDetails"];
-        ConversationDetailsDirectConversationDetails: {
-            /** @enum {string} */
-            $type?: ConversationDetailsDirectConversationDetails$type;
-            peerIdentity: components["schemas"]["UserIdentityProfileDto"];
-        };
-        ConversationDetailsServerConversationDetails: {
-            /** @enum {string} */
-            $type?: ConversationDetailsServerConversationDetails$type;
-            channelIdentity: components["schemas"]["ServerChannelIdentityDto"];
-        };
         CreateChannelCategoryRequest: {
             name: string;
         };
@@ -3042,6 +3075,12 @@ export interface components {
             restorationPassword: string;
         };
         "Dictionary`2": unknown;
+        DmConversationDetails: {
+            peerProfile: components["schemas"]["UserIdentityProfileDto"];
+            /** Format: uuid */
+            conversationId: string;
+            isFriended: boolean;
+        };
         EmojiDto: {
             /** Format: uuid */
             id: string;
@@ -3208,6 +3247,11 @@ export interface components {
         SendRequest: {
             /** Format: uuid */
             recipientId: string;
+        };
+        ServerChannelConversationDetails: {
+            channelIdentity: components["schemas"]["ServerChannelIdentityDto"];
+            /** Format: uuid */
+            conversationId: string;
         };
         ServerChannelIdentityDto: {
             /** Format: uuid */
@@ -3449,12 +3493,6 @@ export interface operations {
 export enum ChannelType {
     Text = "Text",
     Voice = "Voice"
-}
-export enum ConversationDetailsDirectConversationDetails$type {
-    direct = "direct"
-}
-export enum ConversationDetailsServerConversationDetails$type {
-    server = "server"
 }
 export enum FileOperationType {
     Set = "Set",

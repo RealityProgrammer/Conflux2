@@ -5,14 +5,12 @@ import {queryClient} from "./main.tsx";
 import {useGetUserIdentityProfileQuery} from "./graphql/queries.ts";
 import {HttpStatusCode} from "axios";
 import type {
-  DirectConversationSummary,
   ServiceResponse,
   UserAuthorizationInfo,
   UserIdentityProfileDto,
 } from "./api/types.ts";
 import CallOverlay from "./components/call/CallOverlay.tsx";
 import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
-import {directConversationService} from "./api/directConversationService.ts";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
 import {Tooltip} from "radix-ui";
 import {Slide, ToastContainer} from "react-toastify";
@@ -22,18 +20,18 @@ import HomePage from "./pages/HomePage"
 const AuthenticatePage = lazy(() => import("./pages/auth/AuthenticatePage.tsx"));
 const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
 import AuthProvider from "./contexts/AuthContext.tsx";
+import ConversationPage from "./pages/ConversationPage.tsx";
+import type {ConversationSource} from "./contexts/ConversationContext.tsx";
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
 const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
 const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
 const LobbyLayout = lazy(() => import("./pages/lobby/LobbyLayout.tsx"));
 const LobbyPage = lazy(() => import("./pages/lobby/LobbyPage.tsx"));
-const DirectMessagePage = lazy(() => import("./pages/lobby/DirectMessagePage.tsx"));
 const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
 const FriendsPage = lazy(() => import("./pages/lobby/FriendsPage.tsx"));
 const SignalRProvider = lazy(() => import("./contexts/SignalRContext.tsx"));
 const UserLobbyLayout = lazy(() => import("./pages/lobby/UserLobbyLayout.tsx"));
 const ServerLayout = lazy(() => import("./pages/server/ServerLayout.tsx"));
-const ChannelPage = lazy(() => import("./pages/server/ChannelPage.tsx"));
 const PresenceProvider = lazy(() => import("./contexts/PresenceContext.tsx"));
 const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout.tsx"));
 const ProfilePage = lazy(() => import("./pages/settings/ProfilePage.tsx"));
@@ -196,26 +194,11 @@ export const router = createBrowserRouter([
                   },
                   {
                     id: "dm",
-                    path: "dm/:userId?",
-                    element: <DirectMessagePage/>,
-                    loader: async ({params}: LoaderFunctionArgs): Promise<DirectMessagePageLoaderProps | undefined> => {
-                      const userId: string | undefined = params.userId;
-
-                      if (!userId) {
-                        return undefined;
-                      }
-
-                      const summary: ServiceResponse<DirectConversationSummary> =
-                        await directConversationService.getDirectConversationSummary(userId);
-
-                      if (!summary.success || !summary.data || !summary.data.conversationId || !summary.data.peerProfile) {
-                        return undefined;
-                      }
-
-                      return {
-                        conversationId: summary.data.conversationId,
-                        peerProfile: summary.data.peerProfile,
-                      };
+                    path: "dm/:peerId?",
+                    element: <ConversationPage/>,
+                    loader: ({params}: LoaderFunctionArgs): ConversationSource => {
+                      const peerId: string | undefined = params.peerId;
+                      return peerId ? { type: "dm", peerId: peerId } : { type: "invalid" };
                     }
                   },
                 ]
@@ -228,7 +211,13 @@ export const router = createBrowserRouter([
                   {
                     id: "channel",
                     path: "channels/:channelId?",
-                    element: <ChannelPage/>
+                    element: <ConversationPage/>,
+                    loader: ({params}: LoaderFunctionArgs): ConversationSource => {
+                      const serverId: string | undefined = params.serverId;
+                      const channelId: string | undefined = params.channelId;
+
+                      return serverId && channelId ? { type: "server-channel", serverId, channelId } : { type: "invalid" };
+                    },
                   }
                 ]
               }

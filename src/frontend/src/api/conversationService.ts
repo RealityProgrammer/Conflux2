@@ -3,12 +3,26 @@ import type {
   BackendResponse,
   TimelineMessageDto,
   ServiceResponse,
-  TimelineMessagePage, MessageReadStrategy
+  TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
 
 export const conversationService = {
+  getDmConversationDetails: async (peerId: string): Promise<DmConversationDetails> => {
+    const response: AxiosResponse<BackendResponse<DmConversationDetails>> =
+      await apiClient.get(`/conversations/dm/${encodeURIComponent(peerId)}`);
+
+    return response.data.data!;
+  },
+
+  getServerChannelConversationDetails: async (serverId: string, channelId: string): Promise<ServerChannelConversationDetails> => {
+    const response: AxiosResponse<BackendResponse<ServerChannelConversationDetails>> =
+      await apiClient.get(`/conversations/servers/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(channelId)}`);
+
+    return response.data.data!;
+  },
+
   sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
     const trimmedBody = body?.trim();
 

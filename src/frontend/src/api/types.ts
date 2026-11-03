@@ -59,6 +59,8 @@ export type ServerEmojiGroupDto = components["schemas"]["ServerEmojiGroupDto"];
 export type UnreadNotificationCounts = components["schemas"]["UnreadNotificationCounts"];
 export type FriendSearchResponse = components["schemas"]["FriendSearchResponse"];
 export type SendFriendRequestResult = components["schemas"]["SendFriendRequestResult"];
+export type ServerChannelConversationDetails = components["schemas"]["ServerChannelConversationDetails"];
+export type DmConversationDetails = components["schemas"]["DmConversationDetails"];
 
 export type EditedMessageDto = {
   id: string;

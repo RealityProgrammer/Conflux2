@@ -1,6 +1,5 @@
 import {DropdownMenu} from "radix-ui";
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
-import {type ServiceResponse} from "../../api/types.ts";
 import {UserNameplate} from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import type {
@@ -9,7 +8,6 @@ import type {
   FriendRequestReceivedEvent,
   FriendRequestRejectedEvent
 } from "../../api/events.ts";
-import useFriendRequestActions from "../../hooks/useFriendRequestActions.ts";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";

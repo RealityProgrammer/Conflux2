@@ -18,7 +18,7 @@ export const useMentionCountStore = create<MentionCountStoreType>((set) => ({
   serverMentions: {},
   dmMentions: {},
 
-  setInitialMentions: (serverMentions: Record<string, Record<string, number>>, dmMentions: Record<string, number>) => set((state) => {
+  setInitialMentions: (serverMentions: Record<string, Record<string, number>>, dmMentions: Record<string, number>) => set(() => {
     return { serverMentions, dmMentions };
   }),
 
