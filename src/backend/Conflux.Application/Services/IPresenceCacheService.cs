@@ -4,8 +4,6 @@ using Conflux.Domain.Enums;
 namespace Conflux.Application.Services;
 
 public interface IPresenceCacheService {
-    Task<bool> IsUserConnected(Guid userId);
-    
     Task<PresenceStatus?> GetManualStatus(Guid userId);
     Task SetManualStatus(Guid userId, PresenceStatus status);
     Task SetManualStatuses(IReadOnlyDictionary<Guid, PresenceStatus> statuses);

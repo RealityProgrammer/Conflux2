@@ -1,6 +1,6 @@
-namespace Conflux.WebApi.Services;
+namespace Conflux.Application.Services;
 
-public interface ISignalRConnectionTracker {
+public interface IConnectionTracker {
     Task<int> AddConnection(Guid userId, string connectionId);
     Task<int> RemoveConnection(Guid userId, string connectionId);
     Task<int> GetConnectionsCount(Guid userId);

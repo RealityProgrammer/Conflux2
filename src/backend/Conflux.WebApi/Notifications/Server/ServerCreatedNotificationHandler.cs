@@ -1,4 +1,5 @@
 using Conflux.Application.Features.Servers;
+using Conflux.Application.Services;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
@@ -16,7 +17,7 @@ public sealed partial record CreatedServerEvent;
 
 internal sealed class ServerCreatedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
-    ISignalRConnectionTracker signalRConnectionTracker
+    IConnectionTracker connectionTracker
 ) : INotificationHandler<ServerCreatedNotification> {
     public async ValueTask Handle(ServerCreatedNotification notification, CancellationToken cancellationToken) {
         // notify user (all other connections affect too)
@@ -27,7 +28,7 @@ internal sealed class ServerCreatedNotificationHandler(
         // register all connections of this user to join the server group
         var groupName = SignalRGroupNameProvider.GetServerGroupName(notification.ServerId);
         
-        foreach (var connectionId in await signalRConnectionTracker.GetConnections(notification.CreatorUserId)) {
+        foreach (var connectionId in await connectionTracker.GetConnections(notification.CreatorUserId)) {
             await hubContext
                 .Groups
                 .AddToGroupAsync(connectionId, groupName, cancellationToken);

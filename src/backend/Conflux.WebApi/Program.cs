@@ -277,7 +277,7 @@ builder.Services.AddMediator(options => {
 builder.Services.AddValidatorsFromAssemblyContaining(typeof(KickServerMemberCommandValidator));
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<ISignalRConnectionTracker, SignalRConnectionTracker>()
+    .AddSingleton<IConnectionTracker, ConnectionTracker>()
     .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()

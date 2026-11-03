@@ -8,34 +8,44 @@ namespace Conflux.Infrastructure.Services;
 internal sealed class PresenceCacheService(
     IConnectionMultiplexer connectionMultiplexer
 ) : IPresenceCacheService {
+    private static readonly TimeSpan ManualStatusCacheTtl = TimeSpan.FromDays(3);
+    
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
 
-    public async Task<bool> IsUserConnected(Guid userId) {
-        string connectionsKey = $"presence:connections:{userId}";
-        return await _database.KeyExistsAsync(connectionsKey);
-    }
-
     public async Task<PresenceStatus?> GetManualStatus(Guid userId) {
-        var key = $"presence:manual:{userId}";
-        var val = await _database.StringGetAsync(key);
+        RedisValue value = await _database.HashFieldGetAndSetExpiryAsync(
+            $"user:{{{userId}}}",
+            "manual_presence_status",
+            ManualStatusCacheTtl
+        );
         
-        return val.HasValue ? (PresenceStatus)(int)val : null;
+        return value.HasValue ? (PresenceStatus)(int)value : null;
     }
     
     public async Task SetManualStatus(Guid userId, PresenceStatus status) {
-        var key = $"presence:manual:{userId}";
-        await _database.StringSetAsync(key, (int)status, TimeSpan.FromDays(7));
+        await _database.HashFieldSetAndSetExpiryAsync(
+            $"user:{{{userId}}}",
+            "manual_presence_status",
+            (int)status,
+            ManualStatusCacheTtl
+        );
     }
 
     public async Task SetManualStatuses(IReadOnlyDictionary<Guid, PresenceStatus> statuses) {
         IBatch batch = _database.CreateBatch();
-        List<Task<bool>> tasks = new(statuses.Count);
+        List<Task> tasks = new(statuses.Count);
         
         foreach ((Guid userId, PresenceStatus status) in statuses) {
-            var task = batch.StringSetAsync($"presence:manual:{userId}", (int)status, TimeSpan.FromDays(7));
+            var task = batch.HashFieldSetAndSetExpiryAsync(
+                $"user:{{{userId}}}",
+                "manual_presence_status",
+                (int)status,
+                ManualStatusCacheTtl
+            );
+
             tasks.Add(task);
         }
-
+        
         batch.Execute();
         await Task.WhenAll(tasks);
     }

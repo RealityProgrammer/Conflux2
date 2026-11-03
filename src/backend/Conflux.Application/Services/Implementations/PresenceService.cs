@@ -8,6 +8,7 @@ namespace Conflux.Application.Services.Implementations;
 internal sealed class PresenceService(
     IUserRepository userRepository,
     IPresenceCacheService cacheService,
+    IConnectionTracker connectionTracker,
     IMediator mediator
 ) : IPresenceService {
     public async Task<PresenceStatus> UserConnected(Guid userId) {
@@ -169,7 +170,7 @@ internal sealed class PresenceService(
     }
 
     private async Task<PresenceStatus> GetEffectivePresenceAsync(Guid userId) {
-        bool isConnected = await cacheService.IsUserConnected(userId);
+        bool isConnected = await connectionTracker.GetConnectionsCount(userId) > 0;
         if (!isConnected) return PresenceStatus.Offline;
 
         var manualStatus = 

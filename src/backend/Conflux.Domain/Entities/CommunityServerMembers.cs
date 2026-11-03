@@ -15,6 +15,11 @@ public class CommunityServerMember : IHasCreatedAt {
     
     public MembershipStatus Status { get; set; }
     public DateTimeOffset? BanExpireAt { get; set; }
+    
+    public int HighestAuthorizeLevel { get; set; }
+    
+    public Guid HighestAuthorizeRoleId { get; set; }
+    public CommunityServerRole HighestAuthorizeRole { get; set; } = null!;
 
     public virtual ICollection<CommunityServerMemberRole> MemberRoles { get; set; } = [];
     public virtual ICollection<CommunityServerRole> Roles { get; set; } = [];

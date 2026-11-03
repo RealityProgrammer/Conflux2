@@ -17,7 +17,7 @@ namespace Conflux.WebApi.SignalR;
 [Authorize]
 public sealed partial class GatewayHub(
     JoinTracker joinTracker,
-    ISignalRConnectionTracker connectionTracker,
+    IConnectionTracker connectionTracker,
     IServerMemberReadRepository serverMemberReadRepository,
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,

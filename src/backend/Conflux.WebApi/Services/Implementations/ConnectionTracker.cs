@@ -1,10 +1,11 @@
+using Conflux.Application.Services;
 using StackExchange.Redis;
 
 namespace Conflux.WebApi.Services.Implementations;
 
-internal sealed class SignalRConnectionTracker(
+internal sealed class ConnectionTracker(
     IConnectionMultiplexer connectionMultiplexer
-) : ISignalRConnectionTracker {
+) : IConnectionTracker {
     private static readonly LuaScript AddConnectionScript = LuaScript.Prepare(
         """
         redis.call("SADD", @key, @connectionId);
