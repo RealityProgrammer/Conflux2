@@ -230,6 +230,12 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("HighestAuthorizeLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("HighestAuthorizeRoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -239,6 +245,8 @@ namespace Conflux.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CommunityServerId");
+
+                    b.HasIndex("HighestAuthorizeRoleId");
 
                     b.HasIndex("UserId");
 
@@ -825,6 +833,12 @@ namespace Conflux.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Conflux.Domain.Entities.CommunityServerRole", "HighestAuthorizeRole")
+                        .WithMany()
+                        .HasForeignKey("HighestAuthorizeRoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Conflux.Domain.Entities.ApplicationUser", "User")
                         .WithMany("JoinedCommunityServers")
                         .HasForeignKey("UserId")
@@ -832,6 +846,8 @@ namespace Conflux.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("CommunityServer");
+
+                    b.Navigation("HighestAuthorizeRole");
 
                     b.Navigation("User");
                 });
