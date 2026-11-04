@@ -18,6 +18,7 @@ import IconButton from "../components/IconButton.tsx";
 import {FaPerson} from "react-icons/fa6";
 import {useState} from "react";
 import UserProfilePanel from "../components/UserProfilePanel.tsx";
+import ServerMemberList from "../components/server/ServerMemberList.tsx";
 
 export default function ConversationPage() {
   const loaderData = useLoaderData<ConversationSource>();
@@ -126,7 +127,7 @@ function SuccessDisplay() {
                   userId={(detailsQuery.data as DmConversationDetails).peerProfile.id}
                 />
               ) : (
-                <>E</>
+                <ServerMemberList/>
               )}
             </div>
           </aside>

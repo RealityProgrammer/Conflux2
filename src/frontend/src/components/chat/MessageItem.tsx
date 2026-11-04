@@ -18,7 +18,7 @@ import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaThumbtack, FaThumbtackSlash, FaTrashCan} from "react-icons/fa6";
-import usePinMessage, {type PinMessageVariables} from "../../hooks/usePinMessage.ts";
+import usePinMessageMutation, {type PinMessageVariables} from "../../hooks/usePinMessageMutation.ts";
 import {MessageRow} from "./MessageRow.tsx";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
@@ -82,7 +82,7 @@ function MessageView({
     context.actions.onAttachmentClick(message.attachments, index);
   };
 
-  const pinMessageMutation = usePinMessage({
+  const pinMessageMutation = usePinMessageMutation({
     onSuccess: (data: ServiceResponse<TimelineMessageDto>, variables: PinMessageVariables) => {
       if (data.success) {
         context.actions.updateMessagePin(variables.messageId, variables.action === "pin");

@@ -15,5 +15,6 @@ public sealed partial record ServerMemberAuthorizeInfoDto(
 [MemoryPackable]
 public sealed partial record MemberRoleDto(
     Guid Id,
+    SpecialRoleType SpecialRoleType,
     string Name
 );

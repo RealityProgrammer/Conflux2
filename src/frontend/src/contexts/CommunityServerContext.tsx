@@ -1,8 +1,10 @@
 import type {
   ChannelCategoryIdentityDto,
   ServerChannelIdentityDto,
-  ServerDetailsDto, ServerMemberAuthorizeInfoDto,
-  ServiceError, ServiceResponse
+  ServerDetailsDto,
+  ServerMemberAuthorizeInfoDto,
+  ServiceError,
+  ServiceResponse
 } from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import {type QueryKey, useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
@@ -11,12 +13,14 @@ import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {
   ServerChannelCategoryCreatedEvent,
   ServerChannelCategoryDeletedEvent,
-  ServerChannelCreatedEvent, ServerChannelDeletedEvent
+  ServerChannelCreatedEvent,
+  ServerChannelDeletedEvent
 } from "../api/events.ts";
-import {ServerPermission} from "../api/schema.ts";
+import {ServerPermission, SpecialRoleType} from "../api/schema.ts";
 
 interface CommunityServerContextType {
   detailsQueryResult: UseQueryResult<ServerDetailsDto, ServiceError>;
+  isOwner: boolean;
 
   appendChannelCategory: (category: ChannelCategoryIdentityDto) => void;
   removeChannelCategory: (id: string) => void;
@@ -45,15 +49,9 @@ export default function CommunityServerContextProvider({
     enabled: !!serverId,
     queryKey: detailsQueryKey,
     queryFn: async (): Promise<ServerDetailsDto> => {
-      const response = await serverService.getDetails(serverId!);
-      
-      if (response.success) {
-        return response.data!;
-      }
-      
-      throw response.error;
+      return await serverService.getDetails(serverId!);
     },
-    staleTime: 15 * 60 * 1000,
+    staleTime: 45 * 60 * 1000,
     retry: (failureCount, error: ServiceError) => {
       if (error.code === "NETWORK_ERROR" || error.code === "REQUEST_SETUP_ERROR") {
         return failureCount <= 3;
@@ -256,7 +254,8 @@ export default function CommunityServerContextProvider({
       removeChannel,
       hasPermission,
       refreshPermission,
-      updatePermission
+      updatePermission,
+      isOwner: detailsQueryResult.data?.authorizeInfo.roles.some(r => r.specialRoleType === SpecialRoleType.Owner) ?? false,
     }}>
       {children}
     </CommunityServerContext.Provider>

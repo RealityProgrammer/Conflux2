@@ -24,6 +24,7 @@ type Query
     "Returns the elements in the list that come before the specified cursor."
     before: String
     serverId: UUID!
+    order: [CommunityServerMemberSortInput!] @cost(weight: "10")
   ): CommunityServerMemberConnection!
     @listSize(
       assumedSize: 50

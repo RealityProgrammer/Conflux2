@@ -63,6 +63,14 @@ export type GetPendingFriendRequestsQueryVariables = Exact<{
 
 export type GetPendingFriendRequestsQuery = { friendRequests: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, status: Types.FriendRequestStatus, senderUserId: string, otherUser: { id: string, userName: string | null, displayName: string | null, avatarVersion: number | null } | null }> | null } };
 
+export type GetServerMembersQueryVariables = Exact<{
+  serverId: string;
+  after?: string | null | undefined;
+}>;
+
+
+export type GetServerMembersQuery = { communityServerMembers: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ user: { id: string, displayName: string | null, avatarVersion: number | null }, highestAuthorizeRole: { id: string, name: string } }> | null } };
+
 export type GetServerModerationLogsQueryVariables = Exact<{
   serverId: string;
   after?: string | null | undefined;
@@ -563,6 +571,74 @@ useInfiniteGetPendingFriendRequestsQuery.getKey = (variables?: GetPendingFriendR
 
 
 useGetPendingFriendRequestsQuery.fetcher = (variables?: GetPendingFriendRequestsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetPendingFriendRequestsQuery, GetPendingFriendRequestsQueryVariables>(GetPendingFriendRequestsDocument, variables, options);
+
+export const GetServerMembersDocument = new TypedDocumentString(`
+    query GetServerMembers($serverId: UUID!, $after: String) {
+  communityServerMembers(
+    serverId: $serverId
+    order: {highestAuthorizeLevel: DESC, user: {displayName: ASC}}
+    after: $after
+  ) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      user {
+        id
+        displayName
+        avatarVersion
+      }
+      highestAuthorizeRole {
+        id
+        name
+      }
+    }
+  }
+}
+    `);
+
+export const useGetServerMembersQuery = <
+      TData = GetServerMembersQuery,
+      TError = unknown
+    >(
+      variables: GetServerMembersQueryVariables,
+      options?: Omit<UseQueryOptions<GetServerMembersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetServerMembersQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetServerMembersQuery, TError, TData>(
+      {
+    queryKey: ['GetServerMembers', variables],
+    queryFn: graphqlFetcher<GetServerMembersQuery, GetServerMembersQueryVariables>(GetServerMembersDocument, variables),
+    ...options
+  }
+    )};
+
+useGetServerMembersQuery.getKey = (variables: GetServerMembersQueryVariables) => ['GetServerMembers', variables];
+
+export const useInfiniteGetServerMembersQuery = <
+      TData = InfiniteData<GetServerMembersQuery>,
+      TError = unknown
+    >(
+      variables: GetServerMembersQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetServerMembersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetServerMembersQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetServerMembersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['GetServerMembers.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetServerMembersQuery, GetServerMembersQueryVariables>(GetServerMembersDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetServerMembersQuery.getKey = (variables: GetServerMembersQueryVariables) => ['GetServerMembers.infinite', variables];
+
+
+useGetServerMembersQuery.fetcher = (variables: GetServerMembersQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetServerMembersQuery, GetServerMembersQueryVariables>(GetServerMembersDocument, variables, options);
 
 export const GetServerModerationLogsDocument = new TypedDocumentString(`
     query GetServerModerationLogs($serverId: UUID!, $after: String) {

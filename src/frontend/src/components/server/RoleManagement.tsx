@@ -1023,7 +1023,7 @@ function RoleDetails({
         <div className="flex flex-row justify-end mt-2">
           <AlertDialog
             title="Delete Role"
-            subtitle="Subtitle goes here..."
+            subtitle="Never seen again..."
             headerIcon={(
               <BsTrashFill className="size-10 fill-white"/>
             )}

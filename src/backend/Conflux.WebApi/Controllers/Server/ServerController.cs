@@ -46,13 +46,7 @@ public sealed class ServerController(
 
     [HttpGet("{serverId:guid}/details")]
     public async Task<ActionResult<ApiResponse<ServerDetailsDto>>> GetDetails(Guid serverId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await mediator.Send(new GetServerDetailsQuery(serverId, userId));
+        var result = await mediator.Send(new GetServerDetailsQuery(serverId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<ServerDetailsDto>(result.Value!, Error.None));
@@ -104,12 +98,12 @@ public sealed class ServerController(
         };
     }
 
-    [HttpPost("{serverId:guid}/leave")]
+    [HttpDelete("{serverId:guid}")]
     public async Task<ActionResult<ApiResponse>> LeaveServer(Guid serverId) {
         var result = await mediator.Send(new LeaveServerCommand(serverId));
         
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return NoContent();
         }
         
         return result.Error.Code switch {

@@ -4,6 +4,7 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Frozen;
 
@@ -48,7 +49,7 @@ internal sealed class ServerPermissionsProvider(
                 member.Id,
                 int.MaxValue,
                 OwnerEffectivePermissions,
-                [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))],
+                [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.SpecialRoleType, r.Role.Name))],
                 false
             );
             
@@ -133,7 +134,7 @@ internal sealed class ServerPermissionsProvider(
                     member.Id,
                     int.MaxValue,
                     OwnerEffectivePermissions,
-                    [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))],
+                    [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.SpecialRoleType, r.Role.Name))],
                     false
                 );
 
@@ -194,7 +195,7 @@ internal sealed class ServerPermissionsProvider(
             effectivePermissions,
             [..member.MemberRoles
                 .OrderByDescending(mr => mr.Role.AuthorizeLevel)
-                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
+                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.SpecialRoleType, mr.Role.Name))
             ],
             member.BanExpireAt != null && member.BanExpireAt <= currentTime
         );

@@ -1,6 +1,7 @@
 import {AvatarAndBanner} from "../AvatarAndBanner.tsx";
 import {
-  BsChatText,
+  BsChatText, BsDoorClosedFill,
+  BsDoorOpenFill,
   BsExclamationCircle,
   BsFolder,
   BsFolderX,
@@ -20,13 +21,17 @@ import IconButton from "../IconButton.tsx";
 import {useNavigate} from "react-router";
 import {ChannelType, ServerPermission} from "../../api/schema.ts";
 import CreateCategoryOrChannelModal, {type CreateType} from "./CreateCategoryOrChannelModal.tsx";
-import AlertActionDialog from "../AlertActionDialog.tsx";
+import AlertDialog from "../AlertActionDialog.tsx";
 import {useChannelDeleteMutation} from "../../hooks/useChannelDeleteMutation.ts";
 import {toast} from "react-toastify";
 import {useChannelCategoryDeleteMutation} from "../../hooks/useChannelCategoryDeleteMutation.ts";
 import CreateInvitationDialog from "./CreateInvitationDialog.tsx";
 import {ServerManagementModal} from "./ServerManagementModal.tsx";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
+import useLeaveServerMutation from "../../hooks/useLeaveServerMutation.ts";
+import {queryClient} from "../../main.tsx";
+import {useQueryClient} from "@tanstack/react-query";
+import {useInfiniteGetJoinedCommunityServerQuery} from "../../graphql/infiniteQueries.ts";
 
 type CreateModalState = {
   categoryId: string | null;
@@ -117,8 +122,14 @@ function SuccessfulHeader({
   setIsInvitationModalOpen,
   setIsManagementModalOpen,
 }: SuccessfulHeaderProps) {
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { detailsQueryResult: { data: serverDetails, isSuccess: isDetailsSuccess }, hasPermission, isOwner } = useCommunityServerContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLeaveServerModalOpen, setIsLeaveServerModalOpen] = useState(false);
+
+  const leaveServerMutation = useLeaveServerMutation();
   
   if (!serverDetails) return null;
 
@@ -134,7 +145,9 @@ function SuccessfulHeader({
     hasPermission(ServerPermission.WarnMembers) ||
     hasPermission(ServerPermission.BanMembers) ||
     hasPermission(ServerPermission.UnbanMembers);
-  
+
+  const canLeaveServer = !isOwner;
+
   return (
     <div className="relative">
       <AvatarAndBanner.Template
@@ -153,7 +166,7 @@ function SuccessfulHeader({
       
       <p className="flex-none truncate px-2">{serverDetails.name}</p>
 
-      {(canCreateChannel || canAccessServerManagementDialog || canCreateInvitation) && (
+      {isDetailsSuccess && (
         <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
           <DropdownMenu.Trigger asChild>
             <IconButton theme="default" className="absolute top-1 right-1">
@@ -177,7 +190,6 @@ function SuccessfulHeader({
                     onSelect={() => setCreateModalState({ categoryId: null, type: "category" })}
                   >
                     Create category
-
                     <BsFolder className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
@@ -186,7 +198,6 @@ function SuccessfulHeader({
                     onSelect={() => setCreateModalState({ categoryId: null, type: "text" })}
                   >
                     Create text channel
-
                     <BsChatText className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
 
@@ -195,45 +206,105 @@ function SuccessfulHeader({
                     onSelect={() => setCreateModalState({ categoryId: null, type: "voice" })}
                   >
                     Create voice channel
-
                     <BsVolumeUp className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
                 </>
               )}
 
               {canCreateInvitation && (
-                <DropdownMenu.Item
-                  className="dropdown-item-default"
-                  onSelect={() => setIsInvitationModalOpen(true)}
-                >
-                  Create invitation
+                <>
+                  <DropdownMenu.Item
+                    className="dropdown-item-default"
+                    onSelect={() => setIsInvitationModalOpen(true)}
+                  >
+                    Create invitation
+                    <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
+                  </DropdownMenu.Item>
 
-                  <BsPersonPlusFill className="fill-white size-4 ml-auto"/>
-                </DropdownMenu.Item>
+                  <Separator.Root className="horizontal-separator my-1" decorative orientation="horizontal"/>
+                </>
               )}
 
               {canAccessServerManagementDialog && (
                 <>
-                  {(canCreateInvitation || canCreateChannel) && (
-                    <Separator.Root className="horizontal-separator my-1" decorative orientation="horizontal"/>
-                  )}
-
                   <DropdownMenu.Item
                     className="dropdown-item-default"
                     onSelect={() => setIsManagementModalOpen(true)}
                   >
                     Manage Server
-
                     <BsGearFill className="fill-white size-4 ml-auto"/>
                   </DropdownMenu.Item>
+
+                  {canLeaveServer && (
+                    <Separator.Root className="horizontal-separator my-1" decorative orientation="horizontal"/>
+                  )}
                 </>
               )}
-              
+
+              {canLeaveServer && (
+                <DropdownMenu.Item
+                  className="dropdown-item-danger"
+                  onSelect={() => setIsLeaveServerModalOpen(true)}
+                >
+                  Leave Server
+                  <BsDoorOpenFill className="size-4 ml-auto"/>
+                </DropdownMenu.Item>
+              )}
+
               <DropdownMenu.Arrow className="fill-gray-650"/>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       )}
+
+      <AlertDialog
+        open={isLeaveServerModalOpen}
+        onOpenChange={setIsLeaveServerModalOpen}
+        title="Leave Server"
+        subtitle="Well fun time is over, it is time to depart..."
+        headerIcon={(
+          <BsDoorClosedFill className="size-10 fill-white"/>
+        )}
+        contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"
+        cancelButton={(
+          <button
+            type="button"
+            className="button-cursor px-3 py-2"
+          >
+            Cancel
+          </button>
+        )}
+        actionButton={(
+          <button
+            type="button"
+            className="button-theme-danger button-cursor px-3 py-2 rounded-md"
+            onClick={() => {
+              leaveServerMutation.mutate(
+                { serverId: serverDetails?.id },
+                {
+                  onSuccess: () => {
+                    queryClient.invalidateQueries({
+                      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
+                    });
+
+                    navigate("/lobby");
+                  },
+                  onError: () => {
+                    toast.error("Failed to leave server.");
+                  }
+                }
+              );
+              setIsLeaveServerModalOpen(false);
+            }}
+          >
+            Leave Server
+          </button>
+        )}
+      >
+        <div className="p-3">
+          Are you sure you want to leave? Your friends will miss you...
+        </div>
+      </AlertDialog>
     </div>
   );
 }
@@ -292,7 +363,7 @@ function SuccessfulBody({
       
       <CreateInvitationDialog open={isInvitationModalOpen} onOpenChange={setIsInvitationModalOpen}/>
 
-      <AlertActionDialog
+      <AlertDialog
         contentClassName="centered-dialog w-lg bg-gray-650 text-white"
         open={!!deleteModalState}
         onOpenChange={(open) => {
@@ -366,7 +437,7 @@ function SuccessfulBody({
             <p>Are you sure you want to delete this channel? This action cannot be undone.</p>
           )}
         </div>
-      </AlertActionDialog>
+      </AlertDialog>
     </>
   );
 }

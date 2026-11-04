@@ -7,9 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record GetServerDetailsQuery(Guid ServerId, Guid UserId) : IQuery<Result<ServerDetailsDto>>;
+public sealed record GetServerDetailsQuery(Guid ServerId) : IQuery<Result<ServerDetailsDto>>;
 
 public sealed class GetServerDetailsHandler(
+    ICurrentUserService currentUserService,
     ICommunityServerWriteRepository repository,
     IServerPermissionsProvider permissionsProvider
 ) : IQueryHandler<GetServerDetailsQuery, Result<ServerDetailsDto>> {
@@ -17,9 +18,13 @@ public sealed class GetServerDetailsHandler(
         GetServerDetailsQuery query, 
         CancellationToken cancellationToken
     ) {
+	if (currentUserService.UserId is not { } userId) {
+	    return Errors.InvalidIdentifier();
+	}
+
         var serverId = query.ServerId;
         
-        var userAuthorizeResult = await permissionsProvider.GetUserAuthorizeInfo(serverId, query.UserId, cancellationToken);
+        var userAuthorizeResult = await permissionsProvider.GetUserAuthorizeInfo(serverId, userId, cancellationToken);
         if (!userAuthorizeResult.IsSuccess) {
             return userAuthorizeResult.Error;
         }

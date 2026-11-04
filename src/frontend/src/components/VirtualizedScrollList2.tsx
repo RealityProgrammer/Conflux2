@@ -7,7 +7,7 @@ interface VirtualizedScrollList2Props<ItemData> {
   data?: ItemData[];
   className?: string;
   renderEmpty?: () => ReactNode;
-  renderItem: (index: number, data?: ItemData) => ReactNode;
+  renderItem: (index: number, data: ItemData) => ReactNode;
   overscan?: number;
   atBottomThreshold?: number;
   computeItemKey: (index: number) => string;

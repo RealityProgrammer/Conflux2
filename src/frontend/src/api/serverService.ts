@@ -52,20 +52,11 @@ export const serverService = {
     return `/api/communities/${encodeURIComponent(serverId)}/banner?${queryParams}`;
   },
 
-  getDetails: async (serverId: string): Promise<ServiceResponse<ServerDetailsDto>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<ServerDetailsDto>> =
-        await apiClient.get<BackendResponse<ServerDetailsDto>>(`/communities/${encodeURIComponent(serverId)}/details`);
+  getDetails: async (serverId: string): Promise<ServerDetailsDto> => {
+    const response: AxiosResponse<BackendResponse<ServerDetailsDto>> =
+      await apiClient.get<BackendResponse<ServerDetailsDto>>(`/communities/${encodeURIComponent(serverId)}/details`);
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ServerDetailsDto>>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data!.data!;
   },
   
   getMemberAuthorizeInfo: async (serverId: string): Promise<ServiceResponse<ServerMemberAuthorizeInfoDto>> => {
@@ -283,4 +274,8 @@ export const serverService = {
       {addRoleIds, removeRoleIds}
     );
   },
+
+  leaveServer: async (serverId: string): Promise<void> => {
+    await apiClient.delete(`/communities/${encodeURIComponent(serverId)}`);
+  }
 }

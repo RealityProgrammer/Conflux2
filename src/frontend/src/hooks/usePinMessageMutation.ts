@@ -9,11 +9,11 @@ export interface PinMessageVariables {
   action: "pin" | "unpin";
 }
 
-export default function usePinMessage(
-  options: Omit<UseMutationOptions<ServiceResponse<TimelineMessageDto>, Error, PinMessageVariables, unknown>, "mutationFn">
+export default function usePinMessageMutation(
+  options?: Omit<UseMutationOptions<ServiceResponse<TimelineMessageDto>, Error, PinMessageVariables>, "mutationFn" | "mutationKey">
 ) {
   return useMutation<ServiceResponse<TimelineMessageDto>, Error, PinMessageVariables, unknown>({
-    ...options,
+    mutationKey: usePinMessageMutation.key,
     mutationFn: async (variables: PinMessageVariables, _context: MutationFunctionContext) => {
       return conversationService.pinMessage(
         variables.idempotencyKey,
@@ -22,5 +22,8 @@ export default function usePinMessage(
         variables.action,
       );
     },
+    ...options,
   });
 }
+
+usePinMessageMutation.key = ["usePinMessageMutation"]

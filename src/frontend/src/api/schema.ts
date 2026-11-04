@@ -3207,6 +3207,7 @@ export interface components {
         MemberRoleDto: {
             /** Format: uuid */
             id: string;
+            specialRoleType: components["schemas"]["SpecialRoleType"];
             name: string;
         };
         MessageAttachmentDto: {
@@ -3413,6 +3414,8 @@ export interface components {
             userName: string;
             displayName: string;
         };
+        /** @enum {string} */
+        SpecialRoleType: SpecialRoleType;
         StartCallResult: {
             /** Format: uuid */
             callId: string;
@@ -3650,6 +3653,11 @@ export enum SessionDevice {
     Phone = "Phone",
     Tablet = "Tablet",
     Other = "Other"
+}
+export enum SpecialRoleType {
+    None = "None",
+    Default = "Default",
+    Owner = "Owner"
 }
 export enum UserAccountDeleteReason {
     PrivacyConcern = "PrivacyConcern",

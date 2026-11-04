@@ -1167,6 +1167,7 @@ export type QueryCommunityServerMembersArgs = {
   before?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
   last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<CommunityServerMemberSortInput>>;
   serverId: Scalars['UUID']['input'];
 };
 
