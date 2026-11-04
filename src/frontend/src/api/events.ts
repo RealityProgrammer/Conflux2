@@ -193,3 +193,7 @@ export type MentionSource =
 export type MessageMentionReceivedEvent = {
   source: MentionSource;
 }
+
+export type LeftServerEvent = {
+  serverId: string;
+}

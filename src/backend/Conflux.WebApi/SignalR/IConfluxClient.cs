@@ -39,11 +39,13 @@ public interface IConfluxClient {
     Task BannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
     Task UnbannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
     
+    Task JoinedServer(JoinedServerEvent data, CancellationToken cancellationToken = default);
+    Task LeftServer(LeftServerEvent data, CancellationToken cancellationToken = default);
+    Task ServerMemberLeft(ServerMemberLeftEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberKicked(ServerMemberKickedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberWarned(ServerMemberWarnedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberBanned(ServerMemberBannedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
-    Task JoinedServer(JoinedServerEvent data, CancellationToken cancellationToken = default);
     Task CreatedServer(CreatedServerEvent data, CancellationToken cancellationToken = default);
     Task EmojiCreated(EmojiCreatedEvent data, CancellationToken cancellationToken = default);
     Task EmojiDeleted(EmojiDeletedEvent data, CancellationToken cancellationToken = default);

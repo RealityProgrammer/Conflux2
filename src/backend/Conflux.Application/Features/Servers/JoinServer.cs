@@ -1,4 +1,3 @@
-using Conflux.Application.Extensions;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -11,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record JoinServerCommand(string InvitationId) : ICommand<Result>;
 
-public sealed record ServerJoinedNotification(Guid UserId, Guid ServerId) : INotification;
+public sealed record MemberJoinedServerNotification(Guid ServerId, Guid UserId) : INotification;
 
 public sealed class JoinServerHandler(
     ICurrentUserService currentUserService,
@@ -106,7 +105,7 @@ public sealed class JoinServerHandler(
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitAsync(cancellationToken);
 
-                await publisher.Publish(new ServerJoinedNotification(userId, serverId), CancellationToken.None);
+                await publisher.Publish(new MemberJoinedServerNotification(serverId, userId), CancellationToken.None);
                 
                 return Result.Success();
             } catch (DbUpdateConcurrencyException) {

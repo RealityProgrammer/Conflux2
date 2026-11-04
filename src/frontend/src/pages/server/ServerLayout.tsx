@@ -1,4 +1,4 @@
-import {Outlet, useParams} from "react-router";
+import {data, Outlet, useNavigate, useParams} from "react-router";
 import Spinner from "../../components/Spinner.tsx";
 import CommunityServerContextProvider, {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {BsExclamationTriangle} from "react-icons/bs";
@@ -8,6 +8,7 @@ import KickedFromServerDialog from "../../components/server/KickedFromServerDial
 import {useState} from "react";
 import {toast} from "react-toastify";
 import type {
+  LeftServerEvent,
   MemberRolesUpdatedEvent,
   ServerDefaultRoleUpdatedEvent,
   ServerRoleDeletedEvent,
@@ -40,11 +41,17 @@ function EnableGuard() {
   }
   
   return (
+    <PageContent/>
+  );
+}
+
+function PageContent() {
+  return (
     <div className="size-full flex flex-row text-white">
       <aside className="flex-none w-64 h-full bg-gray-725 border-r-2 border-r-gray-600 overflow-hidden">
         <SidebarContent/>
       </aside>
-      
+
       <div className="flex-1 overflow-auto flex flex-row justify-center items-center">
         <PageOutlet/>
       </div>
@@ -78,6 +85,7 @@ function PageOutlet() {
 function SuccessfullyLoaded() {
   const { detailsQueryResult: { data: serverDetails }, updatePermission, refreshPermission } = useCommunityServerContext();
   const [showKickedDialog, setShowKickedDialog] = useState(false);
+  const navigate = useNavigate();
 
   useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverDetails?.id) return;
@@ -99,6 +107,12 @@ function SuccessfullyLoaded() {
     if (!serverDetails.authorizeInfo.roles.some(r => r.id === event.roleId)) return;
 
     await refreshPermission();
+  });
+
+  useSignalREvent("LeftServer", (event: LeftServerEvent) => {
+    if (serverDetails?.id === event.serverId) {
+      navigate("/lobby");
+    }
   });
   
   useSignalREvent("KickedFromServer", (kickedServerId: string) => {

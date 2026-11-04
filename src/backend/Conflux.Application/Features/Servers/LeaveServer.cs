@@ -9,11 +9,14 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record LeaveServerCommand(Guid ServerId) : ICommand<Result>;
 
+public sealed record ServerMemberLeftNotification(Guid ServerId, Guid MemberUserId, Guid MemberId) : INotification;
+
 public sealed class LeaveServerCommandHandler(
     ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
     ICommunityServerRoleRepository serverRoleRepository,
     IUnitOfWork unitOfWork,
+    IPublisher publisher,
     ILogger<LeaveServerCommandHandler> logger
 ) : ICommandHandler<LeaveServerCommand, Result> {
     public async ValueTask<Result> Handle(LeaveServerCommand command, CancellationToken cancellationToken) {
@@ -56,6 +59,8 @@ public sealed class LeaveServerCommandHandler(
             logger.LogError(e, "Exception thrown while trying to leave server.");
             return Errors.UnexpectedError();
         }
+
+	await publisher.Publish(new ServerMemberLeftNotification(serverId, userId, member.Id), CancellationToken.None);
 
         return Result.Success();
     }

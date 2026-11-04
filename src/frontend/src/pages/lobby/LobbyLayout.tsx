@@ -29,7 +29,12 @@ import {HiOutlineSquares2X2, HiOutlineUserGroup} from "react-icons/hi2";
 import {FaGears, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {Avatar} from "../../components/Avatar.tsx";
-import type {CreatedServerEvent, JoinedServerEvent, MessageMentionReceivedEvent} from "../../api/events.ts";
+import type {
+  CreatedServerEvent,
+  JoinedServerEvent,
+  LeftServerEvent,
+  MessageMentionReceivedEvent
+} from "../../api/events.ts";
 import {requestNotificationPermission} from "../../permissions.ts";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 import {playMentionAudio} from "../../sfx.ts";
@@ -90,6 +95,7 @@ function UserHomePageButton() {
 
 function JoinedCommunityServerScrollList() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const {
     data,
@@ -116,7 +122,13 @@ function JoinedCommunityServerScrollList() {
 
   const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
 
-  useSignalREvent("JoinedServer", (_event: JoinedServerEvent) => {
+  useSignalREvent("JoinedServer", () => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
+    });
+  });
+
+  useSignalREvent("LeftServer", () => {
     queryClient.invalidateQueries({
       queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
     });

@@ -1,4 +1,5 @@
 using Conflux.Application.Features.Servers;
+using Conflux.Application.Services;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.SignalR;
 using Facet;
@@ -16,16 +17,30 @@ public sealed partial record ServerMemberBannedEvent;
 
 internal sealed class MemberBannedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IConnectionTracker connectionTracker
 ) : INotificationHandler<ServerMemberBannedNotification> {
     public async ValueTask Handle(ServerMemberBannedNotification notification, CancellationToken cancellationToken) {
+        string? connectionId = 
+            httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+        
         // broadcast the banned notification to the banned user.
         await hubContext.Clients
             .User(notification.BannedMemberUserId.ToString())
             .BannedFromServer(notification.ServerId, cancellationToken);
         
-        string? connectionId = 
-            httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+        // remove the connections of banned users from the server group
+        if (await connectionTracker.GetConnections(notification.BannedMemberUserId) is { Count: > 0 } bannedUserConnectionIds) {
+            var serverGroupName = SignalRGroupNameProvider.GetServerGroupName(notification.ServerId);
+            
+            foreach (var connection in bannedUserConnectionIds) {
+                await hubContext.Groups.RemoveFromGroupAsync(
+                    connection,
+                    serverGroupName,
+                    cancellationToken
+                );
+            }
+        }
 
         // broadcast the banned notification to whoever has the ability to manage member
         string groupName = SignalRGroupNameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);
