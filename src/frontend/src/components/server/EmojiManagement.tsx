@@ -14,7 +14,7 @@ import SelectableImageInput from "../SelectableImageInput.tsx";
 import ErrorPopover from "../ErrorPopover.tsx";
 import {Avatar} from "../Avatar.tsx";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {communityServerService} from "../../api/communityServerService.ts";
+import {serverService} from "../../api/serverService.ts";
 import {toast} from "react-toastify";
 import {ServerPermission} from "../../api/schema.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -197,7 +197,7 @@ function BulkDeleteButton({
   const bulkDeleteMutation = useMutation({
     mutationKey: ["BulkDeleteEmojis"],
     mutationFn: async () => {
-      const response = await communityServerService.deleteEmojis(
+      const response = await serverService.deleteEmojis(
         serverId,
         Array.from(selectedIds)
       );
@@ -264,7 +264,7 @@ function CreateEmojiButton({disabled = false}: {disabled?: boolean}) {
   const createMutation = useMutation({
     mutationKey: ["CreateEmoji"],
     mutationFn: async (data: CreateEmojiFormValues) => {
-      const response: ServiceResponse<EmojiDto> = await communityServerService.createEmoji(
+      const response: ServiceResponse<EmojiDto> = await serverService.createEmoji(
         serverDetails!.id,
         data.shortCode,
         data.file

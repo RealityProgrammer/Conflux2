@@ -9,7 +9,7 @@ import {handleAxiosError} from "./errorHandling.ts";
 import type {PermissionState} from "../graphql/types.ts";
 import type {ServerPermission} from "./schema.ts";
 
-export const communityServerService = {
+export const serverService = {
   createServer: async (idempotencyKey: string, name: string, avatar?: File): Promise<ServiceResponse<ServerIdentityDto>> => {
     try {
       const formData = new FormData();
@@ -68,22 +68,6 @@ export const communityServerService = {
     }
   },
   
-  getChannelCategories: async (serverId: string): Promise<ServiceResponse<ChannelCategoryDetailDto[]>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<ChannelCategoryDetailDto[]>> =
-        await apiClient.get<BackendResponse<ChannelCategoryDetailDto[]>>(`/communities/${encodeURIComponent(serverId)}/details/channel-categories`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ChannelCategoryDetailDto[]>>;
-      return handleAxiosError(axiosError);
-    }
-  },
-  
   getMemberAuthorizeInfo: async (serverId: string): Promise<ServiceResponse<ServerMemberAuthorizeInfoDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<ServerMemberAuthorizeInfoDto>> =
@@ -119,22 +103,6 @@ export const communityServerService = {
       };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse<ChannelCategoryIdentityDto>>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
-  getChannelDetails: async (serverId: string, channelId: string): Promise<ServiceResponse<ChannelDetailsDto>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<ChannelDetailsDto>> =
-        await apiClient.get<BackendResponse<ChannelDetailsDto>>(`/communities/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(channelId)}`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ChannelDetailsDto>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -226,7 +194,7 @@ export const communityServerService = {
   updateRole: async (serverId: string, roleId: string, data: {
     name?: string,
     authorizeLevel?: number,
-    permissionStates?: Record<ServerPermission, PermissionState>,
+    permissionStates: Record<ServerPermission, PermissionState>,
   }): Promise<ServiceResponse<ServerRoleDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<ServerRoleDto>> =
@@ -307,5 +275,12 @@ export const communityServerService = {
       const axiosError = error as AxiosError<BackendResponse<EmojiManagementDto[]>>;
       return handleAxiosError(axiosError);
     }
+  },
+
+  updateMemberRoles: async (serverId: string, userId: string, addRoleIds: string[], removeRoleIds: string[]): Promise<void> => {
+    await apiClient.patch<BackendResponse<EmojiManagementDto[]>>(
+      `/communities/${encodeURIComponent(serverId)}/members/${encodeURIComponent(userId)}/roles`,
+      {addRoleIds, removeRoleIds}
+    );
   },
 }

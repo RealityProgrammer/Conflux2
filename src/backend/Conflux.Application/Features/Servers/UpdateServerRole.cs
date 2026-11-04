@@ -4,6 +4,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -12,7 +13,7 @@ public sealed record UpdateServerRoleCommand(
     Guid RoleId,
     PatchField<string> Name,
     PatchField<int> AuthorizeLevel,
-    PatchField<Dictionary<ServerPermission, PermissionState>>? PermissionStates
+    IReadOnlyDictionary<ServerPermission, PermissionState> PermissionStates
 ) : ICommand<Result<ServerRoleDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateRole];
 }
@@ -22,7 +23,8 @@ public sealed record ServerDefaultRoleUpdatedNotification(Guid ServerId) : INoti
 
 public sealed class UpdateServerRoleHandler(
     ICurrentUserService currentUserService,
-    ICommunityServerRoleRepository repository,
+    ICommunityServerRoleRepository serverRoleRepository,
+    IServerMemberReadRepository serverMemberReadRepository,
     IUnitOfWork unitOfWork,
     IServerPermissionsProvider permissionsProvider,
     IPublisher publisher,
@@ -31,48 +33,82 @@ public sealed class UpdateServerRoleHandler(
     ILogger<UpdateServerRoleHandler> logger
 ) : ICommandHandler<UpdateServerRoleCommand, Result<ServerRoleDto>> {
     public async ValueTask<Result<ServerRoleDto>> Handle(UpdateServerRoleCommand command, CancellationToken cancellationToken) {
-        Guid userId = currentUserService.UserId!.Value;
-        CommunityServerRole? role = await repository.FindById(command.RoleId, true, cancellationToken);
-
-        if (role == null || role.CommunityServerId != command.ServerId) {
-            return Errors.ResourceNotFound("Server role");
+        if (currentUserService.UserId is not { } userId) {
+            return Errors.InvalidIdentifier();
         }
 
-        if (role.SpecialRoleType == SpecialRoleType.Owner) {
-            return Errors.Forbidden("Updating Owner role is not allowed.");
-        }
+        var serverId = command.ServerId;
+        var roleId = command.RoleId;
+        
+        CommunityServerRole? updatingRole = await serverRoleRepository
+            .AsQueryable()
+            .Where(r => r.CommunityServerId == serverId && r.Id == roleId)
+            .Include(r => r.CommunityServer)
+            .ThenInclude(s => s.Roles)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (role.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.IsSet) {
-            return Errors.Forbidden("Updating authorize level of Default role is not allowed.");
+        switch (updatingRole) {
+            case null:
+                return Errors.ResourceNotFound("Server role", [
+                    new(nameof(CommunityServerRole.Id), roleId.ToString()),
+                    new(nameof(CommunityServerRole.CommunityServerId), serverId.ToString()),
+                ]);
+            
+            case var _ when updatingRole.SpecialRoleType == SpecialRoleType.Owner:
+                return Errors.Forbidden("Updating Owner role is not allowed.");
+            
+            case var _ when updatingRole.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.IsSet:
+                return Errors.Forbidden("Updating authorize level of Default role is not allowed.");
         }
         
-        // restrict member from updating role with higher authorize level
-        var result = await permissionsProvider.GetUserAuthorizeInfo(command.ServerId, userId, cancellationToken);
+        // check the authorize level of the user, restrict from updating role with higher or equal authorize level
+        var result = await permissionsProvider.GetUserAuthorizeInfo(serverId, userId, cancellationToken);
 
         if (!result.IsSuccess) {
             return result.Error;
         }
 
-        if (role.AuthorizeLevel >= result.Value!.AuthorizeLevel) {
+        if (updatingRole.AuthorizeLevel >= result.Value!.AuthorizeLevel) {
             return Errors.Forbidden("Updating role with authorize level higher or equals to yours is not allowed.");
         }
         
         if (command.Name.IsSet) {
-            role.Name = command.Name.Value!;
+            updatingRole.Name = command.Name.Value!;
         }
 
         if (command.AuthorizeLevel.IsSet) {
-            role.AuthorizeLevel = command.AuthorizeLevel.Value;
+            updatingRole.AuthorizeLevel = command.AuthorizeLevel.Value;
+            
+            // need to recalculate the highest authorize level for every member owning this role
+            var affectedMembers = await serverMemberReadRepository
+                .AsQueryable()
+                .Where(m => m.CommunityServerId == serverId && m.Roles.Any(r => r.Id == roleId))
+                .Include(m => m.Roles)
+                .ToListAsync(cancellationToken);
+            
+            var defaultRole = updatingRole.CommunityServer.Roles.First(r => r.SpecialRoleType == SpecialRoleType.Default);
+
+            foreach (var member in affectedMembers) {
+                if (member.Roles.Count == 0) {
+                    member.HighestAuthorizeRole = defaultRole;
+                    member.HighestAuthorizeLevel = defaultRole.AuthorizeLevel;
+                } else {
+                    var highest = member.Roles.OrderByDescending(r => r.AuthorizeLevel).First();
+
+                    member.HighestAuthorizeRole = highest;
+                    member.HighestAuthorizeLevel = highest.AuthorizeLevel;
+                }
+            }
         }
         
-        if (command.PermissionStates is { IsSet: true, Value.Count: > 0} permissionStates) {
-            foreach ((var targetPermission, var newState) in permissionStates.Value) {
-                var existingRecord = role.Permissions.FirstOrDefault(p => p.Permission == targetPermission);
+        if (command.PermissionStates is { Count: > 0 } permissionStates) {
+            foreach ((var targetPermission, var newState) in permissionStates) {
+                var existingRecord = updatingRole.Permissions.FirstOrDefault(p => p.Permission == targetPermission);
                 
                 if (newState == PermissionState.Inherit) {
                     // if it is "inherit" then we don't need a record in the database at all
                     if (existingRecord != null) {
-                        role.Permissions.Remove(existingRecord);
+                        updatingRole.Permissions.Remove(existingRecord);
                     }
                 } 
                 else {
@@ -80,8 +116,8 @@ public sealed class UpdateServerRoleHandler(
                     if (existingRecord != null) {
                         existingRecord.State = newState;
                     } else {
-                        role.Permissions.Add(new() {
-                            RoleId = role.Id,
+                        updatingRole.Permissions.Add(new() {
+                            RoleId = updatingRole.Id,
                             Permission = targetPermission,
                             State = newState,
                         });
@@ -95,24 +131,24 @@ public sealed class UpdateServerRoleHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Exception thrown while updating server role.");
+            logger.LogError(e, "Exception thrown while updating server role {id}.", roleId);
             return Errors.UnexpectedError();
         }
         
-        await serverRoleVersioningService.Increment(command.ServerId);
+        await serverRoleVersioningService.Increment(serverId);
 
-        if (role.SpecialRoleType == SpecialRoleType.Default) {
-            await defaultRoleAuthorizeProvider.Remove(command.ServerId);
-            await publisher.Publish(new ServerDefaultRoleUpdatedNotification(command.ServerId), CancellationToken.None);
+        if (updatingRole.SpecialRoleType == SpecialRoleType.Default) {
+            await defaultRoleAuthorizeProvider.Remove(serverId);
+            await publisher.Publish(new ServerDefaultRoleUpdatedNotification(serverId), CancellationToken.None);
         } else {
-            await publisher.Publish(new ServerRoleUpdatedNotification(command.ServerId, command.RoleId), CancellationToken.None);
+            await publisher.Publish(new ServerRoleUpdatedNotification(serverId, roleId), CancellationToken.None);
         }
         
         return Result<ServerRoleDto>.Success(new(
-            role.Id,
-            role.Name,
-            role.Permissions.ToDictionary(p => p.Permission, p => p.State),
-            role.AuthorizeLevel
+            updatingRole.Id,
+            updatingRole.Name,
+            updatingRole.Permissions.ToDictionary(p => p.Permission, p => p.State),
+            updatingRole.AuthorizeLevel
         ));
     }
 }

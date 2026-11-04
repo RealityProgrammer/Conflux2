@@ -1,4 +1,3 @@
-using Conflux.Application.Features;
 using Conflux.Application.Features.Servers;
 using Conflux.Application.Services;
 using Conflux.Domain;
@@ -23,13 +22,13 @@ public class ServerMemberInteractAuthorizationBehaviour<TMessage, TResponse>(
             return TResponse.Failure(executorPermissionsResult.Error);
         }
 
-        var interactingMemberPermissionsResult = await permissionsProvider.GetMemberAuthorizeInfo(message.ServerId, message.InteractingMemberId, cancellationToken);
+        var interactingMemberPermissionsResult = await permissionsProvider.GetUserAuthorizeInfo(message.ServerId, message.InteractMemberUserId, cancellationToken);
         if (!interactingMemberPermissionsResult.IsSuccess) {
             return TResponse.Failure(interactingMemberPermissionsResult.Error);
         }
 
         if (executorPermissionsResult.Value!.AuthorizeLevel < interactingMemberPermissionsResult.Value!.AuthorizeLevel) {
-            return TResponse.Failure(Errors.Forbidden("Executor's authorize level must be greater or equals to authorize level of interacting member."));
+            return TResponse.Failure(Errors.Forbidden("User's authorize level must be greater or equals to authorize level of interacting member."));
         }
         
         return await next(message, cancellationToken);

@@ -50,6 +50,9 @@ public static class Errors {
     
     public static Error OperationFailure(string doWhat) =>
         new(nameof(OperationFailure), $"Failed to {doWhat}.");
+    
+    public static Error OperationFailure(string doWhat, string? because) =>
+        new(nameof(OperationFailure), $"Failed to {doWhat}{(string.IsNullOrEmpty(because) ? '.' : $" because {because}.")}");
 
     public static Error Discontinued(string description) => new(nameof(Discontinued), description);
 

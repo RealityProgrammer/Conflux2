@@ -6,7 +6,7 @@ import type {
 } from "../api/types.ts";
 import {createContext, type ReactNode, useContext} from "react";
 import {type QueryKey, useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
-import {communityServerService} from "../api/communityServerService.ts";
+import {serverService} from "../api/serverService.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {
   ServerChannelCategoryCreatedEvent,
@@ -45,7 +45,7 @@ export default function CommunityServerContextProvider({
     enabled: !!serverId,
     queryKey: detailsQueryKey,
     queryFn: async (): Promise<ServerDetailsDto> => {
-      const response = await communityServerService.getDetails(serverId!);
+      const response = await serverService.getDetails(serverId!);
       
       if (response.success) {
         return response.data!;
@@ -185,7 +185,7 @@ export default function CommunityServerContextProvider({
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return;
     
     const response: ServiceResponse<ServerMemberAuthorizeInfoDto> = 
-      await communityServerService.getMemberAuthorizeInfo(detailsQueryResult.data.id);
+      await serverService.getMemberAuthorizeInfo(detailsQueryResult.data.id);
     
     if (response.success && response.data) {
       queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {

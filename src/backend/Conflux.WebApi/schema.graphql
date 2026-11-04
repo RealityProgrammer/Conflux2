@@ -268,9 +268,6 @@ type Query
 type Mutation @authorize @authorize {
   updateManualPresenceStatus(input: UpdateManualPresenceStatusInput!): UpdateManualPresenceStatusPayload!
     @cost(weight: "10")
-  updateCommunityServerMemberRoles(
-    input: UpdateCommunityServerMemberRolesInput!
-  ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
   kickCommunityServerMember(input: KickCommunityServerMemberInput!): KickCommunityServerMemberPayload!
     @cost(weight: "10")
   banCommunityServerMember(input: BanCommunityServerMemberInput!): BanCommunityServerMemberPayload!
@@ -384,6 +381,9 @@ type CommunityServerMember {
   createdAt: DateTime!
   roles: [CommunityServerRole!]!
   banExpireAt: DateTime
+  highestAuthorizeLevel: Int!
+  highestAuthorizeRoleId: UUID!
+  highestAuthorizeRole: CommunityServerRole!
   authorizeInfo: MemberAuthorizeInfo! @cost(weight: "10")
   status: MembershipStatus!
   numWarn: Int! @cost(weight: "10")
@@ -679,11 +679,6 @@ type UnbanCommunityServerMemberPayload {
   memberId: UUID!
 }
 
-type UpdateCommunityServerMemberRolesPayload {
-  member: CommunityServerMember! @cost(weight: "10")
-  memberId: UUID!
-}
-
 type UpdateManualPresenceStatusPayload {
   userId: UUID!
 }
@@ -857,6 +852,9 @@ input CommunityServerMemberFilterInput {
   createdAt: DateTimeOperationFilterInput
   status: MembershipStatusOperationFilterInput
   banExpireAt: DateTimeOperationFilterInput
+  highestAuthorizeLevel: IntOperationFilterInput
+  highestAuthorizeRoleId: UuidOperationFilterInput
+  highestAuthorizeRole: CommunityServerRoleFilterInput
   memberRoles: ListFilterInputTypeOfCommunityServerMemberRoleFilterInput
   roles: ListFilterInputTypeOfCommunityServerRoleFilterInput
 }
@@ -879,6 +877,9 @@ input CommunityServerMemberSortInput {
   createdAt: SortEnumType @cost(weight: "10")
   status: SortEnumType @cost(weight: "10")
   banExpireAt: SortEnumType @cost(weight: "10")
+  highestAuthorizeLevel: SortEnumType @cost(weight: "10")
+  highestAuthorizeRoleId: SortEnumType @cost(weight: "10")
+  highestAuthorizeRole: CommunityServerRoleSortInput @cost(weight: "10")
 }
 
 input CommunityServerRoleFilterInput {
@@ -896,6 +897,18 @@ input CommunityServerRoleFilterInput {
   permissions: ListFilterInputTypeOfRolePermissionFilterInput
   memberRoles: ListFilterInputTypeOfCommunityServerMemberRoleFilterInput
   members: ListFilterInputTypeOfCommunityServerMemberFilterInput
+}
+
+input CommunityServerRoleSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  authorizeLevel: SortEnumType @cost(weight: "10")
+  specialRoleType: SortEnumType @cost(weight: "10")
+  creatorUser: ApplicationUserSortInput @cost(weight: "10")
+  creatorUserId: SortEnumType @cost(weight: "10")
 }
 
 input CommunityServerSortInput {
@@ -1374,12 +1387,6 @@ input UnsignedIntOperationFilterInput {
   nlt: UnsignedInt @cost(weight: "10")
   lte: UnsignedInt @cost(weight: "10")
   nlte: UnsignedInt @cost(weight: "10")
-}
-
-input UpdateCommunityServerMemberRolesInput {
-  serverId: UUID!
-  memberId: UUID!
-  roleIds: [UUID!]!
 }
 
 input UpdateManualPresenceStatusInput {

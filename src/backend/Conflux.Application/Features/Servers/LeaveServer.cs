@@ -12,7 +12,9 @@ public sealed record LeaveServerCommand(Guid ServerId) : ICommand<Result>;
 public sealed class LeaveServerCommandHandler(
     ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
-    IUnitOfWork unitOfWork
+    ICommunityServerRoleRepository serverRoleRepository,
+    IUnitOfWork unitOfWork,
+    ILogger<LeaveServerCommandHandler> logger
 ) : ICommandHandler<LeaveServerCommand, Result> {
     public async ValueTask<Result> Handle(LeaveServerCommand command, CancellationToken cancellationToken) {
         if (currentUserService.UserId is not { } userId) {
@@ -36,9 +38,24 @@ public sealed class LeaveServerCommandHandler(
         if (member.Roles.Any(r => r.SpecialRoleType == SpecialRoleType.Owner)) {
             return Errors.Forbidden("Owner cannot leave server.");
         }
+        
+        var defaultRole = await serverRoleRepository
+            .AsQueryable()
+            .Where(r => r.CommunityServerId == serverId && r.SpecialRoleType == SpecialRoleType.Default)
+            .SingleAsync(cancellationToken);
 
         member.Status = MembershipStatus.Left;
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        member.HighestAuthorizeRole = defaultRole;
+        member.HighestAuthorizeLevel = defaultRole.AuthorizeLevel;
+
+        try {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        } catch (OperationCanceledException) {
+            throw;
+        } catch (Exception e) {
+            logger.LogError(e, "Exception thrown while trying to leave server.");
+            return Errors.UnexpectedError();
+        }
 
         return Result.Success();
     }

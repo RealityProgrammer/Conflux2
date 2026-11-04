@@ -9,7 +9,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record UnbanServerMemberCommand(
     Guid ServerId,
-    Guid InteractingMemberId
+    Guid InteractMemberUserId
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
         ServerPermission.ManageMembers,
@@ -35,7 +35,7 @@ public sealed class UnbanServerMemberHandler(
     public async ValueTask<Result> Handle(UnbanServerMemberCommand command, CancellationToken cancellationToken) {
         Guid executorUserId = currentUserService.UserId!.Value;
         Guid serverId = command.ServerId;
-        Guid interactingMemberId = command.InteractingMemberId;
+        Guid interactMemberUserId = command.InteractMemberUserId;
         
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
@@ -52,14 +52,14 @@ public sealed class UnbanServerMemberHandler(
         }
         
         CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
             return Errors.ResourceNotFound("Server member", [
                 new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
-                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactMemberUserId.ToString()),
             ]);
         }
 
@@ -78,8 +78,8 @@ public sealed class UnbanServerMemberHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             // delete the permission cache
-            await permissionsCacheService.DeleteUserAuthorizeInfo(serverId, interactingMemberId, CancellationToken.None);
-            await mediator.Publish(new ServerMemberUnbannedNotification(command.ServerId, interactingMemberId, affectedMember.Id), CancellationToken.None);
+            await permissionsCacheService.DeleteUserAuthorizeInfo(serverId, interactMemberUserId, CancellationToken.None);
+            await mediator.Publish(new ServerMemberUnbannedNotification(command.ServerId, interactMemberUserId, affectedMember.Id), CancellationToken.None);
             
             return Result.Success();
         } catch (OperationCanceledException) {

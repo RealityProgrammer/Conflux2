@@ -91,15 +91,6 @@ export type UpdateManualPresenceStatusMutationVariables = Exact<{
 
 export type UpdateManualPresenceStatusMutation = { updateManualPresenceStatus: { userId: string } };
 
-export type UpdateMemberRolesMutationVariables = Exact<{
-  serverId: string;
-  memberId: string;
-  roleIds: Array<string> | string;
-}>;
-
-
-export type UpdateMemberRolesMutation = { updateCommunityServerMemberRoles: { memberId: string } };
-
 export type WarnServerMemberMutationVariables = Exact<{
   serverId: string;
   memberId: string;
@@ -515,32 +506,6 @@ export const useUpdateManualPresenceStatusMutation = <
 
 
 useUpdateManualPresenceStatusMutation.fetcher = (variables: UpdateManualPresenceStatusMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateManualPresenceStatusMutation, UpdateManualPresenceStatusMutationVariables>(UpdateManualPresenceStatusDocument, variables, options);
-
-export const UpdateMemberRolesDocument = new TypedDocumentString(`
-    mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {
-  updateCommunityServerMemberRoles(
-    input: {serverId: $serverId, memberId: $memberId, roleIds: $roleIds}
-  ) {
-    memberId
-  }
-}
-    `);
-
-export const useUpdateMemberRolesMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<UpdateMemberRolesMutation, TError, UpdateMemberRolesMutationVariables, TContext>) => {
-    
-    return useMutation<UpdateMemberRolesMutation, TError, UpdateMemberRolesMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateMemberRoles'],
-    mutationFn: (variables?: UpdateMemberRolesMutationVariables) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables)(),
-    ...options
-  }
-    )};
-
-
-useUpdateMemberRolesMutation.fetcher = (variables: UpdateMemberRolesMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables, options);
 
 export const WarnServerMemberDocument = new TypedDocumentString(`
     mutation WarnServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {

@@ -1,6 +1,6 @@
 import {type MutationStatus, useMutation, type UseMutationOptions, useMutationState} from "@tanstack/react-query";
 import type {ServiceResponse} from "../api/types.ts";
-import {communityServerService} from "../api/communityServerService.ts";
+import {serverService} from "../api/serverService.ts";
 
 export interface UseChannelDeleteMutationVariables {
   serverId: string;
@@ -21,7 +21,7 @@ export function useChannelDeleteMutation(
   return useMutation<ServiceResponse, Error, UseChannelDeleteMutationVariables, unknown>({
     mutationKey: ["channelDelete"],
     mutationFn: async (variables: UseChannelDeleteMutationVariables): Promise<ServiceResponse> => {
-      return communityServerService.deleteChannel(variables.serverId, variables.channelId);
+      return serverService.deleteChannel(variables.serverId, variables.channelId);
     },
     ...options,
   });

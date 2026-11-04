@@ -700,7 +700,9 @@ app.UseRateLimiter();
 if (app.Environment.IsDevelopment()) {
     // swagger
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options => {
+        options.ConfigObject.AdditionalItems["withCredentials"] = true;
+    });
     app.MapOpenApi();
     
     // http logging to print incoming requests and outcoming responses.

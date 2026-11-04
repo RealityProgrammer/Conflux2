@@ -2561,6 +2561,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communities/{serverId}/members/{userId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    serverId: string;
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMemberRolesRequest"];
+                    "text/json": components["schemas"]["UpdateMemberRolesRequest"];
+                    "application/*+json": components["schemas"]["UpdateMemberRolesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/conversations/dm/{peerId}": {
         parameters: {
             query?: never;
@@ -3074,7 +3120,6 @@ export interface components {
             extraMessage: null | string;
             restorationPassword: string;
         };
-        "Dictionary`2": unknown;
         DmConversationDetails: {
             peerProfile: components["schemas"]["UserIdentityProfileDto"];
             /** Format: uuid */
@@ -3207,7 +3252,27 @@ export interface components {
         PatchRoleRequest: {
             name: components["schemas"]["PatchFieldOfstring"];
             authorizeLevel: components["schemas"]["PatchFieldOfint"];
-            permissionStates: components["schemas"]["Dictionary`2"];
+            permissionStates: {
+                CreateRole?: components["schemas"]["PermissionState"];
+                UpdateRole?: components["schemas"]["PermissionState"];
+                DeleteRole?: components["schemas"]["PermissionState"];
+                CreateChannel?: components["schemas"]["PermissionState"];
+                DeleteChannel?: components["schemas"]["PermissionState"];
+                UpdateMemberRoles?: components["schemas"]["PermissionState"];
+                ManageMembers?: components["schemas"]["PermissionState"];
+                KickMembers?: components["schemas"]["PermissionState"];
+                WarnMembers?: components["schemas"]["PermissionState"];
+                BanMembers?: components["schemas"]["PermissionState"];
+                UnbanMembers?: components["schemas"]["PermissionState"];
+                ReadModerationLogs?: components["schemas"]["PermissionState"];
+                CreateInvitation?: components["schemas"]["PermissionState"];
+                SendMessage?: components["schemas"]["PermissionState"];
+                EditMessages?: components["schemas"]["PermissionState"];
+                DeleteMessages?: components["schemas"]["PermissionState"];
+                ManageEmojis?: components["schemas"]["PermissionState"];
+                CreateEmoji?: components["schemas"]["PermissionState"];
+                DeleteEmoji?: components["schemas"]["PermissionState"];
+            };
         };
         /** @enum {string} */
         PermissionState: PermissionState;
@@ -3398,6 +3463,10 @@ export interface components {
                     [key: string]: components["schemas"]["ServerChannelNotificationCounts"];
                 };
             };
+        };
+        UpdateMemberRolesRequest: {
+            addRoleIds: string[];
+            removeRoleIds: string[];
         };
         UpdateProfileResult: {
             avatarVersion?: components["schemas"]["OptionalOfint"];

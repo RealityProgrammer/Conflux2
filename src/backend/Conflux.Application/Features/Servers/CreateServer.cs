@@ -69,6 +69,8 @@ public sealed class CreateServerHandler(
         CommunityServerMember ownerMember = new() {
             UserId = userId,
             CommunityServer = server,
+            HighestAuthorizeRole = ownerRole,
+            HighestAuthorizeLevel = ownerRole.AuthorizeLevel,
             MemberRoles = [
                 new() {
                     Role = ownerRole,

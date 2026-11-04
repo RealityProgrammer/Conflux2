@@ -1,7 +1,7 @@
 import {BsPeople, BsPerson} from "react-icons/bs";
 import {Avatar as RadixAvatar} from "radix-ui";
 import {userService} from "../api/userService.ts";
-import {communityServerService} from "../api/communityServerService.ts";
+import {serverService} from "../api/serverService.ts";
 import type {RefObject} from "react";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
 import type {PresenceStatus} from "../api/schema.ts";
@@ -72,7 +72,7 @@ function Server({
     <RadixAvatar.Root {...props}>
       <RadixAvatar.Image
         className="size-full rounded-[inherit] object-cover"
-        src={serverId && version ? communityServerService.getAvatarUrl(serverId, version) : undefined}
+        src={serverId && version ? serverService.getAvatarUrl(serverId, version) : undefined}
         alt={alt}
         draggable={false}
       />

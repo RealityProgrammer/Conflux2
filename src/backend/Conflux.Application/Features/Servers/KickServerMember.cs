@@ -10,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record KickServerMemberCommand(
     Guid ServerId, 
-    Guid InteractingMemberId,
+    Guid InteractMemberUserId,
     string? Reason
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
@@ -47,7 +47,7 @@ public sealed class KickServerMemberHandler(
     public async ValueTask<Result> Handle(KickServerMemberCommand command, CancellationToken cancellationToken) {
         Guid executorUserId = currentUserService.UserId!.Value;
         Guid serverId = command.ServerId;
-        Guid interactingMemberId = command.InteractingMemberId;
+        Guid interactMemberUserId = command.InteractMemberUserId;
         
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
@@ -64,14 +64,14 @@ public sealed class KickServerMemberHandler(
         }
         
         CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
             return Errors.ResourceNotFound("Server member", [
                 new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
-                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactMemberUserId.ToString()),
             ]);
         }
 

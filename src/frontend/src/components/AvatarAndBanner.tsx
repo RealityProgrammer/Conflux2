@@ -2,7 +2,7 @@ import type {CSSProperties, ReactNode} from "react";
 import {Avatar as RadixAvatar} from "radix-ui";
 import {Avatar, type PresenceProps} from "./Avatar.tsx";
 import {userService} from "../api/userService.ts";
-import {communityServerService} from "../api/communityServerService.ts";
+import {serverService} from "../api/serverService.ts";
 import {BsExclamationTriangle} from "react-icons/bs";
 
 export type ImageProfile = {
@@ -126,7 +126,7 @@ function Server({
       <RadixAvatar.Root className={`block aspect-video overflow-hidden ${bannerClassName}`}>
         <RadixAvatar.Image
           className="size-full object-cover"
-          src={bannerVersion ? communityServerService.getBannerUrl(serverId, bannerVersion) : undefined}
+          src={bannerVersion ? serverService.getBannerUrl(serverId, bannerVersion) : undefined}
           alt={bannerAlt}
         />
 

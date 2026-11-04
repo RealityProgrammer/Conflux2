@@ -10,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record BanServerMemberCommand(
     Guid ServerId,
-    Guid InteractingMemberId,
+    Guid InteractMemberUserId,
     string? Reason,
     TimeSpan? Duration
 ) : ICommand<Result>, IServerMemberInteractCommand {
@@ -54,7 +54,7 @@ public sealed class BanServerMemberHandler(
     public async ValueTask<Result> Handle(BanServerMemberCommand command, CancellationToken cancellationToken) {
         Guid executorUserId = currentUserService.UserId!.Value;
         Guid serverId = command.ServerId;
-        Guid interactingMemberId = command.InteractingMemberId;
+        Guid interactMemberUserId = command.InteractMemberUserId;
         
         var executorMemberId = memberReadRepository.AsQueryable()
             .AsNoTracking()
@@ -71,14 +71,14 @@ public sealed class BanServerMemberHandler(
         }
         
         CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
+            .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
             return Errors.ResourceNotFound("Server member", [
                 new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
-                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactMemberUserId.ToString()),
             ]);
         }
 
@@ -127,7 +127,7 @@ public sealed class BanServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Exception thrown while banning member {memberId}.", interactingMemberId);
+            logger.LogError(e, "Exception thrown while banning member.");
             return Errors.UnexpectedError();
         }
     }

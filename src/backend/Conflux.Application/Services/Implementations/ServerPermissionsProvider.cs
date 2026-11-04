@@ -17,7 +17,7 @@ internal sealed class ServerPermissionsProvider(
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
 
-    private static readonly FrozenSet<ServerPermission> OwnerEffectivePermissions = [..AllPermissions];
+    private static readonly HashSet<ServerPermission> OwnerEffectivePermissions = [..AllPermissions];
     
     public async Task<Result<ServerMemberAuthorizeInfoDto>> GetUserAuthorizeInfo(
         Guid serverId, 

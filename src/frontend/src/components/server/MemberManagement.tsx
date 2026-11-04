@@ -16,7 +16,6 @@ import {
   useInspectMemberQuery,
   useKickServerMemberMutation,
   useUnbanServerMemberMutation,
-  useUpdateMemberRolesMutation,
   useWarnServerMemberMutation
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
@@ -44,6 +43,8 @@ import DurationInput, {type DurationValue} from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
 import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
 import {Avatar} from "../Avatar.tsx";
+import useUpdateMemberRolesMutation from "../../hooks/useUpdateMemberRolesMutation.ts";
+import {data} from "react-router";
 
 type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
@@ -306,7 +307,7 @@ function MemberInformationContent() {
   const {
     handleSubmit,
     control,
-    formState: { isDirty, isSubmitting },
+    formState: { isDirty, isSubmitting, defaultValues },
     reset,
   } = useForm<UpdateMemberInformationFormValues>({
     resolver: zodResolver(updateMemberInformationSchema),
@@ -334,7 +335,7 @@ function MemberInformationContent() {
   const updateMemberRolesMutation = useUpdateMemberRolesMutation({
     onSuccess: (_data, variables) => {
       reset({
-        roleIds: Array.isArray(variables.roleIds) ? variables.roleIds : [variables.roleIds],
+        roleIds: (defaultValues?.roleIds ?? []).filter(r => r && !variables.removeRoleIds.includes(r)).concat(variables.addRoleIds),
       });
 
       refreshInspectingMemberInfo();
@@ -346,10 +347,19 @@ function MemberInformationContent() {
   });
 
   const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (value: UpdateMemberInformationFormValues) => {
+    const addRoleIds = value.roleIds.filter(
+      (id) => !defaultValues!.roleIds!.includes(id),
+    );
+
+    const removeRoleIds = defaultValues?.roleIds?.filter(
+      (id) => !value.roleIds.includes(id!)
+    ) as string[] ?? [] as string[];
+
     await updateMemberRolesMutation.mutateAsync({
       serverId,
-      memberId: inspectingMemberInfo.id,
-      roleIds: value.roleIds,
+      userId: inspectingMemberInfo.user.id,
+      addRoleIds,
+      removeRoleIds,
     });
   };
 

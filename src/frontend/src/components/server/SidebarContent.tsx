@@ -11,7 +11,7 @@ import {
 } from "react-icons/bs";
 import {DropdownMenu, Separator, Tooltip} from "radix-ui";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {communityServerService} from "../../api/communityServerService.ts";
+import {serverService} from "../../api/serverService.ts";
 import AvatarFallback from "./AvatarFallback.tsx";
 import type {ServerChannelIdentityDto, ServiceResponse} from "../../api/types.ts";
 import {useState} from "react";
@@ -144,7 +144,7 @@ function SuccessfulHeader({
           fallback: <div className="size-full bg-violet-500"></div>,
         }}
         avatar={{
-          src: serverDetails.avatarVersion ? communityServerService.getAvatarUrl(serverDetails.id, serverDetails.avatarVersion) : undefined,
+          src: serverDetails.avatarVersion ? serverService.getAvatarUrl(serverDetails.id, serverDetails.avatarVersion) : undefined,
           alt: "Server Avatar",
           fallback: <AvatarFallback/>,
           rootClassName: "border-4 border-gray-725",

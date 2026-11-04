@@ -1,6 +1,6 @@
-using Conflux.Application.Dto;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -9,8 +9,9 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record UpdateMemberRolesCommand(
     Guid ServerId,
-    Guid InteractingMemberId,
-    IReadOnlyCollection<Guid> RoleIds
+    Guid InteractMemberUserId,
+    IReadOnlyCollection<Guid> AddRoleIds,
+    IReadOnlyCollection<Guid> RemoveRoleIds
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
         ServerPermission.ManageMembers, 
@@ -25,104 +26,77 @@ public sealed record MemberRolesUpdatedNotification(
 ) : INotification;
 
 public sealed class UpdateMemberRolesHandler(
-    ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
-    ICommunityServerRoleRepository roleRepository,
-    IServerPermissionsProvider serverPermissionsProvider,
     IServerPermissionsCacheService serverPermissionsCacheService,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<UpdateMemberRolesHandler> logger
 ) : ICommandHandler<UpdateMemberRolesCommand, Result> {
     public async ValueTask<Result> Handle(UpdateMemberRolesCommand command, CancellationToken cancellationToken) {
-        Guid executorUserId = currentUserService.UserId!.Value;
+        var serverId = command.ServerId;
+        var updatingMemberUserId = command.InteractMemberUserId;
         
-        // get the executor user authorize info to compare role authorize level later.
-        var executorAuthorizeInfoResult = await serverPermissionsProvider.GetUserAuthorizeInfo(
-            command.ServerId, 
-            executorUserId,
-            cancellationToken
-        );
-
-        if (!executorAuthorizeInfoResult.IsSuccess) {
-            return executorAuthorizeInfoResult.Error;
-        }
-
-        var executorAuthorizeInfo = executorAuthorizeInfoResult.Value!;
-
-        // prevent duplicate role ids
-        var deduplicatedRoleIds = command.RoleIds.Distinct().ToHashSet();
-        
-        // ensure that the roles are all valid ids, and have authorize level lower than or equal to user's authorize level.
-        var roleInfos = await roleRepository.AsQueryable()
-            .Where(r =>
-                r.CommunityServerId == command.ServerId &&
-                command.RoleIds.Contains(r.Id) &&
-                r.SpecialRoleType == SpecialRoleType.None &&
-                r.AuthorizeLevel <= executorAuthorizeInfo.AuthorizeLevel
-            )
-            .Select(r => new { r.Id, r.AuthorizeLevel })
-            .ToListAsync(cancellationToken);
-
-        if (roleInfos.Count != command.RoleIds.Count) {
-            // imagine that it would be very fucked if somehow roleInfos.length > command.roleIds lmao
-            var missingRoleIds = command.RoleIds.Except(roleInfos.Select(r => r.Id));
-            return Errors.ResourceNotFound(
-                $"Community server role (Ids = [{string.Join(", ", missingRoleIds)}])"
-            );
-        }
-
-        if (roleInfos.FirstOrDefault(r => r.AuthorizeLevel > executorAuthorizeInfo.AuthorizeLevel) is { } surpassedRole) {
-            return Errors.ValidationErrorsOccurred(new() {
-                [nameof(command.RoleIds)] = [
-                    $"Role {surpassedRole.Id} have authorize level surpassed user's authorize level.",
-                ]
-            });
-        }
-        
-        var member = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == command.ServerId && m.Id == command.InteractingMemberId)
-            .Include(member => member.MemberRoles)
-            .ThenInclude(role => role.Role)
+        var updatingMember = await memberReadRepository.AsQueryable()
+            .Where(m => m.CommunityServerId == serverId && m.UserId == updatingMemberUserId)
+            .Include(m => m.Roles)
+            .Include(m => m.CommunityServer)
+            .ThenInclude(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
-
-        if (member == null) {
-            return Errors.ResourceNotFound($"Community server member (Id = {command.InteractingMemberId})");
+        
+        if (updatingMember == null) {
+            return Errors.ResourceNotFound("Server member", [
+                new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
+                new(nameof(CommunityServerMember.UserId), updatingMemberUserId.ToString()),
+            ]);
         }
         
-        await unitOfWork.BeginTransactionAsync(cancellationToken);
+        var defaultRole = updatingMember.CommunityServer.Roles.First(r => r.SpecialRoleType == SpecialRoleType.Default);
+        
+        // apply removal
+        if (command.RemoveRoleIds is { Count: > 0 } removeRoleIds) {
+            foreach (var roleId in removeRoleIds) {
+                var roleToRemove = updatingMember.Roles.FirstOrDefault(r => r.Id == roleId);
+                
+                // only allow removal non-special roles
+                if (roleToRemove is { SpecialRoleType: SpecialRoleType.None }) {
+                    updatingMember.Roles.Remove(roleToRemove);
+                }
+            }
+        }
+        
+        // apply add
+        if (command.AddRoleIds is { Count: > 0 } addRoleIds) {
+            var rolesToAdd = updatingMember.CommunityServer.Roles
+                .Where(r => addRoleIds.Contains(r.Id) && updatingMember.Roles.All(mr => mr.Id != r.Id))
+                .ToList();
+
+            foreach (var roleToAdd in rolesToAdd) {
+                updatingMember.Roles.Add(roleToAdd);
+            }
+        }
+        
+        // recalculate highest authorization role
+        if (updatingMember.Roles.Count == 0) {
+            updatingMember.HighestAuthorizeRole = defaultRole;
+            updatingMember.HighestAuthorizeLevel = defaultRole.AuthorizeLevel;
+        } else {
+            var highest = updatingMember.Roles.OrderByDescending(r => r.AuthorizeLevel).First();
+            
+            updatingMember.HighestAuthorizeRole = highest;
+            updatingMember.HighestAuthorizeLevel = highest.AuthorizeLevel;
+        }
 
         try {
-            // remove roles that not appear on the new role list
-            foreach (var role in member.MemberRoles.Where(mr => !deduplicatedRoleIds.Contains(mr.RoleId)).ToList()) {
-                if (role.Role.SpecialRoleType != SpecialRoleType.None) {
-                    continue;
-                }
-                
-                member.MemberRoles.Remove(role);
-            }
-            
-            var existingRoleIds = member.MemberRoles.Select(mr => mr.RoleId).ToHashSet();
-            foreach (var roleId in deduplicatedRoleIds.Where(id => !existingRoleIds.Contains(id))) {
-                member.MemberRoles.Add(new() { 
-                    RoleId = roleId,
-                });
-            }
-
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            await unitOfWork.CommitAsync(cancellationToken);
         } catch (OperationCanceledException) {
-            await unitOfWork.RollbackAsync(cancellationToken);
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Exception thrown while updating member roles.");
-            
-            await unitOfWork.RollbackAsync(cancellationToken);
+            logger.LogError(e, "Exception thrown while updating roles for member.");
             return Errors.UnexpectedError();
         }
-        
-        await serverPermissionsCacheService.DeleteMemberAuthorizeInfo(command.InteractingMemberId, CancellationToken.None);
-        await mediator.Publish(new MemberRolesUpdatedNotification(member.CommunityServerId, member.UserId, member.Id), CancellationToken.None);
+
+        await serverPermissionsCacheService.DeleteMemberAuthorizeInfo(updatingMemberUserId, CancellationToken.None);
+        await mediator.Publish(new MemberRolesUpdatedNotification(updatingMember.CommunityServerId, updatingMember.UserId, updatingMember.Id), CancellationToken.None);
             
         return Result.Success();
     }

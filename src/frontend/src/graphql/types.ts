@@ -292,6 +292,9 @@ export type CommunityServerMember = {
   communityServer: CommunityServer;
   communityServerId: Scalars['UUID']['output'];
   createdAt: Scalars['DateTime']['output'];
+  highestAuthorizeLevel: Scalars['Int']['output'];
+  highestAuthorizeRole: CommunityServerRole;
+  highestAuthorizeRoleId: Scalars['UUID']['output'];
   id: Scalars['UUID']['output'];
   numWarn: Scalars['Int']['output'];
   roles: Array<CommunityServerRole>;
@@ -327,6 +330,9 @@ export type CommunityServerMemberFilterInput = {
   communityServer?: InputMaybe<CommunityServerFilterInput>;
   communityServerId?: InputMaybe<UuidOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  highestAuthorizeLevel?: InputMaybe<IntOperationFilterInput>;
+  highestAuthorizeRole?: InputMaybe<CommunityServerRoleFilterInput>;
+  highestAuthorizeRoleId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   memberRoles?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
   or?: InputMaybe<Array<CommunityServerMemberFilterInput>>;
@@ -350,6 +356,9 @@ export type CommunityServerMemberSortInput = {
   communityServer?: InputMaybe<CommunityServerSortInput>;
   communityServerId?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
+  highestAuthorizeLevel?: InputMaybe<SortEnumType>;
+  highestAuthorizeRole?: InputMaybe<CommunityServerRoleSortInput>;
+  highestAuthorizeRoleId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   status?: InputMaybe<SortEnumType>;
   user?: InputMaybe<ApplicationUserSortInput>;
@@ -407,6 +416,18 @@ export type CommunityServerRoleFilterInput = {
   or?: InputMaybe<Array<CommunityServerRoleFilterInput>>;
   permissions?: InputMaybe<ListFilterInputTypeOfRolePermissionFilterInput>;
   specialRoleType?: InputMaybe<SpecialRoleTypeOperationFilterInput>;
+};
+
+export type CommunityServerRoleSortInput = {
+  authorizeLevel?: InputMaybe<SortEnumType>;
+  communityServer?: InputMaybe<CommunityServerSortInput>;
+  communityServerId?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  creatorUser?: InputMaybe<ApplicationUserSortInput>;
+  creatorUserId?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  specialRoleType?: InputMaybe<SortEnumType>;
 };
 
 export type CommunityServerSortInput = {
@@ -914,7 +935,6 @@ export type Mutation = {
   banCommunityServerMember: BanCommunityServerMemberPayload;
   kickCommunityServerMember: KickCommunityServerMemberPayload;
   unbanCommunityServerMember: UnbanCommunityServerMemberPayload;
-  updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
   updateManualPresenceStatus: UpdateManualPresenceStatusPayload;
   warnCommunityServerMember: WarnCommunityServerMemberPayload;
 };
@@ -932,11 +952,6 @@ export type MutationKickCommunityServerMemberArgs = {
 
 export type MutationUnbanCommunityServerMemberArgs = {
   input: UnbanCommunityServerMemberInput;
-};
-
-
-export type MutationUpdateCommunityServerMemberRolesArgs = {
-  input: UpdateCommunityServerMemberRolesInput;
 };
 
 
@@ -1482,18 +1497,6 @@ export type UnsignedIntOperationFilterInput = {
   nin?: InputMaybe<Array<InputMaybe<Scalars['UnsignedInt']['input']>>>;
   nlt?: InputMaybe<Scalars['UnsignedInt']['input']>;
   nlte?: InputMaybe<Scalars['UnsignedInt']['input']>;
-};
-
-export type UpdateCommunityServerMemberRolesInput = {
-  memberId: Scalars['UUID']['input'];
-  roleIds: Array<Scalars['UUID']['input']>;
-  serverId: Scalars['UUID']['input'];
-};
-
-export type UpdateCommunityServerMemberRolesPayload = {
-  __typename?: 'UpdateCommunityServerMemberRolesPayload';
-  member: CommunityServerMember;
-  memberId: Scalars['UUID']['output'];
 };
 
 export type UpdateManualPresenceStatusInput = {

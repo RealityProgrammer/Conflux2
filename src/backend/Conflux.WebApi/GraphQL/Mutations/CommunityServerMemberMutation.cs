@@ -28,19 +28,6 @@ public sealed record WarnCommunityServerMemberPayload(Guid MemberId);
 
 [MutationType, Authorize]
 internal static partial class CommunityServerMemberMutation {
-    public static async Task<UpdateCommunityServerMemberRolesPayload> UpdateCommunityServerMemberRoles(
-        Guid serverId,
-        Guid memberId,
-        IReadOnlyCollection<Guid> roleIds,
-        [Service] IMediator mediator
-    ) {
-        var result = await mediator.Send(new UpdateMemberRolesCommand(serverId, memberId, roleIds));
-
-        return result.IsSuccess ? 
-            new(memberId) : 
-            throw new GraphQLException(result.Error.ToHotChocolateError());
-    }
-
     public static async Task<KickCommunityServerMemberPayload> KickCommunityServerMember(
         Guid serverId,
         Guid memberId,

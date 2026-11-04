@@ -7,7 +7,7 @@ import SelectItem from "../SelectItem.tsx";
 import ModalForm from "../ModalForm.tsx";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {communityServerService} from "../../api/communityServerService.ts";
+import {serverService} from "../../api/serverService.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import type {ChannelCategoryIdentityDto, ServerChannelIdentityDto, ServiceResponse} from "../../api/types.ts";
 import {toast} from "react-toastify";
@@ -63,7 +63,7 @@ export default function CreateCategoryOrChannelModal({
     switch (data.type) {
       case "category": {
         const response: ServiceResponse<ChannelCategoryIdentityDto> =
-          await communityServerService.createChannelCategory(idempotencyKey, serverDetails!.id, data.name);
+          await serverService.createChannelCategory(idempotencyKey, serverDetails!.id, data.name);
       
         if (response.success && response.data) {
           onOpenChange(false);
@@ -77,7 +77,7 @@ export default function CreateCategoryOrChannelModal({
       case "text":
       case "voice": {
         const response: ServiceResponse<ServerChannelIdentityDto> =
-          await communityServerService.createChannel(idempotencyKey, serverDetails!.id, data.name, data.type, categoryId);
+          await serverService.createChannel(idempotencyKey, serverDetails!.id, data.name, data.type, categoryId);
         
         if (response.success && response.data) {
           onOpenChange(false);

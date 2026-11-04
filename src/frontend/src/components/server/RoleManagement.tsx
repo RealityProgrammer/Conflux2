@@ -5,7 +5,7 @@ import {
   useInfiniteGetServerRolesByServerIdQuery
 } from "../../graphql/infiniteQueries.ts";
 import {useEffect, useRef, useState, type ReactNode} from "react";
-import {BsCircleFill, BsPlusLg} from "react-icons/bs";
+import {BsCircleFill, BsPlusLg, BsTrashFill} from "react-icons/bs";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import PermissionStatesPill from "./PermissionStatesPill.tsx";
@@ -18,7 +18,7 @@ import {ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
 import {FaSave} from "react-icons/fa";
 import {FaPencil, FaXmark} from "react-icons/fa6";
 import ErrorPopover from "../ErrorPopover.tsx";
-import {communityServerService} from "../../api/communityServerService.ts";
+import {serverService} from "../../api/serverService.ts";
 import Spinner from "../Spinner.tsx";
 import {toast} from "react-toastify";
 import type {ServerRoleDto} from "../../api/types.ts";
@@ -29,6 +29,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
 import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
 import {Avatar} from "../Avatar.tsx";
+import AlertDialog from "../AlertActionDialog.tsx";
 
 type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
 
@@ -65,6 +66,7 @@ export default function RoleManagement() {
       return undefined;
     },
     staleTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const invalidateRoleQuery = () => {
@@ -271,7 +273,7 @@ function RoleList({
       idempotencyKeyRef.current = crypto.randomUUID();
     }
 
-    const response = await communityServerService.createRole(serverId, data.name, idempotencyKeyRef.current);
+    const response = await serverService.createRole(serverId, data.name, idempotencyKeyRef.current);
 
     if (response.success) {
       invalidateRoleQuery();
@@ -447,13 +449,13 @@ function RoleDetails({
       }
     }
     
-    const response = await communityServerService.updateRole(
+    const response = await serverService.updateRole(
       serverId,
       role.id,
       {
         name: dirtyFields.name ? data.name : undefined,
         authorizeLevel: dirtyFields.authorizeLevel ? data.authorizeLevel : undefined,
-        permissionStates: updatedPermissionStates,
+        permissionStates: updatedPermissionStates ?? {} as Record<ServerPermission, PermissionState>,
       }
     );
   
@@ -467,7 +469,7 @@ function RoleDetails({
   };
 
   const handleDeleteRole = async () => {
-    const response = await communityServerService.deleteRole(serverId, role.id);
+    const response = await serverService.deleteRole(serverId, role.id);
 
     if (response.success) {
       deleteRoleData(role.id);
@@ -1019,13 +1021,43 @@ function RoleDetails({
 
       {hasPermission(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
         <div className="flex flex-row justify-end mt-2">
-          <button
-            type="button"
-            className="button-theme-danger p-2 rounded-md cursor-pointer ml-auto"
-            onClick={handleDeleteRole}
+          <AlertDialog
+            title="Delete Role"
+            subtitle="Subtitle goes here..."
+            headerIcon={(
+              <BsTrashFill className="size-10 fill-white"/>
+            )}
+            contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"
+            trigger={(
+              <button
+                type="button"
+                className="button-theme-danger p-2 rounded-md cursor-pointer ml-auto"
+              >
+                Delete Role
+              </button>
+            )}
+            cancelButton={(
+              <button
+                type="button"
+                className="button-cursor px-3 py-2"
+              >
+                Cancel
+              </button>
+            )}
+            actionButton={(
+              <button
+                type="button"
+                className="button-theme-danger button-cursor px-3 py-2 rounded-md"
+                onClick={handleDeleteRole}
+              >
+                Delete Role
+              </button>
+            )}
           >
-            Delete Role
-          </button>
+            <div className="p-3">
+              Are you sure you want to delete this role? This action cannot be reverted...
+            </div>
+          </AlertDialog>
         </div>
       )}
     </form>

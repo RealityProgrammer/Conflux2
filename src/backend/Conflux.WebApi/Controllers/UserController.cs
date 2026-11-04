@@ -57,7 +57,8 @@ public sealed class UserController(
         }
         
         return result.Error.Code switch {
-            nameof(Errors.RequireActiveAccount) or nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.DisallowSelfAction) => BadRequest(new ApiResponse(Errors.ValidationErrorsOccurred(new() {
                 [nameof(search)] = [result.Error.Message],
             }))),

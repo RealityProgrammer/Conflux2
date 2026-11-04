@@ -11,7 +11,7 @@ import type {
 import IconButton from "../../components/IconButton.tsx";
 import SelectableImageInput from "../../components/SelectableImageInput.tsx";
 import {useEffect, useRef, useState} from "react";
-import {communityServerService} from "../../api/communityServerService.ts";
+import {serverService} from "../../api/serverService.ts";
 import ModalForm from "../../components/ModalForm.tsx";
 import {HttpStatusCode} from "axios";
 import {Controller, useForm} from "react-hook-form";
@@ -329,7 +329,7 @@ function CreateServerDialogForm({
 
   const onSubmit = async (data: CreateServerFormValues) => {
     const response: ServiceResponse<ServerIdentityDto> =
-      await communityServerService.createServer(idempotencyKey.current, data.name, data.avatar ?? undefined);
+      await serverService.createServer(idempotencyKey.current, data.name, data.avatar ?? undefined);
 
     if (response.success) {
       onOpenChange(false);

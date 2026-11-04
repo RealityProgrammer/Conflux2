@@ -53,7 +53,7 @@ public sealed class RoleController(
         
         return result.Error.Code switch {
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
-            nameof(Errors.ResourceNotFound) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -80,7 +80,7 @@ public sealed class RoleController(
     public sealed record PatchRoleRequest(
         PatchField<string> Name,
         PatchField<int> AuthorizeLevel,
-        PatchField<Dictionary<ServerPermission, PermissionState>> PermissionStates
+        IReadOnlyDictionary<ServerPermission, PermissionState> PermissionStates
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             if (Name.IsSet) {
