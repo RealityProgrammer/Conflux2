@@ -65,7 +65,7 @@ export default function RoleManagement() {
 
       return undefined;
     },
-    staleTime: 15 * 60 * 1000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

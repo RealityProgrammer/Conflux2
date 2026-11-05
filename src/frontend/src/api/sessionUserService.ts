@@ -9,6 +9,7 @@ import {apiClient} from "./client.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {authService} from "./authService.ts";
 import type {PresenceStatus} from "../graphql/types.ts";
+import {data} from "react-router";
 
 export const sessionUserService = {
   uploadAvatar: async (file: File): Promise<ServiceResponse<number>> => {
@@ -156,19 +157,10 @@ export const sessionUserService = {
     }
   },
 
-  getEmojiEntryGroups: async (): Promise<ServiceResponse<ServerEmojiGroupDto[]>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<ServerEmojiGroupDto[]>> =
-        await apiClient.get("/users/me/emojis/entries");
+  getEmojiEntryGroups: async (): Promise<ServerEmojiGroupDto[]> => {
+    const response: AxiosResponse<BackendResponse<ServerEmojiGroupDto[]>> =
+      await apiClient.get("/users/me/emojis/entries");
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ServerEmojiGroupDto[]>>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data!.data!;
   },
 }

@@ -84,7 +84,7 @@ export default function MemberManagement() {
 
       return undefined;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
   const allMembers = data?.pages.flatMap((page) => page?.serverMemberSearchForAdmin?.nodes ?? []) ?? [];

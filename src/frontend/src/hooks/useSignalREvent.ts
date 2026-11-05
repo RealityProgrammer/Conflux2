@@ -9,6 +9,8 @@ export default function useSignalREvent(methodNames: string[] | string, callback
     callbackRef.current = callback;
   }, [callback]);
 
+  const eventsKey = Array.isArray(methodNames) ? methodNames.join(",") : methodNames;
+
   useEffect(() => {
     if (!connection || !isConnected) {
       console.log("useSignalREvent: no connection.");
@@ -16,20 +18,16 @@ export default function useSignalREvent(methodNames: string[] | string, callback
     }
 
     const handler: (...args: any[]) => any = (...args: any[]) => callbackRef.current(...args);
+    const methods = Array.isArray(methodNames) ? methodNames : [methodNames];
 
-    if (!Array.isArray(methodNames)) {
-      connection.on(methodNames, handler);
-      return () => connection.off(methodNames, handler);
-    }
-
-    for (let methodName of methodNames) {
+    for (let methodName of methods) {
       connection.on(methodName, handler);
     }
 
     return () => {
-      for (let methodName of methodNames) {
+      for (let methodName of methods) {
         connection.off(methodName, handler);
       }
     }
-  }, [connection, isConnected, methodNames]);
+  }, [connection, isConnected, eventsKey]);
 }

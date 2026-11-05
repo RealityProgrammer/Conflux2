@@ -161,7 +161,7 @@ function LogTable() {
 
       return undefined;
     },
-    staleTime: 15 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   const allElements: LogElement[] = data?.pages.flatMap((page: GetServerModerationLogsQuery): LogElement[] => page?.serverModerationLogs?.nodes ?? []) ?? [];
