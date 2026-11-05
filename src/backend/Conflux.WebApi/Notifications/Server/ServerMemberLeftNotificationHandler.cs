@@ -7,20 +7,20 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications.Server;
 
-[Facet(typeof(ServerMemberLeftNotification), exclude: [])]
-public sealed partial record ServerMemberLeftEvent;
+[Facet(typeof(UserLeftServerNotification), exclude: [])]
+public sealed partial record UserLeftServerEvent;
 
-[Facet(typeof(ServerMemberLeftNotification), Include = [
-    nameof(ServerMemberLeftNotification.ServerId),
+[Facet(typeof(UserLeftServerNotification), Include = [
+    nameof(UserLeftServerNotification.ServerId),
 ])]
 public sealed partial record LeftServerEvent;
 
-internal sealed class ServerMemberLeftNotificationHandler(
+internal sealed class UserLeftServerNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
     IHttpContextAccessor httpContextAccessor,
     IConnectionTracker connectionTracker
-) : INotificationHandler<ServerMemberLeftNotification> {
-    public async ValueTask Handle(ServerMemberLeftNotification notification, CancellationToken cancellationToken) {
+) : INotificationHandler<UserLeftServerNotification> {
+    public async ValueTask Handle(UserLeftServerNotification notification, CancellationToken cancellationToken) {
         string? connectionId = 
             httpContextAccessor.HttpContext?.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
@@ -46,6 +46,6 @@ internal sealed class ServerMemberLeftNotificationHandler(
             hubContext.Clients.Group(groupName) :
             hubContext.Clients.GroupExcept(groupName, connectionId);
 
-        await target.ServerMemberLeft(new(notification), cancellationToken);
+        await target.UserLeftServer(new(notification), cancellationToken);
     }
 }

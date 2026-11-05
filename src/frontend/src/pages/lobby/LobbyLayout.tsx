@@ -95,7 +95,6 @@ function UserHomePageButton() {
 
 function JoinedCommunityServerScrollList() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const {
     data,
@@ -128,35 +127,34 @@ function JoinedCommunityServerScrollList() {
     });
   });
 
-  useSignalREvent("LeftServer", () => {
-    queryClient.invalidateQueries({
-      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
-    });
-  });
-  
-  useSignalREvent("KickedFromServer", (serverId: string) => {
-    queryClient.setQueryData<InfiniteData<GetJoinedCommunityServerQuery, unknown>>(
-      useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }), 
-      (oldData) => {
-        if (!oldData || oldData.pages.length === 0) return;
-        
+  const handleRemoveServerFromQueryData = (serverId: string) => {
+    queryClient.setQueryData(
+      useInfiniteGetJoinedCommunityServerQuery.getKey({ after: null }),
+      (oldData: InfiniteData<GetJoinedCommunityServerQuery>): InfiniteData<GetJoinedCommunityServerQuery> => {
+        if (!oldData) return oldData;
+
         return {
           ...oldData,
-          pages: oldData.pages.map(page => {
-            const contain = page.joinedServers.nodes?.some(node => node.id === serverId);
-            if (!contain) return page;
-            
-            return {
-              ...page,
-              joinedServers: {
-                ...page.joinedServers,
-                nodes: page.joinedServers.nodes!.filter(node => node.id !== serverId),
-              },
-            };
-          }),
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            joinedServers: {
+              ...page.joinedServers,
+              nodes: page.joinedServers.nodes ? page.joinedServers.nodes.filter(
+                (node) => node.id !== serverId
+              ) : page.joinedServers.nodes,
+            },
+          })),
         };
       }
     );
+  };
+
+  useSignalREvent("LeftServer", (event: LeftServerEvent) => {
+    handleRemoveServerFromQueryData(event.serverId);
+  });
+  
+  useSignalREvent("KickedFromServer", (serverId: string) => {
+    handleRemoveServerFromQueryData(serverId);
   });
 
   return (

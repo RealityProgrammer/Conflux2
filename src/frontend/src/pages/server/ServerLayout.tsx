@@ -1,4 +1,4 @@
-import {data, Outlet, useNavigate, useParams} from "react-router";
+import {Outlet, useNavigate, useParams} from "react-router";
 import Spinner from "../../components/Spinner.tsx";
 import CommunityServerContextProvider, {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import {BsExclamationTriangle} from "react-icons/bs";

@@ -44,7 +44,6 @@ import Dialog from "../Dialog.tsx";
 import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
 import {Avatar} from "../Avatar.tsx";
 import useUpdateMemberRolesMutation from "../../hooks/useUpdateMemberRolesMutation.ts";
-import {data} from "react-router";
 
 type InspectingMemberContextResult = {
   inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;

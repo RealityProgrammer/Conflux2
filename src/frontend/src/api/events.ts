@@ -166,10 +166,6 @@ export type MessageUnpinnedEvent = {
   messageId: string;
 }
 
-export type JoinedServerEvent = {
-  serverId: string;
-}
-
 export type CreatedServerEvent = {
   serverId: string;
 }
@@ -196,4 +192,20 @@ export type MessageMentionReceivedEvent = {
 
 export type LeftServerEvent = {
   serverId: string;
+}
+
+export type JoinedServerEvent = {
+  serverId: string;
+}
+
+export type UserLeftServerEvent = {
+  serverId: string;
+  memberUserId: string;
+  memberId: string;
+}
+
+export type UserJoinedServerEvent = {
+  serverId: string;
+  memberUserId: string;
+  memberId: string;
 }

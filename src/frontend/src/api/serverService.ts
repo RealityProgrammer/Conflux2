@@ -1,7 +1,7 @@
 import type {AxiosError, AxiosResponse} from "axios";
 import type {
   BackendResponse, ChannelCategoryIdentityDto, ServerChannelIdentityDto,
-  ServerDetailsDto, ServerIdentityDto, ServerRoleDto, ServiceResponse, ChannelDetailsDto, ChannelCategoryDetailDto,
+  ServerDetailsDto, ServerIdentityDto, ServerRoleDto, ServiceResponse,
   ServerMemberAuthorizeInfoDto, EmojiManagementDto, EmojiDto
 } from "./types.ts";
 import {apiClient} from "./client.ts";

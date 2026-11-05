@@ -29,7 +29,6 @@ import CreateInvitationDialog from "./CreateInvitationDialog.tsx";
 import {ServerManagementModal} from "./ServerManagementModal.tsx";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 import useLeaveServerMutation from "../../hooks/useLeaveServerMutation.ts";
-import {queryClient} from "../../main.tsx";
 import {useQueryClient} from "@tanstack/react-query";
 import {useInfiniteGetJoinedCommunityServerQuery} from "../../graphql/infiniteQueries.ts";
 

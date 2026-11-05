@@ -6,7 +6,7 @@ import ConversationContextProvider, {
 import {Avatar} from "../components/Avatar.tsx";
 import type {DmConversationDetails, ServerChannelConversationDetails} from "../api/types.ts";
 import {ChannelType} from "../api/schema.ts";
-import {BsChatTextFill, BsPeopleFill, BsPersonFill, BsSearch, BsVolumeUp} from "react-icons/bs";
+import {BsChatTextFill, BsPeopleFill, BsPersonFill, BsVolumeUp} from "react-icons/bs";
 import ChatContainerContextProvider from "../contexts/ChatContainerContext.tsx";
 import {ChatView} from "../components/chat/ChatView.tsx";
 import TypingIndicator from "../components/chat/TypingIndicator.tsx";
@@ -15,7 +15,6 @@ import useConversationConnection from "../hooks/useConversationConnection.ts";
 import ShowPinnedMessagesButton from "../components/ShowPinnedMessagesButton.tsx";
 import {FaSearch} from "react-icons/fa";
 import IconButton from "../components/IconButton.tsx";
-import {FaPerson} from "react-icons/fa6";
 import {useState} from "react";
 import UserProfilePanel from "../components/UserProfilePanel.tsx";
 import ServerMemberList from "../components/server/ServerMemberList.tsx";
@@ -109,7 +108,7 @@ function SuccessDisplay() {
 
           <aside
             className={`
-              flex flex-col bg-gray-725 border-l-2 border-l-gray-600 z-10 absolute right-0 top-0 h-full w-80 transition-transform duration-300 ease-in-out
+              flex flex-col bg-gray-725 border-l-2 border-l-gray-600 absolute right-0 top-0 h-full w-80 transition-transform duration-300 ease-in-out
               
               ${showRightSidebar ? "translate-x-0 shadow-2xl" : "translate-x-full pointer-events-none"}
 

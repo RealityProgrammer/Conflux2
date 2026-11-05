@@ -41,7 +41,8 @@ public interface IConfluxClient {
     
     Task JoinedServer(JoinedServerEvent data, CancellationToken cancellationToken = default);
     Task LeftServer(LeftServerEvent data, CancellationToken cancellationToken = default);
-    Task ServerMemberLeft(ServerMemberLeftEvent data, CancellationToken cancellationToken = default);
+    Task UserJoinedServer(UserJoinedServerEvent data, CancellationToken cancellationToken = default);
+    Task UserLeftServer(UserLeftServerEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberKicked(ServerMemberKickedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberWarned(ServerMemberWarnedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberBanned(ServerMemberBannedEvent data, CancellationToken cancellationToken = default);

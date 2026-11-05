@@ -40,8 +40,6 @@ using FileSignatures.Formats;
 using FluentValidation;
 using HotChocolate.Execution;
 using HotChocolate.Types.Descriptors;
-using Mediator;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;

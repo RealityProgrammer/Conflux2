@@ -9,7 +9,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record LeaveServerCommand(Guid ServerId) : ICommand<Result>;
 
-public sealed record ServerMemberLeftNotification(Guid ServerId, Guid MemberUserId, Guid MemberId) : INotification;
+public sealed record UserLeftServerNotification(Guid ServerId, Guid MemberUserId, Guid MemberId) : INotification;
 
 public sealed class LeaveServerCommandHandler(
     ICurrentUserService currentUserService,
@@ -60,7 +60,7 @@ public sealed class LeaveServerCommandHandler(
             return Errors.UnexpectedError();
         }
 
-	await publisher.Publish(new ServerMemberLeftNotification(serverId, userId, member.Id), CancellationToken.None);
+	await publisher.Publish(new UserLeftServerNotification(serverId, userId, member.Id), CancellationToken.None);
 
         return Result.Success();
     }

@@ -10,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record JoinServerCommand(string InvitationId) : ICommand<Result>;
 
-public sealed record MemberJoinedServerNotification(Guid ServerId, Guid UserId) : INotification;
+public sealed record UserJoinedServerNotification(Guid ServerId, Guid MemberUserId, Guid MemberId) : INotification;
 
 public sealed class JoinServerHandler(
     ICurrentUserService currentUserService,
@@ -90,7 +90,7 @@ public sealed class JoinServerHandler(
                     member.HighestAuthorizeRoleId = defaultRoleInfo.Id;
                     member.HighestAuthorizeLevel = defaultRoleInfo.AuthorizeLevel;
                 } else {
-                    CommunityServerMember newMember = new() {
+                    member = new() {
                         UserId = userId,
                         CommunityServerId = serverId,
                         Status = MembershipStatus.Active,
@@ -98,14 +98,14 @@ public sealed class JoinServerHandler(
                         HighestAuthorizeLevel = defaultRoleInfo.AuthorizeLevel,
                     };
 
-                    memberWriteRepository.Add(newMember);
+                    memberWriteRepository.Add(member);
                 }
 
                 // attempt save, might throw concurrency exception
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitAsync(cancellationToken);
 
-                await publisher.Publish(new MemberJoinedServerNotification(serverId, userId), CancellationToken.None);
+                await publisher.Publish(new UserJoinedServerNotification(serverId, userId, member.Id), CancellationToken.None);
                 
                 return Result.Success();
             } catch (DbUpdateConcurrencyException) {
