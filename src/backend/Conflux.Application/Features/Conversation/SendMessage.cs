@@ -27,7 +27,7 @@ public sealed record MessageReceivedNotification(
 ) : INotification;
 
 public sealed record MentioningNotification(
-    MentionSource Source,
+    MentionMessageSource Source,
     IReadOnlySet<Guid> MentioningUserIds
 ) : INotification;
 
@@ -175,8 +175,8 @@ public sealed partial class SendMessageHandler(
         userIds.Remove(messageSenderId);   // prevent self-pinging
 
         if (userIds.Count > 0) {
-            MentionSource? mentionSource = null;
-            HashSet<Guid> filteredUserIds = [];
+            MentionMessageSource? mentionSource;
+            HashSet<Guid>? filteredUserIds;
             
             // get mentioning source and remove all unmentionable users:
             // - for non-server, only allow participants
@@ -184,7 +184,7 @@ public sealed partial class SendMessageHandler(
 
             switch (conversationType) {
                 case ConversationType.Direct:
-                    mentionSource = new MentionFromDm(conversationId, messageId, messageSenderId);
+                    mentionSource = new(new MentionFromDm(conversationId, messageSenderId), messageId);
                     filteredUserIds = await conversationRepository
                         .AsQueryable()
                         .Where(c => c.Id == conversationId)
@@ -205,7 +205,7 @@ public sealed partial class SendMessageHandler(
                         })
                         .SingleAsync();
 
-                    mentionSource = new MentionFromServer(conversationId, messageId, channelIds.CommunityServerId, channelIds.Id);
+                    mentionSource = new(new MentionFromServer(conversationId, channelIds.CommunityServerId, channelIds.Id), messageId);
                     filteredUserIds = await conversationRepository
                         .AsQueryable()
                         .Where(c => c.Id == conversationId)
@@ -214,9 +214,14 @@ public sealed partial class SendMessageHandler(
                         .Select(u => u.Id)
                         .ToHashSetAsync();
                     break;
+                
+                default:
+                    mentionSource = null;
+                    filteredUserIds = null;
+                    break;
             }
 
-            if (filteredUserIds.Count > 0 && mentionSource != null) {
+            if (filteredUserIds is { Count: > 0 } && mentionSource != null) {
                 await publisher.Publish(new MentioningNotification(
                     mentionSource,
                     filteredUserIds

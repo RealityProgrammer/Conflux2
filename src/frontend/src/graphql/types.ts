@@ -868,16 +868,21 @@ export type MembershipStatusOperationFilterInput = {
   nin?: InputMaybe<Array<MembershipStatus>>;
 };
 
+export type MentionMessageSource = {
+  __typename?: 'MentionMessageSource';
+  messageId: Scalars['UUID']['output'];
+  source: MentionSource;
+};
+
 export type MentionNotificationPayload = INotificationPayload & {
   __typename?: 'MentionNotificationPayload';
-  source: MentionSource;
+  source: MentionMessageSource;
   typeName: Scalars['String']['output'];
 };
 
 export type MentionSource = {
   __typename?: 'MentionSource';
   conversationId: Scalars['UUID']['output'];
-  messageId: Scalars['UUID']['output'];
 };
 
 export type MessageAttachmentDto = {

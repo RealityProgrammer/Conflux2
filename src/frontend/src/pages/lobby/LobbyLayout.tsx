@@ -482,17 +482,19 @@ export default function LobbyLayout() {
   }, []);
 
   useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
-    if (activeConversationId === event.source.conversationId) return;
+    const source = event.source.source;
+
+    if (activeConversationId === source.conversationId) return;
 
     playMentionAudio();
 
-    switch (event.source.$type) {
+    switch (source.$type) {
       case "dm":
-        incrementDmMention(event.source.peerUserId);
+        incrementDmMention(source.peerUserId);
         break;
 
       case "server":
-        incrementServerMention(event.source.serverId, event.source.channelId);
+        incrementServerMention(source.serverId, source.channelId);
         break;
     }
   });

@@ -1,4 +1,5 @@
 import type {
+  MentionSource,
   MessageAttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
@@ -24,7 +25,7 @@ import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import Spinner from "../Spinner.tsx";
 import {FaArrowDown} from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
-import {notificationService} from "../../api/notificationService.ts";
+import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -39,6 +40,9 @@ export function ChatView({
   allowEditMessage = true,
   allowDeleteMessage = true,
 }: ChatViewProps) {
+  const clearDmMentions = useMentionCountStore(state => state.clearDmMentions);
+  const clearServerChannelMentions = useMentionCountStore(state => state.clearServerChannelMentions);
+
   const setMediaElements = useMediaGalleryStore((state) => state.setElements);
 
   // messaging context and hooks
@@ -66,21 +70,26 @@ export function ChatView({
     hasNextPage,
     fetchNextPage,
     isLoading,
-    isSuccess,
   } = useTimelineMessagesQuery(conversationId, anchorId);
 
-  // mark mention notifications as read
   useEffect(() => {
-    if (isSuccess) {
-      (async () => {
-        const response = await notificationService.markMentionNotificationsAsRead(conversationId);
+    (async () => {
+      const mentionSource: MentionSource | null =
+        await conversationService.markMentionNotificationsAsRead(conversationId);
 
-        if (response.success) {
+      if (mentionSource) {
+        switch (mentionSource.$type) {
+          case "dm":
+            clearDmMentions(mentionSource.peerUserId);
+            break;
 
+          case "server":
+            clearServerChannelMentions(mentionSource.serverId, mentionSource.channelId);
+            break;
         }
-      })();
-    }
-  }, [conversationId, isSuccess]);
+      }
+    })();
+  }, [conversationId]);
 
   const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 

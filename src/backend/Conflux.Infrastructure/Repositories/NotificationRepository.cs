@@ -31,7 +31,7 @@ internal sealed class NotificationRepository(
         return await dbContext.Notifications
             .Where(n => 
                 n.Type == NotificationType.Mention && 
-                ((MentionNotificationPayload)n.Payload).Source.ConversationId == conversationId && 
+                ((MentionNotificationPayload)n.Payload).Source.Source.ConversationId == conversationId && 
                 n.UserId == userId && 
                 !n.IsRead
             )

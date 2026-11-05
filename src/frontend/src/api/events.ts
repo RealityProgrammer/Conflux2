@@ -1,6 +1,6 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
-  EditedMessageDto, EmojiDto,
+  EditedMessageDto, EmojiDto, MentionSource,
 } from "./types.ts";
 import {type PinnedMessageDto, type PresenceStatus} from "../graphql/types.ts";
 
@@ -180,14 +180,13 @@ export type EmojiDeletedEvent = {
   emojiIds: string[];
 }
 
-export type MentionSource =
-  { conversationId: string; messageId: string; } & (
-    { $type: "dm"; peerUserId: string; } |
-    { $type: "server"; serverId: string; channelId: string; }
-  );
+export type MentionMessageSource = {
+  messageId: string;
+  source: MentionSource;
+}
 
 export type MessageMentionReceivedEvent = {
-  source: MentionSource;
+  source: MentionMessageSource;
 }
 
 export type LeftServerEvent = {

@@ -1,6 +1,8 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Conversation;
+using Conflux.Application.Features.Users.Notifications;
 using Conflux.Domain;
+using Conflux.Domain.Dto;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +42,21 @@ public sealed class ConversationController(
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.RequireActiveAccount) or nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+	[HttpPost("{conversationId:guid}/read-mentions")]
+    public async Task<ActionResult<ApiResponse<MentionSource?>>> MarkMentionNotificationsAsRead(Guid conversationId) {
+        var result = await sender.Send(new MarkMentionNotificationsAsRead(conversationId));
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<MentionSource?>(result.Value, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

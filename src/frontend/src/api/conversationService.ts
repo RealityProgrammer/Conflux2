@@ -3,7 +3,7 @@ import type {
   BackendResponse,
   TimelineMessageDto,
   ServiceResponse,
-  TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails
+  TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails, MentionSource
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
@@ -159,4 +159,11 @@ export const conversationService = {
       return handleAxiosError(axiosError);
     }
   },
+
+  markMentionNotificationsAsRead: async (conversationId: string): Promise<MentionSource | null> => {
+    const response: AxiosResponse<BackendResponse<MentionSource | null>> =
+      await apiClient.post(`conversations/${encodeURIComponent(conversationId)}/read-mentions`);
+
+    return response.data.data ?? null;
+  }
 }

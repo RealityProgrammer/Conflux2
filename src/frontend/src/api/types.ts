@@ -61,6 +61,7 @@ export type FriendSearchResponse = components["schemas"]["FriendSearchResponse"]
 export type SendFriendRequestResult = components["schemas"]["SendFriendRequestResult"];
 export type ServerChannelConversationDetails = components["schemas"]["ServerChannelConversationDetails"];
 export type DmConversationDetails = components["schemas"]["DmConversationDetails"];
+export type MentionSource = components["schemas"]["MentionSource"];
 
 export type EditedMessageDto = {
   id: string;

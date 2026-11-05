@@ -1338,49 +1338,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notifications/read-mentions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["MarkMentionNotificationsAsReadRequest"];
-                    "text/json": components["schemas"]["MarkMentionNotificationsAsReadRequest"];
-                    "application/*+json": components["schemas"]["MarkMentionNotificationsAsReadRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/notifications/unread-counts": {
         parameters: {
             query?: never;
@@ -2353,7 +2310,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/communities/{serverId}/leave": {
+    "/api/communities/{serverId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2362,7 +2319,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
+        post?: never;
+        delete: {
             parameters: {
                 query?: never;
                 header?: never;
@@ -2386,7 +2344,6 @@ export interface paths {
                 };
             };
         };
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2680,6 +2637,45 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/read-mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfMentionSource"];
+                        "application/json": components["schemas"]["ApiResponseOfMentionSource"];
+                        "text/json": components["schemas"]["ApiResponseOfMentionSource"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2997,6 +2993,10 @@ export interface components {
             data: null | components["schemas"]["LoginResponse"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfMentionSource: {
+            data: null | components["schemas"]["MentionSource"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfRefreshResponse: {
             data: null | components["schemas"]["RefreshResponse"];
             error: components["schemas"]["Error"];
@@ -3200,15 +3200,30 @@ export interface components {
             tokenType: string;
             accessToken: string;
         };
-        MarkMentionNotificationsAsReadRequest: {
-            /** Format: uuid */
-            conversationId: string;
-        };
         MemberRoleDto: {
             /** Format: uuid */
             id: string;
             specialRoleType: components["schemas"]["SpecialRoleType"];
             name: string;
+        };
+        MentionSource: components["schemas"]["MentionSourceMentionFromDm"] | components["schemas"]["MentionSourceMentionFromServer"];
+        MentionSourceMentionFromDm: {
+            /** @enum {string} */
+            $type?: MentionSourceMentionFromDm$type;
+            /** Format: uuid */
+            peerUserId: string;
+            /** Format: uuid */
+            conversationId: string;
+        };
+        MentionSourceMentionFromServer: {
+            /** @enum {string} */
+            $type?: MentionSourceMentionFromServer$type;
+            /** Format: uuid */
+            serverId: string;
+            /** Format: uuid */
+            channelId: string;
+            /** Format: uuid */
+            conversationId: string;
         };
         MessageAttachmentDto: {
             /** Format: uuid */
@@ -3590,6 +3605,12 @@ export enum InvitationExpireAfter {
     TwoWeeks = "TwoWeeks",
     FourWeeks = "FourWeeks",
     Infinite = "Infinite"
+}
+export enum MentionSourceMentionFromDm$type {
+    dm = "dm"
+}
+export enum MentionSourceMentionFromServer$type {
+    server = "server"
 }
 export enum MessagePropertiesCallEndProperties$type {
     Value1 = 1

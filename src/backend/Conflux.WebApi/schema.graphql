@@ -535,14 +535,18 @@ type MemberAuthorizeInfo {
   isBanned: Boolean!
 }
 
-type MentionNotificationPayload implements INotificationPayload {
+type MentionMessageSource {
   source: MentionSource!
+  messageId: UUID!
+}
+
+type MentionNotificationPayload implements INotificationPayload {
+  source: MentionMessageSource!
   typeName: String!
 }
 
 type MentionSource {
   conversationId: UUID!
-  messageId: UUID!
 }
 
 type MessageAttachmentDto {

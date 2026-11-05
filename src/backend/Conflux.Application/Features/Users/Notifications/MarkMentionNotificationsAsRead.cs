@@ -9,13 +9,14 @@ namespace Conflux.Application.Features.Users.Notifications;
 
 public sealed record MarkMentionNotificationsAsRead(
     Guid ConversationId
-) : ICommand<Result>;
+) : ICommand<Result<MentionSource?>>;
 
 public sealed class MarkMentionNotificationsAsReadHandler(
     ICurrentUserService currentUserService,
-    INotificationWriteRepository notificationWriteRepository
-) : ICommandHandler<MarkMentionNotificationsAsRead, Result> {
-    public async ValueTask<Result> Handle(
+    INotificationWriteRepository notificationWriteRepository,
+    IConversationRepository conversationRepository
+) : ICommandHandler<MarkMentionNotificationsAsRead, Result<MentionSource?>> {
+    public async ValueTask<Result<MentionSource?>> Handle(
         MarkMentionNotificationsAsRead command, 
         CancellationToken cancellationToken
     ) {
@@ -25,12 +26,28 @@ public sealed class MarkMentionNotificationsAsReadHandler(
 
         var conversationId = command.ConversationId;
 
-        await notificationWriteRepository.MarkMentionsAsReadAsync(
+        int updateCount = await notificationWriteRepository.MarkMentionsAsReadAsync(
             conversationId, 
             userId, 
             cancellationToken
         );
 
-        return Result.Success();
+        if (updateCount == 0) {
+            return Result<MentionSource?>.Success(null);
+        }
+
+        var mentionSource = await conversationRepository
+            .AsQueryable()
+            .Where(c => c.Id == conversationId)
+            .Select<Domain.Entities.Conversation, MentionSource>(c =>
+                c.Type == ConversationType.Direct ? 
+                    new MentionFromDm(conversationId, c.FriendRequest!.SenderUserId == userId ? c.FriendRequest.ReceiverUserId : c.FriendRequest.SenderUserId) :
+                    c.Type == ConversationType.Server ?
+                        new MentionFromServer(conversationId, c.Channel!.CommunityServerId, c.Channel!.Id) :
+                        null!
+            )
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return Result<MentionSource?>.Success(mentionSource);
     }
 }

@@ -9,7 +9,7 @@ public interface INotificationPayload {
     public string TypeName => GetType().Name;   // to make HotChocolate shut up about INotificationPayload has to at least define one field
 }
 
-public sealed record MentionNotificationPayload(MentionSource Source) : INotificationPayload;
+public sealed record MentionNotificationPayload(MentionMessageSource Source) : INotificationPayload;
 
 public class Notification : IHasCreatedAt {
     public Guid Id { get; set; }

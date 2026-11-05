@@ -40,7 +40,7 @@ public sealed class QueryUnreadNotificationCountsHandler(
             if (unreadNotif.Type == NotificationType.Mention) {
                 var mentionPayload = (MentionNotificationPayload)unreadNotif.Payload;
 
-                switch (mentionPayload.Source) {
+                switch (mentionPayload.Source.Source) {
                     case MentionFromDm mentionFromDm:
                         ref var count = ref CollectionsMarshal.GetValueRefOrAddDefault(dmMentionCounts, mentionFromDm.PeerUserId, out _);
                         count += 1;
