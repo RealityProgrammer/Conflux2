@@ -1,6 +1,6 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Conversation;
-using Conflux.Application.Features.Users.Notifications;
+using Conflux.Application.Features.Notifications;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Mediator;

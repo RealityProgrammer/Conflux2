@@ -1,5 +1,5 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Users.Notifications;
+using Conflux.Application.Features.Notifications;
 using Conflux.Domain;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;

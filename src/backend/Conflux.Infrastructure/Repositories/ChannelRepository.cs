@@ -17,22 +17,6 @@ internal sealed class ChannelRepository(
         dbContext.Channels.Add(channel);
     }
 
-    public async Task<Result<ChannelMetadataDto>> GetChannelMetadataFromChannelId(
-        Guid channelId,
-        CancellationToken cancellationToken = default
-    ) {
-        ChannelMetadataDto? context = await dbContext.Channels
-            .Where(c => c.Id == channelId)
-            .SelectFacet<ChannelMetadataDto>()
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (context == null) {
-            return Errors.ResourceNotFound("Channel");
-        }
-
-        return Result<ChannelMetadataDto>.Success(context);
-    }
-
     public async Task<bool> Delete(Guid serverId, Guid channelId, CancellationToken cancellationToken = default) {
         // TODO: Soft-deletion
         return await dbContext.Channels

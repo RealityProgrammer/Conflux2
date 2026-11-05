@@ -57,7 +57,6 @@ using System.Threading.RateLimiting;
 using UAParser.Extensions;
 using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
-using InvitationCleanupWorker = Conflux.WebApi.Workers.InvitationCleanupWorker;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -289,7 +288,6 @@ builder.Services.AddSignalR()
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
     .AddScoped<IAccountDeleteStatusCacheProvider, AccountDeleteStatusCacheProvider>()
-    .AddScoped<IAccountPurgingService, AccountPurgingService>()
         
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
@@ -648,13 +646,10 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 
 // jobs/workers
 builder.Services
-    .AddHostedService<InvitationCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
     .AddHostedService<EmailBackgroundWorker>()
-    .AddHostedService<LoginSessionCleanupWorker>()
-    .AddHostedService<PurgePendingDeleteAccountsWorker>()
     .AddHostedService<ConnectionCleanupWorker>()
-    .AddHostedService<MentionNotificationCleanupWorker>();
+    .AddHostedService<DailyPurgeWorker>();
 
 var app = builder.Build();
 

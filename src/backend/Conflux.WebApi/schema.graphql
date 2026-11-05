@@ -1223,6 +1223,7 @@ input MessageFilterInput {
   type: MessageTypeOperationFilterInput
   body: StringOperationFilterInput
   attachments: ListFilterInputTypeOfMediaItemFilterInput
+  searchVector: NpgsqlTsVectorFilterInput
   properties: MessagePropertiesFilterInput
   senderUserId: UuidOperationFilterInput
   sender: ApplicationUserFilterInput
@@ -1267,6 +1268,12 @@ input NotificationTypeOperationFilterInput {
   neq: NotificationType @cost(weight: "10")
   in: [NotificationType!] @cost(weight: "10")
   nin: [NotificationType!] @cost(weight: "10")
+}
+
+input NpgsqlTsVectorFilterInput {
+  and: [NpgsqlTsVectorFilterInput!]
+  or: [NpgsqlTsVectorFilterInput!]
+  count: IntOperationFilterInput
 }
 
 input PermissionStateOperationFilterInput {

@@ -5,7 +5,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Conflux.Application.Features.Users.Notifications;
+namespace Conflux.Application.Features.Notifications;
 
 public sealed record MarkMentionNotificationsAsRead(
     Guid ConversationId

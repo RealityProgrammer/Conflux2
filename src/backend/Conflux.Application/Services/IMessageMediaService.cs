@@ -9,6 +9,4 @@ public interface IMessageMediaService {
     
     string GetPreSignedUrl(Guid attachmentId, TimeSpan expireIn);
     string GetDownloadPreSignedUrl(Guid attachmentId, string? fileName, TimeSpan expireIn);
-    
-    // Task<AttachmentMediaItemInfo?> GetAttachment(Guid attachmentId, CancellationToken cancellationToken = default);
 }

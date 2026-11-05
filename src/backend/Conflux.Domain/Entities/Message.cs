@@ -1,4 +1,5 @@
 using Conflux.Domain.Enums;
+using NpgsqlTypes;
 
 namespace Conflux.Domain.Entities;
 
@@ -8,6 +9,7 @@ public class Message : IHasCreatedAt {
     
     public string? Body { get; set; }
     public virtual ICollection<MediaItem> Attachments { get; set; } = [];
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
     
     public MessageProperties? Properties { get; set; }
     

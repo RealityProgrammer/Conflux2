@@ -1,7 +1,6 @@
 using Conflux.Domain.Entities;
-using Conflux.Domain.Repositories;
 
-namespace Conflux.Application.Services;
+namespace Conflux.Domain.Repositories;
 
 public interface ICommunityServerReadRepository : IReadRepository<CommunityServer> {
     Task<bool> Exists(Guid id, CancellationToken cancellationToken = default);

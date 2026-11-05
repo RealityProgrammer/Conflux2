@@ -28,39 +28,6 @@ internal sealed class FriendRequestRepository(
         dbContext.FriendRequests.Add(friendRequest);
     }
 
-    public async Task<Guid?> TryAcceptReverseRequest(Guid senderId, Guid receiverId, DateTimeOffset utcNow, CancellationToken cancellationToken = default) {
-        var updatedId = await dbContext.Database.SqlQuery<Guid>(
-            $"""
-             UPDATE "FriendRequests"
-             SET "Status" = {(int)FriendRequestStatus.Accepted}, "UpdatedAt" = {utcNow}
-             WHERE "SenderUserId" = {receiverId} AND "ReceiverUserId" = {senderId} AND "Status" = {(int)FriendRequestStatus.Pending}
-             RETURNING "Id"
-             """).FirstOrDefaultAsync(cancellationToken);
-
-        return updatedId == Guid.Empty ? null : updatedId;
-    }
-
-    public async Task<bool> ReactivateRequestAsPending(
-        Guid requestId,
-        Guid senderUserId,
-        Guid receiverUserId,
-        DateTimeOffset utcTime,
-        CancellationToken cancellationToken = default
-    ) {
-        // we could check for the status too but not to make it idempotent.
-        int numChanged = await dbContext.FriendRequests
-            .Where(r => r.Id == requestId)
-            .ExecuteUpdateAsync(setter => {
-                setter
-                    .SetProperty(r => r.SenderUserId, senderUserId)
-                    .SetProperty(r => r.ReceiverUserId, receiverUserId)
-                    .SetProperty(r => r.Status, FriendRequestStatus.Pending)
-                    .SetProperty(r => r.UpdatedAt, utcTime);
-            }, cancellationToken);
-
-        return numChanged > 0;
-    }
-
     public async Task<bool> TryTransitionStatus(
         Guid requestId,
         FriendRequestStatus expectedStatus,
@@ -76,46 +43,5 @@ internal sealed class FriendRequestRepository(
                 cancellationToken);
 
         return numChanged > 0;
-    }
-
-    public async Task<PaginatedResult<DiscoverFriendSummary>> GetFriendDiscovery(
-        Guid searcherId, 
-        string? nameFilter,
-        int offset,
-        int count,
-        CancellationToken cancellationToken = default
-    ) {
-        var queryable = dbContext.Users
-            // ignore the user who requests the search and anyone who hasn't setup their profile
-            .Where(u => u.Id != searcherId && u.IsUserNameLocked)
-            .NameContains(nameFilter);
-        
-        int totalCount = await queryable.CountAsync(cancellationToken);
-
-        List<DiscoverFriendSummary> paginatedItems = await queryable
-            .OrderBy(u => u.UserName)
-            .Skip(offset)
-            .Take(count)
-            .Select(u => new DiscoverFriendSummary(
-                u.Id,
-                u.UserName!, 
-                u.DisplayName!, 
-                u.AvatarVersion,
-                dbContext.FriendRequests
-                    .Where(fr => 
-                        (fr.SenderUserId == searcherId && fr.ReceiverUserId == u.Id || fr.SenderUserId == u.Id && fr.ReceiverUserId == searcherId) &&
-                        // only care about active states, ignore canceled and rejected
-                        (fr.Status == FriendRequestStatus.Pending || fr.Status == FriendRequestStatus.Accepted)
-                    )
-                    .Select(fr => 
-                        fr.Status == FriendRequestStatus.Accepted ? UserRelationshipStatus.Friended :
-                        fr.SenderUserId == searcherId ? UserRelationshipStatus.OutcomingRequest : 
-                        UserRelationshipStatus.IncomingRequest
-                    )
-                    .FirstOrDefault()
-            ))
-            .ToListAsync(cancellationToken);
-        
-        return new(paginatedItems, totalCount);
     }
 }

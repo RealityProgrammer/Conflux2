@@ -8,7 +8,7 @@ using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
 
-namespace Conflux.Application.Features.Users.Notifications;
+namespace Conflux.Application.Features.Notifications;
 
 public sealed class QueryUnreadNotificationCounts : IQuery<Result<UnreadNotificationCounts>>;
 
