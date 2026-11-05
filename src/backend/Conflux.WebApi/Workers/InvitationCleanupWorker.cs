@@ -33,19 +33,18 @@ internal sealed partial class InvitationCleanupWorker(
         var invitationRepository = scope.ServiceProvider.GetRequiredService<IInvitationRepository>();
 
         try {
-            logger.LogInformation("Starting invitation cleanup...");
+            logger.LogInformation("Starting cleanup...");
 
             int deletedCount = await invitationRepository.DeleteInactive(stoppingToken);
 
             if (deletedCount > 0) {
-                LogDeletedCountInvitations(deletedCount);
+                LogDeletedCount(logger, deletedCount);
             }
         } catch (Exception ex) {
-            // Log the error but DO NOT throw, otherwise the entire BackgroundService will crash and stop running
-            logger.LogError(ex, "Exception thrown while cleaning up invitations.");
+            logger.LogError(ex, "Exception thrown while cleaning up.");
         }
     }
     
-    [LoggerMessage(LogLevel.Information, "Deleted {Count} inactive/expired invitations.")]
-    partial void LogDeletedCountInvitations(int count);
+    [LoggerMessage(LogLevel.Information, "Deleted {count} inactive/expired.")]
+    private static partial void LogDeletedCount(ILogger logger, int count);
 }

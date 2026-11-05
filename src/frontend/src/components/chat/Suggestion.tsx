@@ -1,4 +1,4 @@
-import {BsAt, BsClockFill, BsEmojiSmileFill, BsExclamationTriangle} from "react-icons/bs";
+import {BsAt, BsClockFill, BsEmojiSmileFill, BsEmojiTear, BsExclamationTriangle} from "react-icons/bs";
 import {useInterval} from "usehooks-ts";
 import {useState} from "react";
 import {Separator} from "radix-ui";
@@ -207,6 +207,14 @@ function MentionMode({className, searchTerm = "", onSelect}: MentionProps) {
             totalListHeightChanged={setListHeight}
             data={allElements}
             computeItemKey={(index) => allElements[index].id}
+            components={{
+              EmptyPlaceholder: () => (
+                <div className="size-full flex flex-col gap-1 justify-center items-center select-none text-gray-400">
+                  <BsEmojiTear className="size-8"/>
+                  Nobody here...
+                </div>
+              ),
+            }}
             itemContent={(_, item) => (
               <UserNameplate.Root
                 className="p-1.5 hover-highlight rounded-md cursor-pointer"

@@ -5,7 +5,8 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class NotificationRepository(
-    ApplicationDbContext dbContext
+    ApplicationDbContext dbContext,
+    TimeProvider timeProvider
 ) : INotificationReadRepository, INotificationWriteRepository {
     public void Add(Notification value) {
         dbContext.Notifications.Add(value);
@@ -28,6 +29,8 @@ internal sealed class NotificationRepository(
     }
 
     public async Task<int> MarkMentionsAsReadAsync(Guid conversationId, Guid userId, CancellationToken cancellationToken) {
+        var utcNow = timeProvider.GetUtcNow();
+        
         return await dbContext.Notifications
             .Where(n => 
                 n.Type == NotificationType.Mention && 
@@ -37,6 +40,17 @@ internal sealed class NotificationRepository(
             )
             .ExecuteUpdateAsync(s => {
                 s.SetProperty(n => n.IsRead, true);
+                s.SetProperty(n => n.ReadAt, utcNow);
             }, cancellationToken);
+    }
+
+    public async Task<int> PruneReadMentionNotifications(TimeSpan age, CancellationToken cancellationToken) {
+        var utcNow = timeProvider.GetUtcNow();
+        
+        return await dbContext.Notifications
+            .Where(n => 
+                n.Type == NotificationType.Mention && n.IsRead && (n.ReadAt == null || utcNow >= n.ReadAt + age)
+            )
+            .ExecuteDeleteAsync(cancellationToken);
     }
 }

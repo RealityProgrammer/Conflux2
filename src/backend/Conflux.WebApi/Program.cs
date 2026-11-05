@@ -653,7 +653,8 @@ builder.Services
     .AddHostedService<EmailBackgroundWorker>()
     .AddHostedService<LoginSessionCleanupWorker>()
     .AddHostedService<PurgePendingDeleteAccountsWorker>()
-    .AddHostedService<ConnectionCleanupWorker>();
+    .AddHostedService<ConnectionCleanupWorker>()
+    .AddHostedService<MentionNotificationCleanupWorker>();
 
 var app = builder.Build();
 

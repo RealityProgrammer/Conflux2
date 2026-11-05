@@ -40,6 +40,7 @@ import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
 import {playMentionAudio} from "../../sfx.ts";
 import {useActiveConversationStore} from "../../store/useActiveConversationStore.ts";
 import {notificationService} from "../../api/notificationService.ts";
+import {conversationService} from "../../api/conversationService.ts";
 
 function Sidebar() {
   return (
@@ -484,7 +485,10 @@ export default function LobbyLayout() {
   useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
     const source = event.source.source;
 
-    if (activeConversationId === source.conversationId) return;
+    if (activeConversationId === source.conversationId) {
+      conversationService.markMentionNotificationsAsRead(source.conversationId);
+      return;
+    }
 
     playMentionAudio();
 

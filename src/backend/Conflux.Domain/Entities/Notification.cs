@@ -23,4 +23,5 @@ public class Notification : IHasCreatedAt {
     public bool IsRead { get; set; }
     
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? ReadAt { get; set; }
 }

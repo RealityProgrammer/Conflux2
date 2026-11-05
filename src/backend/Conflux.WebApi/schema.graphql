@@ -1259,6 +1259,7 @@ input NotificationFilterInput {
   payload: INotificationPayloadFilterInput
   isRead: BooleanOperationFilterInput
   createdAt: DateTimeOperationFilterInput
+  readAt: DateTimeOperationFilterInput
 }
 
 input NotificationTypeOperationFilterInput {
