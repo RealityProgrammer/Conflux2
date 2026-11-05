@@ -13,6 +13,7 @@ namespace Conflux.Domain.Dto;
     nameof(Message.Body),
     nameof(Message.Attachments),
     nameof(Message.CreatedAt),
+    nameof(Message.UpdatedAt),
     nameof(Message.ReplyTo),
     nameof(Message.Properties),
 ], NestedFacets = [
@@ -27,6 +28,7 @@ public sealed partial record TimelineMessageDto {
     [Required] public string? Body { get; set; } = Body;
     public ICollection<MessageAttachmentDto> Attachments { get; set; } = Attachments;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
+    [Required] public DateTimeOffset? UpdatedAt { get; set; } = UpdatedAt;
     [Required] public TimelineMessageReplyDto? ReplyTo { get; set; } = ReplyTo;
     [Required] public MessageProperties? Properties { get; set; } = Properties;
     [Required] public Guid ConversationId { get; set; } = ConversationId;

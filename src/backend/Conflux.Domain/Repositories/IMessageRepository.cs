@@ -10,4 +10,11 @@ public interface IMessageRepository : IWriteRepository<Message> {
         int limit,
         CancellationToken cancellationToken = default
     );
+
+    Task<Result<MessageSearchPage>> Search(
+        Guid conversationId,
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default
+    );
 }

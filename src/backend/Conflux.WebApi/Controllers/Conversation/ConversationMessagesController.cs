@@ -9,15 +9,13 @@ using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
-using TimelineMessageDto = Conflux.Domain.Dto.TimelineMessageDto;
 
 namespace Conflux.WebApi.Controllers.Conversation;
 
 [ApiController, Route("api/conversations/{conversationId:guid}/messages"), Authorize]
 public sealed class ConversationMessagesController(
-    IMediator mediator
+    ISender sender
 ) : ControllerBase {
     [HttpPost, Idempotent(30), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> SendMessage(
@@ -44,7 +42,7 @@ public sealed class ConversationMessagesController(
                         }
                     }
         
-                    return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessageDto>(null, Errors.OperationFailure("open attachment stream")));
+                    return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.OperationFailure("open attachment stream")));
                 }
             }
         } else {
@@ -52,7 +50,7 @@ public sealed class ConversationMessagesController(
         }
 
         try {
-            var result = await mediator.Send(new SendMessageCommand(
+            var result = await sender.Send(new SendMessageCommand(
                 conversationId, 
                 request.Body, 
                 attachments, 
@@ -85,7 +83,7 @@ public sealed class ConversationMessagesController(
         [FromForm] PatchMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var result = await mediator.Send(new EditMessageCommand(conversationId, messageId, request.Body), cancellationToken);
+        var result = await sender.Send(new EditMessageCommand(conversationId, messageId, request.Body), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse(Error.None));
@@ -102,7 +100,7 @@ public sealed class ConversationMessagesController(
 
     [HttpDelete("{messageId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult> DeleteMessage(Guid conversationId, Guid messageId) {
-        Result result = await mediator.Send(new DeleteMessageCommand(conversationId, messageId));
+        Result result = await sender.Send(new DeleteMessageCommand(conversationId, messageId));
 
         if (result.IsSuccess) {
             return NoContent();
@@ -123,7 +121,7 @@ public sealed class ConversationMessagesController(
         [FromBody] ReadMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var result = await mediator.Send(
+        var result = await sender.Send(
             new ReadTimelineMessagesQuery(conversationId, request.ReadStrategy, 50), 
             cancellationToken
         );
@@ -135,9 +133,29 @@ public sealed class ConversationMessagesController(
         return result.Error.Code switch {
             nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
-            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse<TimelineMessagePage>(null, result.Error)),
-            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<TimelineMessagePage>(null, result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse<TimelineMessagePage>(null, result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
+
+    [HttpPost("search")]
+    public async Task<ActionResult<ApiResponse<MessageSearchPage>>> SearchMessage(
+        Guid conversationId,
+        [FromBody] SearchMessageRequest request,
+        CancellationToken cancellationToken
+    ) {
+        var result = await sender.Send(new SearchMessage(conversationId, request.Query), cancellationToken);
+
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<MessageSearchPage>(result.Value, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
 
@@ -146,7 +164,7 @@ public sealed class ConversationMessagesController(
         Guid conversationId,
         Guid messageId
     ) {
-        var result = await mediator.Send(new PinMessageCommand(conversationId, messageId));
+        var result = await sender.Send(new PinMessageCommand(conversationId, messageId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
@@ -166,7 +184,7 @@ public sealed class ConversationMessagesController(
         Guid conversationId,
         Guid messageId
     ) {
-        var result = await mediator.Send(new UnpinMessageCommand(conversationId, messageId));
+        var result = await sender.Send(new UnpinMessageCommand(conversationId, messageId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
@@ -181,7 +199,7 @@ public sealed class ConversationMessagesController(
         };
     }
 
-    public record SendMessageRequest(
+    public sealed record SendMessageRequest(
         [StringLength(4000, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
         string? Body,
 
@@ -225,12 +243,12 @@ public sealed class ConversationMessagesController(
         }
     }
 
-    public record ReadMessageRequest(
+    public sealed record ReadMessageRequest(
         [Required] MessageReadStrategy ReadStrategy
     );
     
-    public record PatchMessageRequest(
-        [StringLength(1024, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
+    public sealed record PatchMessageRequest(
+        [StringLength(4000, ErrorMessage = "Message body can only have maximum length of 4000 characters.")]
         string? Body
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
@@ -243,4 +261,8 @@ public sealed class ConversationMessagesController(
             return results;
         }
     }
+
+    public sealed record SearchMessageRequest(
+        string Query
+    );
 }

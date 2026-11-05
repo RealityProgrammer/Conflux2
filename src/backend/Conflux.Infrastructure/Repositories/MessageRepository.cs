@@ -102,4 +102,22 @@ internal sealed class MessageRepository(
         
         return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
+
+    public async Task<Result<MessageSearchPage>> Search(
+        Guid conversationId, 
+        string query, 
+        int limit, 
+        CancellationToken cancellationToken = default
+    ) {
+        var page = await dbContext.Messages
+            .Where(m => 
+                m.ConversationId == conversationId &&
+                m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", query))
+            )
+            .SelectFacet<MessageSearchDto>()
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+        return Result<MessageSearchPage>.Success(new(page, page.Count == limit ? page[^1].Id : null));
+    }
 }
