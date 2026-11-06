@@ -1,8 +1,14 @@
-import {type HTMLAttributes, useState} from "react";
+import {type HTMLAttributes, useRef, useState} from "react";
 import {BsCalendar, BsChevronLeft, BsChevronRight} from "react-icons/bs";
 import IconButton from "./IconButton.tsx";
 import {formatDate} from "date-fns";
 import {Popover} from "radix-ui";
+
+const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
 export interface DateTimeRange {
   start?: Date;
@@ -29,13 +35,13 @@ export default function DateTimeRangePicker({
     >
       <p className="text-sm overflow-x-hidden whitespace-nowrap select-none">
         {!value || (!value.start && !value.end) ? (
-          <p className="opacity-30">YYYY/MM/DD HH:mm:ss - YYYY/MM/DD HH:mm:ss</p>
+          <span className="opacity-30">YYYY/MM/DD HH:mm:ss - YYYY/MM/DD HH:mm:ss</span>
         ) : !value.start && value.end ? (
-          <p>Until {formatDate(value.end, "yyyy/MM/dd HH:mm:ss")}</p>
+          <span>Until {formatDate(value.end, "yyyy/MM/dd HH:mm:ss")}</span>
         ) : value.start && !value.end ? (
-          <p>Since {formatDate(value.start, "yyyy/MM/dd HH:mm:ss")}</p>
+          <span>Since {formatDate(value.start, "yyyy/MM/dd HH:mm:ss")}</span>
         ) : (
-          <p>{formatDate(value.start!, "yyyy/MM/dd HH:mm:ss")} - {formatDate(value.end!, "yyyy/MM/dd HH:mm:ss")}</p>
+          <span>{formatDate(value.start!, "yyyy/MM/dd HH:mm:ss")} - {formatDate(value.end!, "yyyy/MM/dd HH:mm:ss")}</span>
         )}
       </p>
 
@@ -186,6 +192,20 @@ function PickerContent({
     }));
   };
 
+  const handleClearCurrent = () => {
+    setValue((prev) => ({
+      start: mode === "start" ? undefined : prev?.start,
+      end: mode === "end" ? undefined : prev?.end,
+    }));
+  };
+
+  const handleClearAll = () => {
+    setValue(() => ({
+      start: undefined,
+      end: undefined,
+    }));
+  };
+
   const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
   const daysInCurrentMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
@@ -226,6 +246,7 @@ function PickerContent({
   for (let i = 1; i <= remainingCells; i++) {
     const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
     const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+
     calendarDays.push({
       year: nextYear,
       month: nextMonth,
@@ -233,12 +254,6 @@ function PickerContent({
       isCurrentMonth: false,
     });
   }
-
-  const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
 
   const today = new Date();
 
@@ -263,7 +278,7 @@ function PickerContent({
       </header>
 
       <section className="flex-1 min-h-0 flex flex-row gap-2 p-2">
-        <div className="flex-1 h-full flex flex-col select-none">
+        <div className="flex-1 flex flex-col select-none">
           {/* navigate left right */}
           <nav className="flex items-center justify-between mb-2 px-1">
             <IconButton theme="default" onClick={handlePrev} disabled={viewMode === "months"}>
@@ -421,10 +436,197 @@ function PickerContent({
 
         </div>
 
-        <div className="flex-1 h-full bg-blue-500">
-
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <TimeClockPicker value={value} setValue={setValue} mode={mode}/>
         </div>
       </section>
+
+      <footer className="flex-none py-2 px-3 border-t-2 border-t-gray-600 flex justify-end items-center gap-2 text-xs text-white">
+        <button
+          type="button"
+          onClick={handleClearCurrent}
+          className="button-theme-primary2 cursor-pointer w-20 py-1.5 rounded-md"
+        >
+          Clear {mode === "start" ? "Start" : "End"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleClearAll}
+          className="button-theme-primary2 cursor-pointer w-20 py-1.5 rounded-md"
+        >
+          Clear All
+        </button>
+      </footer>
     </>
+  );
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+function TimeClockPicker({
+                                  value,
+                                  setValue,
+                                  mode,
+                                }: {
+  value: DateTimeRange | undefined;
+  setValue: (setter: (previous: DateTimeRange) => DateTimeRange) => void;
+  mode: "start" | "end";
+}) {
+  const clockRef = useRef<HTMLDivElement | null>(null);
+  const activeDate = (mode === "start" ? value?.start : value?.end) || new Date();
+
+  const hours = activeDate.getHours();
+  const minutes = activeDate.getMinutes();
+  const seconds = activeDate.getSeconds();
+
+  // rotation degrees
+  const secondDegrees = (seconds / 60) * 360;
+  const minuteDegrees = (minutes / 60) * 360 + (seconds / 60) * 6;
+  const hourDegrees = ((hours % 12) / 12) * 360 + (minutes / 60) * 30;
+
+  // format
+  const displayHours12 = hours % 12 === 0 ? 12 : hours % 12;
+  const amPm = hours >= 12 ? "PM" : "AM";
+  const timeString = `${pad(displayHours12)}:${pad(minutes)}:${pad(seconds)}`;
+
+  const handleToggleAmPm = () => {
+    const updatedDate = new Date(activeDate);
+    const currentHours = updatedDate.getHours();
+
+    if (currentHours >= 12) {
+      updatedDate.setHours(currentHours - 12); // Switch to AM
+    } else {
+      updatedDate.setHours(currentHours + 12); // Switch to PM
+    }
+
+    setValue((prev) => ({
+      start: mode === "start" ? updatedDate : prev?.start,
+      end: mode === "end" ? updatedDate : prev?.end,
+    }));
+  };
+
+  const updateTimeFromPointer = (clientX: number, clientY: number, type: "hour" | "minute" | "second") => {
+    if (!clockRef.current) return;
+
+    const rect = clockRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const radians = Math.atan2(clientY - centerY, clientX - centerX);
+    let degrees = radians * (180 / Math.PI);
+
+    // shift 0° from right (3 o'clock) to top (12 o'clock)
+    degrees += 90;
+    if (degrees < 0) degrees += 360;
+
+    const updatedDate = new Date(activeDate);
+
+    if (type === "second") {
+      const newSeconds = Math.round((degrees / 360) * 60) % 60;
+      updatedDate.setSeconds(newSeconds);
+    } else if (type === "minute") {
+      const newMinutes = Math.round((degrees / 360) * 60) % 60;
+      updatedDate.setMinutes(newMinutes);
+    } else if (type === "hour") {
+      const isPM = updatedDate.getHours() >= 12;
+      let newHour = Math.round((degrees / 360) * 12) % 12;
+      if (isPM) newHour += 12;
+      updatedDate.setHours(newHour);
+    }
+
+    setValue((prev) => ({
+      start: mode === "start" ? updatedDate : prev?.start,
+      end: mode === "end" ? updatedDate : prev?.end,
+    }));
+  };
+
+  const createPointerHandler = (type: "hour" | "minute" | "second") => {
+    // @ts-ignore
+    return (e: PointerEvent<HTMLDivElement>) => {
+      const target = e.currentTarget;
+      target.setPointerCapture(e.pointerId);
+      updateTimeFromPointer(e.clientX, e.clientY, type);
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        updateTimeFromPointer(moveEvent.clientX, moveEvent.clientY, type);
+      };
+
+      const onPointerUp = (upEvent: PointerEvent) => {
+        target.releasePointerCapture(upEvent.pointerId);
+
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
+      };
+
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+    };
+  };
+
+  return (
+    <div className="flex-1 flex flex-col justify-center items-center select-none">
+      {/* clock face container */}
+      <div
+        ref={clockRef}
+        className="relative size-40 bg-black/25 rounded-full shadow-[var(--color-violet-500)_0_0_25px] flex items-center justify-center touch-none"
+      >
+        {/* hour markers */}
+        <div className="absolute inset-0 pointer-events-none">
+          {Array.from({ length: 12 }).map((_, i) => {
+            const angle = i * 30;
+            return (
+              <div
+                key={i}
+                className="absolute size-full flex items-start justify-center"
+                style={{ transform: `rotate(${angle}deg)` }}
+              >
+                <div className="w-0.5 h-2 bg-white/60 mt-1.5" />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* hour hand */}
+        <div
+          onPointerDown={createPointerHandler("hour")}
+          className="absolute bottom-1/2 left-1/2 w-1.75 h-10 bg-white rounded-full -translate-x-1/2 origin-bottom cursor-pointer z-20 hover:bg-blue-200 transition-colors"
+          style={{ transform: `rotate(${hourDegrees}deg)` }}
+        />
+
+        {/* minute hand */}
+        <div
+          onPointerDown={createPointerHandler("minute")}
+          className="absolute bottom-1/2 left-1/2 w-1.25 h-14 bg-white/80 rounded-full -translate-x-1/2 origin-bottom cursor-pointer z-20 hover:bg-blue-200 transition-colors"
+          style={{ transform: `rotate(${minuteDegrees}deg)` }}
+        />
+
+        {/* second hand */}
+        <div
+          onPointerDown={createPointerHandler("second")}
+          className="absolute bottom-1/2 left-1/2 w-0.75 h-18 bg-red-400 rounded-full -translate-x-1/2 origin-bottom cursor-pointer z-20 hover:bg-red-200 transition-colors"
+          style={{ transform: `rotate(${secondDegrees}deg)` }}
+        />
+
+        {/* center pivot */}
+        <div className="absolute size-2.25 bg-white rounded-full z-30 shadow-md pointer-events-none" />
+      </div>
+
+      {/* Digital Time Readout */}
+      <div className="mt-6 text-center text-white">
+        <span className="text-lg font-mono font-semibold tracking-wider">
+          {timeString}
+        </span>
+
+        <button
+          type="button"
+          onClick={handleToggleAmPm}
+          className="ml-2 text-xs font-bold text-gray-400 hover:text-white cursor-pointer bg-gray-800 px-2 py-0.5 rounded transition-colors"
+          title="Click to toggle AM/PM"
+        >
+          {amPm}
+        </button>
+      </div>
+    </div>
   );
 }

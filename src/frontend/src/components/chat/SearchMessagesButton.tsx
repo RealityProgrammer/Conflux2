@@ -1,21 +1,19 @@
 import {FaSearch} from "react-icons/fa";
 import IconButton from "../IconButton.tsx";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {Label, Popover, Separator} from "radix-ui";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useHistoryConversationSearchStore} from "../../store/useHistoryConversationSearchStore.ts";
-import {TruncatedText} from "../TruncatedText.tsx";
 import {Avatar} from "../Avatar.tsx";
 import {FaPlus, FaXmark} from "react-icons/fa6";
 import {useDebounceValue} from "usehooks-ts";
-import {Virtuoso} from "react-virtuoso";
 import {useInfiniteGetConversationParticipantsForSearchQuery} from "../../graphql/infiniteQueries.ts";
-import {data} from "react-router";
 import {UserNameplate} from "../UserNameplate.tsx";
 import VirtualizedScrollList2 from "../VirtualizedScrollList2.tsx";
 import type {UserIdentityProfileDto} from "../../api/types.ts";
 import {BsCheckLg} from "react-icons/bs";
 import DateTimeRangePicker from "../DateTimeRangePicker.tsx";
+import {TruncatedText} from "../TruncatedText.tsx";
 
 interface SearchRequest {
   content: string;
@@ -93,23 +91,23 @@ export default function SearchMessagesButton() {
               />
             </div>
 
-            {/*<Separator.Root className="horizontal-separator my-2 "/>*/}
+            <Separator.Root className="horizontal-separator my-2 "/>
 
-            {/*<p className="group-label">History</p>*/}
+            <p className="group-label">History</p>
 
-            {/*<div className="space-y-1">*/}
-            {/*  {searchHistory.map((q, i) => (*/}
-            {/*    <button*/}
-            {/*      type="button"*/}
-            {/*      key={`${q} - ${i}`}*/}
-            {/*      className="w-full text-left text-sm hover-highlight p-1.5 rounded-md cursor-pointer flex flex-row gap-2 items-center"*/}
-            {/*      onClick={() => executeSearch(q)}*/}
-            {/*    >*/}
-            {/*      <FaSearch className="flex-none size-5 fill-white inline"/>*/}
-            {/*      <TruncatedText className="flex-1">{q}</TruncatedText>*/}
-            {/*    </button>*/}
-            {/*  ))}*/}
-            {/*</div>*/}
+            <div className="space-y-1">
+              {searchHistory.map((q, i) => (
+                <button
+                  type="button"
+                  key={`${q} - ${i}`}
+                  className="w-full text-left text-sm hover-highlight p-1.5 rounded-md cursor-pointer flex flex-row gap-2 items-center"
+                  // onClick={() => executeSearch(q)}
+                >
+                  <FaSearch className="flex-none size-5 fill-white inline"/>
+                  <TruncatedText className="flex-1">{q}</TruncatedText>
+                </button>
+              ))}
+            </div>
           </section>
         </Popover.Content>
       </Popover.Portal>
