@@ -15,6 +15,7 @@ import {UserNameplate} from "../UserNameplate.tsx";
 import VirtualizedScrollList2 from "../VirtualizedScrollList2.tsx";
 import type {UserIdentityProfileDto} from "../../api/types.ts";
 import {BsCheckLg} from "react-icons/bs";
+import DateTimeRangePicker from "../DateTimeRangePicker.tsx";
 
 interface SearchRequest {
   content: string;
@@ -86,6 +87,10 @@ export default function SearchMessagesButton() {
               />
 
               <Label.Root className="block label mb-1">Time</Label.Root>
+
+              <DateTimeRangePicker
+                className="input-field h-9 w-full"
+              />
             </div>
 
             {/*<Separator.Root className="horizontal-separator my-2 "/>*/}
