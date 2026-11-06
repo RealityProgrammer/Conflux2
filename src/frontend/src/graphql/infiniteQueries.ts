@@ -17,6 +17,14 @@ export type GetAssignableServerRolesQueryVariables = Exact<{
 
 export type GetAssignableServerRolesQuery = { communityServerRoles: { pageInfo: { endCursor: string | null, hasNextPage: boolean }, nodes: Array<{ id: string, name: string }> | null } };
 
+export type GetConversationParticipantsForSearchQueryVariables = Exact<{
+  conversationId: string;
+  nameFilter: string;
+}>;
+
+
+export type GetConversationParticipantsForSearchQuery = { conversationParticipants: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ user: { userName: string | null, displayName: string | null, id: string, avatarVersion: number | null } }> | null } };
+
 export type GetConversationPinnedMessagesQueryVariables = Exact<{
   conversationId: string;
   after?: string | null | undefined;
@@ -177,6 +185,70 @@ useInfiniteGetAssignableServerRolesQuery.getKey = (variables: GetAssignableServe
 
 
 useGetAssignableServerRolesQuery.fetcher = (variables: GetAssignableServerRolesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetAssignableServerRolesQuery, GetAssignableServerRolesQueryVariables>(GetAssignableServerRolesDocument, variables, options);
+
+export const GetConversationParticipantsForSearchDocument = new TypedDocumentString(`
+    query GetConversationParticipantsForSearch($conversationId: UUID!, $nameFilter: String!) {
+  conversationParticipants(
+    conversationId: $conversationId
+    where: {user: {or: [{displayName: {ilike: $nameFilter}}, {userName: {ilike: $nameFilter}}]}}
+  ) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      user {
+        userName
+        displayName
+        id
+        avatarVersion
+      }
+    }
+  }
+}
+    `);
+
+export const useGetConversationParticipantsForSearchQuery = <
+      TData = GetConversationParticipantsForSearchQuery,
+      TError = unknown
+    >(
+      variables: GetConversationParticipantsForSearchQueryVariables,
+      options?: Omit<UseQueryOptions<GetConversationParticipantsForSearchQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetConversationParticipantsForSearchQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useQuery<GetConversationParticipantsForSearchQuery, TError, TData>(
+      {
+    queryKey: ['GetConversationParticipantsForSearch', variables],
+    queryFn: graphqlFetcher<GetConversationParticipantsForSearchQuery, GetConversationParticipantsForSearchQueryVariables>(GetConversationParticipantsForSearchDocument, variables),
+    ...options
+  }
+    )};
+
+useGetConversationParticipantsForSearchQuery.getKey = (variables: GetConversationParticipantsForSearchQueryVariables) => ['GetConversationParticipantsForSearch', variables];
+
+export const useInfiniteGetConversationParticipantsForSearchQuery = <
+      TData = InfiniteData<GetConversationParticipantsForSearchQuery>,
+      TError = unknown
+    >(
+      variables: GetConversationParticipantsForSearchQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<GetConversationParticipantsForSearchQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetConversationParticipantsForSearchQuery, TError, TData>['queryKey'] }
+    ) => {
+    
+    return useInfiniteQuery<GetConversationParticipantsForSearchQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['GetConversationParticipantsForSearch.infinite', variables],
+      queryFn: (metaData) => graphqlFetcher<GetConversationParticipantsForSearchQuery, GetConversationParticipantsForSearchQueryVariables>(GetConversationParticipantsForSearchDocument, {...variables, ...(metaData.pageParam ?? {})})(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteGetConversationParticipantsForSearchQuery.getKey = (variables: GetConversationParticipantsForSearchQueryVariables) => ['GetConversationParticipantsForSearch.infinite', variables];
+
+
+useGetConversationParticipantsForSearchQuery.fetcher = (variables: GetConversationParticipantsForSearchQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetConversationParticipantsForSearchQuery, GetConversationParticipantsForSearchQueryVariables>(GetConversationParticipantsForSearchDocument, variables, options);
 
 export const GetConversationPinnedMessagesDocument = new TypedDocumentString(`
     query GetConversationPinnedMessages($conversationId: UUID!, $after: String) {

@@ -66,16 +66,15 @@ export default function ShowPinnedMessagesButton() {
     <Popover.Root open={isOpen} onOpenChange={handleOpenChange}>
       <Popover.Trigger asChild>
         <IconButton theme="default">
-          <FaThumbtack className="size-6"/>
+          <FaThumbtack className="size-5"/>
         </IconButton>
       </Popover.Trigger>
 
       <Popover.Portal>
         <Popover.Content
-          side="top"
           sideOffset={5}
           align="end"
-          className="w-96 h-128 border-2 border-gray-600 rounded-lg bg-gray-725 text-white shadow-lg flex flex-col"
+          className="w-96 h-128 max-h-(--radix-popover-content-available-height) border-2 border-gray-600 rounded-lg bg-gray-725 text-white shadow-lg flex flex-col"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <header className="p-2 border-b-2 border-gray-600">

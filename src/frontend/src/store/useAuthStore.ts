@@ -35,6 +35,7 @@ export const useAuthStore = create<AuthStoreType>(
       partialize: (state) => ({
         hasSession: state.hasSession,
       }),
+      version: 0,
     },
   )
 )

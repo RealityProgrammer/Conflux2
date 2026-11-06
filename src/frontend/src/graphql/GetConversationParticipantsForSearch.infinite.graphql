@@ -1,0 +1,27 @@
+query GetConversationParticipantsForSearch($conversationId: UUID!, $nameFilter: String!) {
+    conversationParticipants(
+        conversationId: $conversationId
+        where: {
+            user: {
+                or: [
+                    { displayName: { ilike: $nameFilter } }
+                    { userName: { ilike: $nameFilter } }
+                ]
+            }
+        }
+    ) {
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+
+        nodes {
+            user {
+                userName
+                displayName
+                id
+                avatarVersion
+            }
+        }
+    }
+}

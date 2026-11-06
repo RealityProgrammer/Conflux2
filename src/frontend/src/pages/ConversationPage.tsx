@@ -18,6 +18,7 @@ import IconButton from "../components/IconButton.tsx";
 import {useState} from "react";
 import UserProfilePanel from "../components/UserProfilePanel.tsx";
 import ServerMemberList from "../components/server/ServerMemberList.tsx";
+import SearchMessagesButton from "../components/chat/SearchMessagesButton.tsx";
 
 export default function ConversationPage() {
   const loaderData = useLoaderData<ConversationSource>();
@@ -160,12 +161,10 @@ function DmHeader({toggleRightSidebar}: {toggleRightSidebar: () => void}) {
       <div className="flex-none flex flex-row justify-center items-center gap-2">
         <ShowPinnedMessagesButton/>
 
-        <IconButton theme="default" disabled>
-          <FaSearch className="size-6"/>
-        </IconButton>
+        <SearchMessagesButton/>
 
         <IconButton theme="default" onClick={toggleRightSidebar}>
-          <BsPersonFill className="size-6"/>
+          <BsPersonFill className="size-5"/>
         </IconButton>
       </div>
     </>

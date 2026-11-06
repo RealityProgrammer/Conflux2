@@ -119,6 +119,28 @@ type Query
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
+  conversationParticipants(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    conversationId: UUID!
+    where: ConversationParticipantFilterInput @cost(weight: "10")
+    order: [ConversationParticipantSortInput!] @cost(weight: "10")
+  ): ConversationParticipantConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  conversation(id: UUID!): Conversation @cost(weight: "10")
   directConversations(
     "Returns the first _n_ elements from the list."
     first: Int
@@ -464,6 +486,32 @@ type ConversationConnection {
 type ConversationEdge {
   "The item at the end of the edge."
   node: Conversation!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type ConversationParticipant {
+  conversation: Conversation!
+  conversationId: UUID!
+  user: ApplicationUser!
+  userId: UUID!
+}
+
+"A connection to a list of items."
+type ConversationParticipantConnection {
+  "A list of edges."
+  edges: [ConversationParticipantEdge!]
+  "A flattened list of the nodes"
+  nodes: [ConversationParticipant!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ConversationParticipantEdge {
+  "The item at the end of the edge."
+  node: ConversationParticipant!
   "A cursor for use in pagination."
   cursor: String!
 }
@@ -950,6 +998,13 @@ input ConversationParticipantFilterInput {
   conversation: ConversationFilterInput
   userId: UuidOperationFilterInput
   user: ApplicationUserFilterInput
+}
+
+input ConversationParticipantSortInput {
+  conversationId: SortEnumType @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
+  userId: SortEnumType @cost(weight: "10")
+  user: ApplicationUserSortInput @cost(weight: "10")
 }
 
 input ConversationSortInput {

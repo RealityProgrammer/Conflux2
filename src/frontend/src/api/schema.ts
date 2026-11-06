@@ -2841,6 +2841,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{conversationId}/messages/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SearchMessageRequest"];
+                    "text/json": components["schemas"]["SearchMessageRequest"];
+                    "application/*+json": components["schemas"]["SearchMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfMessageSearchPage"];
+                        "application/json": components["schemas"]["ApiResponseOfMessageSearchPage"];
+                        "text/json": components["schemas"]["ApiResponseOfMessageSearchPage"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations/{conversationId}/messages/{messageId}/pin": {
         parameters: {
             query?: never;
@@ -2995,6 +3040,10 @@ export interface components {
         };
         ApiResponseOfMentionSource: {
             data: null | components["schemas"]["MentionSource"];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfMessageSearchPage: {
+            data: null | components["schemas"]["MessageSearchPage"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfRefreshResponse: {
@@ -3260,6 +3309,19 @@ export interface components {
             /** @enum {string} */
             type?: MessageReadStrategyLatestType;
         };
+        MessageSearchDto: {
+            /** Format: uuid */
+            id: string;
+            body: null | string;
+            sender: components["schemas"]["UserIdentityProfileDto"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MessageSearchPage: {
+            messages: components["schemas"]["MessageSearchDto"][];
+            /** Format: uuid */
+            endCursor: null | string;
+        };
         /** @enum {string} */
         MessageType: MessageType;
         OptionalOfint: null | number;
@@ -3319,6 +3381,9 @@ export interface components {
             authorization: components["schemas"]["UserAuthorizationInfo"];
             tokenType: string;
             accessToken: string;
+        };
+        SearchMessageRequest: {
+            query: string;
         };
         SendFriendRequestResult: {
             relationshipStatus: components["schemas"]["UserRelationshipStatus"];
@@ -3446,6 +3511,8 @@ export interface components {
             attachments?: components["schemas"]["MessageAttachmentDto"][];
             /** Format: date-time */
             createdAt: string;
+            /** Format: date-time */
+            updatedAt: null | string;
             replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
             properties: null | components["schemas"]["MessageProperties"];
             /** Format: uuid */

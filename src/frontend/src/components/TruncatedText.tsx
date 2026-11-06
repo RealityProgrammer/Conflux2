@@ -12,22 +12,29 @@ export function TruncatedText({
   className = "",
 }: TruncatedTextProps) {
   const textRef = useRef<HTMLSpanElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
 
-  const handleMouseEnter = () => {
-    const el = textRef.current;
-    if (el) {
-      const hasOverflow = el.scrollWidth > el.clientWidth + 1;
+  const checkTruncation = () => {
+    const element = textRef.current;
+    if (element) {
+      const hasOverflow = element.scrollWidth > element.clientWidth + 1;
       setIsTruncated(hasOverflow);
     }
   };
 
   return (
-    <Tooltip.Root open={isTruncated ? undefined : false}>
+    <Tooltip.Root
+      open={isTruncated ? isOpen : false}
+      onOpenChange={(open) => {
+        if (open) checkTruncation();
+        setIsOpen(open);
+      }}
+    >
       <Tooltip.Trigger asChild>
         <span
           ref={textRef}
-          onMouseEnter={handleMouseEnter}
+          onMouseEnter={checkTruncation}
           className={`block truncate ${className}`}
         >
           {children}
@@ -39,7 +46,7 @@ export function TruncatedText({
           side="top"
           align="center"
           sideOffset={4}
-          className="z-50 max-w-xs rounded-md bg-gray-550 px-2.5 py-1.5 text-xs text-white shadow-lg animate-in fade-in-0 zoom-in-95 wrap-break-word"
+          className="z-50 max-w-xs rounded-md bg-gray-550 px-2.5 py-1.5 text-sm text-white shadow-lg animate-in fade-in-0 zoom-in-95 wrap-break-word"
         >
           {children}
           <Tooltip.Arrow className="fill-gray-550" />

@@ -14,19 +14,39 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 public static partial class ConversationQuery {
-    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
-    public static async Task<PageConnection<Conversation>> GetDirectConversations(
+    [UseFirstOrDefault]
+    public static async Task<Conversation?> GetConversation(
+        Guid id,
         QueryContext<Conversation> queryContext,
-        PagingArguments pagingArgs,
         [Service] ICurrentUserService currentUserService,
-        [Service] ApplicationDbContext dbContext,
+        [Service] IConversationRepository conversationRepository,
         CancellationToken cancellationToken
     ) {
         if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        return await dbContext.Conversations
+        return await conversationRepository
+            .AsQueryable()
+            .Where(c => c.Id == id && c.Participants.Any(p => p.UserId == userId))
+            .With(queryContext)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+    
+    [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
+    public static async Task<PageConnection<Conversation>> GetDirectConversations(
+        QueryContext<Conversation> queryContext,
+        PagingArguments pagingArgs,
+        [Service] ICurrentUserService currentUserService,
+        [Service] IConversationRepository conversationRepository,
+        CancellationToken cancellationToken
+    ) {
+        if (currentUserService.UserId is not { } userId) {
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
+        }
+    
+        return await conversationRepository
+            .AsQueryable()
             .Where(c => c.Type == ConversationType.Direct)
             .Where(c => c.Participants.Any(p => p.UserId == userId))
             .With(queryContext)
@@ -53,7 +73,7 @@ public static partial class ConversationQuery {
             .Select(c => new {
                 c.Type,
                 ServerId = c.Channel != null ? (Guid?)c.Channel.CommunityServer.Id : null,
-                IsParticipant = c.Participants.Any(p => p.UserId == userId)
+                IsParticipant = c.Participants.Any(p => p.UserId == userId),
             })
             .FirstOrDefaultAsync(cancellationToken);
 

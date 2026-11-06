@@ -486,6 +486,35 @@ export type ConversationFilterInput = {
   type?: InputMaybe<ConversationTypeOperationFilterInput>;
 };
 
+export type ConversationParticipant = {
+  __typename?: 'ConversationParticipant';
+  conversation: Conversation;
+  conversationId: Scalars['UUID']['output'];
+  user: ApplicationUser;
+  userId: Scalars['UUID']['output'];
+};
+
+/** A connection to a list of items. */
+export type ConversationParticipantConnection = {
+  __typename?: 'ConversationParticipantConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<ConversationParticipantEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<ConversationParticipant>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+export type ConversationParticipantEdge = {
+  __typename?: 'ConversationParticipantEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: ConversationParticipant;
+};
+
 export type ConversationParticipantFilterInput = {
   and?: InputMaybe<Array<ConversationParticipantFilterInput>>;
   conversation?: InputMaybe<ConversationFilterInput>;
@@ -493,6 +522,13 @@ export type ConversationParticipantFilterInput = {
   or?: InputMaybe<Array<ConversationParticipantFilterInput>>;
   user?: InputMaybe<ApplicationUserFilterInput>;
   userId?: InputMaybe<UuidOperationFilterInput>;
+};
+
+export type ConversationParticipantSortInput = {
+  conversation?: InputMaybe<ConversationSortInput>;
+  conversationId?: InputMaybe<SortEnumType>;
+  user?: InputMaybe<ApplicationUserSortInput>;
+  userId?: InputMaybe<SortEnumType>;
 };
 
 export type ConversationSortInput = {
@@ -907,6 +943,7 @@ export type MessageFilterInput = {
   replies?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
   replyTo?: InputMaybe<MessageFilterInput>;
   replyToId?: InputMaybe<UuidOperationFilterInput>;
+  searchVector?: InputMaybe<NpgsqlTsVectorFilterInput>;
   sender?: InputMaybe<ApplicationUserFilterInput>;
   senderUserId?: InputMaybe<UuidOperationFilterInput>;
   type?: InputMaybe<MessageTypeOperationFilterInput>;
@@ -1006,6 +1043,7 @@ export type NotificationFilterInput = {
   isRead?: InputMaybe<BooleanOperationFilterInput>;
   or?: InputMaybe<Array<NotificationFilterInput>>;
   payload?: InputMaybe<INotificationPayloadFilterInput>;
+  readAt?: InputMaybe<DateTimeOperationFilterInput>;
   type?: InputMaybe<NotificationTypeOperationFilterInput>;
   user?: InputMaybe<ApplicationUserFilterInput>;
   userId?: InputMaybe<UuidOperationFilterInput>;
@@ -1020,6 +1058,12 @@ export type NotificationTypeOperationFilterInput = {
   in?: InputMaybe<Array<NotificationType>>;
   neq?: InputMaybe<NotificationType>;
   nin?: InputMaybe<Array<NotificationType>>;
+};
+
+export type NpgsqlTsVectorFilterInput = {
+  and?: InputMaybe<Array<NpgsqlTsVectorFilterInput>>;
+  count?: InputMaybe<IntOperationFilterInput>;
+  or?: InputMaybe<Array<NpgsqlTsVectorFilterInput>>;
 };
 
 /** A cursor that points to a specific page. */
@@ -1128,6 +1172,8 @@ export type Query = {
   communityServerMembers: CommunityServerMemberConnection;
   communityServerRole?: Maybe<CommunityServerRole>;
   communityServerRoles: CommunityServerRoleConnection;
+  conversation?: Maybe<Conversation>;
+  conversationParticipants: ConversationParticipantConnection;
   directConversations: ConversationConnection;
   emoji?: Maybe<Emoji>;
   friendRequests: FriendRequestConnection;
@@ -1189,6 +1235,22 @@ export type QueryCommunityServerRolesArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   serverId: Scalars['UUID']['input'];
   where?: InputMaybe<CommunityServerRoleFilterInput>;
+};
+
+
+export type QueryConversationArgs = {
+  id: Scalars['UUID']['input'];
+};
+
+
+export type QueryConversationParticipantsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  conversationId: Scalars['UUID']['input'];
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<ConversationParticipantSortInput>>;
+  where?: InputMaybe<ConversationParticipantFilterInput>;
 };
 
 
