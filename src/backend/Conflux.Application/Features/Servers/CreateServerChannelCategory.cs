@@ -16,6 +16,17 @@ public sealed record CreateServerChannelCategoryCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateChannel];
 }
 
+public sealed class CreateServerChannelCategoryCommandValidator : AbstractValidator<CreateServerChannelCategoryCommand> {
+    public CreateServerChannelCategoryCommandValidator() {
+        RuleFor(c => c.Name)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage(ValidationMessages.PropertyRequired)
+            .Length(1, 32)
+            .WithMessage(ValidationMessages.StringLengthBetween);
+    }
+}
+
 public sealed record ServerChannelCategoryCreatedNotification(
     Guid ServerId,
     ChannelCategoryIdentityDto CategoryIdentity

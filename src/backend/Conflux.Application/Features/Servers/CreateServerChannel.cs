@@ -18,6 +18,16 @@ public sealed record CreateServerChannelCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateChannel];
 }
 
+public sealed class CreateServerChannelCommandValidator : AbstractValidator<CreateServerChannelCommand> {
+    public CreateServerChannelCommandValidator() {
+        RuleFor(c => c.Name)
+            .NotNull()
+            .WithMessage(ValidationMessages.PropertyRequired)
+            .Length(1, 32)
+            .WithMessage(ValidationMessages.StringLengthBetween);
+    }
+}
+
 public sealed record ServerChannelCreatedNotification(
     Guid ServerId, 
     ServerChannelIdentityDto Channel

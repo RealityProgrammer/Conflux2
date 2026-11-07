@@ -19,6 +19,18 @@ public sealed record UpdateServerRoleCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateRole];
 }
 
+public sealed class UpdateServerRoleCommandValidator : AbstractValidator<UpdateServerRoleCommand> {
+    public UpdateServerRoleCommandValidator() {
+        RuleFor(c => c.Name)
+            .Must(name => !name.HasValue || name.Value is { Length: >= 1 and <= 32 })
+            .WithMessage(ValidationMessages.StringLengthBetween);
+        
+        RuleFor(c => c.AuthorizeLevel)
+            .Must(level => !level.HasValue || level.Value is >= 0 and <= 500_000)
+            .WithMessage("Authorize level must be greater than or equal to 0 and less than or equal to 500000.");
+    }
+}
+
 public sealed record ServerRoleUpdatedNotification(Guid ServerId, Guid RoleId) : INotification;
 public sealed record ServerDefaultRoleUpdatedNotification(Guid ServerId) : INotification;
 

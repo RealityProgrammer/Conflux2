@@ -1,4 +1,3 @@
-using Conflux.Application.Enums;
 using Conflux.Application.Features.Servers;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -72,7 +71,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
     }
     
     public sealed record CreateChannelRequest(
-        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name,
+        string Name,
         ChannelType Type,
         Guid? CategoryId
     );

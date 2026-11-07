@@ -24,14 +24,12 @@ public sealed record BanServerMemberCommand(
 public sealed class BanServerMemberCommandValidator : AbstractValidator<BanServerMemberCommand> {
     public BanServerMemberCommandValidator() {
         RuleFor(c => c.Reason)
-            .Length(256)
-            .When(c => !string.IsNullOrEmpty(c.Reason))
-            .WithMessage("Reason cannot exceed 256 characters.");
+            .MaximumLength(256)
+            .WithMessage(ValidationMessages.StringMaxLength);
 
         RuleFor(c => c.Duration)
             .GreaterThan(TimeSpan.Zero)
-            .When(c => c.Duration != null)
-            .WithMessage("Duration must be a positive time span.");
+            .WithMessage(ValidationMessages.TimeSpanPositive);
     }
 }
 

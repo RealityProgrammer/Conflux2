@@ -81,7 +81,7 @@ public sealed class ConversationMessagesController(
     public async Task<ActionResult<ApiResponse>> EditMessage(
         Guid conversationId,
         Guid messageId,
-        [FromForm] PatchMessageRequest request,
+        [FromForm] EditMessageRequest request,
         CancellationToken cancellationToken
     ) {
         var result = await sender.Send(new EditMessageCommand(conversationId, messageId, request.Body), cancellationToken);
@@ -201,67 +201,18 @@ public sealed class ConversationMessagesController(
     }
 
     public sealed record SendMessageRequest(
-        [StringLength(4000, ErrorMessage = "Message body can only have maximum length of 1024 characters.")]
         string? Body,
-
-        [MaxLength(4, ErrorMessage = "Only 4 attachments allowed in a message.")]
         IFormFile[]? Attachments,
-        
         Guid? ReplyToId
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            var results = new List<ValidationResult>();
-
-            Validator.TryValidateProperty(Body, new(this, null, null) {
-                MemberName = nameof(Body),
-            }, results);
-
-            Validator.TryValidateProperty(Attachments, new(this, null, null) {
-                MemberName = nameof(Attachments),
-            }, results);
-
-            foreach (var result in results) {
-                yield return result;
-            }
-
-            if (Attachments is { Length: > 0 }) {
-                var options = validationContext.GetRequiredService<IOptions<MediaOptions>>().Value;
-
-                if (Attachments.Length > 4) {
-                    yield return new("Only 4 attachments allowed in a message.", [
-                        nameof(Attachments),
-                    ]);
-                }
-
-                foreach (var attachment in Attachments) {
-                    if (attachment.Length > options.MaxMessageAttachmentSize) {
-                        yield return new($"Attachment must be smaller than {options.MaxMessageAttachmentSize.Bytes():MB}.", [
-                            nameof(Attachments),
-                        ]);
-                    }
-                }
-            }
-        }
-    }
+    );
 
     public sealed record ReadMessageRequest(
-        [Required] MessageReadStrategy ReadStrategy
+        MessageReadStrategy ReadStrategy
     );
-    
-    public sealed record PatchMessageRequest(
-        [StringLength(4000, ErrorMessage = "Message body can only have maximum length of 4000 characters.")]
+
+    public sealed record EditMessageRequest(
         string? Body
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            var results = new List<ValidationResult>();
-
-            Validator.TryValidateProperty(Body, new(this, null, null) {
-                MemberName = nameof(Body),
-            }, results);
-
-            return results;
-        }
-    }
+    );
 
     public sealed record SearchMessageRequest(
         string? Content,

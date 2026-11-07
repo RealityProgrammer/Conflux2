@@ -114,29 +114,7 @@ public sealed class ServerController(
     }
 
     public sealed record CreateServerRequest(
-        [Required] string Name, 
+        [Required] string Name,
         IFormFile? Avatar
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
-            var results = new List<ValidationResult>();
-
-            if (Name.Length > 48) {
-                results.Add(new(
-                    "Name can only have maximum length of 48 characters.", 
-                    [nameof(Name)]
-                ));
-            }
-            
-            var options = context.GetRequiredService<IOptions<MediaOptions>>().Value;
-                
-            if (Avatar != null && Avatar.Length > options.MaxAvatarSize) {
-                results.Add(new(
-                    $"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", 
-                    [nameof(Avatar)]
-                ));
-            }
-
-            return results;
-        }
-    }
+    );
 }

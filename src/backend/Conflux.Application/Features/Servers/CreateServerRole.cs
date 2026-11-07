@@ -16,6 +16,14 @@ public sealed record CreateServerRoleCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateRole];
 }
 
+public sealed class CreateServerRoleCommandValidator : AbstractValidator<CreateServerRoleCommand> {
+    public CreateServerRoleCommandValidator() {
+        RuleFor(c => c.Name)
+            .Length(1, 32)
+            .WithMessage(ValidationMessages.StringLengthBetween);
+    }
+}
+
 public sealed record ServerRoleCreatedNotification(
     Guid ServerId,
     ServerRoleDto Role

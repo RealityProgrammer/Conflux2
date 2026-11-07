@@ -23,9 +23,8 @@ public sealed record KickServerMemberCommand(
 public sealed class KickServerMemberCommandValidator : AbstractValidator<KickServerMemberCommand> {
     public KickServerMemberCommandValidator() {
         RuleFor(c => c.Reason)
-            .Length(256)
-            .When(c => !string.IsNullOrEmpty(c.Reason))
-            .WithMessage("Reason cannot exceed 256 characters.");
+            .MaximumLength(256)
+            .WithMessage(ValidationMessages.StringMaxLength);
     }
 }
 

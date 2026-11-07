@@ -47,7 +47,5 @@ public sealed class ChannelCategoryController(
         };
     }
     
-    public sealed record CreateChannelCategoryRequest(
-        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
-    );
+    public sealed record CreateChannelCategoryRequest(string Name);
 }

@@ -6,7 +6,6 @@ using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Server;
@@ -73,27 +72,11 @@ public sealed class RoleController(
         };
     }
     
-    public sealed record CreateRoleRequest(
-        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name
-    );
+    public sealed record CreateRoleRequest(string Name);
 
     public sealed record PatchRoleRequest(
         Facet.Optional<string> Name,
         Facet.Optional<int> AuthorizeLevel,
         IReadOnlyDictionary<ServerPermission, PermissionState> PermissionStates
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            if (Name.HasValue) {
-                if (string.IsNullOrEmpty(Name.Value)) {
-                    yield return new("Name cannot be empty.", [nameof(Name)]);
-                } else if (Name.Value.Length > 32) {
-                    yield return new("Name can only have maximum length of 32 characters.", [nameof(Name)]);
-                }
-            }
-
-            if (AuthorizeLevel is { HasValue: true, Value: < 0 or > 500000 }) {
-                yield return new("Authorize Level must be between 0 and 500000.", [nameof(AuthorizeLevel)]);
-            }
-        }
-    }
+    );
 }

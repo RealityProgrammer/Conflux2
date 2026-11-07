@@ -4,6 +4,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Conversation;
 
@@ -12,6 +13,15 @@ public sealed record EditMessageCommand(
     Guid MessageId, 
     string? Body
 ) : ICommand<Result>, IConversationCommand;
+
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+public sealed class EditMessageCommandValidator : AbstractValidator<EditMessageCommand> {
+    public EditMessageCommandValidator() {
+        RuleFor(c => c.Body)
+            .MaximumLength(4000)
+            .WithMessage(ValidationMessages.StringMaxLength);
+    }
+}
 
 public sealed record MessageEditedNotification(Guid ConversationId, EditedMessageDto Message) : INotification;
 

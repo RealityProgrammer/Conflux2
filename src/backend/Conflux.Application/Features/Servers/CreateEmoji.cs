@@ -12,7 +12,7 @@ namespace Conflux.Application.Features.Servers;
 public sealed record CreateEmojiCommand(
     Guid ServerId,
     string ShortCode,
-    Stream ImageStream
+    Stream Image
 ) : ICommand<Result<EmojiDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.ManageEmojis, ServerPermission.CreateEmoji];
 }
@@ -24,15 +24,15 @@ public sealed partial class CreateEmojiCommandValidator : AbstractValidator<Crea
         RuleFor(command => command.ShortCode)
             .NotNull()
             .NotEmpty()
-            .WithMessage("ShortCode is required.")
+            .WithMessage(ValidationMessages.PropertyRequired)
             .Matches(ShortCodeRegex())
-            .WithMessage("ShortCode can only contain letters, numbers, dashes, and underscores.")
+            .WithMessage("{PropertyName} can only contain letters, numbers, dashes, and underscores.")
             .MaximumLength(48)
-            .WithMessage("ShortCode cannot exceed {MaxLength} characters.");
+            .WithMessage(ValidationMessages.StringMaxLength);
 
-        RuleFor(command => command.ImageStream)
+        RuleFor(command => command.Image)
             .NotNull()
-            .WithMessage("Emoji image stream is required.")
+            .WithMessage(ValidationMessages.PropertyRequired)
             .Must(stream => {
                 if (stream.CanSeek) {
                     return stream.Length <= MaxFileSizeInBytes;
@@ -40,7 +40,7 @@ public sealed partial class CreateEmojiCommandValidator : AbstractValidator<Crea
 
                 return true;
             })
-            .WithMessage("Emoji image stream cannot exceed 256KB.");
+            .WithMessage("{PropertyName} cannot exceed 256KB.");
     }
     
     [GeneratedRegex(@"^[\w\-]+$", RegexOptions.None | RegexOptions.ECMAScript, matchTimeoutMilliseconds: 1000)]
@@ -101,7 +101,7 @@ public sealed partial class CreateEmojiHandler(
         // upload the avatar picture
         Result uploadResult;
         try {
-            uploadResult = await mediaService.Upload(emoji.Id, command.ImageStream, cancellationToken);
+            uploadResult = await mediaService.Upload(emoji.Id, command.Image, cancellationToken);
         } catch (OperationCanceledException) {
             await RollbackDatabase();
             throw;

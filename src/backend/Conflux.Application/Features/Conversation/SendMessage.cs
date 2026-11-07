@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -6,10 +7,13 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
+using Humanizer;
 using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Conflux.Application.Features.Conversation;
@@ -20,6 +24,25 @@ public sealed record SendMessageCommand(
     IReadOnlyList<UploadFile> Attachments,
     Guid? ReplyToId
 ) : ICommand<Result<TimelineMessageDto>>, IConversationCommand;
+
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+public sealed class SendMessageCommandValidator : AbstractValidator<SendMessageCommand> {
+    public SendMessageCommandValidator(IOptions<MediaOptions> mediaOptions) {
+        var options = mediaOptions.Value;
+        
+        RuleFor(c => c.Body)
+            .MaximumLength(4000)
+            .WithMessage(ValidationMessages.StringMaxLength);
+
+        RuleFor(c => c.Attachments)
+            .Must(attachments => attachments.Count <= 4)
+            .WithMessage("Message only allow 4 attachments.");
+
+        RuleForEach(c => c.Attachments)
+            .Must(attachment => attachment.Stream.Length <= options.MaxMessageAttachmentSize)
+            .WithMessage($"Attachment {{CollectionIndex}} is larger than allowed size, maximum is {options.MaxMessageAttachmentSize.Bytes().Megabytes}MB ({options.MaxMessageAttachmentSize} bytes).");
+    }
+}
 
 public sealed record MessageReceivedNotification(
     Guid ConversationId, 

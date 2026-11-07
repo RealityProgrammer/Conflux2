@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -6,7 +7,9 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Conflux.Application.Features.Servers;
@@ -15,6 +18,23 @@ public sealed record CreateServerCommand(
     string Name, 
     Stream? AvatarStream
 ) : ICommand<Result<ServerIdentityDto>>;
+
+public sealed class CreateServerCommandValidator : AbstractValidator<CreateServerCommand> {
+    public CreateServerCommandValidator(IOptions<MediaOptions> mediaOptions) {
+        var options = mediaOptions.Value;
+        
+        RuleFor(c => c.Name)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage(ValidationMessages.PropertyRequired)
+            .Length(1, 48)
+            .WithMessage(ValidationMessages.StringLengthBetween);
+
+        RuleFor(c => c.AvatarStream)
+            .Must(stream => stream == null || stream.Length <= options.MaxAvatarSize)
+            .WithMessage($"Server avatar must be smaller or equals to {options.MaxAvatarSize.Bytes().Megabytes}MB ({options.MaxAvatarSize} bytes).");
+    }
+}
 
 public sealed record ServerCreatedNotification(
     Guid CreatorUserId,
