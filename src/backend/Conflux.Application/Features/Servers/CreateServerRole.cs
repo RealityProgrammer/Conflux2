@@ -6,6 +6,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -16,6 +17,7 @@ public sealed record CreateServerRoleCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateRole];
 }
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 public sealed class CreateServerRoleCommandValidator : AbstractValidator<CreateServerRoleCommand> {
     public CreateServerRoleCommandValidator() {
         RuleFor(c => c.Name)

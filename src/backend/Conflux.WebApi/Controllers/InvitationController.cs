@@ -72,7 +72,7 @@ public sealed class InvitationController(
 
     public sealed record CreateInvitationRequest(
         Guid ServerId,
-        [Range(1, 500000, ErrorMessage = "{0} must be between {1} to {2}, or be infinite.")] int? MaxUses,
+        int? MaxUses,
         InvitationExpireAfter ExpireAfter
     );
 

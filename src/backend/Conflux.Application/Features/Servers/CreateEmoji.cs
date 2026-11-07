@@ -1,10 +1,13 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Humanizer;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Conflux.Application.Features.Servers;
@@ -17,10 +20,11 @@ public sealed record CreateEmojiCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.ManageEmojis, ServerPermission.CreateEmoji];
 }
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 public sealed partial class CreateEmojiCommandValidator : AbstractValidator<CreateEmojiCommand> {
-    private static readonly long MaxFileSizeInBytes = (long)256.Kilobytes().Bytes;
-    
-    public CreateEmojiCommandValidator() {
+    public CreateEmojiCommandValidator(IOptions<MediaOptions> mediaOptions) {
+        var options = mediaOptions.Value;
+        
         RuleFor(command => command.ShortCode)
             .NotNull()
             .NotEmpty()
@@ -35,12 +39,12 @@ public sealed partial class CreateEmojiCommandValidator : AbstractValidator<Crea
             .WithMessage(ValidationMessages.PropertyRequired)
             .Must(stream => {
                 if (stream.CanSeek) {
-                    return stream.Length <= MaxFileSizeInBytes;
+                    return stream.Length <= options.MaxEmojiSize;
                 }
 
                 return true;
             })
-            .WithMessage("{PropertyName} cannot exceed 256KB.");
+            .WithMessage($"{{PropertyName}} cannot exceed {options.MaxEmojiSize.Bytes().Kilobytes}KB.");
     }
     
     [GeneratedRegex(@"^[\w\-]+$", RegexOptions.None | RegexOptions.ECMAScript, matchTimeoutMilliseconds: 1000)]

@@ -67,6 +67,6 @@ public sealed class ServerEmojiController(
         };
     }
 
-    public sealed record CreateEmojiRequest([MaxLength(48)] string ShortCode, [Required] IFormFile Image);
+    public sealed record CreateEmojiRequest(string ShortCode, IFormFile Image);
     public sealed record BulkDeleteEmojiRequest(List<Guid> Ids);
 }

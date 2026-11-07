@@ -1,12 +1,8 @@
 using Conflux.Application.Features.Friends;
 using Conflux.Domain;
-using Conflux.Domain.Dto;
-using Conflux.Domain.Enums;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 

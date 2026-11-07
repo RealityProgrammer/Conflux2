@@ -1,6 +1,7 @@
+// ReSharper disable EntityFramework.ModelValidation.UnlimitedStringLength
+
 using Conflux.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain.Entities;
 
@@ -9,10 +10,10 @@ public class ApplicationUser : IdentityUser<Guid>, IHasCreatedAt {
 
     public int? AvatarVersion { get; set; }
     public int? BannerVersion { get; set; }
-    
-    [MaxLength(48)] public string? DisplayName { get; set; }
-    [MaxLength(255)] public string? Biography { get; set; }
-    [MaxLength(32)] public string? Pronouns { get; set; }
+
+    public string? DisplayName { get; set; } = null!;
+    public string? Biography { get; set; }
+    public string? Pronouns { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }

@@ -437,8 +437,8 @@ public sealed class AuthenticateController(
     public sealed record ConfirmEmailRequest(string Email, string ConfirmationCode);
     
     public sealed record DeleteAccountRequest(
-        [Required] UserAccountDeleteReason Reason, 
-        [MaxLength(255)] string? ExtraMessage,
+        UserAccountDeleteReason Reason, 
+        string? ExtraMessage,
         string RestorationPassword
     );
 

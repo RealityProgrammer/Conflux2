@@ -1,16 +1,13 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
-using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.Dto;
-using Humanizer;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Error = Conflux.Domain.Error;
 
@@ -166,20 +163,8 @@ public sealed class SessionUserController(
         [Required(ErrorMessage = "Display name is required."), StringLength(48, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 48 characters.")]
         string DisplayName
     );
-    
-    public sealed record UploadAvatarRequest(IFormFile File) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
-            if (File == null!) {
-                yield return new("Avatar file is required.", [ nameof(File) ]);
-            } else {
-                var options = context.GetRequiredService<IOptions<MediaOptions>>().Value;
-                
-                if (File.Length > options.MaxAvatarSize) {
-                    yield return new($"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", [ nameof(File) ]);
-                }
-            }
-        }
-    }
+
+    public sealed record UploadAvatarRequest(IFormFile File);
 
     public sealed record UpdateProfileRequest(
         Facet.Optional<string> DisplayName,
@@ -188,55 +173,5 @@ public sealed class SessionUserController(
         Facet.Optional<PresenceStatus> ManualPresenceStatus,
         AvatarOperationInput Avatar,
         AvatarOperationInput Banner
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            List<ValidationResult> results = [];
-            
-            if (DisplayName.HasValue) {
-                string displayName = DisplayName.Value;
-
-                if (string.IsNullOrEmpty(displayName)) {
-                    results.Add(new("Display name is not empty or nullable.", [nameof(DisplayName)]));
-                } else if (displayName.Length > 32) {
-                    results.Add(new("Display name can only have maximum length of 32 characters.", [nameof(DisplayName)]));
-                }
-            }
-
-            if (Pronouns is { HasValue: true, Value.Length: > 32 }) {
-                results.Add(new("Pronouns can only have maximum length of 32 characters.", [nameof(Pronouns)]));
-            }
-            
-            if (Biography is { HasValue: true, Value.Length: > 255 }) {
-                results.Add(new("Biography can only have maximum length of 255 characters.", [nameof(Biography)]));
-            }
-
-            if (ManualPresenceStatus.HasValue && !Enum.IsDefined(ManualPresenceStatus.Value)) {
-                results.Add(new("Undefined PresenceStatus value.", [nameof(ManualPresenceStatus)]));
-            }
-
-            var options = validationContext.GetRequiredService<IOptions<MediaOptions>>().Value;
-
-            if (Avatar.Type == FileOperationType.Set) {
-                if (Avatar.File is { } avatarFile) {
-                    if (avatarFile.Length > options.MaxAvatarSize) {
-                        results.Add(new($"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", [nameof(Avatar)]));
-                    }
-                } else {
-                    results.Add(new("Avatar is required for Set operation.", [nameof(Avatar)]));
-                }
-            }
-
-            if (Banner.Type == FileOperationType.Set) {
-                if (Banner.File is { } avatarFile) {
-                    if (avatarFile.Length > options.MaxBannerSize) {
-                        results.Add(new($"Banner must be smaller than {options.MaxBannerSize.Bytes():MB}.", [nameof(Banner)]));
-                    }
-                } else {
-                    results.Add(new("Banner is required for Set operation.", [nameof(Banner)]));
-                }
-            }
-
-            return results;
-        }
-    }
+    );
 }

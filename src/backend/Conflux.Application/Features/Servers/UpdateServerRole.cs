@@ -6,6 +6,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -19,11 +20,12 @@ public sealed record UpdateServerRoleCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateRole];
 }
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 public sealed class UpdateServerRoleCommandValidator : AbstractValidator<UpdateServerRoleCommand> {
     public UpdateServerRoleCommandValidator() {
         RuleFor(c => c.Name)
             .Must(name => !name.HasValue || name.Value is { Length: >= 1 and <= 32 })
-            .WithMessage(ValidationMessages.StringLengthBetween);
+            .WithMessage("{PropertyName} must have at least 1 and maximum of 32 characters.");
         
         RuleFor(c => c.AuthorizeLevel)
             .Must(level => !level.HasValue || level.Value is >= 0 and <= 500_000)

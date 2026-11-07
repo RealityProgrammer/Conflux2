@@ -6,6 +6,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -16,6 +17,7 @@ public sealed record CreateServerChannelCategoryCommand(
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateChannel];
 }
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 public sealed class CreateServerChannelCategoryCommandValidator : AbstractValidator<CreateServerChannelCategoryCommand> {
     public CreateServerChannelCategoryCommandValidator() {
         RuleFor(c => c.Name)

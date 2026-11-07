@@ -1,11 +1,14 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Linq.Expressions;
 
 namespace Conflux.Application.Features.Users;
@@ -19,6 +22,32 @@ public sealed record UpdateProfileCommand(
     Optional<Stream?> Avatar,
     Optional<Stream?> Banner
 ) : ICommand<Result<UpdateProfileResult>>;
+
+public sealed class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileCommand> {
+    public UpdateProfileCommandValidator(IOptions<MediaOptions> mediaOptions) {
+        var options = mediaOptions.Value;
+        
+        RuleFor(c => c.DisplayName)
+            .Must(p => !p.HasValue || p.Value is { Length: >= 8 and <= 48 })
+            .WithMessage("{PropertyName} must have at least 8 and maximum of 48 characters.");
+
+        RuleFor(c => c.Pronouns)
+            .Must(p => !p.HasValue || p.Value is { Length: <= 32 })
+            .WithMessage("{PropertyName} cannot exceed 32 characters.");
+        
+        RuleFor(c => c.Biography)
+            .Must(p => !p.HasValue || p.Value is { Length: <= 255 })
+            .WithMessage("{PropertyName} cannot exceed 255 characters.");
+        
+        RuleFor(c => c.Avatar)
+            .Must(stream => !stream.HasValue || stream.Value == null || stream.Value.Length <= options.MaxAvatarSize)
+            .WithMessage($"{{PropertyName}} must be smaller or equals to {options.MaxAvatarSize.Bytes().Megabytes}MB ({options.MaxAvatarSize} bytes).");
+        
+        RuleFor(c => c.Banner)
+            .Must(stream => !stream.HasValue || stream.Value == null || stream.Value.Length <= options.MaxBannerSize)
+            .WithMessage($"{{PropertyName}} must be smaller or equals to {options.MaxBannerSize.Bytes().Megabytes}MB ({options.MaxBannerSize} bytes).");
+    }
+}
 
 public sealed class UpdateProfileResult {
     public Optional<int?> AvatarVersion { get; set; }

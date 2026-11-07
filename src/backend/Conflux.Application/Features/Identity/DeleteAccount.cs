@@ -15,9 +15,21 @@ public sealed record DeleteAccountCommand(
     string RestorationPassword
 ) : ICommand<Result>;
 
+public sealed class DeleteAccountCommandValidator : AbstractValidator<DeleteAccountCommand> {
+    public DeleteAccountCommandValidator() {
+        RuleFor(c => c.ExtraMessage)
+            .MaximumLength(255)
+            .WithMessage(ValidationMessages.StringMaxLength);
+
+        RuleFor(c => c.RestorationPassword)
+            .NotEmpty()
+            .NotNull()
+            .WithMessage(ValidationMessages.PropertyRequired);
+    }
+}
+
 public sealed class DeleteAccountHandler(
     ICurrentUserService currentUserService,
-    IUserRepository userRepository,
     IUserAccountDeletionReadRepository accountDeletionReadRepository,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     IUnitOfWork unitOfWork,

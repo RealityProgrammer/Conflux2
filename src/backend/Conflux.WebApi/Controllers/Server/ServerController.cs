@@ -114,7 +114,7 @@ public sealed class ServerController(
     }
 
     public sealed record CreateServerRequest(
-        [Required] string Name,
+        string Name,
         IFormFile? Avatar
     );
 }

@@ -1,8 +1,6 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Friends;
 using Conflux.Domain;
-using Conflux.Domain.Enums;
-using Conflux.WebApi.Attributes;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

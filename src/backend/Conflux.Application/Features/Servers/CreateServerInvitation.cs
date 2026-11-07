@@ -5,6 +5,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -14,6 +15,15 @@ public sealed record CreateServerInvitationCommand(
     TimeSpan? ValidDuration
 ) : ICommand<Result<string>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.CreateInvitation];
+}
+
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+public sealed class CreateServerInvitationCommandValidator : AbstractValidator<CreateServerInvitationCommand> {
+    public CreateServerInvitationCommandValidator() {
+        RuleFor(c => c.MaxUses)
+            .InclusiveBetween(1, 500_000)
+            .WithMessage("{PropertyName} must be between 1 or 500000.");
+    }
 }
 
 public sealed class CreateServerInvitationHandler(

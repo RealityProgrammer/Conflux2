@@ -11,13 +11,13 @@ public sealed record LeaveServerCommand(Guid ServerId) : ICommand<Result>;
 
 public sealed record UserLeftServerNotification(Guid ServerId, Guid MemberUserId, Guid MemberId) : INotification;
 
-public sealed class LeaveServerCommandHandler(
+public sealed class LeaveServerHandler(
     ICurrentUserService currentUserService,
     IServerMemberReadRepository memberReadRepository,
     ICommunityServerRoleRepository serverRoleRepository,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
-    ILogger<LeaveServerCommandHandler> logger
+    ILogger<LeaveServerHandler> logger
 ) : ICommandHandler<LeaveServerCommand, Result> {
     public async ValueTask<Result> Handle(LeaveServerCommand command, CancellationToken cancellationToken) {
         if (currentUserService.UserId is not { } userId) {

@@ -11,6 +11,7 @@ using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -19,6 +20,7 @@ public sealed record CreateServerCommand(
     Stream? AvatarStream
 ) : ICommand<Result<ServerIdentityDto>>;
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 public sealed class CreateServerCommandValidator : AbstractValidator<CreateServerCommand> {
     public CreateServerCommandValidator(IOptions<MediaOptions> mediaOptions) {
         var options = mediaOptions.Value;
