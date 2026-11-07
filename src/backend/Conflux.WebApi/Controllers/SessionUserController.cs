@@ -36,7 +36,7 @@ public sealed class SessionUserController(
             default,
             default,
             default,
-            new(avatarStream, true),
+            new(avatarStream),
             default
         ));
 
@@ -97,15 +97,15 @@ public sealed class SessionUserController(
         await using var avatarStream = request.Avatar.Type == FileOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
         await using var bannerStream = request.Banner.Type == FileOperationType.Set ? request.Banner.File!.OpenReadStream() : Stream.Null;
 
-        PatchField<Stream?> avatarField = request.Avatar.Type switch {
-            FileOperationType.Delete => new(null, true),
-            FileOperationType.Set => new(avatarStream, true),
+        Facet.Optional<Stream?> avatarField = request.Avatar.Type switch {
+            FileOperationType.Delete => new(null),
+            FileOperationType.Set => new(avatarStream),
             _ => default,
         };
         
-        PatchField<Stream?> bannerField = request.Banner.Type switch {
-            FileOperationType.Delete => new(null, true),
-            FileOperationType.Set => new(bannerStream, true),
+        Facet.Optional<Stream?> bannerField = request.Banner.Type switch {
+            FileOperationType.Delete => new(null),
+            FileOperationType.Set => new(bannerStream),
             _ => default,
         };
         
@@ -182,17 +182,17 @@ public sealed class SessionUserController(
     }
 
     public sealed record UpdateProfileRequest(
-        PatchField<string> DisplayName,
-        PatchField<string> Pronouns,
-        PatchField<string> Biography,
-        PatchField<PresenceStatus> ManualPresenceStatus,
+        Facet.Optional<string> DisplayName,
+        Facet.Optional<string> Pronouns,
+        Facet.Optional<string> Biography,
+        Facet.Optional<PresenceStatus> ManualPresenceStatus,
         AvatarOperationInput Avatar,
         AvatarOperationInput Banner
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
             List<ValidationResult> results = [];
             
-            if (DisplayName.IsSet) {
+            if (DisplayName.HasValue) {
                 string displayName = DisplayName.Value;
 
                 if (string.IsNullOrEmpty(displayName)) {
@@ -202,15 +202,15 @@ public sealed class SessionUserController(
                 }
             }
 
-            if (Pronouns is { IsSet: true, Value.Length: > 32 }) {
+            if (Pronouns is { HasValue: true, Value.Length: > 32 }) {
                 results.Add(new("Pronouns can only have maximum length of 32 characters.", [nameof(Pronouns)]));
             }
             
-            if (Biography is { IsSet: true, Value.Length: > 255 }) {
+            if (Biography is { HasValue: true, Value.Length: > 255 }) {
                 results.Add(new("Biography can only have maximum length of 255 characters.", [nameof(Biography)]));
             }
 
-            if (ManualPresenceStatus.IsSet && !Enum.IsDefined(ManualPresenceStatus.Value)) {
+            if (ManualPresenceStatus.HasValue && !Enum.IsDefined(ManualPresenceStatus.Value)) {
                 results.Add(new("Undefined PresenceStatus value.", [nameof(ManualPresenceStatus)]));
             }
 

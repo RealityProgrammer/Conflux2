@@ -78,12 +78,12 @@ public sealed class RoleController(
     );
 
     public sealed record PatchRoleRequest(
-        PatchField<string> Name,
-        PatchField<int> AuthorizeLevel,
+        Facet.Optional<string> Name,
+        Facet.Optional<int> AuthorizeLevel,
         IReadOnlyDictionary<ServerPermission, PermissionState> PermissionStates
     ) : IValidatableObject {
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            if (Name.IsSet) {
+            if (Name.HasValue) {
                 if (string.IsNullOrEmpty(Name.Value)) {
                     yield return new("Name cannot be empty.", [nameof(Name)]);
                 } else if (Name.Value.Length > 32) {
@@ -91,7 +91,7 @@ public sealed class RoleController(
                 }
             }
 
-            if (AuthorizeLevel is { IsSet: true, Value: < 0 or > 500000 }) {
+            if (AuthorizeLevel is { HasValue: true, Value: < 0 or > 500000 }) {
                 yield return new("Authorize Level must be between 0 and 500000.", [nameof(AuthorizeLevel)]);
             }
         }

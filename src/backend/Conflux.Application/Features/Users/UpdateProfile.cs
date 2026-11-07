@@ -12,12 +12,12 @@ namespace Conflux.Application.Features.Users;
 
 public sealed record UpdateProfileCommand(
     Guid UserId,
-    PatchField<string> DisplayName,
-    PatchField<string> Pronouns,
-    PatchField<string> Biography,
-    PatchField<PresenceStatus> ManualPresenceStatus,
-    PatchField<Stream?> Avatar,
-    PatchField<Stream?> Banner
+    Optional<string> DisplayName,
+    Optional<string> Pronouns,
+    Optional<string> Biography,
+    Optional<PresenceStatus> ManualPresenceStatus,
+    Optional<Stream?> Avatar,
+    Optional<Stream?> Banner
 ) : ICommand<Result<UpdateProfileResult>>;
 
 public sealed class UpdateProfileResult {
@@ -36,25 +36,25 @@ public sealed class UpdateProfileHandler(
         Guid userId = command.UserId;
         
         // update fields that can be updated with single database call.
-        if (command.DisplayName.IsSet || 
-            command.Pronouns.IsSet || 
-            command.Biography.IsSet || 
-            command.ManualPresenceStatus.IsSet
+        if (command.DisplayName.HasValue || 
+            command.Pronouns.HasValue || 
+            command.Biography.HasValue || 
+            command.ManualPresenceStatus.HasValue
         ) {
             bool success = await userRepository
                 .AsQueryable()
                 .Where(u => u.Id == userId)
                 .ExecuteUpdateAsync(builder => {
-                    if (command.DisplayName.IsSet) 
+                    if (command.DisplayName.HasValue) 
                         builder.SetProperty(u => u.DisplayName, command.DisplayName.Value);
                         
-                    if (command.Pronouns.IsSet) 
+                    if (command.Pronouns.HasValue) 
                         builder.SetProperty(u => u.Pronouns, string.IsNullOrEmpty(command.Pronouns.Value) ? null : command.Pronouns.Value);
                         
-                    if (command.Biography.IsSet) 
+                    if (command.Biography.HasValue) 
                         builder.SetProperty(u => u.Biography, string.IsNullOrEmpty(command.Biography.Value) ? null : command.Biography.Value);
                         
-                    if (command.ManualPresenceStatus.IsSet) 
+                    if (command.ManualPresenceStatus.HasValue) 
                         builder.SetProperty(u => u.ManualPresenceStatus, command.ManualPresenceStatus.Value);
                 }, cancellationToken) == 1;
 
@@ -66,7 +66,7 @@ public sealed class UpdateProfileHandler(
         Optional<int?> avatarVersion = default, bannerVersion = default;
 
         // process avatar
-        if (command.Avatar.IsSet) {
+        if (command.Avatar.HasValue) {
             if (command.Avatar.Value is { } avatarStream) {
                 var uploadResult = await userMediaService.UploadAvatar(userId, avatarStream, cancellationToken);
 
@@ -99,7 +99,7 @@ public sealed class UpdateProfileHandler(
         }
         
         // process banner
-        if (command.Banner.IsSet) {
+        if (command.Banner.HasValue) {
             if (command.Banner.Value is { } bannerStream) {
                 var uploadResult = await userMediaService.UploadBanner(userId, bannerStream, cancellationToken);
 

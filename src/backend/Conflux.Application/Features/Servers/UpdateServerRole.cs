@@ -4,6 +4,7 @@ using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
@@ -11,8 +12,8 @@ namespace Conflux.Application.Features.Servers;
 public sealed record UpdateServerRoleCommand(
     Guid ServerId,
     Guid RoleId,
-    PatchField<string> Name,
-    PatchField<int> AuthorizeLevel,
+    Optional<string> Name,
+    Optional<int> AuthorizeLevel,
     IReadOnlyDictionary<ServerPermission, PermissionState> PermissionStates
 ) : ICommand<Result<ServerRoleDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.UpdateRole];
@@ -57,7 +58,7 @@ public sealed class UpdateServerRoleHandler(
             case var _ when updatingRole.SpecialRoleType == SpecialRoleType.Owner:
                 return Errors.Forbidden("Updating Owner role is not allowed.");
             
-            case var _ when updatingRole.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.IsSet:
+            case var _ when updatingRole.SpecialRoleType == SpecialRoleType.Default && command.AuthorizeLevel.HasValue:
                 return Errors.Forbidden("Updating authorize level of Default role is not allowed.");
         }
         
@@ -72,11 +73,11 @@ public sealed class UpdateServerRoleHandler(
             return Errors.Forbidden("Updating role with authorize level higher or equals to yours is not allowed.");
         }
         
-        if (command.Name.IsSet) {
+        if (command.Name.HasValue) {
             updatingRole.Name = command.Name.Value!;
         }
 
-        if (command.AuthorizeLevel.IsSet) {
+        if (command.AuthorizeLevel.HasValue) {
             updatingRole.AuthorizeLevel = command.AuthorizeLevel.Value;
             
             // need to recalculate the highest authorize level for every member owning this role

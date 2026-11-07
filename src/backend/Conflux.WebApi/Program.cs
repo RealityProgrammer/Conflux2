@@ -11,7 +11,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Converters;
-using Conflux.Application.Dto;
 using Conflux.Application.Features.Servers;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Options;
@@ -400,7 +399,6 @@ builder.Services
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
 builder.Services.AddControllersWithViews(options => {
     options.Filters.Add<AntiforgeryValidationFilter>();
-    options.ModelBinderProviders.Insert(0, new PatchFieldModelBinderProvider());
     options.ModelBinderProviders.Insert(0, new OptionalModelBinderProvider());
 }).AddJsonOptions(options => {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -498,7 +496,7 @@ builder.Services.AddOpenApi(options => {
                 return Task.CompletedTask;
             }
             
-            if (typeDef == typeof(PatchField<>) || typeDef == typeof(Facet.Optional<>)) {
+            if (typeDef == typeof(Facet.Optional<>)) {
                 var elementType = targetType.GetGenericArguments()[0];
                 
                 schema.Properties?.Clear();
@@ -610,7 +608,6 @@ builder.Services.AddOpenApi(options => {
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
-    options.SchemaFilter<PatchFieldSchemaFilter>();
     options.SchemaFilter<OptionalSchemaFilter>();
     
     options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme {
