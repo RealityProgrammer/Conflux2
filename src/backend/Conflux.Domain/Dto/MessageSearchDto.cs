@@ -9,12 +9,15 @@ namespace Conflux.Domain.Dto;
     nameof(Message.Body),
     nameof(Message.Sender),
     nameof(Message.CreatedAt),
+	nameof(Message.Attachments),
 ], NestedFacets = [
     typeof(UserIdentityProfileDto),
+	typeof(MessageAttachmentDto),
 ])]
 public sealed partial record MessageSearchDto {
     [Required] public Guid Id { get; set; } = Id;
     [Required] public string? Body { get; set; } = Body;
-    [Required] public UserIdentityProfileDto Sender { get; set; } = Sender!;
+    [Required] public UserIdentityProfileDto Sender { get; set; } = Sender;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
+	[Required] public ICollection<MessageAttachmentDto> Attachments { get; set; } = Attachments;
 }

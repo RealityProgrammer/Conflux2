@@ -1,7 +1,7 @@
 import {FaSearch} from "react-icons/fa";
 import IconButton from "../IconButton.tsx";
 import {useEffect, useState} from "react";
-import {Label, Popover, Separator} from "radix-ui";
+import {Label, Popover, Separator, Tooltip} from "radix-ui";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {type SearchRequest, useHistoryConversationSearchStore} from "../../store/useHistoryConversationSearchStore.ts";
 import {Avatar} from "../Avatar.tsx";
@@ -177,7 +177,31 @@ function FilteringView({
             >
               <FaSearch className="flex-none size-5 fill-white"/>
 
-              <TruncatedText className="flex-1">{request.content}</TruncatedText>
+              <TruncatedText className="flex-1 min-w-0">{request.content}</TruncatedText>
+
+              {request.timeRange && (request.timeRange.start || request.timeRange.end) && (
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <BsCalendarFill className="flex-none size-4 fill-white"/>
+                  </Tooltip.Trigger>
+
+                  <Tooltip.Portal>
+                    <Tooltip.Content
+                      side="top"
+                      sideOffset={8}
+                      className="rounded-md shadow-md bg-gray-750 text-white p-2 border-2 border-gray-600 text-sm"
+                    >
+                      {request.timeRange.start && !request.timeRange.end ? (
+                        <p>Since {formatDate(request.timeRange.start, "yyyy/MM/dd HH:mm:ss")}</p>
+                      ) : !request.timeRange.start && request.timeRange.end ? (
+                        <p>Until {formatDate(request.timeRange.end, "yyyy/MM/dd HH:mm:ss")}</p>
+                      ) : request.timeRange.start && request.timeRange.end ? (
+                        <p>From {formatDate(request.timeRange.start, "yyyy/MM/dd HH:mm:ss")} to {formatDate(request.timeRange.end, "yyyy/MM/dd HH:mm:ss")}</p>
+                      ) : null}
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              )}
 
               <IconButton
                 type="button"
@@ -195,7 +219,7 @@ function FilteringView({
         </div>
       </section>
     </>
-  )
+  );
 }
 
 function SenderFilter({
@@ -478,7 +502,7 @@ function ResultView({
                   return (
                     <div className="pb-2">
                       <div
-                        className="hover-highlight p-1.5 rounded-md border-2 border-gray-600 cursor-pointer"
+                        className="hover-highlight p-1.5 rounded-md border-2 border-gray-600 cursor-pointer max-h-96 overflow-hidden"
                         onClick={() => {
                           requestJump(message.id);
                         }}
@@ -497,9 +521,9 @@ function ResultView({
                               content={message.body}
                             />
 
-                            {/*{message.attachments && message.attachments.length > 0 && (*/}
-                            {/*  <MessageAttachments attachments={message.attachments} onAttachmentClick={() => {}}/>*/}
-                            {/*)}*/}
+                            {message.attachments && message.attachments.length > 0 && (
+                              <MessageAttachments attachments={message.attachments} onAttachmentClick={() => {}}/>
+                            )}
                           </div>
                         </MessageRow.Row>
                       </div>

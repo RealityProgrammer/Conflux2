@@ -1,5 +1,5 @@
 import {type HTMLAttributes, useRef, useState} from "react";
-import {BsCalendar, BsChevronLeft, BsChevronRight} from "react-icons/bs";
+import {BsCalendarFill, BsChevronLeft, BsChevronRight} from "react-icons/bs";
 import IconButton from "./IconButton.tsx";
 import {formatDate} from "date-fns";
 import {Popover} from "radix-ui";
@@ -46,6 +46,7 @@ export default function DateTimeRangePicker({
       className={`relative flex items-center justify-between ${className}`}
     >
       <p className="text-sm overflow-x-hidden whitespace-nowrap select-none">
+        {/* the placeholder and value display */}
         {!value || (!value.start && !value.end) ? (
           <span className="opacity-30">YYYY/MM/DD HH:mm:ss - YYYY/MM/DD HH:mm:ss</span>
         ) : !value.start && value.end ? (
@@ -63,7 +64,7 @@ export default function DateTimeRangePicker({
             <IconButton
               theme="default"
             >
-              <BsCalendar className="size-4"/>
+              <BsCalendarFill className="size-4"/>
             </IconButton>
           </Popover.Trigger>
 

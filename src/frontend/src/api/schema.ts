@@ -3316,6 +3316,7 @@ export interface components {
             sender: components["schemas"]["UserIdentityProfileDto"];
             /** Format: date-time */
             createdAt: string;
+            attachments: components["schemas"]["MessageAttachmentDto"][];
         };
         MessageSearchPage: {
             messages: components["schemas"]["MessageSearchDto"][];
