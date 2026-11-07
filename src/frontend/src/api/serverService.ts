@@ -217,11 +217,16 @@ export const serverService = {
     }
   },
 
-  createEmoji: async (serverId: string, shortCode: string, file: File): Promise<ServiceResponse<EmojiDto>> => {
+  createEmoji: async (serverId: string, shortCode: string, file: File, idempotencyKey: string): Promise<ServiceResponse<EmojiDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<EmojiDto>> = await apiClient.postForm<BackendResponse<EmojiDto>>(
         `/communities/${encodeURIComponent(serverId)}/emojis`,
           { shortCode, image: file, },
+          {
+            headers: {
+              "Idempotency-Key": idempotencyKey,
+            }
+          }
         );
 
       return {

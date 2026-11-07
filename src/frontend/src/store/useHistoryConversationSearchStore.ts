@@ -37,6 +37,7 @@ export function areSearchRequestsEqual(req1: SearchRequest, req2: SearchRequest)
   if (req1.content !== req2.content) return false;
   if (!areSenderIdsEqual(req1.senderIds, req2.senderIds)) return false;
   if (!areTimeRangesEqual(req1.timeRange, req2.timeRange)) return false;
+  if (req1.pin !== req2.pin) return false;
 
   return true;
 }

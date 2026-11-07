@@ -144,7 +144,6 @@ function EditorContent({
           setEditDraft(e.target.value);
         }}
         onKeyDown={handleKeyDown}
-        maxLength={1024}
         className="block input-field min-h-10 max-h-40 w-full text-sm resize-none py-2 px-3 overflow-y-auto leading-6 whitespace-pre-wrap"
       />
 

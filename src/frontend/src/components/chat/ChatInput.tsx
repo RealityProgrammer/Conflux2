@@ -164,9 +164,17 @@ export default function ChatInput({disabled}: ChatInputProps) {
             <Suggestion.Emoji
               className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
               searchTerm={suggestion.searchTerm ?? ""}
-              onSelect={(emojiId) => {
+              onSelect={(emoji) => {
                 // replace from the starting colon with the full formatted emoji tag and a trailing space
-                textboxEditorRef.current?.insertEmojiNode(emojiId, suggestion.startColonIndex, cursorPosition);
+                switch (emoji.type) {
+                  case "server-emoji":
+                    textboxEditorRef.current?.insertEmojiNode(emoji.id, suggestion.startColonIndex, cursorPosition);
+                    break;
+
+                  case "unicode-emoji":
+                    textboxEditorRef.current?.insertText(emoji.value, suggestion.startColonIndex, cursorPosition);
+                    break;
+                }
               }}
             />
           ) : suggestion.type === "time" ? (

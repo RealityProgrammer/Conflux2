@@ -64,6 +64,7 @@ export type DmConversationDetails = components["schemas"]["DmConversationDetails
 export type MentionSource = components["schemas"]["MentionSource"];
 export type MessageSearchDto = components["schemas"]["MessageSearchDto"];
 export type MessageSearchPage = components["schemas"]["MessageSearchPage"];
+export type EmojiEntryDto = components["schemas"]["EmojiEntryDto"];
 
 export type EditedMessageDto = {
   id: string;

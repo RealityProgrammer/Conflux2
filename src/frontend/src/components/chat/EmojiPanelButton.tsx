@@ -81,7 +81,7 @@ function PopoverContent({onSelect}: {onSelect: (value: {id: string; shortCode: s
           data={filteredGroups}
           computeItemKey={(index) => filteredGroups[index].serverInfo.serverId}
           itemContent={(_, group: ServerEmojiGroupDto) => (
-            <EmojiGroup.Root
+            <EmojiGroup.Server
               groupName={group.serverInfo.name}
               emojiEntries={group.emojiEntries}
               onSelected={onSelect}

@@ -5,7 +5,7 @@ import {Label, Popover, Select, Separator, Tooltip} from "radix-ui";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {type SearchRequest, useHistoryConversationSearchStore} from "../../store/useHistoryConversationSearchStore.ts";
 import {Avatar} from "../Avatar.tsx";
-import {FaPlus, FaXmark} from "react-icons/fa6";
+import {FaPlus, FaThumbtack, FaThumbtackSlash, FaXmark} from "react-icons/fa6";
 import {useDebounceValue} from "usehooks-ts";
 import {useInfiniteGetConversationParticipantsForSearchQuery} from "../../graphql/infiniteQueries.ts";
 import {UserNameplate} from "../UserNameplate.tsx";
@@ -174,7 +174,7 @@ function FilteringView({
               pin: value as MessagePinFilter,
             }));
           }}>
-            <Select.Trigger className="w-full input-field h-9 inline-flex flex-row items-center gap-2 ">
+            <Select.Trigger className="w-full input-field h-9 inline-flex flex-row items-center gap-2 text-sm">
               <Select.Value placeholder="Unspecified"/>
 
               <Select.Icon className="fill-white flex-none ml-auto">
@@ -245,6 +245,12 @@ function FilteringView({
                   </Tooltip.Portal>
                 </Tooltip.Root>
               )}
+
+              {request.pin === MessagePinFilter.Pin ? (
+                <FaThumbtack className="flex-none size-4 fill-white"/>
+              ) : request.pin === MessagePinFilter.Unpin ? (
+                <FaThumbtackSlash className="flex-none size-4 fill-white"/>
+              ) : null}
 
               <IconButton
                 type="button"

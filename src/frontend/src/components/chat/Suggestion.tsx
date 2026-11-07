@@ -5,12 +5,13 @@ import {Separator} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 import useUserEmojis from "../../hooks/useUserEmojis.ts";
 import Spinner from "../Spinner.tsx";
-import type {ServerEmojiGroupDto, UserIdentityProfileDto} from "../../api/types.ts";
+import type {EmojiEntryDto, ServerEmojiGroupDto, UserIdentityProfileDto} from "../../api/types.ts";
 import {EmojiGroup} from "./EmojiGroup.tsx";
 import {useInfiniteGetMentionableUsersQuery} from "../../graphql/infiniteQueries.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
 import {useUserIdentityStore} from "../../store/useUserIdentityStore.ts";
+import {type UnicodeEmojiEntry, unicodeEmojiTable} from "../../emoji.ts";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t" | "m") => void;
@@ -62,7 +63,7 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
 }
 
 interface EmojiProps {
-  onSelect: (emojiId: string) => void;
+  onSelect: (value: (EmojiEntryDto & { type: "server-emoji" }) | (UnicodeEmojiEntry & { type: "unicode-emoji" })) => void;
   searchTerm: string;
   className?: string;
 }
@@ -78,6 +79,10 @@ function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
         ...group,
         emojiEntries: group.emojiEntries.filter(e => e.shortCode.includes(searchTerm.trim())),
       })).filter(group => group.emojiEntries.length > 0);
+
+  const filteredUnicodeEntries: UnicodeEmojiEntry[] = !searchTerm || searchTerm.length === 0 ?
+    unicodeEmojiTable :
+    unicodeEmojiTable.filter(e => e.name.includes(searchTerm.trim()));
 
   return (
     <div
@@ -95,15 +100,30 @@ function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
       ) : (
         <Virtuoso
           className="h-full"
-          data={filteredData}
-          computeItemKey={(index) => filteredData[index].serverInfo.serverId}
-          itemContent={(_, emojiGroup: ServerEmojiGroupDto) => (
-            <EmojiGroup.Root
-              groupName={emojiGroup.serverInfo.name}
-              emojiEntries={emojiGroup.emojiEntries}
-              onSelected={(entry) => onSelect(entry.id)}
-            />
-          )}
+          totalCount={filteredData.length + 1}  // +1 for built-in emoji table
+          computeItemKey={(index) => index === filteredData.length ? "built-in" : filteredData[index].serverInfo.serverId}
+          itemContent={(index: number) => {
+            if (index < filteredData.length) {
+              const emojiGroup = filteredData[index];
+
+              return (
+                <EmojiGroup.Server
+                  groupName={emojiGroup.serverInfo.name}
+                  emojiEntries={emojiGroup.emojiEntries}
+                  onSelected={(entry) => onSelect({ type: "server-emoji", ...entry })}
+                  className="px-2"
+                />
+              );
+            } else {
+              return (
+                <EmojiGroup.Unicode
+                  entries={filteredUnicodeEntries}
+                  onSelected={(value) => onSelect({ type: "unicode-emoji", ...value }) }
+                  className="px-2"
+                />
+              );
+            }
+          }}
         />
       )}
     </div>

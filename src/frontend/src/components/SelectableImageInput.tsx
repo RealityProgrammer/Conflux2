@@ -7,6 +7,7 @@ interface AvatarInputProps {
   onChange?: (file: File | null) => void;
   className?: string | undefined;
   fallback: () => ReactNode;
+  accept?: string;
 }
 
 export default function SelectableImageInput({
@@ -14,6 +15,7 @@ export default function SelectableImageInput({
   onChange,
   className,
   fallback,
+  accept = "image/png, image/jpeg, image/webp",
   ...props
 }: AvatarInputProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -41,7 +43,7 @@ export default function SelectableImageInput({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/png, image/jpeg, image/webp"
+        accept={accept}
         className="hidden"
       />
 

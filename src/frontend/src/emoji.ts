@@ -1,4 +1,9 @@
-export const emojiTable: { name: string, value: string }[] = [
+export type UnicodeEmojiEntry = {
+  name: string;
+  value: string;
+}
+
+export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "grinning_face", value: "\u{1F600}" },
   { name: "grinning_face_with_big_eyes", value: "\u{1F603}" },
   { name: "grinning_face_with_smiling_eyes", value: "\u{1F604}" },
@@ -1569,14 +1574,4 @@ export const emojiTable: { name: string, value: string }[] = [
   { name: "rainbow_flag", value: "\u{1F3F3}\u{200D}\u{1F308}" },
   { name: "transgender_flag", value: "\u{1F3F3}\u{200D}\u{26A7}" },
   { name: "pirate_flag", value: "\u{1F3F4}\u{200D}\u{2620}" },
-  { name: "keycap_0", value: "\u{30}\u{20E3}" },
-  { name: "keycap_1", value: "\u{31}\u{20E3}" },
-  { name: "keycap_2", value: "\u{32}\u{20E3}" },
-  { name: "keycap_3", value: "\u{33}\u{20E3}" },
-  { name: "keycap_4", value: "\u{34}\u{20E3}" },
-  { name: "keycap_5", value: "\u{35}\u{20E3}" },
-  { name: "keycap_6", value: "\u{36}\u{20E3}" },
-  { name: "keycap_7", value: "\u{37}\u{20E3}" },
-  { name: "keycap_8", value: "\u{38}\u{20E3}" },
-  { name: "keycap_9", value: "\u{39}\u{20E3}" },
 ];

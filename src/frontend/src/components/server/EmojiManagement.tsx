@@ -267,7 +267,8 @@ function CreateEmojiButton({disabled = false}: {disabled?: boolean}) {
       const response: ServiceResponse<EmojiDto> = await serverService.createEmoji(
         serverDetails!.id,
         data.shortCode,
-        data.file
+        data.file,
+        crypto.randomUUID()
       );
 
       if (response.success) {
@@ -349,6 +350,7 @@ function CreateEmojiButton({disabled = false}: {disabled?: boolean}) {
                   fallback={() => (
                     <BsEmojiWink className="size-1/2 fill-gray-700/40"/>
                   )}
+                  accept="image/png, image/jpeg, image/webp, image/gif"
                 />
               </ErrorPopover>
             )}
