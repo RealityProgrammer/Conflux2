@@ -465,10 +465,10 @@ function PickerContent({
 const pad = (n: number) => String(n).padStart(2, "0");
 
 function TimeClockPicker({
-                                  value,
-                                  setValue,
-                                  mode,
-                                }: {
+  value,
+  setValue,
+  mode,
+}: {
   value: DateTimeRange | undefined;
   setValue: (setter: (previous: DateTimeRange) => DateTimeRange) => void;
   mode: "start" | "end";
@@ -486,7 +486,7 @@ function TimeClockPicker({
   const hourDegrees = ((hours % 12) / 12) * 360 + (minutes / 60) * 30;
 
   // format
-  const displayHours12 = hours % 12 === 0 ? 12 : hours % 12;
+  const displayHours12 = hours % 12;
   const amPm = hours >= 12 ? "PM" : "AM";
   const timeString = `${pad(displayHours12)}:${pad(minutes)}:${pad(seconds)}`;
 

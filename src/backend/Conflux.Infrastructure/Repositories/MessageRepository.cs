@@ -103,17 +103,36 @@ internal sealed class MessageRepository(
         return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
 
-    public async Task<Result<MessageSearchPage>> Search(
-        Guid conversationId, 
-        string query, 
-        int limit, 
-        CancellationToken cancellationToken = default
-    ) {
-        var page = await dbContext.Messages
+    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, int limit, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Messages
             .Where(m => 
-                m.ConversationId == conversationId &&
-                m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", query))
-            )
+                m.ConversationId == conversationId
+			);
+
+		if (!string.IsNullOrEmpty(content)) {
+			query = query
+				.Where(m => 
+					m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", content))
+				);
+		}
+
+		if (senderIds is { Count: > 0}) {
+			query = query
+				.Where(m => senderIds.Contains(m.Id));
+		}
+
+		if (startDateTime is { } startTime) {
+			query = query
+				.Where(m => m.CreatedAt >= startTime);
+		}
+
+		if (endDateTime is { } endTime) {
+			query = query
+				.Where(m => m.CreatedAt <= endTime);
+		}
+
+		var page = await query
             .SelectFacet<MessageSearchDto>()
             .Take(limit)
             .ToListAsync(cancellationToken);

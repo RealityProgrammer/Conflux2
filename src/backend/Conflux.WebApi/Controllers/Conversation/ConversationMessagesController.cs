@@ -145,7 +145,7 @@ public sealed class ConversationMessagesController(
         [FromBody] SearchMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var result = await sender.Send(new SearchMessage(conversationId, request.Query), cancellationToken);
+        var result = await sender.Send(new SearchMessage(conversationId, request.Content, request.SenderIds, request.StartDateTime, request.EndDateTime), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<MessageSearchPage>(result.Value, Error.None));
@@ -263,6 +263,9 @@ public sealed class ConversationMessagesController(
     }
 
     public sealed record SearchMessageRequest(
-        string Query
+        string? Content,
+		IReadOnlyCollection<Guid>? SenderIds,
+		DateTimeOffset? StartDateTime,
+		DateTimeOffset? EndDateTime
     );
 }

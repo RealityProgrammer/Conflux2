@@ -1,8 +1,9 @@
 import {type HTMLAttributes, type ReactNode} from "react";
 import {random} from "animejs";
 import {Avatar, type PresenceProps} from "./Avatar.tsx";
+import usePositionBasedRandom from "../hooks/usePositionBasedRandom.ts";
 
-interface UserNameplateProps extends HTMLAttributes<HTMLDivElement> {
+interface RootProps extends HTMLAttributes<HTMLDivElement> {
   userId: string;
   avatarVersion: number | null | undefined;
   avatarAlt?: string;
@@ -22,7 +23,7 @@ function Root({
   className,
   presence,
   ...props
-}: UserNameplateProps) {
+}: RootProps) {
   return (
     <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
       <Avatar.User
@@ -50,14 +51,23 @@ function Root({
   );
 }
 
-function Skeleton({className, ...props}: HTMLAttributes<HTMLDivElement>) {
+interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
+  showUserName?: boolean;
+}
+
+function Skeleton({showUserName, className, ...props}: SkeletonProps) {
+  const nameWidth = usePositionBasedRandom() * 75;
+
   return (
     <div className={`flex flex-row items-center gap-3 ${className ?? ""}`} {...props}>
       <div className="flex-none min-h-8 aspect-square self-stretch h-auto select-none items-center justify-center overflow-hidden rounded-full align-middle bg-white/10 animate-pulse"/>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="h-4 rounded bg-white/10 animate-pulse" style={{width: `${random(144, 224)}px`}}/>
-        <div className="h-4 rounded bg-white/10 animate-pulse mt-1" style={{width: `${random(80, 128)}px`}}/>
+        <div className="h-4 rounded bg-white/10 animate-pulse" style={{width: `${nameWidth}%`}}/>
+
+        {showUserName && (
+          <div className="h-4 rounded bg-white/10 animate-pulse mt-1" style={{width: `${random(80, 128)}px`}}/>
+        )}
       </div>
     </div>
   );

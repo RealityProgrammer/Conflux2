@@ -7,7 +7,10 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record SearchMessage(
     Guid ConversationId,
-    string Query
+    string? Content,
+	IReadOnlyCollection<Guid>? SenderIds,
+	DateTimeOffset? StartDateTime,
+	DateTimeOffset? EndDateTime
 ) : IQuery<Result<MessageSearchPage>>;
 
 public sealed class SearchMessageHandler(
@@ -26,7 +29,10 @@ public sealed class SearchMessageHandler(
 
         return await messageRepository.Search(
             query.ConversationId,
-            query.Query,
+            query.Content,
+			query.SenderIds,
+			query.StartDateTime,
+			query.EndDateTime,
             40,
             cancellationToken
         );

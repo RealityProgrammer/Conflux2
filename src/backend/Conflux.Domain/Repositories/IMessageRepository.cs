@@ -13,7 +13,10 @@ public interface IMessageRepository : IWriteRepository<Message> {
 
     Task<Result<MessageSearchPage>> Search(
         Guid conversationId,
-        string query,
+        string? content,
+		IReadOnlyCollection<Guid>? senderIds,
+		DateTimeOffset? startDateTime,
+		DateTimeOffset? endDateTime,
         int limit,
         CancellationToken cancellationToken = default
     );

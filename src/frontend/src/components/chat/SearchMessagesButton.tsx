@@ -11,13 +11,14 @@ import {useInfiniteGetConversationParticipantsForSearchQuery} from "../../graphq
 import {UserNameplate} from "../UserNameplate.tsx";
 import VirtualizedScrollList2 from "../VirtualizedScrollList2.tsx";
 import type {UserIdentityProfileDto} from "../../api/types.ts";
-import {BsCheckLg} from "react-icons/bs";
-import DateTimeRangePicker from "../DateTimeRangePicker.tsx";
+import {BsCheckLg, BsExclamationTriangle} from "react-icons/bs";
+import DateTimeRangePicker, {type DateTimeRange} from "../DateTimeRangePicker.tsx";
 import {TruncatedText} from "../TruncatedText.tsx";
 
 interface SearchRequest {
   content: string;
   filterSenderIds: string[];
+  timeRange?: DateTimeRange;
 }
 
 export default function SearchMessagesButton() {
@@ -53,14 +54,20 @@ export default function SearchMessagesButton() {
           className="w-96 h-128 max-h-(--radix-popover-content-available-height) border-2 border-gray-600 rounded-lg bg-gray-725 text-white shadow-lg flex flex-col"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <header className="flex-none p-2 border-b-2 border-b-gray-600">
+          <header className="flex-none p-2 border-b-2 border-b-gray-600 flex flex-row gap-2 items-center">
             <input
               type="text"
               placeholder="Enter query here"
-              className="input-field h-9 text-sm w-full"
+              className="flex-1 input-field h-9 text-sm w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+
+            <button
+              className="flex-none button-theme-primary p-2 rounded-md cursor-pointer"
+            >
+              <FaSearch className="size-4 fill-white"/>
+            </button>
           </header>
 
           <section className="flex-1 min-h-0 px-2 py-2 overflow-x-hidden overflow-y-auto scrollbar-none">
@@ -88,6 +95,13 @@ export default function SearchMessagesButton() {
 
               <DateTimeRangePicker
                 className="input-field h-9 w-full"
+                value={searchRequest.timeRange}
+                onChange={(value) => {
+                  setSearchRequest((prev: SearchRequest): SearchRequest => ({
+                    ...prev,
+                    timeRange: value,
+                  }))
+                }}
               />
             </div>
 
@@ -218,48 +232,64 @@ function AddSenderFilterButton({
           </header>
 
           <section className="flex-1 min-h-0 pt-1">
-            <VirtualizedScrollList2
-              data={allParticipants}
-              showBottomLoader={isFetchingNextPage}
-              endReached={() => {
-                if (hasNextPage) {
-                  fetchNextPage();
-                }
-              }}
-              showTopLoader={false}
-              overscan={10}
-              className="h-full"
-              computeItemKey={(index) => allParticipants[index].user.id}
-              renderEmpty={() => (
-                <div className="size-full flex flex-col gap-1 justify-center items-center">
-                  { nameSearch.length > 0 ? (
-                    <p className="select-none text-gray-500 text-sm">Enter name of sender</p>
-                  ) : (
-                    <p className="select-none text-gray-500 text-sm">So very empty here...</p>
-                  )}
-                </div>
-              )}
-              renderItem={(_, participant) => {
-                return (
-                  <div className="px-1">
-                    <UserNameplate.Root
-                      userId={participant.user.id}
-                      avatarVersion={participant.user.avatarVersion}
-                      displayName={participant.user.displayName ?? "???"}
-                      className="p-1.5 cursor-pointer hover-highlight rounded-md"
-                      onClick={() => {
-                        onUserToggle(participant.user);
-                        setIsOpen(false);
-                      }}
-                    >
-                      { selectedUsers.some(u => u.id === participant.user.id) ? (
-                        <BsCheckLg className="size-4 fill-white"/>
-                      ) : null }
-                    </UserNameplate.Root>
+            {isLoading ? (
+              <div className="overflow-hidden size-full">
+                {Array.from({length: 20}, (_, i) => (
+                  <UserNameplate.Skeleton
+                    key={i}
+                    className="p-1.5"
+                  />
+                ))}
+              </div>
+            ) : isError ? (
+              <div className="size-full flex flex-col gap-1 justify-center items-center">
+                <BsExclamationTriangle className="size-6 fill-white"/>
+                <p className="text-center select-none text-sm">Failed to load users.</p>
+              </div>
+            ) : (
+              <VirtualizedScrollList2
+                data={allParticipants}
+                showBottomLoader={isFetchingNextPage}
+                endReached={() => {
+                  if (hasNextPage) {
+                    fetchNextPage();
+                  }
+                }}
+                showTopLoader={false}
+                overscan={10}
+                className="h-full"
+                computeItemKey={(index) => allParticipants[index].user.id}
+                renderEmpty={() => (
+                  <div className="size-full flex flex-col gap-1 justify-center items-center">
+                    { !nameSearch || nameSearch.length === 0 ? (
+                      <p className="select-none text-gray-500 text-sm">Enter name of sender</p>
+                    ) : (
+                      <p className="select-none text-gray-500 text-sm">So very empty here...</p>
+                    )}
                   </div>
-                );
-              }}
-            />
+                )}
+                renderItem={(_, participant) => {
+                  return (
+                    <div className="px-1">
+                      <UserNameplate.Root
+                        userId={participant.user.id}
+                        avatarVersion={participant.user.avatarVersion}
+                        displayName={participant.user.displayName ?? "???"}
+                        className="p-1.5 cursor-pointer hover-highlight rounded-md"
+                        onClick={() => {
+                          onUserToggle(participant.user);
+                          setIsOpen(false);
+                        }}
+                      >
+                        { selectedUsers.some(u => u.id === participant.user.id) ? (
+                          <BsCheckLg className="size-4 fill-white"/>
+                        ) : null }
+                      </UserNameplate.Root>
+                    </div>
+                  );
+                }}
+              />
+            )}
           </section>
         </Popover.Content>
       </Popover.Portal>
