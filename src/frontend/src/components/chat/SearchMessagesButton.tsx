@@ -1,26 +1,22 @@
 import {FaSearch} from "react-icons/fa";
 import IconButton from "../IconButton.tsx";
-import {useEffect, useState} from "react";
-import {Label, Popover, Separator, Tooltip} from "radix-ui";
+import {useState} from "react";
+import {Label, Popover, Select, Separator, Tooltip} from "radix-ui";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {type SearchRequest, useHistoryConversationSearchStore} from "../../store/useHistoryConversationSearchStore.ts";
 import {Avatar} from "../Avatar.tsx";
 import {FaPlus, FaXmark} from "react-icons/fa6";
 import {useDebounceValue} from "usehooks-ts";
-import {
-  type GetServerMembersQuery,
-  useInfiniteGetConversationParticipantsForSearchQuery
-} from "../../graphql/infiniteQueries.ts";
+import {useInfiniteGetConversationParticipantsForSearchQuery} from "../../graphql/infiniteQueries.ts";
 import {UserNameplate} from "../UserNameplate.tsx";
 import VirtualizedScrollList2 from "../VirtualizedScrollList2.tsx";
 import type {MessageSearchDto, UserIdentityProfileDto} from "../../api/types.ts";
 import {
-  BsCalendar,
   BsCalendarFill,
   BsCheckLg,
+  BsChevronDown,
   BsChevronLeft,
   BsExclamationTriangle,
-  BsQuestion,
   BsQuestionLg
 } from "react-icons/bs";
 import DateTimeRangePicker from "../DateTimeRangePicker.tsx";
@@ -30,12 +26,19 @@ import useMessageSearchQuery from "../../hooks/useMessageSearchQuery.ts";
 import {formatDate} from "date-fns";
 import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
+import SelectItem from "../SelectItem.tsx";
+import {MessagePinFilter} from "../../api/schema.ts";
 
 export default function SearchMessagesButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"filter" | "result">("filter");
 
-  const [searchRequest, setSearchRequest] = useState<SearchRequest>({ content: '', senderIds: [], timeRange: undefined });
+  const [searchRequest, setSearchRequest] = useState<SearchRequest>({
+    content: '',
+    senderIds: [],
+    timeRange: undefined,
+    pin: MessagePinFilter.Unspecified,
+  });
 
   const onSearchRequested = (searchRequest: SearchRequest) => {
     setSearchRequest(searchRequest);
@@ -150,7 +153,7 @@ function FilteringView({
             }}
           />
 
-          <Label.Root className="block label mb-1">Time</Label.Root>
+          <Label.Root className="block label mb-1 mt-2">Time</Label.Root>
 
           <DateTimeRangePicker
             className="input-field h-9 w-full"
@@ -162,6 +165,42 @@ function FilteringView({
               }))
             }}
           />
+
+          <Label.Root className="block label mb-1 mt-2">Pin</Label.Root>
+
+          <Select.Root value={searchRequest.pin as string} onValueChange={(value) => {
+            setSearchRequest((prev) => ({
+              ...prev,
+              pin: value as MessagePinFilter,
+            }));
+          }}>
+            <Select.Trigger className="w-full input-field h-9 inline-flex flex-row items-center gap-2 ">
+              <Select.Value placeholder="Unspecified"/>
+
+              <Select.Icon className="fill-white flex-none ml-auto">
+                <BsChevronDown className="size-4"/>
+              </Select.Icon>
+            </Select.Trigger>
+
+            <Select.Portal>
+              <Select.Content
+                className="z-2001 overflow-hidden bg-gray-650 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                position="popper"
+                side="bottom"
+                sideOffset={4}
+              >
+                <Select.Viewport>
+                  {Object.entries(MessagePinFilter).map(([name, value]) => (
+                    <SelectItem
+                      key={value}
+                      text={name}
+                      value={value}
+                    />
+                  ))}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
         </div>
 
         <Separator.Root className="horizontal-separator my-2"/>
@@ -177,7 +216,11 @@ function FilteringView({
             >
               <FaSearch className="flex-none size-5 fill-white"/>
 
-              <TruncatedText className="flex-1 min-w-0">{request.content}</TruncatedText>
+              {request.content && request.content.length > 0 ? (
+                <TruncatedText className="flex-1 min-w-0">{request.content}</TruncatedText>
+              ) : (
+                <i className="flex-1 min-w-0 text-gray-400">&lt;no content&gt;</i>
+              )}
 
               {request.timeRange && (request.timeRange.start || request.timeRange.end) && (
                 <Tooltip.Root>

@@ -3280,6 +3280,8 @@ export interface components {
             name: string;
             type: string;
         };
+        /** @enum {string} */
+        MessagePinFilter: MessagePinFilter;
         MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
         MessagePropertiesCallEndProperties: {
             /** @enum {integer} */
@@ -3391,6 +3393,7 @@ export interface components {
             startDateTime: null | string;
             /** Format: date-time */
             endDateTime: null | string;
+            pinFilter: components["schemas"]["MessagePinFilter"];
             /** Format: uuid */
             beforeCursor: null | string;
         };
@@ -3687,6 +3690,11 @@ export enum MentionSourceMentionFromDm$type {
 }
 export enum MentionSourceMentionFromServer$type {
     server = "server"
+}
+export enum MessagePinFilter {
+    Unspecified = "Unspecified",
+    Pin = "Pin",
+    Unpin = "Unpin"
 }
 export enum MessagePropertiesCallEndProperties$type {
     Value1 = 1

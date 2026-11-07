@@ -1,11 +1,13 @@
 import {create} from "zustand";
 import { persist } from "zustand/middleware";
 import type {DateTimeRange} from "../components/DateTimeRangePicker.tsx";
+import type {MessagePinFilter} from "../api/schema.ts";
 
 export interface SearchRequest {
   content: string;
   senderIds: string[];
   timeRange?: DateTimeRange;
+  pin: MessagePinFilter;
 }
 
 function areSenderIdsEqual(arr1: string[], arr2: string[]): boolean {

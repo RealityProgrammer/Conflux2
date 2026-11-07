@@ -177,6 +177,7 @@ export const conversationService = {
         senderIds: request.senderIds,
         startDateTime: request.timeRange?.start,
         endDateTime: request.timeRange?.end,
+        pinFilter: request.pin,
         beforeCursor,
       }
     );

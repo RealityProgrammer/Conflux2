@@ -1,6 +1,7 @@
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 
 namespace Conflux.Application.Features.Conversation;
@@ -11,6 +12,7 @@ public sealed record SearchMessage(
 	IReadOnlyCollection<Guid>? SenderIds,
 	DateTimeOffset? StartDateTime,
 	DateTimeOffset? EndDateTime,
+	MessagePinFilter PinFilter,
 	Guid? BeforeCursor
 ) : IQuery<Result<MessageSearchPage>>;
 
@@ -34,6 +36,7 @@ public sealed class SearchMessageHandler(
 			query.SenderIds,
 			query.StartDateTime,
 			query.EndDateTime,
+			query.PinFilter,
 			query.BeforeCursor,
             40,
             cancellationToken

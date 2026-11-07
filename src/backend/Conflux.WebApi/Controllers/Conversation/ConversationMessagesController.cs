@@ -3,6 +3,7 @@ using Conflux.Application.Features.Conversation;
 using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
+using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
 using Humanizer;
 using Mediator;
@@ -145,7 +146,7 @@ public sealed class ConversationMessagesController(
         [FromBody] SearchMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var result = await sender.Send(new SearchMessage(conversationId, request.Content, request.SenderIds, request.StartDateTime, request.EndDateTime, request.BeforeCursor), cancellationToken);
+        var result = await sender.Send(new SearchMessage(conversationId, request.Content, request.SenderIds, request.StartDateTime, request.EndDateTime, request.PinFilter, request.BeforeCursor), cancellationToken);
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<MessageSearchPage>(result.Value, Error.None));
@@ -267,6 +268,7 @@ public sealed class ConversationMessagesController(
 		IReadOnlyCollection<Guid>? SenderIds,
 		DateTimeOffset? StartDateTime,
 		DateTimeOffset? EndDateTime,
+		MessagePinFilter PinFilter,
 		Guid? BeforeCursor
     );
 }

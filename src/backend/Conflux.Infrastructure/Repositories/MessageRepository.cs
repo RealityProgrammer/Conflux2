@@ -1,6 +1,7 @@
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
+using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
 
@@ -103,38 +104,42 @@ internal sealed class MessageRepository(
         return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
 
-    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, Guid? beforeCursor, int limit, CancellationToken cancellationToken = default)
+    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, MessagePinFilter pinFilter, Guid? beforeCursor, int limit, CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Messages
-            .Where(m => 
-                m.ConversationId == conversationId
+        var query = dbContext.Messages.Where(m => 
+			m.ConversationId == conversationId
 			);
 
 		if (!string.IsNullOrEmpty(content)) {
-			query = query
-				.Where(m => 
-					m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", content))
-				);
+			query = query.Where(m => 
+				m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", content))
+			);
 		}
 
 		if (senderIds is { Count: > 0}) {
-			query = query
-				.Where(m => senderIds.Contains(m.Id));
+			query = query.Where(m => senderIds.Contains(m.Id));
 		}
 
 		if (startDateTime is { } startTime) {
-			query = query
-				.Where(m => m.CreatedAt >= startTime);
+			query = query.Where(m => m.CreatedAt >= startTime);
 		}
 
 		if (endDateTime is { } endTime) {
-			query = query
-				.Where(m => m.CreatedAt <= endTime);
+			query = query.Where(m => m.CreatedAt <= endTime);
 		}
 
 		if (beforeCursor is { } before) {
-			query = query
-				.Where(m => m.Id.CompareTo(before) < 0);
+			query = query.Where(m => m.Id.CompareTo(before) < 0);
+		}
+
+		switch (pinFilter) {
+			case MessagePinFilter.Pin:
+				query = query.Where(m => m.PinnedAt != null);
+				break;
+
+			case MessagePinFilter.Unpin:
+				query = query.Where(m => m.PinnedAt == null);
+				break;
 		}
 
 		var page = await query
