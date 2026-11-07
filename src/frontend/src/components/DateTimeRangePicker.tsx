@@ -22,11 +22,23 @@ interface DateTimeRangePickerProps extends Omit<HTMLAttributes<HTMLDivElement>, 
 
 export default function DateTimeRangePicker({
   className = "",
-  value: initialValue,
+  value: controlledValue,
   onChange,
   ...props
 }: DateTimeRangePickerProps) {
-  const [value, setValue] = useState<DateTimeRange | undefined>(initialValue);
+  const isControlled = controlledValue !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = useState<DateTimeRange | undefined>(undefined);
+  const value = isControlled ? controlledValue : uncontrolledValue;
+
+  const setValue = (setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined) => {
+    const next = setter(value);
+
+    if (!isControlled) {
+      setUncontrolledValue(next);
+    }
+
+    onChange?.(next ?? {});
+  };
 
   return (
     <div
@@ -74,7 +86,7 @@ export default function DateTimeRangePicker({
 function PickerContent({
   value,
   setValue,
-}: { value: DateTimeRange | undefined; setValue: (setter: (previous: DateTimeRange) => DateTimeRange) => void; }) {
+}: { value: DateTimeRange | undefined; setValue: (setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined) => void; }) {
   const [mode, setMode] = useState<"start" | "end">("start");
   const [viewMode, setViewMode] = useState<"days" | "months" | "years">("days");
 
@@ -470,7 +482,7 @@ function TimeClockPicker({
   mode,
 }: {
   value: DateTimeRange | undefined;
-  setValue: (setter: (previous: DateTimeRange) => DateTimeRange) => void;
+  setValue: (setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined) => void;
   mode: "start" | "end";
 }) {
   const clockRef = useRef<HTMLDivElement | null>(null);

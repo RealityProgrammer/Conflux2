@@ -3319,8 +3319,9 @@ export interface components {
         };
         MessageSearchPage: {
             messages: components["schemas"]["MessageSearchDto"][];
+            hasNextPage: boolean;
             /** Format: uuid */
-            endCursor: null | string;
+            nextPageCursor: null | string;
         };
         /** @enum {string} */
         MessageType: MessageType;
@@ -3383,7 +3384,14 @@ export interface components {
             accessToken: string;
         };
         SearchMessageRequest: {
-            query: string;
+            content: null | string;
+            senderIds: null | string[];
+            /** Format: date-time */
+            startDateTime: null | string;
+            /** Format: date-time */
+            endDateTime: null | string;
+            /** Format: uuid */
+            beforeCursor: null | string;
         };
         SendFriendRequestResult: {
             relationshipStatus: components["schemas"]["UserRelationshipStatus"];

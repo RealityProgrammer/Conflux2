@@ -1,41 +1,52 @@
 import {FaSearch} from "react-icons/fa";
 import IconButton from "../IconButton.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Label, Popover, Separator} from "radix-ui";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import {useHistoryConversationSearchStore} from "../../store/useHistoryConversationSearchStore.ts";
+import {type SearchRequest, useHistoryConversationSearchStore} from "../../store/useHistoryConversationSearchStore.ts";
 import {Avatar} from "../Avatar.tsx";
 import {FaPlus, FaXmark} from "react-icons/fa6";
 import {useDebounceValue} from "usehooks-ts";
-import {useInfiniteGetConversationParticipantsForSearchQuery} from "../../graphql/infiniteQueries.ts";
+import {
+  type GetServerMembersQuery,
+  useInfiniteGetConversationParticipantsForSearchQuery
+} from "../../graphql/infiniteQueries.ts";
 import {UserNameplate} from "../UserNameplate.tsx";
 import VirtualizedScrollList2 from "../VirtualizedScrollList2.tsx";
-import type {UserIdentityProfileDto} from "../../api/types.ts";
-import {BsCheckLg, BsExclamationTriangle} from "react-icons/bs";
-import DateTimeRangePicker, {type DateTimeRange} from "../DateTimeRangePicker.tsx";
+import type {MessageSearchDto, UserIdentityProfileDto} from "../../api/types.ts";
+import {
+  BsCalendar,
+  BsCalendarFill,
+  BsCheckLg,
+  BsChevronLeft,
+  BsExclamationTriangle,
+  BsQuestion,
+  BsQuestionLg
+} from "react-icons/bs";
+import DateTimeRangePicker from "../DateTimeRangePicker.tsx";
 import {TruncatedText} from "../TruncatedText.tsx";
-
-interface SearchRequest {
-  content: string;
-  filterSenderIds: string[];
-  timeRange?: DateTimeRange;
-}
+import {MessageRow} from "./MessageRow.tsx";
+import useMessageSearchQuery from "../../hooks/useMessageSearchQuery.ts";
+import {formatDate} from "date-fns";
+import MessageBody from "./MessageBody.tsx";
+import MessageAttachments from "./MessageAttachments.tsx";
 
 export default function SearchMessagesButton() {
-  const { conversationId } = useChatContainerContext();
-
-  const searchHistory = useHistoryConversationSearchStore(state => state.searchHistory[conversationId]) ?? [];
-  const setSearchHistory = useHistoryConversationSearchStore(state => state.setSearchHistory);
-
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [mode, setMode] = useState<"filter" | "result">("filter");
 
-  const [searchRequest, setSearchRequest] = useState<SearchRequest>({ content: '', filterSenderIds: [] });
+  const [searchRequest, setSearchRequest] = useState<SearchRequest>({ content: '', senderIds: [], timeRange: undefined });
+
+  const onSearchRequested = (searchRequest: SearchRequest) => {
+    setSearchRequest(searchRequest);
+    setMode("result");
+  }
 
   return (
     <Popover.Root open={isOpen} onOpenChange={(open) => {
       if (!open) {
-        setSearchQuery('');
+        setSearchRequest({ content: '', senderIds: [], timeRange: undefined });
+        setMode("filter");
       }
 
       setIsOpen(open);
@@ -54,79 +65,137 @@ export default function SearchMessagesButton() {
           className="w-96 h-128 max-h-(--radix-popover-content-available-height) border-2 border-gray-600 rounded-lg bg-gray-725 text-white shadow-lg flex flex-col"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <header className="flex-none p-2 border-b-2 border-b-gray-600 flex flex-row gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Enter query here"
-              className="flex-1 input-field h-9 text-sm w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+          {mode === "filter" ? (
+            <FilteringView
+              searchRequest={searchRequest}
+              setSearchRequest={setSearchRequest}
+              onSearchRequested={onSearchRequested}
             />
-
-            <button
-              className="flex-none button-theme-primary p-2 rounded-md cursor-pointer"
-            >
-              <FaSearch className="size-4 fill-white"/>
-            </button>
-          </header>
-
-          <section className="flex-1 min-h-0 px-2 py-2 overflow-x-hidden overflow-y-auto scrollbar-none">
-            <p className="group-label">Filtering</p>
-
-            <div className="space-y-1">
-              <Label.Root className="block label mb-1">Sender{searchRequest.filterSenderIds.length > 1 ? 's' : ''}</Label.Root>
-
-              <SenderFilter
-                addUserId={(id) => {
-                  setSearchRequest((prev: SearchRequest): SearchRequest => ({
-                    ...prev,
-                    filterSenderIds: [...prev.filterSenderIds, id],
-                  }));
-                }}
-                removeUserId={(id) => {
-                  setSearchRequest((prev: SearchRequest): SearchRequest => ({
-                    ...prev,
-                    filterSenderIds: prev.filterSenderIds.filter(v => v !== id),
-                  }));
-                }}
-              />
-
-              <Label.Root className="block label mb-1">Time</Label.Root>
-
-              <DateTimeRangePicker
-                className="input-field h-9 w-full"
-                value={searchRequest.timeRange}
-                onChange={(value) => {
-                  setSearchRequest((prev: SearchRequest): SearchRequest => ({
-                    ...prev,
-                    timeRange: value,
-                  }))
-                }}
-              />
-            </div>
-
-            <Separator.Root className="horizontal-separator my-2 "/>
-
-            <p className="group-label">History</p>
-
-            <div className="space-y-1">
-              {searchHistory.map((q, i) => (
-                <button
-                  type="button"
-                  key={`${q} - ${i}`}
-                  className="w-full text-left text-sm hover-highlight p-1.5 rounded-md cursor-pointer flex flex-row gap-2 items-center"
-                  // onClick={() => executeSearch(q)}
-                >
-                  <FaSearch className="flex-none size-5 fill-white inline"/>
-                  <TruncatedText className="flex-1">{q}</TruncatedText>
-                </button>
-              ))}
-            </div>
-          </section>
+          ) : (
+            <ResultView
+              searchRequest={searchRequest}
+              navigateBackward={() => {
+                setMode("filter");
+              }}
+            />
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
   );
+}
+
+interface FilteringViewProps {
+  searchRequest: SearchRequest;
+  setSearchRequest: (value: SearchRequest | ((prev: SearchRequest) => SearchRequest)) => void;
+  onSearchRequested: (searchRequest: SearchRequest) => void;
+}
+
+function FilteringView({
+  searchRequest,
+  setSearchRequest,
+  onSearchRequested,
+}: FilteringViewProps) {
+  const { conversationId } = useChatContainerContext();
+
+  const searchHistory = useHistoryConversationSearchStore(state => state.searchHistory[conversationId]) ?? [];
+  const registerSearchRequest = useHistoryConversationSearchStore(state => state.registerSearchRequest);
+  const removeSearchRequest = useHistoryConversationSearchStore(state => state.removeSearchRequest);
+
+  const handleSearch = (request: SearchRequest) => {
+    registerSearchRequest(conversationId, request);
+    onSearchRequested(request);
+  }
+
+  return (
+    <>
+      <header className="flex-none p-2 border-b-2 border-b-gray-600 flex flex-row gap-2 items-center">
+        <input
+          type="text"
+          placeholder="Enter query here"
+          className="flex-1 input-field h-9 text-sm w-full"
+          value={searchRequest.content}
+          onChange={(e) => setSearchRequest((prev: SearchRequest): SearchRequest => ({
+            ...prev,
+            content: e.target.value,
+          }))}
+        />
+
+        <button
+          className="flex-none button-theme-primary p-2 rounded-md cursor-pointer"
+          onClick={() => handleSearch(searchRequest)}
+        >
+          <FaSearch className="size-4 fill-white"/>
+        </button>
+      </header>
+
+      <section className="flex-1 min-h-0 px-2 py-2 overflow-x-hidden overflow-y-auto scrollbar-none">
+        <p className="group-label">Filtering</p>
+
+        <div className="space-y-1">
+          <Label.Root className="block label mb-1">Sender{searchRequest.senderIds.length > 1 ? 's' : ''}</Label.Root>
+
+          <SenderFilter
+            addUserId={(id) => {
+              setSearchRequest((prev: SearchRequest): SearchRequest => ({
+                ...prev,
+                senderIds: [...prev.senderIds, id],
+              }));
+            }}
+            removeUserId={(id) => {
+              setSearchRequest((prev: SearchRequest): SearchRequest => ({
+                ...prev,
+                senderIds: prev.senderIds.filter(v => v !== id),
+              }));
+            }}
+          />
+
+          <Label.Root className="block label mb-1">Time</Label.Root>
+
+          <DateTimeRangePicker
+            className="input-field h-9 w-full"
+            value={searchRequest.timeRange}
+            onChange={(value) => {
+              setSearchRequest((prev: SearchRequest): SearchRequest => ({
+                ...prev,
+                timeRange: value,
+              }))
+            }}
+          />
+        </div>
+
+        <Separator.Root className="horizontal-separator my-2"/>
+
+        <p className="group-label">History</p>
+
+        <div className="space-y-1">
+          {searchHistory.map((request, index) => (
+            <div
+              key={`${request.content} - ${index}`}
+              className="w-full text-left text-sm hover-highlight p-1.5 rounded-md cursor-pointer flex flex-row gap-2 items-center"
+              onClick={() => setSearchRequest(request)}
+            >
+              <FaSearch className="flex-none size-5 fill-white"/>
+
+              <TruncatedText className="flex-1">{request.content}</TruncatedText>
+
+              <IconButton
+                type="button"
+                theme="default"
+                className="flex-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeSearchRequest(conversationId, index);
+                }}
+              >
+                <FaXmark className="size-5"/>
+              </IconButton>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  )
 }
 
 function SenderFilter({
@@ -251,7 +320,7 @@ function AddSenderFilterButton({
                 data={allParticipants}
                 showBottomLoader={isFetchingNextPage}
                 endReached={() => {
-                  if (hasNextPage) {
+                  if (hasNextPage && !isFetchingNextPage && !isLoading) {
                     fetchNextPage();
                   }
                 }}
@@ -295,4 +364,154 @@ function AddSenderFilterButton({
       </Popover.Portal>
     </Popover.Root>
   )
+}
+
+interface ResultViewProps {
+  searchRequest: SearchRequest;
+  navigateBackward: () => void;
+}
+
+type SearchRenderItem =
+  { type: "date"; date: Date; } |
+  { type: "message"; message: MessageSearchDto; };
+
+function ResultView({
+  searchRequest,
+  navigateBackward,
+}: ResultViewProps) {
+  const { conversationId, requestJump } = useChatContainerContext();
+  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useMessageSearchQuery(
+    {conversationId, request: searchRequest},
+    {
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+      retry: false,
+    }
+  );
+
+  const rawMessages = data?.pages.flatMap((page) => page?.messages ?? []) ?? [];
+
+  const renderItems: SearchRenderItem[] = [];
+  let lastDate: Date | null = null;
+
+  for (const rawMessage of rawMessages) {
+    const messageDate = new Date(rawMessage.createdAt);
+
+    if (!lastDate || messageDate.getDay() !== lastDate.getDay()) {
+      renderItems.push({
+        type: "date",
+        date: messageDate,
+      });
+
+      lastDate = messageDate;
+    }
+
+    renderItems.push({
+      type: "message",
+      message: rawMessage,
+    });
+  }
+
+  return (
+    <>
+      <header className="flex-none p-2 border-b-2 border-b-gray-600 flex flex-row gap-2 justify-start items-center">
+        <IconButton
+          theme="default"
+          onClick={navigateBackward}
+          className="flex-none"
+        >
+          <BsChevronLeft className="size-4"/>
+        </IconButton>
+
+        <span>Back</span>
+      </header>
+
+      <section className="flex-1 min-h-0 px-2 py-2 overflow-x-hidden overflow-y-auto scrollbar-none">
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({length: 10}, (_, i) => (
+              <MessageRow.HeaderSkeleton key={i}>
+                <MessageRow.BodySkeleton/>
+              </MessageRow.HeaderSkeleton>
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="size-full flex flex-col gap-1 justify-center items-center">
+            <BsExclamationTriangle className="size-6 fill-white"/>
+            <p className="text-center select-none text-sm">Failed to search messages.</p>
+          </div>
+        ) : (
+          <VirtualizedScrollList2
+            data={renderItems}
+            computeItemKey={(index) => {
+              const item = renderItems[index];
+              return `${item.type}-${item.type === "message" ? item.message.id : item.date}`
+            }}
+            className="h-full scrollbar-none"
+            endReached={() => {
+              if (hasNextPage && !isFetchingNextPage && !isLoading) {
+                fetchNextPage();
+              }
+            }}
+            showTopLoader={false}
+            showBottomLoader={isFetchingNextPage}
+            overscan={10}
+            renderEmpty={() => (
+              <div className="size-full flex flex-col gap-1 justify-center items-center">
+                <BsQuestionLg className="size-6 fill-white"/>
+                <p className="text-center select-none text-sm">Well that was awkward, nothing is here...</p>
+              </div>
+            )}
+            renderItem={(_index, item) => {
+              switch (item.type) {
+                case "date":
+                  return (
+                    <div className="select-none font-bold text-lg flex flex-row items-center gap-2 pb-2">
+                      <BsCalendarFill className="size-4 fill-white inline"/>
+                      {formatDate(item.date, "yyyy/MM/dd")}
+                    </div>
+                  );
+
+                case "message":
+                  const message = item.message;
+
+                  return (
+                    <div className="pb-2">
+                      <div
+                        className="hover-highlight p-1.5 rounded-md border-2 border-gray-600 cursor-pointer"
+                        onClick={() => {
+                          requestJump(message.id);
+                        }}
+                      >
+                        <MessageRow.Row
+                          header={{
+                            senderDisplayName: message.sender?.displayName ?? "???",
+                            senderId: message.sender.id,
+                            senderAvatarVersion: message.sender.avatarVersion,
+                            avatarAlt: `Avatar of ${message.sender.displayName ?? "???"}`,
+                          }}
+                          date={new Date(message.createdAt)}
+                        >
+                          <div className="flex-1 space-y-1">
+                            <MessageBody
+                              content={message.body}
+                            />
+
+                            {/*{message.attachments && message.attachments.length > 0 && (*/}
+                            {/*  <MessageAttachments attachments={message.attachments} onAttachmentClick={() => {}}/>*/}
+                            {/*)}*/}
+                          </div>
+                        </MessageRow.Row>
+                      </div>
+                    </div>
+                  );
+
+                default: return null;
+              }
+            }}
+          />
+        )}
+      </section>
+    </>
+  );
 }

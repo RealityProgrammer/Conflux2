@@ -103,7 +103,7 @@ internal sealed class MessageRepository(
         return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
     }
 
-    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, int limit, CancellationToken cancellationToken = default)
+    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, Guid? beforeCursor, int limit, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Messages
             .Where(m => 
@@ -132,11 +132,17 @@ internal sealed class MessageRepository(
 				.Where(m => m.CreatedAt <= endTime);
 		}
 
+		if (beforeCursor is { } before) {
+			query = query
+				.Where(m => m.Id.CompareTo(before) < 0);
+		}
+
 		var page = await query
+			.OrderByDescending(m => m.CreatedAt)
             .SelectFacet<MessageSearchDto>()
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return Result<MessageSearchPage>.Success(new(page, page.Count == limit ? page[^1].Id : null));
+        return Result<MessageSearchPage>.Success(new(page, page.Count == limit, page.Count > 0 ? page[^1].Id : null));
     }
 }

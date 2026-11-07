@@ -143,7 +143,7 @@ function ContentDisplay({
           overscan={5}
           itemContent={(_index, message) => (
             <div className="pb-1">
-              <div className="p-2 border-2 border-gray-600 rounded-md group bg-black/8 cursor-pointer" onClick={() => onPinnedMessageClick(message.id)}>
+              <div className="p-2 border-2 border-gray-600 rounded-md bg-black/8 cursor-pointer" onClick={() => onPinnedMessageClick(message.id)}>
                 <MessageRow.Row
                   header={{
                     senderDisplayName: message.sender?.displayName ?? "???",

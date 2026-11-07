@@ -105,7 +105,7 @@ function MemberList({ serverId }: { serverId: string }) {
       }}
       showBottomLoader={isFetchingNextPage}
       endReached={() => {
-        if (hasNextPage) {
+        if (hasNextPage && !isFetchingNextPage && !isLoading) {
           fetchNextPage();
         }
       }}
@@ -117,8 +117,8 @@ function MemberList({ serverId }: { serverId: string }) {
 }
 
 type RenderItem =
-  | { type: 'header'; roleId: string; roleName: string; }
-  | { type: 'member'; member: NonNullable<GetServerMembersQuery["communityServerMembers"]["nodes"]>[number] };
+  { type: "header"; roleId: string; roleName: string; } |
+  { type: "member"; member: NonNullable<GetServerMembersQuery["communityServerMembers"]["nodes"]>[number] };
 
 function useGroupedServerMembers(serverId: string) {
   const { data, isLoading, isError, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteGetServerMembersQuery(

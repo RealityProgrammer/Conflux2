@@ -3,10 +3,12 @@ import type {
   BackendResponse,
   TimelineMessageDto,
   ServiceResponse,
-  TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails, MentionSource
+  TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails, MentionSource,
+  MessageSearchPage
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
+import type {SearchRequest} from "../store/useHistoryConversationSearchStore.ts";
 
 export const conversationService = {
   getDmConversationDetails: async (peerId: string): Promise<DmConversationDetails> => {
@@ -165,5 +167,20 @@ export const conversationService = {
       await apiClient.post(`conversations/${encodeURIComponent(conversationId)}/read-mentions`);
 
     return response.data.data ?? null;
+  },
+
+  searchMessage: async (conversationId: string, request: SearchRequest, beforeCursor: string | null): Promise<MessageSearchPage> => {
+    const response: AxiosResponse<BackendResponse<MessageSearchPage>> = await apiClient.post(
+      `conversations/${encodeURIComponent(conversationId)}/messages/search`,
+      {
+        content: request.content,
+        senderIds: request.senderIds,
+        startDateTime: request.timeRange?.start,
+        endDateTime: request.timeRange?.end,
+        beforeCursor,
+      }
+    );
+
+    return response.data.data!;
   }
 }

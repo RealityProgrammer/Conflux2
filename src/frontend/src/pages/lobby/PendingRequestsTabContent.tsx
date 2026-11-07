@@ -25,6 +25,7 @@ export default function PendingRequestsTabContent() {
     data,
     fetchNextPage,
     isFetchingNextPage,
+    hasNextPage,
     isLoading,
   } = useInfiniteGetPendingFriendRequestsQuery(
     { after: null },
@@ -104,7 +105,11 @@ export default function PendingRequestsTabContent() {
             totalCount={allElements.length}
             computeItemKey={(index) => allElements[index].id}
             atBottomThreshold={120}
-            endReached={() => fetchNextPage()}
+            endReached={() => {
+              if (hasNextPage && !isFetchingNextPage && !isLoading) {
+                fetchNextPage();
+              }
+            }}
             overscan={10}
             renderItem={(index) => {
               return (

@@ -10,7 +10,8 @@ public sealed record SearchMessage(
     string? Content,
 	IReadOnlyCollection<Guid>? SenderIds,
 	DateTimeOffset? StartDateTime,
-	DateTimeOffset? EndDateTime
+	DateTimeOffset? EndDateTime,
+	Guid? BeforeCursor
 ) : IQuery<Result<MessageSearchPage>>;
 
 public sealed class SearchMessageHandler(
@@ -33,6 +34,7 @@ public sealed class SearchMessageHandler(
 			query.SenderIds,
 			query.StartDateTime,
 			query.EndDateTime,
+			query.BeforeCursor,
             40,
             cancellationToken
         );

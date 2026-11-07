@@ -17,6 +17,7 @@ public interface IMessageRepository : IWriteRepository<Message> {
 		IReadOnlyCollection<Guid>? senderIds,
 		DateTimeOffset? startDateTime,
 		DateTimeOffset? endDateTime,
+		Guid? beforeCursor,
         int limit,
         CancellationToken cancellationToken = default
     );

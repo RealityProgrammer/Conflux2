@@ -25,6 +25,7 @@ export default function FriendListTabContent() {
     data,
     fetchNextPage,
     isFetchingNextPage,
+    hasNextPage,
     isLoading,
   } = useInfiniteGetFriendsQuery(
     { after: null, nameFilter, },
@@ -110,7 +111,11 @@ export default function FriendListTabContent() {
             totalCount={allElements.length}
             computeItemKey={(index) => allElements[index].otherUser!.id}
             atBottomThreshold={120}
-            endReached={() => fetchNextPage()}
+            endReached={() => {
+              if (hasNextPage && !isFetchingNextPage && !isLoading) {
+                fetchNextPage();
+              }
+            }}
             overscan={10}
             renderItem={(index) => {
               return (

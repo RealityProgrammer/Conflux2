@@ -1,6 +1,6 @@
 import {Tooltip} from "radix-ui";
 import {type HTMLAttributes, useSyncExternalStore} from "react";
-import {intervalToDuration, formatDuration, type DurationUnit} from "date-fns";
+import {intervalToDuration, formatDuration, type DurationUnit, formatDate} from "date-fns";
 
 const ONE_WEEK_SECONDS = 7 * 24 * 60 * 60;
 
@@ -30,13 +30,13 @@ function subscribe(listener: () => void) {
 }
 
 function formatTime(value: Date, now: number, relative: boolean): string {
-  if (!relative) return value.toLocaleString();
+  if (!relative) return formatDate(value, "yyyy/MM/dd HH:mm:ss");
 
   // calculate the time difference, return the raw date time if the difference is >= 1 week
   const diffSec = Math.floor((now - value.getTime()) / 1000);
   const abs = Math.abs(diffSec);
 
-  if (abs >= ONE_WEEK_SECONDS) return value.toLocaleString();
+  if (abs >= ONE_WEEK_SECONDS) return formatDate(value, "yyyy/MM/dd HH:mm:ss");
 
   const past = diffSec >= 0;
   const duration = intervalToDuration(
