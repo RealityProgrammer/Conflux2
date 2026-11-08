@@ -22,6 +22,14 @@ export class MarkdownMarkerNode extends TextNode {
     return false;
   }
 
+  getTextContent(): string {
+    return this.__text;
+  }
+
+  getTextContentSize(): number {
+    return this.__text.length;
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.color = 'color-mix(in oklab, var(--color-gray-400) 70%, transparent)';

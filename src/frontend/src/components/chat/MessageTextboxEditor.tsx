@@ -12,7 +12,7 @@ import {
   $isElementNode, $createParagraphNode, $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
   mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, $getNodeByKey, ParagraphNode,
-  type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType,
+  type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType, type Transform,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from "@lexical/history";
@@ -38,6 +38,7 @@ import {
   registerMarkdownShortcuts,
   $convertToMarkdownString,
   $convertFromMarkdownString,
+  type TextMatchTransformer,
   HEADING,
   QUOTE,
   CHECK_LIST,
@@ -89,6 +90,21 @@ const LINK_MATCHERS: LinkMatcher[] = [
     return text.startsWith("http") ? text : `https://${text}`;
   }),
 ];
+
+export const MARKDOWN_MARKER_TRANSFORMER: TextMatchTransformer = {
+  dependencies: [MarkdownMarkerNode],
+  export: (node) => {
+    if ($isMarkdownMarkerNode(node)) {
+      return node.getTextContent();
+    }
+    return null;
+  },
+  importRegExp: /$^/,
+  regExp: /$^/,
+  replace: () => {},
+  trigger: "",
+  type: "text-match",
+};
 
 export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
   return editor.registerUpdateListener(({ editorState, dirtyElements, tags }: UpdateListenerPayload) => {
@@ -369,6 +385,7 @@ const CHAT_MARKDOWN_TRANSFORMERS = [
   ORDERED_LIST,
   INLINE_CODE,
   CODE,
+  MARKDOWN_MARKER_TRANSFORMER,
 ];
 
 export const MarkdownShortcutsExtension = defineExtension({
