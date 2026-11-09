@@ -31,6 +31,7 @@ import {BsWrenchAdjustable} from "react-icons/bs";
 import Container from "../Container.tsx";
 import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
 import {Label} from "radix-ui";
+import MessageAttachments from "./MessageAttachments.tsx";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -542,7 +543,7 @@ export function ChatView({
             setEditingMessage(undefined);
           }
         }}
-        messageBody={editingMessage?.body ?? ""}
+        originalMessage={editingMessage}
         handleSubmit={handleSaveEdit}
       />
 
@@ -567,9 +568,11 @@ export function ChatView({
 function EditMessageModal({
   open,
   onOpenChange,
-  messageBody,
+  originalMessage,
   handleSubmit,
-}: {open: boolean; onOpenChange: (open: boolean) => void; messageBody: string; handleSubmit: (newBody: string) => void;}) {
+}: {open: boolean; onOpenChange: (open: boolean) => void; originalMessage: TimelineMessageDto | undefined; handleSubmit: (newBody: string) => void;}) {
+  const setMediaElements = useMediaGalleryStore((state) => state.setElements);
+
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
 
   const handleEditSubmit = () => {
@@ -586,17 +589,37 @@ function EditMessageModal({
       headerIcon={(<BsWrenchAdjustable className="size-10 fill-white"/>)}
       contentClassName="centered-dialog w-3xl rounded-xl text-white bg-gray-650 outline-none"
     >
-      <div className="px-3 py-2">
-        <Label.Root className="label mb-1">Body</Label.Root>
+      {originalMessage && (
+        <div className="px-3 py-2">
+          <Label.Root className="label mb-1 block">Body</Label.Root>
 
-        <MessageTextboxEditor
-          ref={textboxEditorRef}
-          key={open ? messageBody : undefined}
-          initialValue={messageBody}
-          onEnterSend={handleEditSubmit}
-          onSuggestionChange={() => {}}
-        />
-      </div>
+          <MessageTextboxEditor
+            ref={textboxEditorRef}
+            key={open ? originalMessage.id : undefined}
+            initialValue={originalMessage.body ?? ""}
+            onEnterSend={handleEditSubmit}
+            onSuggestionChange={() => {}}
+          />
+
+          {originalMessage.attachments && originalMessage.attachments.length > 0 && (
+            <>
+              <Label.Root className="label mb-1 mt-2 block">Attachments</Label.Root>
+
+              <MessageAttachments
+                attachments={originalMessage.attachments}
+                onAttachmentClick={(index: number) => {
+                  setMediaElements(originalMessage.attachments!.map(attachment => ({
+                    id: attachment.id,
+                    src: conversationService.getAttachmentImageUrl(attachment.id, false),
+                    fileName: attachment.name,
+                    mediaType: attachment.type,
+                  })), index, {});
+                }}
+              />
+            </>
+          )}
+        </div>
+      )}
     </Dialog>
   );
 }

@@ -682,19 +682,17 @@ export default function MessageTextboxEditor({
 
   return (
     <LexicalExtensionComposer extension={lexicalExtensions} contentEditable={null}>
-      <div className="flex-1 relative flex flex-row items-end gap-2">
-        <TextArea
-          initialValue={initialValue}
-          onTextChange={onTextChange}
-          onEnterSend={onEnterSend}
-          onSuggestionChange={onSuggestionChange}
-          onEditorReady={(editor) => {
-            editorRef.current = editor;
-          }}
-          onImagePaste={onImagePaste}
-          lastSelectionRef={lastSelectionRef}
-        />
-      </div>
+      <TextArea
+        initialValue={initialValue}
+        onTextChange={onTextChange}
+        onEnterSend={onEnterSend}
+        onSuggestionChange={onSuggestionChange}
+        onEditorReady={(editor) => {
+          editorRef.current = editor;
+        }}
+        onImagePaste={onImagePaste}
+        lastSelectionRef={lastSelectionRef}
+      />
     </LexicalExtensionComposer>
   );
 }
@@ -1007,13 +1005,10 @@ function TextArea({
   }, [editor, lastSelectionRef]);
 
   return (
-    <div className="input-field min-h-10 max-h-36 w-full flex-1 text-sm py-2 px-3 overflow-y-auto leading-relaxed relative">
-      <div style={{ display: "block" }} className="w-full min-h-full">
-        <ContentEditable className="outline-none min-h-full whitespace-pre-wrap break-all"/>
-      </div>
-
+    <>
+      <ContentEditable className="input-field min-h-9 max-h-48 w-full text-sm py-2 px-3 outline-none whitespace-pre-wrap break-all overflow-y-auto leading-relaxed relative"/>
       <LexicalSyncPlugin onTextChange={onTextChange}/>
-    </div>
+    </>
   );
 }
 

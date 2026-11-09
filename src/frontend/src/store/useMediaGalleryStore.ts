@@ -28,6 +28,7 @@ export const useMediaGalleryStore = create<MediaGalleryStoreType>((set) => ({
   options: undefined,
 
   setElements: (elements: MediaGalleryElement[], viewIndex: number, options?: MediaGalleryOptions) => set(() => {
+    console.log("set elements");
     return { elements, viewIndex: Math.min(Math.max(viewIndex, 0), elements.length - 1), options };
   }),
 

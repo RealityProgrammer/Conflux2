@@ -19,9 +19,10 @@ import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import {Suggestion} from "./Suggestion.tsx";
 import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
-import {FaPaperPlane} from "react-icons/fa6";
+import {FaPaperPlane, FaXmark} from "react-icons/fa6";
 import EmojiPanelButton from "./EmojiPanelButton.tsx";
 import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
+import {Attachment} from "./Attachment.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -47,6 +48,8 @@ type AttachmentItem = {
 }
 
 export default function ChatInput({disabled}: ChatInputProps) {
+  const setGalleryElements = useMediaGalleryStore((state) => state.setElements);
+
   const {conversationId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
 
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
@@ -146,8 +149,6 @@ export default function ChatInput({disabled}: ChatInputProps) {
     setAttachments([]);
   };
 
-  const setGalleryElements = useMediaGalleryStore(state => state.setElements);
-
   return (
     <footer className="relative flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
       {suggestion && (
@@ -221,24 +222,32 @@ export default function ChatInput({disabled}: ChatInputProps) {
       )}
 
       {attachments.length > 0 && (
-        <ScrollArea.Root className="h-32 w-full overflow-hidden">
-          <ScrollArea.Viewport className="size-full min-h-0 py-2">
-            <div className="flex flex-row gap-3 items-center h-28 px-2 w-max">
-              {attachments.map((item, index) => (
-                <AttachmentThumbnail
-                  key={item.id}
-                  file={item.file}
-                  onRemove={() => handleRemoveAttachment(item.id)}
-                  previewUrl={item.previewUrl}
-                  onClick={() => {
-                    setGalleryElements(attachments.map(attachment => ({
-                      id: attachment.id,
-                      fileName: attachment.file.name,
-                      mediaType: attachment.file.type,
-                      src: attachment.previewUrl!,
-                    })), index);
-                  }}
-                />
+        <ScrollArea.Root className="w-full">
+          <ScrollArea.Viewport className="size-full">
+            <div className="flex flex-row gap-2 items-center">
+              {attachments.map((attachment, index) => (
+                <div key={index} className="relative shrink-0 h-13">
+                  <Attachment.FilePill
+                    key={index}
+                    file={{ type: attachment.file.type, previewSrc: attachment.previewUrl ?? "", fileName: attachment.file.name }}
+                    className="h-full border-2 border-gray-600 rounded-md overflow-hidden pr-4 max-w-64 hover-highlight cursor-pointer"
+                    onClick={() => {
+                      setGalleryElements(attachments.map(attachment => ({
+                        id: attachment.id,
+                        fileName: attachment.file.name,
+                        mediaType: attachment.file.type,
+                        src: attachment.previewUrl!,
+                      })), index, {});
+                    }}
+                  />
+
+                  <button
+                    className="absolute button-theme-danger border-2 border-gray-600 rounded-full p-1 right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                    onClick={() => handleRemoveAttachment(attachment.id)}
+                  >
+                    <FaXmark className="size-3 fill-white"/>
+                  </button>
+                </div>
               ))}
             </div>
           </ScrollArea.Viewport>
@@ -302,57 +311,5 @@ export default function ChatInput({disabled}: ChatInputProps) {
         </IconButton>
       </section>
     </footer>
-  );
-}
-
-function AttachmentThumbnail({file, previewUrl, onRemove, onClick}: AttachmentThumbnailProps) {
-  return (
-    <div className="flex-none h-full aspect-square relative group">
-
-      {/* Inner wrapper handles rounding and clipping ONLY for the image/content */}
-      <div className={`size-full rounded-md overflow-hidden ${
-        file.type.startsWith('image/')
-          ? ""
-          : "border border-gray-500 hover:border-gray-400 transition-colors duration-200 bg-gray-800"
-      }`}>
-        {file.type.startsWith("image") && previewUrl ? (
-          <div className="size-full cursor-pointer" onClick={onClick}>
-            <img
-              src={previewUrl}
-              alt={file.name}
-              className="size-full object-cover hover:opacity-80 transition-opacity"
-            />
-          </div>
-        ) : file.type.startsWith("video") ? (
-          <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
-            <BsCameraVideo className="size-6 fill-white"/>
-          </div>
-        ) : file.type.startsWith("audio") ? (
-          <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
-            <BsMusicNote className="size-6 fill-white"/>
-          </div>
-        ) : (
-          <div
-            onClick={onClick}
-            className="size-full flex flex-col items-center justify-center p-2 text-xs text-center text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
-          >
-            <span className="truncate w-full font-medium">{file.name}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Delete button sits safely outside the clipped image wrapper */}
-      <IconButton
-        isLoading={false}
-        theme="danger"
-        className="absolute -top-2 -right-2 rounded-md invisible group-hover:visible p-1 bg-gray-700 border-2 border-gray-600 z-20 shadow-md"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove();
-        }}
-      >
-        <BsTrashFill className="size-4"/>
-      </IconButton>
-    </div>
   );
 }
