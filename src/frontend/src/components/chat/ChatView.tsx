@@ -26,6 +26,11 @@ import Spinner from "../Spinner.tsx";
 import {FaArrowDown} from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
+import Dialog from "../Dialog.tsx";
+import {BsWrenchAdjustable} from "react-icons/bs";
+import Container from "../Container.tsx";
+import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
+import {Label} from "radix-ui";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -96,13 +101,11 @@ export function ChatView({
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
   const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
-  const [editingMessageDraft, setEditingMessageDraft] = useState<string | null>(null);
   const prevAllowEditRef = useRef(allowEditMessage);
 
   useEffect(() => {
     if (prevAllowEditRef.current && !allowEditMessage) {
       setEditingMessage(undefined);
-      setEditingMessageDraft(null);
     }
 
     prevAllowEditRef.current = allowEditMessage;
@@ -119,7 +122,7 @@ export function ChatView({
     prevAllowDeleteRef.current = allowDeleteMessage;
   }, [allowDeleteMessage]);
 
-  const timelineItems = useTimelineItems(messagePages, editingMessage?.id ?? undefined);
+  const timelineItems = useTimelineItems(messagePages);
 
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const showScrollBottomRef = useRef(false);
@@ -360,8 +363,6 @@ export function ChatView({
     if (editingMessage === undefined) return;
 
     setEditingMessage(undefined);
-    setEditingMessageDraft(null);
-
     handleEditMessage(editingMessage, newBody?.trim() ?? null);
   };
 
@@ -385,13 +386,13 @@ export function ChatView({
       onMessageDeleteTrigger: setDeletingMessage,
       onMessageEditTrigger: (message: TimelineMessageDto) => {
         setEditingMessage(message);
-        setEditingMessageDraft(message.body ?? "");
+        // setEditingMessageDraft(message.body ?? "");
       },
       onMessageReplyTrigger: setReplyingMessage,
-      onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
+      // onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
       onEditCancel: () => {
         setEditingMessage(undefined);
-        setEditingMessageDraft(null);
+        // setEditingMessageDraft(null);
       },
       onEditSaved: (newBody) => handleSaveEdit(newBody),
       onAttachmentClick: (messageAttachments: MessageAttachmentDto[], clickedIndex: number) => {
@@ -412,7 +413,7 @@ export function ChatView({
       updateMessagePin: (messageId: string, isPinned: boolean) => updateMessage(messageId, { isPinned }),
     },
     states: {
-      editingMessageDraft: editingMessageDraft,
+      // editingMessageDraft: editingMessageDraft,
       highlightedMessageId,
       allowEditMessage,
       allowDeleteMessage,
@@ -534,6 +535,17 @@ export function ChatView({
         </div>
       )}
 
+      <EditMessageModal
+        open={!!editingMessage}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingMessage(undefined);
+          }
+        }}
+        messageBody={editingMessage?.body ?? ""}
+        handleSubmit={handleSaveEdit}
+      />
+
       <DeleteMessageConfirmationDialog
         open={!!deletingMessage}
         onOpenChange={(open) => {
@@ -549,5 +561,42 @@ export function ChatView({
         }}
       />
     </div>
+  );
+}
+
+function EditMessageModal({
+  open,
+  onOpenChange,
+  messageBody,
+  handleSubmit,
+}: {open: boolean; onOpenChange: (open: boolean) => void; messageBody: string; handleSubmit: (newBody: string) => void;}) {
+  const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
+
+  const handleEditSubmit = () => {
+    if (!textboxEditorRef.current) return;
+    handleSubmit(textboxEditorRef.current.convertToMarkdownString());
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Edit Message"
+      subtitle="Should have thought of it first before sending..."
+      headerIcon={(<BsWrenchAdjustable className="size-10 fill-white"/>)}
+      contentClassName="centered-dialog w-3xl rounded-xl text-white bg-gray-650 outline-none"
+    >
+      <div className="px-3 py-2">
+        <Label.Root className="label mb-1">Body</Label.Root>
+
+        <MessageTextboxEditor
+          ref={textboxEditorRef}
+          key={open ? messageBody : undefined}
+          initialValue={messageBody}
+          onEnterSend={handleEditSubmit}
+          onSuggestionChange={() => {}}
+        />
+      </div>
+    </Dialog>
   );
 }

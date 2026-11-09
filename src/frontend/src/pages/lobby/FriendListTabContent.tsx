@@ -75,7 +75,6 @@ export default function FriendListTabContent() {
   };
 
   useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
-    console.log("unfriended", event);
     removeUser(event.invokerUserId);
   });
 

@@ -101,8 +101,6 @@ function SuccessfullyLoaded() {
   });
 
   useSignalREvent(["ServerRoleUpdated", "ServerRoleDeleted"], async (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
-    console.log("ServerRoleUpdated");
-
     if (serverDetails?.id !== event.serverId) return;
     if (!serverDetails.authorizeInfo.roles.some(r => r.id === event.roleId)) return;
 

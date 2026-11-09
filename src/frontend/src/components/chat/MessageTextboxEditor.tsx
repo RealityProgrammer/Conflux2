@@ -74,8 +74,8 @@ export interface MessageTextboxEditorRef {
 }
 
 interface MessageTextboxEditorProps {
-  value?: string;
-  onTextChange: (text: string, cursorPosition: number) => void;
+  initialValue?: string;
+  onTextChange?: (text: string, cursorPosition: number) => void;
   onEnterSend: () => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
   onImagePaste?: (file: File) => void;
@@ -586,7 +586,7 @@ const lexicalExtensions = defineExtension({
 });
 
 export default function MessageTextboxEditor({
-  value = "",
+  initialValue = "",
   onTextChange,
   onEnterSend,
   onSuggestionChange,
@@ -684,7 +684,7 @@ export default function MessageTextboxEditor({
     <LexicalExtensionComposer extension={lexicalExtensions} contentEditable={null}>
       <div className="flex-1 relative flex flex-row items-end gap-2">
         <TextArea
-          value={value}
+          initialValue={initialValue}
           onTextChange={onTextChange}
           onEnterSend={onEnterSend}
           onSuggestionChange={onSuggestionChange}
@@ -700,8 +700,8 @@ export default function MessageTextboxEditor({
 }
 
 interface TextAreaProps {
-  value?: string;
-  onTextChange: (text: string, cursorPosition: number) => void;
+  initialValue?: string;
+  onTextChange?: (text: string, cursorPosition: number) => void;
   onEnterSend: () => void;
   onEditorReady: (editor: LexicalEditor) => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
@@ -710,7 +710,7 @@ interface TextAreaProps {
 }
 
 function TextArea({
-  value = "",
+  initialValue = "",
   onTextChange,
   onEnterSend,
   onEditorReady,
@@ -719,31 +719,20 @@ function TextArea({
   lastSelectionRef,
 }: TextAreaProps) {
   const [editor] = useLexicalComposerContext();
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
     onEditorReady(editor);
-  }, [editor, onEditorReady]);
 
-  // synchronize value
-  useEffect(() => {
-    if (!value) return;
-
+    // update initial value
     editor.update(() => {
-      const currentText = $getRoot().getTextContent();
-
-      // only overwrite editor state if it is the initial load or value changed
-      if (isInitialMount.current || currentText !== value) {
-        $getRoot().clear();
-
-        if (value.trim() !== "") {
-          $convertFromMarkdownString(value, CHAT_MARKDOWN_TRANSFORMERS);
-        }
-
-        isInitialMount.current = false;
+      $getRoot().clear();
+      if (initialValue && initialValue.trim() !== "") {
+        $convertFromMarkdownString(initialValue, CHAT_MARKDOWN_TRANSFORMERS);
+      } else {
+        $getRoot().append($createParagraphNode());
       }
     });
-  }, [editor, value]);
+  }, [editor]);
 
   // handle escape to next paragraph block when user press Escape on codeblock or quoteblock
   useEffect(() => {
@@ -1028,7 +1017,7 @@ function TextArea({
   );
 }
 
-function LexicalSyncPlugin({ onTextChange }: { onTextChange: (text: string, cursor: number) => void }) {
+function LexicalSyncPlugin({ onTextChange }: { onTextChange?: (text: string, cursor: number) => void }) {
   return (
     <OnChangePlugin
       onChange={(editorState: EditorState) => {
@@ -1041,7 +1030,7 @@ function LexicalSyncPlugin({ onTextChange }: { onTextChange: (text: string, curs
             cursor = getGlobalCursorOffset(selection);
           }
 
-          onTextChange(text, cursor);
+          onTextChange?.(text, cursor);
         });
       }}
     />

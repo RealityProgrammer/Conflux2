@@ -1,6 +1,5 @@
 import {MessageItem} from "../components/chat/MessageItem.tsx";
 import type {TimelineItem} from "../components/chat/TimelineItem.ts";
-import {MessageEditorItem} from "../components/chat/MessageEditorItem.tsx";
 import {DateSeparator} from "../components/chat/DateSeparator.tsx";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
 import {SendingMessage} from "../components/chat/SendingMessage.tsx";
@@ -22,8 +21,7 @@ function isSameDay(d1: Date, d2: Date): boolean {
 }
 
 export default function useTimelineItems(
-  messagePages: InfiniteData<TimelineMessagePage | null | undefined, unknown> | undefined,
-  editingMessageId?: string | undefined,
+  messagePages: InfiniteData<TimelineMessagePage | null | undefined, unknown> | undefined
 ): TimelineItem[] {
   const { conversationId } = useChatContainerContext();
 
@@ -67,11 +65,7 @@ export default function useTimelineItems(
           { ...message, body: editingOperation.newBody } :
           message;
 
-        items.push(editingMessageId === message.id ?
-          new MessageEditorItem({
-            message: displayingMessage,
-            showHeader: messageHasHeader,
-          }) :
+        items.push(
           new MessageItem({
             message: displayingMessage,
             showHeader: messageHasHeader,

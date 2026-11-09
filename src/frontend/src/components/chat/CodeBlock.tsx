@@ -4,12 +4,12 @@ import IconButton from "../IconButton.tsx";
 import { BsCopy } from "react-icons/bs";
 import {useEffect, useState} from "react";
 
-const loadedLanguages = new Set<string>();
-
 interface CodeBlockProps {
   language?: string;
   code: string;
 }
+
+const loadedLanguages = new Set<string>();
 
 export default function CodeBlock({ language, code }: CodeBlockProps) {
   const [isLoaded, setIsLoaded] = useState(false);

@@ -133,7 +133,11 @@ const markdownComponents: Components = {
       const code = String(codeProps.children).replace(/\n$/, "");
 
       return (
-        <CodeBlock language={match?.[1]} code={code}/>
+        <div className="h-32">
+
+        </div>
+
+        // <CodeBlock language={match?.[1]} code={code}/>
       );
     }
 

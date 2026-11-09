@@ -7,7 +7,7 @@ export interface TimelineContext {
     onMessageReplyTrigger: (message: TimelineMessageDto) => void;
 
     onEditCancel: () => void;
-    onEditDraftChange: (body: string | null) => void;
+    // onEditDraftChange: (body: string | null) => void;
     onEditSaved: (newBody: string | null) => void;
 
     onAttachmentClick: (attachments: MessageAttachmentDto[], index: number) => void;
@@ -22,7 +22,7 @@ export interface TimelineContext {
   };
 
   states: {
-    editingMessageDraft: string | null;
+    // editingMessageDraft: string | null;
     highlightedMessageId: string | null;
     allowEditMessage: boolean;
     allowDeleteMessage: boolean;
