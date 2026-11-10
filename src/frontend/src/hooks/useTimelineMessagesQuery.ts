@@ -61,6 +61,5 @@ export default function useTimelineMessagesQuery(
     },
 
     staleTime: 60 * 30 * 1000,
-    refetchOnWindowFocus: false,
   });
 }

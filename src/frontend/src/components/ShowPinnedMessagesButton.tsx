@@ -29,7 +29,6 @@ export default function ShowPinnedMessagesButton() {
     enabled: hasBeenOpened,
     staleTime: 1000 * 60 * 15,
     retry: false,
-    refetchOnWindowFocus: false,
   });
 
   const allElements = data?.pages.flatMap((page) => page?.pinnedMessages.nodes ?? []) ?? [];

@@ -19,5 +19,5 @@ public sealed partial record MessageSearchDto {
     [Required] public string? Body { get; set; } = Body;
     [Required] public UserIdentityProfileDto Sender { get; set; } = Sender;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
-	[Required] public ICollection<MessageAttachmentDto> Attachments { get; set; } = Attachments;
+	[Required] public IList<MessageAttachmentDto> Attachments { get; set; } = Attachments;
 }

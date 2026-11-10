@@ -66,7 +66,6 @@ export default function RoleManagement() {
       return undefined;
     },
     staleTime: 0,
-    refetchOnWindowFocus: false,
   });
 
   const invalidateRoleQuery = () => {

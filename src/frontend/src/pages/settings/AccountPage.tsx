@@ -55,7 +55,6 @@ function AccountInfoContainer() {
   const auth = useAuth();
   
   const { data, isLoading, isError } = useGetSessionUserAccountInfoQuery(undefined, {
-    refetchOnWindowFocus: false,
     staleTime: 30 * 60 * 1000,
   });
 
@@ -324,7 +323,6 @@ function AccountSessions() {
   const queryClient = useQueryClient();
   
   const { data, isLoading, isError } = useSessionsQuery({
-    refetchOnWindowFocus: false,
     retry: false,
   });
 

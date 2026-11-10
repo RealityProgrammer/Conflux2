@@ -1,9 +1,10 @@
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
-import type {TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
+import type {EditedMessageDto, TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
 
 interface UseTimelineMessagesResult {
   appendMessage: (message: TimelineMessageDto) => void;
-  updateMessage: (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId">>) => void;
+  updateMessage: (messageId: string, properties: EditedMessageDto) => void;
+  updatePinStatus: (messageId: string, isPinned: boolean) => void;
   deleteMessage: (messageId: string) => void;
 }
 
@@ -51,7 +52,7 @@ export default function useTimelineMessageMutations(
     });
   };
 
-  const updateMessage = (messageId: string, properties: Partial<Omit<TimelineMessageDto, "id" | "type" | "conversationId" | "replyTo" | "sender">>) => {
+  const updateMessage = (messageId: string, properties: EditedMessageDto) => {
     modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
       let hasMessage = false;
       for (const page of oldData.pages) {
@@ -73,7 +74,38 @@ export default function useTimelineMessageMutations(
           return {
             ...page,
             messages: page.messages.map(m => m.id === messageId ?
-              {...m, ...properties} :
+              {...m, body: properties.newBody, attachments: properties.attachments} :
+              m
+            ),
+          };
+        }),
+      };
+    });
+  };
+
+  const updatePinStatus = (messageId: string, isPinned: boolean) => {
+    modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
+      let hasMessage = false;
+      for (const page of oldData.pages) {
+        if (!page) continue;
+
+        hasMessage = page.messages.some(m => m.id === messageId);
+        if (hasMessage) break;
+      }
+
+      if (!hasMessage) return oldData;
+
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+          if (!page || !page.messages.some(m => m.id === messageId)) {
+            return page;
+          }
+
+          return {
+            ...page,
+            messages: page.messages.map(m => m.id === messageId ?
+              {...m, isPinned} :
               m
             ),
           };
@@ -113,6 +145,7 @@ export default function useTimelineMessageMutations(
   return {
     appendMessage,
     updateMessage,
+    updatePinStatus,
     deleteMessage,
   };
 }

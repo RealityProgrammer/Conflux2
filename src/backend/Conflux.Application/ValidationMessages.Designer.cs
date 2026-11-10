@@ -63,9 +63,21 @@ namespace Conflux.Application {
             }
         }
         
+        internal static string StringMaxLength_Format {
+            get {
+                return ResourceManager.GetString("StringMaxLength_Format", resourceCulture);
+            }
+        }
+        
         internal static string TimeSpanPositive {
             get {
                 return ResourceManager.GetString("TimeSpanPositive", resourceCulture);
+            }
+        }
+        
+        internal static string MessageMaximumAttachmentsCount {
+            get {
+                return ResourceManager.GetString("MessageMaximumAttachmentsCount", resourceCulture);
             }
         }
     }

@@ -6,7 +6,13 @@ import {router} from "./router.tsx"
 import {csrfService} from "./api/csrfService.ts";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
-export const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  }
+});
 
 async function initializeApp() {
   await csrfService.requestCsrfToken();

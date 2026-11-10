@@ -23,7 +23,6 @@ export default function ConversationContextProvider({
     source.type === "dm" ? source.peerId : "",
     {
       enabled: source.type === "dm",
-      refetchOnWindowFocus: false,
       retry: 2,
       staleTime: 30 * 60 * 1000,
     },
@@ -33,7 +32,6 @@ export default function ConversationContextProvider({
     source.type === "server-channel" ? { serverId: source.serverId, channelId: source.channelId } : { serverId: "???", channelId: "???" },
     {
       enabled: source.type === "server-channel",
-      refetchOnWindowFocus: false,
       retry: 2,
       staleTime: 30 * 60 * 1000,
     }

@@ -134,7 +134,6 @@ function useGroupedServerMembers(serverId: string) {
 
         return undefined;
       },
-      refetchOnWindowFocus: false,
       staleTime: 15 * 30 * 1000,
     }
   );

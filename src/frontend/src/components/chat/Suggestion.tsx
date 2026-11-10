@@ -5,7 +5,7 @@ import {Separator} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
 import useUserEmojis from "../../hooks/useUserEmojis.ts";
 import Spinner from "../Spinner.tsx";
-import type {EmojiEntryDto, ServerEmojiGroupDto, UserIdentityProfileDto} from "../../api/types.ts";
+import type {EmojiEntryDto, UserIdentityProfileDto} from "../../api/types.ts";
 import {EmojiGroup} from "./EmojiGroup.tsx";
 import {useInfiniteGetMentionableUsersQuery} from "../../graphql/infiniteQueries.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
@@ -179,7 +179,6 @@ function MentionMode({className, searchTerm = "", onSelect}: MentionProps) {
     { conversationId, nameFilter: searchTerm },
     {
       enabled: searchTerm.length >= 3,
-      refetchOnWindowFocus: false,
       initialPageParam: { after: null },
       getNextPageParam: (lastPage) => {
         const pageInfo = lastPage?.mentionableUsers?.pageInfo;

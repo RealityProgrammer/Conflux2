@@ -23,7 +23,7 @@ export default function MessageAttachments({
             >
               {attachment.type.startsWith("image") ? (
                 <img
-                  src={conversationService.getAttachmentImageUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentViewUrl(attachment.id)}
                   alt="attachment"
                   className="object-cover size-full"
                   loading="lazy"
@@ -31,7 +31,7 @@ export default function MessageAttachments({
                 />
               ) : attachment.type.startsWith("video") ? (
                 <video
-                  src={conversationService.getAttachmentImageUrl(attachment.id, false)}
+                  src={conversationService.getAttachmentViewUrl(attachment.id)}
                   className="object-cover size-full"
                   autoPlay={false}
                   onClick={() => onAttachmentClick(index)}
@@ -53,7 +53,7 @@ export default function MessageAttachments({
         className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
         orientation="horizontal">
         <ScrollArea.Thumb
-          className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
+          className="relative flex-1 rounded-full bg-gray-400"/>
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   );

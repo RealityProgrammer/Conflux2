@@ -4,7 +4,7 @@ import type {
   TimelineMessageDto,
   ServiceResponse,
   TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails, MentionSource,
-  MessageSearchPage
+  MessageSearchPage, EditedMessageDto
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
@@ -69,27 +69,15 @@ export const conversationService = {
     }
   },
 
-  editMessage: async (conversationId: string, messageId: string, newBody: string | null): Promise<ServiceResponse> => {
+  editMessage: async (conversationId: string, messageId: string, newBody: string | null, removeAttachmentIds: string[]): Promise<EditedMessageDto> => {
     const trimmedBody = newBody?.trim();
 
-    try {
-      const formData = new FormData();
+    const response: AxiosResponse<BackendResponse<EditedMessageDto>> = await apiClient.patchForm(
+      `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+      { body: trimmedBody, removeAttachmentIds }
+    );
 
-      if (trimmedBody) {
-        formData.append("body", trimmedBody);
-      }
-
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.patchForm(`/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`, formData);
-
-      return {
-        success: true,
-        statusCode: response.status,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data.data!;
   },
 
   deleteMessage: async (conversationId: string, messageId: string): Promise<ServiceResponse> => {
@@ -125,18 +113,8 @@ export const conversationService = {
     }
   },
 
-  getAttachmentImageUrl: (attachmentId: string, forceRefresh: boolean): string => {
-    let refreshParam: string;
-
-    if (forceRefresh) {
-      const params = new URLSearchParams();
-      params.append("t", new Date().getTime().toString());
-      refreshParam = `?${params.toString()}`;
-    } else {
-      refreshParam = "";
-    }
-
-    return `/api/attachments/${encodeURIComponent(attachmentId)}/image${refreshParam}`;
+  getAttachmentViewUrl: (attachmentId: string): string => {
+    return `/api/attachments/${encodeURIComponent(attachmentId)}/view`;
   },
 
   getAttachmentDownloadUrl: (attachmentId: string): string => {

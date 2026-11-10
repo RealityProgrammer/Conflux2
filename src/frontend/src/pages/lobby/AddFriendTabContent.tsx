@@ -22,7 +22,6 @@ export default function AddFriendTabContent() {
 
   const { data, isEnabled, isLoading, isError } = useDiscoverFriend(searchTerm, {
     enabled: searchTerm.length >= 8,
-    refetchOnWindowFocus: false,
     retry: false,
   });
 

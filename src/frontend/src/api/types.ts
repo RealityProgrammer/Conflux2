@@ -34,6 +34,7 @@ export type RefreshResponse = components["schemas"]["RefreshResponse"];
 export type StartCallResult = components["schemas"]["StartCallResult"];
 export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
 export type TimelineMessageDto = components["schemas"]["TimelineMessageDto"];
+export type EditedMessageDto = components["schemas"]["EditedMessageDto"];
 export type MessageAttachmentDto = components["schemas"]["MessageAttachmentDto"];
 export type TimelineMessagePage = components["schemas"]["TimelineMessagePage"];
 export type ServerChannelIdentityDto = components["schemas"]["ServerChannelIdentityDto"];
@@ -65,8 +66,3 @@ export type MentionSource = components["schemas"]["MentionSource"];
 export type MessageSearchDto = components["schemas"]["MessageSearchDto"];
 export type MessageSearchPage = components["schemas"]["MessageSearchPage"];
 export type EmojiEntryDto = components["schemas"]["EmojiEntryDto"];
-
-export type EditedMessageDto = {
-  id: string;
-  newBody: string | null;
-}

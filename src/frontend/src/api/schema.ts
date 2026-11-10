@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/attachments/{attachmentId}/image": {
+    "/api/attachments/{attachmentId}/view": {
         parameters: {
             query?: never;
             header?: never;
@@ -1521,14 +1521,14 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/x-www-form-urlencoded": {
+                        "DisplayName.HasValue"?: boolean;
                         "DisplayName.Value"?: string;
-                        "DisplayName.IsSet"?: boolean;
+                        "Pronouns.HasValue"?: boolean;
                         "Pronouns.Value"?: string;
-                        "Pronouns.IsSet"?: boolean;
+                        "Biography.HasValue"?: boolean;
                         "Biography.Value"?: string;
-                        "Biography.IsSet"?: boolean;
+                        "ManualPresenceStatus.HasValue"?: boolean;
                         "ManualPresenceStatus.Value"?: components["schemas"]["PresenceStatus"];
-                        "ManualPresenceStatus.IsSet"?: boolean;
                         "Avatar.Type"?: components["schemas"]["FileOperationType"];
                         "Avatar.File"?: components["schemas"]["IFormFile"];
                         "Banner.Type"?: components["schemas"]["FileOperationType"];
@@ -2776,7 +2776,10 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/x-www-form-urlencoded": {
-                        Body?: string;
+                        "Body.HasValue"?: boolean;
+                        "Body.Value"?: string;
+                        RemoveAttachmentIds?: string[];
+                        AddAttachments?: components["schemas"]["IFormFile"][];
                     };
                 };
             };
@@ -2787,9 +2790,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
+                        "text/plain": components["schemas"]["ApiResponseOfEditedMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfEditedMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfEditedMessageDto"];
                     };
                 };
             };
@@ -2997,6 +3000,10 @@ export interface components {
             data: null | components["schemas"]["DmConversationDetails"];
             error: components["schemas"]["Error"];
         };
+        ApiResponseOfEditedMessageDto: {
+            data: null | components["schemas"]["EditedMessageDto"];
+            error: components["schemas"]["Error"];
+        };
         ApiResponseOfEmojiDto: {
             data: null | components["schemas"]["EmojiDto"];
             error: components["schemas"]["Error"];
@@ -3175,6 +3182,10 @@ export interface components {
             conversationId: string;
             isFriended: boolean;
         };
+        EditedMessageDto: {
+            newBody: null | string;
+            attachments: components["schemas"]["MessageAttachmentDto"][];
+        };
         EmojiDto: {
             /** Format: uuid */
             id: string;
@@ -3329,11 +3340,10 @@ export interface components {
         /** @enum {string} */
         MessageType: MessageType;
         OptionalOfint: null | number;
-        PatchFieldOfint: number;
-        PatchFieldOfstring: string;
+        OptionalOfstring: string;
         PatchRoleRequest: {
-            name: components["schemas"]["PatchFieldOfstring"];
-            authorizeLevel: components["schemas"]["PatchFieldOfint"];
+            name: components["schemas"]["OptionalOfstring"];
+            authorizeLevel: components["schemas"]["OptionalOfint"];
             permissionStates: {
                 CreateRole?: components["schemas"]["PermissionState"];
                 UpdateRole?: components["schemas"]["PermissionState"];

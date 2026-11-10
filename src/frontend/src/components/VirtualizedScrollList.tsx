@@ -214,7 +214,7 @@ export default function VirtualizedScrollList({
         }`}
         orientation="vertical"
       >
-        <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400" />
+        <ScrollArea.Thumb className="relative flex-1 rounded-full bg-gray-400" />
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   );

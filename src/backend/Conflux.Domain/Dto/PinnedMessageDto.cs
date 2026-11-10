@@ -20,7 +20,7 @@ namespace Conflux.Domain.Dto;
 public sealed partial record PinnedMessageDto {
     [Required] public Guid Id { get; set; } = Id;
     public string? Body { get; set; } = Body;
-    [Required] public ICollection<MessageAttachmentDto> Attachments { get; set; } = Attachments;
+    [Required] public IList<MessageAttachmentDto> Attachments { get; set; } = Attachments;
     [Required] public Guid? SenderUserId { get; set; } = SenderUserId;
     public TimelineMessageSenderDto? Sender { get; set; } = Sender;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;

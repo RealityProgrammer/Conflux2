@@ -27,7 +27,13 @@
     <data name="StringMaxLength" xml:space="preserve">
         <value>{PropertyName} cannot exceed {MaxLength} characters.</value>
     </data>
+    <data name="StringMaxLength_Format" xml:space="preserve">
+        <value>{{PropertyName}} cannot exceed {0} characters.</value>
+    </data>
     <data name="TimeSpanPositive" xml:space="preserve">
         <value>{PropertyName} must be a positive time span.</value>
+    </data>
+    <data name="MessageMaximumAttachmentsCount" xml:space="preserve">
+        <value>A message can have at most {0} attachments.</value>
     </data>
 </root>

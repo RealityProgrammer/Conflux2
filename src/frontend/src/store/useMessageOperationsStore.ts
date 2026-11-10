@@ -11,6 +11,7 @@ export type SendMessageOperation = {
 
 export type EditMessageOperation = {
   newBody: string | null;
+  removeAttachmentIds: string[];
   error: boolean;
 }
 
@@ -23,7 +24,7 @@ interface MessageOperationStoreType {
   updateSendOperation: (operationId: string, error: boolean) => void;
   removeSendOperation: (operationId: string) => void;
 
-  addEditOperation: (messageId: string, newBody: string | null) => void;
+  addEditOperation: (messageId: string, newBody: string | null, removeAttachmentIds: string[]) => void;
   updateEditOperation: (messageId: string, error: boolean) => void;
   removeEditOperation: (messageId: string) => void;
 
@@ -71,10 +72,10 @@ export const useMessageOperationsStore = create<MessageOperationStoreType>((set)
     };
   }),
 
-  addEditOperation: (messageId: string, newBody: string | null) => set((state) => ({
+  addEditOperation: (messageId: string, newBody: string | null, removeAttachmentIds: string[]) => set((state) => ({
     editOperations: {
       ...state.editOperations,
-      [messageId]: { newBody, error: false },
+      [messageId]: { newBody, removeAttachmentIds, error: false },
     },
   })),
 

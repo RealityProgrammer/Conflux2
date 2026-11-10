@@ -1,6 +1,7 @@
 import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import type {
+  EditedMessageDto,
   ServiceResponse,
   TimelineMessageDto,
 } from "../api/types.ts";
@@ -13,7 +14,7 @@ import {useActiveConversationStore} from "../store/useActiveConversationStore.ts
 import {useConversationContext} from "./ConversationContext.tsx";
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
-type EditMessagePayload = { messageId: string, newBody: string | null };
+type EditMessagePayload = { messageId: string, newBody: string | null, removeAttachmentIds: string[]; };
 type DeleteMessagePayload = { messageId: string };
 
 interface ChatContainerContextType {
@@ -27,7 +28,7 @@ interface ChatContainerContextType {
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
 
   handleSendMessage: (messageInput: MessageInput) => void;
-  handleEditMessage: (originalMessage: TimelineMessageDto, newBody: string | null) => void;
+  handleEditMessage: (originalMessage: TimelineMessageDto, newBody: string | null, removeAttachmentIds: string[]) => void;
   handleDeleteMessage: (originalMessage: TimelineMessageDto) => void;
 
   retrySendOperation: (operationId: string) => void;
@@ -129,20 +130,15 @@ export default function ChatContainerContextProvider({
   const removeEditOperation = useMessageOperationsStore((state) => state.removeEditOperation);
 
   const editMessageMutation = useMutation({
-    mutationFn: async (payload: EditMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
-      return await conversationService.editMessage(conversationId, payload.messageId, payload.newBody);
+    mutationFn: async (payload: EditMessagePayload): Promise<EditedMessageDto> => {
+      return await conversationService.editMessage(conversationId, payload.messageId, payload.newBody, payload.removeAttachmentIds);
     },
     onMutate: async (payload: EditMessagePayload) => {
-      addEditOperation(payload.messageId, payload.newBody);
+      addEditOperation(payload.messageId, payload.newBody, payload.removeAttachmentIds);
     },
-    onSuccess: async (result: ServiceResponse, payload: EditMessagePayload) => {
-      if (result.success) {
-        removeEditOperation(payload.messageId);
-        updateMessage(payload.messageId, { body: payload.newBody });
-      } else {
-        updateEditOperation(payload.messageId, true);
-        toast.error("Failed to edit message.");
-      }
+    onSuccess: async (result: EditedMessageDto, payload: EditMessagePayload) => {
+      removeEditOperation(payload.messageId);
+      updateMessage(payload.messageId, { newBody: result.newBody, attachments: result.attachments });
     },
     onError: (_error, payload) => {
       updateEditOperation(payload.messageId, true);
@@ -154,7 +150,7 @@ export default function ChatContainerContextProvider({
     const op = editOperations[messageId];
     if (!op) return;
 
-    editMessageMutation.mutate({messageId, newBody: op.newBody});
+    editMessageMutation.mutate({messageId, newBody: op.newBody, removeAttachmentIds: op.removeAttachmentIds});
   };
 
   const addDeletingMessage = useMessageOperationsStore((state) => state.addDeletingMessage);
@@ -193,12 +189,13 @@ export default function ChatContainerContextProvider({
     setReplyingMessage(null);
   };
 
-  const handleEditMessage = async (originalMessage: TimelineMessageDto, newBody: string | null) => {
+  const handleEditMessage = async (originalMessage: TimelineMessageDto, newBody: string | null, removeAttachmentIds: string[]) => {
     if (!conversationId) return;
 
     editMessageMutation.mutate({
       messageId: originalMessage.id,
-      newBody
+      newBody,
+      removeAttachmentIds,
     });
   };
 

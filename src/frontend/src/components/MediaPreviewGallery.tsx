@@ -1,7 +1,7 @@
 import {Dialog} from "radix-ui";
 import IconButton from "./IconButton.tsx";
 import {BsChevronLeft, BsChevronRight} from "react-icons/bs";
-import {type MouseEvent, useEffect, useRef, useState} from "react";
+import {type MouseEvent, useRef, useState} from "react";
 import {useEventListener} from "usehooks-ts";
 import {FaDownload, FaXmark} from "react-icons/fa6";
 import {useMediaGalleryStore} from "../store/useMediaGalleryStore.ts";

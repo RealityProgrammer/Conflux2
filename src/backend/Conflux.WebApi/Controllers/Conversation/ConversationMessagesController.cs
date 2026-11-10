@@ -1,15 +1,12 @@
 using Conflux.Application.Dto;
 using Conflux.Application.Features.Conversation;
-using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.Attributes;
-using Humanizer;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Conversation;
@@ -78,16 +75,44 @@ public sealed class ConversationMessagesController(
     }
 
     [HttpPatch("{messageId:guid}"), ValidateAntiForgeryToken]
-    public async Task<ActionResult<ApiResponse>> EditMessage(
+    public async Task<ActionResult<ApiResponse<EditedMessageDto>>> EditMessage(
         Guid conversationId,
         Guid messageId,
         [FromForm] EditMessageRequest request,
         CancellationToken cancellationToken
     ) {
-        var result = await sender.Send(new EditMessageCommand(conversationId, messageId, request.Body), cancellationToken);
+        UploadFile[] addAttachmentFiles;
+        
+        if (request.AddAttachments is { Count: > 0 }) {
+            addAttachmentFiles = new UploadFile[request.AddAttachments.Count];
+            
+            for (int i = 0; i < addAttachmentFiles.Length; i++) {
+                try {
+                    addAttachmentFiles[i] = new(request.AddAttachments[i].FileName, request.AddAttachments[i].OpenReadStream());
+                } catch {
+                    foreach (var attachment in addAttachmentFiles) {
+                        if (attachment.Stream != null!) {
+                            await attachment.Stream.DisposeAsync();
+                        }
+                    }
+        
+                    return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.OperationFailure("open attachment stream")));
+                }
+            }
+        } else {
+            addAttachmentFiles = [];
+        }
+        
+        var result = await sender.Send(new EditMessageCommand(
+            conversationId, 
+            messageId, 
+            request.Body,
+            request.RemoveAttachmentIds ?? [],
+            addAttachmentFiles
+        ), cancellationToken);
 
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return Ok(new ApiResponse<EditedMessageDto>(result.Value!, Error.None));
         }
 
         return result.Error.Code switch {
@@ -211,7 +236,9 @@ public sealed class ConversationMessagesController(
     );
 
     public sealed record EditMessageRequest(
-        string? Body
+        Facet.Optional<string?> Body,
+        IReadOnlyCollection<Guid>? RemoveAttachmentIds,
+        IReadOnlyList<IFormFile>? AddAttachments
     );
 
     public sealed record SearchMessageRequest(

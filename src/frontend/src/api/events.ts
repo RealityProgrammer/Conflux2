@@ -33,6 +33,7 @@ export type MessageReceivedEvent = {
 }
 
 export type MessageEditedEvent = {
+  messageId: string;
   message: EditedMessageDto;
 }
 

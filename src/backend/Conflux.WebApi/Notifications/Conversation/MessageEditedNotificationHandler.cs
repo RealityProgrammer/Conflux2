@@ -1,5 +1,4 @@
 using Conflux.Application.Features.Conversation;
-using Conflux.Domain.Dto;
 using Conflux.WebApi.SignalR;
 using Facet;
 using Mediator;
@@ -7,7 +6,10 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Conflux.WebApi.Notifications.Conversation;
 
-[Facet(typeof(MessageEditedNotification), Include = [nameof(MessageEditedNotification.Message)])]
+[Facet(typeof(MessageEditedNotification), Include = [
+    nameof(MessageEditedNotification.Message),
+    nameof(MessageEditedNotification.MessageId),
+])]
 public sealed partial record MessageEditedEvent;
 
 internal sealed class EditedNotificationHandler(

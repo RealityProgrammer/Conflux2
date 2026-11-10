@@ -345,7 +345,6 @@ function AddSenderFilterButton({
 
         return undefined;
       },
-      refetchOnWindowFocus: false,
     }
   );
 
@@ -457,7 +456,6 @@ function ResultView({
     {conversationId, request: searchRequest},
     {
       staleTime: 0,
-      refetchOnWindowFocus: false,
       retry: false,
     }
   );

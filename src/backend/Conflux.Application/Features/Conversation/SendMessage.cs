@@ -36,7 +36,7 @@ public sealed class SendMessageCommandValidator : AbstractValidator<SendMessageC
 
         RuleFor(c => c.Attachments)
             .Must(attachments => attachments.Count <= 4)
-            .WithMessage("Message only allow 4 attachments.");
+            .WithMessage(string.Format(ValidationMessages.MessageMaximumAttachmentsCount, 4));
 
         RuleForEach(c => c.Attachments)
             .Must(attachment => attachment.Stream.Length <= options.MaxMessageAttachmentSize)
@@ -95,7 +95,6 @@ public sealed partial class SendMessageHandler(
             SenderUserId = senderUserId,
             Conversation = conversation,
             ReplyToId = command.ReplyToId,
-            CreatedAt = utcNow,
         };
         
         messageRepository.Add(message);
@@ -111,18 +110,17 @@ public sealed partial class SendMessageHandler(
         AttachmentUploadResult[] attachmentUploadResults = uploadResults.Value!;
 
         // add MediaItem objects
-        MediaItem[] mediaItems = new MediaItem[attachmentUploadResults.Length];
+        message.Attachments = attachmentUploadResults.Length == 0 ? Array.Empty<MediaItem>() : new List<MediaItem>();
+
         for (int i = 0; i < attachmentUploadResults.Length; i++) {
-            mediaItems[i] = new() {
+            message.Attachments.Add(new() {
                 Id = attachmentUploadResults[i].Id,
+                Type = MediaItemType.MessageAttachment,
                 FileName = attachmentUploadResults[i].FileName,
                 ContentType = attachmentUploadResults[i].Format.MediaType,
                 Version = 0,
-                Type = MediaItemType.MessageAttachment,
-            };
+            });
         }
-        
-        message.Attachments = mediaItems;
         
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -8,7 +8,7 @@ namespace Conflux.WebApi.Controllers;
 public sealed class AttachmentController(
     IMessageMediaService messageMediaService
 ) : ControllerBase {
-    [HttpGet("image")]
+    [HttpGet("view")]
     public RedirectResult GetImage(Guid attachmentId) {
         return Redirect(messageMediaService.GetPreSignedUrl(attachmentId, TimeSpan.FromHours(3)));
     }

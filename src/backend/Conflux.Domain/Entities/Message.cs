@@ -8,7 +8,7 @@ public class Message : IHasCreatedAt {
     public MessageType Type { get; set; }
     
     public string? Body { get; set; }
-    public virtual ICollection<MediaItem> Attachments { get; set; } = [];
+    public virtual IList<MediaItem> Attachments { get; set; } = [];
     public NpgsqlTsVector SearchVector { get; set; } = null!;
     
     public MessageProperties? Properties { get; set; }

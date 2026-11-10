@@ -1,9 +1,6 @@
 import IconButton from "../IconButton.tsx";
 import {
-  BsCameraVideo,
-  BsMusicNote,
   BsPaperclip,
-  BsTrashFill,
   BsX
 } from "react-icons/bs";
 import {
@@ -23,6 +20,7 @@ import {FaPaperPlane, FaXmark} from "react-icons/fa6";
 import EmojiPanelButton from "./EmojiPanelButton.tsx";
 import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {Attachment} from "./Attachment.tsx";
+import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -224,12 +222,12 @@ export default function ChatInput({disabled}: ChatInputProps) {
       {attachments.length > 0 && (
         <ScrollArea.Root className="w-full">
           <ScrollArea.Viewport className="size-full">
-            <div className="flex flex-row gap-2 items-center">
+            <div className="flex flex-row gap-4 items-center">
               {attachments.map((attachment, index) => (
                 <div key={index} className="relative shrink-0 h-13">
                   <Attachment.FilePill
                     key={index}
-                    file={{ type: attachment.file.type, previewSrc: attachment.previewUrl ?? "", fileName: attachment.file.name }}
+                    file={{ type: attachment.file.type, src: attachment.previewUrl ?? "", fileName: attachment.file.name }}
                     className="h-full border-2 border-gray-600 rounded-md overflow-hidden pr-4 max-w-64 hover-highlight cursor-pointer"
                     onClick={() => {
                       setGalleryElements(attachments.map(attachment => ({
@@ -257,18 +255,14 @@ export default function ChatInput({disabled}: ChatInputProps) {
             orientation="horizontal"
           >
             <ScrollArea.Thumb
-              className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
+              className="relative flex-1 rounded-full bg-gray-400"/>
           </ScrollArea.Scrollbar>
         </ScrollArea.Root>
       )}
 
       <section className="flex flex-row items-end gap-2">
-        <input
+        <MessageAttachmentInput
           ref={fileInputRef}
-          type="file"
-          accept="image/jpeg, image/png, image/gif, audio/ogg, audio/wav, audio/mp4, audio/mpeg, audio/vorbis, video/H263, video/H264, video/H265, video/mp4, video/ogg"
-          multiple
-          hidden
           onChange={handleAttachmentChanged}
         />
 

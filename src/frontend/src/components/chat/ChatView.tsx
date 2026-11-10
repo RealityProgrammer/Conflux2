@@ -26,12 +26,7 @@ import Spinner from "../Spinner.tsx";
 import {FaArrowDown} from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
 import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
-import Dialog from "../Dialog.tsx";
-import {BsWrenchAdjustable} from "react-icons/bs";
-import Container from "../Container.tsx";
-import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
-import {Label} from "radix-ui";
-import MessageAttachments from "./MessageAttachments.tsx";
+import EditMessageModal from "./EditMessageModal.tsx";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -97,7 +92,7 @@ export function ChatView({
     })();
   }, [conversationId]);
 
-  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
+  const { appendMessage, updateMessage, updatePinStatus, deleteMessage } = useTimelineMessageMutations(conversationId);
 
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
@@ -360,11 +355,11 @@ export function ChatView({
   }
 
   // edit handling
-  const handleSaveEdit = async (newBody: string | null) => {
+  const handleSaveEdit = async (newBody: string | null, removeAttachmentIds: string[]) => {
     if (editingMessage === undefined) return;
 
     setEditingMessage(undefined);
-    handleEditMessage(editingMessage, newBody?.trim() ?? null);
+    handleEditMessage(editingMessage, newBody?.trim() ?? null, removeAttachmentIds);
   };
 
   // signalr events
@@ -375,7 +370,7 @@ export function ChatView({
   });
 
   useSignalREvent("MessageEdited", async (event: MessageEditedEvent) => {
-    updateMessage(event.message.id, { body: event.message.newBody });
+    updateMessage(event.messageId, event.message);
   });
 
   useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
@@ -390,16 +385,14 @@ export function ChatView({
         // setEditingMessageDraft(message.body ?? "");
       },
       onMessageReplyTrigger: setReplyingMessage,
-      // onEditDraftChange: (body: string | null) => setEditingMessageDraft(body),
       onEditCancel: () => {
         setEditingMessage(undefined);
-        // setEditingMessageDraft(null);
       },
-      onEditSaved: (newBody) => handleSaveEdit(newBody),
+      updateEditMessage: (newBody: string | null, removeAttachmentIds) => handleSaveEdit(newBody, removeAttachmentIds),
       onAttachmentClick: (messageAttachments: MessageAttachmentDto[], clickedIndex: number) => {
         setMediaElements(messageAttachments.map(attachment => ({
           id: attachment.id,
-          src: conversationService.getAttachmentImageUrl(attachment.id, false),
+          src: conversationService.getAttachmentViewUrl(attachment.id),
           fileName: attachment.name,
           mediaType: attachment.type,
         })), clickedIndex, {
@@ -411,7 +404,7 @@ export function ChatView({
       retrySendingOperation: retrySendOperation,
       retryEditOperation,
       removeEditOperation,
-      updateMessagePin: (messageId: string, isPinned: boolean) => updateMessage(messageId, { isPinned }),
+      updateMessagePin: (messageId: string, isPinned: boolean) => updatePinStatus(messageId, isPinned),
     },
     states: {
       // editingMessageDraft: editingMessageDraft,
@@ -544,7 +537,9 @@ export function ChatView({
           }
         }}
         originalMessage={editingMessage}
-        handleSubmit={handleSaveEdit}
+        handleSubmit={(newBody: string | null, removeAttachmentIds: string[]) => {
+          handleSaveEdit(newBody, removeAttachmentIds);
+        }}
       />
 
       <DeleteMessageConfirmationDialog
@@ -562,64 +557,5 @@ export function ChatView({
         }}
       />
     </div>
-  );
-}
-
-function EditMessageModal({
-  open,
-  onOpenChange,
-  originalMessage,
-  handleSubmit,
-}: {open: boolean; onOpenChange: (open: boolean) => void; originalMessage: TimelineMessageDto | undefined; handleSubmit: (newBody: string) => void;}) {
-  const setMediaElements = useMediaGalleryStore((state) => state.setElements);
-
-  const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
-
-  const handleEditSubmit = () => {
-    if (!textboxEditorRef.current) return;
-    handleSubmit(textboxEditorRef.current.convertToMarkdownString());
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Edit Message"
-      subtitle="Should have thought of it first before sending..."
-      headerIcon={(<BsWrenchAdjustable className="size-10 fill-white"/>)}
-      contentClassName="centered-dialog w-3xl rounded-xl text-white bg-gray-650 outline-none"
-    >
-      {originalMessage && (
-        <div className="px-3 py-2">
-          <Label.Root className="label mb-1 block">Body</Label.Root>
-
-          <MessageTextboxEditor
-            ref={textboxEditorRef}
-            key={open ? originalMessage.id : undefined}
-            initialValue={originalMessage.body ?? ""}
-            onEnterSend={handleEditSubmit}
-            onSuggestionChange={() => {}}
-          />
-
-          {originalMessage.attachments && originalMessage.attachments.length > 0 && (
-            <>
-              <Label.Root className="label mb-1 mt-2 block">Attachments</Label.Root>
-
-              <MessageAttachments
-                attachments={originalMessage.attachments}
-                onAttachmentClick={(index: number) => {
-                  setMediaElements(originalMessage.attachments!.map(attachment => ({
-                    id: attachment.id,
-                    src: conversationService.getAttachmentImageUrl(attachment.id, false),
-                    fileName: attachment.name,
-                    mediaType: attachment.type,
-                  })), index, {});
-                }}
-              />
-            </>
-          )}
-        </div>
-      )}
-    </Dialog>
   );
 }

@@ -81,7 +81,7 @@ public sealed class MessageMediaService(
         }
     }
 
-    public async Task<Result> DeleteAttachments(IReadOnlyList<Guid> attachmentIds, CancellationToken cancellationToken = default) {
+    public async Task<Result> DeleteAttachments(IReadOnlyCollection<Guid> attachmentIds, CancellationToken cancellationToken = default) {
         return await blobStorage.DeleteRange(attachmentIds.Select(GetAttachmentKey), cancellationToken);
     }
 

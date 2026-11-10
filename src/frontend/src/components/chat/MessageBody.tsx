@@ -133,11 +133,7 @@ const markdownComponents: Components = {
       const code = String(codeProps.children).replace(/\n$/, "");
 
       return (
-        <div className="h-32">
-
-        </div>
-
-        // <CodeBlock language={match?.[1]} code={code}/>
+        <CodeBlock language={match?.[1]} code={code}/>
       );
     }
 
@@ -346,7 +342,6 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
   }, {
     enabled: !isKnownDead,
     staleTime: 30 * 60 * 1000,  // 30 min stale time
-    refetchOnWindowFocus: false,
     retry: 3,
   });
 

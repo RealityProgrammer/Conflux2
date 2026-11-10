@@ -14,7 +14,6 @@ export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
       return await sessionUserService.getEmojiEntryGroups();
     },
     staleTime: 60 * 60 * 1000,  // 1 hour stale time
-    refetchOnWindowFocus: false,
   });
 
   const { data, isSuccess } = queryResult;

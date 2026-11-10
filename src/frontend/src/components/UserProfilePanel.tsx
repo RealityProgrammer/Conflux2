@@ -20,7 +20,13 @@ export default function UserProfilePanel({
   className,
   ...props
 }: UserProfileCardProps) {
-  const { data, isLoading, isError } = useGetUserFullProfileQuery({ id: userId });
+  const { data, isLoading, isError } = useGetUserFullProfileQuery(
+    { id: userId },
+    {
+      retry: false,
+      staleTime: 60 * 60 * 1000,
+    }
+  );
 
   return (
     <section className={`${className}`} {...props}>

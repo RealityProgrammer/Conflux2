@@ -29,7 +29,6 @@ export default function PresenceProvider({children} : {children: ReactNode}) {
     { 
       enabled: !!userProfile?.id,
       staleTime: 60 * 30 * 1000,
-      refetchOnWindowFocus: false,
     },
   );
 

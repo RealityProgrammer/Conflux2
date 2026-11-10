@@ -78,7 +78,6 @@ function ProfileForm() {
     {
       enabled: !!auth.userProfile,
       staleTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
     }
   );
 

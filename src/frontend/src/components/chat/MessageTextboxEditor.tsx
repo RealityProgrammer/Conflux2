@@ -12,7 +12,7 @@ import {
   $isElementNode, $createParagraphNode, $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
   mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, $getNodeByKey, ParagraphNode,
-  type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType, type Transform,
+  type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from "@lexical/history";
@@ -76,7 +76,7 @@ export interface MessageTextboxEditorRef {
 interface MessageTextboxEditorProps {
   initialValue?: string;
   onTextChange?: (text: string, cursorPosition: number) => void;
-  onEnterSend: () => void;
+  onEnterSend?: () => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
   onImagePaste?: (file: File) => void;
   ref?: Ref<MessageTextboxEditorRef>;
@@ -700,7 +700,7 @@ export default function MessageTextboxEditor({
 interface TextAreaProps {
   initialValue?: string;
   onTextChange?: (text: string, cursorPosition: number) => void;
-  onEnterSend: () => void;
+  onEnterSend?: () => void;
   onEditorReady: (editor: LexicalEditor) => void;
   onSuggestionChange: (data: SuggestionData | undefined) => void;
   onImagePaste?: (file: File) => void;
@@ -807,9 +807,11 @@ function TextArea({
             return false;
           }
 
-          event.preventDefault();
-          onEnterSend();
-          return true;
+          if (onEnterSend) {
+            event.preventDefault();
+            onEnterSend();
+            return true;
+          }
         }
 
         return false;

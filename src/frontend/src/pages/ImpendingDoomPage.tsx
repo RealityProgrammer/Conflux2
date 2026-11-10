@@ -67,7 +67,6 @@ function ContentPanel() {
     },
     staleTime: Infinity,
     retry: false,
-    refetchOnWindowFocus: false,
   });
   
   return (
