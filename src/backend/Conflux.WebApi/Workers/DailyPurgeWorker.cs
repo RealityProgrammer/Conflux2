@@ -12,10 +12,11 @@ internal sealed class DailyPurgeWorker(
     IServiceScopeFactory scopeFactory,
     ILogger<DailyPurgeWorker> logger
 ) : BackgroundService {
-    private static readonly TimeSpan NotificationAge = TimeSpan.FromDays(7);
-    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         logger.LogInformation("Started.");
+        
+        // initial prune
+        await PurgeStuffs(stoppingToken);
 
         using var timer = new PeriodicTimer(TimeSpan.FromHours(24));
 

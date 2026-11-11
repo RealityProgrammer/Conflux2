@@ -5,6 +5,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -55,35 +56,41 @@ internal sealed class UserRepository(
     }
 
     public async Task<int> AnonymizeUsers(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken = default) {
-        var now = timeProvider.GetUtcNow();
+        if (userIds.Count == 0) return 0;
 
-        return await dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE "AspNetUsers" AS u
-            SET 
-                "Email" = 'ghostuser_' || t.generated_name || '@purged.gone',
-                "NormalizedEmail" = 'GHOSTUSER_' || UPPER(t.generated_name) || '@PURGED.GONE',
-                "EmailConfirmed" = false,
-                "TwoFactorEnabled" = false,
-                "UserName" = 'ghostuser_' || t.generated_name,
-                "NormalizedUserName" = 'GHOSTUSER_' || t.generated_name,
-                "DisplayName" = 'ghostuser_' || t.generated_name,
-                "PasswordHash" = 'PURGED_PASSWORD',
-                "PhoneNumber" = NULL,
-                "PhoneNumberConfirmed" = false,
-                "AvatarId" = NULL,
-                "BannerId" = NULL,
-                "Biography" = NULL,
-                "Pronouns" = NULL,
-                "DeletedAt" = {now}
-            FROM (
-                SELECT 
-                    "Id",
-                    substr(md5(random()::text), 1, 16) AS generated_name
-                FROM "AspNetUsers" 
-                WHERE "Id" = ANY({userIds})
-            ) AS t
-            WHERE u."Id" = t."Id";
-            """, cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        
+        // expensive asf but what can we do...
+        var users = await dbContext.Users
+            .Where(u => userIds.Contains(u.Id))
+            .ToListAsync(cancellationToken);
+
+        if (users.Count == 0) return 0;
+        
+        foreach (var user in users) {
+            string randomName = RandomNumberGenerator.GetString("0123456789abcdefghijklmnopqrstuvwxyz", 32);
+
+            user.Email = $"ghostuser_{randomName}@purged.gone";
+            user.NormalizedEmail = $"GHOSTUSER_{randomName.ToUpperInvariant()}@PURGED.GONE";
+            user.EmailConfirmed = false;
+            user.TwoFactorEnabled = false;
+            user.UserName = $"ghostuser_{randomName}";
+            user.NormalizedUserName = $"GHOSTUSER_{randomName}";
+            user.DisplayName = $"ghostuser_{randomName}";
+            user.PasswordHash = "PURGED_PASSWORD";
+            user.PhoneNumber = null;
+            user.PhoneNumberConfirmed = false;
+            user.AvatarVersion = null;
+            user.BannerVersion = null;
+            user.Biography = null;
+            user.Pronouns = null;
+            user.DeletedAt = now;
+            user.LockoutEnd = null;
+            user.ManualPresenceStatus = PresenceStatus.Invisible;
+            user.ConcurrencyStamp = null;
+            user.SecurityStamp = null;
+        }
+
+        return await dbContext.SaveChangesAsync(cancellationToken);
     }
 }
