@@ -100,7 +100,7 @@ public sealed class AuthenticateController(
     public async Task<ActionResult<ApiResponse>> Register([FromBody] RegisterRequest request) {
         if (request.Password != request.ConfirmPassword) {
             return BadRequest(new ApiResponse(Errors.ValidationErrorsOccurred(new() {
-                ["confirmPassword"] = ["Passwords are mismatch."],
+                [nameof(RegisterRequest.ConfirmPassword)] = ["Passwords are mismatch."],
             })));
         }
         

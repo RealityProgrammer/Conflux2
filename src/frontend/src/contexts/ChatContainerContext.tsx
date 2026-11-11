@@ -1,6 +1,7 @@
 import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
 import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import type {
+  BackendResponse,
   EditedMessageDto,
   ServiceResponse,
   TimelineMessageDto,
@@ -12,6 +13,8 @@ import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
 import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
 import {useActiveConversationStore} from "../store/useActiveConversationStore.ts";
 import {useConversationContext} from "./ConversationContext.tsx";
+import {type AxiosError, HttpStatusCode} from "axios";
+import {handleAxiosError} from "../api/errorHandling.ts";
 
 type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
 type EditMessagePayload = { messageId: string, newBody: string | null, removeAttachmentIds: string[]; newAttachments: File[] };
@@ -74,7 +77,7 @@ export default function ChatContainerContextProvider({
 
   const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
   const addSendOperation = useMessageOperationsStore((state) => state.addSendOperation);
-  const updateSendOperation = useMessageOperationsStore((state) => state.updateSendOperation);
+  const setSendOperationError = useMessageOperationsStore((state) => state.setSendOperationError);
   const removeSendOperation = useMessageOperationsStore((state) => state.removeSendOperation);
 
   const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
@@ -96,15 +99,42 @@ export default function ChatContainerContextProvider({
         idempotencyKey: payload.idempotencyKey,
         input: payload.input,
         conversationId,
-        error: false,
       });
     },
     onSuccess: async (result: TimelineMessageDto, payload: SendMessagePayload) => {
       removeSendOperation(payload.operationId);
       appendMessage(result);
     },
-    onError: (_error, payload) => {
-      updateSendOperation(payload.operationId, true);
+    onError: (error: AxiosError<BackendResponse>, payload: SendMessagePayload) => {
+      toast.error("Failed to send message.");
+
+      const response: ServiceResponse = handleAxiosError(error);
+
+      switch (response.statusCode) {
+        case HttpStatusCode.BadRequest:
+          if (response.error?.code === "ValidationErrorsOccurred") {
+            const details = response.error.details as Record<"body" | "attachments", string[]>;
+
+            setSendOperationError(payload.operationId, {
+              type: "validation",
+              fields: {
+                attachments: details.attachments,
+                body: details.body,
+              }
+            });
+          } else {
+            setSendOperationError(payload.operationId, { type: "unknown" });
+          }
+          break;
+
+        case 0 as HttpStatusCode:
+          setSendOperationError(payload.operationId, { type: "network" });
+          break;
+
+        default:
+          setSendOperationError(payload.operationId, { type: "unknown" });
+          break;
+      }
     },
   });
 
@@ -122,7 +152,7 @@ export default function ChatContainerContextProvider({
   // TODO: switch value to MessageInput once we have attachments editing
   const editOperations = useMessageOperationsStore((state) => state.editOperations);
   const addEditOperation = useMessageOperationsStore((state) => state.addEditOperation);
-  const updateEditOperation = useMessageOperationsStore((state) => state.updateEditOperation);
+  const setEditOperationError = useMessageOperationsStore((state) => state.setEditOperationError);
   const removeEditOperation = useMessageOperationsStore((state) => state.removeEditOperation);
 
   const editMessageMutation = useMutation({
@@ -136,9 +166,36 @@ export default function ChatContainerContextProvider({
       removeEditOperation(payload.messageId);
       updateMessage(payload.messageId, { newBody: result.newBody, attachments: result.attachments });
     },
-    onError: (_error, payload) => {
-      updateEditOperation(payload.messageId, true);
+    onError: (error: AxiosError<BackendResponse>, payload: EditMessagePayload) => {
       toast.error("Failed to edit message.");
+
+      const response: ServiceResponse = handleAxiosError(error);
+
+      switch (response.statusCode) {
+        case HttpStatusCode.BadRequest:
+          if (response.error?.code === "ValidationErrorsOccurred") {
+            const details = response.error.details as Record<"body" | "attachments", string[]>;
+
+            setEditOperationError(payload.messageId, {
+              type: "validation",
+              fields: {
+                attachments: details.attachments,
+                body: details.body,
+              }
+            });
+          } else {
+            setEditOperationError(payload.messageId, { type: "unknown" });
+          }
+          break;
+
+        case 0 as HttpStatusCode:
+          setEditOperationError(payload.messageId, { type: "network" });
+          break;
+
+        default:
+          setEditOperationError(payload.messageId, { type: "unknown" });
+          break;
+      }
     },
   });
 

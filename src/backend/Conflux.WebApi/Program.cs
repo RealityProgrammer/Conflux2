@@ -401,9 +401,15 @@ builder.Services.AddControllersWithViews(options => {
     options.Filters.Add<AntiforgeryValidationFilter>();
     options.ModelBinderProviders.Insert(0, new OptionalModelBinderProvider());
 }).AddJsonOptions(options => {
+    // converters
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.JsonSerializerOptions.Converters.Add(new OptionalConverterFactory());
     
+    // naming stuffs
+    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+    
+    // resolver and stuffs for Optional to not serialize stuffs (no idea if it works)
     var existingResolver = options.JsonSerializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
     options.JsonSerializerOptions.TypeInfoResolver = existingResolver.WithAddedModifier(static typeInfo => {
         if (typeInfo.Kind != JsonTypeInfoKind.Object) return;
@@ -421,7 +427,7 @@ builder.Services.AddControllersWithViews(options => {
         var validationErrors = context.ModelState
             .Where(ms => ms.Value!.Errors.Count > 0)
             .ToDictionary(
-                kvp => JsonNamingPolicy.CamelCase.ConvertName(kvp.Key), // blame the frontend
+                kvp => JsonNamingPolicy.CamelCase.ConvertName(kvp.Key), // also camel-case
                 kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
             );
 

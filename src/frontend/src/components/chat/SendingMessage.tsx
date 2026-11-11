@@ -4,12 +4,15 @@ import {type ReactNode} from "react";
 import type {MessageInput} from "./ChatInput.tsx";
 import MessageBody from "./MessageBody.tsx";
 import IconButton from "../IconButton.tsx";
-import {FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
+import type {MessageOperationError} from "../../store/useMessageOperationsStore.ts";
+import {BsArrowReturnLeft, BsExclamationTriangle} from "react-icons/bs";
+import {Tooltip} from "radix-ui";
 
 type SendingMessageProps = {
   operationId: string;
   input: MessageInput;
-  error: boolean;
+  error?: MessageOperationError;
 }
 
 export class SendingMessage extends TimelineItem<SendingMessageProps> {
@@ -22,32 +25,65 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
   }
 
   render(context: TimelineContext): ReactNode {
+    const trimmedBody = this.data.input.body.trim();
+
     return (
       <div className="hover-highlight">
-        <div className={`group px-2 flex flex-row justify-center items-start gap-3 ${this.data.error ? "bg-red-500/40" : ""}`}>
-          {this.data.error ? (
-            <section className="flex-none flex flex-row justify-end items-start w-10 mt-1 invisible group-hover:visible gap-1">
-              <IconButton theme="default" onClick={() => context.actions.retrySendingOperation(this.data.operationId)}>
-                <FaRepeat className="size-4"/>
-              </IconButton>
+        <div className={`relative group px-2 py-1 flex flex-row justify-center items-start gap-3 ${this.data.error ? "bg-red-500/40" : ""}`}>
+          <div className={`ml-13 flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}>
+            {trimmedBody.length > 0 ? (
+              <>
+                <MessageBody
+                  content={this.data.input.body}
+                />
 
-              <IconButton theme="default" onClick={() => context.actions.removeSendingOperation(this.data.operationId)}>
-                <FaTrashCan className="size-4"/>
-              </IconButton>
-            </section>
-          ) : (
-            <div className="w-10"></div>
-          )}
-
-          <div className={`flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}>
-            <MessageBody
-              content={this.data.input.body}
-            />
-
-            {this.data.input.attachments && this.data.input.attachments.length > 0 && (
-              <p className="text-xs">With {this.data.input.attachments.length} attachment(s).</p>
+                {this.data.input.attachments && this.data.input.attachments.length > 0 && (
+                  <p className="text-xs">With {this.data.input.attachments.length} attachment(s).</p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs">{this.data.input.attachments.length} attachment(s).</p>
             )}
           </div>
+
+          {this.data.error && (
+            <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <BsExclamationTriangle className="flex-1 size-5"/>
+                </Tooltip.Trigger>
+
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    side="top"
+                    align="center"
+                    sideOffset={4}
+                    className="rounded-md shadow-md bg-gray-750 text-white p-2 border-2 border-gray-600 text-sm"
+                  >
+                    {this.data.error.type === "network" ? (
+                      "Network issue happened."
+                    ) : this.data.error.type === "validation" ? (
+                      <ol className="list-inside list-decimal space-y-2">
+                        {Object.entries(this.data.error.fields).filter(p => !!p[1] && p[1].length > 0).flatMap(p => p[1]).map(errorMessage => (
+                          <li>{errorMessage}</li>
+                        ))}
+                      </ol>
+                    ) : (
+                      "Unknown error happened."
+                    )}
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+
+              <IconButton theme="default" className="flex-1" onClick={() => context.actions.retrySendingOperation(this.data.operationId)}>
+                <FaRepeat className="size-5"/>
+              </IconButton>
+
+              <IconButton theme="danger" className="flex-1" onClick={() => context.actions.removeSendingOperation(this.data.operationId)}>
+                <FaTrashCan className="size-5"/>
+              </IconButton>
+            </section>
+          )}
         </div>
       </div>
     )

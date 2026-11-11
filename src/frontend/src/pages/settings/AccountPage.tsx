@@ -170,17 +170,17 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
       reset();
     } else {
       if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as Record<"OldPassword" | "NewPassword", string[]>;
+        const details = response.error.details as Record<"oldPassword" | "newPassword", string[]>;
 
-        if (details.OldPassword && details.OldPassword.length > 0) {
+        if (details.oldPassword && details.oldPassword.length > 0) {
           setError("oldPassword", {
-            message: details.OldPassword[0],
+            message: details.oldPassword[0],
           });
         }
         
-        if (details.NewPassword && details.NewPassword.length > 0) {
+        if (details.newPassword && details.newPassword.length > 0) {
           setError("newPassword", {
-            message: details.NewPassword[0],
+            message: details.newPassword[0],
           });
         }
       } else {

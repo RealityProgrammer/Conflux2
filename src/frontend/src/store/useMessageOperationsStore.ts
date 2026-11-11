@@ -1,19 +1,24 @@
 import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import { create } from 'zustand';
 
+export type MessageOperationError =
+  { type: "unknown" } |
+  { type: "network" } |
+  { type: "validation", fields: Record<string, string[]>; };
+
 export type SendMessageOperation = {
   id: string;
   input: MessageInput;
   conversationId: string;
   idempotencyKey: string;
-  error: boolean;
+  error?: MessageOperationError;
 };
 
 export type EditMessageOperation = {
   newBody: string | null;
   removeAttachmentIds: string[];
   newAttachments: File[];
-  error: boolean;
+  error?: MessageOperationError;
 }
 
 interface MessageOperationStoreType {
@@ -22,11 +27,11 @@ interface MessageOperationStoreType {
   deletingMessageIds: string[];
 
   addSendOperation: (operation: SendMessageOperation) => void;
-  updateSendOperation: (operationId: string, error: boolean) => void;
+  setSendOperationError: (operationId: string, error: NonNullable<MessageOperationError>) => void;
   removeSendOperation: (operationId: string) => void;
 
   addEditOperation: (messageId: string, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => void;
-  updateEditOperation: (messageId: string, error: boolean) => void;
+  setEditOperationError: (messageId: string, error: NonNullable<MessageOperationError>) => void;
   removeEditOperation: (messageId: string) => void;
 
   addDeletingMessage: (messageId: string) => void;
@@ -44,7 +49,7 @@ export const useMessageOperationsStore = create<MessageOperationStoreType>((set)
     if (isRetry) {
       return {
         sendOperations: state.sendOperations.map(op =>
-          op.id === operation.id ? { ...op, error: false } : op,
+          op.id === operation.id ? { ...op, error: undefined } : op,
         ),
       };
     }
@@ -57,7 +62,7 @@ export const useMessageOperationsStore = create<MessageOperationStoreType>((set)
     };
   }),
 
-  updateSendOperation: (operationId: string, error: boolean) => set((state) => ({
+  setSendOperationError: (operationId: string, error: NonNullable<MessageOperationError>) => set((state) => ({
     sendOperations: state.sendOperations.map((op) =>
       op.id === operationId ? { ...op, error } : op
     ),
@@ -76,11 +81,11 @@ export const useMessageOperationsStore = create<MessageOperationStoreType>((set)
   addEditOperation: (messageId: string, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => set((state) => ({
     editOperations: {
       ...state.editOperations,
-      [messageId]: { newBody, removeAttachmentIds, newAttachments, error: false },
+      [messageId]: { newBody, removeAttachmentIds, newAttachments, error: undefined },
     },
   })),
 
-  updateEditOperation: (messageId: string, error: boolean) => set((state) => {
+  setEditOperationError: (messageId: string, error: NonNullable<MessageOperationError>) => set((state) => {
     const op = state.editOperations[messageId];
     if (!op) return state;
     return {
