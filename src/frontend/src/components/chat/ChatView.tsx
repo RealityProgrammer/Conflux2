@@ -382,7 +382,6 @@ export function ChatView({
       onMessageDeleteTrigger: setDeletingMessage,
       onMessageEditTrigger: (message: TimelineMessageDto) => {
         setEditingMessage(message);
-        // setEditingMessageDraft(message.body ?? "");
       },
       onMessageReplyTrigger: setReplyingMessage,
       onEditCancel: () => {

@@ -138,7 +138,7 @@ export default function ChatContainerContextProvider({
     },
   });
 
-  const retrySendingOperation = (operationId: string) => {
+  const retrySendOperation = (operationId: string) => {
     const operation = sendOperations.find(o => o.id === operationId && o.error);
     if (!operation) return;
 
@@ -269,7 +269,7 @@ export default function ChatContainerContextProvider({
       handleEditMessage,
       handleDeleteMessage,
       removeSendOperation,
-      retrySendOperation: retrySendingOperation,
+      retrySendOperation,
       retryEditOperation,
       removeEditOperation,
     }}>

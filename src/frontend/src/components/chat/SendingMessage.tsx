@@ -4,9 +4,9 @@ import {type ReactNode} from "react";
 import type {MessageInput} from "./ChatInput.tsx";
 import MessageBody from "./MessageBody.tsx";
 import IconButton from "../IconButton.tsx";
-import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {FaRepeat, FaTrashCan} from "react-icons/fa6";
 import type {MessageOperationError} from "../../store/useMessageOperationsStore.ts";
-import {BsArrowReturnLeft, BsExclamationTriangle} from "react-icons/bs";
+import {BsExclamationTriangle} from "react-icons/bs";
 import {Tooltip} from "radix-ui";
 
 type SendingMessageProps = {
@@ -62,13 +62,19 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
                   >
                     {this.data.error.type === "network" ? (
                       "Network issue happened."
-                    ) : this.data.error.type === "validation" ? (
-                      <ol className="list-inside list-decimal space-y-2">
-                        {Object.entries(this.data.error.fields).filter(p => !!p[1] && p[1].length > 0).flatMap(p => p[1]).map(errorMessage => (
-                          <li>{errorMessage}</li>
-                        ))}
-                      </ol>
-                    ) : (
+                    ) : this.data.error.type === "validation" ? (() => {
+                      const messages = Object.entries(this.data.error.fields).filter(p => !!p[1] && p[1].length > 0).flatMap(p => p[1]);
+
+                      return messages.length === 1 ? (
+                        <p>{messages[0]}</p>
+                      ) : (
+                        <ol className="list-inside list-decimal space-y-2">
+                          {messages.map(errorMessage => (
+                            <li>{errorMessage}</li>
+                          ))}
+                        </ol>
+                      )
+                    })() : (
                       "Unknown error happened."
                     )}
                   </Tooltip.Content>
