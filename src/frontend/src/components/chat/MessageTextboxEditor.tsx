@@ -31,9 +31,9 @@ import {
 import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {$createTimestampNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
-import { ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList } from "@lexical/list";
-import { HeadingNode, QuoteNode, $isQuoteNode } from "@lexical/rich-text";
-import { CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension } from "@lexical/code-core";
+import {ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList} from "@lexical/list";
+import {HeadingNode, QuoteNode, $isQuoteNode} from "@lexical/rich-text";
+import {CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension} from "@lexical/code-core";
 import {
   registerMarkdownShortcuts,
   $convertToMarkdownString,
@@ -56,6 +56,9 @@ import {
 } from "@lexical/link";
 import {$createMarkdownMarkerNode, $isMarkdownMarkerNode, MarkdownMarkerNode} from "./nodes/MarkdownMarkerNode.tsx";
 import {$createMentionNode, MentionDecoratorNode} from "./nodes/MentionDecoratorNode.tsx";
+
+// TODO: Design toolbar
+// TODO: Table in the design toolbar
 
 export type SuggestionData =
   { type: "mode"; startColonIndex: number } |
@@ -926,6 +929,12 @@ function TextArea({
 
         // suggestions only occur inside normal text nodes
         if (!$isTextNode(node)) {
+          onSuggestionChange(undefined);
+          return;
+        }
+
+        // prevent suggestion if parent is code node
+        if (node.getParents().some($isCodeNode)) {
           onSuggestionChange(undefined);
           return;
         }
