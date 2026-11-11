@@ -81,7 +81,7 @@ export default function ChatContainerContextProvider({
 
   // message mutations
   const sendMessageMutation = useMutation({
-    mutationFn: async (payload: SendMessagePayload): Promise<ServiceResponse<TimelineMessageDto>> => {
+    mutationFn: async (payload: SendMessagePayload): Promise<TimelineMessageDto> => {
       return await conversationService.sendMessage(
         conversationId!,
         payload.idempotencyKey,
@@ -99,13 +99,9 @@ export default function ChatContainerContextProvider({
         error: false,
       });
     },
-    onSuccess: async (result: ServiceResponse<TimelineMessageDto>, payload: SendMessagePayload) => {
-      if (result.success) {
-        removeSendOperation(payload.operationId);
-        appendMessage(result.data!);
-      } else {
-        updateSendOperation(payload.operationId, true);
-      }
+    onSuccess: async (result: TimelineMessageDto, payload: SendMessagePayload) => {
+      removeSendOperation(payload.operationId);
+      appendMessage(result);
     },
     onError: (_error, payload) => {
       updateSendOperation(payload.operationId, true);
@@ -157,18 +153,14 @@ export default function ChatContainerContextProvider({
   const removeDeletingMessage = useMessageOperationsStore((state) => state.removeDeletingMessage);
 
   const deleteMessageMutation = useMutation({
-    mutationFn: async (payload: DeleteMessagePayload): Promise<ServiceResponse> => {
-      return await conversationService.deleteMessage(conversationId, payload.messageId);
+    mutationFn: async (payload: DeleteMessagePayload): Promise<void> => {
+      await conversationService.deleteMessage(conversationId, payload.messageId);
     },
     onMutate: async (payload: DeleteMessagePayload) => {
       addDeletingMessage(payload.messageId);
     },
-    onSuccess: async (result: ServiceResponse, payload: DeleteMessagePayload) => {
-      if (result.success) {
-        deleteMessage(payload.messageId);
-      } else {
-        toast.error("Failed to delete message.");
-      }
+    onSuccess: async (_result: void, payload: DeleteMessagePayload) => {
+      deleteMessage(payload.messageId);
     },
     onError: (_error, _payload) => {
       toast.error("Failed to delete message.");

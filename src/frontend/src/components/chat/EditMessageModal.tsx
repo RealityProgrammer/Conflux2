@@ -97,6 +97,8 @@ export default function EditMessageModal({
     if (!textboxEditorRef.current) return;
 
     handleSubmit(textboxEditorRef.current.convertToMarkdownString(), removeAttachmentIds, newAttachments.map(a => a.file));
+    setRemoveAttachmentIds([]);
+    setNewAttachments([]);
   };
 
   return (
@@ -185,7 +187,7 @@ export default function EditMessageModal({
                         fileName: attachment.file.name,
                       }}
                       className="h-full border-2 rounded-md overflow-hidden pr-4 max-w-64 cursor-pointer border-green-500 bg-green-500/50"
-                      onClick={() => handleAttachmentClick(index)}
+                      onClick={() => handleAttachmentClick((originalMessage?.attachments?.length ?? 0) + index)}
                     />
 
                     <button

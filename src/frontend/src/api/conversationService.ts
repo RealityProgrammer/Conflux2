@@ -25,68 +25,24 @@ export const conversationService = {
     return response.data.data!;
   },
 
-  sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<TimelineMessageDto> => {
     const trimmedBody = body?.trim();
 
     if (!trimmedBody && !attachments) {
-      return {
-        success: false,
-        statusCode: HttpStatusCode.BadRequest,
-      };
+      throw new Error("Empty message content.");
     }
 
-    try {
-      const formData = new FormData();
+    const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.postForm(
+      `conversations/${encodeURIComponent(conversationId)}/messages`,
+      { body: trimmedBody, attachments, replyToId, },
+      { headers: { "Idempotency-Key": idempotencyKey } }
+    );
 
-      if (trimmedBody) {
-        formData.append("body", trimmedBody);
-      }
-
-      if (attachments) {
-        for (let i = 0; i < attachments.length; i++) {
-          formData.append("attachments", attachments[i]);
-        }
-      }
-
-      if (replyToId) {
-        formData.append("replyToId", replyToId);
-      }
-
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.postForm(
-        `conversations/${encodeURIComponent(conversationId)}/messages`,
-        formData,
-        { headers: { "Idempotency-Key": idempotencyKey } }
-      );
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data.data!;
   },
 
   editMessage: async (conversationId: string, messageId: string, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]): Promise<EditedMessageDto> => {
     const trimmedBody = newBody?.trim() ?? "";
-
-    const formData = new FormData();
-
-    formData.append("body", trimmedBody);
-
-    if (removeAttachmentIds && removeAttachmentIds.length > 0) {
-      for (const removeAttachmentId of removeAttachmentIds) {
-        formData.append("removeAttachmentIds", removeAttachmentId);
-      }
-    }
-
-    if (newAttachments && newAttachments.length > 0) {
-      for (const attachment of newAttachments) {
-        formData.append("addAttachments", attachment);
-      }
-    }
 
     const response: AxiosResponse<BackendResponse<EditedMessageDto>> = await apiClient.patchForm(
       `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
@@ -97,18 +53,13 @@ export const conversationService = {
   },
 
   deleteMessage: async (conversationId: string, messageId: string): Promise<ServiceResponse> => {
-    try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
+    const response: AxiosResponse<BackendResponse> =
+      await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
 
-      return {
-        success: true,
-        statusCode: response.status,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return {
+      success: true,
+      statusCode: response.status,
+    };
   },
 
   readTimelineMessages: async (conversationId: string, readStrategy: MessageReadStrategy): Promise<ServiceResponse<TimelineMessagePage>> => {
