@@ -1,6 +1,6 @@
 import type {TimelineMessageDto} from "../../api/types.ts";
-import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
-import {useRef, useState} from "react";
+import {type MediaGalleryElement, useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
+import {type ChangeEvent, useRef, useState} from "react";
 import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
 import Dialog from "../Dialog.tsx";
 import {BsWrenchAdjustable} from "react-icons/bs";
@@ -9,12 +9,13 @@ import {conversationService} from "../../api/conversationService.ts";
 import {Attachment} from "./Attachment.tsx";
 import {FaFileCirclePlus, FaRepeat, FaXmark} from "react-icons/fa6";
 import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
+import type {AttachmentItem} from "./ChatInput.tsx";
 
 interface EditMessageModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   originalMessage: TimelineMessageDto | undefined;
-  handleSubmit: (newBody: string | null, removeAttachmentIds: string[]) => void;
+  handleSubmit: (newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => void;
 }
 
 export default function EditMessageModal({
@@ -27,7 +28,30 @@ export default function EditMessageModal({
 
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
+
   const [removeAttachmentIds, setRemoveAttachmentIds] = useState<string[]>([]);
+  const [newAttachments, setNewAttachments] = useState<AttachmentItem[]>([]);
+
+  const handleAttachmentChanged = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
+    const files = e.target.files;
+
+    if (!files || !files.length) {
+      return;
+    }
+
+    const newAttachments = Array.from(files).map<AttachmentItem>(file => {
+      const objectURL = URL.createObjectURL(file);
+
+      return {
+        file,
+        id: crypto.randomUUID(),
+        previewUrl: objectURL,
+      };
+    });
+
+    setNewAttachments((prev: AttachmentItem[]): AttachmentItem[] => [...prev, ...newAttachments]);
+    e.target.value = '';
+  };
 
   const handleToggleRemoveCurrentAttachment = (attachmentId: string) => {
     setRemoveAttachmentIds((prev: string[]): string[] => {
@@ -39,9 +63,40 @@ export default function EditMessageModal({
     });
   };
 
+  const handleRemoveNewAttachment = (attachmentId: string) => {
+    setNewAttachments((prev: AttachmentItem[]): AttachmentItem[] => {
+      return prev.filter(v => v.id !== attachmentId);
+    });
+  }
+
+  const handleAttachmentClick = (index: number) => {
+    const galleryElements: MediaGalleryElement[] = [];
+
+    if (originalMessage && originalMessage.attachments && originalMessage.attachments.length > 0) {
+      galleryElements.push(...originalMessage.attachments.map((a): MediaGalleryElement => ({
+        id: a.id,
+        fileName: a.name,
+        mediaType: a.type,
+        src: conversationService.getAttachmentViewUrl(a.id),
+      })));
+    }
+
+    if (newAttachments.length > 0) {
+      galleryElements.push(...newAttachments.map((a): MediaGalleryElement => ({
+        id: a.id,
+        fileName: a.file.name,
+        mediaType: a.file.type,
+        src: a.previewUrl,
+      })));
+    }
+
+    setGalleryElements(galleryElements, index, {});
+  };
+
   const handleEditSubmit = () => {
     if (!textboxEditorRef.current) return;
-    handleSubmit(textboxEditorRef.current.convertToMarkdownString(), removeAttachmentIds);
+
+    handleSubmit(textboxEditorRef.current.convertToMarkdownString(), removeAttachmentIds, newAttachments.map(a => a.file));
   };
 
   return (
@@ -100,14 +155,7 @@ export default function EditMessageModal({
                           fileName: attachment.name
                         }}
                         className={`h-full border-2 rounded-md overflow-hidden pr-4 max-w-64 cursor-pointer ${isBeingRemoved ? "bg-red-500/30 border-red-600" : "bg-none border-gray-600"}`}
-                        onClick={() => {
-                          setGalleryElements(originalMessage.attachments!.map(attachment => ({
-                            id: attachment.id,
-                            fileName: attachment.name,
-                            mediaType: attachment.type,
-                            src: conversationService.getAttachmentViewUrl(attachment.id),
-                          })), index, {});
-                        }}
+                        onClick={() => handleAttachmentClick(index)}
                       />
 
                       <button
@@ -127,6 +175,30 @@ export default function EditMessageModal({
                   );
                 })}
 
+                {newAttachments.length > 0 && newAttachments.map((attachment, index) => (
+                  <div key={index} className="relative shrink-0 h-13">
+                    <Attachment.FilePill
+                      key={index}
+                      file={{
+                        type: attachment.file.type,
+                        src: attachment.previewUrl,
+                        fileName: attachment.file.name,
+                      }}
+                      className="h-full border-2 rounded-md overflow-hidden pr-4 max-w-64 cursor-pointer border-green-500 bg-green-500/50"
+                      onClick={() => handleAttachmentClick(index)}
+                    />
+
+                    <button
+                      className={`
+                        absolute border-2 rounded-full p-1 right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-pointer bg-gray-700 border-green-500
+                      `}
+                      onClick={() => handleRemoveNewAttachment(attachment.id)}
+                    >
+                      <FaXmark className="size-4 fill-white"/>
+                    </button>
+                  </div>
+                ))}
+
                 <button
                   className="button-theme-primary p-2 aspect-square rounded-md cursor-pointer"
                   onClick={() => {
@@ -138,9 +210,7 @@ export default function EditMessageModal({
 
                 <MessageAttachmentInput
                   ref={attachmentInputRef}
-                  onChange={(e) => {
-
-                  }}
+                  onChange={handleAttachmentChanged}
                 />
               </div>
             </ScrollArea.Viewport>

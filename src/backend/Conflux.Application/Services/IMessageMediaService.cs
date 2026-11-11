@@ -4,7 +4,7 @@ using Conflux.Domain;
 namespace Conflux.Application.Services;
 
 public interface IMessageMediaService {
-    Task<Result<AttachmentUploadResult[]>> UploadAttachments(IReadOnlyList<UploadFile> files, CancellationToken cancellationToken = default);
+    Task<Result<AttachmentUploadResult[]>> UploadAttachments(IReadOnlyCollection<UploadFile> files, CancellationToken cancellationToken = default);
     Task<Result> DeleteAttachments(IReadOnlyCollection<Guid> attachmentIds, CancellationToken cancellationToken = default);
     
     string GetPreSignedUrl(Guid attachmentId, TimeSpan expireIn);

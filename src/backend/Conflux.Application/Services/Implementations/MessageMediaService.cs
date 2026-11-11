@@ -13,7 +13,7 @@ public sealed class MessageMediaService(
     ILogger<MessageMediaService> logger
 ) : IMessageMediaService {
     public async Task<Result<AttachmentUploadResult[]>> UploadAttachments(
-        IReadOnlyList<UploadFile> files, 
+        IReadOnlyCollection<UploadFile> files, 
         CancellationToken cancellationToken = default
     ) {
         if (files.Count == 0) return Result<AttachmentUploadResult[]>.Success([]);
@@ -22,8 +22,8 @@ public sealed class MessageMediaService(
         
         // validate file formats.
         try {
-            for (int i = 0; i < files.Count; i++) {
-                var stream = files[i].Stream;
+            foreach ((var i, var file) in files.Index()) {
+                var stream = file.Stream;
                 
                 if (fileFormatInspector.DetermineFileFormat(stream) is not { } fileFormat) {
                     return Errors.ValidationErrorsOccurred(new() {
@@ -41,7 +41,7 @@ public sealed class MessageMediaService(
                     });
                 }
 
-                results[i] = new(Guid.NewGuid(), fileFormat, files[i].FileName);
+                results[i] = new(Guid.NewGuid(), fileFormat, file.FileName);
             }
         } finally {
             foreach (var file in files) {

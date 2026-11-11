@@ -7,7 +7,6 @@ export interface TimelineContext {
     onMessageReplyTrigger: (message: TimelineMessageDto) => void;
 
     onEditCancel: () => void;
-    updateEditMessage: (body: string | null, removeAttachmentIds: string[]) => void;
     onAttachmentClick: (attachments: MessageAttachmentDto[], index: number) => void;
 
     retrySendingOperation: (operationId: string) => void;

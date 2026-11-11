@@ -14,6 +14,9 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
+  formSerializer: {
+    indexes: null,
+  }
 });
 
 export const graphqlClient = apiClient.create({

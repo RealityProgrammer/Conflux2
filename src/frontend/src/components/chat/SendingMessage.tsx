@@ -41,7 +41,7 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
 
           <div className={`flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}>
             <MessageBody
-              content={this.data.input.messageBody}
+              content={this.data.input.body}
             />
 
             {this.data.input.attachments && this.data.input.attachments.length > 0 && (

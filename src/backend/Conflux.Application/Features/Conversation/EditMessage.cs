@@ -113,7 +113,7 @@ public sealed class EditMessageHandler(
         
         try {
             if (command.AddAttachments.Count > 0) {
-                var uploadResult = await messageMediaService.UploadAttachments(command.AddAttachments.ToList(), cancellationToken);
+                var uploadResult = await messageMediaService.UploadAttachments(command.AddAttachments, cancellationToken);
                 
                 if (!uploadResult.IsSuccess) {
                     return Errors.OperationFailure("upload new attachments");
@@ -143,13 +143,17 @@ public sealed class EditMessageHandler(
             // add new MediaItem entity to database
             if (command.AddAttachments.Count > 0) {
                 foreach (var uploadResult in newAttachmentsUploadResults) {
-                    message.Attachments.Add(new() {
+                    var mediaItem = new MediaItem {
                         Id = uploadResult.Id,
                         Type = MediaItemType.MessageAttachment,
                         FileName = uploadResult.FileName,
                         ContentType = uploadResult.Format.MediaType,
                         Version = 0,
-                    });
+                        MessageId = message.Id,
+                    };
+
+                    message.Attachments.Add(mediaItem);
+                    unitOfWork.MarkAsAdded(mediaItem);
                 }
             }
 

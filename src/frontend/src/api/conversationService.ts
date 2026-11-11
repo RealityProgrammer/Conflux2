@@ -69,12 +69,28 @@ export const conversationService = {
     }
   },
 
-  editMessage: async (conversationId: string, messageId: string, newBody: string | null, removeAttachmentIds: string[]): Promise<EditedMessageDto> => {
-    const trimmedBody = newBody?.trim();
+  editMessage: async (conversationId: string, messageId: string, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]): Promise<EditedMessageDto> => {
+    const trimmedBody = newBody?.trim() ?? "";
+
+    const formData = new FormData();
+
+    formData.append("body", trimmedBody);
+
+    if (removeAttachmentIds && removeAttachmentIds.length > 0) {
+      for (const removeAttachmentId of removeAttachmentIds) {
+        formData.append("removeAttachmentIds", removeAttachmentId);
+      }
+    }
+
+    if (newAttachments && newAttachments.length > 0) {
+      for (const attachment of newAttachments) {
+        formData.append("addAttachments", attachment);
+      }
+    }
 
     const response: AxiosResponse<BackendResponse<EditedMessageDto>> = await apiClient.patchForm(
       `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
-      { body: trimmedBody, removeAttachmentIds }
+      { body: trimmedBody, removeAttachmentIds, addAttachments: newAttachments }
     );
 
     return response.data.data!;

@@ -355,11 +355,11 @@ export function ChatView({
   }
 
   // edit handling
-  const handleSaveEdit = async (newBody: string | null, removeAttachmentIds: string[]) => {
+  const handleSaveEdit = async (newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => {
     if (editingMessage === undefined) return;
 
     setEditingMessage(undefined);
-    handleEditMessage(editingMessage, newBody?.trim() ?? null, removeAttachmentIds);
+    handleEditMessage(editingMessage, newBody?.trim() ?? null, removeAttachmentIds, newAttachments);
   };
 
   // signalr events
@@ -388,7 +388,6 @@ export function ChatView({
       onEditCancel: () => {
         setEditingMessage(undefined);
       },
-      updateEditMessage: (newBody: string | null, removeAttachmentIds) => handleSaveEdit(newBody, removeAttachmentIds),
       onAttachmentClick: (messageAttachments: MessageAttachmentDto[], clickedIndex: number) => {
         setMediaElements(messageAttachments.map(attachment => ({
           id: attachment.id,
@@ -537,8 +536,8 @@ export function ChatView({
           }
         }}
         originalMessage={editingMessage}
-        handleSubmit={(newBody: string | null, removeAttachmentIds: string[]) => {
-          handleSaveEdit(newBody, removeAttachmentIds);
+        handleSubmit={(newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => {
+          handleSaveEdit(newBody, removeAttachmentIds, newAttachments);
         }}
       />
 

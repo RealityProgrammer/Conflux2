@@ -9,7 +9,7 @@ import {useMediaGalleryStore} from "../store/useMediaGalleryStore.ts";
 const IMAGE_SCALE_FACTOR = 3;
 
 export default function MediaPreviewGallery() {
-  const attachments = useMediaGalleryStore(state => state.elements);
+  const elements = useMediaGalleryStore(state => state.elements);
   const viewIndex = useMediaGalleryStore(state => state.viewIndex);
   const options = useMediaGalleryStore(state => state.options);
   const clearElements = useMediaGalleryStore(state => state.clearElements);
@@ -31,7 +31,7 @@ export default function MediaPreviewGallery() {
   };
 
   const handleDownload = async (e: MouseEvent<HTMLButtonElement>) => {
-    if (!attachments || !options?.downloadUrlProvider) return;
+    if (!elements || !options?.downloadUrlProvider) return;
 
     e.preventDefault();
     e.stopPropagation();
@@ -51,7 +51,7 @@ export default function MediaPreviewGallery() {
   });
 
   return (
-    <Dialog.Root open={!!attachments && attachments.length > 0} onOpenChange={(open) => {
+    <Dialog.Root open={!!elements && elements.length > 0} onOpenChange={(open) => {
       if (!open) {
         clearElements();
       }
@@ -83,7 +83,7 @@ export default function MediaPreviewGallery() {
           </Dialog.Close>
         </div>
 
-        {attachments && attachments.length > 1 && (
+        {elements && elements.length > 1 && (
           <>
               <IconButton
                 isLoading={false}
@@ -116,24 +116,24 @@ export default function MediaPreviewGallery() {
 }
 
 function AttachmentContent() {
-  const viewAttachment = useMediaGalleryStore(state => state.elements?.[state.viewIndex]);
+  const attachment = useMediaGalleryStore(state => state.elements?.[state.viewIndex]);
 
-  if (!viewAttachment) return null;
+  if (!attachment) return null;
 
   return (
     <>
-      {viewAttachment.mediaType.startsWith("image") ? (
-        <ZoomableImage key={viewAttachment.id} src={viewAttachment.src}/>
-      ) : viewAttachment.mediaType.startsWith("video") ? (
+      {attachment.mediaType.startsWith("image") && !!attachment.src ? (
+        <ZoomableImage key={attachment.id} src={attachment.src}/>
+      ) : attachment.mediaType.startsWith("video") ? (
         <video
-          src={viewAttachment.src}
+          src={attachment.src}
           controls
           autoPlay={false}
           className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain"
         />
-      ) : viewAttachment.mediaType.startsWith("audio") ? (
+      ) : attachment.mediaType.startsWith("audio") ? (
         <audio
-          src={viewAttachment.src}
+          src={attachment.src}
           controls
           autoPlay={false}
           className="w-full h-auto max-w-[95vw]"

@@ -4,11 +4,11 @@ interface MediaGalleryOptions {
   downloadUrlProvider?: (attachmentIndex: number) => string | Promise<string>;
 }
 
-interface MediaGalleryElement {
+export interface MediaGalleryElement {
   id: string;
   fileName: string;
   mediaType: string;
-  src: string;
+  src?: string;
 }
 
 interface MediaGalleryStoreType {

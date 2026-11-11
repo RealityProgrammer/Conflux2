@@ -27,19 +27,12 @@ export interface ChatInputProps {
 }
 
 export type MessageInput = {
-  messageBody: string;
+  body: string;
   attachments: File[];
   replyingMessage: TimelineMessageDto | null;
 }
 
-export interface AttachmentThumbnailProps {
-  file: File;
-  previewUrl?: string;
-  onRemove: () => void;
-  onClick: () => void;
-}
-
-type AttachmentItem = {
+export type AttachmentItem = {
   id: string;
   file: File;
   previewUrl?: string;
@@ -96,8 +89,8 @@ export default function ChatInput({disabled}: ChatInputProps) {
       };
     });
 
-    setAttachments([...attachments, ...newAttachments]);
-    e.target.value = '';    // reset so that same file can be selected again (for some reason lmao)
+    setAttachments((prev: AttachmentItem[]): AttachmentItem[] => [...prev, ...newAttachments]);
+    e.target.value = '';
   };
 
   const attachmentsRef = useRef<AttachmentItem[]>([]);
@@ -133,7 +126,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
     const convertedBody = textboxEditorRef.current.convertToMarkdownString();
 
     handleSendMessage?.({
-      messageBody: convertedBody,
+      body: convertedBody,
       attachments: attachments.map(attachment => attachment.file),
       replyingMessage: replyingMessage,
     });

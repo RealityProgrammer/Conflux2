@@ -237,13 +237,13 @@ public sealed class ConversationMessagesController(
 
     public sealed record EditMessageRequest(
         Facet.Optional<string?> Body,
-        IReadOnlyCollection<Guid>? RemoveAttachmentIds,
-        IReadOnlyList<IFormFile>? AddAttachments
+        List<Guid>? RemoveAttachmentIds,
+        IFormFileCollection? AddAttachments
     );
 
     public sealed record SearchMessageRequest(
         string? Content,
-		IReadOnlyCollection<Guid>? SenderIds,
+		List<Guid>? SenderIds,
 		DateTimeOffset? StartDateTime,
 		DateTimeOffset? EndDateTime,
 		MessagePinFilter PinFilter,
