@@ -1,4 +1,4 @@
-import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
+import {type AxiosError, type AxiosResponse} from "axios";
 import type {
   BackendResponse,
   TimelineMessageDto,
@@ -25,7 +25,7 @@ export const conversationService = {
     return response.data.data!;
   },
 
-  sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<TimelineMessageDto> => {
+  sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments: File[], replyToId: string | null): Promise<TimelineMessageDto> => {
     const trimmedBody = body?.trim();
 
     if (!trimmedBody && !attachments) {
@@ -41,8 +41,8 @@ export const conversationService = {
     return response.data.data!;
   },
 
-  editMessage: async (conversationId: string, messageId: string, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]): Promise<EditedMessageDto> => {
-    const trimmedBody = newBody?.trim() ?? "";
+  editMessage: async (conversationId: string, messageId: string, body?: string | null, removeAttachmentIds?: string[], newAttachments?: File[]): Promise<EditedMessageDto> => {
+    const trimmedBody = body?.trim() ?? "";
 
     const response: AxiosResponse<BackendResponse<EditedMessageDto>> = await apiClient.patchForm(
       `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
@@ -52,14 +52,8 @@ export const conversationService = {
     return response.data.data!;
   },
 
-  deleteMessage: async (conversationId: string, messageId: string): Promise<ServiceResponse> => {
-    const response: AxiosResponse<BackendResponse> =
-      await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
-
-    return {
-      success: true,
-      statusCode: response.status,
-    };
+  deleteMessage: async (conversationId: string, messageId: string): Promise<void> => {
+    await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
   },
 
   readTimelineMessages: async (conversationId: string, readStrategy: MessageReadStrategy): Promise<ServiceResponse<TimelineMessagePage>> => {

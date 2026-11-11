@@ -1,24 +1,24 @@
 import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
-import type {MessageInput} from "../components/chat/ChatInput.tsx";
 import type {
   BackendResponse,
   EditedMessageDto,
   ServiceResponse,
   TimelineMessageDto,
 } from "../api/types.ts";
-import {useMutation} from "@tanstack/react-query";
-import {conversationService} from "../api/conversationService.ts";
 import {toast} from "react-toastify";
-import {useMessageOperationsStore} from "../store/useMessageOperationsStore.ts";
+import {
+  type MessageEditInput,
+  type MessageSendInput,
+  useMessageOperationsStore
+} from "../store/useMessageOperationsStore.ts";
 import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
 import {useActiveConversationStore} from "../store/useActiveConversationStore.ts";
 import {useConversationContext} from "./ConversationContext.tsx";
 import {type AxiosError, HttpStatusCode} from "axios";
 import {handleAxiosError} from "../api/errorHandling.ts";
-
-type SendMessagePayload = { operationId: string, input: MessageInput, idempotencyKey: string; };
-type EditMessagePayload = { messageId: string, newBody: string | null, removeAttachmentIds: string[]; newAttachments: File[] };
-type DeleteMessagePayload = { messageId: string };
+import useSendMessageMutation, {type UseSendMessageMutationVariables} from "../hooks/useSendMessageMutation.ts";
+import useEditMessageMutation, {type UseEditMessageMutationVariables} from "../hooks/useEditMessageMutation.ts";
+import useDeleteMessageMutation, {type UseDeleteMessageMutationVariables} from "../hooks/useDeleteMessageMutation.ts";
 
 interface ChatContainerContextType {
   conversationId: string;
@@ -30,15 +30,15 @@ interface ChatContainerContextType {
   replyingMessage: TimelineMessageDto | null;
   setReplyingMessage: (message: TimelineMessageDto | null) => void;
 
-  handleSendMessage: (messageInput: MessageInput) => void;
-  handleEditMessage: (originalMessage: TimelineMessageDto, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => void;
-  handleDeleteMessage: (originalMessage: TimelineMessageDto) => void;
+  handleSendMessage: (input: MessageSendInput) => void;
+  handleEditMessage: (messageId: string, input: MessageEditInput) => void;
+  handleDeleteMessage: (messageId: string) => void;
 
-  retrySendOperation: (operationId: string) => void;
-  removeSendOperation: (operationId: string) => void;
+  retrySendOperation: (idempotencyKey: string) => void;
+  removeSendOperation: (idempotencyKey: string) => void;
 
   retryEditOperation: (messageId: string) => void;
-  removeEditOperation: (messageId: string) => void;
+  removeEditOperation: (operationIdempotencyKey: string) => void;
 }
 
 const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
@@ -52,8 +52,8 @@ export default function ChatContainerContextProvider({
     throw new Error("ChatContainerContextProvider can only be used if conversation details query has success query.");
   }
 
+  // set active conversation id
   const conversationId = detailsQuery?.data?.conversationId!;
-
   const setActiveConversationId = useActiveConversationStore((state) => state.setActiveConversationId);
 
   useEffect(() => {
@@ -69,53 +69,57 @@ export default function ChatContainerContextProvider({
     };
   }, [detailsQuery, setActiveConversationId]);
 
+  // setup some states
   const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
   const [jumpMessageId, setJumpMessageId] = useState<string | null>(null);
 
   const requestJump = (messageId: string) => setJumpMessageId(messageId);
   const clearJump = () => setJumpMessageId(null);
 
-  const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
-  const addSendOperation = useMessageOperationsStore((state) => state.addSendOperation);
-  const setSendOperationError = useMessageOperationsStore((state) => state.setSendOperationError);
-  const removeSendOperation = useMessageOperationsStore((state) => state.removeSendOperation);
+  const {
+    addSendOperation,
+    setSendOperationError,
+    removeSendOperation,
+    addEditOperation,
+    setEditOperationError,
+    removeEditOperation,
+    addDeletingMessage,
+    removeDeletingMessage,
+  } = useMessageOperationsStore();
+
+  const sendOperations = useMessageOperationsStore(
+    (state) => state.sendOperationsByConversation[conversationId]
+  ) || [];
+  const editOperations = useMessageOperationsStore(
+    (state) => state.editOperationsByConversation[conversationId]
+  ) || {};
 
   const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 
   // message mutations
-  const sendMessageMutation = useMutation({
-    mutationFn: async (payload: SendMessagePayload): Promise<TimelineMessageDto> => {
-      return await conversationService.sendMessage(
-        conversationId!,
-        payload.idempotencyKey,
-        payload.input.body,
-        payload.input.attachments,
-        payload.input.replyingMessage?.id
-      );
-    },
-    onMutate: async (payload: SendMessagePayload) => {
-      addSendOperation({
-        id: payload.operationId,
-        idempotencyKey: payload.idempotencyKey,
-        input: payload.input,
+  const sendMessageMutation = useSendMessageMutation({
+    onMutate: async (variables: UseSendMessageMutationVariables) => {
+      addSendOperation(conversationId, {
+        idempotencyKey: variables.idempotencyKey,
+        input: variables.input,
         conversationId,
       });
     },
-    onSuccess: async (result: TimelineMessageDto, payload: SendMessagePayload) => {
-      removeSendOperation(payload.operationId);
+    onSuccess: async (result: TimelineMessageDto, variables: UseSendMessageMutationVariables) => {
+      removeSendOperation(conversationId, variables.idempotencyKey);
       appendMessage(result);
     },
-    onError: (error: AxiosError<BackendResponse>, payload: SendMessagePayload) => {
+    onError: (error: Error, variables: UseSendMessageMutationVariables) => {
       toast.error("Failed to send message.");
 
-      const response: ServiceResponse = handleAxiosError(error);
+      const response: ServiceResponse = handleAxiosError(error as AxiosError<BackendResponse>);
 
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
           if (response.error?.code === "ValidationErrorsOccurred") {
             const details = response.error.details as Record<"body" | "attachments", string[]>;
 
-            setSendOperationError(payload.operationId, {
+            setSendOperationError(conversationId, variables.idempotencyKey, {
               type: "validation",
               fields: {
                 attachments: details.attachments,
@@ -123,60 +127,55 @@ export default function ChatContainerContextProvider({
               }
             });
           } else {
-            setSendOperationError(payload.operationId, { type: "unknown" });
+            setSendOperationError(conversationId, variables.idempotencyKey, { type: "unknown" });
           }
           break;
 
         case 0 as HttpStatusCode:
-          setSendOperationError(payload.operationId, { type: "network" });
+          setSendOperationError(conversationId, variables.idempotencyKey, { type: "network" });
           break;
 
         default:
-          setSendOperationError(payload.operationId, { type: "unknown" });
+          setSendOperationError(conversationId, variables.idempotencyKey, { type: "unknown" });
           break;
       }
     },
   });
 
-  const retrySendOperation = (operationId: string) => {
-    const operation = sendOperations.find(o => o.id === operationId && o.error);
+  const retrySendOperation = (idempotencyKey: string) => {
+    const operation = sendOperations.find(o => o.idempotencyKey === idempotencyKey && o.error);
     if (!operation) return;
 
     sendMessageMutation.mutate({
-      operationId: operationId,
-      idempotencyKey: operation.idempotencyKey,
+      conversationId,
       input: operation.input,
+      idempotencyKey: operation.idempotencyKey,
     });
   };
 
-  // TODO: switch value to MessageInput once we have attachments editing
-  const editOperations = useMessageOperationsStore((state) => state.editOperations);
-  const addEditOperation = useMessageOperationsStore((state) => state.addEditOperation);
-  const setEditOperationError = useMessageOperationsStore((state) => state.setEditOperationError);
-  const removeEditOperation = useMessageOperationsStore((state) => state.removeEditOperation);
-
-  const editMessageMutation = useMutation({
-    mutationFn: async (payload: EditMessagePayload): Promise<EditedMessageDto> => {
-      return await conversationService.editMessage(conversationId, payload.messageId, payload.newBody, payload.removeAttachmentIds, payload.newAttachments);
+  const editMessageMutation = useEditMessageMutation({
+    onMutate: async (variables: UseEditMessageMutationVariables) => {
+      addEditOperation(conversationId, variables.messageId, {
+        body: variables.body,
+        removeAttachmentIds: variables.removeAttachmentIds,
+        addAttachments: variables.addAttachments
+      });
     },
-    onMutate: async (payload: EditMessagePayload) => {
-      addEditOperation(payload.messageId, payload.newBody, payload.removeAttachmentIds, payload.newAttachments);
+    onSuccess: async (result: EditedMessageDto, variables: UseEditMessageMutationVariables) => {
+      removeEditOperation(conversationId, variables.messageId);
+      updateMessage(variables.messageId, { newBody: result.newBody, attachments: result.attachments });
     },
-    onSuccess: async (result: EditedMessageDto, payload: EditMessagePayload) => {
-      removeEditOperation(payload.messageId);
-      updateMessage(payload.messageId, { newBody: result.newBody, attachments: result.attachments });
-    },
-    onError: (error: AxiosError<BackendResponse>, payload: EditMessagePayload) => {
+    onError: (error: Error, variables: UseEditMessageMutationVariables) => {
       toast.error("Failed to edit message.");
 
-      const response: ServiceResponse = handleAxiosError(error);
+      const response: ServiceResponse = handleAxiosError(error as AxiosError<BackendResponse>);
 
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
           if (response.error?.code === "ValidationErrorsOccurred") {
             const details = response.error.details as Record<"body" | "attachments", string[]>;
 
-            setEditOperationError(payload.messageId, {
+            setEditOperationError(conversationId, variables.messageId, {
               type: "validation",
               fields: {
                 attachments: details.attachments,
@@ -184,16 +183,16 @@ export default function ChatContainerContextProvider({
               }
             });
           } else {
-            setEditOperationError(payload.messageId, { type: "unknown" });
+            setEditOperationError(conversationId, variables.messageId, { type: "unknown" });
           }
           break;
 
         case 0 as HttpStatusCode:
-          setEditOperationError(payload.messageId, { type: "network" });
+          setEditOperationError(conversationId, variables.messageId, { type: "network" });
           break;
 
         default:
-          setEditOperationError(payload.messageId, { type: "unknown" });
+          setEditOperationError(conversationId, variables.messageId, { type: "unknown" });
           break;
       }
     },
@@ -201,59 +200,59 @@ export default function ChatContainerContextProvider({
 
   const retryEditOperation = (messageId: string) => {
     const op = editOperations[messageId];
-    if (!op) return;
+    if (!op || !op.error) return;
 
-    editMessageMutation.mutate({messageId, newBody: op.newBody, removeAttachmentIds: op.removeAttachmentIds, newAttachments: op.newAttachments});
+    editMessageMutation.mutate({
+      conversationId,
+      messageId,
+      ...op.input,
+    });
   };
 
-  const addDeletingMessage = useMessageOperationsStore((state) => state.addDeletingMessage);
-  const removeDeletingMessage = useMessageOperationsStore((state) => state.removeDeletingMessage);
-
-  const deleteMessageMutation = useMutation({
-    mutationFn: async (payload: DeleteMessagePayload): Promise<void> => {
-      await conversationService.deleteMessage(conversationId, payload.messageId);
+  const deleteMessageMutation = useDeleteMessageMutation({
+    onMutate: async (payload: UseDeleteMessageMutationVariables) => {
+      addDeletingMessage(conversationId, payload.messageId);
     },
-    onMutate: async (payload: DeleteMessagePayload) => {
-      addDeletingMessage(payload.messageId);
-    },
-    onSuccess: async (_result: void, payload: DeleteMessagePayload) => {
+    onSuccess: async (_result: void, payload: UseDeleteMessageMutationVariables) => {
       deleteMessage(payload.messageId);
     },
     onError: (_error, _payload) => {
       toast.error("Failed to delete message.");
     },
     onSettled: (_data, _error, payload) => {
-      removeDeletingMessage(payload.messageId);
+      removeDeletingMessage(conversationId, payload.messageId);
     },
   });
 
   // messaging operation
-  const handleSendMessage = async (state: MessageInput) => {
+  const handleSendMessage = async (state: MessageSendInput) => {
     if (!conversationId) return;
 
-    const operationId = `__queue_message-${crypto.randomUUID()}`;
-    const idempotencyKey = crypto.randomUUID();
-    sendMessageMutation.mutate({operationId, input: state, idempotencyKey});
+    sendMessageMutation.mutate({
+      conversationId,
+      input: state,
+      idempotencyKey: crypto.randomUUID(),
+    });
 
     setReplyingMessage(null);
   };
 
-  const handleEditMessage = async (originalMessage: TimelineMessageDto, newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => {
+  const handleEditMessage = async (messageId: string, input: MessageEditInput) => {
     if (!conversationId) return;
 
     editMessageMutation.mutate({
-      messageId: originalMessage.id,
-      newBody,
-      removeAttachmentIds,
-      newAttachments
+      conversationId,
+      messageId,
+      ...input,
     });
   };
 
-  const handleDeleteMessage = async (message: TimelineMessageDto) => {
+  const handleDeleteMessage = async (messageId: string) => {
     if (!conversationId) return;
 
     deleteMessageMutation.mutate({
-      messageId: message.id
+      conversationId,
+      messageId,
     });
   };
 
@@ -268,10 +267,14 @@ export default function ChatContainerContextProvider({
       handleSendMessage,
       handleEditMessage,
       handleDeleteMessage,
-      removeSendOperation,
+      removeSendOperation: (operationIdempotencyKey: string) => {
+        removeSendOperation(conversationId, operationIdempotencyKey);
+      },
       retrySendOperation,
       retryEditOperation,
-      removeEditOperation,
+      removeEditOperation: (operationIdempotencyKey: string) => {
+        removeEditOperation(conversationId, operationIdempotencyKey);
+      },
     }}>
       {children}
     </ChatContainerContext.Provider>

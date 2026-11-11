@@ -1,17 +1,16 @@
 import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {type ReactNode} from "react";
-import type {MessageInput} from "./ChatInput.tsx";
 import MessageBody from "./MessageBody.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaRepeat, FaTrashCan} from "react-icons/fa6";
-import type {MessageOperationError} from "../../store/useMessageOperationsStore.ts";
+import type {MessageOperationError, MessageSendInput} from "../../store/useMessageOperationsStore.ts";
 import {BsExclamationTriangle} from "react-icons/bs";
 import {Tooltip} from "radix-ui";
 
 type SendingMessageProps = {
-  operationId: string;
-  input: MessageInput;
+  idempotencyKey: string;
+  input: MessageSendInput;
   error?: MessageOperationError;
 }
 
@@ -21,17 +20,17 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
   }
 
   getKey(): string {
-    return `sending-msg_${this.data.operationId}`;
+    return `sending-msg_${this.data.idempotencyKey}`;
   }
 
   render(context: TimelineContext): ReactNode {
-    const trimmedBody = this.data.input.body.trim();
+    const trimmedBody = this.data.input.body?.trim() ?? null;
 
     return (
       <div className="hover-highlight">
         <div className={`relative group px-2 py-1 flex flex-row justify-center items-start gap-3 ${this.data.error ? "bg-red-500/40" : ""}`}>
           <div className={`ml-13 flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}>
-            {trimmedBody.length > 0 ? (
+            {trimmedBody && trimmedBody.length > 0 ? (
               <>
                 <MessageBody
                   content={this.data.input.body}
@@ -81,11 +80,11 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
                 </Tooltip.Portal>
               </Tooltip.Root>
 
-              <IconButton theme="default" className="flex-1" onClick={() => context.actions.retrySendingOperation(this.data.operationId)}>
+              <IconButton theme="default" className="flex-1" onClick={() => context.actions.retrySendingOperation(this.data.idempotencyKey)}>
                 <FaRepeat className="size-5"/>
               </IconButton>
 
-              <IconButton theme="danger" className="flex-1" onClick={() => context.actions.removeSendingOperation(this.data.operationId)}>
+              <IconButton theme="danger" className="flex-1" onClick={() => context.actions.removeSendingOperation(this.data.idempotencyKey)}>
                 <FaTrashCan className="size-5"/>
               </IconButton>
             </section>

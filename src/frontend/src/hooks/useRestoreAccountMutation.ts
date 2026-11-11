@@ -6,10 +6,12 @@ export function useRestoreAccountMutation(
   options?: Omit<UseMutationOptions<ServiceResponse<RestoreAccountResponse>, Error, string>, "mutationKey" | "mutationFn">,
 ) {
   return useMutation({
-    mutationKey: ["RestoreAccount"],
+    mutationKey: useRestoreAccountMutation.key,
     mutationFn: async (restorationPassword: string): Promise<ServiceResponse> => {
       return authService.restoreAccount(restorationPassword);
     },
     ...options
   });
 }
+
+useRestoreAccountMutation.key = ["useRestoreAccountMutation"];

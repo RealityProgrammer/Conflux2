@@ -270,7 +270,7 @@ export function ChatView({
 
   // if we're anchored and the target item is already in the list, make Virtuoso centred on it, else start at the bottom.
   const anchorArrayIndex = anchorId && !isLoading ? timelineItems.findIndex(
-    item => item instanceof MessageItem && item.data.message.id === anchorId,
+    item => item instanceof MessageItem && item.data.content.message.id === anchorId,
   ) : -1;
 
   const initialTopMostItemIndex = anchorArrayIndex >= 0 ?
@@ -304,7 +304,7 @@ export function ChatView({
     if (!jumpMessageId) return;
 
     const arrayIndex = timelineItems.findIndex(item =>
-      item instanceof MessageItem && item.data.message.id === jumpMessageId
+      item instanceof MessageItem && item.data.content.message.id === jumpMessageId
     );
 
     // message already loaded, jump to it immediately
@@ -355,11 +355,15 @@ export function ChatView({
   }
 
   // edit handling
-  const handleSaveEdit = async (newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => {
+  const handleSaveEdit = async (newBody: string | null, removeAttachmentIds: string[], addAttachments: File[]) => {
     if (editingMessage === undefined) return;
 
     setEditingMessage(undefined);
-    handleEditMessage(editingMessage, newBody?.trim() ?? null, removeAttachmentIds, newAttachments);
+    handleEditMessage(editingMessage.id, {
+      body: newBody?.trim() ?? null,
+      removeAttachmentIds,
+      addAttachments,
+    });
   };
 
   // signalr events
@@ -549,7 +553,7 @@ export function ChatView({
         }}
         onConfirm={() => {
           if (deletingMessage) {
-            handleDeleteMessage(deletingMessage);
+            handleDeleteMessage(deletingMessage.id);
             setDeletingMessage(undefined);
           }
         }}

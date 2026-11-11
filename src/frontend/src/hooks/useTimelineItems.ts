@@ -25,9 +25,9 @@ export default function useTimelineItems(
 ): TimelineItem[] {
   const { conversationId } = useChatContainerContext();
 
-  const sendOperations = useMessageOperationsStore((state) => state.sendOperations);
-  const deletingMessageIds = useMessageOperationsStore((state) => state.deletingMessageIds);
-  const editOperations = useMessageOperationsStore((state) => state.editOperations);
+  const sendOperations = useMessageOperationsStore((state) => state.sendOperationsByConversation[conversationId]) ?? [];
+  const editOperations = useMessageOperationsStore((state) => state.editOperationsByConversation[conversationId]) ?? [];
+  const deletingMessageIds = useMessageOperationsStore((state) => state.deletingMessageIdsByConversation[conversationId]) ?? new Set<string>();
 
   const items: TimelineItem[] = [];
 
@@ -38,7 +38,8 @@ export default function useTimelineItems(
   let messageHasHeader = true;
 
   for (const page of messagePages.pages.filter(p => !!p)) {
-    const activeMessages = page.messages.filter(m => !deletingMessageIds.includes(m.id));
+    const activeMessages = page.messages.filter(m => !deletingMessageIds.has(m.id));
+
     if (!activeMessages.length) continue;
 
     for (const message of activeMessages) {
@@ -61,15 +62,11 @@ export default function useTimelineItems(
         }
 
         const editingOperation = editOperations[message.id];
-        const displayingMessage = editingOperation ?
-          { ...message, body: editingOperation.newBody } :
-          message;
 
         items.push(
           new MessageItem({
-            message: displayingMessage,
+            content: editingOperation ? { type: "edit", message: message, error: editingOperation.error, input: editingOperation.input } : { type: "message", message: message },
             showHeader: messageHasHeader,
-            editingStatus: editingOperation ? editingOperation.error ? "error" : "saving" : "none",
           })
         );
 
@@ -132,7 +129,7 @@ export default function useTimelineItems(
     if (operation.conversationId !== conversationId) continue;
 
     items.push(new SendingMessage({
-      operationId: operation.id,
+      idempotencyKey: operation.idempotencyKey,
       input: operation.input,
       error: operation.error,
     }));

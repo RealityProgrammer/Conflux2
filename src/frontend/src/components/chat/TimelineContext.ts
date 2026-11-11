@@ -9,8 +9,8 @@ export interface TimelineContext {
     onEditCancel: () => void;
     onAttachmentClick: (attachments: MessageAttachmentDto[], index: number) => void;
 
-    retrySendingOperation: (operationId: string) => void;
-    removeSendingOperation: (operationId: string) => void;
+    retrySendingOperation: (idempotencyKey: string) => void;
+    removeSendingOperation: (idempotencyKey: string) => void;
 
     retryEditOperation: (messageId: string) => void;
     removeEditOperation: (messageId: string) => void;

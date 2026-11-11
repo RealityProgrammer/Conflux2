@@ -10,7 +10,6 @@ import {
   useState
 } from "react";
 import {ScrollArea} from "radix-ui";
-import type {TimelineMessageDto} from "../../api/types.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
@@ -24,12 +23,6 @@ import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
-}
-
-export type MessageInput = {
-  body: string;
-  attachments: File[];
-  replyingMessage: TimelineMessageDto | null;
 }
 
 export type AttachmentItem = {
@@ -128,7 +121,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
     handleSendMessage?.({
       body: convertedBody,
       attachments: attachments.map(attachment => attachment.file),
-      replyingMessage: replyingMessage,
+      replyingMessageId: replyingMessage?.id ?? null,
     });
 
     attachments.forEach(item => {

@@ -22,11 +22,13 @@ import usePinMessageMutation, {type PinMessageVariables} from "../../hooks/usePi
 import {MessageRow} from "./MessageRow.tsx";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
+import type {MessageEditInput, MessageOperationError} from "../../store/useMessageOperationsStore.ts";
 
 type MessageItemProps = {
-  message: TimelineMessageDto;
+  content:
+    | { type: "message", message: TimelineMessageDto; }
+    | { type: "edit", message: TimelineMessageDto; input: MessageEditInput; error?: MessageOperationError; };
   showHeader: boolean;
-  editingStatus: "none" | "error" | "saving";
 }
 
 export class MessageItem extends TimelineItem<MessageItemProps> {
@@ -35,16 +37,15 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
   }
 
   getKey(): string {
-    return `message_${this.data.message.id}`;
+    return `message_${this.data.content.message.id}`;
   }
 
   render(context: TimelineContext): ReactNode {
     return (
       <MessageView
-        key={`message-${this.data.message.id}`}
-        message={this.data.message}
+        key={`message-${this.data.content.message.id}`}
+        content={this.data.content}
         showHeader={this.data.showHeader}
-        editingStatus={this.data.editingStatus}
         context={context}
       />
     );
@@ -52,16 +53,14 @@ export class MessageItem extends TimelineItem<MessageItemProps> {
 }
 
 interface MessageViewProps {
-  message: TimelineMessageDto;
+  content: MessageItemProps["content"];
   showHeader: boolean;
-  editingStatus: "none" | "error" | "saving"
   context: TimelineContext;
 }
 
 function MessageView({
-  message,
+  content,
   showHeader,
-  editingStatus,
   context,
 }: MessageViewProps) {
   const auth = useAuth();
@@ -69,17 +68,17 @@ function MessageView({
   const { appendMessage } = useTimelineMessageMutations(conversationId);
 
   const handleReplyTrigger = () => {
-    context.actions.onMessageReplyTrigger(message);
+    context.actions.onMessageReplyTrigger(content.message);
   };
 
   const handleEditTrigger = () => {
-    context.actions.onMessageEditTrigger(message);
+    context.actions.onMessageEditTrigger(content.message);
   };
 
   const handleAttachmentClicked = (index: number) => {
-    if (!message.attachments || message.attachments.length === 0) return;
+    if (!content.message.attachments || content.message.attachments.length === 0) return;
 
-    context.actions.onAttachmentClick(message.attachments, index);
+    context.actions.onAttachmentClick(content.message.attachments, index);
   };
 
   const pinMessageMutation = usePinMessageMutation({
@@ -96,8 +95,8 @@ function MessageView({
   const handlePinMessage = async () => {
     const response: ServiceResponse<TimelineMessageDto> = await pinMessageMutation.mutateAsync({
       idempotencyKey: crypto.randomUUID(),
-      conversationId: message.conversationId,
-      messageId: message.id,
+      conversationId: content.message.conversationId,
+      messageId: content.message.id,
       action: "pin"
     });
 
@@ -109,8 +108,8 @@ function MessageView({
   const handleUnpinMessage = async () => {
     const response: ServiceResponse<TimelineMessageDto> = await pinMessageMutation.mutateAsync({
       idempotencyKey: crypto.randomUUID(),
-      conversationId: message.conversationId,
-      messageId: message.id,
+      conversationId: content.message.conversationId,
+      messageId: content.message.id,
       action: "unpin"
     });
 
@@ -119,7 +118,7 @@ function MessageView({
     }
   };
 
-  const isHighlighted = context.states.highlightedMessageId === message.id;
+  const isHighlighted = context.states.highlightedMessageId === content.message.id;
 
   return (
     <ContextMenu.Root>
@@ -127,33 +126,39 @@ function MessageView({
         className={`relative w-full group block ${showHeader ? "pt-1" : ""}`}
       >
         <div className={`hover-highlight flex flex-col pt-0.5 ${isHighlighted ? "animate-messageHighlight" : ""}`}>
-          <div className={`px-2 ${editingStatus === "error" ? "bg-red-500/40" : ""}`}>
-            {message.replyTo && (
+          <div className={`px-2 ${content.type === "edit" && content.error ? "bg-red-500/40" : ""}`}>
+            {content.message.replyTo && (
               <MessageRow.Reply
-                messageId={message.replyTo.id}
-                senderDisplayName={message.replyTo.sender?.displayName ?? "???"}
-                attachmentCount={message.replyTo.attachmentCount}
-                body={message.replyTo.body}
+                messageId={content.message.replyTo.id}
+                senderDisplayName={content.message.replyTo.sender?.displayName ?? "???"}
+                attachmentCount={content.message.replyTo.attachmentCount}
+                body={content.message.replyTo.body}
               />
             )}
 
             <MessageRow.Row
               header={showHeader ? {
-                senderId: message.sender?.id,
-                senderAvatarVersion: message.sender!.avatarVersion,
-                avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
-                senderDisplayName: message.sender?.displayName ?? "???",
+                senderId: content.message.sender?.id,
+                senderAvatarVersion: content.message.sender!.avatarVersion,
+                avatarAlt: content.message.sender ? `Avatar of ${content.message.sender.displayName ?? "???"}` : undefined,
+                senderDisplayName: content.message.sender?.displayName ?? "???",
               } : undefined}
-              date={new Date(message.createdAt)}
+              date={new Date(content.message.createdAt)}
             >
-              <div className={`flex-1 space-y-1 ${editingStatus == "saving" ? "animate-pulse" : editingStatus == "error" ? "text-gray-300" : ""}`}>
-                <MessageBody
-                  content={message.body}
-                />
+              <div className={`flex-1 space-y-1 text-white ${content.type == "edit" ? "animate-pulse" : ""}`}>
+                {(content.type === "message" || (content.type === "edit" && content.input.body === undefined)) ? (
+                  <MessageBody
+                    content={content.message.body}
+                  />
+                ) : content.type === "edit" && content.input.body && (
+                  <MessageBody
+                    content={content.input.body}
+                  />
+                )}
 
-                {message.attachments && message.attachments.length > 0 && (
+                {content.message.attachments && content.message.attachments.length > 0 && (
                   <MessageAttachments
-                    attachments={message.attachments}
+                    attachments={content.message.attachments}
                     onAttachmentClick={handleAttachmentClicked}
                   />
                 )}
@@ -161,23 +166,11 @@ function MessageView({
             </MessageRow.Row>
           </div>
 
-          {editingStatus !== "saving" && (
+          {(content.type === "message" || (content.type === "edit" && content.error)) && (
             <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
-              {editingStatus === "error" && (
+              {content.type === "message" ? (
                 <>
-                  <IconButton theme="default" className="size-5" onClick={() => context.actions.retryEditOperation(message.id)}>
-                    <FaRepeat className=" size-5 ml-auto"/>
-                  </IconButton>
-
-                  <IconButton theme="danger" className="size-5" onClick={() => context.actions.removeEditOperation(message.id)}>
-                    <FaTrashCan className="size-5 ml-auto"/>
-                  </IconButton>
-                </>
-              )}
-
-              {editingStatus === "none" && (
-                <>
-                  {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
+                  {auth.userAuthorization?.id && auth.userAuthorization.id === content.message.sender!.id && (
                     <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
                       <FaPencil className="size-5 ml-auto"/>
                     </IconButton>
@@ -185,6 +178,16 @@ function MessageView({
 
                   <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
                     <BsArrowReturnLeft className="size-5 ml-auto"/>
+                  </IconButton>
+                </>
+              ) : content.type === "edit" && content.error && (
+                <>
+                  <IconButton theme="default" className="size-5" onClick={() => context.actions.retryEditOperation(content.message.id)}>
+                    <FaRepeat className=" size-5 ml-auto"/>
+                  </IconButton>
+
+                  <IconButton theme="danger" className="size-5" onClick={() => context.actions.removeEditOperation(content.message.id)}>
+                    <FaTrashCan className="size-5 ml-auto"/>
                   </IconButton>
                 </>
               )}
@@ -205,7 +208,7 @@ function MessageView({
             Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
           </ContextMenu.Item>
 
-          {auth.userAuthorization?.id === message.sender!.id && context.states.allowEditMessage && (
+          {auth.userAuthorization?.id === content.message.sender!.id && context.states.allowEditMessage && (
             <ContextMenu.Item
               className="dropdown-item-default"
               onSelect={handleEditTrigger}
@@ -214,7 +217,7 @@ function MessageView({
             </ContextMenu.Item>
           )}
 
-          {message.isPinned ? (
+          {content.message.isPinned ? (
             <ContextMenu.Item
               className="dropdown-item-default"
               disabled={isPinning}
@@ -232,30 +235,32 @@ function MessageView({
             </ContextMenu.Item>
           )}
 
-          {auth.userAuthorization?.id === message.sender!.id && context.states.allowDeleteMessage && (
+          {auth.userAuthorization?.id === content.message.sender!.id && context.states.allowDeleteMessage && (
             <ContextMenu.Item
               className="dropdown-item-danger"
-              onSelect={() => context.actions.onMessageDeleteTrigger(message)}
+              onSelect={() => context.actions.onMessageDeleteTrigger(content.message)}
             >
-              Delete message <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
+              Delete Message <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
             </ContextMenu.Item>
           )}
 
-          <ContextMenu.Separator className="horizontal-separator my-1.5"/>
+          {content.message?.body && (
+            <>
+              <ContextMenu.Separator className="horizontal-separator my-1.5"/>
 
-          {message?.body && (
-            <ContextMenu.Item
-              className="dropdown-item-default"
-              onSelect={async () => {
-                try {
-                  await navigator.clipboard.writeText(message.body!);
-                } catch {
-                  toast.error("Failed to copy message body to clipboard, possible API error?")
-                }
-              }}
-            >
-              Copy text <BsCopy className="fill-white size-4 ml-auto"/>
-            </ContextMenu.Item>
+              <ContextMenu.Item
+                className="dropdown-item-default"
+                onSelect={async () => {
+                  try {
+                    await navigator.clipboard.writeText(content.message.body!);
+                  } catch {
+                    toast.error("Failed to copy message body to clipboard, possible API error?")
+                  }
+                }}
+              >
+                Copy text <BsCopy className="fill-white size-4 ml-auto"/>
+              </ContextMenu.Item>
+            </>
           )}
         </ContextMenu.Content>
       </ContextMenu.Portal>
