@@ -1,6 +1,6 @@
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {type MediaGalleryElement, useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
-import {type ChangeEvent, useRef, useState} from "react";
+import {type ChangeEvent, useEffect, useRef, useState} from "react";
 import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
 import Dialog from "../Dialog.tsx";
 import {BsWrenchAdjustable} from "react-icons/bs";
@@ -10,6 +10,8 @@ import {Attachment} from "./Attachment.tsx";
 import {FaFileCirclePlus, FaRepeat, FaXmark} from "react-icons/fa6";
 import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
 import type {AttachmentItem} from "./ChatInput.tsx";
+import {useMessageOperationsStore} from "../../store/useMessageOperationsStore.ts";
+import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 
 interface EditMessageModalProps {
   open: boolean;
@@ -24,13 +26,51 @@ export default function EditMessageModal({
   originalMessage,
   handleSubmit,
 }: EditMessageModalProps) {
+  const { conversationId } = useChatContainerContext();
   const setGalleryElements = useMediaGalleryStore((state) => state.setElements);
+
+  const editOperation = useMessageOperationsStore(
+    (state) => state.editOperationsByConversation[conversationId]?.[originalMessage?.id ?? ""]
+  );
 
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
 
-  const [removeAttachmentIds, setRemoveAttachmentIds] = useState<string[]>([]);
-  const [newAttachments, setNewAttachments] = useState<AttachmentItem[]>([]);
+  const [removeAttachmentIds, setRemoveAttachmentIds] = useState<string[]>(
+    editOperation?.input.removeAttachmentIds ?? []
+  );
+  const [newAttachments, setNewAttachments] = useState<AttachmentItem[]>(() => {
+    if (!editOperation?.input.addAttachments) return [];
+
+    return editOperation.input.addAttachments.map(file => ({
+      file,
+      id: crypto.randomUUID(),
+      previewUrl: URL.createObjectURL(file),
+    }));
+  });
+
+  // sync state if edit operation changed for some reason.
+  useEffect(() => {
+    if (open) {
+      setRemoveAttachmentIds(editOperation?.input.removeAttachmentIds ?? []);
+
+      if (editOperation?.input.addAttachments) {
+        setNewAttachments(
+          editOperation.input.addAttachments.map(file => ({
+            file,
+            id: crypto.randomUUID(),
+            previewUrl: URL.createObjectURL(file),
+          }))
+        );
+      } else {
+        setNewAttachments([]);
+      }
+    }
+  }, [open, editOperation]);
+
+  const initialBody = editOperation?.input.body !== undefined
+    ? editOperation.input.body
+    : originalMessage?.body ?? "";
 
   const handleAttachmentChanged = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
     const files = e.target.files;
@@ -65,6 +105,10 @@ export default function EditMessageModal({
 
   const handleRemoveNewAttachment = (attachmentId: string) => {
     setNewAttachments((prev: AttachmentItem[]): AttachmentItem[] => {
+      const target = prev.find(v => v.id === attachmentId);
+      if (target && target.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
       return prev.filter(v => v.id !== attachmentId);
     });
   }
@@ -101,6 +145,21 @@ export default function EditMessageModal({
     setNewAttachments([]);
   };
 
+  // object url revoking
+  useEffect(() => {
+    return () => {
+      newAttachments.forEach(att => att.previewUrl && URL.revokeObjectURL(att.previewUrl));
+    };
+  }, [newAttachments]);
+
+  useEffect(() => {
+    if (!open) {
+      newAttachments.forEach(att => att.previewUrl && URL.revokeObjectURL(att.previewUrl));
+      setNewAttachments([]);
+      setRemoveAttachmentIds([]);
+    }
+  }, [open]);
+
   return (
     <Dialog
       open={open}
@@ -133,8 +192,8 @@ export default function EditMessageModal({
 
           <MessageTextboxEditor
             ref={textboxEditorRef}
-            key={open ? originalMessage.id : undefined}
-            initialValue={originalMessage.body ?? ""}
+            key={open ? `${originalMessage.id}-${editOperation ? 'editing' : 'fresh'}` : undefined}
+            initialValue={initialBody ?? ""}
             onSuggestionChange={() => {}}
           />
 

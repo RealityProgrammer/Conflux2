@@ -8,7 +8,7 @@ import {MessageRow} from "./MessageRow.tsx";
 import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
-import {FaRepeat, FaTrashCan} from "react-icons/fa6";
+import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
 import {BsExclamationTriangle} from "react-icons/bs";
 
 type EditingMessageItemProps = {
@@ -53,8 +53,8 @@ function View({
   const message = data.message;
 
   return (
-    <div className="group relative hover-highlight flex flex-col pt-0.5">
-      <div className={`px-2 ${data.error ? "bg-red-500/40" : ""}`}>
+    <div className={`group relative flex flex-col pt-0.5 ${data.error ? "bg-red-500/40 hover:bg-red-500/50" : ""}`}>
+      <div className={`px-2`}>
         {message.replyTo && (
           <MessageRow.Reply
             messageId={message.replyTo.id}
@@ -136,6 +136,10 @@ function View({
               </Tooltip.Content>
             </Tooltip.Portal>
           </Tooltip.Root>
+
+          <IconButton theme="default" className="size-5" onClick={() => context.actions.onMessageEditTrigger(message)}>
+            <FaPencil className="size-5 ml-auto"/>
+          </IconButton>
 
           <IconButton theme="default" className="size-5" onClick={() => context.actions.retryEditOperation(message.id)}>
             <FaRepeat className="size-5 ml-auto"/>

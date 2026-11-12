@@ -538,6 +538,7 @@ export function ChatView({
             setEditingMessage(undefined);
           }
         }}
+        key={editingMessage?.id}
         originalMessage={editingMessage}
         handleSubmit={(newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => {
           handleSaveEdit(newBody, removeAttachmentIds, newAttachments);
