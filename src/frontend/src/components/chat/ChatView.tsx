@@ -270,7 +270,7 @@ export function ChatView({
 
   // if we're anchored and the target item is already in the list, make Virtuoso centred on it, else start at the bottom.
   const anchorArrayIndex = anchorId && !isLoading ? timelineItems.findIndex(
-    item => item instanceof MessageItem && item.data.content.message.id === anchorId,
+    item => item instanceof MessageItem && item.data.message.id === anchorId,
   ) : -1;
 
   const initialTopMostItemIndex = anchorArrayIndex >= 0 ?
@@ -304,7 +304,7 @@ export function ChatView({
     if (!jumpMessageId) return;
 
     const arrayIndex = timelineItems.findIndex(item =>
-      item instanceof MessageItem && item.data.content.message.id === jumpMessageId
+      item instanceof MessageItem && item.data.message.id === jumpMessageId
     );
 
     // message already loaded, jump to it immediately

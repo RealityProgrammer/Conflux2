@@ -122,8 +122,8 @@ export default function ChatContainerContextProvider({
             setSendOperationError(conversationId, variables.idempotencyKey, {
               type: "validation",
               fields: {
-                attachments: details.attachments,
                 body: details.body,
+                attachments: details.attachments,
               }
             });
           } else {
@@ -173,13 +173,14 @@ export default function ChatContainerContextProvider({
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
           if (response.error?.code === "ValidationErrorsOccurred") {
-            const details = response.error.details as Record<"body" | "attachments", string[]>;
+            const details = response.error.details as Record<"body" | "removeAttachmentIds" | "addAttachments", string[]>;
 
             setEditOperationError(conversationId, variables.messageId, {
               type: "validation",
               fields: {
-                attachments: details.attachments,
                 body: details.body,
+                removeAttachmentIds: details.removeAttachmentIds,
+                addAttachments: details.addAttachments,
               }
             });
           } else {

@@ -120,6 +120,7 @@ public sealed class ConversationMessagesController(
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }

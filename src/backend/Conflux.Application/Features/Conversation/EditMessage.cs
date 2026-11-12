@@ -140,6 +140,11 @@ public sealed class EditMessageHandler(
                 }
             }
 
+            // re-ordering the remaining attachments.
+            for (int i = 0; i < message.Attachments.Count; i++) {
+                message.Attachments[i].Order = (short)i;
+            }
+
             // add new MediaItem entity to database
             if (command.AddAttachments.Count > 0) {
                 foreach ((int index, var uploadResult) in newAttachmentsUploadResults.Index()) {
@@ -150,7 +155,7 @@ public sealed class EditMessageHandler(
                         ContentType = uploadResult.Format.MediaType,
                         Version = 0,
                         MessageId = message.Id,
-                        Order = (short)index,
+                        Order = (short)(message.Attachments.Count + index), // new attachments move to the last positions
                     };
 
                     message.Attachments.Add(mediaItem);

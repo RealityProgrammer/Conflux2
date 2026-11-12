@@ -11,6 +11,7 @@ import {PinMessageItem} from "../components/chat/PinMessageItem.tsx";
 import {CallCancelItem} from "../components/chat/CallCancelItem.tsx";
 import {CallEndItem} from "../components/chat/CallEndItem.tsx";
 import type {InfiniteData} from "@tanstack/react-query";
+import {EditingMessageItem} from "../components/chat/EditingMessageItem.tsx";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -35,7 +36,7 @@ export default function useTimelineItems(
 
   let lastMessageDate: Date | null = null;
   let lastMessageSenderId: string | null = null;
-  let messageHasHeader = true;
+  let showHeader = true;
 
   for (const page of messagePages.pages.filter(p => !!p)) {
     const activeMessages = page.messages.filter(m => !deletingMessageIds.has(m.id));
@@ -53,27 +54,34 @@ export default function useTimelineItems(
         }));
 
         lastMessageDate = messageDate;
-        messageHasHeader = true;
+        showHeader = true;
       }
 
       if (message.type === MessageType.Message) {
-        if (!messageHasHeader && (lastMessageSenderId !== message.sender!.id || !!message.replyTo)) {
-          messageHasHeader = true;
+        if (!showHeader && (lastMessageSenderId !== message.sender!.id || !!message.replyTo)) {
+          showHeader = true;
         }
 
         const editingOperation = editOperations[message.id];
 
-        items.push(
-          new MessageItem({
-            content: editingOperation ? { type: "edit", message: message, error: editingOperation.error, input: editingOperation.input } : { type: "message", message: message },
-            showHeader: messageHasHeader,
-          })
-        );
+        if (editingOperation) {
+          items.push(new EditingMessageItem({
+            message,
+            input: editingOperation.input,
+            error: editingOperation.error,
+            showHeader: showHeader,
+          }));
+        } else {
+          items.push(new MessageItem({
+            message,
+            showHeader: showHeader,
+          }));
+        }
 
-        messageHasHeader = false;
+        showHeader = false;
         lastMessageSenderId = message.sender!.id;
       } else {
-        messageHasHeader = true;
+        showHeader = true;
 
         switch (message.type) {
           case MessageType.CallStart:
