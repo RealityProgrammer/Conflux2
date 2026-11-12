@@ -128,8 +128,16 @@ export default function ChatContainerContextProvider({
           }
           break;
 
+        case HttpStatusCode.Forbidden:
+          setSendOperationError(conversationId, variables.idempotencyKey, { type: "forbidden", message: response.error!.message! });
+          break;
+
         case 0 as HttpStatusCode:
           setSendOperationError(conversationId, variables.idempotencyKey, { type: "network" });
+          break;
+
+        case HttpStatusCode.InternalServerError:
+          setSendOperationError(conversationId, variables.idempotencyKey, { type: "server" });
           break;
 
         default:
@@ -179,6 +187,14 @@ export default function ChatContainerContextProvider({
           } else {
             setEditOperationError(conversationId, variables.messageId, { type: "unknown" });
           }
+          break;
+
+        case HttpStatusCode.Forbidden:
+          setEditOperationError(conversationId, variables.messageId, { type: "forbidden", message: response.error!.message! });
+          break;
+
+        case HttpStatusCode.InternalServerError:
+          setEditOperationError(conversationId, variables.messageId, { type: "server" });
           break;
 
         case 0 as HttpStatusCode:

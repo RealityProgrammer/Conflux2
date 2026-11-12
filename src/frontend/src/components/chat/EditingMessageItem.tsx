@@ -10,6 +10,7 @@ import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
 import {BsExclamationTriangle} from "react-icons/bs";
+import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
 
 type EditingMessageItemProps = {
   message: TimelineMessageDto;
@@ -104,38 +105,7 @@ function View({
 
       {data.error && (
         <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              <BsExclamationTriangle className="flex-1 size-5"/>
-            </Tooltip.Trigger>
-
-            <Tooltip.Portal>
-              <Tooltip.Content
-                side="top"
-                align="center"
-                sideOffset={4}
-                className="rounded-md shadow-md bg-gray-750 text-white p-2 border-2 border-gray-600 text-sm"
-              >
-                {data.error.type === "network" ? (
-                  "Network issue happened."
-                ) : data.error.type === "validation" ? (() => {
-                  const messages = data.error.messages;
-
-                  return messages.length === 1 ? (
-                    <p>{messages[0]}</p>
-                  ) : (
-                    <ol className="list-inside list-decimal space-y-2">
-                      {messages.map(errorMessage => (
-                        <li>{errorMessage}</li>
-                      ))}
-                    </ol>
-                  )
-                })() : (
-                  "Unknown error happened."
-                )}
-              </Tooltip.Content>
-            </Tooltip.Portal>
-          </Tooltip.Root>
+          <MessageOperationErrorDisplay error={data.error} className="flex-1 size-5"/>
 
           <IconButton theme="default" className="size-5" onClick={() => context.actions.onMessageEditTrigger(message)}>
             <FaPencil className="size-5 ml-auto"/>

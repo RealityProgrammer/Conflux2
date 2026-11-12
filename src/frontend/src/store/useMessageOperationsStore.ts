@@ -14,8 +14,10 @@ export type MessageEditInput = {
 
 export type MessageOperationError =
   | { type: "validation", messages: string[]; }
+  | { type: "forbidden", message: string; }
   | { type: "network" }
-  | { type: "unknown" };
+  | { type: "unknown" }
+  | { type: "server" };
 
 export type SendOperation = {
   input: MessageSendInput;

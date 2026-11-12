@@ -60,9 +60,8 @@ public sealed class ConversationMessagesController(
             }
         
             return result.Error.Code switch {
-                nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
                 nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
-                nameof(Errors.Forbidden) => NotFound(new ApiResponse(Errors.ResourceNotFound("Conversation"))),
+                nameof(Errors.RequireActiveAccount) or nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
                 nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
                 nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),

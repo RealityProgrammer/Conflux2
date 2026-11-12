@@ -61,11 +61,11 @@ public sealed partial class SendMessageHandler(
     IConversationRepository conversationRepository,
     IConversationParticipantsProvider conversationParticipantsProvider,
     IConversationAuthorizeService conversationAuthorizeService,
+    IEmojiReadRepository emojiReadRepository,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
     TimeProvider timeProvider,
     IMessageMediaService messageMediaService,
-    IServerEmojiCacheService serverEmojiCacheService,
     ILogger<SendMessageHandler> logger
 ) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand command, CancellationToken cancellationToken) {
@@ -85,14 +85,21 @@ public sealed partial class SendMessageHandler(
         }
 
         if (!await conversationAuthorizeService.CanSendMessage(senderUserId, conversationId, cancellationToken)) {
-            return Errors.Forbidden("User is not allowed to send message in this conversation.");
+            return Errors.Forbidden("You are not allowed to send message in this conversation.");
         }
 
-        // parse the markdown document here since we gonna use it for both validation and extract mentioning.
-        var markdownDocument = Markdown.Parse(command.Body);
+        // parse the Markdown document here since we going to use it for both validation and extract mentioning.
+        MarkdownDocument? markdownDocument = null;
 
-        // ensure that user is allowed to use the emoji (user is member of the server contains the emoji).
-        
+        if (!string.IsNullOrWhiteSpace(command.Body)) {
+            markdownDocument = Markdown.Parse(command.Body);
+            
+            // ensure that user is allowed to use the emoji (user is member of the server contains the emoji).
+            var error = await TryValidateEmoji(markdownDocument, senderUserId, cancellationToken);
+            if (error != Error.None) {
+                return error;
+            }
+        }
 
         var utcNow = timeProvider.GetUtcNow();
 
@@ -163,7 +170,7 @@ public sealed partial class SendMessageHandler(
         
         // publish mentioning notification
         // check regex isMatch to quickly discard any message that doesn't have any mentioning token
-        if (!string.IsNullOrEmpty(message.Body) && MentionUserRegex().IsMatch(message.Body)) {
+        if (markdownDocument != null && MentionUserRegex.IsMatch(message.Body!)) {
             await PublishMentionNotification(
                 conversation.Type,
                 conversationId, 
@@ -185,6 +192,72 @@ public sealed partial class SendMessageHandler(
         }
 
         return Result<TimelineMessageDto>.Success(dto);
+    }
+
+    private async Task<Error> TryValidateEmoji(MarkdownDocument markdownDocument, Guid senderUserId, CancellationToken cancellationToken) {
+        // extract emoji ids first.
+        var emojiIds = new HashSet<Guid>();
+
+        foreach (Block block in markdownDocument) {
+            TraverseObject(block, emojiIds);
+        }
+
+        if (emojiIds.Count == 0) {
+            return Error.None;
+        }
+        
+        // extract server ids from emoji and check if user is member of that server
+        var validEmojiCount = await emojiReadRepository
+            .AsQueryable()
+            .Where(e => emojiIds.Contains(e.Id) && e.Server.Members.Any(m => m.UserId == senderUserId && m.Status == MembershipStatus.Active))
+            .CountAsync(cancellationToken);
+
+        return validEmojiCount != emojiIds.Count ? 
+            Errors.Forbidden("You do not have permission to use one or more emojis in this message.") : 
+            Error.None;
+
+        static void TraverseObject(MarkdownObject markdownObject, HashSet<Guid> emojiIds) {
+            while (true) {
+                // skip these blocks
+                if (markdownObject is CodeBlock or FencedCodeBlock or CodeInline) {
+                    return;
+                }
+
+                switch (markdownObject) {
+                    case ContainerBlock containerBlock:
+                        foreach (var children in containerBlock) {
+                            TraverseObject(children, emojiIds);
+                        }
+                        break;
+
+                    case LeafBlock leafBlock:
+                        if (leafBlock.Inline is { } inline) {
+                            markdownObject = inline;
+                            continue;
+                        }
+                        break;
+
+                    case ContainerInline containerInline:
+                        foreach (var children in containerInline) {
+                            TraverseObject(children, emojiIds);
+                        }
+                        break;
+
+                    case LiteralInline literalInline:
+                        var text = literalInline.Content.AsSpan();
+
+                        foreach (var match in EmojiRegex.EnumerateMatches(text)) {
+                            ReadOnlySpan<char> slice = text.Slice(match.Index + 2, match.Length - 3);
+
+                            if (Guid.TryParse(slice, out Guid emojiId)) {
+                                emojiIds.Add(emojiId);
+                            }
+                        }
+                        break;
+                }
+                break;
+            }
+        }
     }
     
     private async Task PublishMentionNotification(
@@ -260,45 +333,52 @@ public sealed partial class SendMessageHandler(
         return;
 
         static void TraverseObject(MarkdownObject markdownObject, HashSet<Guid> userIds) {
-            // skip these blocks
-            if (markdownObject is CodeBlock or FencedCodeBlock or CodeInline or QuoteBlock) {
-                return;
-            }
+            while (true) {
+                // skip these blocks
+                if (markdownObject is CodeBlock or FencedCodeBlock or CodeInline or QuoteBlock) {
+                    return;
+                }
 
-            switch (markdownObject) {
-                case ContainerBlock containerBlock:
-                    foreach (var children in containerBlock) {
-                        TraverseObject(children, userIds);
-                    }
-                    break;
-                
-                case LeafBlock leafBlock:
-                    if (leafBlock.Inline is { } inline) {
-                        TraverseObject(inline, userIds);
-                    }
-                    break;
-                
-                case ContainerInline containerInline:
-                    foreach (var children in containerInline) {
-                        TraverseObject(children, userIds);
-                    }
-                    break;
-                
-                case LiteralInline literalInline:
-                    var text = literalInline.Content.AsSpan();
-                    
-                    foreach (var match in MentionUserRegex().EnumerateMatches(text)) {
-                        ReadOnlySpan<char> userIdSlice = text.Slice(match.Index + 2, match.Length - 3);
-                        
-                        if (Guid.TryParse(userIdSlice, out Guid userId)) {
-                            userIds.Add(userId);
+                switch (markdownObject) {
+                    case ContainerBlock containerBlock:
+                        foreach (var children in containerBlock) {
+                            TraverseObject(children, userIds);
                         }
-                    }
-                    break;
+                        break;
+
+                    case LeafBlock leafBlock:
+                        if (leafBlock.Inline is { } inline) {
+                            markdownObject = inline;
+                            continue;
+                        }
+                        break;
+
+                    case ContainerInline containerInline:
+                        foreach (var children in containerInline) {
+                            TraverseObject(children, userIds);
+                        }
+                        break;
+
+                    case LiteralInline literalInline:
+                        var text = literalInline.Content.AsSpan();
+
+                        foreach (var match in MentionUserRegex.EnumerateMatches(text)) {
+                            ReadOnlySpan<char> userIdSlice = text.Slice(match.Index + 2, match.Length - 3);
+
+                            if (Guid.TryParse(userIdSlice, out Guid userId)) {
+                                userIds.Add(userId);
+                            }
+                        }
+                        break;
+                }
+                break;
             }
         }
     }
 
     [GeneratedRegex(@":m([\da-f\-]+):", RegexOptions.Compiled)]
-    private static partial Regex MentionUserRegex();
+    private static partial Regex MentionUserRegex { get; }
+    
+    [GeneratedRegex(@":e([\da-f\-]+):", RegexOptions.Compiled)]
+    private static partial Regex EmojiRegex { get; }
 }
