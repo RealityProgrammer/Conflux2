@@ -39,8 +39,7 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Biography")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -53,8 +52,7 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DisplayName")
-                        .HasMaxLength(48)
-                        .HasColumnType("character varying(48)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -96,8 +94,7 @@ namespace Conflux.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Pronouns")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("text");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
@@ -465,11 +462,14 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<Guid?>("MessageId")
                         .HasColumnType("uuid");
 
+                    b.Property<short>("Order")
+                        .HasColumnType("smallint");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
+                    b.Property<short>("Version")
+                        .HasColumnType("smallint");
 
                     b.HasKey("Id");
 

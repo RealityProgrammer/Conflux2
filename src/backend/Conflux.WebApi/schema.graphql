@@ -572,7 +572,7 @@ type KickCommunityServerMemberPayload {
 
 type MediaItem {
   id: UUID!
-  version: Int!
+  version: Short!
   fileName: String
   contentType: String!
 }
@@ -1252,7 +1252,8 @@ input MediaItemFilterInput {
   type: MediaItemTypeOperationFilterInput
   contentType: StringOperationFilterInput
   fileName: StringOperationFilterInput
-  version: IntOperationFilterInput
+  version: ShortOperationFilterInput
+  order: ShortOperationFilterInput
   messageId: UuidOperationFilterInput
   message: MessageFilterInput
 }
@@ -1406,6 +1407,21 @@ input ServerPermissionOperationFilterInput {
   neq: ServerPermission @cost(weight: "10")
   in: [ServerPermission!] @cost(weight: "10")
   nin: [ServerPermission!] @cost(weight: "10")
+}
+
+input ShortOperationFilterInput {
+  eq: Short @cost(weight: "10")
+  neq: Short @cost(weight: "10")
+  in: [Short] @cost(weight: "10")
+  nin: [Short] @cost(weight: "10")
+  gt: Short @cost(weight: "10")
+  ngt: Short @cost(weight: "10")
+  gte: Short @cost(weight: "10")
+  ngte: Short @cost(weight: "10")
+  lt: Short @cost(weight: "10")
+  nlt: Short @cost(weight: "10")
+  lte: Short @cost(weight: "10")
+  nlte: Short @cost(weight: "10")
 }
 
 input SpecialRoleTypeOperationFilterInput {
@@ -1650,6 +1666,10 @@ scalar DateTime
 "The `Duration` scalar type represents a duration of time."
 scalar Duration
   @specifiedBy(url: "https://scalars.graphql.org/chillicream/duration.html")
+
+"The `Short` scalar type represents a signed 16-bit integer."
+scalar Short
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/short.html")
 
 "The `UnsignedInt` scalar type represents an unsigned 32-bit integer."
 scalar UnsignedInt

@@ -55,7 +55,7 @@ public sealed class EditMessageHandler(
         
         var message = await messageRepository
             .AsQueryable()
-            .Include(m => m.Attachments)
+            .Include(m => m.Attachments.OrderBy(a => a.Order))
             .Where(m => m.Id == messageId && m.ConversationId == conversationId)
             .FirstOrDefaultAsync(cancellationToken);
         
@@ -142,7 +142,7 @@ public sealed class EditMessageHandler(
 
             // add new MediaItem entity to database
             if (command.AddAttachments.Count > 0) {
-                foreach (var uploadResult in newAttachmentsUploadResults) {
+                foreach ((int index, var uploadResult) in newAttachmentsUploadResults.Index()) {
                     var mediaItem = new MediaItem {
                         Id = uploadResult.Id,
                         Type = MediaItemType.MessageAttachment,
@@ -150,6 +150,7 @@ public sealed class EditMessageHandler(
                         ContentType = uploadResult.Format.MediaType,
                         Version = 0,
                         MessageId = message.Id,
+                        Order = (short)index,
                     };
 
                     message.Attachments.Add(mediaItem);

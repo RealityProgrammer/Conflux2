@@ -30,7 +30,8 @@ internal sealed class MessageRepository(
         var baseQuery = dbContext.Messages
             .AsNoTracking()
             .Where(m => m.ConversationId == conversationId)
-            .Include(m => m.ReplyTo);
+            .Include(m => m.ReplyTo)
+            .Include(m => m.Attachments.OrderBy(a => a.Order));
 
         switch (readStrategy) {
             case MessageReadStrategy.Latest:

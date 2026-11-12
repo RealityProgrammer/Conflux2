@@ -22,9 +22,7 @@ public sealed class MessageMediaService(
         
         // validate file formats.
         try {
-            foreach ((var i, var file) in files.Index()) {
-                var stream = file.Stream;
-                
+            foreach ((int i, (string fileName, Stream stream)) in files.Index()) {
                 if (fileFormatInspector.DetermineFileFormat(stream) is not { } fileFormat) {
                     return Errors.ValidationErrorsOccurred(new() {
                         [$"{nameof(files)}[{i}]"] = [
@@ -41,7 +39,7 @@ public sealed class MessageMediaService(
                     });
                 }
 
-                results[i] = new(Guid.NewGuid(), fileFormat, file.FileName);
+                results[i] = new(Guid.NewGuid(), fileFormat, fileName);
             }
         } finally {
             foreach (var file in files) {

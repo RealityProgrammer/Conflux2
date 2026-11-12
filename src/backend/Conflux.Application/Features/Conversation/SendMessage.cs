@@ -119,6 +119,7 @@ public sealed partial class SendMessageHandler(
                 FileName = attachmentUploadResults[i].FileName,
                 ContentType = attachmentUploadResults[i].Format.MediaType,
                 Version = 0,
+                Order = (short)i,
             });
         }
         

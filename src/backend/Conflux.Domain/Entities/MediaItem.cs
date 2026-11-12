@@ -7,7 +7,8 @@ public class MediaItem {
     public required MediaItemType Type { get; set; }
     public required string ContentType { get; set; }
     public string? FileName { get; set; }
-    public int Version { get; set; }
+    public short Version { get; set; }
+    public required short Order { get; set; }
     
     public Guid? MessageId { get; set; }
     public Message? Message { get; set; }
