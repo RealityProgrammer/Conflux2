@@ -119,7 +119,7 @@ function View({
                 {data.error.type === "network" ? (
                   "Network issue happened."
                 ) : data.error.type === "validation" ? (() => {
-                  const messages = Object.entries(data.error.fields).filter(p => !!p[1] && p[1].length > 0).flatMap(p => p[1]);
+                  const messages = data.error.messages;
 
                   return messages.length === 1 ? (
                     <p>{messages[0]}</p>

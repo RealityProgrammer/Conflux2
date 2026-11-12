@@ -13,7 +13,7 @@ export type MessageEditInput = {
 }
 
 export type MessageOperationError =
-  | { type: "validation", fields: Record<string, string[]>; }
+  | { type: "validation", messages: string[]; }
   | { type: "network" }
   | { type: "unknown" };
 

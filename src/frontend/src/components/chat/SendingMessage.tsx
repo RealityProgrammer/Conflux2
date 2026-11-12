@@ -62,7 +62,7 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
                     {this.data.error.type === "network" ? (
                       "Network issue happened."
                     ) : this.data.error.type === "validation" ? (() => {
-                      const messages = Object.entries(this.data.error.fields).filter(p => !!p[1] && p[1].length > 0).flatMap(p => p[1]);
+                      const messages = this.data.error.messages;
 
                       return messages.length === 1 ? (
                         <p>{messages[0]}</p>

@@ -117,14 +117,11 @@ export default function ChatContainerContextProvider({
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
           if (response.error?.code === "ValidationErrorsOccurred") {
-            const details = response.error.details as Record<"body" | "attachments", string[]>;
+            const details = response.error.details as Record<string, string[]>;
 
             setSendOperationError(conversationId, variables.idempotencyKey, {
               type: "validation",
-              fields: {
-                body: details.body,
-                attachments: details.attachments,
-              }
+              messages: Object.values(details).flatMap(p => p),
             });
           } else {
             setSendOperationError(conversationId, variables.idempotencyKey, { type: "unknown" });
@@ -177,11 +174,7 @@ export default function ChatContainerContextProvider({
 
             setEditOperationError(conversationId, variables.messageId, {
               type: "validation",
-              fields: {
-                body: details.body,
-                removeAttachmentIds: details.removeAttachmentIds,
-                addAttachments: details.addAttachments,
-              }
+              messages: Object.values(details).flatMap(p => p),
             });
           } else {
             setEditOperationError(conversationId, variables.messageId, { type: "unknown" });
