@@ -61,9 +61,9 @@ public sealed partial class SendMessageHandler(
     IConversationRepository conversationRepository,
     IConversationParticipantsProvider conversationParticipantsProvider,
     IConversationAuthorizeService conversationAuthorizeService,
-    IEmojiReadRepository emojiReadRepository,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
+    IEmojiValidationService emojiValidationService,
     TimeProvider timeProvider,
     IMessageMediaService messageMediaService,
     ILogger<SendMessageHandler> logger
@@ -95,7 +95,7 @@ public sealed partial class SendMessageHandler(
             markdownDocument = Markdown.Parse(command.Body);
             
             // ensure that user is allowed to use the emoji (user is member of the server contains the emoji).
-            var error = await TryValidateEmoji(markdownDocument, senderUserId, cancellationToken);
+            var error = await emojiValidationService.ValidateMessageEmojis(markdownDocument, senderUserId, cancellationToken);
             if (error != Error.None) {
                 return error;
             }
@@ -194,72 +194,6 @@ public sealed partial class SendMessageHandler(
         return Result<TimelineMessageDto>.Success(dto);
     }
 
-    private async Task<Error> TryValidateEmoji(MarkdownDocument markdownDocument, Guid senderUserId, CancellationToken cancellationToken) {
-        // extract emoji ids first.
-        var emojiIds = new HashSet<Guid>();
-
-        foreach (Block block in markdownDocument) {
-            TraverseObject(block, emojiIds);
-        }
-
-        if (emojiIds.Count == 0) {
-            return Error.None;
-        }
-        
-        // extract server ids from emoji and check if user is member of that server
-        var validEmojiCount = await emojiReadRepository
-            .AsQueryable()
-            .Where(e => emojiIds.Contains(e.Id) && e.Server.Members.Any(m => m.UserId == senderUserId && m.Status == MembershipStatus.Active))
-            .CountAsync(cancellationToken);
-
-        return validEmojiCount != emojiIds.Count ? 
-            Errors.Forbidden("You do not have permission to use one or more emojis in this message.") : 
-            Error.None;
-
-        static void TraverseObject(MarkdownObject markdownObject, HashSet<Guid> emojiIds) {
-            while (true) {
-                // skip these blocks
-                if (markdownObject is CodeBlock or FencedCodeBlock or CodeInline) {
-                    return;
-                }
-
-                switch (markdownObject) {
-                    case ContainerBlock containerBlock:
-                        foreach (var children in containerBlock) {
-                            TraverseObject(children, emojiIds);
-                        }
-                        break;
-
-                    case LeafBlock leafBlock:
-                        if (leafBlock.Inline is { } inline) {
-                            markdownObject = inline;
-                            continue;
-                        }
-                        break;
-
-                    case ContainerInline containerInline:
-                        foreach (var children in containerInline) {
-                            TraverseObject(children, emojiIds);
-                        }
-                        break;
-
-                    case LiteralInline literalInline:
-                        var text = literalInline.Content.AsSpan();
-
-                        foreach (var match in EmojiRegex.EnumerateMatches(text)) {
-                            ReadOnlySpan<char> slice = text.Slice(match.Index + 2, match.Length - 3);
-
-                            if (Guid.TryParse(slice, out Guid emojiId)) {
-                                emojiIds.Add(emojiId);
-                            }
-                        }
-                        break;
-                }
-                break;
-            }
-        }
-    }
-    
     private async Task PublishMentionNotification(
         ConversationType conversationType, 
         Guid conversationId, 
@@ -378,7 +312,4 @@ public sealed partial class SendMessageHandler(
 
     [GeneratedRegex(@":m([\da-f\-]+):", RegexOptions.Compiled)]
     private static partial Regex MentionUserRegex { get; }
-    
-    [GeneratedRegex(@":e([\da-f\-]+):", RegexOptions.Compiled)]
-    private static partial Regex EmojiRegex { get; }
 }

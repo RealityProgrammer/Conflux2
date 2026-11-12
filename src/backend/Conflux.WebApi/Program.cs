@@ -316,6 +316,7 @@ builder.Services
     
     .AddScoped<IServerEmojiCacheService, ServerEmojiCacheService>()
     .AddScoped<IServerEmojiProvider, ServerEmojiProvider>()
+    .AddScoped<IEmojiValidationService, EmojiValidationService>()
     
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>

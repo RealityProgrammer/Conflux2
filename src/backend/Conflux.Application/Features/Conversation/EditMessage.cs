@@ -7,6 +7,7 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet;
 using Facet.Extensions;
+using Markdig;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 
@@ -43,15 +44,22 @@ public sealed class EditMessageHandler(
     IMessageMediaService messageMediaService,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
+    IEmojiValidationService emojiValidationService,
     ILogger<EditMessageHandler> logger
 ) : ICommandHandler<EditMessageCommand, Result<EditedMessageDto>> {
     public async ValueTask<Result<EditedMessageDto>> Handle(EditMessageCommand command, CancellationToken cancellationToken) {
         if (currentUserService.UserId is not { } userId) {
             return Errors.InvalidIdentifier();
         }
+        
+        Guid conversationId = command.ConversationId;
+        
+        // validate conversation authorization.
+        if (!await conversationAuthorizeService.CanEditMessage(userId, conversationId, cancellationToken)) {
+            return Errors.Forbidden("User is not allowed to edit message in this conversation.");
+        }
 
         Guid messageId = command.MessageId;
-        Guid conversationId = command.ConversationId;
         
         var message = await messageRepository
             .AsQueryable()
@@ -66,19 +74,16 @@ public sealed class EditMessageHandler(
             ]);
         }
         
-        // validate conversation authorization.
-        if (!await conversationAuthorizeService.CanEditMessage(userId, command.ConversationId, cancellationToken)) {
-            return Errors.Forbidden("User is not allowed to edit message in this conversation.");
-        }
-        
         // ensure only message owner can edit the message.
         if (message.SenderUserId != userId) {
             return Errors.Forbidden("User is not allowed to edit other user message.");
         }
         
         // ensure all remove attachment ids actually belong to this message
+        var removeAttachmentIds = command.RemoveAttachmentIds;
+        
         var currentAttachmentIds = message.Attachments.Select(a => a.Id).ToHashSet();
-        if (command.RemoveAttachmentIds.Any(id => !currentAttachmentIds.Contains(id))) {
+        if (removeAttachmentIds.Any(id => !currentAttachmentIds.Contains(id))) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(EditMessageCommand.RemoveAttachmentIds)] = [
                     "One or more attachments to remove do not belong to this message.",
@@ -87,7 +92,9 @@ public sealed class EditMessageHandler(
         }
         
         // ensure final attachments is less than or equal to maximum allowance (4).
-        int finalAttachmentsCount = message.Attachments.Count - command.RemoveAttachmentIds.Count + command.AddAttachments.Count;
+        var addAttachments = command.AddAttachments;
+        
+        int finalAttachmentsCount = message.Attachments.Count - removeAttachmentIds.Count + addAttachments.Count;
         if (finalAttachmentsCount > 4) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(EditMessageCommand.AddAttachments)] = [
@@ -108,12 +115,22 @@ public sealed class EditMessageHandler(
             });
         }
         
+        // validate emoji if has body
+        if (command.Body is { HasValue: true, Value: { } body } && !string.IsNullOrWhiteSpace(body)) {
+            var markdownDocument = Markdown.Parse(body);
+
+            var error = await emojiValidationService.ValidateMessageEmojis(markdownDocument, userId, cancellationToken);
+            if (error != Error.None) {
+                return error;
+            }
+        }
+        
         // upload attachments first if there is any
         AttachmentUploadResult[] newAttachmentsUploadResults = [];
         
         try {
-            if (command.AddAttachments.Count > 0) {
-                var uploadResult = await messageMediaService.UploadAttachments(command.AddAttachments, cancellationToken);
+            if (addAttachments.Count > 0) {
+                var uploadResult = await messageMediaService.UploadAttachments(addAttachments, cancellationToken);
                 
                 if (!uploadResult.IsSuccess) {
                     return Errors.OperationFailure("upload new attachments");
@@ -123,14 +140,14 @@ public sealed class EditMessageHandler(
             }
 
             if (command.Body.HasValue) {
-                message.Body = command.Body.Value;
+                message.Body = command.Body.Value?.Trim();
             }
             
             message.UpdatedAt = timeProvider.GetUtcNow();
             
             // remove attachments from database
-            if (command.RemoveAttachmentIds.Count > 0) {
-                foreach (var removeAttachmentId in command.RemoveAttachmentIds) {
+            if (removeAttachmentIds.Count > 0) {
+                foreach (var removeAttachmentId in removeAttachmentIds) {
                     for (int attachmentIndex = 0; attachmentIndex < message.Attachments.Count; attachmentIndex++) {
                         if (message.Attachments[attachmentIndex].Id == removeAttachmentId) {
                             message.Attachments.RemoveAt(attachmentIndex);
@@ -146,7 +163,7 @@ public sealed class EditMessageHandler(
             }
 
             // add new MediaItem entity to database
-            if (command.AddAttachments.Count > 0) {
+            if (addAttachments.Count > 0) {
                 foreach ((int index, var uploadResult) in newAttachmentsUploadResults.Index()) {
                     var mediaItem = new MediaItem {
                         Id = uploadResult.Id,
@@ -166,8 +183,8 @@ public sealed class EditMessageHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             // delete removed files in object storage.
-            if (command.RemoveAttachmentIds.Count > 0) {
-                await messageMediaService.DeleteAttachments(command.RemoveAttachmentIds, CancellationToken.None);
+            if (removeAttachmentIds.Count > 0) {
+                await messageMediaService.DeleteAttachments(removeAttachmentIds, CancellationToken.None);
             }
         } catch (OperationCanceledException) {
             // compensate by delete uploaded media file
@@ -191,7 +208,7 @@ public sealed class EditMessageHandler(
             new(message.Body, [.. message.Attachments.SelectFacets<MediaItem, MessageAttachmentDto>()]);
 
         await publisher.Publish(
-            new MessageEditedNotification(command.ConversationId, message.Id, dto), 
+            new MessageEditedNotification(conversationId, message.Id, dto), 
             CancellationToken.None
         );
         
