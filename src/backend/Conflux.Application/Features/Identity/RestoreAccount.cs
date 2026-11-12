@@ -13,7 +13,7 @@ public sealed class RestoreAccountHandler(
     ICurrentUserService currentUserService,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     TimeProvider timeProvider,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
+    IAccountDeleteCacheService accountDeleteCacheService,
     IPasswordHasher<object> passwordHasher,
     IUnitOfWork unitOfWork
 ) : ICommandHandler<RestoreAccountCommand, Result> {
@@ -58,7 +58,7 @@ public sealed class RestoreAccountHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
-        await accountDeleteStatusCacheProvider.Remove(userId);
+        await accountDeleteCacheService.Remove(userId);
         return Result.Success();
     }
 }

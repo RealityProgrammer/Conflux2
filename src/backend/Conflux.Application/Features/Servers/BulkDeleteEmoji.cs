@@ -22,7 +22,7 @@ public sealed class BulkDeleteEmojiHandler(
     IEmojiWriteRepository emojiWriteRepository,
     IPublisher publisher,
     IEmojiMediaService mediaService,
-    IServerEmojiCacheProvider cacheProvider,
+    IServerEmojiCacheService cacheService,
     ILogger<BulkDeleteEmojiHandler> logger
 ) : ICommandHandler<BulkDeleteEmojiCommand, Result<int>> {
     public async ValueTask<Result<int>> Handle(BulkDeleteEmojiCommand command, CancellationToken cancellationToken) {
@@ -36,7 +36,7 @@ public sealed class BulkDeleteEmojiHandler(
 
         // unrecoverable procedure...
         if (deletedCount > 0) {
-            await cacheProvider.Remove(serverId);
+            await cacheService.Remove(serverId);
             
             try {
                 Result result = await mediaService.Delete(emojiIds, CancellationToken.None);

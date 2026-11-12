@@ -7,10 +7,10 @@ using StackExchange.Redis;
 
 namespace Conflux.Infrastructure.Services;
 
-internal sealed class AccountDeleteStatusCacheProvider(
+internal sealed class AccountDeleteCacheService(
     IConnectionMultiplexer connectionMultiplexer,
     IUserAccountDeletionReadRepository userAccountDeletionReadRepository
-) : IAccountDeleteStatusCacheProvider {
+) : IAccountDeleteCacheService {
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(2);
     
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();

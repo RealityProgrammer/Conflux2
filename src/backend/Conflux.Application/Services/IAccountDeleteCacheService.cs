@@ -2,7 +2,7 @@ using Conflux.Domain.Enums;
 
 namespace Conflux.Application.Services;
 
-public interface IAccountDeleteStatusCacheProvider {
+public interface IAccountDeleteCacheService {
     Task<AccountDeletionStatus?> GetStatus(Guid userId);
     Task Set(Guid userId, AccountDeletionStatus status);
     Task Remove(Guid userId);

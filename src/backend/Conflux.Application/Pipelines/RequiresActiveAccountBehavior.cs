@@ -7,7 +7,7 @@ namespace Conflux.Application.Pipelines;
 
 internal sealed class RequiresActiveAccountBehavior<TMessage, TResponse>(
     ICurrentUserService currentUserService,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
+    IAccountDeleteCacheService accountDeleteCacheService
 ) : IPipelineBehavior<TMessage, TResponse> where TMessage : IMessage where TResponse : IResult<TResponse> {
     public async ValueTask<TResponse> Handle(
         TMessage request, 
@@ -23,7 +23,7 @@ internal sealed class RequiresActiveAccountBehavior<TMessage, TResponse>(
         }
 
         AccountDeletionStatus status = 
-            await accountDeleteStatusCacheProvider.Check(userId, cancellationToken);
+            await accountDeleteCacheService.Check(userId, cancellationToken);
 
         if (status != AccountDeletionStatus.None) {
             return TResponse.Failure(Errors.RequireActiveAccount());

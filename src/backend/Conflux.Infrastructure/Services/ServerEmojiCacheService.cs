@@ -6,10 +6,10 @@ using StackExchange.Redis;
 
 namespace Conflux.Infrastructure.Services;
 
-internal sealed class ServerEmojiCacheProvider(
+internal sealed class ServerEmojiCacheService(
     IConnectionMultiplexer connectionMultiplexer,
-    ILogger<ServerEmojiCacheProvider> logger
-) : IServerEmojiCacheProvider {
+    ILogger<ServerEmojiCacheService> logger
+) : IServerEmojiCacheService {
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(3);
     
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
@@ -35,7 +35,7 @@ internal sealed class ServerEmojiCacheProvider(
         await _database.HashDeleteAsync(GetStorageKey(serverId), "emojis");
     }
 
-    public async Task Set(Guid serverId, List<EmojiEntryDto> emojis) {
+    public async Task Set(Guid serverId, IReadOnlyList<EmojiEntryDto> emojis) {
         await _database.HashFieldSetAndSetExpiryAsync(
             GetStorageKey(serverId), 
             "emojis", 

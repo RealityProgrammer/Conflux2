@@ -65,6 +65,7 @@ public sealed partial class SendMessageHandler(
     IPublisher publisher,
     TimeProvider timeProvider,
     IMessageMediaService messageMediaService,
+    IServerEmojiCacheService serverEmojiCacheService,
     ILogger<SendMessageHandler> logger
 ) : ICommandHandler<SendMessageCommand, Result<TimelineMessageDto>> {
     public async ValueTask<Result<TimelineMessageDto>> Handle(SendMessageCommand command, CancellationToken cancellationToken) {
@@ -86,6 +87,12 @@ public sealed partial class SendMessageHandler(
         if (!await conversationAuthorizeService.CanSendMessage(senderUserId, conversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to send message in this conversation.");
         }
+
+        // parse the markdown document here since we gonna use it for both validation and extract mentioning.
+        var markdownDocument = Markdown.Parse(command.Body);
+
+        // ensure that user is allowed to use the emoji (user is member of the server contains the emoji).
+        
 
         var utcNow = timeProvider.GetUtcNow();
 
@@ -161,7 +168,7 @@ public sealed partial class SendMessageHandler(
                 conversation.Type,
                 conversationId, 
                 message.Id, 
-                message.Body,
+                markdownDocument,
                 senderUserId
             );
         }
@@ -184,13 +191,12 @@ public sealed partial class SendMessageHandler(
         ConversationType conversationType, 
         Guid conversationId, 
         Guid messageId,
-        string messageBody, 
+        MarkdownDocument markdownDocument,
         Guid messageSenderId
     ) {
-        var document = Markdown.Parse(messageBody);
         var userIds = new HashSet<Guid>();
 
-        foreach (Block block in document) {
+        foreach (Block block in markdownDocument) {
             TraverseObject(block, userIds);
         }
 

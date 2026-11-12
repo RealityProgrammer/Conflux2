@@ -286,7 +286,7 @@ builder.Services.AddSignalR()
 // Conflux services.
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
-    .AddScoped<IAccountDeleteStatusCacheProvider, AccountDeleteStatusCacheProvider>()
+    .AddScoped<IAccountDeleteCacheService, AccountDeleteCacheService>()
         
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
@@ -314,7 +314,8 @@ builder.Services
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
     
-    .AddScoped<IServerEmojiCacheProvider, ServerEmojiCacheProvider>()
+    .AddScoped<IServerEmojiCacheService, ServerEmojiCacheService>()
+    .AddScoped<IServerEmojiProvider, ServerEmojiProvider>()
     
     .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
     .AddScoped<IServerMemberWriteRepository>(services =>

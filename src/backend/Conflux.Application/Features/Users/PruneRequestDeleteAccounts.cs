@@ -12,7 +12,7 @@ public sealed class PruneRequestDeleteAccountsHandler(
     IUserAccountDeletionWriteRepository userAccountDeletionWriteRepository,
     IUserRepository userRepository,
     TimeProvider timeProvider,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
+    IAccountDeleteCacheService accountDeleteCacheService,
     IUserMediaService userMediaService,
     ISessionService sessionService
 ) : ICommandHandler<PruneRequestDeleteAccountsCommand> {
@@ -52,7 +52,7 @@ public sealed class PruneRequestDeleteAccountsHandler(
             }, cancellationToken);
         
         // delete pending cache
-        await accountDeleteStatusCacheProvider.Remove(expiredUserIds);
+        await accountDeleteCacheService.Remove(expiredUserIds);
         
         // delete sessions
         await sessionService.RemoveAllSession(expiredUserIds);

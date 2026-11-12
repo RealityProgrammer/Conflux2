@@ -61,7 +61,7 @@ public sealed partial class CreateEmojiHandler(
     IEmojiReadRepository emojiReadRepository,
     IUnitOfWork unitOfWork,
     IEmojiMediaService mediaService,
-    IServerEmojiCacheProvider cacheProvider,
+    IServerEmojiCacheService cacheService,
     ILogger<CreateEmojiHandler> logger
 ) : ICommandHandler<CreateEmojiCommand, Result<EmojiDto>> {
     private const int MaxEmojiCount = 50;
@@ -121,7 +121,7 @@ public sealed partial class CreateEmojiHandler(
             return uploadResult.Error;
         }
         
-        await cacheProvider.Remove(serverId);
+        await cacheService.Remove(serverId);
 
         EmojiDto dto = new(emoji);
         await publisher.Publish(new EmojiCreatedNotification(serverId, dto), CancellationToken.None);
