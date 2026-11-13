@@ -12,7 +12,7 @@ public sealed record QueryEmojiEntries : ICommand<Result<IReadOnlyList<ServerEmo
 
 public sealed class QueryEmojiEntriesHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository serverMemberReadRepository,
+    IServerMemberRepository serverMemberRepository,
     IServerEmojiProvider serverEmojiProvider
 ) : ICommandHandler<QueryEmojiEntries, Result<IReadOnlyList<ServerEmojiGroupDto>>> {
     public async ValueTask<Result<IReadOnlyList<ServerEmojiGroupDto>>> Handle(
@@ -24,7 +24,7 @@ public sealed class QueryEmojiEntriesHandler(
         }
 
         // get joined server ids
-        List<ServerEmojiGroupInfoDto> joinedServers = await serverMemberReadRepository
+        List<ServerEmojiGroupInfoDto> joinedServers = await serverMemberRepository
             .AsQueryable()
             .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.CommunityServer)

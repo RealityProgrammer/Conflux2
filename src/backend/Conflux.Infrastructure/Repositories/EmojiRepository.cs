@@ -6,7 +6,7 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class EmojiRepository(
     ApplicationDbContext dbContext
-) : IEmojiReadRepository, IEmojiWriteRepository {
+) : IEmojiRepository {
     public async Task<int> CountByServerId(Guid serverId, CancellationToken cancellationToken = default) {
         return await dbContext.Emojis.CountAsync(x => x.Id == serverId, cancellationToken);
     }

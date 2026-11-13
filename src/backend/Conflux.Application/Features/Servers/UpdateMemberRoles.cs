@@ -26,7 +26,7 @@ public sealed record MemberRolesUpdatedNotification(
 ) : INotification;
 
 public sealed class UpdateMemberRolesHandler(
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerPermissionsCacheService serverPermissionsCacheService,
     IUnitOfWork unitOfWork,
     IMediator mediator,
@@ -36,7 +36,7 @@ public sealed class UpdateMemberRolesHandler(
         var serverId = command.ServerId;
         var updatingMemberUserId = command.InteractMemberUserId;
         
-        var updatingMember = await memberReadRepository.AsQueryable()
+        var updatingMember = await memberRepository.AsQueryable()
             .Where(m => m.CommunityServerId == serverId && m.UserId == updatingMemberUserId)
             .Include(m => m.Roles)
             .Include(m => m.CommunityServer)

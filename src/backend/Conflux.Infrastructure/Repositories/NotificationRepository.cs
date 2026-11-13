@@ -7,7 +7,7 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class NotificationRepository(
     ApplicationDbContext dbContext,
     TimeProvider timeProvider
-) : INotificationReadRepository, INotificationWriteRepository {
+) : INotificationRepository {
     public void Add(Notification value) {
         dbContext.Notifications.Add(value);
     }

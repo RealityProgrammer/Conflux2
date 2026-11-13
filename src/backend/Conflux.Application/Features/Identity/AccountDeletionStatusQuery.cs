@@ -11,7 +11,7 @@ public sealed record AccountDeletionStatusQuery : IQuery<Result<AccountDeletionS
 
 public sealed class AccountDeletionStatusQueryHandler(
     ICurrentUserService currentUserService,
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
+    IUserAccountDeletionRepository userAccountDeletionRepository
 ) : IQueryHandler<AccountDeletionStatusQuery, Result<AccountDeletionStatusDto>> {
     public async ValueTask<Result<AccountDeletionStatusDto>> Handle(
         AccountDeletionStatusQuery query, 
@@ -21,7 +21,7 @@ public sealed class AccountDeletionStatusQueryHandler(
             return Errors.InvalidIdentifier();
         }
 
-        var deletion = await userAccountDeletionReadRepository
+        var deletion = await userAccountDeletionRepository
             .AsQueryable()
             .AsNoTracking()
             .Where(u => u.UserId == userId && u.Status == UserAccountDeleteStatus.Pending)

@@ -9,7 +9,7 @@ namespace Conflux.Infrastructure.Services;
 
 internal sealed class AccountDeleteCacheService(
     IConnectionMultiplexer connectionMultiplexer,
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository
+    IUserAccountDeletionRepository userAccountDeletionRepository
 ) : IAccountDeleteCacheService {
     private static readonly TimeSpan Ttl = TimeSpan.FromHours(2);
     
@@ -49,7 +49,7 @@ internal sealed class AccountDeleteCacheService(
         }
         
         // Fetch status and expiration info from repository
-        Result<AccountDeletionDetails> result = await userAccountDeletionReadRepository.GetDeletionDetails(userId, cancellationToken);
+        Result<AccountDeletionDetails> result = await userAccountDeletionRepository.GetDeletionDetails(userId, cancellationToken);
 
         if (!result.IsSuccess) {
             await Set(userId, AccountDeletionStatus.None);

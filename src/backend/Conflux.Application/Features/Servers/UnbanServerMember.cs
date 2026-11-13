@@ -25,7 +25,7 @@ public sealed record ServerMemberUnbannedNotification(
 
 public sealed class UnbanServerMemberHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerPermissionsCacheService permissionsCacheService,
     IServerModerationLogWriteRepository moderationLogWriteRepository,
     IUnitOfWork unitOfWork,
@@ -37,7 +37,7 @@ public sealed class UnbanServerMemberHandler(
         Guid serverId = command.ServerId;
         Guid interactMemberUserId = command.InteractMemberUserId;
         
-        var executorMemberId = memberReadRepository.AsQueryable()
+        var executorMemberId = memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == executorUserId)
             .Select(m => m.Id)
@@ -51,7 +51,7 @@ public sealed class UnbanServerMemberHandler(
             ]);
         }
         
-        CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
+        CommunityServerMember? affectedMember = await memberRepository.AsQueryable()
             .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);

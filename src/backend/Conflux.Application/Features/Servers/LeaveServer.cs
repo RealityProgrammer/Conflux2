@@ -13,7 +13,7 @@ public sealed record UserLeftServerNotification(Guid ServerId, Guid MemberUserId
 
 public sealed class LeaveServerHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     ICommunityServerRoleRepository serverRoleRepository,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
@@ -26,7 +26,7 @@ public sealed class LeaveServerHandler(
         
         Guid serverId = command.ServerId;
         
-        CommunityServerMember? member = await memberReadRepository.AsQueryable()
+        CommunityServerMember? member = await memberRepository.AsQueryable()
             .Where(r => r.CommunityServerId == serverId && r.UserId == userId)
             .Include(r => r.Roles)
             .FirstOrDefaultAsync(cancellationToken);

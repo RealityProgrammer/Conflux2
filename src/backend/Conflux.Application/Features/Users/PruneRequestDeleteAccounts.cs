@@ -8,7 +8,7 @@ namespace Conflux.Application.Features.Users;
 public sealed class PruneRequestDeleteAccountsCommand : ICommand;
 
 public sealed class PruneRequestDeleteAccountsHandler(
-    IUserAccountDeletionReadRepository userAccountDeletionReadRepository,
+    IUserAccountDeletionRepository userAccountDeletionRepository,
     IUserAccountDeletionWriteRepository userAccountDeletionWriteRepository,
     IUserRepository userRepository,
     TimeProvider timeProvider,
@@ -22,7 +22,7 @@ public sealed class PruneRequestDeleteAccountsHandler(
         var now = timeProvider.GetUtcNow();
         
         // gather ids in batch of 512 rows at once.
-        var expiredIds = await userAccountDeletionReadRepository
+        var expiredIds = await userAccountDeletionRepository
             .AsQueryable()
             .Where(u => u.Status == UserAccountDeleteStatus.Pending && u.CreatedAt + GracePeriodDuration <= now)
             .Select(u => new { u.Id, u.UserId })

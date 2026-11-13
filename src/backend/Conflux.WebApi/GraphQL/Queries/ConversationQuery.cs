@@ -60,7 +60,7 @@ public static partial class ConversationQuery {
         PagingArguments pagingArgs,
         [Service] ICurrentUserService currentUserService,
         [Service] IConversationRepository conversationRepository,
-        [Service] IServerMemberReadRepository serverMemberReadRepository,
+        [Service] IServerMemberRepository serverMemberRepository,
         CancellationToken cancellationToken
     ) {
         if (currentUserService.UserId is not { } userId) {
@@ -83,7 +83,7 @@ public static partial class ConversationQuery {
         
         bool hasAccess = conversationData.Type switch {
             ConversationType.Server => conversationData.ServerId.HasValue && 
-               await serverMemberReadRepository
+               await serverMemberRepository
                    .AsQueryable()
                    .AnyAsync(
                        sm => sm.CommunityServerId == conversationData.ServerId.Value && sm.UserId == userId, 

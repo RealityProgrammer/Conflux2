@@ -11,7 +11,7 @@ using System.Collections.Frozen;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerPermissionsProvider(
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerPermissionsCacheService cacheService,
     IServerDefaultRoleAuthorizeProvider defaultRoleAuthorizeProvider,
     TimeProvider timeProvider
@@ -29,7 +29,7 @@ internal sealed class ServerPermissionsProvider(
             return Result<ServerMemberAuthorizeInfoDto>.Success(cached);
         }
 
-        CommunityServerMember? member = await memberReadRepository.AsQueryable()
+        CommunityServerMember? member = await memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.MemberRoles)
@@ -79,7 +79,7 @@ internal sealed class ServerPermissionsProvider(
         CancellationToken cancellationToken = default
     ) {
         // fetch server and user id from member and call GetUserPermissions, should be fast enough
-        var ids = await memberReadRepository.AsQueryable().AsNoTracking()
+        var ids = await memberRepository.AsQueryable().AsNoTracking()
             .Where(r => r.CommunityServerId == serverId && r.Id == memberId)
             .Select(r => new {
                 r.CommunityServerId,
@@ -105,7 +105,7 @@ internal sealed class ServerPermissionsProvider(
         Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>> results = new(userIds.Count);
         Dictionary<Guid, ServerMemberAuthorizeInfoDto> dtosToCache = new(userIds.Count);
 
-        List<CommunityServerMember> members = await memberReadRepository.AsQueryable()
+        List<CommunityServerMember> members = await memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && userIds.Contains(m.UserId))
             .Include(m => m.MemberRoles)

@@ -287,81 +287,58 @@ builder.Services.AddSignalR()
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
     .AddScoped<IAccountDeleteCacheService, AccountDeleteCacheService>()
-        
+
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
-    
+
     .AddSingleton<ISessionService, SessionService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
-    
+
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
     .AddScoped<IServerDefaultRoleAuthorizeProvider, ServerDefaultRoleAuthorizeProvider>()
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
     .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
-    
+
     .AddSingleton<IEmailQueue, EmailQueue>()
     .AddSingleton<IMailService, MailService>()
     .AddScoped<IAuthMailService, AuthMailService>()
-    
+
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
-    
+
     .AddScoped<IUnitOfWork, UnitOfWork>()
-    
+
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
-    
+
     .AddScoped<IServerEmojiCacheService, ServerEmojiCacheService>()
     .AddScoped<IServerEmojiProvider, ServerEmojiProvider>()
     .AddScoped<IEmojiValidationService, EmojiValidationService>()
-    
-    .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
-    .AddScoped<IServerMemberWriteRepository>(services =>
-        (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
-    )
-    
+
+    .AddScoped<IServerMemberRepository, ServerMemberRepository>()
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
-    
-    .AddScoped<IMediaItemReadRepository, MediaItemRepository>()
-    .AddScoped<IMediaItemWriteRepository>(services =>
-        (MediaItemRepository)services.GetRequiredService<IMediaItemReadRepository>()
-    )
-    
+
+    .AddScoped<IMediaItemRepository, MediaItemRepository>()
+
     .AddScoped<ICommunityServerReadRepository, CommunityServerRepository>()
-    .AddScoped<ICommunityServerWriteRepository>(services =>
-        (CommunityServerRepository)services.GetRequiredService<ICommunityServerReadRepository>())
-    
+
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>()
     .AddScoped<IChannelRepository, ChannelRepository>()
-    .AddScoped<IServerModerationLogReadRepository, ServerModerationLogRepository>()
-    .AddScoped<IServerModerationLogWriteRepository>(services => 
-        (ServerModerationLogRepository)services.GetRequiredService<IServerModerationLogReadRepository>()
-    )
+    .AddScoped<IServerModerationLogRepository, ServerModerationLogRepository>()
     .AddScoped<ICallingService, CallingService>()
-    
-    .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
-    .AddScoped<IUserAccountDeletionWriteRepository>(services => 
-        (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
-    )
-    
-    .AddScoped<INotificationReadRepository, NotificationRepository>()
-    .AddScoped<INotificationWriteRepository>(services => 
-        (NotificationRepository)services.GetRequiredService<INotificationReadRepository>()
-    )
-    
-    .AddScoped<IEmojiReadRepository, EmojiRepository>()
-    .AddScoped<IEmojiWriteRepository>(services => 
-        (EmojiRepository)services.GetRequiredService<IEmojiReadRepository>()
-    );
+
+    .AddScoped<IUserAccountDeletionRepository, UserAccountDeletionRepository>()
+    .AddScoped<INotificationRepository, NotificationRepository>()
+    .AddScoped<IEmojiRepository, EmojiRepository>();
 
 // blob service.
 builder.Services.AddSingleton<IAmazonS3>((services) => {

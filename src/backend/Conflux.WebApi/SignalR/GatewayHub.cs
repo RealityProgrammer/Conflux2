@@ -18,7 +18,7 @@ namespace Conflux.WebApi.SignalR;
 public sealed partial class GatewayHub(
     JoinTracker joinTracker,
     IConnectionTracker connectionTracker,
-    IServerMemberReadRepository serverMemberReadRepository,
+    IServerMemberRepository serverMemberRepository,
     ITypingIndicatorService typingIndicatorService,
     IPresenceService presenceService,
     ISender sender
@@ -37,7 +37,7 @@ public sealed partial class GatewayHub(
         }
         
         // add to joined servers groups
-        List<Guid> joinedServerIds = await serverMemberReadRepository
+        List<Guid> joinedServerIds = await serverMemberRepository
             .AsQueryable()
             .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active)
             .Select(m => m.CommunityServerId)

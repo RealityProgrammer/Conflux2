@@ -58,7 +58,7 @@ public sealed partial class CreateEmojiHandler(
     IPublisher publisher,
     IEmojiWriteRepository emojiWriteRepository,
     ICommunityServerReadRepository communityServerReadRepository,
-    IEmojiReadRepository emojiReadRepository,
+    IEmojiRepository emojiRepository,
     IUnitOfWork unitOfWork,
     IEmojiMediaService mediaService,
     IServerEmojiCacheService cacheService,
@@ -79,7 +79,7 @@ public sealed partial class CreateEmojiHandler(
             ]);
         }
         
-        int emojiCount = await emojiReadRepository.CountByServerId(serverId, cancellationToken);
+        int emojiCount = await emojiRepository.CountByServerId(serverId, cancellationToken);
         if (emojiCount >= MaxEmojiCount) {
             return Errors.ServerEmojiLimit();
         }

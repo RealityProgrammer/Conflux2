@@ -16,7 +16,7 @@ public sealed class JoinServerHandler(
     ICurrentUserService currentUserService,
     IInvitationRepository invitationRepository,
     IServerMemberWriteRepository memberWriteRepository,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     ICommunityServerRoleRepository serverRoleRepository,
     IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
@@ -63,7 +63,7 @@ public sealed class JoinServerHandler(
                 }
 
                 // check member status
-                var member = await memberReadRepository.AsQueryable()
+                var member = await memberRepository.AsQueryable()
                     .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
                     .FirstOrDefaultAsync(cancellationToken);
 

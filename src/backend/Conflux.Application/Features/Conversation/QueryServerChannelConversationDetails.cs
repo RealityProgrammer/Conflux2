@@ -16,7 +16,7 @@ public sealed record QueryServerChannelConversationDetails(
 
 public sealed class QueryServerChannelConversationDetailsHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository serverMemberReadRepository,
+    IServerMemberRepository serverMemberRepository,
     IChannelRepository channelRepository,
     IConversationRepository conversationRepository
 ) : IQueryHandler<QueryServerChannelConversationDetails, Result<ServerChannelConversationDetails>> {
@@ -30,7 +30,7 @@ public sealed class QueryServerChannelConversationDetailsHandler(
         
         Guid serverId = query.ServerId;
 
-        if (!await serverMemberReadRepository.IsUserJoined(userId, serverId, cancellationToken)) {
+        if (!await serverMemberRepository.IsUserJoined(userId, serverId, cancellationToken)) {
             return Errors.Forbidden("User is not a member of server.");
         }
         

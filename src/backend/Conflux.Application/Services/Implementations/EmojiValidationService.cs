@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed partial class EmojiValidationService(
-    IEmojiReadRepository emojiReadRepository
+    IEmojiRepository emojiRepository
 ) : IEmojiValidationService {
     public async Task<Error> ValidateMessageEmojis(
         MarkdownDocument markdownDocument, 
@@ -28,7 +28,7 @@ internal sealed partial class EmojiValidationService(
         }
         
         // extract server ids from emoji and check if user is member of that server
-        var validEmojiCount = await emojiReadRepository
+        var validEmojiCount = await emojiRepository
             .AsQueryable()
             .Where(e => emojiIds.Contains(e.Id) && e.Server.Members.Any(m => m.UserId == userId && m.Status == MembershipStatus.Active))
             .CountAsync(cancellationToken);

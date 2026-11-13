@@ -39,7 +39,7 @@ public sealed record ServerDefaultRoleUpdatedNotification(Guid ServerId) : INoti
 public sealed class UpdateServerRoleHandler(
     ICurrentUserService currentUserService,
     ICommunityServerRoleRepository serverRoleRepository,
-    IServerMemberReadRepository serverMemberReadRepository,
+    IServerMemberRepository serverMemberRepository,
     IUnitOfWork unitOfWork,
     IServerPermissionsProvider permissionsProvider,
     IPublisher publisher,
@@ -95,7 +95,7 @@ public sealed class UpdateServerRoleHandler(
             updatingRole.AuthorizeLevel = command.AuthorizeLevel.Value;
             
             // need to recalculate the highest authorize level for every member owning this role
-            var affectedMembers = await serverMemberReadRepository
+            var affectedMembers = await serverMemberRepository
                 .AsQueryable()
                 .Where(m => m.CommunityServerId == serverId && m.Roles.Any(r => r.Id == roleId))
                 .Include(m => m.Roles)

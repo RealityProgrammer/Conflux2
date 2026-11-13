@@ -14,7 +14,7 @@ public sealed class QueryUnreadNotificationCounts : IQuery<Result<UnreadNotifica
 
 public sealed class QueryUnreadNotificationCountsHandler(
     ICurrentUserService currentUserService,
-    INotificationReadRepository notificationReadRepository
+    INotificationRepository notificationRepository
 ) : IQueryHandler<QueryUnreadNotificationCounts, Result<UnreadNotificationCounts>> {
     public async ValueTask<Result<UnreadNotificationCounts>> Handle(
         QueryUnreadNotificationCounts query, 
@@ -24,7 +24,7 @@ public sealed class QueryUnreadNotificationCountsHandler(
             return Errors.InvalidIdentifier();
         }
 
-        var unreadNotifications = await notificationReadRepository
+        var unreadNotifications = await notificationRepository
             .AsQueryable()
             .Where(n => !n.IsRead && n.UserId == userId)
             .Select(n => new {

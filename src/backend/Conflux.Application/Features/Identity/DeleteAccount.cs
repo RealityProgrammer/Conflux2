@@ -30,7 +30,7 @@ public sealed class DeleteAccountCommandValidator : AbstractValidator<DeleteAcco
 
 public sealed class DeleteAccountHandler(
     ICurrentUserService currentUserService,
-    IUserAccountDeletionReadRepository accountDeletionReadRepository,
+    IUserAccountDeletionRepository userAccountDeletionRepository,
     IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     IUnitOfWork unitOfWork,
     ILogger<DeleteAccountHandler> logger,
@@ -46,7 +46,7 @@ public sealed class DeleteAccountHandler(
         // no need to check if account already have a request here, RequiresActiveAccountBehavior already done it
         
         // if user is already having a pending request, return success
-        bool hasPendingRequest = await accountDeletionReadRepository
+        bool hasPendingRequest = await userAccountDeletionRepository
             .AsQueryable()
             .Where(r => r.UserId == userId && r.Status == UserAccountDeleteStatus.Pending)
             .AnyAsync(cancellationToken);

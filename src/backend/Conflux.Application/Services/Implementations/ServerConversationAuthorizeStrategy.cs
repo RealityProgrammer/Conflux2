@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Services.Implementations;
 
 public class ServerConversationAuthorizeStrategy(
-    IServerMemberReadRepository serverMemberReadRepository,
+    IServerMemberRepository serverMemberRepository,
     IConversationRepository conversationRepository,
     IServerPermissionsProvider serverPermissionsProvider
 ) : IConversationAuthorizeStrategy {
@@ -57,7 +57,7 @@ public class ServerConversationAuthorizeStrategy(
         return await conversationRepository
             .AsQueryable()
             .Where(c => c.Id == conversationId && c.Type == ConversationType.Server && c.Channel != null)
-            .Where(c => serverMemberReadRepository.AsQueryable().Any(m =>
+            .Where(c => serverMemberRepository.AsQueryable().Any(m =>
                 m.CommunityServerId == c.Channel!.CommunityServerId &&
                 m.UserId == userId &&
                 m.Status == MembershipStatus.Active

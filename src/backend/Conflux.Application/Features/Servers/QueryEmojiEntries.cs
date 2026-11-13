@@ -9,7 +9,7 @@ namespace Conflux.Application.Features.Servers;
 public sealed record QueryEmojiEntries(Guid ServerId) : IQuery<List<EmojiEntryDto>>;
 
 public sealed class QueryEmojiEntriesHandler(
-    IEmojiReadRepository emojiReadRepository,
+    IEmojiRepository emojiRepository,
     IServerEmojiCacheService cacheService
 ) : IQueryHandler<QueryEmojiEntries, List<EmojiEntryDto>> {
     public async ValueTask<List<EmojiEntryDto>> Handle(QueryEmojiEntries query, CancellationToken cancellationToken) {
@@ -19,7 +19,7 @@ public sealed class QueryEmojiEntriesHandler(
             return cached;
         }
 
-        List<EmojiEntryDto> emojis = await emojiReadRepository.GetEntriesByServerId(serverId, cancellationToken);
+        List<EmojiEntryDto> emojis = await emojiRepository.GetEntriesByServerId(serverId, cancellationToken);
 
         await cacheService.Set(serverId, emojis);
         return emojis;

@@ -27,5 +27,7 @@ public class Message : IHasCreatedAt {
     public Message? ReplyTo { get; set; }
     public virtual ICollection<Message> Replies { get; set; } = null!;
     
+    public MessageReaction? Reaction { get; set; }
+    
     public DateTimeOffset? PinnedAt { get; set; }
 }

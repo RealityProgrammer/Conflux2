@@ -12,13 +12,13 @@ public sealed record GetServerChannelCategoriesQuery(
 
 public sealed class GetServerChannelCategoriesHandler(
     ICommunityServerWriteRepository repository,
-    IServerMemberReadRepository serverMemberReadRepository
+    IServerMemberRepository serverMemberRepository
 ) : IQueryHandler<GetServerChannelCategoriesQuery, Result<IReadOnlyCollection<ChannelCategoryDetailDto>>> {
     public async ValueTask<Result<IReadOnlyCollection<ChannelCategoryDetailDto>>> Handle(
         GetServerChannelCategoriesQuery query, 
         CancellationToken cancellationToken
     ) {
-        if (!await serverMemberReadRepository.IsUserJoined(query.UserId, query.ServerId, cancellationToken)) {
+        if (!await serverMemberRepository.IsUserJoined(query.UserId, query.ServerId, cancellationToken)) {
             return Errors.ResourceNotFound("Server", [
                 new(nameof(CommunityServer.Id), query.ServerId.ToString()),
             ]);

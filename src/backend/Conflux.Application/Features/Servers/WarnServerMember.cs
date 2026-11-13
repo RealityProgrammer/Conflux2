@@ -36,7 +36,7 @@ public sealed record ServerMemberWarnedNotification(
 
 public sealed class WarnServerMemberHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerModerationLogWriteRepository moderationLogWriteRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
@@ -47,7 +47,7 @@ public sealed class WarnServerMemberHandler(
         Guid serverId = command.ServerId;
         Guid interactMemberUserId = command.InteractMemberUserId;
         
-        var executorMemberId = memberReadRepository.AsQueryable()
+        var executorMemberId = memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == executorUserId)
             .Select(m => m.Id)
@@ -61,7 +61,7 @@ public sealed class WarnServerMemberHandler(
             ]);
         }
         
-        CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
+        CommunityServerMember? affectedMember = await memberRepository.AsQueryable()
             .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);

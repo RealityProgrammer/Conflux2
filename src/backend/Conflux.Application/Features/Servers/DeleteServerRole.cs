@@ -22,7 +22,7 @@ public sealed record ServerRoleDeletedNotification(
 public sealed class DeleteServerRoleHandler(
     ICommunityServerRoleRepository serverRoleRepository,
     IServerRoleVersioningService serverRoleVersioningService,
-    IServerMemberReadRepository serverMemberReadRepository,
+    IServerMemberRepository serverMemberRepository,
     IUnitOfWork unitOfWork,
     IPublisher publisher,
     ILogger<DeleteServerRoleHandler> logger
@@ -52,7 +52,7 @@ public sealed class DeleteServerRoleHandler(
             var defaultRole = deletingRole.CommunityServer.Roles.First(r => r.SpecialRoleType == SpecialRoleType.Default);
             
             // get all members who have the deleting role to recalculate highest authorize level role.
-            var affectedMembers = await serverMemberReadRepository
+            var affectedMembers = await serverMemberRepository
                 .AsQueryable()
                 .Where(m => m.Roles.Any(r => r.Id == roleId))
                 .Include(m => m.Roles)

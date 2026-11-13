@@ -18,6 +18,10 @@ internal sealed class UserRepository(
         return userManager.Users;
     }
 
+    public void Add(ApplicationUser value) {
+        userManager.CreateAsync(value);
+    }
+
     public async Task<Result<UserIdentityProfileDto>> GetIdentityProfile(Guid userId, CancellationToken cancellationToken = default) {
         UserIdentityProfileDto? result = await dbContext.Users
             .Where(u => u.Id == userId)

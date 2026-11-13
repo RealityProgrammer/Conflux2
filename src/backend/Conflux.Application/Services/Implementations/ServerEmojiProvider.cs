@@ -6,7 +6,7 @@ namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerEmojiProvider(
     IServerEmojiCacheService serverEmojiCacheService,
-    IEmojiReadRepository emojiReadRepository
+    IEmojiRepository emojiRepository
 ) : IServerEmojiProvider {
     public async Task<Dictionary<Guid, IReadOnlyCollection<EmojiEntryDto>>> GetEntries(
         IReadOnlyCollection<Guid> serverIds, 
@@ -32,7 +32,7 @@ internal sealed class ServerEmojiProvider(
         }
         
         // collect cache-miss and backfill
-        var groups = await emojiReadRepository
+        var groups = await emojiRepository
             .AsQueryable()
             .Where(e => missServerIds.Contains(e.ServerId))
             .OrderBy(e => e.ServerId)

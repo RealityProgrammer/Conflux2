@@ -48,5 +48,7 @@ public class ApplicationDbContext(
         new UserAccountDeletionConfiguration().Configure(builder.Entity<UserAccountDeletion>());
         new EmojiConfiguration().Configure(builder.Entity<Emoji>());
         new NotificationConfiguration().Configure(builder.Entity<Notification>());
+        new MessageReactionConfiguration().Configure(builder.Entity<MessageReaction>());
+        new UserConfiguration().Configure(builder.Entity<ApplicationUser>());
     }
 }

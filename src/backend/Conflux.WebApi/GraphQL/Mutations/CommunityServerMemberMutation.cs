@@ -11,7 +11,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 namespace Conflux.WebApi.GraphQL.Mutations;
 
 public sealed record UpdateCommunityServerMemberRolesPayload(Guid MemberId) {
-    public async Task<CommunityServerMember> GetMemberAsync([Service] IServerMemberReadRepository repository) {
+    public async Task<CommunityServerMember> GetMemberAsync([Service] IServerMemberRepository repository) {
         return (await repository
             .AsQueryable()
             .AsNoTracking()

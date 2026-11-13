@@ -16,14 +16,14 @@ public static partial class NotificationQuery {
         Guid id,
         QueryContext<Notification> queryContext,
         [Service] ICurrentUserService currentUserService,
-        [Service] INotificationReadRepository notificationReadRepository,
+        [Service] INotificationRepository notificationRepository,
         CancellationToken cancellationToken
     ) {
         if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        return await notificationReadRepository
+        return await notificationRepository
             .AsQueryable()
             .Where(n => n.Id == id && n.UserId == userId)
             .With(queryContext)
@@ -35,14 +35,14 @@ public static partial class NotificationQuery {
         QueryContext<Notification> queryContext,
         PagingArguments pagingArgs,
         [Service] ICurrentUserService currentUserService,
-        [Service] INotificationReadRepository notificationReadRepository,
+        [Service] INotificationRepository notificationRepository,
         CancellationToken cancellationToken
     ) {
         if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
         
-        return await notificationReadRepository
+        return await notificationRepository
             .AsQueryable()
             .Where(n => n.UserId == userId)
             .With(queryContext)
