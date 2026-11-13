@@ -15,7 +15,6 @@ import {type ReactNode, useState} from "react";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {authService} from "../../api/authService.ts";
 import {toast} from "react-toastify";
-import Container from "../../components/Container.tsx";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {useGetSessionUserAccountInfoQuery} from "../../graphql/queries.ts";
 import {masker} from "../../utils/masker.ts";
@@ -61,7 +60,7 @@ function AccountInfoContainer() {
   const [showEmail, setShowEmail] = useState(false);
   
   return (
-    <Container maxBreakpoint="2xl" className="shadow-md border-2 border-gray-600 rounded-lg bg-black/10 p-1">
+    <div className="shadow-md border-2 border-gray-600 rounded-lg bg-black/10 p-1 container w-xl mx-auto">
       {isLoading ? (
         <div className="size-full h-32 flex flex-row justify-center items-center">
           <Spinner className="size-8 fill-white"/>
@@ -125,7 +124,7 @@ function AccountInfoContainer() {
           </div>
         </>
       )}
-    </Container>
+    </div>
   );
 }
 
@@ -199,8 +198,7 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
       title="Change Password"
       subtitle="Hotswap the door key immediately now!"
       trigger={trigger}
-      contentClassName="centered-dialog bg-gray-650 text-white rounded-xl"
-      maxBreakpoint="xl"
+      contentClassName="centered-dialog w-xl bg-gray-650 text-white rounded-xl"
       submitButton={(
         <button type="submit" className="button-theme-primary button-cursor w-40 py-2 rounded-md" disabled={isSubmitting}>
           {isSubmitting ? (
@@ -401,7 +399,7 @@ function AccountSessions() {
   
   return (
     <div className="mt-2 flex flex-col items-center justify-center gap-2">
-      <Container maxBreakpoint="2xl">
+      <div className="container max-w-2xl">
         <p className="label mb-1">Current session</p>
 
         <div className="shadow-md border-2 border-gray-600 rounded-lg bg-black/10">
@@ -415,10 +413,8 @@ function AccountSessions() {
             <SessionElement details={data.currentSession} isThisSession={false}/>
           )}
         </div>
-      </Container>
-      
-      <Container maxBreakpoint="2xl">
-        <p className="label mb-1">All sessions</p>
+
+        <p className="label mb-1 mt-2">All sessions</p>
 
         <div className="shadow-md border-2 border-gray-600 rounded-lg bg-black/10 h-96 overflow-y-scroll scrollbar-none">
           {isLoading ? (
@@ -435,8 +431,8 @@ function AccountSessions() {
           ) : (
             <>
               {data.allSessions.filter((s: SessionDetails) => !deletingSessions.includes(s.sessionId)).map((details) => (
-                <SessionElement 
-                  key={details.sessionId} 
+                <SessionElement
+                  key={details.sessionId}
                   details={details}
                   className="hover-highlight"
                   isThisSession={details.sessionId === data.currentSession.sessionId}
@@ -447,16 +443,16 @@ function AccountSessions() {
             </>
           )}
         </div>
-        
+
         <div className="mt-2 flex flex-row justify-end items-center gap-2">
-          <button 
+          <button
             className="button-theme-danger px-3 py-2 button-cursor rounded-md"
             onClick={() => deleteOtherSessionsMutation.mutate()}
           >
             Delete all other sessions
           </button>
         </div>
-      </Container>
+      </div>
     </div>
   );
 }

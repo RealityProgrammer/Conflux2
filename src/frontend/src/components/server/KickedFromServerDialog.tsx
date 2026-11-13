@@ -30,8 +30,7 @@ export default function KickedFromServerDialog({
       )}
       title="Kicked from server"
       subtitle="You have been banished by the council"
-      contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-      maxBreakpoint="lg"
+      contentClassName="centered-dialog w-xl text-white bg-gray-650 outline-none"
       disableCloseOnOutsideClick
       disableCloseOnEscapeKeyDown
     >

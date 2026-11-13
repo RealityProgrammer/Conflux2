@@ -20,8 +20,7 @@ export default function DeleteMessageConfirmationDialog({
       headerIcon={<BsTrashFill className="size-10 fill-white"/>}
       title="Delete Message"
       subtitle="Nothing happened here, folk..."
-      maxBreakpoint="xl"
-      contentClassName="centered-dialog text-white bg-gray-650 outline-none"
+      contentClassName="centered-dialog w-xl text-white bg-gray-650 outline-none"
       footerContent={(
         <div className="flex flex-row justify-end p-3 gap-3">
           <RadixDialog.Close

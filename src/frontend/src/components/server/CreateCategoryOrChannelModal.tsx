@@ -101,12 +101,11 @@ export default function CreateCategoryOrChannelModal({
         onOpenChange(open);
       }}
       formMethods={formMethods}
-      contentClassName="centered-dialog rounded-md text-white"
+      contentClassName="centered-dialog w-xl rounded-md text-white"
       headerIcon={(<BsChatText className="size-10 fill-white"/>)}
       title={"Create new Channel or Category"}
       subtitle={"Claim the unclaimed territory!"}
       onSubmit={handleSubmit}
-      maxBreakpoint="xl"
       submitButton={(
         <button
           type="submit"

@@ -619,7 +619,7 @@ function KickMemberButton() {
       <button
         type="button"
         disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !hasPermission(ServerPermission.KickMembers) || isSubmitting}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 button-cursor flex justify-center items-center"
         onClick={() => setOpenModal(true)}
       >
         {isSubmitting ? (
@@ -643,13 +643,12 @@ function KickMemberButton() {
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Kick Member"
           subtitle="Throw them into the grass field"
-          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-          maxBreakpoint="2xl"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           formMethods={formMethods}
           submitButton={(
             <button
               type="submit"
-              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              className="button-theme-primary button-cursor h-10 rounded-md w-32 flex flex-row justify-center items-center"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -723,7 +722,7 @@ function WarnMemberButton() {
       <button
         type="button"
         disabled={!hasPermission(ServerPermission.WarnMembers) || warnMutation.isPending}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-warning cursor-pointer flex justify-center items-center"
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-warning button-cursor flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
         {warnMutation.isPending ? (
@@ -747,13 +746,12 @@ function WarnMemberButton() {
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Warn Member"
           subtitle="Somebody has been naughty..."
-          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-          maxBreakpoint="2xl"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           formMethods={formMethods}
           submitButton={(
             <button
               type="submit"
-              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              className="button-theme-primary button-cursor h-10 rounded-md w-32 flex flex-row justify-center items-center"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -839,7 +837,7 @@ function BanMemberButton({
       <button
         type="button"
         disabled={!hasPermission(ServerPermission.BanMembers) || isSubmitting}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer flex justify-center items-center"
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger button-cursor flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
         {isSubmitting ? (
@@ -863,13 +861,12 @@ function BanMemberButton({
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Ban Member"
           subtitle="The council have decided to exile this nerd"
-          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-          maxBreakpoint="2xl"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           formMethods={formMethods}
           submitButton={(
             <button
               type="submit"
-              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              className="button-theme-primary button-cursor h-10 rounded-md w-32 flex flex-row justify-center items-center"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -957,7 +954,7 @@ function UnbanMemberButton({
       <button
         type="button"
         disabled={!hasPermission(ServerPermission.BanMembers) || unbanMutation.isPending || !inspectingMemberInfo.banExpireAt}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-success cursor-pointer flex justify-center items-center"
+        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-success button-cursor flex justify-center items-center"
         onClick={() => setOpenDialog(true)}
       >
         {unbanMutation.isPending ? (
@@ -980,8 +977,7 @@ function UnbanMemberButton({
           title="Unban Member"
           subtitle="Feeling funny today, might unban a guy for a change."
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
-          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-          maxBreakpoint="2xl"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           footerContent={(
             <div className="w-full flex flex-row justify-end p-3 gap-3">
               <RadixDialog.Close
@@ -993,7 +989,7 @@ function UnbanMemberButton({
 
               <button
                 type="submit"
-                className="button-theme-primary cursor-pointer h-10 rounded-md w-40 flex flex-row justify-center items-center"
+                className="button-theme-primary button-cursor h-10 rounded-md w-40 flex flex-row justify-center items-center"
                 disabled={unbanMutation.isPending}
                 onClick={() => unbanMutation.mutate({ serverId: serverDetails!.id, memberId: inspectingMemberInfo.id })}
               >

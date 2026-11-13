@@ -170,8 +170,7 @@ export default function EditMessageModal({
       title="Edit Message"
       subtitle="Should have gave it a thought first..."
       headerIcon={(<BsWrenchAdjustable className="size-10 fill-white"/>)}
-      contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-      maxBreakpoint="4xl"
+      contentClassName="centered-dialog w-4xl rounded-xl text-white bg-gray-650 outline-none"
       footerContent={(
         <div className="w-full flex flex-row justify-end p-3 gap-3">
           <RadixDialog.Close

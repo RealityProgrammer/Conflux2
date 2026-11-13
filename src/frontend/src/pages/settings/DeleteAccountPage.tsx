@@ -11,7 +11,6 @@ import {useAuth} from "../../contexts/AuthContext.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
 import {useState} from "react";
 import {authService} from "../../api/authService.ts";
-import Container from "../../components/Container.tsx";
 
 export default function DeleteAccountPage() {
   const auth = useAuth();
@@ -106,7 +105,7 @@ export default function DeleteAccountPage() {
 
       <h2 className="font-semibold text-xl">Now tell us...</h2>
 
-      <Container maxBreakpoint="2xl" className="border-2 border-gray-600 rounded-lg bg-black/10 mt-2">
+      <div className="container max-w-2xl border-2 border-gray-600 rounded-lg bg-black/10 mt-2">
         <form onSubmit={handleSubmit(onSubmit)} className="p-4">
           <div>
             <Label.Root className="label mb-1 block">...the reason you want to delete your account?</Label.Root>
@@ -211,7 +210,7 @@ export default function DeleteAccountPage() {
             </button>
           </div>
         </form>
-      </Container>
+      </div>
     </>
   );
 }

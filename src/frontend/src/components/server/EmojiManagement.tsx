@@ -1,4 +1,3 @@
-import Container from "../Container.tsx";
 import {useEffect, useRef, useState} from "react";
 import {BsEmojiSmileFill, BsEmojiWink, BsExclamationTriangle, BsPlusLg, BsSearch, BsTrashFill} from "react-icons/bs";
 import {Virtuoso} from "react-virtuoso";
@@ -32,13 +31,11 @@ export default function EmojiManagement() {
         </p>
       </header>
 
-      <Container
-        maxBreakpoint="3xl"
-        containerClassName="min-h-0 flex-1"
-        className="overflow-hidden h-full bg-black/10 border-2 border-gray-600 rounded-xl px-2 pt-3 flex flex-col"
+      <div
+        className="container max-w-3xl mx-auto overflow-hidden h-full bg-black/10 border-2 border-gray-600 rounded-xl px-2 pt-3 flex flex-col"
       >
         <ContainerContent/>
-      </Container>
+      </div>
     </>
   );
 }
@@ -319,8 +316,7 @@ function CreateEmojiButton({disabled = false}: {disabled?: boolean}) {
           Create Emoji
         </button>
       )}
-      contentClassName="centered-dialog rounded-md text-white"
-      maxBreakpoint="xl"
+      contentClassName="centered-dialog w-xl rounded-md text-white"
     >
       <div className="mb-2">
         <Label.Root className="block mb-1 label">Short code</Label.Root>

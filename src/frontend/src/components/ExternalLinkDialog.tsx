@@ -58,11 +58,10 @@ export default function ExternalLinkDialog() {
       onOpenChange={handleOpenChange}
       title="Prepare to be in the barren land"
       subtitle="It is dangerous out there..."
-      contentClassName="centered-dialog text-white bg-gray-650 outline-none"
+      contentClassName="centered-dialog text-white bg-gray-650 outline-none container"
       headerIcon={(
         <BsBoxArrowUpRight className="fill-white size-10"/>
       )}
-      maxBreakpoint="2xl"
       footerContent={(
         <div className="w-full flex flex-row justify-end p-3 gap-3">
           <RadixDialog.Close

@@ -267,7 +267,7 @@ export const router = createBrowserRouter([
         ]
       },
     ]
-  }
+  },
 ]);
 
 // require user to be login, else send to login page

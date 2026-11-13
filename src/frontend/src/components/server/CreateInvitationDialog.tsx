@@ -105,13 +105,12 @@ export default function CreateInvitationDialog({
       open={open}
       onOpenChange={onOpenChange}
       formMethods={formMethods}
-      contentClassName="centered-dialog text-white"
+      contentClassName="centered-dialog w-xl text-white"
       headerIcon={(<BsPersonPlus className="size-10 fill-white"/>)}
       title="Grab an invitation"
       subtitle="Invite people to the fun gang"
       submitButton={(<GetInvitationLinkButton/>)}
       onSubmit={handleGetInvitation}
-      maxBreakpoint="xl"
     >
       <div className="w-full">
         <Label.Root className="label block mb-1">Expire after</Label.Root>

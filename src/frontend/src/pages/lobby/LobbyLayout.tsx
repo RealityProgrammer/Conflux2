@@ -395,8 +395,7 @@ function CreateServerDialogForm({
         </button>
       )}
       onSubmit={onSubmit}
-      contentClassName="centered-dialog text-white"
-      maxBreakpoint="xl"
+      contentClassName="centered-dialog w-xl text-white"
     >
       <div className="flex flex-col items-center">
         <Controller

@@ -5,7 +5,6 @@ import {UserNameplate} from "../../components/UserNameplate.tsx";
 import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
 import {FriendSearchStatus, UserRelationshipStatus} from "../../api/schema.ts";
 import {BsExclamationTriangle, BsQuestion} from "react-icons/bs";
-import Container from "../../components/Container.tsx";
 import useDiscoverFriend from "../../hooks/useDiscoverFriend.ts";
 import {toast} from "react-toastify";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -95,7 +94,7 @@ export default function AddFriendTabContent() {
         />
       </section>
 
-      <Container maxBreakpoint="lg" className="mt-4 flex flex-col justify-center items-center border-2 border-gray-600 rounded-md">
+      <div className="container max-w-lg mt-4 flex flex-col justify-center items-center border-2 border-gray-600 rounded-md">
         {!isEnabled ? (
           <p className="p-3 select-none text-gray-500 text-sm">Enter at least 8 characters to search user.</p>
         ) : isLoading ? (
@@ -193,7 +192,7 @@ export default function AddFriendTabContent() {
             ) : null}
           </UserNameplate.Root>
         )}
-      </Container>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,6 @@ import type {ReactNode} from "react";
 import {Dialog as RadixDialog} from "radix-ui";
 import IconButton from "./IconButton.tsx";
 import {FaXmark} from "react-icons/fa6";
-import useFluidBreakpoints, {type BREAKPOINTS, type BreakpointType} from "../hooks/useFluidBreakpoints.ts";
 
 export interface DialogProps {
   open?: boolean;
@@ -16,7 +15,6 @@ export interface DialogProps {
   footerContent?: ReactNode;
   disableCloseOnOutsideClick?: boolean;
   disableCloseOnEscapeKeyDown?: boolean;
-  maxBreakpoint: BreakpointType;
 }
 
 export default function Dialog({
@@ -31,10 +29,7 @@ export default function Dialog({
   footerContent,
   disableCloseOnOutsideClick = false,
   disableCloseOnEscapeKeyDown = false,
-  maxBreakpoint,
 }: DialogProps) {
-  const fluidBreakpoints = useFluidBreakpoints(maxBreakpoint, false);
-
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger && (
@@ -47,7 +42,7 @@ export default function Dialog({
         <RadixDialog.Overlay className="backdrop-overlay"/>
 
         <RadixDialog.Content
-          className={`flex flex-col ${fluidBreakpoints} ${contentClassName}`}
+          className={`flex flex-col ${contentClassName}`}
           onPointerDownOutside={(e) => {
             if (disableCloseOnOutsideClick) {
               e.preventDefault();
