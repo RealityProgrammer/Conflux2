@@ -120,9 +120,9 @@ function MessageView({
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
-        className={`relative w-full group block ${showHeader ? "pt-1" : ""}`}
+        className={`relative w-full group block`}
       >
-        <div className={`hover-highlight flex flex-col pt-0.5 ${isHighlighted ? "animate-messageHighlight" : ""}`}>
+        <div className={`hover-highlight flex flex-col py-0.5 ${isHighlighted ? "animate-messageHighlight" : ""}`}>
           <div className="px-2">
             {message.replyTo && (
               <MessageRow.Reply
@@ -153,6 +153,15 @@ function MessageView({
                     onAttachmentClick={handleAttachmentClicked}
                   />
                 )}
+
+                {/* TODO: Reaction */}
+                {/*<ul className="flex flex-row flex-wrap gap-2 text-sm">*/}
+                {/*  <li className="shrink-0 flex flex-row gap-2 items-center border-2 border-gray-500 hover-highlight bg-black/8 rounded-md p-1 select-none cursor-pointer">*/}
+                {/*    <div className="size-4 bg-red-500"></div>*/}
+
+                {/*    69*/}
+                {/*  </li>*/}
+                {/*</ul>*/}
               </div>
             </MessageRow.Row>
           </div>
