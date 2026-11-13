@@ -85,23 +85,23 @@ export default function MediaPreviewGallery() {
 
         {elements && elements.length > 1 && (
           <>
-              <IconButton
-                isLoading={false}
-                theme="default"
-                className="fixed left-4 top-1/2 -translate-y-1/2 z-60 rounded-full p-2 bg-gray-700 border-2 border-gray-600"
-                onClick={handlePrev}
-              >
-                <BsChevronLeft className="size-7"/>
-              </IconButton>
+            <IconButton
+              isLoading={false}
+              theme="default"
+              className="fixed left-4 top-1/2 -translate-y-1/2 z-60 rounded-full p-2 bg-gray-700 border-2 border-gray-600"
+              onClick={handlePrev}
+            >
+              <BsChevronLeft className="size-7"/>
+            </IconButton>
 
-              <IconButton
-                isLoading={false}
-                theme="default"
-                className="fixed right-4 top-1/2 -translate-y-1/2 z-60 rounded-full p-2 bg-gray-700 border-2 border-gray-600"
-                onClick={handleNext}
-              >
-                <BsChevronRight className="size-7"/>
-              </IconButton>
+            <IconButton
+              isLoading={false}
+              theme="default"
+              className="fixed right-4 top-1/2 -translate-y-1/2 z-60 rounded-full p-2 bg-gray-700 border-2 border-gray-600"
+              onClick={handleNext}
+            >
+              <BsChevronRight className="size-7"/>
+            </IconButton>
           </>
         )}
 
