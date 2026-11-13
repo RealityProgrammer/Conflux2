@@ -17,7 +17,6 @@ export interface ModalFormProps<TFieldValues extends FieldValues> {
   contentClassName?: string;
   headerIcon?: ReactNode;
   onClear?: () => void;
-  minBreakpoint?: typeof BREAKPOINTS[number];
   maxBreakpoint: typeof BREAKPOINTS[number];
 }
 
@@ -34,7 +33,6 @@ export default function ModalForm<TFieldValues extends FieldValues>({
   contentClassName,
   headerIcon,
   onClear,
-  minBreakpoint,
   maxBreakpoint,
 }: ModalFormProps<TFieldValues>) {
   const formId = useId();
@@ -83,7 +81,6 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       title={title}
       subtitle={subtitle}
       footerContent={footerContent}
-      minBreakpoint={minBreakpoint}
       maxBreakpoint={maxBreakpoint}
     >
       <FormProvider {...formMethods}>

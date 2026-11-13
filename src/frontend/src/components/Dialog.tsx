@@ -16,7 +16,6 @@ export interface DialogProps {
   footerContent?: ReactNode;
   disableCloseOnOutsideClick?: boolean;
   disableCloseOnEscapeKeyDown?: boolean;
-  minBreakpoint?: typeof BREAKPOINTS[number];
   maxBreakpoint: BreakpointType;
 }
 
@@ -32,10 +31,9 @@ export default function Dialog({
   footerContent,
   disableCloseOnOutsideClick = false,
   disableCloseOnEscapeKeyDown = false,
-  minBreakpoint = "sm",
   maxBreakpoint,
 }: DialogProps) {
-  const fluidBreakpoints = useFluidBreakpoints(minBreakpoint, maxBreakpoint);
+  const fluidBreakpoints = useFluidBreakpoints(maxBreakpoint, false);
 
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>

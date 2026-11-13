@@ -171,7 +171,6 @@ export default function EditMessageModal({
       subtitle="Should have gave it a thought first..."
       headerIcon={(<BsWrenchAdjustable className="size-10 fill-white"/>)}
       contentClassName="centered-dialog text-white bg-gray-650 outline-none"
-      minBreakpoint="lg"
       maxBreakpoint="4xl"
       footerContent={(
         <div className="w-full flex flex-row justify-end p-3 gap-3">

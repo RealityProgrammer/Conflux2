@@ -31,7 +31,6 @@ const CONTAINER_CLASSES = {
 }
 
 export default function useFluidBreakpoints(
-  minBreakpoint: typeof BREAKPOINTS[number],
   maxBreakpoint: BreakpointType,
   container?: boolean
 ) {
@@ -39,11 +38,10 @@ export default function useFluidBreakpoints(
     return "max-w-full";
   }
 
-  const minIndex = BREAKPOINTS.indexOf(minBreakpoint);
   const maxIndex = BREAKPOINTS.indexOf(maxBreakpoint);
 
   const breakpoints = BREAKPOINTS.slice(
-    minIndex !== -1 ? minIndex : 0,
+    0,
     maxIndex !== -1 ? maxIndex + 1 : BREAKPOINTS.length
   );
 

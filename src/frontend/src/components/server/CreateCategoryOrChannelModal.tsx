@@ -106,7 +106,6 @@ export default function CreateCategoryOrChannelModal({
       title={"Create new Channel or Category"}
       subtitle={"Claim the unclaimed territory!"}
       onSubmit={handleSubmit}
-      minBreakpoint="lg"
       maxBreakpoint="xl"
       submitButton={(
         <button
