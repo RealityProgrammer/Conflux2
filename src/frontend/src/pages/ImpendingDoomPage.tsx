@@ -183,7 +183,7 @@ function SuccessfullyLoaded({data}: {data: AccountDeletionStatusDto}) {
         </div>
       </header>
 
-      <main className="px-4 py-2">
+      <main className="panel-padding">
         <p className="mb-2">
           <span>Approximate remaining time:</span>
           <span className="float-end">

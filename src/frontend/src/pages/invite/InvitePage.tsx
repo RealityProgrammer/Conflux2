@@ -105,7 +105,7 @@ function Invitation({summary, invitationId}: {
         </div>
 
         <footer className="mt-6 flex flex-col justify-center items-center gap-2">
-          <button className="relative button-theme-primary px-4 py-2 cursor-pointer rounded-md" onClick={handleJoiningServer}>
+          <button className="relative button-theme-primary panel-padding cursor-pointer rounded-md" onClick={handleJoiningServer}>
             <span className={`${joinStatus === "nothing" ? "visible" : "invisible"}`}>Join server</span>
 
             {joinStatus === "joining" && (

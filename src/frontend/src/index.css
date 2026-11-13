@@ -429,6 +429,10 @@
     @apply text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2;
 }
 
+@utility panel-padding {
+    @apply px-4 py-2;
+}
+
 @font-face {
     font-family: 'DeterminationMono';
     src: url('/public/fonts/DeterminationMono.ttf') format('truetype');

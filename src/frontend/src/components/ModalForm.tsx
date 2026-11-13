@@ -82,7 +82,7 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       <FormProvider {...formMethods}>
         <form
           id={formId}
-          className="px-4 py-2"
+          className="panel-padding"
           onSubmit={formMethods.handleSubmit(onSubmit)}
         >
           {children}

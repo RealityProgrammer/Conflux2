@@ -1002,7 +1002,7 @@ function UnbanMemberButton({
             </div>
           )}
         >
-          <div className="px-4 py-2">
+          <div className="panel-padding">
             Are you sure you want to unban this member?<br/>
           </div>
         </Dialog>

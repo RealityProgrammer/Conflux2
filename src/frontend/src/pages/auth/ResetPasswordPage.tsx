@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
           </header>
 
           <form onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
-            <main className="px-4 py-2 space-y-3">
+            <main className="panel-padding space-y-3">
               <div>
                 <Label.Root className="label block mb-1">New Password</Label.Root>
 

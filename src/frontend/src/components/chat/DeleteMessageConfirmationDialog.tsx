@@ -39,7 +39,7 @@ export default function DeleteMessageConfirmationDialog({
         </div>
       )}
     >
-      <div className="p-3">
+      <div className="panel-padding">
         Are you sure you want to delete this message?<br/>
         This action cannot be undone. You will never see this message and its attachments ever again.
       </div>
