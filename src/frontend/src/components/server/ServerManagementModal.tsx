@@ -55,7 +55,8 @@ function Modal({open, onOpenChanged}: {open: boolean, onOpenChanged: (open: bool
       )}
       title="Server Configuration Panel"
       subtitle="Click-clack, what is that sound?"
-      contentClassName="centered-dialog size-full rounded-xl text-white bg-gray-650 outline-none"
+      contentClassName="fullscreen-dialog text-white bg-gray-650 outline-none"
+      maxBreakpoint="full"
     >
       <Tabs.Root
         value={activeTab}

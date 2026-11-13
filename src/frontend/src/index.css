@@ -230,6 +230,14 @@
         @apply hidden;
     }
 
+    .centered-dialog {
+        @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl outline-none w-full;
+    }
+
+    .fullscreen-dialog {
+        @apply fixed inset-4 rounded-xl outline-none;
+    }
+
     .input-label {
         @apply text-sm font-semibold text-gray-200;
     }
@@ -419,10 +427,6 @@
 
 @utility animate-messageHighlight {
     animation: animate-messageHighlight 1.5s linear 0s 1;
-}
-
-@utility centered-dialog {
-    @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[calc(100dvw-2rem)] max-h-[calc(100dvh-2rem)]
 }
 
 @utility group-label {

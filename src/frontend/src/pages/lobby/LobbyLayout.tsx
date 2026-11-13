@@ -374,75 +374,74 @@ function CreateServerDialogForm({
   });
   
   return (
-    <>
-      <ModalForm
-        open={open}
-        onOpenChange={onOpenChange}
-        formMethods={formMethods}
-        headerIcon={(<BsPeople className="size-10 fill-white"/>)}
-        title="Create a new Community Server"
-        subtitle="Give it a name, a vessel. Give it a life..."
-        submitButton={(
-          <button
-            type="submit"
-            className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Spinner className="size-5 fill-white"/>
-            ) : (
-              <>Create Server</>
-            )}
-          </button>
-        )}
-        onSubmit={onSubmit}
-        contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 z-55 rounded-md text-white"
-      >
-        <div className="flex flex-col items-center">
-          <Controller
-            control={control}
-            name="avatar"
-            render={({ field }) => (
-              <div className="flex flex-row gap-3">
-                <ErrorPopover
-                  open={!!errors.avatar}
-                  content={errors.avatar?.message}
-                >
-                  <SelectableImageInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    className="size-48 rounded-full overflow-hidden flex-none"
-                    fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
-                  />
-                </ErrorPopover>
+    <ModalForm
+      open={open}
+      onOpenChange={onOpenChange}
+      formMethods={formMethods}
+      headerIcon={(<BsPeople className="size-10 fill-white"/>)}
+      title="Create a new Community Server"
+      subtitle="Give it a name, a vessel. Give it a life..."
+      submitButton={(
+        <button
+          type="submit"
+          className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <Spinner className="size-5 fill-white"/>
+          ) : (
+            <>Create Server</>
+          )}
+        </button>
+      )}
+      onSubmit={onSubmit}
+      contentClassName="centered-dialog text-white"
+      maxBreakpoint="xl"
+    >
+      <div className="flex flex-col items-center">
+        <Controller
+          control={control}
+          name="avatar"
+          render={({ field }) => (
+            <div className="flex flex-row gap-3">
+              <ErrorPopover
+                open={!!errors.avatar}
+                content={errors.avatar?.message}
+              >
+                <SelectableImageInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  className="size-48 rounded-full overflow-hidden flex-none"
+                  fallback={() => (<BsPeople className="fill-black size-5/6"/>)}
+                />
+              </ErrorPopover>
 
-                <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={!field.value}>
-                    <FaXmark className="size-5"/>
-                  </IconButton>
-                </div>
+              <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
+                <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={!field.value}>
+                  <FaXmark className="size-5"/>
+                </IconButton>
               </div>
-            )}
+            </div>
+          )}
+        />
+      </div>
+
+      <div className="mt-4 w-full">
+        <Label.Root className="label block mb-1">Server name</Label.Root>
+
+        <ErrorPopover
+          open={!!errors.name}
+          content={errors.name?.message}
+        >
+          <input
+            type="text"
+            className="input-field h-11 w-full"
+            placeholder="Enter server name"
+            {...register("name")}
           />
-        </div>
-
-        <div className="mt-4 w-full">
-          <Label.Root className="label block mb-1">Server name</Label.Root>
-
-          <ErrorPopover
-            open={!!errors.name}
-            content={errors.name?.message}
-          >
-            <input
-              type="text"
-              className="input-field h-11 w-full"
-              placeholder="Enter server name"
-              {...register("name")}
-            />
-          </ErrorPopover>
-        </div>
-      </ModalForm>
-    </>
+        </ErrorPopover>
+      </div>
+    </ModalForm>
   );
 }
 

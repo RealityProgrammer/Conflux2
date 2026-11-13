@@ -3,13 +3,11 @@ import type {MessageEditInput, MessageOperationError} from "../../store/useMessa
 import {TimelineItem} from "./TimelineItem.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import type {ReactNode} from "react";
-import {Tooltip} from "radix-ui";
 import {MessageRow} from "./MessageRow.tsx";
 import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaPencil, FaRepeat, FaTrashCan} from "react-icons/fa6";
-import {BsExclamationTriangle} from "react-icons/bs";
 import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
 
 type EditingMessageItemProps = {

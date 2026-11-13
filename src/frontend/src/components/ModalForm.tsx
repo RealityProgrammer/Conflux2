@@ -2,6 +2,7 @@ import {cloneElement, isValidElement, type ReactElement, type ReactNode, useId} 
 import {type FieldValues, FormProvider, type SubmitHandler, type UseFormReturn} from "react-hook-form";
 import Dialog from "./Dialog.tsx";
 import {Dialog as RadixDialog} from "radix-ui"
+import type {BREAKPOINTS} from "../hooks/useFluidBreakpoints.ts";
 
 export interface ModalFormProps<TFieldValues extends FieldValues> {
   open?: boolean;
@@ -16,6 +17,8 @@ export interface ModalFormProps<TFieldValues extends FieldValues> {
   contentClassName?: string;
   headerIcon?: ReactNode;
   onClear?: () => void;
+  minBreakpoint?: typeof BREAKPOINTS[number];
+  maxBreakpoint: typeof BREAKPOINTS[number];
 }
 
 export default function ModalForm<TFieldValues extends FieldValues>({
@@ -31,6 +34,8 @@ export default function ModalForm<TFieldValues extends FieldValues>({
   contentClassName,
   headerIcon,
   onClear,
+  minBreakpoint,
+  maxBreakpoint,
 }: ModalFormProps<TFieldValues>) {
   const formId = useId();
 
@@ -78,6 +83,8 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       title={title}
       subtitle={subtitle}
       footerContent={footerContent}
+      minBreakpoint={minBreakpoint}
+      maxBreakpoint={maxBreakpoint}
     >
       <FormProvider {...formMethods}>
         <form

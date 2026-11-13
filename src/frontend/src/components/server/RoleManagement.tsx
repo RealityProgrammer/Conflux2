@@ -1026,7 +1026,7 @@ function RoleDetails({
             headerIcon={(
               <BsTrashFill className="size-10 fill-white"/>
             )}
-            contentClassName="centered-dialog w-128 rounded-xl text-white bg-gray-650 outline-none"
+            contentClassName="centered-dialog w-128 text-white bg-gray-650 outline-none"
             trigger={(
               <button
                 type="button"

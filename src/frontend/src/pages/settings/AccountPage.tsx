@@ -199,7 +199,8 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
       title="Change Password"
       subtitle="Hotswap the door key immediately now!"
       trigger={trigger}
-      contentClassName="centered-dialog w-xl bg-gray-650 text-white rounded-lg"
+      contentClassName="centered-dialog bg-gray-650 text-white rounded-xl"
+      maxBreakpoint="xl"
       submitButton={(
         <button type="submit" className="button-theme-primary button-cursor w-40 py-2 rounded-md" disabled={isSubmitting}>
           {isSubmitting ? (

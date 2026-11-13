@@ -643,7 +643,8 @@ function KickMemberButton() {
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Kick Member"
           subtitle="Throw them into the grass field"
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
+          maxBreakpoint="2xl"
           formMethods={formMethods}
           submitButton={(
             <button
@@ -746,7 +747,8 @@ function WarnMemberButton() {
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Warn Member"
           subtitle="Somebody has been naughty..."
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
+          maxBreakpoint="2xl"
           formMethods={formMethods}
           submitButton={(
             <button
@@ -861,7 +863,8 @@ function BanMemberButton({
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
           title="Ban Member"
           subtitle="The council have decided to exile this nerd"
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
+          maxBreakpoint="2xl"
           formMethods={formMethods}
           submitButton={(
             <button
@@ -977,7 +980,8 @@ function UnbanMemberButton({
           title="Unban Member"
           subtitle="Feeling funny today, might unban a guy for a change."
           headerIcon={(<BsHammer className="size-10 fill-white"/>)}
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-128"
+          contentClassName="centered-dialog text-white bg-gray-650 outline-none"
+          maxBreakpoint="2xl"
           footerContent={(
             <div className="w-full flex flex-row justify-end p-3 gap-3">
               <RadixDialog.Close

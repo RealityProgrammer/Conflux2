@@ -319,7 +319,8 @@ function CreateEmojiButton({disabled = false}: {disabled?: boolean}) {
           Create Emoji
         </button>
       )}
-      contentClassName="w-xl centered-dialog w-lg rounded-md text-white"
+      contentClassName="centered-dialog rounded-md text-white"
+      maxBreakpoint="xl"
     >
       <div className="mb-2">
         <Label.Root className="block mb-1 label">Short code</Label.Root>

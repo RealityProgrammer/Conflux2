@@ -5,8 +5,6 @@ import MessageBody from "./MessageBody.tsx";
 import IconButton from "../IconButton.tsx";
 import {FaRepeat, FaTrashCan} from "react-icons/fa6";
 import type {MessageOperationError, MessageSendInput} from "../../store/useMessageOperationsStore.ts";
-import {BsExclamationTriangle} from "react-icons/bs";
-import {Tooltip} from "radix-ui";
 import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
 
 type SendingMessageProps = {

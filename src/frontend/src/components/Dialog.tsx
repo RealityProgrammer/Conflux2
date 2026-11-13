@@ -2,6 +2,7 @@ import type {ReactNode} from "react";
 import {Dialog as RadixDialog} from "radix-ui";
 import IconButton from "./IconButton.tsx";
 import {FaXmark} from "react-icons/fa6";
+import useFluidBreakpoints, {type BREAKPOINTS, type BreakpointType} from "../hooks/useFluidBreakpoints.ts";
 
 export interface DialogProps {
   open?: boolean;
@@ -15,13 +16,15 @@ export interface DialogProps {
   footerContent?: ReactNode;
   disableCloseOnOutsideClick?: boolean;
   disableCloseOnEscapeKeyDown?: boolean;
+  minBreakpoint?: typeof BREAKPOINTS[number];
+  maxBreakpoint: BreakpointType;
 }
 
 export default function Dialog({
   open,
   onOpenChange,
   trigger,
-  contentClassName,
+  contentClassName = "",
   headerIcon,
   title,
   subtitle,
@@ -29,7 +32,11 @@ export default function Dialog({
   footerContent,
   disableCloseOnOutsideClick = false,
   disableCloseOnEscapeKeyDown = false,
+  minBreakpoint = "sm",
+  maxBreakpoint,
 }: DialogProps) {
+  const fluidBreakpoints = useFluidBreakpoints(minBreakpoint, maxBreakpoint);
+
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger && (
@@ -42,7 +49,7 @@ export default function Dialog({
         <RadixDialog.Overlay className="backdrop-overlay"/>
 
         <RadixDialog.Content
-          className={`flex flex-col ${contentClassName ?? ""}`}
+          className={`flex flex-col ${fluidBreakpoints} ${contentClassName}`}
           onPointerDownOutside={(e) => {
             if (disableCloseOnOutsideClick) {
               e.preventDefault();
@@ -54,35 +61,64 @@ export default function Dialog({
             }
           }}
         >
-          <header className="flex-none bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
-            {headerIcon}
-
-            <div className="flex-1">
-              <RadixDialog.Title className="font-bold text-xl text-white">{title}</RadixDialog.Title>
-
-              {subtitle && (
-                <RadixDialog.Description className="text-sm text-gray-400">{subtitle}</RadixDialog.Description>
-              )}
-            </div>
-
-            <RadixDialog.Close asChild>
-              <IconButton theme="default" className="size-6">
-                <FaXmark className="size-6"/>
-              </IconButton>
-            </RadixDialog.Close>
-          </header>
-
-          <main className="flex-1 min-w-0 min-h-0">
+          <BodyContent
+            headerIcon={headerIcon}
+            title={title}
+            subtitle={subtitle}
+            footerContent={footerContent}
+          >
             {children}
-          </main>
-
-          {footerContent && (
-            <footer className="flex-none border-t-2 border-t-gray-600">
-              {footerContent}
-            </footer>
-          )}
+          </BodyContent>
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>
+  );
+}
+
+interface BodyContentProps {
+  headerIcon?: ReactNode;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  footerContent?: ReactNode;
+}
+
+function BodyContent({
+  headerIcon,
+  title,
+  subtitle,
+  children,
+  footerContent,
+}: BodyContentProps) {
+  return (
+    <>
+      <header className="flex-none bg-black/10 px-3 py-2 border-b-2 border-b-gray-600 flex flex-row items-center gap-2">
+        {headerIcon}
+
+        <div className="flex-1">
+          <RadixDialog.Title className="font-bold text-xl text-white">{title}</RadixDialog.Title>
+
+          {subtitle && (
+            <RadixDialog.Description className="text-sm text-gray-400">{subtitle}</RadixDialog.Description>
+          )}
+        </div>
+
+        <RadixDialog.Close asChild>
+          <IconButton theme="default" className="size-6">
+            <FaXmark className="size-6"/>
+          </IconButton>
+        </RadixDialog.Close>
+      </header>
+
+      <main className="flex-1 min-w-0 min-h-0">
+        {children}
+      </main>
+
+      {footerContent && (
+        <footer className="flex-none border-t-2 border-t-gray-600">
+          {footerContent}
+        </footer>
+      )}
+    </>
   );
 }

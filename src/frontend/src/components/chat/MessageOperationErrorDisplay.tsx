@@ -1,5 +1,4 @@
 import {Tooltip} from "radix-ui";
-import {BsExclamationTriangle} from "react-icons/bs";
 import type {MessageOperationError} from "../../store/useMessageOperationsStore.ts";
 import type {SVGAttributes} from "react";
 import {FaExclamationTriangle} from "react-icons/fa";
