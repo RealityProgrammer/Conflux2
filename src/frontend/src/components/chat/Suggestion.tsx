@@ -62,8 +62,12 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
   );
 }
 
+export type SelectedEmoji =
+  | (EmojiEntryDto & { type: "server-emoji" })
+  | (UnicodeEmojiEntry & { type: "unicode-emoji" });
+
 interface EmojiProps {
-  onSelect: (value: (EmojiEntryDto & { type: "server-emoji" }) | (UnicodeEmojiEntry & { type: "unicode-emoji" })) => void;
+  onSelect: (value: SelectedEmoji) => void;
   searchTerm: string;
   className?: string;
 }
@@ -131,11 +135,11 @@ function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
 }
 
 interface TimeProps {
-  onSelectSystemTime?: () => void;
+  onSelect: (value: Date) => void;
   className?: string;
 }
 
-function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
+function TimeMode({ className = "", onSelect }: TimeProps) {
   const [systemTime, setSystemTime] = useState<number>(() => Date.now());
   useInterval(() => {
     setSystemTime(Date.now());
@@ -144,19 +148,19 @@ function TimeMode({ className = "", onSelectSystemTime }: TimeProps) {
   return (
     <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll scrollbar-none ${className}`}>
       <ul className="space-y-1 text-sm">
-        <li className="px-3 py-1.5 flex flex-row items-center mt-1" onClick={onSelectSystemTime}>
+        <li className="px-3 py-1.5 flex flex-row items-center mt-1">
           <p className="flex-1 text-left">Display current time</p>
           <p className="flex-1 text-right">:t:</p>
         </li>
   
-        <li className="px-3 py-1.5 flex flex-row items-center" onClick={onSelectSystemTime}>
+        <li className="px-3 py-1.5 flex flex-row items-center">
           <p className="flex-1 text-left">Specific point in time</p>
           <p className="flex-1 text-right">:t&lt;millisecond&gt;:</p>
         </li>
         
         <Separator.Root className="horizontal-separator mx-2"></Separator.Root>
         
-        <li className="px-3 py-1.5 flex flex-row items-center hover-highlight cursor-pointer" onClick={onSelectSystemTime}>
+        <li className="px-3 py-1.5 flex flex-row items-center hover-highlight cursor-pointer" onClick={() => onSelect(new Date())}>
           <p className="flex-1 text-left">System Time</p>
           <p className="flex-1 text-right">{systemTime}</p>
         </li>

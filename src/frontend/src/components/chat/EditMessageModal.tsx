@@ -1,7 +1,7 @@
 import type {TimelineMessageDto} from "../../api/types.ts";
 import {type MediaGalleryElement, useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import {type ChangeEvent, useEffect, useRef, useState} from "react";
-import MessageTextboxEditor, {type MessageTextboxEditorRef} from "./MessageTextboxEditor.tsx";
+import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
 import Dialog from "../Dialog.tsx";
 import {BsWrenchAdjustable} from "react-icons/bs";
 import {Dialog as RadixDialog, Label, ScrollArea} from "radix-ui";
@@ -12,6 +12,7 @@ import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
 import type {AttachmentItem} from "./ChatInput.tsx";
 import {useMessageOperationsStore} from "../../store/useMessageOperationsStore.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import {MessageEditorSuggestions} from "./MessageEditorSuggestions.tsx";
 
 interface EditMessageModalProps {
   open: boolean;
@@ -35,6 +36,8 @@ export default function EditMessageModal({
 
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
+  const [suggestion, setSuggestion] = useState<SuggestionData | null>(null);
+  const [cursorPosition, setCursorPosition] = useState(0);
 
   const [removeAttachmentIds, setRemoveAttachmentIds] = useState<string[]>(
     editOperation?.input.removeAttachmentIds ?? []
@@ -190,12 +193,25 @@ export default function EditMessageModal({
         <div className="px-3 py-2">
           <Label.Root className="label mb-1 block">Body</Label.Root>
 
-          <MessageTextboxEditor
-            ref={textboxEditorRef}
-            key={open ? `${originalMessage.id}-${editOperation ? 'editing' : 'fresh'}` : undefined}
-            initialValue={initialBody ?? ""}
-            onSuggestionChange={() => {}}
-          />
+          <div className="relative">
+            <MessageEditorSuggestions.Default
+              suggestion={suggestion}
+              textboxEditorRef={textboxEditorRef}
+              cursorPosition={cursorPosition}
+            />
+
+            <MessageTextboxEditor
+              ref={textboxEditorRef}
+              key={open ? `${originalMessage.id}-${editOperation ? 'editing' : 'fresh'}` : undefined}
+              initialValue={initialBody ?? ""}
+              onSuggestionChange={(suggestion) => {
+                setSuggestion(suggestion);
+              }}
+              onTextChange={(_text: string, cursorPosition: number) => {
+                setCursorPosition(cursorPosition);
+              }}
+            />
+          </div>
 
           <Label.Root className="label mb-1 mt-2 block">Attachments</Label.Root>
 

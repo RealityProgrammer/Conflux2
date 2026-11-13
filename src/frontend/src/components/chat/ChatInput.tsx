@@ -13,13 +13,13 @@ import {ScrollArea} from "radix-ui";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
-import {Suggestion} from "./Suggestion.tsx";
 import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
 import {FaPaperPlane, FaXmark} from "react-icons/fa6";
 import EmojiPanelButton from "./EmojiPanelButton.tsx";
 import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {Attachment} from "./Attachment.tsx";
 import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
+import { MessageEditorSuggestions } from "./MessageEditorSuggestions.tsx";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -42,7 +42,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
   const [messageBody, setMessageBody] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  const [suggestion, setSuggestion] = useState<SuggestionData | undefined>(undefined);
+  const [suggestion, setSuggestion] = useState<SuggestionData | null>(null);
 
   const notifyTyping = useTypingEmitter(conversationId);
 
@@ -135,52 +135,11 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   return (
     <footer className="relative flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
-      {suggestion && (
-        <>
-          {suggestion.type === "mode" ? (
-            <Suggestion.Mode
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              onSelect={(mode) => {
-                // cursor is after the start colon, insert the mode directly
-                textboxEditorRef.current?.insertText(mode, suggestion.startColonIndex + 1, cursorPosition);
-              }}
-            />
-          ) : suggestion.type === "emoji" ? (
-            <Suggestion.Emoji
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              searchTerm={suggestion.searchTerm ?? ""}
-              onSelect={(emoji) => {
-                // replace from the starting colon with the full formatted emoji tag and a trailing space
-                switch (emoji.type) {
-                  case "server-emoji":
-                    textboxEditorRef.current?.insertEmojiNode(emoji.id, suggestion.startColonIndex, cursorPosition);
-                    break;
-
-                  case "unicode-emoji":
-                    textboxEditorRef.current?.insertText(emoji.value, suggestion.startColonIndex, cursorPosition);
-                    break;
-                }
-              }}
-            />
-          ) : suggestion.type === "time" ? (
-            <Suggestion.Time
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              onSelectSystemTime={() => {
-                // replace from the starting colon with the formatted timestamp tag and a trailing space
-                textboxEditorRef.current?.insertText(`:t${new Date().getTime()}: `, suggestion.startColonIndex, cursorPosition);
-              }}
-            />
-          ) : suggestion.type === "mention" ? (
-            <Suggestion.Mention
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              searchTerm={suggestion.searchTerm ?? ""}
-              onSelect={(user) => {
-                textboxEditorRef.current?.insertMentionNode({id: user.id, name: user.displayName ?? "???"}, suggestion.startColonIndex, cursorPosition);
-              }}
-            />
-          ) : null}
-        </>
-      )}
+      <MessageEditorSuggestions.Default
+        suggestion={suggestion}
+        textboxEditorRef={textboxEditorRef}
+        cursorPosition={cursorPosition}
+      />
 
       {replyingMessage && (
         <section className="flex flex-col min-w-0">
@@ -194,13 +153,13 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
           {/* https://stackoverflow.com/a/79634869 */}
           {replyingMessage.body && (
-            <p className="min-w-0 overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
+            <p className="mt-1 min-w-0 overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
               <span className="line-clamp-2 break-all">{replyingMessage.body}</span>
             </p>
           )}
 
           {replyingMessage.attachments && replyingMessage.attachments.length > 0 && (
-            <span className="text-sm">{replyingMessage.attachments.length} attachment{replyingMessage.attachments.length > 1 ? 's' : ''}</span>
+            <span className="text-sm mt-1">With {replyingMessage.attachments.length} attachment{replyingMessage.attachments.length > 1 ? 's' : ''}</span>
           )}
         </section>
       )}

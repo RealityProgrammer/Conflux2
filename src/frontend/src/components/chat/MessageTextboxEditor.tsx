@@ -80,7 +80,7 @@ interface MessageTextboxEditorProps {
   initialValue?: string;
   onTextChange?: (text: string, cursorPosition: number) => void;
   onEnterSend?: () => void;
-  onSuggestionChange: (data: SuggestionData | undefined) => void;
+  onSuggestionChange: (data: SuggestionData | null) => void;
   onImagePaste?: (file: File) => void;
   ref?: Ref<MessageTextboxEditorRef>;
 }
@@ -705,9 +705,9 @@ interface TextAreaProps {
   onTextChange?: (text: string, cursorPosition: number) => void;
   onEnterSend?: () => void;
   onEditorReady: (editor: LexicalEditor) => void;
-  onSuggestionChange: (data: SuggestionData | undefined) => void;
+  onSuggestionChange: (data: SuggestionData | null) => void;
   onImagePaste?: (file: File) => void;
-  lastSelectionRef: RefObject<{ nodeKey: string; offset: number } | null>; // 👈 Added prop type
+  lastSelectionRef: RefObject<{ nodeKey: string; offset: number } | null>;
 }
 
 function TextArea({
@@ -920,7 +920,7 @@ function TextArea({
       editorState.read(() => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          onSuggestionChange(undefined);
+          onSuggestionChange(null);
           return;
         }
 
@@ -929,13 +929,13 @@ function TextArea({
 
         // suggestions only occur inside normal text nodes
         if (!$isTextNode(node)) {
-          onSuggestionChange(undefined);
+          onSuggestionChange(null);
           return;
         }
 
         // prevent suggestion if parent is code node
         if (node.getParents().some($isCodeNode)) {
-          onSuggestionChange(undefined);
+          onSuggestionChange(null);
           return;
         }
 
@@ -993,7 +993,7 @@ function TextArea({
           return;
         }
 
-        onSuggestionChange(undefined);
+        onSuggestionChange(null);
       });
     });
   }, [editor, onSuggestionChange]);
