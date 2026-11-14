@@ -28,8 +28,13 @@ export type UserAuthorizationInfo = components["schemas"]["UserAuthorizationInfo
 
 export type UserIdentityProfileDto = NonNullable<GetUserIdentityProfileQuery['user']>;
 
+export type KeyedPaginatedPage<TKey, TElement> =
+  Omit<components["schemas"]["KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"], "beforeKey" | "afterKey" | "elements"> &
+  { beforeKey: TKey, afterKey: TKey, elements: TElement[] };
+
 export type LoginResponse = components["schemas"]["LoginResponse"];
 export type RefreshResponse = components["schemas"]["RefreshResponse"];
+export type PinnedMessageDto = components["schemas"]["PinnedMessageDto"];
 
 export type StartCallResult = components["schemas"]["StartCallResult"];
 export type TimelineMessageSenderDto = components["schemas"]["TimelineMessageSenderDto"];
@@ -47,7 +52,6 @@ export type ServerRoleDto = components["schemas"]["ServerRoleDto"];
 export type ServerIdentityDto = components["schemas"]["ServerIdentityDto"];
 export type CallEndProperties = Omit<components["schemas"]["MessagePropertiesCallEndProperties"], "$type">;
 export type GetIncomingDirectCallQueryResult = components["schemas"]["GetIncomingDirectCallQueryResult"];
-export type MessageReadStrategy = components["schemas"]["MessageReadStrategy"];
 export type UpdateProfileResult = components["schemas"]["UpdateProfileResult"];
 export type AccountDeletionStatusDto = components["schemas"]["AccountDeletionStatusDto"];
 export type RestoreAccountResponse = components["schemas"]["RestoreAccountResponse"];

@@ -1,29 +1,34 @@
+using System.ComponentModel.DataAnnotations;
 using Conflux.Domain.Entities;
 using Facet;
-using System.ComponentModel.DataAnnotations;
 
 namespace Conflux.Domain.Dto;
+
+[Facet(typeof(ApplicationUser), Include = [
+    nameof(ApplicationUser.Id),
+    nameof(ApplicationUser.DisplayName),
+    nameof(ApplicationUser.AvatarVersion),
+])]
+public sealed partial record PinnedMessageSender {
+    [Required] public Guid Id { get; set; } = Id;
+    [Required] public string? DisplayName { get; set; } = DisplayName;
+    [Required] public int? AvatarVersion { get; set; } = AvatarVersion;
+}
 
 [Facet(typeof(Message), Include = [
     nameof(Message.Id),
     nameof(Message.Body),
-    nameof(Message.Attachments),
-    nameof(Message.SenderUserId),
     nameof(Message.Sender),
     nameof(Message.CreatedAt),
-    nameof(Message.UpdatedAt),
     nameof(Message.PinnedAt),
 ], NestedFacets = [
-    typeof(TimelineMessageSenderDto),
-    typeof(MessageAttachmentDto),
+    typeof(PinnedMessageSender),
 ])]
 public sealed partial record PinnedMessageDto {
     [Required] public Guid Id { get; set; } = Id;
-    public string? Body { get; set; } = Body;
-    [Required] public IList<MessageAttachmentDto> Attachments { get; set; } = Attachments;
-    [Required] public Guid? SenderUserId { get; set; } = SenderUserId;
-    public TimelineMessageSenderDto? Sender { get; set; } = Sender;
+    [Required] public string? Body { get; set; } = Body;
+    [Required] public PinnedMessageSender? Sender { get; set; } = Sender;
     [Required] public DateTimeOffset CreatedAt { get; set; } = CreatedAt;
-    public DateTimeOffset? UpdatedAt { get; set; } = UpdatedAt;
-    public DateTimeOffset? PinnedAt { get; set; } = PinnedAt;
+    [Required] public DateTimeOffset? PinnedAt { get; set; } = PinnedAt;
+    [Required, MapFrom("Attachments == null ? 0 : Attachments.Count")] public int AttachmentsCount { get; set; }
 }

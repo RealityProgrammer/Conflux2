@@ -5,15 +5,14 @@ import {BsExclamationTriangle, BsPinAngleFill} from "react-icons/bs";
 import MessageBody from "./chat/MessageBody.tsx";
 import {Virtuoso} from "react-virtuoso";
 import {MessageRow} from "./chat/MessageRow.tsx";
-import MessageAttachments from "./chat/MessageAttachments.tsx";
-import {
-  type GetConversationPinnedMessagesQuery,
-} from "../graphql/infiniteQueries.ts";
 import useQueryPinnedMessages from "../hooks/useQueryPinnedMessages.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {MessageDeletedEvent, MessagePinnedEvent, MessageUnpinnedEvent} from "../api/events.ts";
 import {useState} from "react";
 import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
+import {queryClient} from "../main.tsx";
+import type {KeyedPaginatedPage, PinnedMessageDto} from "../api/types.ts";
+import type {InfiniteData} from "@tanstack/react-query";
 
 export default function ShowPinnedMessagesButton() {
   const { requestJump, conversationId } = useChatContainerContext();
@@ -21,17 +20,14 @@ export default function ShowPinnedMessagesButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
-  const {
-    queryResult: { data, isLoading, isError },
-    append: appendPinnedMessage,
-    remove: removePinnedMessage,
-  } = useQueryPinnedMessages(conversationId, {
+  const { data, isLoading, isError } = useQueryPinnedMessages(conversationId, {
     enabled: hasBeenOpened,
     staleTime: 1000 * 60 * 15,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
-  const allElements = data?.pages.flatMap((page) => page?.pinnedMessages.nodes ?? []) ?? [];
+  const allElements: PinnedMessageDto[] = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -46,19 +42,34 @@ export default function ShowPinnedMessagesButton() {
     requestJump(messageId);
   }
 
-  useSignalREvent("MessagePinned", (event: MessagePinnedEvent) => {
+  useSignalREvent("MessagePinned", (_event: MessagePinnedEvent) => {
     if (!hasBeenOpened) return;
-    appendPinnedMessage(event.message);
+
+    // TODO: Append instead of invalidate
+    // appendPinnedMessage(event.message);
+
+    queryClient.invalidateQueries({
+      queryKey: useQueryPinnedMessages.getKey(conversationId),
+    })
   });
 
-  useSignalREvent("MessageUnpinned", (event: MessageUnpinnedEvent) => {
+  useSignalREvent(["MessageUnpinned", "MessageDeleted"], (event: MessageUnpinnedEvent | MessageDeletedEvent) => {
     if (!hasBeenOpened) return;
-    removePinnedMessage(event.messageId);
-  });
 
-  useSignalREvent("MessageDeleted", (event: MessageDeletedEvent) => {
-    if (!hasBeenOpened) return;
-    removePinnedMessage(event.messageId);
+    queryClient.setQueryData<InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>>(
+      useQueryPinnedMessages.getKey(conversationId),
+      (oldData) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            elements: page.elements.filter((msg) => msg.id !== event.messageId),
+          })),
+        };
+      }
+    );
   });
 
   return (
@@ -99,7 +110,7 @@ export default function ShowPinnedMessagesButton() {
 }
 
 interface ContentDisplayProps {
-  allElements: NonNullable<GetConversationPinnedMessagesQuery["pinnedMessages"]["nodes"]>;
+  allElements: PinnedMessageDto[];
   isLoading: boolean;
   isError: boolean;
   onPinnedMessageClick: (messageId: string) => void;
@@ -157,9 +168,10 @@ function ContentDisplay({
                       content={message.body}
                     />
 
-                    {message.attachments && message.attachments.length > 0 && (
-                      <MessageAttachments attachments={message.attachments} onAttachmentClick={() => {}}/>
-                    )}
+                    {/* TODO: Should we allow attachments in pinned message display? */}
+                    {/*{message.attachments && message.attachments.length > 0 && (*/}
+                    {/*  <MessageAttachments attachments={message.attachments} onAttachmentClick={() => {}}/>*/}
+                    {/*)}*/}
                   </div>
                 </MessageRow.Row>
               </div>

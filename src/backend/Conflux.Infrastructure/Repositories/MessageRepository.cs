@@ -4,6 +4,7 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
+using System.Linq.Expressions;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -20,7 +21,8 @@ internal sealed class MessageRepository(
 
     public async Task<Result<TimelineMessagePage>> GetTimelineMessages(
         Guid conversationId, 
-        MessageReadStrategy readStrategy,
+        MessageLoadDirection loadDirection,
+        Guid? cursorMessageId,
         int limit,
         CancellationToken cancellationToken = default
     ) {
@@ -31,13 +33,14 @@ internal sealed class MessageRepository(
             .AsNoTracking()
             .Where(m => m.ConversationId == conversationId)
             .Include(m => m.ReplyTo)
-            .Include(m => m.Attachments.OrderBy(a => a.Order));
+            .Include(m => m.Attachments.OrderBy(a => a.Order))
+            .Include(m => m.Sender);
 
-        switch (readStrategy) {
-            case MessageReadStrategy.Latest:
+        switch (loadDirection) {
+            case MessageLoadDirection.Latest:
                 messages = await baseQuery
                     .OrderByDescending(m => m.Id)
-                    .SelectFacet<TimelineMessageDto>()
+                    .Select(SelectTimelineMessages)
                     .Take(limit)
                     .Reverse()  // return the messages in chronological order
                     .ToListAsync(cancellationToken);
@@ -45,71 +48,99 @@ internal sealed class MessageRepository(
                 hasMoreBefore = messages.Count == limit;
                 hasMoreAfter = false;
                 break;
-            
-            case MessageReadStrategy.Before before:
+
+            case MessageLoadDirection.Before:
+            {
+                if (cursorMessageId is not { } cursorId) goto case MessageLoadDirection.Latest;
+                
                 messages = await baseQuery
-                    .Where(m => m.Id.CompareTo(before.CursorId) < 0)
+                    .Where(m => m.Id.CompareTo(cursorId) < 0)
                     .OrderByDescending(m => m.Id)
-                    .SelectFacet<TimelineMessageDto>()
+                    .Select(SelectTimelineMessages)
                     .Take(limit)
                     .Reverse()
                     .ToListAsync(cancellationToken);
-                
+
                 hasMoreBefore = messages.Count == limit;
                 hasMoreAfter = null;
                 break;
-            
-            case MessageReadStrategy.After after:
+            }
+
+            case MessageLoadDirection.After:
+            {
+                if (cursorMessageId is not { } cursorId) goto case MessageLoadDirection.Latest;
+
                 messages = await baseQuery
-                    .Where(m => m.Id.CompareTo(after.CursorId) > 0)
+                    .Where(m => m.Id.CompareTo(cursorId) > 0)
                     .OrderBy(m => m.Id)
-                    .SelectFacet<TimelineMessageDto>()
+                    .Select(SelectTimelineMessages)
                     .Take(limit)
                     .ToListAsync(cancellationToken);
-                
+
                 hasMoreBefore = null;
                 hasMoreAfter = messages.Count == limit;
                 break;
-            
-            case MessageReadStrategy.Around around:
-                int halfLimit = limit / 2;
+            }
+
+            case MessageLoadDirection.Around:
+            {
+                if (cursorMessageId is not { } cursorId) goto case MessageLoadDirection.Latest;
                 
+                int halfLimit = limit / 2;
+
                 List<TimelineMessageDto> beforeAnchor = await baseQuery
-                    .Where(m => m.Id.CompareTo(around.AnchorId) < 0)
+                    .Where(m => m.Id.CompareTo(cursorId) < 0)
                     .OrderByDescending(m => m.Id)
-                    .SelectFacet<TimelineMessageDto>()
+                    .Select(SelectTimelineMessages)
                     .Take(halfLimit)
                     .Reverse()
                     .ToListAsync(cancellationToken);
-                
+
                 List<TimelineMessageDto> afterAnchor = await baseQuery
-                    .Where(m => m.Id.CompareTo(around.AnchorId) >= 0) // can't forget the cursor message too lmao
+                    .Where(m => m.Id.CompareTo(cursorId) >= 0) // can't forget the cursor message too lmao
                     .OrderBy(m => m.Id)
-                    .SelectFacet<TimelineMessageDto>()
+                    .Select(SelectTimelineMessages)
                     .Take(halfLimit + 1)
                     .ToListAsync(cancellationToken);
-                
-                messages = [..beforeAnchor, ..afterAnchor];
+
+                messages = [.. beforeAnchor, .. afterAnchor];
                 hasMoreBefore = beforeAnchor.Count == halfLimit;
                 hasMoreAfter = afterAnchor.Count == halfLimit + 1;
                 break;
-            
+            }
+
             default:
-                return Errors.ValidationErrorsOccurred(new() {
-                    [nameof(readStrategy)] = [
-                        "Unknown message read strategy.",
-                    ],
-                });
+                goto case MessageLoadDirection.Latest;
         }
         
         return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
+    }
+
+    private static Expression<Func<Message, TimelineMessageDto>> SelectTimelineMessages {
+        get {
+            return message => new(
+                message.Id,
+                message.Type,
+                message.Sender == null ? null : new TimelineMessageSenderDto(message.Sender.Id, message.Sender.DisplayName, message.Sender.AvatarVersion),
+                message.Body,
+                message.Attachments.Select(a => new MessageAttachmentDto(a.Id, a.ContentType, a.FileName)).ToList(),
+                message.ReplyTo == null ? null : new TimelineMessageReplyDto(message.ReplyTo.Id, new(message.ReplyTo.Sender!.Id, message.ReplyTo.Sender!.DisplayName, message.ReplyTo.Sender!.AvatarVersion), message.ReplyTo.Body, message.Attachments.Count),
+                message.Properties,
+                message.CreatedAt,
+                message.UpdatedAt,
+                message.ConversationId,
+                message.PinnedAt != null,
+                null,
+                null
+            );
+        }
     }
 
     public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, MessagePinFilter pinFilter, Guid? beforeCursor, int limit, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Messages.Where(m => 
 			m.ConversationId == conversationId
-			);
+		);
 
 		if (!string.IsNullOrEmpty(content)) {
 			query = query.Where(m => 
@@ -150,5 +181,58 @@ internal sealed class MessageRepository(
             .ToListAsync(cancellationToken);
 
         return Result<MessageSearchPage>.Success(new(page, page.Count == limit, page.Count > 0 ? page[^1].Id : null));
+    }
+
+    public async Task<KeyedPaginatedPage<DateTimeOffset, PinnedMessageDto>> GetPinnedMessages(
+        Guid conversationId, 
+        DateTimeOffset? before, 
+        DateTimeOffset? after,
+        int limit,
+        CancellationToken cancellationToken = default
+    ) {
+        var query = dbContext.Messages.Where(m =>
+            m.ConversationId == conversationId && m.PinnedAt != null
+        );
+
+        if (before.HasValue) {
+            query = query.Where(m => m.PinnedAt < before);
+        } else if (after.HasValue) {
+            query = query.Where(m => m.PinnedAt > after);
+        }
+
+        var messages = await query.OrderByDescending(m => m.PinnedAt)
+            .Take(limit + 1)    // + 1 to trim away
+            .SelectFacet<PinnedMessageDto>()
+            .ToListAsync(cancellationToken);
+
+        if (messages.Count == 0) {
+            return new(default, default, false, false, []);
+        }
+
+        bool hasMore = messages.Count > limit;
+        bool hasPreviousPage, hasNextPage;
+        
+        if (hasMore) {
+            messages.RemoveAt(messages.Count - 1); // trim last one away
+        }
+
+        if (before.HasValue) {
+            hasNextPage = hasMore;
+            hasPreviousPage = true;
+        } else if (after.HasValue) {
+            hasPreviousPage = hasMore;
+            hasNextPage = true;
+        } else {
+            hasPreviousPage = false;
+            hasNextPage = hasMore;
+        }
+
+        return new(
+            messages[0].PinnedAt!.Value,
+            messages[^1].PinnedAt!.Value,
+            hasPreviousPage,
+            hasNextPage,
+            messages
+        );
     }
 }

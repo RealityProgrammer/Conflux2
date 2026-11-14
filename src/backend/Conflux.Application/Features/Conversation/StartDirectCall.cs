@@ -43,6 +43,35 @@ internal sealed class StartDirectCallHandler(
         if (!conversationResult.IsSuccess) {
             return conversationResult.Error;
         }
+        
+        // get profiles
+        var profiles = await friendRequestRepository.AsQueryable()
+            .Where(r => r.Status == FriendRequestStatus.Accepted)
+            .Where(r =>
+                r.SenderUserId == callerId && r.ReceiverUserId == calleeId ||
+                r.SenderUserId == calleeId && r.ReceiverUserId == callerId
+            )
+            .Include(r => r.Sender)
+            .Include(r => r.Receiver)
+            .Select(r => new {
+                Sender = new UserIdentityProfileDto {
+                    Id = r.Sender.Id,
+                    UserName = r.Sender.UserName,
+                    DisplayName = r.Sender.DisplayName,
+                    AvatarVersion = r.Sender.AvatarVersion,
+                },
+                Receiver = new UserIdentityProfileDto {
+                    Id = r.Receiver.Id,
+                    UserName = r.Receiver.UserName,
+                    DisplayName = r.Receiver.DisplayName,
+                    AvatarVersion = r.Receiver.AvatarVersion,
+                },
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (profiles == null) {
+            return Errors.NoAcceptedFriendRequest();
+        }
 
         Domain.Entities.Conversation conversation = conversationResult.Value!;
         
@@ -55,58 +84,41 @@ internal sealed class StartDirectCallHandler(
         Guid callId = callIdResult.Value;
 
         try {
-            var profiles = await friendRequestRepository.AsQueryable()
-                .Where(r => r.Status == FriendRequestStatus.Accepted)
-                .Where(r =>
-                    r.SenderUserId == callerId && r.ReceiverUserId == calleeId ||
-                    r.SenderUserId == calleeId && r.ReceiverUserId == callerId
-                )
-                .Include(r => r.Sender)
-                .Include(r => r.Receiver)
-                .Select(r => new {
-                    Sender = new UserIdentityProfileDto {
-                        Id = r.Sender.Id,
-                        UserName = r.Sender.UserName,
-                        DisplayName = r.Sender.DisplayName,
-                        AvatarVersion = r.Sender.AvatarVersion,
-                    },
-                    Receiver = new UserIdentityProfileDto {
-                        Id = r.Receiver.Id,
-                        UserName = r.Receiver.UserName,
-                        DisplayName = r.Receiver.DisplayName,
-                        AvatarVersion = r.Receiver.AvatarVersion,
-                    },
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (profiles == null) {
-                await callingService.DeleteDirectCall(callId);
-                return Errors.NoAcceptedFriendRequest();
-            }
-            
             UserIdentityProfileDto callerProfile = profiles.Sender.Id == callerId ? profiles.Sender : profiles.Receiver;
             UserIdentityProfileDto calleeProfile = profiles.Sender.Id == callerId ? profiles.Receiver : profiles.Sender;
             
             await publisher.Publish(new IncomingCallNotification(callId, calleeProfile.Id, callerProfile), CancellationToken.None);
             
             // append the start call message to conversation
-            Message createdMessage = new Message {
+            Message message = new Message {
                 Type = MessageType.CallStart,
                 Conversation = conversation,
                 SenderUserId = callerId,
             };
             
-            conversation.Messages.Add(createdMessage);
+            conversation.Messages.Add(message);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             
-            TimelineMessageDto messageDto = new(createdMessage) {
-                Sender = await userRepository
+            TimelineMessageDto messageDto = new(
+                message.Id,
+                message.Type,
+                await userRepository
                     .AsQueryable()
-                    .Where(s => s.Id == callerId)
-                    .SelectFacet<TimelineMessageSenderDto>()
+                    .Where(s => s.Id == message.SenderUserId)
+                    .Select(u => new TimelineMessageSenderDto(u.Id, u.DisplayName, u.AvatarVersion))
                     .FirstOrDefaultAsync(CancellationToken.None),
-            };
+                null,
+                null,
+                null,
+                null,
+                message.CreatedAt,
+                null,
+                message.ConversationId,
+                false,
+                null,
+                null
+            );
 
             await publisher.Publish(
                 new MessageReceivedNotification(conversation.Id, messageDto), 

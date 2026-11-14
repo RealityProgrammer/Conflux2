@@ -60,4 +60,25 @@ public sealed class ConversationController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
+    
+    [HttpGet("{conversationId:guid}/pinned-messages")]
+    public async Task<ActionResult<ApiResponse<KeyedPaginatedPage<DateTimeOffset, PinnedMessageDto>>>> QueryPinnedMessages(
+        Guid conversationId,
+        [FromQuery(Name = "before")] DateTimeOffset? before,
+        [FromQuery(Name = "after")] DateTimeOffset? after
+    ) {
+        var result = await sender.Send(new QueryPinnedMessages(conversationId, before, after));
+        
+        if (result.IsSuccess) {
+            return Ok(new ApiResponse<KeyedPaginatedPage<DateTimeOffset, PinnedMessageDto>>(result.Value, Error.None));
+        }
+
+        return result.Error.Code switch {
+            nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
+            nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
+        };
+    }
 }

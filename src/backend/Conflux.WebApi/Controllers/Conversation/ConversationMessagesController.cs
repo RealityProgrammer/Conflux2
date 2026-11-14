@@ -142,14 +142,15 @@ public sealed class ConversationMessagesController(
         };
     }
 
-    [HttpPost("read")]
+    [HttpGet]
     public async Task<ActionResult<ApiResponse<TimelineMessagePage>>> GetMessages(
         Guid conversationId,
-        [FromBody] ReadMessageRequest request,
+        [FromQuery(Name = "cursor")] Guid? cursorMessageId,
+        [FromQuery(Name = "direction")] MessageLoadDirection direction,
         CancellationToken cancellationToken
     ) {
         var result = await sender.Send(
-            new ReadTimelineMessagesQuery(conversationId, request.ReadStrategy, 50), 
+            new QueryTimelineMessages(conversationId, direction, cursorMessageId, 50), 
             cancellationToken
         );
 
@@ -191,7 +192,7 @@ public sealed class ConversationMessagesController(
         Guid conversationId,
         Guid messageId
     ) {
-        var result = await sender.Send(new PinMessageCommand(conversationId, messageId));
+        var result = await sender.Send(new PinMessageCommand(conversationId, messageId, MessagePinAction.Pin));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
@@ -211,7 +212,7 @@ public sealed class ConversationMessagesController(
         Guid conversationId,
         Guid messageId
     ) {
-        var result = await sender.Send(new UnpinMessageCommand(conversationId, messageId));
+        var result = await sender.Send(new PinMessageCommand(conversationId, messageId, MessagePinAction.Unpin));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
@@ -226,7 +227,7 @@ public sealed class ConversationMessagesController(
         };
     }
 
-    [HttpPost("{messageId:guid}/reactions/add")]
+    [HttpPost("{messageId:guid}/reactions")]
     public async Task<ActionResult<ApiResponse>> ReactMessage(
         Guid messageId, 
         [FromBody] ReactionRequest request
@@ -251,11 +252,7 @@ public sealed class ConversationMessagesController(
         IFormFile[]? Attachments,
         Guid? ReplyToId
     );
-
-    public sealed record ReadMessageRequest(
-        MessageReadStrategy ReadStrategy
-    );
-
+    
     public sealed record EditMessageRequest(
         Facet.Optional<string?> Body,
         List<Guid>? RemoveAttachmentIds,

@@ -21,7 +21,7 @@ export default function MessageAttachments({
               key={attachment.id}
               className="flex-none overflow-hidden relative group size-40 cursor-pointer"
             >
-              {attachment.type.startsWith("image") ? (
+              {attachment.contentType.startsWith("image") ? (
                 <img
                   src={conversationService.getAttachmentViewUrl(attachment.id)}
                   alt="attachment"
@@ -29,14 +29,14 @@ export default function MessageAttachments({
                   loading="lazy"
                   onClick={() => onAttachmentClick(index)}
                 />
-              ) : attachment.type.startsWith("video") ? (
+              ) : attachment.contentType.startsWith("video") ? (
                 <video
                   src={conversationService.getAttachmentViewUrl(attachment.id)}
                   className="object-cover size-full"
                   autoPlay={false}
                   onClick={() => onAttachmentClick(index)}
                 />
-              ) : attachment.type.startsWith("audio") ? (
+              ) : attachment.contentType.startsWith("audio") ? (
                 <div
                   className="flex flex-row justify-center items-center size-full"
                   onClick={() => onAttachmentClick(index)}

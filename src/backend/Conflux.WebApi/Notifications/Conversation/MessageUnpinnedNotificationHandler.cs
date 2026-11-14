@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Conflux.WebApi.Notifications.Conversation;
 
 [Facet(typeof(MessageUnpinnedNotification), Include = [
+    nameof(MessageUnpinnedNotification.ConversationId),
     nameof(MessageUnpinnedNotification.MessageId),
 ])]
 public sealed partial record MessageUnpinnedEvent;

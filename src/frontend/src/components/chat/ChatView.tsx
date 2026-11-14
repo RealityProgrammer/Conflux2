@@ -15,7 +15,7 @@ import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
 import type {TimelineContext} from "./TimelineContext.ts";
 import {Virtuoso, type VirtuosoHandle} from "react-virtuoso";
-import useTimelineMessagesQuery from "../../hooks/useTimelineMessagesQuery.ts";
+import useQueryTimelineMessages from "../../hooks/useQueryTimelineMessages.ts";
 import {MessageRow} from "./MessageRow.tsx";
 import {MessageItem} from "./MessageItem.tsx";
 import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.tsx";
@@ -71,7 +71,7 @@ export function ChatView({
     hasNextPage,
     fetchNextPage,
     isLoading,
-  } = useTimelineMessagesQuery(conversationId, anchorId);
+  } = useQueryTimelineMessages(conversationId, anchorId);
 
   useEffect(() => {
     (async () => {
@@ -395,8 +395,8 @@ export function ChatView({
         setMediaElements(messageAttachments.map(attachment => ({
           id: attachment.id,
           src: conversationService.getAttachmentViewUrl(attachment.id),
-          fileName: attachment.name,
-          mediaType: attachment.type,
+          fileName: attachment.fileName,
+          mediaType: attachment.contentType,
         })), clickedIndex, {
           downloadUrlProvider: (attachmentIndex: number) => conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
         });

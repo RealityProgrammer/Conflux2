@@ -1,5 +1,6 @@
 import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
 import type {EditedMessageDto, TimelineMessageDto, TimelineMessagePage} from "../api/types.ts";
+import useQueryTimelineMessages from "./useQueryTimelineMessages.ts";
 
 interface UseTimelineMessagesResult {
   appendMessage: (message: TimelineMessageDto) => void;
@@ -15,7 +16,7 @@ export default function useTimelineMessageMutations(
 
   const modifyMessageData = (callback: (oldData: InfiniteData<TimelineMessagePage | null | undefined>) => InfiniteData<TimelineMessagePage | null | undefined>) => {
     queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
-      { queryKey: ["conversation", conversationId] },
+      { queryKey: useQueryTimelineMessages.getKey(conversationId) },
       (oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) {
           return oldData;

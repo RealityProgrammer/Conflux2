@@ -1,105 +1,30 @@
 import {
-  type InfiniteData,
-  type UseInfiniteQueryOptions,
-  type UseInfiniteQueryResult,
-  useQueryClient
+  type InfiniteData, type QueryKey, useInfiniteQuery, type UseInfiniteQueryOptions,
 } from "@tanstack/react-query";
-import {
-  type GetConversationPinnedMessagesQuery, type GetConversationPinnedMessagesQueryVariables,
-  useInfiniteGetConversationPinnedMessagesQuery
-} from "../graphql/infiniteQueries.ts";
-import type {PinnedMessageDto} from "../graphql/types.ts";
+import type {KeyedPaginatedPage, PinnedMessageDto} from "../api/types.ts";
+import {conversationService} from "../api/conversationService.ts";
 
-interface UseQueryPinnedMessagesResult {
-  queryResult: UseInfiniteQueryResult<InfiniteData<GetConversationPinnedMessagesQuery, unknown>, Error>;
-  append: (message: PinnedMessageDto) => void;
-  remove: (messageId: string) => void;
+type PageParams = {
+  before: string | null;
 }
 
 export default function useQueryPinnedMessages(
   conversationId: string,
-  options?: Omit<Omit<UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, Error, InfiniteData<GetConversationPinnedMessagesQuery>>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, Error, InfiniteData<GetConversationPinnedMessagesQuery>>['queryKey'] }, "queryFn" | "initialPageParam" | "getNextPageParam">
-): UseQueryPinnedMessagesResult {
-  const queryResult: UseInfiniteQueryResult<InfiniteData<GetConversationPinnedMessagesQuery, unknown>, Error> = useInfiniteGetConversationPinnedMessagesQuery(
-    {
-      conversationId,
-      after: null,
-    } as GetConversationPinnedMessagesQueryVariables,
-    {
-      initialPageParam: {conversationId, after: null},
-      getNextPageParam: (lastPage: GetConversationPinnedMessagesQuery): { after: string } | undefined => {
-        const pageInfo: GetConversationPinnedMessagesQuery["pinnedMessages"]["pageInfo"] = lastPage?.pinnedMessages.pageInfo;
-
-        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-          return { after: pageInfo.endCursor };
-        }
-
-        return undefined;
-      },
-      ...options
+  options: Omit<UseInfiniteQueryOptions<KeyedPaginatedPage<string, PinnedMessageDto>, Error, InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>, QueryKey, PageParams>, "queryKey" | "queryFn" | "initialPageParam" | "getNextPageParam">
+) {
+  return useInfiniteQuery<KeyedPaginatedPage<string, PinnedMessageDto>, Error, InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>, QueryKey, PageParams>({
+    queryKey: useQueryPinnedMessages.getKey(conversationId),
+    queryFn: async ({pageParam}: { pageParam: PageParams }): Promise<KeyedPaginatedPage<string, PinnedMessageDto>> => {
+      return await conversationService.queryPinnedMessages(conversationId, pageParam.before ?? undefined, undefined);
     },
-  );
+    initialPageParam: {} as PageParams,
+    getNextPageParam: (lastPage: KeyedPaginatedPage<string, PinnedMessageDto>) => {
+      if (!lastPage?.hasNextPage || lastPage.elements.length === 0) return undefined;
 
-  const queryClient = useQueryClient();
-
-  const append = (message: PinnedMessageDto) => {
-    queryClient.setQueryData<InfiniteData<GetConversationPinnedMessagesQuery, unknown>>(
-      useInfiniteGetConversationPinnedMessagesQuery.getKey({ conversationId, after: null }),
-      (oldData) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page, index: number) =>
-            index === 0 ? {
-              ...page,
-              pinnedMessages: {
-                ...page.pinnedMessages,
-                nodes: page.pinnedMessages.nodes ? [
-                  {
-                    id: message.id,
-                    body: message.body ?? null,
-                    attachments: message.attachments,
-                    createdAt: message.createdAt,
-                    sender: {
-                      id: message.sender!.id,
-                      displayName: message.sender!.displayName,
-                      avatarVersion: message.sender!.avatarVersion ?? null,
-                    },
-                  },
-                  ...page.pinnedMessages.nodes,
-                ] : null,
-              },
-            } : page
-          ),
-        };
-      }
-    );
-  };
-
-  const remove = (messageId: string) => {
-    queryClient.setQueryData<InfiniteData<GetConversationPinnedMessagesQuery, unknown>>(
-      useInfiniteGetConversationPinnedMessagesQuery.getKey({ conversationId, after: null }),
-      (oldData) => {
-        if (!oldData) return oldData;
-
-        if (!oldData.pages.some(p => p.pinnedMessages.nodes && p.pinnedMessages.nodes.some(n => n.id === messageId))) {
-          return oldData;
-        }
-
-        return {
-          ...oldData,
-          pages: oldData.pages.map(page => ({
-            ...page,
-            pinnedMessages: {
-              ...page.pinnedMessages,
-              nodes: page.pinnedMessages.nodes ? page.pinnedMessages.nodes.filter(m => m.id !== messageId) : page.pinnedMessages.nodes,
-            }
-          })),
-        };
-      }
-    );
-  }
-
-  return { queryResult, append, remove };
+      return { before: lastPage.elements[0].pinnedAt };
+    },
+    ...options,
+  });
 }
+
+useQueryPinnedMessages.getKey = (conversationId: string) => ["useQueryPinnedMessages", conversationId];

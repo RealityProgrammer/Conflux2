@@ -2682,6 +2682,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{conversationId}/pinned-messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    before?: string;
+                    after?: string;
+                };
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+                        "application/json": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+                        "text/json": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations/{conversationId}/messages": {
         parameters: {
             query?: never;
@@ -2689,7 +2731,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                    direction?: components["schemas"]["MessageLoadDirection"];
+                };
+                header?: never;
+                path: {
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -2779,7 +2847,7 @@ export interface paths {
                         "Body.HasValue"?: boolean;
                         "Body.Value"?: string;
                         RemoveAttachmentIds?: string[];
-                        AddAttachments?: components["schemas"]["IFormFile"][];
+                        AddAttachments?: components["schemas"]["IFormFileCollection"];
                     };
                 };
             };
@@ -2797,51 +2865,6 @@ export interface paths {
                 };
             };
         };
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ReadMessageRequest"];
-                    "text/json": components["schemas"]["ReadMessageRequest"];
-                    "application/*+json": components["schemas"]["ReadMessageRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/conversations/{conversationId}/messages/search": {
@@ -2969,6 +2992,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{conversationId}/messages/{messageId}/reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    messageId: string;
+                    conversationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReactionRequest"];
+                    "text/json": components["schemas"]["ReactionRequest"];
+                    "application/*+json": components["schemas"]["ReactionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApiResponse"];
+                        "application/json": components["schemas"]["ApiResponse"];
+                        "text/json": components["schemas"]["ApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3031,6 +3100,10 @@ export interface components {
         };
         ApiResponseOfIReadOnlyListOfUserIdentityProfileDto: {
             data: null | components["schemas"]["UserIdentityProfileDto"][];
+            error: components["schemas"]["Error"];
+        };
+        ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
+            data: null | components["schemas"]["KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
             error: components["schemas"]["Error"];
         };
         ApiResponseOfListOfEmojiEntryDto: {
@@ -3249,8 +3322,18 @@ export interface components {
         };
         /** Format: binary */
         IFormFile: string;
+        IFormFileCollection: components["schemas"]["IFormFile"][];
         /** @enum {string} */
         InvitationExpireAfter: InvitationExpireAfter;
+        KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
+            /** Format: date-time */
+            beforeKey: string;
+            /** Format: date-time */
+            afterKey: string;
+            hasPreviousPage: boolean;
+            hasNextPage: boolean;
+            elements: components["schemas"]["PinnedMessageDto"][];
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -3288,9 +3371,11 @@ export interface components {
         MessageAttachmentDto: {
             /** Format: uuid */
             id: string;
-            name: string;
-            type: string;
+            fileName: string;
+            contentType: string;
         };
+        /** @enum {string} */
+        MessageLoadDirection: MessageLoadDirection;
         /** @enum {string} */
         MessagePinFilter: MessagePinFilter;
         MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
@@ -3298,29 +3383,6 @@ export interface components {
             /** @enum {integer} */
             $type?: MessagePropertiesCallEndProperties$type;
             duration: string;
-        };
-        MessageReadStrategy: components["schemas"]["MessageReadStrategyLatest"] | components["schemas"]["MessageReadStrategyAround"] | components["schemas"]["MessageReadStrategyBefore"] | components["schemas"]["MessageReadStrategyAfter"];
-        MessageReadStrategyAfter: {
-            /** @enum {string} */
-            type?: MessageReadStrategyAfterType;
-            /** Format: uuid */
-            cursorId: string;
-        };
-        MessageReadStrategyAround: {
-            /** @enum {string} */
-            type?: MessageReadStrategyAroundType;
-            /** Format: uuid */
-            anchorId: string;
-        };
-        MessageReadStrategyBefore: {
-            /** @enum {string} */
-            type?: MessageReadStrategyBeforeType;
-            /** Format: uuid */
-            cursorId: string;
-        };
-        MessageReadStrategyLatest: {
-            /** @enum {string} */
-            type?: MessageReadStrategyLatestType;
         };
         MessageSearchDto: {
             /** Format: uuid */
@@ -3368,10 +3430,32 @@ export interface components {
         };
         /** @enum {string} */
         PermissionState: PermissionState;
+        PinnedMessageDto: {
+            /** Format: uuid */
+            id: string;
+            body: null | string;
+            sender: null | components["schemas"]["PinnedMessageSender"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            pinnedAt: null | string;
+            /** Format: int32 */
+            attachmentsCount: number;
+        };
+        PinnedMessageSender: {
+            /** Format: uuid */
+            id: string;
+            displayName: null | string;
+            /** Format: int32 */
+            avatarVersion: null | number;
+        };
         /** @enum {string} */
         PresenceStatus: PresenceStatus;
-        ReadMessageRequest: {
-            readStrategy: components["schemas"]["MessageReadStrategy"];
+        /** @enum {string} */
+        ReactionAction: ReactionAction;
+        ReactionRequest: {
+            reactionKey: string;
+            action: components["schemas"]["ReactionAction"];
         };
         RefreshResponse: {
             authorization: components["schemas"]["UserAuthorizationInfo"];
@@ -3530,16 +3614,20 @@ export interface components {
             type: components["schemas"]["MessageType"];
             sender: null | components["schemas"]["TimelineMessageSenderDto"];
             body: null | string;
-            attachments?: components["schemas"]["MessageAttachmentDto"][];
+            attachments: null | components["schemas"]["MessageAttachmentDto"][];
+            replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
+            properties: null | components["schemas"]["MessageProperties"];
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             updatedAt: null | string;
-            replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
-            properties: null | components["schemas"]["MessageProperties"];
             /** Format: uuid */
             conversationId: string;
             isPinned: boolean;
+            reactionsCounts: null | {
+                [key: string]: number;
+            };
+            userReactions: null | string[];
         };
         TimelineMessagePage: {
             messages: components["schemas"]["TimelineMessageDto"][];
@@ -3552,14 +3640,14 @@ export interface components {
             sender: components["schemas"]["TimelineMessageSenderDto"];
             body: null | string;
             /** Format: int32 */
-            attachmentCount: number;
+            attachmentsCount: number;
         };
         TimelineMessageSenderDto: {
             /** Format: uuid */
             id: string;
             displayName: null | string;
             /** Format: int32 */
-            avatarVersion?: null | number;
+            avatarVersion: null | number;
         };
         UnreadNotificationCounts: {
             dmMentionCounts: {
@@ -3701,6 +3789,12 @@ export enum MentionSourceMentionFromDm$type {
 export enum MentionSourceMentionFromServer$type {
     server = "server"
 }
+export enum MessageLoadDirection {
+    Latest = "Latest",
+    Before = "Before",
+    After = "After",
+    Around = "Around"
+}
 export enum MessagePinFilter {
     Unspecified = "Unspecified",
     Pin = "Pin",
@@ -3708,18 +3802,6 @@ export enum MessagePinFilter {
 }
 export enum MessagePropertiesCallEndProperties$type {
     Value1 = 1
-}
-export enum MessageReadStrategyAfterType {
-    after = "after"
-}
-export enum MessageReadStrategyAroundType {
-    around = "around"
-}
-export enum MessageReadStrategyBeforeType {
-    before = "before"
-}
-export enum MessageReadStrategyLatestType {
-    latest = "latest"
 }
 export enum MessageType {
     Message = "Message",
@@ -3741,6 +3823,10 @@ export enum PresenceStatus {
     Idle = "Idle",
     DoNotDisturb = "DoNotDisturb",
     Invisible = "Invisible"
+}
+export enum ReactionAction {
+    Add = "Add",
+    Remove = "Remove"
 }
 export enum ServerPermission {
     CreateRole = "CreateRole",

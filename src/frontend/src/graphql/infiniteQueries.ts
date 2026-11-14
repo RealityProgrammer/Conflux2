@@ -25,14 +25,6 @@ export type GetConversationParticipantsForSearchQueryVariables = Exact<{
 
 export type GetConversationParticipantsForSearchQuery = { conversationParticipants: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ user: { userName: string | null, displayName: string | null, id: string, avatarVersion: number | null } }> | null } };
 
-export type GetConversationPinnedMessagesQueryVariables = Exact<{
-  conversationId: string;
-  after?: string | null | undefined;
-}>;
-
-
-export type GetConversationPinnedMessagesQuery = { pinnedMessages: { pageInfo: { hasNextPage: boolean, hasPreviousPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, body: string | null, createdAt: string, attachments: Array<{ id: string, name: string, type: string }>, sender: { id: string, displayName: string, avatarVersion: number | null } | null }> | null } };
-
 export type GetDirectConversationsQueryVariables = Exact<{
   after?: string | null | undefined;
 }>;
@@ -249,79 +241,6 @@ useInfiniteGetConversationParticipantsForSearchQuery.getKey = (variables: GetCon
 
 
 useGetConversationParticipantsForSearchQuery.fetcher = (variables: GetConversationParticipantsForSearchQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetConversationParticipantsForSearchQuery, GetConversationParticipantsForSearchQueryVariables>(GetConversationParticipantsForSearchDocument, variables, options);
-
-export const GetConversationPinnedMessagesDocument = new TypedDocumentString(`
-    query GetConversationPinnedMessages($conversationId: UUID!, $after: String) {
-  pinnedMessages(
-    after: $after
-    conversationId: $conversationId
-    order: {pinnedAt: DESC}
-  ) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      endCursor
-    }
-    nodes {
-      id
-      body
-      attachments {
-        id
-        name
-        type
-      }
-      createdAt
-      sender {
-        id
-        displayName
-        avatarVersion
-      }
-    }
-  }
-}
-    `);
-
-export const useGetConversationPinnedMessagesQuery = <
-      TData = GetConversationPinnedMessagesQuery,
-      TError = unknown
-    >(
-      variables: GetConversationPinnedMessagesQueryVariables,
-      options?: Omit<UseQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetConversationPinnedMessagesQuery, TError, TData>(
-      {
-    queryKey: ['GetConversationPinnedMessages', variables],
-    queryFn: graphqlFetcher<GetConversationPinnedMessagesQuery, GetConversationPinnedMessagesQueryVariables>(GetConversationPinnedMessagesDocument, variables),
-    ...options
-  }
-    )};
-
-useGetConversationPinnedMessagesQuery.getKey = (variables: GetConversationPinnedMessagesQueryVariables) => ['GetConversationPinnedMessages', variables];
-
-export const useInfiniteGetConversationPinnedMessagesQuery = <
-      TData = InfiniteData<GetConversationPinnedMessagesQuery>,
-      TError = unknown
-    >(
-      variables: GetConversationPinnedMessagesQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<GetConversationPinnedMessagesQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useInfiniteQuery<GetConversationPinnedMessagesQuery, TError, TData>(
-      (() => {
-    const { queryKey: optionsQueryKey, ...restOptions } = options;
-    return {
-      queryKey: optionsQueryKey ?? ['GetConversationPinnedMessages.infinite', variables],
-      queryFn: (metaData) => graphqlFetcher<GetConversationPinnedMessagesQuery, GetConversationPinnedMessagesQueryVariables>(GetConversationPinnedMessagesDocument, {...variables, ...(metaData.pageParam ?? {})})(),
-      ...restOptions
-    }
-  })()
-    )};
-
-useInfiniteGetConversationPinnedMessagesQuery.getKey = (variables: GetConversationPinnedMessagesQueryVariables) => ['GetConversationPinnedMessages.infinite', variables];
-
-
-useGetConversationPinnedMessagesQuery.fetcher = (variables: GetConversationPinnedMessagesQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetConversationPinnedMessagesQuery, GetConversationPinnedMessagesQueryVariables>(GetConversationPinnedMessagesDocument, variables, options);
 
 export const GetDirectConversationsDocument = new TypedDocumentString(`
     query GetDirectConversations($after: String) {

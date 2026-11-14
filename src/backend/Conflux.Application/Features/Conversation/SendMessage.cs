@@ -149,22 +149,32 @@ public sealed partial class SendMessageHandler(
         }
 
         // publish message received notification
-        TimelineMessageDto dto = new(message) {
-            ReplyTo = await messageRepository
-                .AsQueryable()
-                .Where(m => m.Id == message.ReplyToId)
-                .SelectFacet<TimelineMessageReplyDto>()
-                .SingleOrDefaultAsync(CancellationToken.None),
-            
-            Sender = await userRepository
+        TimelineMessageDto messageDto = new(
+            message.Id,
+            message.Type,
+            await userRepository
                 .AsQueryable()
                 .Where(u => u.Id == message.SenderUserId)
-                .SelectFacet<TimelineMessageSenderDto>()
+                .Select(u => new TimelineMessageSenderDto(u.Id, u.DisplayName, u.AvatarVersion))
                 .FirstOrDefaultAsync(CancellationToken.None),
-        };
-
+            message.Body,
+            [..message.Attachments.SelectFacets<MediaItem, MessageAttachmentDto>()],
+            await messageRepository
+                .AsQueryable()
+                .Where(m => m.Id == message.ReplyToId)
+                .Select(m => new TimelineMessageReplyDto(m.Id, new(m.Sender!.Id, m.Sender!.DisplayName, m.Sender!.AvatarVersion), m.Body, m.Attachments.Count))
+                .SingleOrDefaultAsync(CancellationToken.None),
+            message.Properties,
+            message.CreatedAt,
+            message.UpdatedAt,
+            message.ConversationId,
+            false,
+            null,
+            null
+        );
+            
         await publisher.Publish(
-            new MessageReceivedNotification(conversationId, dto), 
+            new MessageReceivedNotification(conversationId, messageDto), 
             CancellationToken.None
         );
         
@@ -191,7 +201,7 @@ public sealed partial class SendMessageHandler(
             );
         }
 
-        return Result<TimelineMessageDto>.Success(dto);
+        return Result<TimelineMessageDto>.Success(messageDto);
     }
 
     private async Task PublishMentionNotification(

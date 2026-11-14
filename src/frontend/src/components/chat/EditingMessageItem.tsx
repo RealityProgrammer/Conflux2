@@ -58,7 +58,7 @@ function View({
           <MessageRow.Reply
             messageId={message.replyTo.id}
             senderDisplayName={message.replyTo.sender?.displayName ?? "???"}
-            attachmentCount={message.replyTo.attachmentCount}
+            attachmentCount={message.replyTo.attachmentsCount}
             body={message.replyTo.body}
           />
         )}

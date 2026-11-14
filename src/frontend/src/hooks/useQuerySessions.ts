@@ -2,11 +2,11 @@ import {type UndefinedInitialDataOptions, useQuery, type UseQueryResult} from "@
 import {authService} from "../api/authService.ts";
 import type {SessionsQueryResult} from "../api/types.ts";
 
-export default function useSessionsQuery(
+export default function useQuerySessions(
   options?: Omit<UndefinedInitialDataOptions<SessionsQueryResult, Error>, "queryKey" | "queryFn">
 ): UseQueryResult<SessionsQueryResult, Error> {
   return useQuery({
-    queryKey: useSessionsQuery.queryKey,
+    queryKey: useQuerySessions.queryKey,
     queryFn: async (): Promise<SessionsQueryResult> => {
       const response = await authService.getSessions();
       
@@ -20,4 +20,4 @@ export default function useSessionsQuery(
   })
 }
 
-useSessionsQuery.queryKey = ["SessionsQuery"];
+useQuerySessions.queryKey = ["useQuerySessions"];

@@ -1,3 +1,4 @@
+using Conflux.Application.Enums;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -11,10 +12,12 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record PinMessageCommand(
     Guid ConversationId, 
-    Guid MessageId
+    Guid MessageId,
+    MessagePinAction Action
 ) : ICommand<Result<TimelineMessageDto>>, IConversationCommand;
 
-public sealed record MessagePinnedNotification(Guid ConversationId, PinnedMessageDto Message) : INotification;
+public sealed record MessagePinnedNotification(Guid ConversationId) : INotification;
+public sealed record MessageUnpinnedNotification(Guid ConversationId, Guid MessageId) : INotification;
 
 internal sealed class PinMessageHandler(
     ICurrentUserService currentUserService,
@@ -33,8 +36,10 @@ internal sealed class PinMessageHandler(
         }
         
         Guid conversationId = command.ConversationId;
+        Guid messageId = command.MessageId;
+        MessagePinAction action = command.Action;
         
-        Message publishingMessage;
+        Message message;
         
         Domain.Entities.Conversation? conversation = await conversationRepository
             .AsQueryable()
@@ -51,9 +56,9 @@ internal sealed class PinMessageHandler(
         try {
             int changed = await messageRepository
                 .AsQueryable()
-                .Where(m => m.Type == MessageType.Message && m.Id == command.MessageId && m.ConversationId == conversationId && m.PinnedAt == null)
+                .Where(m => m.Type == MessageType.Message && m.Id == messageId && m.ConversationId == conversationId && m.PinnedAt == null)
                 .ExecuteUpdateAsync(builder => {
-                    builder.SetProperty(m => m.PinnedAt, utcNow);
+                    builder.SetProperty(m => m.PinnedAt, action == MessagePinAction.Pin ? utcNow : null);
                 }, cancellationToken);
             
             if (changed == 0) {
@@ -61,15 +66,15 @@ internal sealed class PinMessageHandler(
                 
                 return Errors.ResourceNotFound("Message", [
                     new(nameof(Message.ConversationId), conversationId.ToString()),
-                    new(nameof(Message.Id), command.MessageId.ToString()),
+                    new(nameof(Message.Id), messageId.ToString()),
                     new(nameof(Message.Type), nameof(MessageType.Message)),
                 ]);
             }
 
-            Message message = new() {
-                SenderUserId = userId,
-                Type = MessageType.Pin,
+            message = new() {
+                Type = action == MessagePinAction.Pin ?  MessageType.Pin : MessageType.Unpin,
                 Conversation = conversation,
+                SenderUserId = userId,
             };
 
             messageRepository.Add(message);
@@ -78,35 +83,43 @@ internal sealed class PinMessageHandler(
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitAsync(cancellationToken);
-
-            publishingMessage = message;
         } catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(cancellationToken);
             throw;
         } catch (Exception e) {
             logger.LogError(e, "Exception thrown while pinning message.");
             await unitOfWork.RollbackAsync(cancellationToken);
-            return Errors.OperationFailure("pin message");
+            
+            return Errors.OperationFailure(action == MessagePinAction.Pin ? "pin message" : "unpin message");
         }
-        
-        // publish notifications
-        TimelineMessageDto messageDto = new(publishingMessage) {
-            Sender = await userRepository
+
+        TimelineMessageDto messageDto = new(
+            message.Id,
+            message.Type,
+            await userRepository
                 .AsQueryable()
-                .Where(s => s.Id == userId)
-                .SelectFacet<TimelineMessageSenderDto>()
+                .Where(s => s.Id == message.SenderUserId)
+                .Select(u => new TimelineMessageSenderDto(u.Id, u.DisplayName, u.AvatarVersion))
                 .FirstOrDefaultAsync(CancellationToken.None),
-        };
+            null,
+            null,
+            null,
+            null,
+            message.CreatedAt,
+            null,
+            message.ConversationId,
+            false,
+            null,
+            null
+        );
 
         await publisher.Publish(new MessageReceivedNotification(conversationId, messageDto), CancellationToken.None);
 
-        PinnedMessageDto pinnedMessage = await messageRepository
-            .AsQueryable()
-            .Where(m => m.Id == command.MessageId)
-            .SelectFacet<PinnedMessageDto>()
-            .SingleAsync(CancellationToken.None);
-        
-        await publisher.Publish(new MessagePinnedNotification(conversationId, pinnedMessage), CancellationToken.None);
+        if (action == MessagePinAction.Pin) {
+            await publisher.Publish(new MessagePinnedNotification(conversationId), CancellationToken.None);
+        } else {
+            await publisher.Publish(new MessageUnpinnedNotification(conversationId, messageId), CancellationToken.None);
+        }
         
         // publish a conversation updated if conversation is type Direct
         if (conversation.Type == ConversationType.Direct) {

@@ -7,7 +7,7 @@ import {
   BsKeyFill
 } from "react-icons/bs";
 import DateTimeText from "../../components/DateTimeText.tsx";
-import useSessionsQuery from "../../hooks/useSessionsQuery.ts";
+import useQuerySessions from "../../hooks/useQuerySessions.ts";
 import Spinner from "../../components/Spinner.tsx";
 import type {ServiceResponse, SessionDetails, SessionDevice, SessionsQueryResult} from "../../api/types.ts";
 import {FaDesktop, FaPhone, FaTablet} from "react-icons/fa6";
@@ -321,7 +321,7 @@ const DeviceIcons: Record<SessionDevice, ReactNode> = {
 function AccountSessions() {
   const queryClient = useQueryClient();
   
-  const { data, isLoading, isError } = useSessionsQuery({
+  const { data, isLoading, isError } = useQuerySessions({
     retry: false,
   });
 
@@ -339,7 +339,7 @@ function AccountSessions() {
         toast.success("Session deleted successfully.");
         
         queryClient.setQueryData<SessionsQueryResult>(
-          useSessionsQuery.queryKey,
+          useQuerySessions.queryKey,
           (oldData) => {
             if (!oldData) return oldData;
             
@@ -375,7 +375,7 @@ function AccountSessions() {
         toast.success("Sessions deleted successfully.");
 
         queryClient.setQueryData<SessionsQueryResult>(
-          useSessionsQuery.queryKey,
+          useQuerySessions.queryKey,
           (oldData) => {
             if (!oldData) return oldData;
 

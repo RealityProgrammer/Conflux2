@@ -23,6 +23,8 @@ internal sealed class MessageReactionBatcher(
         ReactionAction action,
         CancellationToken cancellationToken = default
     ) {
+        // TODO: Validate that message is a reaction-able type.
+        
         string messageIdString = messageId.ToString();
         RedisKey reactionDeltaKey = GetDeltaKey(messageId);
         RedisValue field = $"{userId}:{reactionKey}";
@@ -51,7 +53,7 @@ internal sealed class MessageReactionBatcher(
             }
         }
         
-        // it is hard to implement same thing to remove where it check for emoji with 0 user, but it might have to
+        // it is hard to implement same thing to remove where it checks for emoji with 0 user, but it might have to
         // manually resolve delta and scan fields and stuffs so just leave it to the database sync method
 
         await _database.HashSetAsync(reactionDeltaKey, field, (int)action);

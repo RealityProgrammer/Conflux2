@@ -68,13 +68,25 @@ internal sealed class CancelDirectCallHandler(
         }
         
         try {
-            TimelineMessageDto messageDto = new(message) {
-                Sender = await userRepository
+            TimelineMessageDto messageDto = new(
+                message.Id,
+                message.Type,
+                await userRepository
                     .AsQueryable()
-                    .Where(s => s.Id == callerId)
-                    .SelectFacet<TimelineMessageSenderDto>()
+                    .Where(u => u.Id == message.SenderUserId)
+                    .Select(u => new TimelineMessageSenderDto(u.Id, u.DisplayName, u.AvatarVersion))
                     .FirstOrDefaultAsync(CancellationToken.None),
-            };
+                null,
+                null,
+                null,
+                null,
+                message.CreatedAt,
+                null,
+                message.ConversationId,
+                false,
+                null,
+                null
+            );
             
             await publisher.Publish(
                 new MessageReceivedNotification(conversation.Id, messageDto), 

@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 import {BsEmojiSmileFill, BsEmojiWink, BsExclamationTriangle, BsPlusLg, BsSearch, BsTrashFill} from "react-icons/bs";
 import {Virtuoso} from "react-virtuoso";
-import useEmojisForManagementQuery from "../../hooks/useEmojisForManagementQuery.ts";
+import useQueryEmojisForManagement from "../../hooks/useQueryEmojisForManagement.ts";
 import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
 import type {EmojiDto, EmojiManagementDto, ServiceResponse} from "../../api/types.ts";
 import ModalForm from "../ModalForm.tsx";
@@ -44,7 +44,7 @@ function ContainerContent() {
   const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
   const hasDeletePermission = hasPermission(ServerPermission.DeleteEmoji);
 
-  const { data, isError, isLoading } = useEmojisForManagementQuery(serverDetails!.id);
+  const { data, isError, isLoading } = useQueryEmojisForManagement(serverDetails!.id);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -94,7 +94,7 @@ function ContainerContent() {
     if (event.serverId !== serverDetails!.id) return;
 
     queryClient.invalidateQueries({
-      queryKey: useEmojisForManagementQuery.getKey(serverDetails!.id),
+      queryKey: useQueryEmojisForManagement.getKey(serverDetails!.id),
     });
   });
 
@@ -102,7 +102,7 @@ function ContainerContent() {
     if (event.serverId !== serverDetails!.id) return;
 
     queryClient.setQueryData<EmojiManagementDto[]>(
-      useEmojisForManagementQuery.getKey(serverDetails!.id),
+      useQueryEmojisForManagement.getKey(serverDetails!.id),
       (oldData) => {
         if (!oldData) return oldData;
 
@@ -207,7 +207,7 @@ function BulkDeleteButton({
       toast.success(`Successfully deleted emoji(s).`);
 
       queryClient.invalidateQueries({
-        queryKey: useEmojisForManagementQuery.getKey(serverId),
+        queryKey: useQueryEmojisForManagement.getKey(serverId),
       });
 
       onSuccess();
@@ -276,7 +276,7 @@ function CreateEmojiButton({disabled = false}: {disabled?: boolean}) {
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({
-        queryKey: useEmojisForManagementQuery.getKey(serverDetails!.id),
+        queryKey: useQueryEmojisForManagement.getKey(serverDetails!.id),
       });
 
       setFormOpen(false);

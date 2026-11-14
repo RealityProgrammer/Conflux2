@@ -122,8 +122,8 @@ export default function EditMessageModal({
     if (originalMessage && originalMessage.attachments && originalMessage.attachments.length > 0) {
       galleryElements.push(...originalMessage.attachments.map((a): MediaGalleryElement => ({
         id: a.id,
-        fileName: a.name,
-        mediaType: a.type,
+        fileName: a.fileName,
+        mediaType: a.contentType,
         src: conversationService.getAttachmentViewUrl(a.id),
       })));
     }
@@ -227,9 +227,9 @@ export default function EditMessageModal({
                       <Attachment.FilePill
                         key={index}
                         file={{
-                          type: attachment.type,
                           src: viewUrl,
-                          fileName: attachment.name
+                          type: attachment.contentType,
+                          fileName: attachment.fileName,
                         }}
                         className={`h-full border-2 rounded-md overflow-hidden pr-4 max-w-64 cursor-pointer ${isBeingRemoved ? "bg-red-500/30 border-red-600" : "bg-none border-gray-600"}`}
                         onClick={() => handleAttachmentClick(index)}

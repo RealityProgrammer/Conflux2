@@ -43,4 +43,8 @@
       <ProjectReference Include="..\Conflux.Infrastructure\Conflux.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Enums\" />
+    </ItemGroup>
+
 </Project>

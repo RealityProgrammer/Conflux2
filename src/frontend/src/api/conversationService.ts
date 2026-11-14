@@ -3,8 +3,8 @@ import type {
   BackendResponse,
   TimelineMessageDto,
   ServiceResponse,
-  TimelineMessagePage, MessageReadStrategy, DmConversationDetails, ServerChannelConversationDetails, MentionSource,
-  MessageSearchPage, EditedMessageDto
+  TimelineMessagePage, DmConversationDetails, ServerChannelConversationDetails, MentionSource,
+  MessageSearchPage, EditedMessageDto, KeyedPaginatedPage, PinnedMessageDto
 } from "./types.ts";
 import {handleAxiosError} from "./errorHandling.ts";
 import {apiClient} from "./client.ts";
@@ -56,22 +56,33 @@ export const conversationService = {
     await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
   },
 
-  readTimelineMessages: async (conversationId: string, readStrategy: MessageReadStrategy): Promise<ServiceResponse<TimelineMessagePage>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<TimelineMessagePage>> =
-        await apiClient.post(`/conversations/${encodeURIComponent(conversationId)}/messages/read`, {
-          readStrategy,
-        });
+  queryTimelineMessages: async (conversationId: string, loadDirection: "Around" | "Before" | "After" | "Latest", cursorMessageId?: string): Promise<TimelineMessagePage> => {
+    const params = new URLSearchParams();
+    params.set("direction", loadDirection);
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
+    if (cursorMessageId) {
+      params.set("cursor", cursorMessageId);
     }
+
+    const response: AxiosResponse<BackendResponse<TimelineMessagePage>> =
+      await apiClient.get(`/conversations/${encodeURIComponent(conversationId)}/messages?${params.toString()}`);
+
+    return response.data.data!;
+  },
+
+  queryPinnedMessages: async (conversationId: string, before?: string, after?: string): Promise<KeyedPaginatedPage<string, PinnedMessageDto>> => {
+    const params = new URLSearchParams();
+
+    if (before) {
+      params.set("before", before);
+    } else if (after) {
+      params.set("after", after);
+    }
+
+    const response: AxiosResponse<BackendResponse<KeyedPaginatedPage<string, PinnedMessageDto>>> =
+      await apiClient.get(`/conversations/${encodeURIComponent(conversationId)}/pinned-messages?${params.toString()}`);
+
+    return response.data.data!;
   },
 
   getAttachmentViewUrl: (attachmentId: string): string => {

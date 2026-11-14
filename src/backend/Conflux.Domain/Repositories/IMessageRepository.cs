@@ -7,7 +7,8 @@ namespace Conflux.Domain.Repositories;
 public interface IMessageRepository : IRepository<Message> {
     Task<Result<TimelineMessagePage>> GetTimelineMessages(
         Guid conversationId, 
-        MessageReadStrategy readStrategy,
+        MessageLoadDirection loadDirection,
+        Guid? cursorMessageId,
         int limit,
         CancellationToken cancellationToken = default
     );
@@ -20,6 +21,14 @@ public interface IMessageRepository : IRepository<Message> {
 		DateTimeOffset? endDateTime,
 		MessagePinFilter pin,
 		Guid? beforeCursor,
+        int limit,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<KeyedPaginatedPage<DateTimeOffset, PinnedMessageDto>> GetPinnedMessages(
+        Guid conversationId,
+        DateTimeOffset? before,
+        DateTimeOffset? after,
         int limit,
         CancellationToken cancellationToken = default
     );
