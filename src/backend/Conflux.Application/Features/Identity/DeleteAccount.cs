@@ -31,7 +31,6 @@ public sealed class DeleteAccountCommandValidator : AbstractValidator<DeleteAcco
 public sealed class DeleteAccountHandler(
     ICurrentUserService currentUserService,
     IUserAccountDeletionRepository userAccountDeletionRepository,
-    IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
     IUnitOfWork unitOfWork,
     ILogger<DeleteAccountHandler> logger,
     ISessionService sessionService,
@@ -65,7 +64,7 @@ public sealed class DeleteAccountHandler(
             RestorationPasswordHash = hashedPassword,
         };
 
-        accountDeletionWriteRepository.Add(request);
+        userAccountDeletionRepository.Add(request);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);

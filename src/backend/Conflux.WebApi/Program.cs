@@ -287,58 +287,47 @@ builder.Services.AddSignalR()
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
     .AddScoped<IAccountDeleteCacheService, AccountDeleteCacheService>()
-
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
-
     .AddSingleton<ISessionService, SessionService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
-
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
     .AddScoped<IServerDefaultRoleAuthorizeProvider, ServerDefaultRoleAuthorizeProvider>()
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
     .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
-
     .AddSingleton<IEmailQueue, EmailQueue>()
     .AddSingleton<IMailService, MailService>()
     .AddScoped<IAuthMailService, AuthMailService>()
-
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
-
     .AddScoped<IUnitOfWork, UnitOfWork>()
-
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
-
     .AddScoped<IServerEmojiCacheService, ServerEmojiCacheService>()
     .AddScoped<IServerEmojiProvider, ServerEmojiProvider>()
     .AddScoped<IEmojiValidationService, EmojiValidationService>()
-
     .AddScoped<IServerMemberRepository, ServerMemberRepository>()
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
-
     .AddScoped<IMediaItemRepository, MediaItemRepository>()
-
-    .AddScoped<ICommunityServerReadRepository, CommunityServerRepository>()
-
+    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>()
     .AddScoped<IChannelRepository, ChannelRepository>()
     .AddScoped<IServerModerationLogRepository, ServerModerationLogRepository>()
     .AddScoped<ICallingService, CallingService>()
-
     .AddScoped<IUserAccountDeletionRepository, UserAccountDeletionRepository>()
     .AddScoped<INotificationRepository, NotificationRepository>()
-    .AddScoped<IEmojiRepository, EmojiRepository>();
+    .AddScoped<IEmojiRepository, EmojiRepository>()
+    .AddScoped<IMessageReactionRepository, MessageReactionRepository>()
+    .AddScoped<IMessageReactionBatcher, MessageReactionBatcher>();
 
 // blob service.
 builder.Services.AddSingleton<IAmazonS3>((services) => {
@@ -631,7 +620,8 @@ builder.Services
     .AddHostedService<CallCleanupWorker>()
     .AddHostedService<EmailBackgroundWorker>()
     .AddHostedService<ConnectionCleanupWorker>()
-    .AddHostedService<DailyPurgeWorker>();
+    .AddHostedService<DailyPurgeWorker>()
+    .AddHostedService<MessageReactionSynchronizeWorker>();
 
 var app = builder.Build();
 

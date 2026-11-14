@@ -40,7 +40,7 @@ public sealed partial class ToggleReactionHandler(
             });
         }
 
-        await reactionBatcher.RecordDelta(userId, command.MessageId, reactionKey, command.Action, cancellationToken);
+        return await reactionBatcher.RecordDelta(userId, command.MessageId, reactionKey, command.Action, cancellationToken);
     }
 
     private bool IsValidReactionKeyFormat(string key) {

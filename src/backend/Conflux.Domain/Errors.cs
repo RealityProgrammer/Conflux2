@@ -183,4 +183,7 @@ public static class Errors {
     
     public static Error ServerEmojiLimit() =>
         new(nameof(ServerEmojiLimit), "Server has hit emoji limit.");
+
+    public static Error MessageUniqueReactionLimit(int count) =>
+        new(nameof(MessageUniqueReactionLimit), $"Message has hit unique reaction limit ({count}).");
 }

@@ -38,7 +38,7 @@ public sealed class KickServerMemberHandler(
     ICurrentUserService currentUserService,
     IServerMemberRepository memberRepository,
     IServerPermissionsCacheService permissionsCacheService,
-    IServerModerationLogWriteRepository moderationLogWriteRepository,
+    IServerModerationLogRepository moderationLogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<KickServerMemberHandler> logger
@@ -94,7 +94,7 @@ public sealed class KickServerMemberHandler(
                 AffectedMember = affectedMember,
             };
             
-            moderationLogWriteRepository.Add(log);
+            moderationLogRepository.Add(log);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             // delete the permission cache

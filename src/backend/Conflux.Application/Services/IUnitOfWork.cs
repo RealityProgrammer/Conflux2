@@ -2,6 +2,8 @@ namespace Conflux.Application.Services;
 
 public interface IUnitOfWork {
     void MarkAsAdded(object entity);
+    void MarkAsModified(object entity);
+    
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

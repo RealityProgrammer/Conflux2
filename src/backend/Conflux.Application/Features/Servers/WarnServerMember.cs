@@ -37,7 +37,7 @@ public sealed record ServerMemberWarnedNotification(
 public sealed class WarnServerMemberHandler(
     ICurrentUserService currentUserService,
     IServerMemberRepository memberRepository,
-    IServerModerationLogWriteRepository moderationLogWriteRepository,
+    IServerModerationLogRepository moderationLogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<WarnServerMemberCommand> logger
@@ -86,7 +86,7 @@ public sealed class WarnServerMemberHandler(
                 AffectedMember = affectedMember,
             };
             
-            moderationLogWriteRepository.Add(log);
+            moderationLogRepository.Add(log);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await mediator.Publish(new ServerMemberWarnedNotification(command.ServerId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
             

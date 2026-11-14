@@ -27,6 +27,7 @@ public class ApplicationDbContext(
     public DbSet<UserAccountDeletion> UserAccountDeletions { get; set; }
     public DbSet<Emoji> Emojis { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<MessageReaction> MessageReactions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);

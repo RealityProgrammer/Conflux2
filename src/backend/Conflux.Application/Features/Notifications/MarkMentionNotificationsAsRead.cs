@@ -13,7 +13,7 @@ public sealed record MarkMentionNotificationsAsRead(
 
 public sealed class MarkMentionNotificationsAsReadHandler(
     ICurrentUserService currentUserService,
-    INotificationWriteRepository notificationWriteRepository,
+    INotificationRepository notificationRepository,
     IConversationRepository conversationRepository
 ) : ICommandHandler<MarkMentionNotificationsAsRead, Result<MentionSource?>> {
     public async ValueTask<Result<MentionSource?>> Handle(
@@ -26,7 +26,7 @@ public sealed class MarkMentionNotificationsAsReadHandler(
 
         var conversationId = command.ConversationId;
 
-        int updateCount = await notificationWriteRepository.MarkMentionsAsReadAsync(
+        int updateCount = await notificationRepository.MarkMentionsAsReadAsync(
             conversationId, 
             userId, 
             cancellationToken

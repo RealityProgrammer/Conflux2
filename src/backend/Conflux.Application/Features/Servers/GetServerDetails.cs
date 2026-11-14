@@ -11,7 +11,7 @@ public sealed record GetServerDetailsQuery(Guid ServerId) : IQuery<Result<Server
 
 public sealed class GetServerDetailsHandler(
     ICurrentUserService currentUserService,
-    ICommunityServerWriteRepository repository,
+    ICommunityServerRepository repository,
     IServerPermissionsProvider permissionsProvider
 ) : IQueryHandler<GetServerDetailsQuery, Result<ServerDetailsDto>> {
     public async ValueTask<Result<ServerDetailsDto>> Handle(

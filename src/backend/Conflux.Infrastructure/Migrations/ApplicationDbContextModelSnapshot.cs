@@ -549,13 +549,13 @@ namespace Conflux.Infrastructure.Migrations
                     b.Property<Guid>("MessageId")
                         .HasColumnType("uuid");
 
-                    b.Property<Dictionary<string, List<Guid>>>("Reactions")
+                    b.Property<Dictionary<string, HashSet<Guid>>>("Reactions")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.HasKey("MessageId");
 
-                    b.ToTable("MessageReaction");
+                    b.ToTable("MessageReactions");
                 });
 
             modelBuilder.Entity("Conflux.Domain.Entities.Notification", b =>

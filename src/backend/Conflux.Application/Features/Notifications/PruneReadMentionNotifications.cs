@@ -8,14 +8,14 @@ public sealed class PruneReadMentionNotificationsCommand : ICommand;
 
 public sealed class PruneReadMentionNotificationsHandler(
     TimeProvider timeProvider,
-    INotificationWriteRepository notificationWriteRepository
+    INotificationRepository notificationRepository
 ) : ICommandHandler<PruneReadMentionNotificationsCommand> {
     private static readonly TimeSpan ExpirationTime = TimeSpan.FromDays(7);
     
     public async ValueTask<Unit> Handle(PruneReadMentionNotificationsCommand command, CancellationToken cancellationToken) {
         var utcNow = timeProvider.GetUtcNow();
         
-        await notificationWriteRepository
+        await notificationRepository
             .AsQueryable()
             .Where(n => 
                 n.Type == NotificationType.Mention && n.IsRead && (n.ReadAt == null || utcNow >= n.ReadAt + ExpirationTime)

@@ -9,7 +9,6 @@ public sealed class PruneRequestDeleteAccountsCommand : ICommand;
 
 public sealed class PruneRequestDeleteAccountsHandler(
     IUserAccountDeletionRepository userAccountDeletionRepository,
-    IUserAccountDeletionWriteRepository userAccountDeletionWriteRepository,
     IUserRepository userRepository,
     TimeProvider timeProvider,
     IAccountDeleteCacheService accountDeleteCacheService,
@@ -42,7 +41,7 @@ public sealed class PruneRequestDeleteAccountsHandler(
         await userRepository.AnonymizeUsers(expiredUserIds, cancellationToken);
         
         // update the user account deletions
-        await userAccountDeletionWriteRepository
+        await userAccountDeletionRepository
             .AsQueryable()
             .Where(d => deleteRequestIds.Contains(d.Id))
             .ExecuteUpdateAsync(builder => {

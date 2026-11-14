@@ -19,7 +19,7 @@ public sealed record BulkDeleteEmojiCommand(
 public sealed record EmojiDeletedNotification(Guid ServerId, List<Guid> EmojiIds) : INotification;
 
 public sealed class BulkDeleteEmojiHandler(
-    IEmojiWriteRepository emojiWriteRepository,
+    IEmojiRepository emojiRepository,
     IPublisher publisher,
     IEmojiMediaService mediaService,
     IServerEmojiCacheService cacheService,
@@ -29,7 +29,7 @@ public sealed class BulkDeleteEmojiHandler(
         var serverId = command.ServerId;
         var emojiIds = command.EmojiIds;
         
-        int deletedCount = await emojiWriteRepository
+        int deletedCount = await emojiRepository
             .AsQueryable()
             .Where(e => e.ServerId == serverId && emojiIds.Contains(e.Id))
             .ExecuteDeleteAsync(cancellationToken);

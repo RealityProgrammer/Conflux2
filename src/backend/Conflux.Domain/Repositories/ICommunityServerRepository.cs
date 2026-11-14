@@ -3,7 +3,7 @@ using Conflux.Domain.Entities;
 
 namespace Conflux.Domain.Repositories;
 
-public interface ICommunityServerReadRepository : IRepository<CommunityServer> {
+public interface ICommunityServerRepository : IRepository<CommunityServer> {
     Task<bool> Exists(Guid id, CancellationToken cancellationToken = default);
     
     Task<List<ChannelCategoryDetailDto>> GetChannelCategoryStructure(

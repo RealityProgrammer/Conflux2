@@ -56,9 +56,8 @@ public sealed record EmojiCreatedNotification(Guid ServerId, EmojiDto Emoji) : I
 public sealed partial class CreateEmojiHandler(
     ICurrentUserService currentUserService,
     IPublisher publisher,
-    IEmojiWriteRepository emojiWriteRepository,
-    ICommunityServerReadRepository communityServerReadRepository,
     IEmojiRepository emojiRepository,
+    ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
     IEmojiMediaService mediaService,
     IServerEmojiCacheService cacheService,
@@ -73,7 +72,7 @@ public sealed partial class CreateEmojiHandler(
         
         Guid serverId = command.ServerId;
 
-        if (!await communityServerReadRepository.Exists(serverId, cancellationToken)) {
+        if (!await communityServerRepository.Exists(serverId, cancellationToken)) {
             return Errors.ResourceNotFound("Community Server", [
                 new(nameof(CommunityServer.Id), serverId.ToString()),
             ]);
@@ -90,7 +89,7 @@ public sealed partial class CreateEmojiHandler(
             CreatorId = userId,
         };
         
-        emojiWriteRepository.Add(emoji);
+        emojiRepository.Add(emoji);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -129,7 +128,7 @@ public sealed partial class CreateEmojiHandler(
         return Result<EmojiDto>.Success(dto);
 
         async Task RollbackDatabase() {
-            emojiWriteRepository.Remove(emoji);
+            emojiRepository.Remove(emoji);
             
             try {
                 await unitOfWork.SaveChangesAsync(CancellationToken.None);

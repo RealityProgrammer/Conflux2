@@ -7,7 +7,7 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Notifications;
 
 public sealed class PersistMentioningNotificationHandler(
-    INotificationWriteRepository notificationWriteRepository,
+    INotificationRepository notificationRepository,
     IUnitOfWork unitOfWork,
     ILogger<PersistMentioningNotificationHandler> logger
 ) : INotificationHandler<MentioningNotification> {
@@ -19,7 +19,7 @@ public sealed class PersistMentioningNotificationHandler(
                 Payload = new MentionNotificationPayload(notification.Source),
             };
             
-            notificationWriteRepository.Add(notif);
+            notificationRepository.Add(notif);
         }
 
         try {

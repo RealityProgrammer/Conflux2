@@ -15,7 +15,6 @@ public sealed record UserJoinedServerNotification(Guid ServerId, Guid MemberUser
 public sealed class JoinServerHandler(
     ICurrentUserService currentUserService,
     IInvitationRepository invitationRepository,
-    IServerMemberWriteRepository memberWriteRepository,
     IServerMemberRepository memberRepository,
     ICommunityServerRoleRepository serverRoleRepository,
     IUnitOfWork unitOfWork,
@@ -98,7 +97,7 @@ public sealed class JoinServerHandler(
                         HighestAuthorizeLevel = defaultRoleInfo.AuthorizeLevel,
                     };
 
-                    memberWriteRepository.Add(member);
+                    memberRepository.Add(member);
                 }
 
                 // attempt save, might throw concurrency exception

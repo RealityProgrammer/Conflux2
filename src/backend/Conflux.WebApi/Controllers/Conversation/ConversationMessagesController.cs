@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Enums;
 using Conflux.Application.Features.Conversation;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -225,15 +226,15 @@ public sealed class ConversationMessagesController(
         };
     }
 
-    [HttpPost("{messageId:guid}/reactions/toggle")]
-    public async Task<ActionResult<ApiResponse>> ToggleReaction(
+    [HttpPost("{messageId:guid}/reactions/add")]
+    public async Task<ActionResult<ApiResponse>> ReactMessage(
         Guid messageId, 
-        [FromBody] ToggleReactionRequest request
+        [FromBody] ReactionRequest request
     ) {
-        var result = await sender.Send(new ToggleReactionCommand(messageId, request.ReactionKey));
+        var result = await sender.Send(new ToggleReactionCommand(messageId, request.ReactionKey, request.Action));
         
         if (result.IsSuccess) {
-            return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
+            return Ok(new ApiResponse(Error.None));
         }
         
         return result.Error.Code switch {
@@ -270,5 +271,5 @@ public sealed class ConversationMessagesController(
 		Guid? BeforeCursor
     );
 
-    public sealed record ToggleReactionRequest(string ReactionKey);
+    public sealed record ReactionRequest(string ReactionKey, ReactionAction Action);
 }

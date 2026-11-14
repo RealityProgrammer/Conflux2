@@ -43,7 +43,7 @@ public sealed class BanServerMemberHandler(
     ICurrentUserService currentUserService,
     IServerMemberRepository memberRepository,
     IServerPermissionsCacheService permissionsCacheService,
-    IServerModerationLogWriteRepository moderationLogWriteRepository,
+    IServerModerationLogRepository moderationLogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<BanServerMemberCommand> logger,
@@ -114,7 +114,7 @@ public sealed class BanServerMemberHandler(
                 AffectedMember = affectedMember,
             };
             
-            moderationLogWriteRepository.Add(log);
+            moderationLogRepository.Add(log);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             // delete the permission cache

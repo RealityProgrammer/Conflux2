@@ -1134,6 +1134,13 @@ input InvitationFilterInput {
   version: UnsignedIntOperationFilterInput
 }
 
+input KeyValuePairOfStringAndHashSetOfGuidFilterInput {
+  and: [KeyValuePairOfStringAndHashSetOfGuidFilterInput!]
+  or: [KeyValuePairOfStringAndHashSetOfGuidFilterInput!]
+  key: StringOperationFilterInput
+  value: ListUuidOperationFilterInput
+}
+
 input KickCommunityServerMemberInput {
   serverId: UUID!
   memberId: UUID!
@@ -1203,6 +1210,13 @@ input ListFilterInputTypeOfInvitationFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
+input ListFilterInputTypeOfKeyValuePairOfStringAndHashSetOfGuidFilterInput {
+  all: KeyValuePairOfStringAndHashSetOfGuidFilterInput @cost(weight: "10")
+  none: KeyValuePairOfStringAndHashSetOfGuidFilterInput @cost(weight: "10")
+  some: KeyValuePairOfStringAndHashSetOfGuidFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
 input ListFilterInputTypeOfMediaItemFilterInput {
   all: MediaItemFilterInput @cost(weight: "10")
   none: MediaItemFilterInput @cost(weight: "10")
@@ -1242,6 +1256,13 @@ input ListFilterInputTypeOfUserAccountDeletionFilterInput {
   all: UserAccountDeletionFilterInput @cost(weight: "10")
   none: UserAccountDeletionFilterInput @cost(weight: "10")
   some: UserAccountDeletionFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListUuidOperationFilterInput {
+  all: UuidOperationFilterInput @cost(weight: "10")
+  none: UuidOperationFilterInput @cost(weight: "10")
+  some: UuidOperationFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 
@@ -1291,12 +1312,21 @@ input MessageFilterInput {
   replyToId: UuidOperationFilterInput
   replyTo: MessageFilterInput
   replies: ListFilterInputTypeOfMessageFilterInput
+  reaction: MessageReactionFilterInput
   pinnedAt: DateTimeOperationFilterInput
 }
 
 input MessagePropertiesFilterInput {
   and: [MessagePropertiesFilterInput!]
   or: [MessagePropertiesFilterInput!]
+}
+
+input MessageReactionFilterInput {
+  and: [MessageReactionFilterInput!]
+  or: [MessageReactionFilterInput!]
+  messageId: UuidOperationFilterInput
+  message: MessageFilterInput
+  reactions: ListFilterInputTypeOfKeyValuePairOfStringAndHashSetOfGuidFilterInput
 }
 
 input MessageTypeOperationFilterInput {

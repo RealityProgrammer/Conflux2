@@ -27,7 +27,7 @@ public sealed class UnbanServerMemberHandler(
     ICurrentUserService currentUserService,
     IServerMemberRepository memberRepository,
     IServerPermissionsCacheService permissionsCacheService,
-    IServerModerationLogWriteRepository moderationLogWriteRepository,
+    IServerModerationLogRepository moderationLogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<BanServerMemberCommand> logger
@@ -73,7 +73,7 @@ public sealed class UnbanServerMemberHandler(
                 AffectedMember = affectedMember,
             };
             
-            moderationLogWriteRepository.Add(log);
+            moderationLogRepository.Add(log);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -11,7 +11,7 @@ public sealed record GetServerChannelCategoriesQuery(
 ) : IQuery<Result<IReadOnlyCollection<ChannelCategoryDetailDto>>>;
 
 public sealed class GetServerChannelCategoriesHandler(
-    ICommunityServerWriteRepository repository,
+    ICommunityServerRepository repository,
     IServerMemberRepository serverMemberRepository
 ) : IQueryHandler<GetServerChannelCategoriesQuery, Result<IReadOnlyCollection<ChannelCategoryDetailDto>>> {
     public async ValueTask<Result<IReadOnlyCollection<ChannelCategoryDetailDto>>> Handle(
