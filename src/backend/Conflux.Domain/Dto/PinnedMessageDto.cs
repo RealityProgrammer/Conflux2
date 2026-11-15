@@ -8,7 +8,7 @@ namespace Conflux.Domain.Dto;
     nameof(ApplicationUser.Id),
     nameof(ApplicationUser.DisplayName),
     nameof(ApplicationUser.AvatarVersion),
-])]
+], CopyDocs = false)]
 public sealed partial record PinnedMessageSender {
     [Required] public Guid Id { get; set; } = Id;
     [Required] public string? DisplayName { get; set; } = DisplayName;

@@ -4,7 +4,9 @@ using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Facet.Extensions;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace Conflux.Infrastructure.Repositories;
 
@@ -20,7 +22,7 @@ internal sealed class MessageRepository(
     }
 
     public async Task<Result<TimelineMessagePage>> GetTimelineMessages(
-        Guid conversationId, 
+        Guid conversationId,
         MessageLoadDirection loadDirection,
         Guid? cursorMessageId,
         int limit,
@@ -28,7 +30,7 @@ internal sealed class MessageRepository(
     ) {
         List<TimelineMessageDto> messages;
         bool? hasMoreBefore, hasMoreAfter;
-        
+
         var baseQuery = dbContext.Messages
             .AsNoTracking()
             .Where(m => m.ConversationId == conversationId)
@@ -44,15 +46,14 @@ internal sealed class MessageRepository(
                     .Take(limit)
                     .Reverse()  // return the messages in chronological order
                     .ToListAsync(cancellationToken);
-                
+
                 hasMoreBefore = messages.Count == limit;
                 hasMoreAfter = false;
                 break;
 
-            case MessageLoadDirection.Before:
-            {
+            case MessageLoadDirection.Before: {
                 if (cursorMessageId is not { } cursorId) goto case MessageLoadDirection.Latest;
-                
+
                 messages = await baseQuery
                     .Where(m => m.Id.CompareTo(cursorId) < 0)
                     .OrderByDescending(m => m.Id)
@@ -66,8 +67,7 @@ internal sealed class MessageRepository(
                 break;
             }
 
-            case MessageLoadDirection.After:
-            {
+            case MessageLoadDirection.After: {
                 if (cursorMessageId is not { } cursorId) goto case MessageLoadDirection.Latest;
 
                 messages = await baseQuery
@@ -82,10 +82,9 @@ internal sealed class MessageRepository(
                 break;
             }
 
-            case MessageLoadDirection.Around:
-            {
+            case MessageLoadDirection.Around: {
                 if (cursorMessageId is not { } cursorId) goto case MessageLoadDirection.Latest;
-                
+
                 int halfLimit = limit / 2;
 
                 List<TimelineMessageDto> beforeAnchor = await baseQuery
@@ -112,8 +111,43 @@ internal sealed class MessageRepository(
             default:
                 goto case MessageLoadDirection.Latest;
         }
-        
+
+        // messages loaded, query the reactions separately to keep thing simple.
+        List<Guid> messageIds = [.. messages.Select(m => m.Id)];
+
+        var reactionsSummaries = await dbContext.Database.SqlQuery<RawMessageReactionsSummary>(
+            $$"""
+            SELECT
+                "MessageId",
+                coalesce(
+                    (SELECT jsonb_object_agg(key, jsonb_array_length(value)) FROM jsonb_each("Reactions")),
+                    '{}'::jsonb
+                ) AS "ReactionsCountsJson"
+            FROM "MessageReactions"
+            WHERE "MessageId" = ANY({{messageIds}})
+            """
+        ).ToDictionaryAsync(s => s.MessageId, s => s, cancellationToken);
+
+        // snitch the messages and reactions together.
+        for (int i = 0; i < messages.Count; i++) {
+            var message = messages[i];
+
+            if (!reactionsSummaries.TryGetValue(message.Id, out var reactionsSummary)) continue;
+
+            messages[i] = message with {
+                ReactionsCounts = reactionsSummary.ReactionsCounts,
+            };
+        }
+
         return Result<TimelineMessagePage>.Success(new(messages, hasMoreBefore, hasMoreAfter));
+    }
+
+    private sealed class RawMessageReactionsSummary {
+        public Guid MessageId { get; set; }
+        public string ReactionsCountsJson { get; set; } = "{}";
+
+        [NotMapped]
+        public Dictionary<string, int> ReactionsCounts => JsonSerializer.Deserialize<Dictionary<string, int>>(ReactionsCountsJson) ?? [];
     }
 
     private static Expression<Func<Message, TimelineMessageDto>> SelectTimelineMessages {
@@ -136,46 +170,45 @@ internal sealed class MessageRepository(
         }
     }
 
-    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, MessagePinFilter pinFilter, Guid? beforeCursor, int limit, CancellationToken cancellationToken = default)
-    {
-        var query = dbContext.Messages.Where(m => 
-			m.ConversationId == conversationId
-		);
+    public async Task<Result<MessageSearchPage>> Search(Guid conversationId, string? content, IReadOnlyCollection<Guid>? senderIds, DateTimeOffset? startDateTime, DateTimeOffset? endDateTime, MessagePinFilter pinFilter, Guid? beforeCursor, int limit, CancellationToken cancellationToken = default) {
+        var query = dbContext.Messages.Where(m =>
+            m.ConversationId == conversationId
+        );
 
-		if (!string.IsNullOrEmpty(content)) {
-			query = query.Where(m => 
-				m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", content))
-			);
-		}
+        if (!string.IsNullOrEmpty(content)) {
+            query = query.Where(m =>
+                m.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("simple", content))
+            );
+        }
 
-		if (senderIds is { Count: > 0}) {
-			query = query.Where(m => senderIds.Contains(m.Id));
-		}
+        if (senderIds is { Count: > 0 }) {
+            query = query.Where(m => senderIds.Contains(m.Id));
+        }
 
-		if (startDateTime is { } startTime) {
-			query = query.Where(m => m.CreatedAt >= startTime);
-		}
+        if (startDateTime is { } startTime) {
+            query = query.Where(m => m.CreatedAt >= startTime);
+        }
 
-		if (endDateTime is { } endTime) {
-			query = query.Where(m => m.CreatedAt <= endTime);
-		}
+        if (endDateTime is { } endTime) {
+            query = query.Where(m => m.CreatedAt <= endTime);
+        }
 
-		if (beforeCursor is { } before) {
-			query = query.Where(m => m.Id.CompareTo(before) < 0);
-		}
+        if (beforeCursor is { } before) {
+            query = query.Where(m => m.Id.CompareTo(before) < 0);
+        }
 
-		switch (pinFilter) {
-			case MessagePinFilter.Pin:
-				query = query.Where(m => m.PinnedAt != null);
-				break;
+        switch (pinFilter) {
+            case MessagePinFilter.Pin:
+                query = query.Where(m => m.PinnedAt != null);
+                break;
 
-			case MessagePinFilter.Unpin:
-				query = query.Where(m => m.PinnedAt == null);
-				break;
-		}
+            case MessagePinFilter.Unpin:
+                query = query.Where(m => m.PinnedAt == null);
+                break;
+        }
 
-		var page = await query
-			.OrderByDescending(m => m.CreatedAt)
+        var page = await query
+            .OrderByDescending(m => m.CreatedAt)
             .SelectFacet<MessageSearchDto>()
             .Take(limit)
             .ToListAsync(cancellationToken);
@@ -184,8 +217,8 @@ internal sealed class MessageRepository(
     }
 
     public async Task<KeyedPaginatedPage<DateTimeOffset, PinnedMessageDto>> GetPinnedMessages(
-        Guid conversationId, 
-        DateTimeOffset? before, 
+        Guid conversationId,
+        DateTimeOffset? before,
         DateTimeOffset? after,
         int limit,
         CancellationToken cancellationToken = default
@@ -196,7 +229,8 @@ internal sealed class MessageRepository(
 
         if (before.HasValue) {
             query = query.Where(m => m.PinnedAt < before);
-        } else if (after.HasValue) {
+        }
+        else if (after.HasValue) {
             query = query.Where(m => m.PinnedAt > after);
         }
 
@@ -211,7 +245,7 @@ internal sealed class MessageRepository(
 
         bool hasMore = messages.Count > limit;
         bool hasPreviousPage, hasNextPage;
-        
+
         if (hasMore) {
             messages.RemoveAt(messages.Count - 1); // trim last one away
         }
@@ -219,10 +253,12 @@ internal sealed class MessageRepository(
         if (before.HasValue) {
             hasNextPage = hasMore;
             hasPreviousPage = true;
-        } else if (after.HasValue) {
+        }
+        else if (after.HasValue) {
             hasPreviousPage = hasMore;
             hasNextPage = true;
-        } else {
+        }
+        else {
             hasPreviousPage = false;
             hasNextPage = hasMore;
         }
