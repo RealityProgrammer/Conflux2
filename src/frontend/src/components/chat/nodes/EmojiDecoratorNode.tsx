@@ -36,7 +36,7 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
   }
 
   isIsolated(): boolean {
-    return false;
+    return true;
   }
 
   getTextContent(): string {

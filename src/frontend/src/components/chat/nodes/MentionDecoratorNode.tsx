@@ -45,7 +45,7 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
   }
 
   isIsolated(): boolean {
-    return false;
+    return true;
   }
 
   getTextContent(): string {

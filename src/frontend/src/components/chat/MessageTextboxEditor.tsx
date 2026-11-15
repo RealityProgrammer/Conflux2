@@ -13,6 +13,8 @@ import {
   SELECTION_CHANGE_COMMAND,
   mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, $getNodeByKey, ParagraphNode,
   type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType,
+  KEY_ARROW_RIGHT_COMMAND, $isDecoratorNode, KEY_ARROW_LEFT_COMMAND, KEY_BACKSPACE_COMMAND, type DecoratorNode,
+  type ElementNode,
 } from "lexical";
 import {RichTextExtension} from "@lexical/rich-text";
 import {HistoryExtension} from "@lexical/history";
@@ -28,7 +30,7 @@ import {
   $createRangeSelection,
   $setSelection
 } from "lexical";
-import {$createEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
+import {$createEmojiNode, $isEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {$createTimestampNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
 import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
 import {ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList} from "@lexical/list";
@@ -56,15 +58,17 @@ import {
 } from "@lexical/link";
 import {$createMarkdownMarkerNode, $isMarkdownMarkerNode, MarkdownMarkerNode} from "./nodes/MarkdownMarkerNode.tsx";
 import {$createMentionNode, MentionDecoratorNode} from "./nodes/MentionDecoratorNode.tsx";
+import {globals} from "animejs";
+import editor = globals.editor;
 
 // TODO: Design toolbar
 // TODO: Table in the design toolbar
 
 export type SuggestionData =
-  { type: "mode"; startColonIndex: number } |
-  { type: "emoji"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; } |
-  { type: "time"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string; } |
-  { type: "mention", startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; };
+  | { type: "mode"; startColonIndex: number }
+  | { type: "emoji"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; }
+  | { type: "time"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string; }
+  | { type: "mention", startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; };
 
 export interface MessageTextboxEditorRef {
   reset: () => void;
@@ -150,17 +154,19 @@ export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
         }
       }
 
+      let hasChangedParagraph = false;
+
       for (const [nodeKey] of dirtyElements) {
         const paragraph = $getNodeByKey(nodeKey);
 
-        if (!$isParagraphNode(paragraph) || !paragraph.isAttached()) {
-          continue;
+        if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
+          if (processParagraph(paragraph)) {
+            hasChangedParagraph = true;
+          }
         }
-
-        processParagraph(paragraph);
       }
 
-      if (savedAnchorOffset !== -1 && $isRangeSelection(selection)) {
+      if (hasChangedParagraph && savedAnchorOffset !== -1 && $isRangeSelection(selection)) {
         for (const [nodeKey] of dirtyElements) {
           const paragraph = $getNodeByKey(nodeKey);
           if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
@@ -175,16 +181,27 @@ export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
 
 function getAbsoluteOffset(paragraph: ParagraphNode, targetNode: LexicalNode, localOffset: number): number {
   let offset = 0;
-  let found = false;
-  for (const child of paragraph.getChildren()) {
-    if (child === targetNode) {
+
+  function walk(node: LexicalNode): boolean {
+    if (node === targetNode) {
       offset += localOffset;
-      found = true;
-      break;
+      return true;
     }
-    offset += child.getTextContentSize();
+
+    if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        if (walk(child)) return true;
+      }
+
+      return false;
+    }
+
+    offset += node.getTextContentSize();
+    return false;
   }
-  return found ? offset : 0;
+
+  const found = walk(paragraph);
+  return found ? offset : -1;
 }
 
 function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, targetFocusOffset: number) {
@@ -201,17 +218,19 @@ function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, 
 
   let currentOffset = 0;
   for (const child of children) {
-    if (!$isTextNode(child)) continue;
     const size = child.getTextContentSize();
 
-    if (!anchorNode && targetAnchorOffset <= currentOffset + size) {
-      anchorNode = child;
-      anchorLocal = targetAnchorOffset - currentOffset;
+    if ($isTextNode(child)) {
+      if (!anchorNode && targetAnchorOffset <= currentOffset + size) {
+        anchorNode = child;
+        anchorLocal = targetAnchorOffset - currentOffset;
+      }
+      if (!focusNode && targetFocusOffset <= currentOffset + size) {
+        focusNode = child;
+        focusLocal = targetFocusOffset - currentOffset;
+      }
     }
-    if (!focusNode && targetFocusOffset <= currentOffset + size) {
-      focusNode = child;
-      focusLocal = targetFocusOffset - currentOffset;
-    }
+
     currentOffset += size;
   }
 
@@ -237,10 +256,12 @@ function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, 
   }
 }
 
-function processParagraph(paragraph: ParagraphNode) {
+function processParagraph(paragraph: ParagraphNode): boolean {
+  const fullText = paragraph.getTextContent();
+  if (!/[*_~]/.test(fullText)) return false; // no markers, nothing to highlight, bail out
+
   // clean everything
-  const children = paragraph.getChildren();
-  children.forEach((child) => {
+  paragraph.getChildren().forEach((child) => {
     if ($isMarkdownMarkerNode(child)) {
       const normalTextNode = new TextNode(child.getTextContent());
       child.replace(normalTextNode);
@@ -255,34 +276,30 @@ function processParagraph(paragraph: ParagraphNode) {
   });
 
   // merge everything into 1 unify text node
-  let updatedChildren = paragraph.getChildren();
-  while (updatedChildren.length > 1) {
-    let merged = false;
-    for (let i = 0; i < updatedChildren.length - 1; i++) {
-      const current = updatedChildren[i];
-      const next = updatedChildren[i + 1];
-      if ($isTextNode(current) && $isTextNode(next)) {
-        current.setTextContent(current.getTextContent() + next.getTextContent());
-        next.remove();
-        merged = true;
-        break;
-      }
+  let children = paragraph.getChildren();
+
+  for (let i = 0; i < children.length - 1; i++) {
+    const current = children[i];
+    const next = children[i + 1];
+
+    if ($isTextNode(current) && $isTextNode(next)) {
+      current.setTextContent(current.getTextContent() + next.getTextContent());
+      next.remove();
+
+      i--;
     }
-    if (!merged) break;
-    updatedChildren = paragraph.getChildren();
   }
 
   // begin parsing
-  const fullText = paragraph.getTextContent();
   if (fullText.trim() === "") {
-    return;
+    return false;
   }
 
   const pattern = /(?<!\\)(\*\*\*|___|\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))(.*?)(\1)/g;
   const matches = [...fullText.matchAll(pattern)];
 
   if (matches.length === 0) {
-    return;
+    return false;
   }
 
   // sort matches from right to left (descending index) so splits don't shift earlier indices
@@ -378,6 +395,8 @@ function processParagraph(paragraph: ParagraphNode) {
       }
     }
   }
+
+  return true;
 }
 
 const CHAT_MARKDOWN_TRANSFORMERS = [
@@ -477,6 +496,12 @@ export const CustomTransformExtension = defineExtension({
 
         const emojiNode = $createEmojiNode(matchedEmoji.id);
         targetNode.replace(emojiNode);
+
+        // create trailing text node after the emoji
+        const nextSibling = emojiNode.getNextSibling();
+        if (!nextSibling || !$isTextNode(nextSibling)) {
+          emojiNode.insertAfter($createTextNode(""));
+        }
         return;
       }
 
@@ -672,6 +697,7 @@ export default function MessageTextboxEditor({
 
         editorRef.current?.focus();
         const fallbackSelection = $getSelection();
+
         if ($isRangeSelection(fallbackSelection)) {
           if (typeof content === "string") {
             fallbackSelection.insertText(content);
@@ -733,7 +759,7 @@ function TextArea({
         $getRoot().append($createParagraphNode());
       }
     });
-  }, [editor]);
+  }, [editor]); // initialValue is for on-mount only
 
   // handle escape to next paragraph block when user press Escape on codeblock or quoteblock
   useEffect(() => {
@@ -912,7 +938,7 @@ function TextArea({
       },
       COMMAND_PRIORITY_HIGH
     )
-  }, [editor]);
+  }, [editor, onImagePaste]);
 
   // suggestion listener
   useEffect(() => {
@@ -1015,6 +1041,143 @@ function TextArea({
     });
   }, [editor, lastSelectionRef]);
 
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_BACKSPACE_COMMAND,
+      (event: KeyboardEvent) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
+        const offset = anchor.offset;
+
+        if ($isElementNode(node)) {
+          if (offset > 0) {
+            const prevChild = node.getChildAtIndex(offset - 1);
+
+            if ($isIsolatedDecoratorNode(prevChild)) {
+              const decoratorIndex = offset - 1;
+              prevChild!.remove();
+              $placeCaretAtGap(node, decoratorIndex);
+              event.preventDefault();
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // if node is text node
+        if ($isTextNode(node)) {
+          const prevSibling = node.getPreviousSibling();
+          const parent = node.getParent();
+
+          if (!$isElementNode(parent)) return false;
+
+          if (offset === 0 && $isIsolatedDecoratorNode(prevSibling)) {
+            const decoratorIndex = prevSibling!.getIndexWithinParent();
+            prevSibling!.remove();
+            $placeCaretAtGap(parent, decoratorIndex);
+            event.preventDefault();
+            return true;
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
+
+  // navigate around isolated decorator node
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      (event: KeyboardEvent) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
+        const offset = anchor.offset;
+
+        const previousSibling = node.getPreviousSibling();
+
+        if (offset === 0 && $isDecoratorNode(previousSibling) && previousSibling.isIsolated()) {
+          const emojiNode = node.getPreviousSibling()!;
+          const prevSibling = emojiNode.getPreviousSibling();
+
+          const newSelection = $createRangeSelection();
+          if (prevSibling && $isTextNode(prevSibling)) {
+            newSelection.anchor.set(prevSibling.__key, prevSibling.getTextContentSize(), "text");
+            newSelection.focus.set(prevSibling.__key, prevSibling.getTextContentSize(), "text");
+          } else {
+            const parent = emojiNode.getParent();
+
+            if (parent) {
+              const index = emojiNode.getIndexWithinParent();
+              newSelection.anchor.set(parent.__key, index, "element");
+              newSelection.focus.set(parent.__key, index, "element");
+            }
+          }
+          $setSelection(newSelection);
+          event.preventDefault();
+          return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      (event: KeyboardEvent) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
+        const offset = anchor.offset;
+
+        // check if we are at the end of a text node and the next sibling is an emoji
+        const nextSibling = node.getNextSibling();
+
+        if ($isTextNode(node) && offset === node.getTextContentSize() && $isDecoratorNode(nextSibling) && nextSibling.isIsolated()) {
+          const emojiNode = node.getNextSibling()!;
+          const nextEmojiSibling = emojiNode.getNextSibling();
+
+          const newSelection = $createRangeSelection();
+          if (nextEmojiSibling && $isTextNode(nextEmojiSibling)) {
+            newSelection.anchor.set(nextEmojiSibling.__key, 0, "text");
+            newSelection.focus.set(nextEmojiSibling.__key, 0, "text");
+          } else {
+            const parent = emojiNode.getParent();
+            if (parent) {
+              const index = emojiNode.getIndexWithinParent() + 1;
+              newSelection.anchor.set(parent.__key, index, "element");
+              newSelection.focus.set(parent.__key, index, "element");
+            }
+          }
+          $setSelection(newSelection);
+          event.preventDefault();
+          return true;
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
+
   return (
     <>
       <ContentEditable className="input-field min-h-9 max-h-48 w-full text-sm py-2 px-3 outline-none whitespace-pre-wrap break-all overflow-y-auto leading-relaxed relative"/>
@@ -1083,29 +1246,19 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
   return globalOffset;
 }
 
-function getGlobalOffsetForNodeOffset(targetNode: TextNode, targetOffset: number): number {
-  const root = $getRoot();
-  let globalOffset = 0;
+function getGlobalOffsetForNodeOffset(node: TextNode, localOffset: number): number {
+  let result = 0;
 
-  function traverse(node: LexicalNode): boolean {
-    if (node === targetNode) {
-      globalOffset += targetOffset;
+  $forEachLeaf((leaf, start) => {
+    if (leaf === node) {
+      result = start + localOffset;
       return true;
     }
 
-    if ($isElementNode(node)) {
-      for (const child of node.getChildren()) {
-        if (traverse(child)) return true;
-      }
-    } else {
-      globalOffset += node.getTextContentSize();
-    }
-
     return false;
-  }
+  });
 
-  traverse(root);
-  return globalOffset;
+  return result;
 }
 
 function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
@@ -1123,8 +1276,7 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
         traverse(child);
       }
     } else {
-      const nodeText = node.getTextContent();
-      const nodeLength = nodeText.length;
+      const nodeLength = node.getTextContentSize();
 
       if ($isTextNode(node)) {
         if (!startPoint && currentLength + nodeLength >= startOffset) {
@@ -1189,8 +1341,70 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
 
   if (startPoint && endPoint) {
     const selection = $createRangeSelection();
+
     selection.anchor.set(startPoint.node.getKey(), startPoint.offset, startPoint.type);
     selection.focus.set(endPoint.node.getKey(), endPoint.offset, endPoint.type);
     $setSelection(selection);
   }
+}
+
+function $isIsolatedDecoratorNode(node: LexicalNode | null | undefined): node is DecoratorNode<any> {
+  return node != null && $isDecoratorNode(node) && node.isIsolated();
+}
+
+function $placeCaretAtGap(parent: ElementNode, index: number) {
+  // paragraph node that ends on a decorator has nowhere to type after it so append an empty text node so the
+  // caret has a place to stand
+  const last = parent.getLastChild();
+  if (last && !$isTextNode(last)) {
+    parent.append($createTextNode(""));
+  }
+
+  // empty paragraph (ex: only-child emoji decorator node was added and then deleted).
+  if (parent.getChildrenSize() === 0) {
+    const empty = $createTextNode("");
+    parent.append(empty);
+    empty.select(0, 0);
+    return;
+  }
+
+  const next = parent.getChildAtIndex(index);
+  const prev = parent.getChildAtIndex(index - 1);
+
+  const newSelection = $createRangeSelection();
+  if (next && $isTextNode(next)) {
+    newSelection.anchor.set(next.__key, 0, "text");
+    newSelection.focus.set(next.__key, 0, "text");
+  } else if (prev && $isTextNode(prev)) {
+    const size = prev.getTextContentSize();
+    newSelection.anchor.set(prev.__key, size, "text");
+    newSelection.focus.set(prev.__key, size, "text");
+  } else {
+    newSelection.anchor.set(parent.__key, index, "element");
+    newSelection.focus.set(parent.__key, index, "element");
+  }
+
+  $setSelection(newSelection);
+}
+
+// walk tree depth first, collect the node start offset and size along the way
+function $forEachLeaf(fn: (node: LexicalNode, start: number, size: number) => boolean) {
+  let offset = 0;
+
+  function walk(node: LexicalNode): boolean {
+    if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        if (walk(child)) return true;
+      }
+
+      return false;
+    }
+
+    const size = node.getTextContentSize();
+    const stop = fn(node, offset, size);
+    offset += size;
+    return stop;
+  }
+
+  walk($getRoot());
 }
