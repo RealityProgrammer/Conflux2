@@ -184,7 +184,16 @@ function getAbsoluteOffset(paragraph: ParagraphNode, targetNode: LexicalNode, lo
 
   function walk(node: LexicalNode): boolean {
     if (node === targetNode) {
-      offset += localOffset;
+      if ($isElementNode(node)) {
+        const children = node.getChildren();
+
+        for (let i = 0; i < localOffset && i < children.length; i++) {
+          offset += children[i].getTextContentSize();
+        }
+      } else {
+        offset += localOffset;
+      }
+
       return true;
     }
 
@@ -215,38 +224,45 @@ function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, 
   let anchorLocal = 0;
   let focusNode: TextNode | null = null;
   let focusLocal = 0;
-
   let currentOffset = 0;
-  for (const child of children) {
-    const size = child.getTextContentSize();
 
-    if ($isTextNode(child)) {
+  function walk(node: LexicalNode) {
+    if (anchorNode && focusNode) return;
+
+    if ($isTextNode(node)) {
+      const size = node.getTextContentSize();
       if (!anchorNode && targetAnchorOffset <= currentOffset + size) {
-        anchorNode = child;
+        anchorNode = node;
         anchorLocal = targetAnchorOffset - currentOffset;
       }
       if (!focusNode && targetFocusOffset <= currentOffset + size) {
-        focusNode = child;
+        focusNode = node;
         focusLocal = targetFocusOffset - currentOffset;
       }
+      currentOffset += size;
+      return;
     }
 
-    currentOffset += size;
+    if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        walk(child);
+        if (anchorNode && focusNode) return;
+      }
+      return;
+    }
+
+    // decorator leaf
+    currentOffset += node.getTextContentSize();
   }
 
-  // Fallback to end of paragraph if offsets exceed bounds
-  if (!anchorNode && children.length > 0) {
-    const last = children[children.length - 1];
-    if ($isTextNode(last)) {
-      anchorNode = last;
-      anchorLocal = last.getTextContentSize();
-    }
-  }
-  if (!focusNode && children.length > 0) {
-    const last = children[children.length - 1];
-    if ($isTextNode(last)) {
-      focusNode = last;
-      focusLocal = last.getTextContentSize();
+  walk(paragraph);
+
+  // Fallback: last text node at its end
+  if (!anchorNode || !focusNode) {
+    const lastText = findLastTextNode(paragraph);
+    if (lastText) {
+      if (!anchorNode) { anchorNode = lastText; anchorLocal = lastText.getTextContentSize(); }
+      if (!focusNode)  { focusNode = lastText;  focusLocal = lastText.getTextContentSize(); }
     }
   }
 
@@ -256,9 +272,33 @@ function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, 
   }
 }
 
+function findLastTextNode(node: LexicalNode): TextNode | null {
+  if ($isTextNode(node)) return node;
+  if (!$isElementNode(node)) return null;
+
+  const children = node.getChildren();
+
+  for (let i = children.length - 1; i >= 0; i--) {
+    const found = findLastTextNode(children[i]);
+    if (found) return found;
+  }
+
+  return null;
+}
+
 function processParagraph(paragraph: ParagraphNode): boolean {
   const fullText = paragraph.getTextContent();
   if (!/[*_~]/.test(fullText)) return false; // no markers, nothing to highlight, bail out
+
+  const pattern = /(?<!\\)(\*\*\*|___|\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))(.*?)(\1)/g;
+  const matches = [...fullText.matchAll(pattern)];
+
+  let hasMarkers = false;
+  for (const child of paragraph.getChildren()) {
+    if ($isMarkdownMarkerNode(child)) { hasMarkers = true; break; }
+  }
+
+  if (matches.length === 0 && !hasMarkers) return false;
 
   // clean everything
   paragraph.getChildren().forEach((child) => {
@@ -277,29 +317,19 @@ function processParagraph(paragraph: ParagraphNode): boolean {
 
   // merge everything into 1 unify text node
   let children = paragraph.getChildren();
+  let i = 0;
 
-  for (let i = 0; i < children.length - 1; i++) {
+  while (i < children.length - 1) {
     const current = children[i];
     const next = children[i + 1];
 
     if ($isTextNode(current) && $isTextNode(next)) {
       current.setTextContent(current.getTextContent() + next.getTextContent());
       next.remove();
-
-      i--;
+      children.splice(i + 1, 1);
+    } else {
+      i++;
     }
-  }
-
-  // begin parsing
-  if (fullText.trim() === "") {
-    return false;
-  }
-
-  const pattern = /(?<!\\)(\*\*\*|___|\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))(.*?)(\1)/g;
-  const matches = [...fullText.matchAll(pattern)];
-
-  if (matches.length === 0) {
-    return false;
   }
 
   // sort matches from right to left (descending index) so splits don't shift earlier indices
@@ -1187,6 +1217,8 @@ function TextArea({
 }
 
 function LexicalSyncPlugin({ onTextChange }: { onTextChange?: (text: string, cursor: number) => void }) {
+  const lastRef = useRef<{ text: string; cursor: number } | null>(null);
+
   return (
     <OnChangePlugin
       onChange={(editorState: EditorState) => {
@@ -1198,6 +1230,10 @@ function LexicalSyncPlugin({ onTextChange }: { onTextChange?: (text: string, cur
           if ($isRangeSelection(selection)) {
             cursor = getGlobalCursorOffset(selection);
           }
+
+          const last = lastRef.current;
+          if (last && last.text === text && last.cursor === cursor) return;
+          lastRef.current = { text, cursor };
 
           onTextChange?.(text, cursor);
         });
@@ -1211,39 +1247,57 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
   const anchorNode = anchor.getNode();
   const anchorOffset = anchor.offset;
 
-  const root = $getRoot();
-  let globalOffset = 0;
+  if ($isTextNode(anchorNode)) {
+    let result = 0;
 
-  function walk(node: LexicalNode): boolean {
-    if (node === anchorNode) {
-      if ($isTextNode(node)) {
-        globalOffset += anchorOffset;
-      } else if ($isElementNode(node)) {
-        const children = node.getChildren();
+    $forEachLeaf((leaf, start) => {
+      if (leaf === anchorNode) { result = start + anchorOffset; return true; }
+      return false;
+    });
 
-        for (let i = 0; i < anchorOffset && i < children.length; i++) {
-          globalOffset += children[i].getTextContentSize();
-        }
-      }
-
-      return true;
-    }
-
-    if ($isElementNode(node)) {
-      const children = node.getChildren();
-
-      for (const child of children) {
-        if (walk(child)) return true;
-      }
-    } else {
-      globalOffset += node.getTextContentSize();
-    }
-
-    return false;
+    return result;
   }
 
-  walk(root);
-  return globalOffset;
+  if ($isElementNode(anchorNode)) {
+    const children = anchorNode.getChildren();
+    let childSum = 0;
+
+    for (let i = 0; i < anchorOffset && i < children.length; i++) {
+      childSum += children[i].getTextContentSize();
+    }
+
+    let anchorStart = -1;
+    $forEachLeaf((leaf, start) => {
+      if (anchorNode.isParentOf(leaf)) { anchorStart = start; return true; }
+      return false;
+    });
+
+    if (anchorStart === -1) {
+      let result = 0;
+      let done = false;
+      let running = 0;
+
+      function walk(node: LexicalNode): boolean {
+        if (done) return true;
+        if (node === anchorNode) { result = running + childSum; done = true; return true; }
+
+        if ($isElementNode(node)) {
+          for (const child of node.getChildren()) { if (walk(child)) return true; }
+          return false;
+        }
+
+        running += node.getTextContentSize();
+        return false;
+      }
+
+      walk($getRoot());
+      return done ? result : 0;
+    }
+
+    return anchorStart + childSum;
+  }
+
+  return 0;
 }
 
 function getGlobalOffsetForNodeOffset(node: TextNode, localOffset: number): number {
@@ -1262,80 +1316,53 @@ function getGlobalOffsetForNodeOffset(node: TextNode, localOffset: number): numb
 }
 
 function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
-  const root = $getRoot();
-  let currentLength = 0;
   let startPoint: { node: LexicalNode; offset: number; type: "text" | "element" } | null = null;
   let endPoint: { node: LexicalNode; offset: number; type: "text" | "element" } | null = null;
 
-  function traverse(node: LexicalNode) {
-    if (startPoint && endPoint) return;
-
-    if ($isElementNode(node)) {
-      const children = node.getChildren();
-      for (const child of children) {
-        traverse(child);
-      }
-    } else {
-      const nodeLength = node.getTextContentSize();
-
+  $forEachLeaf((node, start, size) => {
+    if (!startPoint && startOffset <= start + size) {
       if ($isTextNode(node)) {
-        if (!startPoint && currentLength + nodeLength >= startOffset) {
-          startPoint = { node, offset: startOffset - currentLength, type: "text" };
-        }
-        if (!endPoint && currentLength + nodeLength >= endOffset) {
-          endPoint = { node, offset: endOffset - currentLength, type: "text" };
-        }
+        startPoint = { node, offset: startOffset - start, type: "text" };
       } else {
-        if (!startPoint && currentLength + nodeLength >= startOffset) {
-          const parent = node.getParent();
-          if (parent) {
-            const index = parent.getChildren().indexOf(node);
-            const targetOffset = startOffset <= currentLength ? index : index + 1;
-            startPoint = { node: parent, offset: targetOffset, type: "element" };
-          }
-        }
-        if (!endPoint && currentLength + nodeLength >= endOffset) {
-          const parent = node.getParent();
-          if (parent) {
-            const index = parent.getChildren().indexOf(node);
-            const targetOffset = endOffset <= currentLength ? index : index + 1;
-            endPoint = { node: parent, offset: targetOffset, type: "element" };
-          }
-        }
-      }
-
-      currentLength += nodeLength;
-    }
-  }
-
-  traverse(root);
-
-  // fallbacks if offsets land at the very end of the document
-  if (!startPoint) {
-    const lastNode = root.getLastChild();
-    if (lastNode) {
-      if ($isTextNode(lastNode)) {
-        startPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: "text" };
-      } else {
-        const parent = lastNode.getParent();
+        const parent = node.getParent();
         if (parent) {
-          startPoint = { node: parent, offset: parent.getChildren().length, type: "element" };
+          const index = node.getIndexWithinParent();
+          const targetOffset = startOffset <= start ? index : index + 1;
+          startPoint = { node: parent, offset: targetOffset, type: "element" };
         }
       }
     }
-  }
 
-  if (!endPoint) {
-    const lastNode = root.getLastChild();
-    if (lastNode) {
-      if ($isTextNode(lastNode)) {
-        endPoint = { node: lastNode, offset: lastNode.getTextContentSize(), type: "text" };
+    if (!endPoint && endOffset <= start + size) {
+      if ($isTextNode(node)) {
+        endPoint = { node, offset: endOffset - start, type: "text" };
       } else {
-        const parent = lastNode.getParent();
+        const parent = node.getParent();
         if (parent) {
-          endPoint = { node: parent, offset: parent.getChildren().length, type: "element" };
+          const index = node.getIndexWithinParent();
+          const targetOffset = endOffset <= start ? index : index + 1;
+          endPoint = { node: parent, offset: targetOffset, type: "element" };
         }
       }
+    }
+
+    return startPoint !== null && endPoint !== null;
+  });
+
+  // fallbacks: use the last leaf
+  if (!startPoint || !endPoint) {
+    let lastLeaf: LexicalNode = null!;
+
+    $forEachLeaf((node) => { lastLeaf = node; return false; });
+
+    if (lastLeaf) {
+      const lastLeafParent = (lastLeaf as LexicalNode).getParent();
+
+      const fallback = lastLeaf != null && $isTextNode(lastLeaf)
+        ? { node: lastLeaf, offset: lastLeaf.getTextContentSize(), type: "text" as const }
+        : lastLeafParent ? { node: lastLeafParent, offset: lastLeafParent.getChildren().length, type: "element" as const } : null;
+
+      if (fallback) { startPoint ??= fallback; endPoint ??= fallback; }
     }
   }
 

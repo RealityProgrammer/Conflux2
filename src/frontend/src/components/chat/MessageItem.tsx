@@ -3,7 +3,7 @@ import type {
   ServiceResponse,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {type ReactNode, useState} from "react";
+import { type ReactNode, useState } from "react";
 import type { TimelineContext } from "./TimelineContext.ts";
 import { ContextMenu } from "radix-ui";
 import {
@@ -22,8 +22,9 @@ import usePinMessageMutation, { type UsePinMessageVariables } from "../../hooks/
 import { MessageRow } from "./MessageRow.tsx";
 import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
-import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
-import {EmojiPanel} from "./EmojiPanel.tsx";
+import { $createEmojiNode } from "./nodes/EmojiDecoratorNode.tsx";
+import { EmojiPanel } from "./EmojiPanel.tsx";
+import { Emoji } from "../Emoji.tsx";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -152,14 +153,23 @@ function MessageView({
                 )}
 
                 {reactionsCountsEntries.length > 0 && (
-                  <ul className="flex flex-row flex-wrap gap-2 text-sm">
+                  <ul className="flex flex-row flex-wrap gap-1 text-sm">
                     {reactionsCountsEntries.map(([reactionKey, reactionCount]) => {
+                      const serverEmojiId = reactionKey.startsWith("emoji.") ? reactionKey.slice("emoji.".length) : undefined;
+
                       return (
                         <li
                           key={reactionKey}
-                          className="flex-none flex flex-row gap-2 items-center border-2 border-gray-600 hover-highlight bg-black/8 rounded-md px-1.5 py-0.5 select-none cursor-pointer"
+                          className="flex-none flex flex-row gap-1 items-center border-2 border-gray-600 hover-highlight bg-black/8 rounded-md px-1.5 py-0.75 select-none cursor-pointer"
                         >
-                          <div className="size-4 bg-red-500"></div>
+                          {serverEmojiId ? (
+                            <Emoji.Root
+                              emojiId={serverEmojiId}
+                              className="size-6"
+                            />
+                          ) : (
+                            <div className="size-6 bg-red-500"></div>
+                          )}
 
                           {reactionCount}
                         </li>

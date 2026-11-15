@@ -92,7 +92,7 @@ function Groups({
       ) : (
         <Virtuoso
           className="h-full scrollbar-none"
-          totalCount={filteredData.length + 1}  // +1 for built-in emoji table
+          totalCount={filteredData.length + Math.sign(filteredUnicodeEntries.length)}  // +1 for built-in emoji table
           computeItemKey={(index) => index === filteredData.length ? "built-in" : filteredData[index].serverInfo.serverId}
           itemContent={(index: number) => {
             if (index < filteredData.length) {
@@ -115,6 +115,13 @@ function Groups({
                 />
               );
             }
+          }}
+          components={{
+            EmptyPlaceholder: () => (
+              <div className="size-full flex flex-row justify-center items-center">
+                Nothing is here...
+              </div>
+            ),
           }}
         />
       )}

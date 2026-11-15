@@ -44,7 +44,7 @@ function Unicode({entries, onSelected, ...props}: UnicodeProps) {
   return (
     <div {...props}>
       <div className="sticky top-0 bg-gray-725 backdrop-blur-sm py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-        Unicode Built-in
+        Unicode
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-1 justify-center mt-1">
