@@ -1,26 +1,26 @@
-import {TimelineItem} from "./TimelineItem.ts";
+import { TimelineItem } from "./TimelineItem.ts";
 import type {
   ServiceResponse,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {type ReactNode} from "react";
-import type {TimelineContext} from "./TimelineContext.ts";
-import {ContextMenu} from "radix-ui";
+import { type ReactNode } from "react";
+import type { TimelineContext } from "./TimelineContext.ts";
+import { ContextMenu } from "radix-ui";
 import {
   BsArrowReturnLeft,
   BsCopy,
   BsPencilFill,
   BsTrashFill
 } from "react-icons/bs";
-import {useAuth} from "../../contexts/AuthContext.tsx";
-import {toast} from "react-toastify";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { toast } from "react-toastify";
 import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
-import {FaPencil, FaThumbtack, FaThumbtackSlash} from "react-icons/fa6";
-import usePinMessageMutation, {type PinMessageVariables} from "../../hooks/usePinMessageMutation.ts";
-import {MessageRow} from "./MessageRow.tsx";
-import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import { FaPencil, FaThumbtack, FaThumbtackSlash } from "react-icons/fa6";
+import usePinMessageMutation, { type PinMessageVariables } from "../../hooks/usePinMessageMutation.ts";
+import { MessageRow } from "./MessageRow.tsx";
+import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 
 type MessageItemProps = {
@@ -116,6 +116,7 @@ function MessageView({
   };
 
   const isHighlighted = context.states.highlightedMessageId === message.id;
+  const reactionsCountsEntries = message.reactionsCounts ? Object.entries(message.reactionsCounts) : [];
 
   return (
     <ContextMenu.Root>
@@ -154,7 +155,19 @@ function MessageView({
                   />
                 )}
 
-                {/* TODO: Reaction */}
+                {reactionsCountsEntries.length > 0 && (
+                  <ul className="flex flex-row flex-wrap gap-2 text-sm">
+                    {reactionsCountsEntries.map(([_reactionKey, reactionCount]) => {
+                      return (
+                        <li className="flex-none flex flex-row gap-2 items-center border-2 border-gray-600 hover-highlight bg-black/8 rounded-md px-1.5 py-0.5 select-none cursor-pointer">
+                          <div className="size-4 bg-red-500"></div>
+
+                          {reactionCount}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
                 {/*<ul className="flex flex-row flex-wrap gap-2 text-sm">*/}
                 {/*  <li className="shrink-0 flex flex-row gap-2 items-center border-2 border-gray-500 hover-highlight bg-black/8 rounded-md p-1 select-none cursor-pointer">*/}
                 {/*    <div className="size-4 bg-red-500"></div>*/}
@@ -169,12 +182,12 @@ function MessageView({
           <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
             {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
               <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
-                <FaPencil className="size-5 ml-auto"/>
+                <FaPencil className="size-5 ml-auto" />
               </IconButton>
             )}
 
             <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
-              <BsArrowReturnLeft className="size-5 ml-auto"/>
+              <BsArrowReturnLeft className="size-5 ml-auto" />
             </IconButton>
           </section>
         </div>
@@ -189,7 +202,7 @@ function MessageView({
             className="dropdown-item-default"
             onSelect={handleReplyTrigger}
           >
-            Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto"/>
+            Reply Message <BsArrowReturnLeft className="fill-white size-4 ml-auto" />
           </ContextMenu.Item>
 
           {auth.userAuthorization?.id === message.sender!.id && context.states.allowEditMessage && (
@@ -197,7 +210,7 @@ function MessageView({
               className="dropdown-item-default"
               onSelect={handleEditTrigger}
             >
-              Edit Message <BsPencilFill className="fill-white size-4 ml-auto"/>
+              Edit Message <BsPencilFill className="fill-white size-4 ml-auto" />
             </ContextMenu.Item>
           )}
 
@@ -207,7 +220,7 @@ function MessageView({
               disabled={isPinning}
               onSelect={handleUnpinMessage}
             >
-              Unpin Message <FaThumbtackSlash className="fill-red-500 size-4 ml-auto"/>
+              Unpin Message <FaThumbtackSlash className="fill-red-500 size-4 ml-auto" />
             </ContextMenu.Item>
           ) : (
             <ContextMenu.Item
@@ -215,7 +228,7 @@ function MessageView({
               disabled={isPinning}
               onSelect={handlePinMessage}
             >
-              Pin Message <FaThumbtack className="fill-white size-4 ml-auto"/>
+              Pin Message <FaThumbtack className="fill-white size-4 ml-auto" />
             </ContextMenu.Item>
           )}
 
@@ -224,13 +237,13 @@ function MessageView({
               className="dropdown-item-danger"
               onSelect={() => context.actions.onMessageDeleteTrigger(message)}
             >
-              Delete Message <BsTrashFill className="fill-red-500 size-4 ml-auto"/>
+              Delete Message <BsTrashFill className="fill-red-500 size-4 ml-auto" />
             </ContextMenu.Item>
           )}
 
           {message?.body && (
             <>
-              <ContextMenu.Separator className="horizontal-separator my-1.5"/>
+              <ContextMenu.Separator className="horizontal-separator my-1.5" />
 
               <ContextMenu.Item
                 className="dropdown-item-default"
@@ -242,7 +255,7 @@ function MessageView({
                   }
                 }}
               >
-                Copy text <BsCopy className="fill-white size-4 ml-auto"/>
+                Copy text <BsCopy className="fill-white size-4 ml-auto" />
               </ContextMenu.Item>
             </>
           )}

@@ -1,7 +1,5 @@
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
-using Facet;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Conflux.Domain.Dto;
