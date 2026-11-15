@@ -93,23 +93,14 @@ export const conversationService = {
     return `/api/attachments/${encodeURIComponent(attachmentId)}/download`;
   },
 
-  pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<ServiceResponse<TimelineMessageDto>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.post(
-        `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/${encodeURIComponent(action)}`,
-        {},
-        { headers: { "Idempotency-Key": idempotencyKey } }
-      );
+  pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<TimelineMessageDto> => {
+    const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.post(
+      `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/${encodeURIComponent(action)}`,
+      {},
+      { headers: { "Idempotency-Key": idempotencyKey } }
+    );
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data.data!;
   },
 
   markMentionNotificationsAsRead: async (conversationId: string): Promise<MentionSource | null> => {

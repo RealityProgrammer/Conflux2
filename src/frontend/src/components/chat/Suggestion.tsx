@@ -3,15 +3,12 @@ import {useInterval} from "usehooks-ts";
 import {useState} from "react";
 import {Separator} from "radix-ui";
 import {Virtuoso} from "react-virtuoso";
-import useUserEmojis from "../../hooks/useUserEmojis.ts";
-import Spinner from "../Spinner.tsx";
-import type {EmojiEntryDto, UserIdentityProfileDto} from "../../api/types.ts";
-import {EmojiGroup} from "./EmojiGroup.tsx";
+import type {UserIdentityProfileDto} from "../../api/types.ts";
 import {useInfiniteGetMentionableUsersQuery} from "../../graphql/infiniteQueries.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {UserNameplate} from "../UserNameplate.tsx";
 import {useUserIdentityStore} from "../../store/useUserIdentityStore.ts";
-import {type UnicodeEmojiEntry, unicodeEmojiTable} from "../../emoji.ts";
+import {EmojiPanel, type SelectedEmoji} from "./EmojiPanel.tsx";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t" | "m") => void;
@@ -62,10 +59,6 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
   );
 }
 
-export type SelectedEmoji =
-  | (EmojiEntryDto & { type: "server-emoji" })
-  | (UnicodeEmojiEntry & { type: "unicode-emoji" });
-
 interface EmojiProps {
   onSelect: (value: SelectedEmoji) => void;
   searchTerm: string;
@@ -73,63 +66,11 @@ interface EmojiProps {
 }
 
 function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
-  const { data, isLoading, isError } = useUserEmojis();
-
-  const filteredData = !data ?
-    [] :
-    !searchTerm || searchTerm.length === 0 ?
-      data :
-      data.map(group => ({
-        ...group,
-        emojiEntries: group.emojiEntries.filter(e => e.shortCode.includes(searchTerm.trim())),
-      })).filter(group => group.emojiEntries.length > 0);
-
-  const filteredUnicodeEntries: UnicodeEmojiEntry[] = !searchTerm || searchTerm.length === 0 ?
-    unicodeEmojiTable :
-    unicodeEmojiTable.filter(e => e.name.includes(searchTerm.trim()));
-
   return (
     <div
       className={`p-1 h-72 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 ${className}`}
     >
-      {isLoading ? (
-        <div className="size-full flex flex-row justify-center items-center">
-          <Spinner className="size-8 fill-white"/>
-        </div>
-      ) : isError || !data ? (
-        <div className="size-full flex flex-col gap-1 justify-center items-center">
-          <BsExclamationTriangle className="size-8 fill-white"/>
-          <p className="select-none text-center">Failed to load your emojis.</p>
-        </div>
-      ) : (
-        <Virtuoso
-          className="h-full"
-          totalCount={filteredData.length + 1}  // +1 for built-in emoji table
-          computeItemKey={(index) => index === filteredData.length ? "built-in" : filteredData[index].serverInfo.serverId}
-          itemContent={(index: number) => {
-            if (index < filteredData.length) {
-              const emojiGroup = filteredData[index];
-
-              return (
-                <EmojiGroup.Server
-                  groupName={emojiGroup.serverInfo.name}
-                  emojiEntries={emojiGroup.emojiEntries}
-                  onSelected={(entry) => onSelect({ type: "server-emoji", ...entry })}
-                  className="px-2"
-                />
-              );
-            } else {
-              return (
-                <EmojiGroup.Unicode
-                  entries={filteredUnicodeEntries}
-                  onSelected={(value) => onSelect({ type: "unicode-emoji", ...value }) }
-                  className="px-2"
-                />
-              );
-            }
-          }}
-        />
-      )}
+      <EmojiPanel.Groups onSelect={onSelect} searchTerm={searchTerm}/>
     </div>
   );
 }

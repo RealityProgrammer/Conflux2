@@ -3,12 +3,12 @@ import type {
   ServiceResponse,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import { type ReactNode } from "react";
+import {type ReactNode, useState} from "react";
 import type { TimelineContext } from "./TimelineContext.ts";
 import { ContextMenu } from "radix-ui";
 import {
   BsArrowReturnLeft,
-  BsCopy,
+  BsCopy, BsEmojiWinkFill,
   BsPencilFill,
   BsTrashFill
 } from "react-icons/bs";
@@ -18,10 +18,12 @@ import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import { FaPencil, FaThumbtack, FaThumbtackSlash } from "react-icons/fa6";
-import usePinMessageMutation, { type PinMessageVariables } from "../../hooks/usePinMessageMutation.ts";
+import usePinMessageMutation, { type UsePinMessageVariables } from "../../hooks/usePinMessageMutation.ts";
 import { MessageRow } from "./MessageRow.tsx";
 import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
+import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
+import {EmojiPanel} from "./EmojiPanel.tsx";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -64,6 +66,8 @@ function MessageView({
   const { conversationId } = useChatContainerContext();
   const { appendMessage } = useTimelineMessageMutations(conversationId);
 
+  const [isEmojiPopoverOpen, setIsEmojiPopoverOpen] = useState(false);
+
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger(message);
   };
@@ -79,40 +83,32 @@ function MessageView({
   };
 
   const pinMessageMutation = usePinMessageMutation({
-    onSuccess: (data: ServiceResponse<TimelineMessageDto>, variables: PinMessageVariables) => {
-      if (data.success) {
-        context.actions.updateMessagePin(variables.messageId, variables.action === "pin");
-      } else {
-        toast.error(`Failed to ${variables.action} message`);
-      }
+    onSuccess: (data: TimelineMessageDto, variables: UsePinMessageVariables) => {
+      context.actions.updateMessagePin(variables.messageId, variables.action === "pin");
+      appendMessage(data);
+    },
+    onError: (_error: Error, variables: UsePinMessageVariables) => {
+      toast.error(`Failed to ${variables.action} message`);
     },
   });
   const { isPending: isPinning } = pinMessageMutation;
 
-  const handlePinMessage = async () => {
-    const response: ServiceResponse<TimelineMessageDto> = await pinMessageMutation.mutateAsync({
+  const handlePinMessage = () => {
+    pinMessageMutation.mutate({
       idempotencyKey: crypto.randomUUID(),
       conversationId: message.conversationId,
       messageId: message.id,
       action: "pin"
     });
-
-    if (response.success) {
-      appendMessage(response.data!);
-    }
   };
 
-  const handleUnpinMessage = async () => {
-    const response: ServiceResponse<TimelineMessageDto> = await pinMessageMutation.mutateAsync({
+  const handleUnpinMessage = () => {
+    pinMessageMutation.mutate({
       idempotencyKey: crypto.randomUUID(),
       conversationId: message.conversationId,
       messageId: message.id,
       action: "unpin"
     });
-
-    if (response.success) {
-      appendMessage(response.data!);
-    }
   };
 
   const isHighlighted = context.states.highlightedMessageId === message.id;
@@ -157,9 +153,12 @@ function MessageView({
 
                 {reactionsCountsEntries.length > 0 && (
                   <ul className="flex flex-row flex-wrap gap-2 text-sm">
-                    {reactionsCountsEntries.map(([_reactionKey, reactionCount]) => {
+                    {reactionsCountsEntries.map(([reactionKey, reactionCount]) => {
                       return (
-                        <li className="flex-none flex flex-row gap-2 items-center border-2 border-gray-600 hover-highlight bg-black/8 rounded-md px-1.5 py-0.5 select-none cursor-pointer">
+                        <li
+                          key={reactionKey}
+                          className="flex-none flex flex-row gap-2 items-center border-2 border-gray-600 hover-highlight bg-black/8 rounded-md px-1.5 py-0.5 select-none cursor-pointer"
+                        >
                           <div className="size-4 bg-red-500"></div>
 
                           {reactionCount}
@@ -168,18 +167,26 @@ function MessageView({
                     })}
                   </ul>
                 )}
-                {/*<ul className="flex flex-row flex-wrap gap-2 text-sm">*/}
-                {/*  <li className="shrink-0 flex flex-row gap-2 items-center border-2 border-gray-500 hover-highlight bg-black/8 rounded-md p-1 select-none cursor-pointer">*/}
-                {/*    <div className="size-4 bg-red-500"></div>*/}
-
-                {/*    69*/}
-                {/*  </li>*/}
-                {/*</ul>*/}
               </div>
             </MessageRow.Row>
           </div>
 
-          <section className="hidden group-hover:flex flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1">
+          <section className={`${isEmojiPopoverOpen ? "flex" : "hidden group-hover:flex"} flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1`}>
+            <EmojiPanel.StandardPopover
+              onOpenChange={(open: boolean) => {
+                setIsEmojiPopoverOpen(open);
+              }}
+              side="left"
+              contentClassName="emoji-standard-panel"
+              trigger={(
+                <IconButton theme="default" className="size-5">
+                  <BsEmojiWinkFill className="size-5 ml-auto" />
+                </IconButton>
+              )}
+              onSelect={(emoji) => {
+              }}
+            />
+
             {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
               <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
                 <FaPencil className="size-5 ml-auto" />

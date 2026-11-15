@@ -1,5 +1,6 @@
 import IconButton from "../IconButton.tsx";
 import {
+  BsEmojiWinkFill,
   BsPaperclip,
   BsX
 } from "react-icons/bs";
@@ -15,11 +16,12 @@ import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
 import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
 import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
 import {FaPaperPlane, FaXmark} from "react-icons/fa6";
-import EmojiPanelButton from "./EmojiPanelButton.tsx";
-import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
 import {Attachment} from "./Attachment.tsx";
 import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
 import { MessageEditorSuggestions } from "./MessageEditorSuggestions.tsx";
+import {EmojiPanel} from "./EmojiPanel.tsx";
+import {$createEmojiNode} from "./nodes/EmojiDecoratorNode.tsx";
+import {$createTextNode} from "lexical";
 
 export interface ChatInputProps {
   disabled?: boolean;
@@ -236,9 +238,29 @@ export default function ChatInput({disabled}: ChatInputProps) {
           }}
         />
 
-        <EmojiPanelButton onSelect={(value) => {
-          textboxEditorRef.current?.insertAtLastSelection(() => $createEmojiNode(value.id));
-        }}/>
+        <EmojiPanel.StandardPopover
+          side="top"
+          trigger={(
+            <IconButton
+              className="flex-none mb-2"
+              isLoading={false}
+            >
+              <BsEmojiWinkFill className="size-6"/>
+            </IconButton>
+          )}
+          contentClassName="emoji-standard-panel"
+          onSelect={(emoji) => {
+            switch (emoji.type) {
+              case "server-emoji":
+                textboxEditorRef.current?.insertAtLastSelection(() => $createEmojiNode(emoji.id));
+                break;
+
+              case "unicode-emoji":
+                textboxEditorRef.current?.insertAtLastSelection(() => $createTextNode(emoji.value));
+                break;
+            }
+          }}
+        />
 
         <IconButton
           className="flex-none mb-2"

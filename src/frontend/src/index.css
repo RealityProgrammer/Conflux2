@@ -375,6 +375,10 @@
     .message-quote {
         @apply border-l-4 border-gray-500 pl-4 py-1 my-2 text-gray-300 italic bg-white/4 rounded-r-md;
     }
+
+    .emoji-standard-panel {
+        @apply w-128 h-112 border-2 border-gray-600 rounded-lg bg-gray-725 text-white shadow-lg;
+    }
 }
 
 @utility button-cursor {

@@ -1,7 +1,8 @@
-import {type SelectedEmoji, Suggestion} from "./Suggestion.tsx";
+import {Suggestion} from "./Suggestion.tsx";
 import type {MessageTextboxEditorRef, SuggestionData} from "./MessageTextboxEditor.tsx";
 import type {UserIdentityProfileDto} from "../../api/types.ts";
 import type {RefObject} from "react";
+import type {SelectedEmoji} from "./EmojiPanel.tsx";
 
 interface BaseProps {
   suggestion: SuggestionData | null;
