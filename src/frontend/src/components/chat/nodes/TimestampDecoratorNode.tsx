@@ -41,6 +41,10 @@ export class TimestampDecoratorNode extends DecoratorNode<ReactNode> {
     return true;
   }
 
+  isIsolated(): boolean {
+    return false;
+  }
+
   getTextContent(): string {
     return `:t${this.__timestamp}:`;
   }

@@ -35,6 +35,10 @@ export class EmojiDecoratorNode extends DecoratorNode<ReactNode> {
     return true;
   }
 
+  isIsolated(): boolean {
+    return false;
+  }
+
   getTextContent(): string {
     return `:e${this.__emojiId}:`;
   }

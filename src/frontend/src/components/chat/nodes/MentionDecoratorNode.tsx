@@ -44,6 +44,10 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
     return true;
   }
 
+  isIsolated(): boolean {
+    return false;
+  }
+
   getTextContent(): string {
     return `:m${this.__userId}:`;
   }
