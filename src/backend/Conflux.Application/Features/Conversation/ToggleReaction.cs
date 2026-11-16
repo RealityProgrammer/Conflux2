@@ -43,18 +43,27 @@ public sealed partial class ToggleReactionHandler(
         return await reactionBatcher.RecordDelta(userId, command.MessageId, reactionKey, command.Action, cancellationToken);
     }
 
-    private bool IsValidReactionKeyFormat(string key) {
+    private static bool IsValidReactionKeyFormat(string key) {
         if (string.IsNullOrWhiteSpace(key)) return false;
         if (key.Contains(':')) return false;
         
-        if (key.StartsWith("server.")) {
-            return Guid.TryParse(key.AsSpan("server.".Length), out _);
+        if (key.StartsWith("emoji.")) {
+            return Guid.TryParse(key.AsSpan("emoji.".Length), out _);
         }
 
-        // TODO: Emoji check
-        return true;
+        if (key.StartsWith("unicode.")) {
+            // TODO: accurately validate emoji character values instead of just rune length.
+            // https://unicode.org/Public/18.0.0/emoji/emoji-test.txt
+            ReadOnlySpan<char> valueSpan = key.AsSpan("unicode.".Length);
+
+            int runeCount = 0;
+            foreach (var _ in valueSpan.EnumerateRunes()) {
+                runeCount++;
+            }
+
+            return runeCount <= 7;
+        }
+        
+        return false;
     }
-    
-    [GeneratedRegex("\\P{So}", RegexOptions.Compiled)]
-    private static partial Regex UnicodeEmojiRegex { get; }
 }

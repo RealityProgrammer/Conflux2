@@ -19,7 +19,7 @@ export function useChannelDeleteMutation(
   options?: Omit<UseMutationOptions<ServiceResponse, Error, UseChannelDeleteMutationVariables, unknown>, "mutationFn" | "mutationKey">,
 ) {
   return useMutation<ServiceResponse, Error, UseChannelDeleteMutationVariables, unknown>({
-    mutationKey: ["channelDelete"],
+    mutationKey: useChannelDeleteMutation.key,
     mutationFn: async (variables: UseChannelDeleteMutationVariables): Promise<ServiceResponse> => {
       return serverService.deleteChannel(variables.serverId, variables.channelId);
     },
@@ -27,9 +27,11 @@ export function useChannelDeleteMutation(
   });
 }
 
-export function useChannelDeleteMutationState(serverId: string, channelId: string) {
+useChannelDeleteMutation.key = ["useChannelDeleteMutation"];
+
+export function useChannelDeleteMutationState(serverId: string, channelId: string): UseChannelDeleteMutationState {
   const mutations = useMutationState({
-    filters: { mutationKey: ["channelDelete"] },
+    filters: { mutationKey: useChannelDeleteMutation.key },
     select: (mutation) => {
       const variables = mutation.state.variables as UseChannelDeleteMutationVariables | undefined;
       const isTarget = variables?.serverId === serverId && variables?.channelId === channelId;

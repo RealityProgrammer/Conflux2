@@ -124,5 +124,12 @@ export const conversationService = {
     );
 
     return response.data.data!;
-  }
+  },
+
+  toggleReaction: async (conversationId: string, messageId: string, reactionKey: `${"unicode" | "emoji"}.${string}`, action: "add" | "remove"): Promise<void> => {
+    await apiClient.post(
+      `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/reactions`,
+      {reactionKey, action}
+    );
+  },
 }

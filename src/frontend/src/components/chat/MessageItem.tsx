@@ -25,6 +25,7 @@ import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations
 import { $createEmojiNode } from "./nodes/EmojiDecoratorNode.tsx";
 import { EmojiPanel } from "./EmojiPanel.tsx";
 import { Emoji } from "../Emoji.tsx";
+import useMessageReactionMutation from "../../hooks/useMessageReactionMutation.ts";
 
 type MessageItemProps = {
   message: TimelineMessageDto;
@@ -112,6 +113,12 @@ function MessageView({
     });
   };
 
+  const reactionMutation = useMessageReactionMutation({
+    onError: (error: Error) => {
+      toast.error("Failed to react to message.");
+    },
+  });
+
   const isHighlighted = context.states.highlightedMessageId === message.id;
   const reactionsCountsEntries = message.reactionsCounts ? Object.entries(message.reactionsCounts) : [];
 
@@ -194,6 +201,33 @@ function MessageView({
                 </IconButton>
               )}
               onSelect={(emoji) => {
+                switch (emoji.type) {
+                  case "server-emoji": {
+                    const reactionKey: `emoji.${string}` = `emoji.${emoji.id}`;
+                    if (message.userReactions && message.userReactions.includes(reactionKey)) break;
+
+                    reactionMutation.mutate({
+                      conversationId,
+                      messageId: message.id,
+                      reactionKey,
+                      action: "add",
+                    });
+                    break;
+                  }
+
+                  case "unicode-emoji": {
+                    const reactionKey: `unicode.${string}` = `unicode.${emoji.value}`;
+                    if (message.userReactions && message.userReactions.includes(reactionKey)) break;
+
+                    reactionMutation.mutate({
+                      conversationId,
+                      messageId: message.id,
+                      reactionKey,
+                      action: "add",
+                    });
+                    break;
+                  }
+                }
               }}
             />
 

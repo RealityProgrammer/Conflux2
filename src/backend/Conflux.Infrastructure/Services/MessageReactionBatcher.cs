@@ -13,22 +13,22 @@ internal sealed class MessageReactionBatcher(
     IUnitOfWork unitOfWork
 ) : IMessageReactionBatcher {
     private const int MaxUniqueReactions = 25;
-    
+
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
-    
+
     public async Task<Result> RecordDelta(
-        Guid userId, 
-        Guid messageId, 
-        string reactionKey, 
+        Guid userId,
+        Guid messageId,
+        string reactionKey,
         ReactionAction action,
         CancellationToken cancellationToken = default
     ) {
         // TODO: Validate that message is a reaction-able type.
-        
+
         string messageIdString = messageId.ToString();
         RedisKey reactionDeltaKey = GetDeltaKey(messageId);
         RedisValue field = $"{userId}:{reactionKey}";
-        
+
         // if the action is Add, verify the unique reaction limit
         if (action == ReactionAction.Add) {
             // check if active reactions key exists, else load from database and fill in the cache
@@ -37,24 +37,37 @@ internal sealed class MessageReactionBatcher(
             if (!await _database.KeyExistsAsync(activeReactionsKey)) {
                 await WarmUpActiveReactions(messageId, activeReactionsKey, cancellationToken);
             }
-            
+
             // check for max unique reaction count, check if the reaction is "active", else append to the unique list.
             bool isAlreadyActive = await _database.SetContainsAsync(activeReactionsKey, reactionKey);
 
             if (!isAlreadyActive) {
                 long uniqueCount = await _database.SetLengthAsync(activeReactionsKey);
-                
+
                 if (uniqueCount >= MaxUniqueReactions) {
                     return Result.Failure(Errors.MessageUniqueReactionLimit(MaxUniqueReactions));
                 }
-                
+
                 await _database.SetAddAsync(activeReactionsKey, reactionKey);
                 await _database.KeyExpireAsync(activeReactionsKey, TimeSpan.FromDays(7));
             }
         }
-        
+
         // it is hard to implement same thing to remove where it checks for emoji with 0 user, but it might have to
         // manually resolve delta and scan fields and stuffs so just leave it to the database sync method
+
+        // check if there is an existing delta
+        RedisValue existingDelta = await _database.HashGetAsync(reactionDeltaKey, field);
+
+        if (existingDelta.HasValue) {
+            ReactionAction previousAction = (ReactionAction)(int)existingDelta;
+
+            // since there is only 2 actions, so if user do any action different from the existing delta, remove it
+            if (previousAction != action) {
+                await _database.HashDeleteAsync(reactionDeltaKey, field);
+                return Result.Success();
+            }
+        }
 
         await _database.HashSetAsync(reactionDeltaKey, field, (int)action);
         await _database.SetAddAsync("message:reactions_dirty", messageIdString);
@@ -67,7 +80,7 @@ internal sealed class MessageReactionBatcher(
             .GetMessageReactionKeys(messageId, cancellationToken);
 
         if (reactionKeys is { Count: > 0 }) {
-            await _database.SetAddAsync(activeReactionsKey, [..reactionKeys.Select(k => (RedisValue)k)]);
+            await _database.SetAddAsync(activeReactionsKey, [.. reactionKeys.Select(k => (RedisValue)k)]);
             await _database.KeyExpireAsync(activeReactionsKey, TimeSpan.FromDays(7));
         }
     }
@@ -75,31 +88,35 @@ internal sealed class MessageReactionBatcher(
     public async Task Synchronize(CancellationToken cancellationToken = default) {
         RedisValue[] dirtyMessageIds = await _database.SetMembersAsync("message:reactions_dirty");
         if (dirtyMessageIds.Length == 0) return;
-        
+
         foreach (var messageIdValue in dirtyMessageIds) {
             if (!Guid.TryParse(messageIdValue.ToString(), out var messageId)) continue;
-        
+
             RedisKey reactionDeltaKey = GetDeltaKey(messageId);
-            
+
             // get all deltas
             HashEntry[] entries = await _database.HashGetAllAsync(reactionDeltaKey);
             if (entries.Length == 0) continue;
-            
+
             MessageReaction? messageReaction = await messageReactionRepository
                 .AsQueryable()
                 .FirstOrDefaultAsync(r => r.MessageId == messageId, cancellationToken);
-        
+
+            // blame the MarkAsModified beneath
+            bool hasToAdd = false;
+
             if (messageReaction == null) {
                 messageReaction = new() { MessageId = messageId, Reactions = [] };
                 messageReactionRepository.Add(messageReaction);
+                hasToAdd = true;
             }
 
             var reactionSpanLookup = messageReaction.Reactions.GetAlternateLookup<ReadOnlySpan<char>>();
-            
+
             // apply delta differences
             foreach (var entry in entries) {
                 // entry is $"{userId}:{reactionKey}", extract the userId and reactionKey
-                
+
                 string fieldName = entry.Name!;
                 int colonIndex = fieldName.IndexOf(':');
 
@@ -114,7 +131,7 @@ internal sealed class MessageReactionBatcher(
                 ReactionAction action = (ReactionAction)(int)entry.Value;
 
                 ReadOnlySpan<char> reactionKey = fieldName.AsSpan(colonIndex + 1);
-                
+
                 // ensure list exists for the reactionKey
                 if (!reactionSpanLookup.TryGetValue(reactionKey, out var reaction)) {
                     reactionSpanLookup[reactionKey] = reaction = [];
@@ -124,13 +141,13 @@ internal sealed class MessageReactionBatcher(
                     case ReactionAction.Add:
                         reaction.Add(userId);
                         break;
-                    
+
                     case ReactionAction.Remove:
                         reaction.Remove(userId);
                         break;
                 }
             }
-            
+
             // cleanup empty reaction to prevent bloat
             List<RedisValue> keysToRemove = [];
             foreach (var key in messageReaction.Reactions.Keys.ToList()) {
@@ -141,20 +158,20 @@ internal sealed class MessageReactionBatcher(
             }
 
             if (keysToRemove.Count > 0) {
-                await _database.SetRemoveAsync(GetActiveReactionsKey(messageId), [..keysToRemove]);
+                await _database.SetRemoveAsync(GetActiveReactionsKey(messageId), [.. keysToRemove]);
             }
-            
-            unitOfWork.MarkAsModified(messageReaction);
+
+            if (!hasToAdd) {
+                unitOfWork.MarkAsModified(messageReaction);
+            }
         }
 
         // save database
-        int changes = await unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        GC.KeepAlive(changes);
-        
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
         // cleanup delta and dirty markers
         await _database.SetRemoveAsync("message:reactions_dirty", dirtyMessageIds);
-        
+
         await _database.KeyDeleteAsync(
             [..dirtyMessageIds.Select(id => GetDeltaKey(Guid.Parse((string)id!))),
         ]);
