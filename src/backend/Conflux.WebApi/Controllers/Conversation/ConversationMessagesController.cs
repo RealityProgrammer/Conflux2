@@ -228,7 +228,7 @@ public sealed class ConversationMessagesController(
     }
 
     [HttpPost("{messageId:guid}/reactions")]
-    public async Task<ActionResult<ApiResponse>> ReactMessage(
+    public async Task<ActionResult<ApiResponse>> SetReaction(
         Guid messageId, 
         [FromBody] ReactionRequest request
     ) {

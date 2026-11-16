@@ -546,14 +546,37 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.MessageReaction", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EmojiId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("IconSource")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("MessageId")
                         .HasColumnType("uuid");
 
-                    b.Property<Dictionary<string, HashSet<Guid>>>("Reactions")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
+                    b.Property<string>("UnicodeValue")
+                        .HasColumnType("text");
 
-                    b.HasKey("MessageId");
+                    b.PrimitiveCollection<HashSet<Guid>>("UserIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmojiId");
+
+                    b.HasIndex("MessageId", "EmojiId")
+                        .IsUnique()
+                        .HasFilter("\"EmojiId\" IS NOT NULL");
+
+                    b.HasIndex("MessageId", "UnicodeValue")
+                        .IsUnique()
+                        .HasFilter("\"UnicodeValue\" IS NOT NULL");
 
                     b.ToTable("MessageReactions");
                 });
@@ -1044,11 +1067,18 @@ namespace Conflux.Infrastructure.Migrations
 
             modelBuilder.Entity("Conflux.Domain.Entities.MessageReaction", b =>
                 {
+                    b.HasOne("Conflux.Domain.Entities.Emoji", "Emoji")
+                        .WithMany()
+                        .HasForeignKey("EmojiId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Conflux.Domain.Entities.Message", "Message")
-                        .WithOne("Reaction")
-                        .HasForeignKey("Conflux.Domain.Entities.MessageReaction", "MessageId")
+                        .WithMany("Reaction")
+                        .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Emoji");
 
                     b.Navigation("Message");
                 });

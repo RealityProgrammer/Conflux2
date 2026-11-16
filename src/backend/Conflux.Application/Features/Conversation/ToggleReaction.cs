@@ -1,6 +1,7 @@
 using Conflux.Application.Enums;
 using Conflux.Application.Services;
 using Conflux.Domain;
+using Conflux.Domain.Enums;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
@@ -8,7 +9,7 @@ namespace Conflux.Application.Features.Conversation;
 
 public sealed record ToggleReactionCommand(
     Guid MessageId, 
-    string ReactionKey, 
+    string ReactionKey,
     ReactionAction Action
 ) : ICommand<Result>;
 
@@ -17,7 +18,28 @@ public sealed class ToggleReactionCommandValidator : AbstractValidator<ToggleRea
     public ToggleReactionCommandValidator() {
         RuleFor(c => c.Action)
             .IsInEnum()
-            .WithMessage("Reaction action is undefined.");
+            .WithMessage("{PropertyName} is undefined.");
+        
+        RuleFor(c => c.ReactionKey)
+            .Must(k => k.StartsWith("unicode.") || k.StartsWith("emoji."))
+            .WithMessage("{PropertyName} must starts with \"unicode.\" or \"server.\" prefix.");
+
+        RuleFor(c => c.ReactionKey)
+            .Must(k => Guid.TryParse(k.AsSpan("emoji.".Length), out _))
+            .When(c => c.ReactionKey.StartsWith("emoji."))
+            .WithMessage("{PropertyName} must be a GUID.");
+
+        RuleFor(c => c.ReactionKey)
+            .Must(k => {
+                int runeCount = 0;
+                foreach (var _ in k.AsSpan("unicode.".Length).EnumerateRunes()) {
+                    runeCount++;
+                }
+
+                return runeCount <= 7;
+            })
+            .When(c => c.ReactionKey.StartsWith("unicode."))
+            .WithMessage("{PropertyName} must have value of an unicode string with less than or equals to 7 runes.");
     }
 }
 
@@ -31,39 +53,7 @@ public sealed partial class ToggleReactionHandler(
         }
 
         string reactionKey = command.ReactionKey;
-        
-        if (!IsValidReactionKeyFormat(reactionKey)) {
-            return Errors.ValidationErrorsOccurred(new() {
-                [nameof(ToggleReactionCommand.ReactionKey)] = [
-                    "Invalid reaction key.",
-                ],
-            });
-        }
 
         return await reactionBatcher.RecordDelta(userId, command.MessageId, reactionKey, command.Action, cancellationToken);
-    }
-
-    private static bool IsValidReactionKeyFormat(string key) {
-        if (string.IsNullOrWhiteSpace(key)) return false;
-        if (key.Contains(':')) return false;
-        
-        if (key.StartsWith("emoji.")) {
-            return Guid.TryParse(key.AsSpan("emoji.".Length), out _);
-        }
-
-        if (key.StartsWith("unicode.")) {
-            // TODO: accurately validate emoji character values instead of just rune length.
-            // https://unicode.org/Public/18.0.0/emoji/emoji-test.txt
-            ReadOnlySpan<char> valueSpan = key.AsSpan("unicode.".Length);
-
-            int runeCount = 0;
-            foreach (var _ in valueSpan.EnumerateRunes()) {
-                runeCount++;
-            }
-
-            return runeCount <= 7;
-        }
-        
-        return false;
     }
 }

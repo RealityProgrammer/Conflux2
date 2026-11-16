@@ -6,6 +6,7 @@ import usePositionBasedRandom from "../../hooks/usePositionBasedRandom.ts";
 import {distribute} from "../../utils/random.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import {Avatar} from "../Avatar.tsx";
+import {Emoji} from "../Emoji.tsx";
 
 interface ReplyProps {
   messageId: string;
@@ -131,6 +132,50 @@ function BodySkeleton() {
 
       <div className="h-4.5 rounded-full animate-pulse bg-white/10" style={{width: `${lastRowWidthPercentage}%`}}></div>
     </div>
+  )
+}
+
+interface ReactionsProps {
+  reactionsCountsEntries: [string, number][];
+  userReactionKeys: string[];
+}
+
+function Reactions({
+  reactionsCountsEntries,
+  userReactionKeys
+}: ReactionsProps) {
+  return (
+    <>
+      {reactionsCountsEntries.length > 0 && (
+        <ul className="flex flex-row flex-wrap gap-1 text-sm">
+          {reactionsCountsEntries.map(([reactionKey, reactionCount]) => {
+            const serverEmojiId = reactionKey.startsWith("emoji.") ? reactionKey.slice("emoji.".length) : undefined;
+            const hasReacted = userReactionKeys && userReactionKeys.includes(reactionKey);
+
+            return (
+              <li
+                key={reactionKey}
+                className={`flex-none flex flex-row gap-1 items-center border-2 ${hasReacted ? "border-gray-500 bg-white/10" : "border-gray-600 bg-black/8"} hover-highlight rounded-md px-1.5 py-0.75 select-none cursor-pointer`}
+                onClick={() => {
+
+                }}
+              >
+                {serverEmojiId ? (
+                  <Emoji.Root
+                    emojiId={serverEmojiId}
+                    className="size-6"
+                  />
+                ) : (
+                  <div className="size-6 bg-red-500"></div>
+                )}
+
+                {reactionCount}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
   )
 }
 

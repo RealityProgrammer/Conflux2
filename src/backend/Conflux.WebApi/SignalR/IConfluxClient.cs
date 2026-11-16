@@ -66,4 +66,7 @@ public interface IConfluxClient {
     Task ReceiveCallOffer(string userIdentifier, string sdp);
     Task ReceiveCallAnswer(string userIdentifier, string sdp);
     Task ReceiveIceCandidate(string userIdentifier, string sdp);
+    
+    Task ReactionsCountsSynchronized(ReactionsCountsSynchronizedEvent data, CancellationToken cancellationToken = default);
+    Task ReceiveMessageReactionsConfirmation(ReceiveMessageReactionsConfirmationEvent data, CancellationToken cancellationToken = default);
 }

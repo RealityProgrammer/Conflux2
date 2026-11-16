@@ -17,5 +17,5 @@ public sealed record TimelineMessageDto(
     Guid ConversationId,
     bool IsPinned,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string, int>? ReactionsCounts,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? UserReactions
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? UserReactionKeys
 );

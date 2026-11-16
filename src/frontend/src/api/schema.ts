@@ -3627,7 +3627,7 @@ export interface components {
             reactionsCounts: null | {
                 [key: string]: number;
             };
-            userReactions: null | string[];
+            userReactionKeys: null | string[];
         };
         TimelineMessagePage: {
             messages: components["schemas"]["TimelineMessageDto"][];

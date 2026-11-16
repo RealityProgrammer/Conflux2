@@ -1071,13 +1071,6 @@ input InvitationFilterInput {
   version: UnsignedIntOperationFilterInput
 }
 
-input KeyValuePairOfStringAndHashSetOfGuidFilterInput {
-  and: [KeyValuePairOfStringAndHashSetOfGuidFilterInput!]
-  or: [KeyValuePairOfStringAndHashSetOfGuidFilterInput!]
-  key: StringOperationFilterInput
-  value: ListUuidOperationFilterInput
-}
-
 input KickCommunityServerMemberInput {
   serverId: UUID!
   memberId: UUID!
@@ -1147,13 +1140,6 @@ input ListFilterInputTypeOfInvitationFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
-input ListFilterInputTypeOfKeyValuePairOfStringAndHashSetOfGuidFilterInput {
-  all: KeyValuePairOfStringAndHashSetOfGuidFilterInput @cost(weight: "10")
-  none: KeyValuePairOfStringAndHashSetOfGuidFilterInput @cost(weight: "10")
-  some: KeyValuePairOfStringAndHashSetOfGuidFilterInput @cost(weight: "10")
-  any: Boolean @cost(weight: "10")
-}
-
 input ListFilterInputTypeOfMediaItemFilterInput {
   all: MediaItemFilterInput @cost(weight: "10")
   none: MediaItemFilterInput @cost(weight: "10")
@@ -1165,6 +1151,13 @@ input ListFilterInputTypeOfMessageFilterInput {
   all: MessageFilterInput @cost(weight: "10")
   none: MessageFilterInput @cost(weight: "10")
   some: MessageFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfMessageReactionFilterInput {
+  all: MessageReactionFilterInput @cost(weight: "10")
+  none: MessageReactionFilterInput @cost(weight: "10")
+  some: MessageReactionFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 
@@ -1249,7 +1242,7 @@ input MessageFilterInput {
   replyToId: UuidOperationFilterInput
   replyTo: MessageFilterInput
   replies: ListFilterInputTypeOfMessageFilterInput
-  reaction: MessageReactionFilterInput
+  reaction: ListFilterInputTypeOfMessageReactionFilterInput
   pinnedAt: DateTimeOperationFilterInput
 }
 
@@ -1261,9 +1254,14 @@ input MessagePropertiesFilterInput {
 input MessageReactionFilterInput {
   and: [MessageReactionFilterInput!]
   or: [MessageReactionFilterInput!]
+  id: UuidOperationFilterInput
   messageId: UuidOperationFilterInput
   message: MessageFilterInput
-  reactions: ListFilterInputTypeOfKeyValuePairOfStringAndHashSetOfGuidFilterInput
+  iconSource: ReactionIconSourceTypeOperationFilterInput
+  unicodeValue: StringOperationFilterInput
+  emojiId: UuidOperationFilterInput
+  emoji: EmojiFilterInput
+  userIds: ListUuidOperationFilterInput
 }
 
 input MessageTypeOperationFilterInput {
@@ -1311,6 +1309,13 @@ input PresenceStatusOperationFilterInput {
   neq: PresenceStatus @cost(weight: "10")
   in: [PresenceStatus!] @cost(weight: "10")
   nin: [PresenceStatus!] @cost(weight: "10")
+}
+
+input ReactionIconSourceTypeOperationFilterInput {
+  eq: ReactionIconSourceType @cost(weight: "10")
+  neq: ReactionIconSourceType @cost(weight: "10")
+  in: [ReactionIconSourceType!] @cost(weight: "10")
+  nin: [ReactionIconSourceType!] @cost(weight: "10")
 }
 
 input RolePermissionFilterInput {
@@ -1548,6 +1553,11 @@ enum PresenceStatus {
   Idle
   DoNotDisturb
   Invisible
+}
+
+enum ReactionIconSourceType {
+  Unicode
+  Emoji
 }
 
 enum ServerModerationAction {

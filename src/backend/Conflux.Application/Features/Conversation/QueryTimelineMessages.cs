@@ -23,7 +23,7 @@ public sealed class QueryTimelineMessagesValidator : AbstractValidator<QueryTime
             .Null()
             .When(x => x.LoadDirection == MessageLoadDirection.Latest)
             .WithMessage("Querying latest messages must not have cursor message id.");
-        
+
         RuleFor(x => x.CursorMessageId)
             .NotNull()
             .When(x => x.LoadDirection != MessageLoadDirection.Latest)
@@ -37,19 +37,20 @@ public sealed class ReadTimelineMessagesHandler(
     IConversationAuthorizeService conversationAuthorizeService
 ) : IQueryHandler<QueryTimelineMessages, Result<TimelineMessagePage>> {
     public async ValueTask<Result<TimelineMessagePage>> Handle(
-        QueryTimelineMessages query, 
+        QueryTimelineMessages query,
         CancellationToken cancellationToken
     ) {
         if (currentUserService.UserId is not { } userId) {
             return Errors.InvalidIdentifier();
         }
-        
+
         if (!await conversationAuthorizeService.CanReadMessage(userId, query.ConversationId, cancellationToken)) {
             return Errors.Forbidden("User is not allowed to read message in this conversation.");
         }
-        
+
         return await messageRepository.GetTimelineMessages(
-            query.ConversationId, 
+            userId,
+            query.ConversationId,
             query.LoadDirection,
             query.CursorMessageId,
             query.Count,

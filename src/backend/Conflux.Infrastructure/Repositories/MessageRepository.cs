@@ -11,7 +11,8 @@ using System.Text.Json;
 namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class MessageRepository(
-    ApplicationDbContext dbContext
+    ApplicationDbContext dbContext,
+    ILogger<MessageRepository> logger
 ) : IMessageRepository {
     public IQueryable<Message> AsQueryable() {
         return dbContext.Messages;
@@ -22,6 +23,7 @@ internal sealed class MessageRepository(
     }
 
     public async Task<Result<TimelineMessagePage>> GetTimelineMessages(
+        Guid userId,
         Guid conversationId,
         MessageLoadDirection loadDirection,
         Guid? cursorMessageId,
@@ -109,6 +111,7 @@ internal sealed class MessageRepository(
             }
 
             default:
+                logger.LogWarning("Undefined load direction, fallback to Latest.");
                 goto case MessageLoadDirection.Latest;
         }
 
@@ -116,16 +119,32 @@ internal sealed class MessageRepository(
         List<Guid> messageIds = [.. messages.Select(m => m.Id)];
 
         var reactionsSummaries = await dbContext.Database.SqlQuery<RawMessageReactionsSummary>(
-            $$"""
-            SELECT
-                "MessageId",
-                coalesce(
-                    (SELECT jsonb_object_agg(key, jsonb_array_length(value)) FROM jsonb_each("Reactions")),
-                    '{}'::jsonb
-                ) AS "ReactionsCountsJson"
-            FROM "MessageReactions"
-            WHERE "MessageId" = ANY({{messageIds}})
-            """
+             $$"""
+             SELECT
+                 m."MessageId",
+                 COALESCE(
+                     jsonb_object_agg(
+                         CASE 
+                             WHEN r."IconSource" = 0 THEN 'unicode.' || r."UnicodeValue"
+                             WHEN r."IconSource" = 1 THEN 'emoji.' || r."EmojiId"::text
+                         END,
+                         cardinality(r."UserIds")
+                     ) FILTER (WHERE r."MessageId" IS NOT NULL),
+                     '{}'::jsonb
+                 )::text AS "ReactionsCountsJson",
+                 COALESCE(
+                     jsonb_agg(
+                         CASE 
+                             WHEN r."IconSource" = 0 THEN 'unicode.' || r."UnicodeValue"
+                             WHEN r."IconSource" = 1 THEN 'emoji.' || r."EmojiId"::text
+                         END
+                     ) FILTER (WHERE r."MessageId" IS NOT NULL AND {{userId}} = ANY(r."UserIds")),
+                     '[]'::jsonb
+                 )::text AS "UserReactionsJson"
+             FROM unnest({{messageIds}}::uuid[]) AS m("MessageId")
+             JOIN "MessageReactions" r ON r."MessageId" = m."MessageId"
+             GROUP BY m."MessageId";
+             """
         ).ToDictionaryAsync(s => s.MessageId, s => s, cancellationToken);
 
         // snitch the messages and reactions together.
@@ -136,6 +155,7 @@ internal sealed class MessageRepository(
 
             messages[i] = message with {
                 ReactionsCounts = reactionsSummary.ReactionsCounts,
+                UserReactionKeys = reactionsSummary.UserReactionKeys,
             };
         }
 
@@ -145,9 +165,13 @@ internal sealed class MessageRepository(
     private sealed class RawMessageReactionsSummary {
         public Guid MessageId { get; set; }
         public string ReactionsCountsJson { get; set; } = "{}";
+        public string UserReactionsJson { get; set; } = "[]";
 
         [NotMapped]
         public Dictionary<string, int> ReactionsCounts => JsonSerializer.Deserialize<Dictionary<string, int>>(ReactionsCountsJson) ?? [];
+
+        [NotMapped]
+        public string[] UserReactionKeys => JsonSerializer.Deserialize<string[]>(UserReactionsJson) ?? [];
     }
 
     private static Expression<Func<Message, TimelineMessageDto>> SelectTimelineMessages {

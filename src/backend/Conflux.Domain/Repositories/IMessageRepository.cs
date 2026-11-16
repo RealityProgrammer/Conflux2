@@ -6,7 +6,8 @@ namespace Conflux.Domain.Repositories;
 
 public interface IMessageRepository : IRepository<Message> {
     Task<Result<TimelineMessagePage>> GetTimelineMessages(
-        Guid conversationId, 
+        Guid userId,
+        Guid conversationId,
         MessageLoadDirection loadDirection,
         Guid? cursorMessageId,
         int limit,
@@ -16,11 +17,11 @@ public interface IMessageRepository : IRepository<Message> {
     Task<Result<MessageSearchPage>> Search(
         Guid conversationId,
         string? content,
-		IReadOnlyCollection<Guid>? senderIds,
-		DateTimeOffset? startDateTime,
-		DateTimeOffset? endDateTime,
-		MessagePinFilter pin,
-		Guid? beforeCursor,
+        IReadOnlyCollection<Guid>? senderIds,
+        DateTimeOffset? startDateTime,
+        DateTimeOffset? endDateTime,
+        MessagePinFilter pin,
+        Guid? beforeCursor,
         int limit,
         CancellationToken cancellationToken = default
     );

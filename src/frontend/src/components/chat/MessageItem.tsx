@@ -1,6 +1,5 @@
 import { TimelineItem } from "./TimelineItem.ts";
 import type {
-  ServiceResponse,
   TimelineMessageDto,
 } from "../../api/types.ts";
 import { type ReactNode, useState } from "react";
@@ -22,7 +21,6 @@ import usePinMessageMutation, { type UsePinMessageVariables } from "../../hooks/
 import { MessageRow } from "./MessageRow.tsx";
 import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
-import { $createEmojiNode } from "./nodes/EmojiDecoratorNode.tsx";
 import { EmojiPanel } from "./EmojiPanel.tsx";
 import { Emoji } from "../Emoji.tsx";
 import useMessageReactionMutation from "../../hooks/useMessageReactionMutation.ts";
@@ -114,7 +112,7 @@ function MessageView({
   };
 
   const reactionMutation = useMessageReactionMutation({
-    onError: (error: Error) => {
+    onError: (_error: Error) => {
       toast.error("Failed to react to message.");
     },
   });
@@ -163,11 +161,15 @@ function MessageView({
                   <ul className="flex flex-row flex-wrap gap-1 text-sm">
                     {reactionsCountsEntries.map(([reactionKey, reactionCount]) => {
                       const serverEmojiId = reactionKey.startsWith("emoji.") ? reactionKey.slice("emoji.".length) : undefined;
+                      const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
 
                       return (
                         <li
                           key={reactionKey}
-                          className="flex-none flex flex-row gap-1 items-center border-2 border-gray-600 hover-highlight bg-black/8 rounded-md px-1.5 py-0.75 select-none cursor-pointer"
+                          className={`flex-none flex flex-row gap-1 items-center border-2 ${hasReacted ? "border-gray-500 bg-white/10" : "border-gray-600 bg-black/8"} hover-highlight rounded-md px-1.5 py-0.75 select-none cursor-pointer`}
+                          onClick={() => {
+
+                          }}
                         >
                           {serverEmojiId ? (
                             <Emoji.Root
@@ -204,7 +206,7 @@ function MessageView({
                 switch (emoji.type) {
                   case "server-emoji": {
                     const reactionKey: `emoji.${string}` = `emoji.${emoji.id}`;
-                    if (message.userReactions && message.userReactions.includes(reactionKey)) break;
+                    if (message.userReactionKeys && message.userReactionKeys.includes(reactionKey)) break;
 
                     reactionMutation.mutate({
                       conversationId,
@@ -217,7 +219,7 @@ function MessageView({
 
                   case "unicode-emoji": {
                     const reactionKey: `unicode.${string}` = `unicode.${emoji.value}`;
-                    if (message.userReactions && message.userReactions.includes(reactionKey)) break;
+                    if (message.userReactionKeys && message.userReactionKeys.includes(reactionKey)) break;
 
                     reactionMutation.mutate({
                       conversationId,
