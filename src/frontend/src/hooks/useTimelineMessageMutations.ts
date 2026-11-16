@@ -7,6 +7,7 @@ interface UseTimelineMessagesResult {
   updateMessage: (messageId: string, properties: EditedMessageDto) => void;
   updatePinStatus: (messageId: string, isPinned: boolean) => void;
   deleteMessage: (messageId: string) => void;
+  updateReactionsCounts: (messageId: string, reactionsCounts: Record<string, number>) => void;
 }
 
 export default function useTimelineMessageMutations(
@@ -143,10 +144,42 @@ export default function useTimelineMessageMutations(
     });
   };
 
+  const updateReactionsCounts = (messageId: string, reactionsCounts: Record<string, number>) => {
+    modifyMessageData((oldData: InfiniteData<TimelineMessagePage | null | undefined>): InfiniteData<TimelineMessagePage | null | undefined> => {
+      let hasMessage = false;
+      for (const page of oldData.pages) {
+        if (!page) continue;
+
+        hasMessage = page.messages.some(m => m.id === messageId);
+        if (hasMessage) break;
+      }
+
+      if (!hasMessage) return oldData;
+
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+          if (!page || !page.messages.some(m => m.id === messageId)) {
+            return page;
+          }
+
+          return {
+            ...page,
+            messages: page.messages.map(m => m.id === messageId ?
+              {...m, reactionsCounts,} :
+              m
+            ),
+          };
+        }),
+      };
+    });
+  };
+
   return {
     appendMessage,
     updateMessage,
     updatePinStatus,
     deleteMessage,
+    updateReactionsCounts,
   };
 }

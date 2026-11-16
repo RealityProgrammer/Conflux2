@@ -739,13 +739,6 @@ export enum InvitationStatus {
   Valid = 'Valid'
 }
 
-export type KeyValuePairOfStringAndHashSetOfGuidFilterInput = {
-  and?: InputMaybe<Array<KeyValuePairOfStringAndHashSetOfGuidFilterInput>>;
-  key?: InputMaybe<StringOperationFilterInput>;
-  or?: InputMaybe<Array<KeyValuePairOfStringAndHashSetOfGuidFilterInput>>;
-  value?: InputMaybe<ListUuidOperationFilterInput>;
-};
-
 export type KickCommunityServerMemberInput = {
   memberId: Scalars['UUID']['input'];
   reason?: InputMaybe<Scalars['String']['input']>;
@@ -820,13 +813,6 @@ export type ListFilterInputTypeOfInvitationFilterInput = {
   some?: InputMaybe<InvitationFilterInput>;
 };
 
-export type ListFilterInputTypeOfKeyValuePairOfStringAndHashSetOfGuidFilterInput = {
-  all?: InputMaybe<KeyValuePairOfStringAndHashSetOfGuidFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
-  none?: InputMaybe<KeyValuePairOfStringAndHashSetOfGuidFilterInput>;
-  some?: InputMaybe<KeyValuePairOfStringAndHashSetOfGuidFilterInput>;
-};
-
 export type ListFilterInputTypeOfMediaItemFilterInput = {
   all?: InputMaybe<MediaItemFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -839,6 +825,13 @@ export type ListFilterInputTypeOfMessageFilterInput = {
   any?: InputMaybe<Scalars['Boolean']['input']>;
   none?: InputMaybe<MessageFilterInput>;
   some?: InputMaybe<MessageFilterInput>;
+};
+
+export type ListFilterInputTypeOfMessageReactionFilterInput = {
+  all?: InputMaybe<MessageReactionFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<MessageReactionFilterInput>;
+  some?: InputMaybe<MessageReactionFilterInput>;
 };
 
 export type ListFilterInputTypeOfNotificationFilterInput = {
@@ -957,7 +950,7 @@ export type MessageFilterInput = {
   or?: InputMaybe<Array<MessageFilterInput>>;
   pinnedAt?: InputMaybe<DateTimeOperationFilterInput>;
   properties?: InputMaybe<MessagePropertiesFilterInput>;
-  reaction?: InputMaybe<MessageReactionFilterInput>;
+  reaction?: InputMaybe<ListFilterInputTypeOfMessageReactionFilterInput>;
   replies?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
   replyTo?: InputMaybe<MessageFilterInput>;
   replyToId?: InputMaybe<UuidOperationFilterInput>;
@@ -975,10 +968,15 @@ export type MessagePropertiesFilterInput = {
 
 export type MessageReactionFilterInput = {
   and?: InputMaybe<Array<MessageReactionFilterInput>>;
+  emoji?: InputMaybe<EmojiFilterInput>;
+  emojiId?: InputMaybe<UuidOperationFilterInput>;
+  iconSource?: InputMaybe<ReactionIconSourceTypeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
   message?: InputMaybe<MessageFilterInput>;
   messageId?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<MessageReactionFilterInput>>;
-  reactions?: InputMaybe<ListFilterInputTypeOfKeyValuePairOfStringAndHashSetOfGuidFilterInput>;
+  unicodeValue?: InputMaybe<StringOperationFilterInput>;
+  userIds?: InputMaybe<ListUuidOperationFilterInput>;
 };
 
 export enum MessageType {
@@ -1341,6 +1339,18 @@ export type QueryServerModerationLogsArgs = {
 
 export type QueryUserArgs = {
   id: Scalars['UUID']['input'];
+};
+
+export enum ReactionIconSourceType {
+  Emoji = 'Emoji',
+  Unicode = 'Unicode'
+}
+
+export type ReactionIconSourceTypeOperationFilterInput = {
+  eq?: InputMaybe<ReactionIconSourceType>;
+  in?: InputMaybe<Array<ReactionIconSourceType>>;
+  neq?: InputMaybe<ReactionIconSourceType>;
+  nin?: InputMaybe<Array<ReactionIconSourceType>>;
 };
 
 export type RolePermission = {

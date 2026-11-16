@@ -9,7 +9,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   MessageDeletedEvent,
   MessageEditedEvent,
-  MessageReceivedEvent
+  MessageReceivedEvent, ReactionsCountsSynchronizedEvent
 } from "../../api/events.ts";
 import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
@@ -92,7 +92,7 @@ export function ChatView({
     })();
   }, [conversationId]);
 
-  const { appendMessage, updateMessage, updatePinStatus, deleteMessage } = useTimelineMessageMutations(conversationId);
+  const { appendMessage, updateMessage, updatePinStatus, deleteMessage, updateReactionsCounts } = useTimelineMessageMutations(conversationId);
 
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
@@ -379,6 +379,14 @@ export function ChatView({
 
   useSignalREvent("MessageDeleted", async (event: MessageDeletedEvent) => {
     deleteMessage(event.messageId);
+  });
+
+  useSignalREvent("ReactionsCountsSynchronized", async (event: ReactionsCountsSynchronizedEvent) => {
+    if (event.conversationId !== conversationId) return;
+
+    for (const message of event.messages) {
+      updateReactionsCounts(message.messageId, message.reactionsCounts);
+    }
   });
 
   const timelineContext: TimelineContext = {
