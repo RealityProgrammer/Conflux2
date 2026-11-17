@@ -1,6 +1,6 @@
-import {useQuery, type UseQueryOptions} from "@tanstack/react-query";
-import {conversationService} from "../api/conversationService.ts";
-import type {DmConversationDetails} from "../api/types.ts";
+import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { conversationService } from "../api/conversationService.ts";
+import type { DmConversationDetails } from "../api/types.ts";
 
 export default function useQueryDmConversationDetails(
   peerId: string,
@@ -15,4 +15,7 @@ export default function useQueryDmConversationDetails(
   });
 }
 
-useQueryDmConversationDetails.getKey = (peerId: string) => ["useQueryDmConversationDetails", peerId];
+useQueryDmConversationDetails.getKey = (peerId: string) => [
+  "useQueryDmConversationDetails",
+  peerId,
+];

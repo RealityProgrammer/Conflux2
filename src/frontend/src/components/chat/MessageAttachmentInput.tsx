@@ -1,4 +1,4 @@
-import type {ChangeEventHandler, RefObject} from "react";
+import type { ChangeEventHandler, RefObject } from "react";
 
 interface MessageAttachmentInputProps {
   ref?: RefObject<HTMLInputElement | null>;
@@ -19,5 +19,5 @@ export default function MessageAttachmentInput({
       hidden
       onChange={onChange}
     />
-  )
+  );
 }

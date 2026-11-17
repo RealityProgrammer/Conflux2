@@ -1,13 +1,13 @@
-import {apiClient} from "./client.ts";
-import type {BackendResponse, ServiceResponse,} from "./types.ts";
-import {type AxiosError, type AxiosResponse} from "axios";
-import {handleAxiosError} from "./errorHandling.ts";
+import { apiClient } from "./client.ts";
+import type { BackendResponse, ServiceResponse } from "./types.ts";
+import { type AxiosError, type AxiosResponse } from "axios";
+import { handleAxiosError } from "./errorHandling.ts";
 
 export const csrfService = {
   requestCsrfToken: async (): Promise<ServiceResponse> => {
     try {
       const response: AxiosResponse<BackendResponse> =
-        await apiClient.get<BackendResponse>('/csrf/token');
+        await apiClient.get<BackendResponse>("/csrf/token");
 
       return {
         success: true,

@@ -1,5 +1,5 @@
-import {useUserIdentityStore} from "../../store/useUserIdentityStore.ts";
-import {useEffect} from "react";
+import { useUserIdentityStore } from "../../store/useUserIdentityStore.ts";
+import { useEffect } from "react";
 
 interface MentionProps {
   userId: string;
@@ -22,14 +22,15 @@ export default function Mention({
     }
   }, [userId, userId, fetchUser]);
 
-  const displayName = user?.displayName || fallbackDisplayName || `user_${userId}`;
+  const displayName =
+    user?.displayName || fallbackDisplayName || `user_${userId}`;
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-400/25 hover:bg-blue-400/60 font-semibold text-blue-100 cursor-default text-sm rounded-md ${className}`}
+      className={`inline-flex cursor-default items-center gap-1 rounded-md bg-blue-400/25 px-1.5 py-0.5 text-sm font-semibold text-blue-100 hover:bg-blue-400/60 ${className}`}
       {...props}
     >
       @{displayName}
     </span>
-  )
+  );
 }

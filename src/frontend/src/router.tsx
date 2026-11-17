@@ -1,9 +1,14 @@
-import { Suspense, lazy } from 'react';
-import {createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect} from "react-router";
-import {authService} from "./api/authService.ts";
-import {queryClient} from "./main.tsx";
-import {useGetUserIdentityProfileQuery} from "./graphql/queries.ts";
-import {HttpStatusCode} from "axios";
+import { Suspense, lazy } from "react";
+import {
+  createBrowserRouter,
+  type LoaderFunctionArgs,
+  Outlet,
+  redirect,
+} from "react-router";
+import { authService } from "./api/authService.ts";
+import { queryClient } from "./main.tsx";
+import { useGetUserIdentityProfileQuery } from "./graphql/queries.ts";
+import { HttpStatusCode } from "axios";
 import type {
   ServiceResponse,
   UserAuthorizationInfo,
@@ -12,38 +17,52 @@ import type {
 import CallOverlay from "./components/call/CallOverlay.tsx";
 import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
-import {Tooltip} from "radix-ui";
-import {Slide, ToastContainer} from "react-toastify";
+import { Tooltip } from "radix-ui";
+import { Slide, ToastContainer } from "react-toastify";
 import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 
-import HomePage from "./pages/HomePage"
-const AuthenticatePage = lazy(() => import("./pages/auth/AuthenticatePage.tsx"));
-const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
+import HomePage from "./pages/HomePage";
+const AuthenticatePage = lazy(
+  () => import("./pages/auth/AuthenticatePage.tsx"),
+);
+const ResetPasswordPage = lazy(
+  () => import("./pages/auth/ResetPasswordPage.tsx"),
+);
 import AuthProvider from "./contexts/AuthContext.tsx";
 import ConversationPage from "./pages/ConversationPage.tsx";
-import type {ConversationSource} from "./contexts/ConversationContext.tsx";
+import type { ConversationSource } from "./contexts/ConversationContext.tsx";
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
-const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
-const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
+const ConfirmEmailPage = lazy(
+  () => import("./pages/auth/ConfirmEmailPage.tsx"),
+);
+const ProfileSetupPage = lazy(
+  () => import("./pages/miscs/ProfileSetupPage.tsx"),
+);
 const LobbyLayout = lazy(() => import("./pages/lobby/LobbyLayout.tsx"));
 const LobbyPage = lazy(() => import("./pages/lobby/LobbyPage.tsx"));
-const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
+const SystemAnnouncementPage = lazy(
+  () => import("./pages/lobby/SystemAnnouncementPage.tsx"),
+);
 const FriendsPage = lazy(() => import("./pages/lobby/FriendsPage.tsx"));
 const SignalRProvider = lazy(() => import("./contexts/SignalRContext.tsx"));
 const UserLobbyLayout = lazy(() => import("./pages/lobby/UserLobbyLayout.tsx"));
 const ServerLayout = lazy(() => import("./pages/server/ServerLayout.tsx"));
 const PresenceProvider = lazy(() => import("./contexts/PresenceContext.tsx"));
-const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout.tsx"));
+const SettingsLayout = lazy(
+  () => import("./pages/settings/SettingsLayout.tsx"),
+);
 const ProfilePage = lazy(() => import("./pages/settings/ProfilePage.tsx"));
 const AccountPage = lazy(() => import("./pages/settings/AccountPage.tsx"));
-const DeleteAccountPage = lazy(() => import("./pages/settings/DeleteAccountPage.tsx"));
+const DeleteAccountPage = lazy(
+  () => import("./pages/settings/DeleteAccountPage.tsx"),
+);
 const ImpendingDoomPage = lazy(() => import("./pages/ImpendingDoomPage.tsx"));
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
 export type RootLoaderProps = {
   authorizationInfo: UserAuthorizationInfo;
   userProfile: UserIdentityProfileDto;
-}
+};
 
 export type DirectMessagePageLoaderProps = {
   conversationId: string;
@@ -55,25 +74,32 @@ export const router = createBrowserRouter([
     id: "root",
     path: "/",
     loader: async (): Promise<RootLoaderProps | null> => {
-      const authResponse: ServiceResponse<UserAuthorizationInfo> = await authService.getAuthorizationInfo();
+      const authResponse: ServiceResponse<UserAuthorizationInfo> =
+        await authService.getAuthorizationInfo();
       if (!authResponse.success || !authResponse.data) return null;
-      
+
       const authInfo: UserAuthorizationInfo = authResponse.data;
       let profileInfo: UserIdentityProfileDto | null = null;
 
       if (authInfo?.id) {
         try {
-          profileInfo = (await queryClient.query({
-            queryKey: useGetUserIdentityProfileQuery.getKey({ id: authInfo.id }),
-            queryFn: useGetUserIdentityProfileQuery.fetcher({ id: authInfo.id }),
-            staleTime: "static",
-          })).user;
+          profileInfo = (
+            await queryClient.query({
+              queryKey: useGetUserIdentityProfileQuery.getKey({
+                id: authInfo.id,
+              }),
+              queryFn: useGetUserIdentityProfileQuery.fetcher({
+                id: authInfo.id,
+              }),
+              staleTime: "static",
+            })
+          ).user;
         } catch (error) {
           console.error("failed to load user profile: ", error);
         }
       }
 
-      return { authorizationInfo: authInfo,  userProfile: profileInfo! };
+      return { authorizationInfo: authInfo, userProfile: profileInfo! };
     },
     element: (
       <>
@@ -86,10 +112,10 @@ export const router = createBrowserRouter([
           theme="dark"
           transition={Slide}
         />
-        
+
         <Tooltip.Provider delayDuration={500}>
           <AuthProvider>
-            <Outlet/>
+            <Outlet />
           </AuthProvider>
         </Tooltip.Provider>
       </>
@@ -97,7 +123,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage/>,
+        element: <HomePage />,
       },
       {
         path: "auth",
@@ -105,40 +131,43 @@ export const router = createBrowserRouter([
           {
             index: true,
             loader: requireGuest,
-            element: <AuthenticatePage/>,
+            element: <AuthenticatePage />,
           },
           {
             path: "verify-email",
             loader: requireUnverified,
-            element:
-              <Suspense fallback={<SuspenseFallback/>}>
-                <VerifyEmailPage/>
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <VerifyEmailPage />
               </Suspense>
+            ),
           },
           {
             path: "confirm-email",
-            element:
-              <Suspense fallback={<SuspenseFallback/>}>
-                <ConfirmEmailPage/>
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <ConfirmEmailPage />
               </Suspense>
+            ),
           },
           {
             path: "reset-password",
             loader: requireGuest,
-            element: <ResetPasswordPage/>
-          }
-        ]
+            element: <ResetPasswordPage />,
+          },
+        ],
       },
       {
         path: "setup-profile",
         loader: async () => {
           const auth = await requireAuth();
-          return auth.isProfileSetup ? redirect('/') : null;
+          return auth.isProfileSetup ? redirect("/") : null;
         },
-        element:
-          <Suspense fallback={<SuspenseFallback/>}>
-            <ProfileSetupPage/>
+        element: (
+          <Suspense fallback={<SuspenseFallback />}>
+            <ProfileSetupPage />
           </Suspense>
+        ),
       },
       {
         path: "impending-doom",
@@ -146,127 +175,141 @@ export const router = createBrowserRouter([
           const auth = await requireAuth();
           return auth.isPendingDelete ? null : redirect("/lobby");
         },
-        element: <ImpendingDoomPage/>
+        element: <ImpendingDoomPage />,
       },
       {
         loader: appGuard,
         // only rerun the loader if the path has truly changed
-        shouldRevalidate: ({currentUrl, nextUrl}) => {
+        shouldRevalidate: ({ currentUrl, nextUrl }) => {
           return currentUrl.pathname !== nextUrl.pathname;
         },
         element: (
           <>
             <SignalRProvider>
               <PresenceProvider>
-                <Outlet/>
-                <CallOverlay/>
+                <Outlet />
+                <CallOverlay />
               </PresenceProvider>
             </SignalRProvider>
 
-            <MediaPreviewGallery/>
+            <MediaPreviewGallery />
 
-            <ExternalLinkDialog/>
+            <ExternalLinkDialog />
           </>
         ),
         children: [
           {
             path: "lobby",
-            element: <LobbyLayout/>,
+            element: <LobbyLayout />,
             children: [
               {
                 index: true,
-                element: <LobbyPage/>,
+                element: <LobbyPage />,
               },
               {
                 path: "me",
-                element: <UserLobbyLayout/>,
+                element: <UserLobbyLayout />,
                 children: [
                   {
                     path: "announcements",
-                    element:
-                      <Suspense fallback={<SuspenseFallback/>}>
-                        <SystemAnnouncementPage/>
+                    element: (
+                      <Suspense fallback={<SuspenseFallback />}>
+                        <SystemAnnouncementPage />
                       </Suspense>
+                    ),
                   },
                   {
                     path: "friends",
-                    element: <FriendsPage/>
+                    element: <FriendsPage />,
                   },
                   {
                     id: "dm",
                     path: "dm/:peerId?",
-                    element: <ConversationPage/>,
-                    loader: ({params}: LoaderFunctionArgs): ConversationSource => {
+                    element: <ConversationPage />,
+                    loader: ({
+                      params,
+                    }: LoaderFunctionArgs): ConversationSource => {
                       const peerId: string | undefined = params.peerId;
-                      return peerId ? { type: "dm", peerId: peerId } : { type: "invalid" };
-                    }
+                      return peerId
+                        ? { type: "dm", peerId: peerId }
+                        : { type: "invalid" };
+                    },
                   },
-                ]
+                ],
               },
               {
                 id: "server",
                 path: "servers/:serverId?",
-                element: <ServerLayout/>,
+                element: <ServerLayout />,
                 children: [
                   {
                     id: "channel",
                     path: "channels/:channelId?",
-                    element: <ConversationPage/>,
-                    loader: ({params}: LoaderFunctionArgs): ConversationSource => {
+                    element: <ConversationPage />,
+                    loader: ({
+                      params,
+                    }: LoaderFunctionArgs): ConversationSource => {
                       const serverId: string | undefined = params.serverId;
                       const channelId: string | undefined = params.channelId;
 
-                      return serverId && channelId ? { type: "server-channel", serverId, channelId } : { type: "invalid" };
+                      return serverId && channelId
+                        ? { type: "server-channel", serverId, channelId }
+                        : { type: "invalid" };
                     },
-                  }
-                ]
-              }
-            ]
+                  },
+                ],
+              },
+            ],
           },
           {
             path: "invite/:inviteId",
-            element:
-              <Suspense fallback={<SuspenseFallback/>}>
-                <InvitePage/>
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <InvitePage />
               </Suspense>
+            ),
           },
           {
             path: "settings",
-            element: <SettingsLayout/>,
+            element: <SettingsLayout />,
             children: [
               {
                 index: true,
                 element: (
-                  <div className="flex flex-row justify-center items-center size-full">
-                    <span className="select-none text-gray-400">Pick what you want to configure on the left sidebar</span>
+                  <div className="flex size-full flex-row items-center justify-center">
+                    <span className="text-gray-400 select-none">
+                      Pick what you want to configure on the left sidebar
+                    </span>
                   </div>
                 ),
               },
               {
                 path: "profile",
-                element: <ProfilePage/>
+                element: <ProfilePage />,
               },
               {
                 path: "account",
-                element: <AccountPage/>
+                element: <AccountPage />,
               },
               {
                 path: "delete-account",
-                element: <DeleteAccountPage/>
+                element: <DeleteAccountPage />,
               },
               {
                 path: "*",
                 element: (
-                  <div className="flex flex-row justify-center items-center size-full">
-                    <span className="select-none text-gray-400">You are not supposed to be here...</span>
+                  <div className="flex size-full flex-row items-center justify-center">
+                    <span className="text-gray-400 select-none">
+                      You are not supposed to be here...
+                    </span>
                   </div>
                 ),
-              }
+              },
             ],
-          }
-        ]
+          },
+        ],
       },
-    ]
+    ],
   },
 ]);
 
@@ -275,7 +318,7 @@ async function requireAuth(): Promise<UserAuthorizationInfo> {
   const response = await authService.getAuthorizationInfo();
 
   if (response.statusCode !== HttpStatusCode.Ok || !response.data) {
-    throw redirect('/auth#login');
+    throw redirect("/auth#login");
   }
 
   return response.data;
@@ -286,7 +329,7 @@ async function requireGuest(): Promise<null> {
   const response = await authService.getAuthorizationInfo();
 
   if (response.statusCode === HttpStatusCode.Ok && response.data) {
-    throw redirect('/lobby/me');
+    throw redirect("/lobby/me");
   }
 
   return null;
@@ -296,13 +339,13 @@ async function appGuard(): Promise<UserAuthorizationInfo> {
   const authInfo = await requireAuth();
 
   if (!authInfo.isVerified) {
-    throw redirect('/auth/verify-email');
+    throw redirect("/auth/verify-email");
   }
 
   if (!authInfo.isProfileSetup) {
-    throw redirect('/setup-profile');
+    throw redirect("/setup-profile");
   }
-  
+
   if (authInfo.isPendingDelete) {
     throw redirect("/impending-doom");
   }
@@ -314,7 +357,7 @@ async function requireUnverified() {
   const response = await requireAuth();
 
   if (response.isVerified) {
-    throw redirect('/');
+    throw redirect("/");
   }
 
   return null;

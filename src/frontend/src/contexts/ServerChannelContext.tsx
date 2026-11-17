@@ -1,11 +1,13 @@
-import {createContext, type ReactNode, useContext} from "react";
-import type {ChannelDetailsDto} from "../api/types.ts";
+import { createContext, type ReactNode, useContext } from "react";
+import type { ChannelDetailsDto } from "../api/types.ts";
 
 interface ServerChannelContextType {
   channelDetails: ChannelDetailsDto;
 }
 
-const ServerChannelContext = createContext<ServerChannelContextType | null>(null);
+const ServerChannelContext = createContext<ServerChannelContextType | null>(
+  null,
+);
 
 interface CommunityServerChannelContextProviderProps {
   children: ReactNode;
@@ -17,17 +19,22 @@ export default function ServerChannelContextProvider({
   channelDetails,
 }: CommunityServerChannelContextProviderProps) {
   return (
-    <ServerChannelContext.Provider value={{
-      channelDetails
-    }}>
+    <ServerChannelContext.Provider
+      value={{
+        channelDetails,
+      }}
+    >
       {children}
     </ServerChannelContext.Provider>
-  )
+  );
 }
 
 export function useServerChannelContext(): ServerChannelContextType {
   const context = useContext(ServerChannelContext);
-  if (!context) throw new Error("useCommunityServerChannelContext must be used within an CommunityServerChannelContextProvider.");
+  if (!context)
+    throw new Error(
+      "useCommunityServerChannelContext must be used within an CommunityServerChannelContextProvider.",
+    );
 
   return context;
 }

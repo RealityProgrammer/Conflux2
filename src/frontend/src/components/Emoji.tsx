@@ -1,6 +1,6 @@
-import {emojiService} from "../api/emojiService.ts";
-import {useState, type HTMLAttributes} from "react";
-import {BsExclamationTriangle} from "react-icons/bs"
+import { emojiService } from "../api/emojiService.ts";
+import { useState, type HTMLAttributes } from "react";
+import { BsExclamationTriangle } from "react-icons/bs";
 
 interface EmojiProps extends HTMLAttributes<HTMLDivElement> {
   emojiId: string;
@@ -12,7 +12,9 @@ function Root({ emojiId, shortCode, className, ...props }: EmojiProps) {
 
   if (hasError) {
     return (
-      <BsExclamationTriangle className={`inline-block fill-red-500 animate-pulse ${className}`}/>
+      <BsExclamationTriangle
+        className={`inline-block animate-pulse fill-red-500 ${className}`}
+      />
     );
   }
 
@@ -26,16 +28,16 @@ function Root({ emojiId, shortCode, className, ...props }: EmojiProps) {
         onError={() => setHasError(true)}
       />
     </span>
-  )
+  );
 }
 
 function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`bg-white/10 animate-pulse ${className}`} {...props}></div>
-  )
+    <div className={`animate-pulse bg-white/10 ${className}`} {...props}></div>
+  );
 }
 
 export const Emoji = {
   Root,
   Skeleton,
-}
+};

@@ -1,5 +1,5 @@
-import {type QueryKey, useMutation} from "@tanstack/react-query";
-import {friendService} from "../api/friendService.ts";
+import { type QueryKey, useMutation } from "@tanstack/react-query";
+import { friendService } from "../api/friendService.ts";
 
 export interface UseUnfriendMutationVariables {
   friendId: string;

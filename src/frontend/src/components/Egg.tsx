@@ -1,60 +1,57 @@
-import {useEffect, useRef, useState} from "react";
-import {animate, type JSAnimation, stagger} from "animejs";
+import { useEffect, useRef, useState } from "react";
+import { animate, type JSAnimation, stagger } from "animejs";
 
 export type DialogueStep =
-  {
-    type: "text";
-    text: string
-  } | {
-  type: "choice";
-  options: {
-    label: string;
-    action?: () => void; // Trigger state changes (e.g., getting the egg)
-    next: DialogueStep[]; // The dialogue path if this option is chosen
-  }[];
-};
+  | {
+      type: "text";
+      text: string;
+    }
+  | {
+      type: "choice";
+      options: {
+        label: string;
+        action?: () => void; // Trigger state changes (e.g., getting the egg)
+        next: DialogueStep[]; // The dialogue path if this option is chosen
+      }[];
+    };
 
 function getDialogue(
   entity: "tree" | "man",
   flags: Record<string, boolean>,
-  setFlag: (key: string, value: boolean
-  ) => void): DialogueStep[] {
+  setFlag: (key: string, value: boolean) => void,
+): DialogueStep[] {
   const hasEgg: boolean = flags["hasEgg"];
   const ignoredEgg: boolean = flags["ignoredEgg"];
 
   switch (entity) {
     case "tree":
       if (hasEgg) {
-        return [{type: "text", text: "(It is a tree.)"}];
+        return [{ type: "text", text: "(It is a tree.)" }];
       } else {
-        return [{type: "text", text: "(He is behind the tree.)"}];
+        return [{ type: "text", text: "(He is behind the tree.)" }];
       }
 
     case "man":
       if (hasEgg || ignoredEgg) {
-        return [{type: "text", text: "(Well, there is not a man here.)"}];
+        return [{ type: "text", text: "(Well, there is not a man here.)" }];
       } else {
         return [
-          {type: "text", text: "(Well, there is a man here.)"},
-          {type: "text", text: "(He offered you something.)"},
+          { type: "text", text: "(Well, there is a man here.)" },
+          { type: "text", text: "(He offered you something.)" },
           {
             type: "choice",
             options: [
               {
                 label: "Yes",
                 action: () => setFlag("hasEgg", true),
-                next: [
-                  {type: "text", text: "(You received an Egg.)"},
-                ],
+                next: [{ type: "text", text: "(You received an Egg.)" }],
               },
               {
                 label: "No",
                 action: () => setFlag("ignoredEgg", true),
-                next: [
-                  {type: "text", text: "(Then he needn't be here.)"}
-                ]
+                next: [{ type: "text", text: "(Then he needn't be here.)" }],
               },
-            ]
+            ],
           },
         ];
       }
@@ -63,8 +60,12 @@ function getDialogue(
 
 export default function Egg() {
   // game state
-  const [flags, setFlags] = useState<Record<string, boolean>>({hasEgg: false, ignoredEgg: false});
-  const setFlag = (key: string, value: boolean) => setFlags((prev: Record<string, boolean>) => ({...prev, [key]: value}));
+  const [flags, setFlags] = useState<Record<string, boolean>>({
+    hasEgg: false,
+    ignoredEgg: false,
+  });
+  const setFlag = (key: string, value: boolean) =>
+    setFlags((prev: Record<string, boolean>) => ({ ...prev, [key]: value }));
 
   // Dialogue State
   const [showTextbox, setShowTextbox] = useState(false);
@@ -94,19 +95,26 @@ export default function Egg() {
   const currentStep = currentDialog[lineIndex];
 
   useEffect(() => {
-    if (!showTextbox || !currentStep || currentStep.type !== "text" || !textRef.current) return;
+    if (
+      !showTextbox ||
+      !currentStep ||
+      currentStep.type !== "text" ||
+      !textRef.current
+    )
+      return;
 
     setIsTyping(true);
 
-    const chars = textRef.current.querySelectorAll<HTMLSpanElement>('.dialog-char');
-    chars.forEach(c => (c.style.opacity = '0'));
+    const chars =
+      textRef.current.querySelectorAll<HTMLSpanElement>(".dialog-char");
+    chars.forEach((c) => (c.style.opacity = "0"));
 
     // Anime.js v4 syntax
     animationRef.current = animate(chars, {
       opacity: [0, 1],
       duration: 10,
       delay: stagger(35),
-      onComplete: () => setIsTyping(false)
+      onComplete: () => setIsTyping(false),
     });
 
     return () => {
@@ -121,8 +129,9 @@ export default function Egg() {
 
     if (isTyping) {
       if (animationRef.current) animationRef.current.pause();
-      const chars = textRef.current.querySelectorAll<HTMLSpanElement>('.dialog-char');
-      chars.forEach(c => (c.style.opacity = '1'));
+      const chars =
+        textRef.current.querySelectorAll<HTMLSpanElement>(".dialog-char");
+      chars.forEach((c) => (c.style.opacity = "1"));
       setIsTyping(false);
     } else {
       if (lineIndex < currentDialog.length - 1) {
@@ -141,74 +150,72 @@ export default function Egg() {
     setLineIndex(0);
   };
 
-  const characters = currentStep?.type === "text" ?
-    currentStep.text.split('').map((char, i) => (
-      <span key={i} className="dialog-char opacity-0">
-                {char}
-            </span>
-    )) : null;
+  const characters =
+    currentStep?.type === "text"
+      ? currentStep.text.split("").map((char, i) => (
+          <span key={i} className="dialog-char opacity-0">
+            {char}
+          </span>
+        ))
+      : null;
 
   return (
-    <div
-      className="min-h-0 flex-1 w-full mx-auto overflow-hidden flex items-center justify-center bg-black @container-size select-none">
+    <div className="@container-size mx-auto flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-black select-none">
       <div
-        className="aspect-4/3 w-[min(100cqw,calc(100cqh*4/3))] h-[min(100cqh,calc(100cqw*3/4))] flex items-center justify-center relative"
+        className="relative flex aspect-4/3 h-[min(100cqh,calc(100cqw*3/4))] w-[min(100cqw,calc(100cqh*4/3))] items-center justify-center"
         onClick={handleTextboxContinuation}
       >
-        <audio
-          src="https://soundcloud.com/deltarune-unused-ost/man-ogg?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"/>
+        <audio src="https://soundcloud.com/deltarune-unused-ost/man-ogg?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing" />
 
         <img
           src="/secrets/tree.gif"
           className="w-1/3"
-          style={{imageRendering: "pixelated"}}
+          style={{ imageRendering: "pixelated" }}
           alt="Secret tree"
         />
 
         {!showTextbox && (
           <>
             <button
-              className="absolute top-[35%] left-1/2 -translate-x-1/2 w-16 h-24 bg-transparent border-2 border-transparent cursor-pointer"
+              className="absolute top-[35%] left-1/2 h-24 w-16 -translate-x-1/2 cursor-pointer border-2 border-transparent bg-transparent"
               aria-label="???"
               onClick={handleInteractMan}
-            >
-            </button>
+            ></button>
 
             <button
-              className="absolute bottom-[30%] left-1/2 -translate-x-1/2 w-24 h-12 bg-transparent border-2 border-transparent cursor-pointer"
+              className="absolute bottom-[30%] left-1/2 h-12 w-24 -translate-x-1/2 cursor-pointer border-2 border-transparent bg-transparent"
               aria-label="tree"
               onClick={handleInteractTree}
-            >
-            </button>
+            ></button>
           </>
         )}
 
         {/* textbox */}
         {showTextbox && currentStep && (
           <div
-            className="absolute bottom-[4%] w-[92%] h-[30%] px-10 py-8 text-white font-[DeterminationMono] text-[42px]"
+            className="absolute bottom-[4%] h-[30%] w-[92%] px-10 py-8 font-[DeterminationMono] text-[42px] text-white"
             style={{
               borderImage: "url('/secrets/textbox.png') 14 fill / 28px",
               imageRendering: "pixelated",
             }}
           >
             {currentStep.type === "text" ? (
-              <div className="flex gap-x-4 h-full">
-                                <span
-                                  className="leading-[1.2]"
-                                  style={{
-                                    WebkitFontSmoothing: "none",
-                                    MozOsxFontSmoothing: "grayscale",
-                                    fontSmooth: "never",
-                                    imageRendering: "pixelated",
-                                  }}
-                                >
-                                    *
-                                </span>
+              <div className="flex h-full gap-x-4">
+                <span
+                  className="leading-[1.2]"
+                  style={{
+                    WebkitFontSmoothing: "none",
+                    MozOsxFontSmoothing: "grayscale",
+                    fontSmooth: "never",
+                    imageRendering: "pixelated",
+                  }}
+                >
+                  *
+                </span>
 
                 <p
                   ref={textRef}
-                  className="whitespace-pre-wrap leading-[1.2]"
+                  className="leading-[1.2] whitespace-pre-wrap"
                   style={{
                     WebkitFontSmoothing: "none",
                     MozOsxFontSmoothing: "grayscale",
@@ -220,26 +227,23 @@ export default function Egg() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-row gap-y-4 h-full items-center justify-between">
+              <div className="flex h-full flex-row items-center justify-between gap-y-4">
                 {currentStep.options.map((opt, idx) => (
                   <div
                     key={idx}
-                    className="group flex flex-row items-center gap-x-4 cursor-pointer group"
+                    className="group group flex cursor-pointer flex-row items-center gap-x-4"
                     onClick={() => handleChoiceSelect(opt)}
                   >
                     <img
                       src="/secrets/soul.png"
-                      className="size-6 invisible group-hover:visible"
+                      className="invisible size-6 group-hover:visible"
                     />
 
-                    <span className="leading-[1.3]">
-                                            {opt.label}
-                                        </span>
+                    <span className="leading-[1.3]">{opt.label}</span>
                   </div>
                 ))}
               </div>
             )}
-
           </div>
         )}
       </div>

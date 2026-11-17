@@ -1,20 +1,22 @@
-import {Dialog} from "radix-ui";
+import { Dialog } from "radix-ui";
 import IconButton from "./IconButton.tsx";
-import {BsChevronLeft, BsChevronRight} from "react-icons/bs";
-import {type MouseEvent, useRef, useState} from "react";
-import {useEventListener} from "usehooks-ts";
-import {FaDownload, FaXmark} from "react-icons/fa6";
-import {useMediaGalleryStore} from "../store/useMediaGalleryStore.ts";
+import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { type MouseEvent, useRef, useState } from "react";
+import { useEventListener } from "usehooks-ts";
+import { FaDownload, FaXmark } from "react-icons/fa6";
+import { useMediaGalleryStore } from "../store/useMediaGalleryStore.ts";
 
 const IMAGE_SCALE_FACTOR = 3;
 
 export default function MediaPreviewGallery() {
-  const elements = useMediaGalleryStore(state => state.elements);
-  const viewIndex = useMediaGalleryStore(state => state.viewIndex);
-  const options = useMediaGalleryStore(state => state.options);
-  const clearElements = useMediaGalleryStore(state => state.clearElements);
-  const previousElement = useMediaGalleryStore(state => state.previousElement);
-  const nextElement = useMediaGalleryStore(state => state.nextElement);
+  const elements = useMediaGalleryStore((state) => state.elements);
+  const viewIndex = useMediaGalleryStore((state) => state.viewIndex);
+  const options = useMediaGalleryStore((state) => state.options);
+  const clearElements = useMediaGalleryStore((state) => state.clearElements);
+  const previousElement = useMediaGalleryStore(
+    (state) => state.previousElement,
+  );
+  const nextElement = useMediaGalleryStore((state) => state.nextElement);
 
   const handlePrev = (e?: MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
@@ -51,17 +53,20 @@ export default function MediaPreviewGallery() {
   });
 
   return (
-    <Dialog.Root open={!!elements && elements.length > 0} onOpenChange={(open) => {
-      if (!open) {
-        clearElements();
-      }
-    }}>
+    <Dialog.Root
+      open={!!elements && elements.length > 0}
+      onOpenChange={(open) => {
+        if (!open) {
+          clearElements();
+        }
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Title className="sr-only">Media preview gallery</Dialog.Title>
 
-        <Dialog.Overlay className="backdrop-overlay"/>
+        <Dialog.Overlay className="backdrop-overlay" />
 
-        <div className="z-100 absolute top-4 right-4 flex flex-row items-center gap-4 p-2 bg-gray-600 rounded-lg">
+        <div className="absolute top-4 right-4 z-100 flex flex-row items-center gap-4 rounded-lg bg-gray-600 p-2">
           {options?.downloadUrlProvider && (
             <IconButton
               theme="default"
@@ -69,16 +74,13 @@ export default function MediaPreviewGallery() {
               onClick={handleDownload}
               isLoading={false}
             >
-              <FaDownload className="size-7"/>
+              <FaDownload className="size-7" />
             </IconButton>
           )}
 
           <Dialog.Close asChild>
-            <IconButton
-              theme="default"
-              className="cursor-pointer"
-            >
-              <FaXmark className="size-6"/>
+            <IconButton theme="default" className="cursor-pointer">
+              <FaXmark className="size-6" />
             </IconButton>
           </Dialog.Close>
         </div>
@@ -88,27 +90,25 @@ export default function MediaPreviewGallery() {
             <IconButton
               isLoading={false}
               theme="default"
-              className="fixed left-4 top-1/2 -translate-y-1/2 z-60 rounded-full p-2 bg-gray-700 border-2 border-gray-600"
+              className="fixed top-1/2 left-4 z-60 -translate-y-1/2 rounded-full border-2 border-gray-600 bg-gray-700 p-2"
               onClick={handlePrev}
             >
-              <BsChevronLeft className="size-7"/>
+              <BsChevronLeft className="size-7" />
             </IconButton>
 
             <IconButton
               isLoading={false}
               theme="default"
-              className="fixed right-4 top-1/2 -translate-y-1/2 z-60 rounded-full p-2 bg-gray-700 border-2 border-gray-600"
+              className="fixed top-1/2 right-4 z-60 -translate-y-1/2 rounded-full border-2 border-gray-600 bg-gray-700 p-2"
               onClick={handleNext}
             >
-              <BsChevronRight className="size-7"/>
+              <BsChevronRight className="size-7" />
             </IconButton>
           </>
         )}
 
-        <Dialog.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-full gap-4 shadow-lg duration-200 outline-none overflow-auto flex flex-row justify-center items-center scrollbar-none"
-        >
-          <AttachmentContent/>
+        <Dialog.Content className="fixed top-1/2 left-1/2 flex size-full -translate-x-1/2 -translate-y-1/2 scrollbar-none flex-row items-center justify-center gap-4 overflow-auto shadow-lg duration-200 outline-none">
+          <AttachmentContent />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -116,50 +116,60 @@ export default function MediaPreviewGallery() {
 }
 
 function AttachmentContent() {
-  const attachment = useMediaGalleryStore(state => state.elements?.[state.viewIndex]);
+  const attachment = useMediaGalleryStore(
+    (state) => state.elements?.[state.viewIndex],
+  );
 
   if (!attachment) return null;
 
   return (
     <>
       {attachment.mediaType.startsWith("image") && !!attachment.src ? (
-        <ZoomableImage key={attachment.id} src={attachment.src}/>
+        <ZoomableImage key={attachment.id} src={attachment.src} />
       ) : attachment.mediaType.startsWith("video") ? (
         <video
           src={attachment.src}
           controls
           autoPlay={false}
-          className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain"
+          className="h-auto max-h-[95vh] w-auto max-w-[95vw] object-contain"
         />
       ) : attachment.mediaType.startsWith("audio") ? (
         <audio
           src={attachment.src}
           controls
           autoPlay={false}
-          className="w-full h-auto max-w-[95vw]"
+          className="h-auto w-full max-w-[95vw]"
         />
       ) : (
-        <div
-          className="bg-gray-800 p-10 rounded-lg flex flex-col items-center justify-center text-gray-300 w-[50vw] max-w-md h-[30vh]">
-          <span className="text-lg font-medium text-center w-full px-4">Preview is not available for this type of attachment</span>
+        <div className="flex h-[30vh] w-[50vw] max-w-md flex-col items-center justify-center rounded-lg bg-gray-800 p-10 text-gray-300">
+          <span className="w-full px-4 text-center text-lg font-medium">
+            Preview is not available for this type of attachment
+          </span>
         </div>
       )}
     </>
-  )
+  );
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function clampImagePanning(valueX: number, valueY: number, image: HTMLImageElement) {
-  const maxPanX = Math.max(0, (image.offsetWidth * IMAGE_SCALE_FACTOR - window.innerWidth) / 2);
-  const maxPanY = Math.max(0, (image.offsetHeight * IMAGE_SCALE_FACTOR - window.innerHeight) / 2);
+function clampImagePanning(
+  valueX: number,
+  valueY: number,
+  image: HTMLImageElement,
+) {
+  const maxPanX = Math.max(
+    0,
+    (image.offsetWidth * IMAGE_SCALE_FACTOR - window.innerWidth) / 2,
+  );
+  const maxPanY = Math.max(
+    0,
+    (image.offsetHeight * IMAGE_SCALE_FACTOR - window.innerHeight) / 2,
+  );
 
-  return [
-    clamp(valueX, -maxPanX, maxPanX),
-    clamp(valueY, -maxPanY, maxPanY),
-  ];
+  return [clamp(valueX, -maxPanX, maxPanX), clamp(valueY, -maxPanY, maxPanY)];
 }
 
 function ZoomableImage({ src }: { src: string }) {
@@ -203,7 +213,7 @@ function ZoomableImage({ src }: { src: string }) {
 
       setIsZoomed(true);
     }
-  }
+  };
 
   const handleMouseDown = (e: MouseEvent<HTMLImageElement>) => {
     if (e.button === 1 && isZoomed) {
@@ -256,7 +266,7 @@ function ZoomableImage({ src }: { src: string }) {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      className={`object-contain max-w-[95vw] max-h-[95vh] w-auto h-auto ${
+      className={`h-auto max-h-[95vh] w-auto max-w-[95vw] object-contain ${
         isDragging
           ? "cursor-grabbing"
           : isZoomed
@@ -265,7 +275,9 @@ function ZoomableImage({ src }: { src: string }) {
       }`}
       style={{
         transform: `translate(${pan.x}px, ${pan.y}px) scale(${isZoomed ? IMAGE_SCALE_FACTOR : 1})`,
-        transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.2, 0, 0, 1)",
+        transition: isDragging
+          ? "none"
+          : "transform 0.3s cubic-bezier(0.2, 0, 0, 1)",
       }}
     />
   );

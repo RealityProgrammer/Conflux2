@@ -1,7 +1,7 @@
-import {create} from "zustand";
+import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type {DateTimeRange} from "../components/DateTimeRangePicker.tsx";
-import type {MessagePinFilter} from "../api/schema.ts";
+import type { DateTimeRange } from "../components/DateTimeRangePicker.tsx";
+import type { MessagePinFilter } from "../api/schema.ts";
 
 export interface SearchRequest {
   content: string;
@@ -19,19 +19,27 @@ function areSenderIdsEqual(arr1: string[], arr2: string[]): boolean {
   return sorted1.every((val, index) => val === sorted2[index]);
 }
 
-function areTimeRangesEqual(range1?: DateTimeRange, range2?: DateTimeRange): boolean {
+function areTimeRangesEqual(
+  range1?: DateTimeRange,
+  range2?: DateTimeRange,
+): boolean {
   if (range1 === range2) return true;
   if (!range1 || !range2) return false;
 
-  const start1 = range1.start instanceof Date ? range1.start.getTime() : range1.start;
-  const start2 = range2.start instanceof Date ? range2.start.getTime() : range2.start;
+  const start1 =
+    range1.start instanceof Date ? range1.start.getTime() : range1.start;
+  const start2 =
+    range2.start instanceof Date ? range2.start.getTime() : range2.start;
   const end1 = range1.end instanceof Date ? range1.end.getTime() : range1.end;
   const end2 = range2.end instanceof Date ? range2.end.getTime() : range2.end;
 
   return start1 === start2 && end1 === end2;
 }
 
-export function areSearchRequestsEqual(req1: SearchRequest, req2: SearchRequest): boolean {
+export function areSearchRequestsEqual(
+  req1: SearchRequest,
+  req2: SearchRequest,
+): boolean {
   if (req1 === req2) return true;
 
   if (req1.content !== req2.content) return false;
@@ -45,47 +53,56 @@ export function areSearchRequestsEqual(req1: SearchRequest, req2: SearchRequest)
 interface HistoryConversationSearchStoreType {
   searchHistory: Record<string, SearchRequest[]>;
 
-  registerSearchRequest: (conversationId: string, request: SearchRequest) => void;
+  registerSearchRequest: (
+    conversationId: string,
+    request: SearchRequest,
+  ) => void;
   removeSearchRequest: (conversationId: string, index: number) => void;
 }
 
-export const useHistoryConversationSearchStore = create<HistoryConversationSearchStoreType>(
-  // @ts-ignore
-  persist(
-    (set, get) => ({
-      searchHistory: {},
+export const useHistoryConversationSearchStore =
+  create<HistoryConversationSearchStoreType>(
+    // @ts-ignore
+    persist(
+      (set, get) => ({
+        searchHistory: {},
 
-      registerSearchRequest: (conversationId: string, request: SearchRequest) => {
-        const currentHistory = get().searchHistory[conversationId] ?? [];
-        const filteredHistory = currentHistory.filter((item) => !areSearchRequestsEqual(item, request));
-        const newHistory = [request, ...filteredHistory].slice(0, 5);
+        registerSearchRequest: (
+          conversationId: string,
+          request: SearchRequest,
+        ) => {
+          const currentHistory = get().searchHistory[conversationId] ?? [];
+          const filteredHistory = currentHistory.filter(
+            (item) => !areSearchRequestsEqual(item, request),
+          );
+          const newHistory = [request, ...filteredHistory].slice(0, 5);
 
-        set({
-          searchHistory: {
-            ...get().searchHistory,
-            [conversationId]: newHistory,
-          },
-        });
-      },
+          set({
+            searchHistory: {
+              ...get().searchHistory,
+              [conversationId]: newHistory,
+            },
+          });
+        },
 
-      removeSearchRequest: (conversationId: string, index: number) => {
-        const currentHistory = get().searchHistory[conversationId] ?? [];
-        const filtered = currentHistory.filter((_value, i) => i !== index);
+        removeSearchRequest: (conversationId: string, index: number) => {
+          const currentHistory = get().searchHistory[conversationId] ?? [];
+          const filtered = currentHistory.filter((_value, i) => i !== index);
 
-        set({
-          searchHistory: {
-            ...get().searchHistory,
-            [conversationId]: filtered,
-          },
-        });
-      }
-    }),
-    {
-      name: "conversation-search-history",
-      partialize: (state) => ({
-        searchHistory: state.searchHistory
+          set({
+            searchHistory: {
+              ...get().searchHistory,
+              [conversationId]: filtered,
+            },
+          });
+        },
       }),
-      version: 1,
-    }
-  )
-);
+      {
+        name: "conversation-search-history",
+        partialize: (state) => ({
+          searchHistory: state.searchHistory,
+        }),
+        version: 1,
+      },
+    ),
+  );

@@ -1,5 +1,5 @@
-import {Popover} from "radix-ui";
-import type {ReactNode} from "react";
+import { Popover } from "radix-ui";
+import type { ReactNode } from "react";
 
 export interface ErrorPopoverProps {
   open: boolean;
@@ -16,16 +16,14 @@ export default function ErrorPopover({
 }: ErrorPopoverProps) {
   return (
     <Popover.Root open={open}>
-      <Popover.Anchor asChild>
-        {children}
-      </Popover.Anchor>
+      <Popover.Anchor asChild>{children}</Popover.Anchor>
 
       <Popover.Portal>
         <Popover.Content
           side="top"
           sideOffset={sideOffset}
           align="center"
-          className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white shadow-lg animate-in fade-in zoom-in duration-200"
+          className="animate-in fade-in zoom-in rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white shadow-lg duration-200"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           {content}
@@ -34,5 +32,5 @@ export default function ErrorPopover({
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
-  )
+  );
 }

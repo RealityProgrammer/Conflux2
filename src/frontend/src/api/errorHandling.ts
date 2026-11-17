@@ -1,7 +1,9 @@
-import type {AxiosError, HttpStatusCode} from "axios";
-import type {BackendResponse, ServiceResponse} from "./types.ts";
+import type { AxiosError, HttpStatusCode } from "axios";
+import type { BackendResponse, ServiceResponse } from "./types.ts";
 
-export function handleAxiosError(error: AxiosError<BackendResponse>): ServiceResponse {
+export function handleAxiosError(
+  error: AxiosError<BackendResponse>,
+): ServiceResponse {
   if (error.response) {
     return {
       success: false,
@@ -10,7 +12,7 @@ export function handleAxiosError(error: AxiosError<BackendResponse>): ServiceRes
         code: "UNKNOWN_SERVER_ERROR",
         message: "An unknown server error occurred.",
       },
-    }
+    };
   } else if (error.request) {
     return {
       success: false,

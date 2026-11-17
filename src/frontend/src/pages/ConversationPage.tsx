@@ -1,21 +1,29 @@
-import {useLoaderData} from "react-router";
+import { useLoaderData } from "react-router";
 import ConversationContextProvider, {
   type ConversationSource,
-  useConversationContext
+  useConversationContext,
 } from "../contexts/ConversationContext.tsx";
-import {Avatar} from "../components/Avatar.tsx";
-import type {DmConversationDetails, ServerChannelConversationDetails} from "../api/types.ts";
-import {ChannelType} from "../api/schema.ts";
-import {BsChatTextFill, BsPeopleFill, BsPersonFill, BsVolumeUp} from "react-icons/bs";
+import { Avatar } from "../components/Avatar.tsx";
+import type {
+  DmConversationDetails,
+  ServerChannelConversationDetails,
+} from "../api/types.ts";
+import { ChannelType } from "../api/schema.ts";
+import {
+  BsChatTextFill,
+  BsPeopleFill,
+  BsPersonFill,
+  BsVolumeUp,
+} from "react-icons/bs";
 import ChatContainerContextProvider from "../contexts/ChatContainerContext.tsx";
-import {ChatView} from "../components/chat/ChatView.tsx";
+import { ChatView } from "../components/chat/ChatView.tsx";
 import TypingIndicator from "../components/chat/TypingIndicator.tsx";
 import ChatInput from "../components/chat/ChatInput.tsx";
 import useConversationConnection from "../hooks/useConversationConnection.ts";
 import ShowPinnedMessagesButton from "../components/ShowPinnedMessagesButton.tsx";
-import {FaSearch} from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import IconButton from "../components/IconButton.tsx";
-import {useState} from "react";
+import { useState } from "react";
 import UserProfilePanel from "../components/UserProfilePanel.tsx";
 import ServerMemberList from "../components/server/ServerMemberList.tsx";
 import SearchMessagesButton from "../components/chat/SearchMessagesButton.tsx";
@@ -25,7 +33,7 @@ export default function ConversationPage() {
 
   return (
     <ConversationContextProvider source={loaderData}>
-      <ContextConsumer/>
+      <ContextConsumer />
     </ConversationContextProvider>
   );
 }
@@ -35,25 +43,25 @@ function ContextConsumer() {
 
   return (
     <>
-      { source.type === "invalid" || !detailsQuery || (detailsQuery && detailsQuery.isError) ? (
-        <ErrorDisplay/>
+      {source.type === "invalid" ||
+      !detailsQuery ||
+      (detailsQuery && detailsQuery.isError) ? (
+        <ErrorDisplay />
       ) : detailsQuery.isLoading ? (
-        <LoadingDisplay/>
+        <LoadingDisplay />
       ) : (
-        <SuccessDisplay/>
+        <SuccessDisplay />
       )}
     </>
-  )
+  );
 }
 
 function LoadingDisplay() {
   return (
-    <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
-      <header
-        className="flex-none h-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2 text-sm"
-      >
-        <div className="flex-none size-7 bg-white/10 animate-pulse rounded-full"></div>
-        <div className="flex-1 h-5 bg-white/10 animate-pulse w-1/2 max-w-lg rounded-full"></div>
+    <div className="flex size-full flex-col overflow-hidden bg-gray-700 text-white">
+      <header className="bg-gray-750 flex h-11 flex-none flex-row items-center gap-2 border-b-2 border-b-gray-600 px-2 text-sm">
+        <div className="size-7 flex-none animate-pulse rounded-full bg-white/10"></div>
+        <div className="h-5 w-1/2 max-w-lg flex-1 animate-pulse rounded-full bg-white/10"></div>
       </header>
     </div>
   );
@@ -61,10 +69,8 @@ function LoadingDisplay() {
 
 function ErrorDisplay() {
   return (
-    <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
-      <header
-        className="flex-none h-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2 text-sm"
-      >
+    <div className="flex size-full flex-col overflow-hidden bg-gray-700 text-white">
+      <header className="bg-gray-750 flex h-11 flex-none flex-row items-center gap-2 border-b-2 border-b-gray-600 px-2 text-sm">
         <p>But nobody came...</p>
       </header>
     </div>
@@ -85,49 +91,41 @@ function SuccessDisplay() {
 
   const toggleRightSidebar = () => {
     setShowRightSidebar(!showRightSidebar);
-  }
+  };
 
   return (
     <ChatContainerContextProvider>
-      <div className="flex flex-col overflow-hidden size-full text-white bg-gray-700">
-        <header
-          className="flex-none h-11 bg-gray-750 border-b-gray-600 border-b-2 flex flex-row items-center px-2 gap-2 text-sm"
-        >
+      <div className="flex size-full flex-col overflow-hidden bg-gray-700 text-white">
+        <header className="bg-gray-750 flex h-11 flex-none flex-row items-center gap-2 border-b-2 border-b-gray-600 px-2 text-sm">
           {source.type === "dm" ? (
-            <DmHeader toggleRightSidebar={toggleRightSidebar}/>
+            <DmHeader toggleRightSidebar={toggleRightSidebar} />
           ) : source.type === "server-channel" ? (
-            <ServerChannelHeader toggleRightSidebar={toggleRightSidebar}/>
+            <ServerChannelHeader toggleRightSidebar={toggleRightSidebar} />
           ) : null}
         </header>
 
-        <main className="flex-1 flex flex-row relative size-full overflow-hidden">
-          <section className="flex-1 flex flex-col gap-0 min-w-0">
-            <ChatView/>
-            <TypingIndicator/>
-            <ChatInput/>
+        <main className="relative flex size-full flex-1 flex-row overflow-hidden">
+          <section className="flex min-w-0 flex-1 flex-col gap-0">
+            <ChatView />
+            <TypingIndicator />
+            <ChatInput />
           </section>
 
           <aside
-            className={`
-              flex flex-col bg-gray-725 border-l-2 border-l-gray-600 absolute right-0 top-0 h-full w-80 transition-transform duration-300 ease-in-out
-              
-              ${showRightSidebar ? "translate-x-0 shadow-2xl" : "translate-x-full pointer-events-none"}
-
-              lg:relative lg:top-auto lg:right-auto lg:h-auto lg:translate-x-0
-              lg:transition-[width,border-color] lg:duration-300 lg:ease-in-out
-              ${showRightSidebar ? "lg:w-80 lg:border-l-gray-600" : "lg:w-0 lg:border-l-0 lg:pointer-events-none"}
-            `}
+            className={`bg-gray-725 absolute top-0 right-0 flex h-full w-80 flex-col border-l-2 border-l-gray-600 transition-transform duration-300 ease-in-out ${showRightSidebar ? "translate-x-0 shadow-2xl" : "pointer-events-none translate-x-full"} lg:relative lg:top-auto lg:right-auto lg:h-auto lg:translate-x-0 lg:transition-[width,border-color] lg:duration-300 lg:ease-in-out ${showRightSidebar ? "lg:w-80 lg:border-l-gray-600" : "lg:pointer-events-none lg:w-0 lg:border-l-0"} `}
           >
             {/* Inner fixed-width container prevents content squishing during desktop width transition */}
-            <div className="w-80 h-full flex flex-col overflow-hidden">
+            <div className="flex h-full w-80 flex-col overflow-hidden">
               {source.type === "dm" ? (
                 <UserProfilePanel
-                  className="flex-0 border-l border-l-gray-600 basis-72 bg-gray-725"
+                  className="bg-gray-725 flex-0 basis-72 border-l border-l-gray-600"
                   avatarClassName="border-4 border-gray-725 bg-gray-725"
-                  userId={(detailsQuery.data as DmConversationDetails).peerProfile.id}
+                  userId={
+                    (detailsQuery.data as DmConversationDetails).peerProfile.id
+                  }
                 />
               ) : (
-                <ServerMemberList/>
+                <ServerMemberList />
               )}
             </div>
           </aside>
@@ -137,7 +135,7 @@ function SuccessDisplay() {
   );
 }
 
-function DmHeader({toggleRightSidebar}: {toggleRightSidebar: () => void}) {
+function DmHeader({ toggleRightSidebar }: { toggleRightSidebar: () => void }) {
   const { detailsQuery } = useConversationContext();
   const peerProfile = (detailsQuery!.data as DmConversationDetails).peerProfile;
 
@@ -147,55 +145,59 @@ function DmHeader({toggleRightSidebar}: {toggleRightSidebar: () => void}) {
         userId={peerProfile.id}
         alt={`Avatar of ${peerProfile.displayName} (@${peerProfile.userName})`}
         version={peerProfile.avatarVersion}
-        className="flex-none rounded-full size-7"
+        className="size-7 flex-none rounded-full"
       />
 
       <p className="flex-1">
         {peerProfile.displayName}
 
         {peerProfile.displayName !== peerProfile.userName ? (
-          <span className="text-gray-400">{" "}(@{peerProfile.userName})</span>
+          <span className="text-gray-400"> (@{peerProfile.userName})</span>
         ) : null}
       </p>
 
-      <div className="flex-none flex flex-row justify-center items-center gap-2">
-        <ShowPinnedMessagesButton/>
+      <div className="flex flex-none flex-row items-center justify-center gap-2">
+        <ShowPinnedMessagesButton />
 
-        <SearchMessagesButton/>
+        <SearchMessagesButton />
 
         <IconButton theme="default" onClick={toggleRightSidebar}>
-          <BsPersonFill className="size-5"/>
+          <BsPersonFill className="size-5" />
         </IconButton>
       </div>
     </>
   );
 }
 
-function ServerChannelHeader({toggleRightSidebar}: {toggleRightSidebar: () => void}) {
+function ServerChannelHeader({
+  toggleRightSidebar,
+}: {
+  toggleRightSidebar: () => void;
+}) {
   const { detailsQuery } = useConversationContext();
-  const channelIdentity = (detailsQuery!.data as ServerChannelConversationDetails).channelIdentity;
+  const channelIdentity = (
+    detailsQuery!.data as ServerChannelConversationDetails
+  ).channelIdentity;
 
   return (
     <>
       {channelIdentity.channelType === ChannelType.Text ? (
-        <BsChatTextFill className="flex-none fill-white size-7"/>
+        <BsChatTextFill className="size-7 flex-none fill-white" />
       ) : (
-        <BsVolumeUp className="flex-none fill-white size-7"/>
+        <BsVolumeUp className="size-7 flex-none fill-white" />
       )}
 
-      <p className="flex-1">
-        {channelIdentity.name}
-      </p>
+      <p className="flex-1">{channelIdentity.name}</p>
 
-      <div className="flex-none flex flex-row justify-center items-center gap-2">
-        <ShowPinnedMessagesButton/>
+      <div className="flex flex-none flex-row items-center justify-center gap-2">
+        <ShowPinnedMessagesButton />
 
         <IconButton theme="default" disabled>
-          <FaSearch className="size-6"/>
+          <FaSearch className="size-6" />
         </IconButton>
 
         <IconButton theme="default" onClick={toggleRightSidebar}>
-          <BsPeopleFill className="size-6"/>
+          <BsPeopleFill className="size-6" />
         </IconButton>
       </div>
     </>

@@ -1,7 +1,7 @@
-import {Tooltip} from "radix-ui";
-import type {MessageOperationError} from "../../store/useMessageOperationsStore.ts";
-import type {SVGAttributes} from "react";
-import {FaExclamationTriangle} from "react-icons/fa";
+import { Tooltip } from "radix-ui";
+import type { MessageOperationError } from "../../store/useMessageOperationsStore.ts";
+import type { SVGAttributes } from "react";
+import { FaExclamationTriangle } from "react-icons/fa";
 
 interface MessageOperationErrorDisplayProps extends SVGAttributes<SVGElement> {
   error: MessageOperationError;
@@ -14,7 +14,7 @@ export default function MessageOperationErrorDisplay({
   return (
     <Tooltip.Root>
       <Tooltip.Trigger>
-        <FaExclamationTriangle {...props}/>
+        <FaExclamationTriangle {...props} />
       </Tooltip.Trigger>
 
       <Tooltip.Portal>
@@ -22,7 +22,7 @@ export default function MessageOperationErrorDisplay({
           side="top"
           align="center"
           sideOffset={4}
-          className="rounded-md shadow-md bg-gray-750 text-white p-2 border-2 border-gray-600 text-sm"
+          className="bg-gray-750 rounded-md border-2 border-gray-600 p-2 text-sm text-white shadow-md"
         >
           {(() => {
             switch (error.type) {
@@ -42,7 +42,7 @@ export default function MessageOperationErrorDisplay({
                   <p>{messages[0]}</p>
                 ) : (
                   <ol className="list-inside list-decimal space-y-2">
-                    {messages.map(errorMessage => (
+                    {messages.map((errorMessage) => (
                       <li>{errorMessage}</li>
                     ))}
                   </ol>

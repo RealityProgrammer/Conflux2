@@ -1,14 +1,20 @@
-import {BsAt, BsClockFill, BsEmojiSmileFill, BsEmojiTear, BsExclamationTriangle} from "react-icons/bs";
-import {useInterval} from "usehooks-ts";
-import {useState} from "react";
-import {Separator} from "radix-ui";
-import {Virtuoso} from "react-virtuoso";
-import type {UserIdentityProfileDto} from "../../api/types.ts";
-import {useInfiniteGetMentionableUsersQuery} from "../../graphql/infiniteQueries.ts";
-import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import {UserNameplate} from "../UserNameplate.tsx";
-import {useUserIdentityStore} from "../../store/useUserIdentityStore.ts";
-import {EmojiPanel, type SelectedEmoji} from "./EmojiPanel.tsx";
+import {
+  BsAt,
+  BsClockFill,
+  BsEmojiSmileFill,
+  BsEmojiTear,
+  BsExclamationTriangle,
+} from "react-icons/bs";
+import { useInterval } from "usehooks-ts";
+import { useState } from "react";
+import { Separator } from "radix-ui";
+import { Virtuoso } from "react-virtuoso";
+import type { UserIdentityProfileDto } from "../../api/types.ts";
+import { useInfiniteGetMentionableUsersQuery } from "../../graphql/infiniteQueries.ts";
+import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
+import { UserNameplate } from "../UserNameplate.tsx";
+import { useUserIdentityStore } from "../../store/useUserIdentityStore.ts";
+import { EmojiPanel, type SelectedEmoji } from "./EmojiPanel.tsx";
 
 interface ModeProps {
   onSelect: (mode: "e" | "t" | "m") => void;
@@ -17,26 +23,30 @@ interface ModeProps {
 
 function SelectMode({ className = "", onSelect }: ModeProps) {
   return (
-    <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll ${className}`}>
+    <div
+      className={`bg-gray-725 max-h-60 overflow-y-scroll rounded-lg border-2 border-gray-600 ${className}`}
+    >
       <ul className="space-y-1 text-sm">
-        <li 
-          className="px-3 py-1.5 hover-highlight flex flex-row justify-center items-center gap-2 cursor-pointer"
+        <li
+          className="hover-highlight flex cursor-pointer flex-row items-center justify-center gap-2 px-3 py-1.5"
           onClick={() => onSelect("e")}
         >
-          <BsEmojiSmileFill className="flex-none size-8 fill-white"/>
-          
+          <BsEmojiSmileFill className="size-8 flex-none fill-white" />
+
           <div className="flex-1">
             <p>Emoji (e)</p>
-            <p className="text-gray-400">Spice up the chat with some fun icons.</p>
+            <p className="text-gray-400">
+              Spice up the chat with some fun icons.
+            </p>
           </div>
         </li>
-  
-        <li 
-          className="px-3 py-1.5 hover-highlight flex flex-row justify-center items-center gap-2 cursor-pointer"
+
+        <li
+          className="hover-highlight flex cursor-pointer flex-row items-center justify-center gap-2 px-3 py-1.5"
           onClick={() => onSelect("t")}
         >
-          <BsClockFill className="flex-none size-8 fill-white"/>
-  
+          <BsClockFill className="size-8 flex-none fill-white" />
+
           <div className="flex-1">
             <p>Time (t)</p>
             <p className="text-gray-400">What time is it?</p>
@@ -44,14 +54,16 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
         </li>
 
         <li
-          className="px-3 py-1.5 hover-highlight flex flex-row justify-center items-center gap-2 cursor-pointer"
+          className="hover-highlight flex cursor-pointer flex-row items-center justify-center gap-2 px-3 py-1.5"
           onClick={() => onSelect("m")}
         >
-          <BsAt className="flex-none size-8 fill-white"/>
+          <BsAt className="size-8 flex-none fill-white" />
 
           <div className="flex-1">
             <p>Mention (m)</p>
-            <p className="text-gray-400">Specifically mention an user to draw their attention.</p>
+            <p className="text-gray-400">
+              Specifically mention an user to draw their attention.
+            </p>
           </div>
         </li>
       </ul>
@@ -68,9 +80,9 @@ interface EmojiProps {
 function EmojiMode({ className = "", searchTerm, onSelect }: EmojiProps) {
   return (
     <div
-      className={`p-1 h-72 bg-gray-725 ring-2 ring-gray-600 rounded-lg overflow-hidden flex flex-col gap-2 transition-all duration-150 ${className}`}
+      className={`bg-gray-725 flex h-72 flex-col gap-2 overflow-hidden rounded-lg p-1 ring-2 ring-gray-600 transition-all duration-150 ${className}`}
     >
-      <EmojiPanel.Groups onSelect={onSelect} searchTerm={searchTerm}/>
+      <EmojiPanel.Groups onSelect={onSelect} searchTerm={searchTerm} />
     </div>
   );
 }
@@ -85,23 +97,28 @@ function TimeMode({ className = "", onSelect }: TimeProps) {
   useInterval(() => {
     setSystemTime(Date.now());
   }, 1000);
-  
+
   return (
-    <div className={`max-h-60 bg-gray-725 border-2 border-gray-600 rounded-lg overflow-y-scroll scrollbar-none ${className}`}>
+    <div
+      className={`bg-gray-725 max-h-60 scrollbar-none overflow-y-scroll rounded-lg border-2 border-gray-600 ${className}`}
+    >
       <ul className="space-y-1 text-sm">
-        <li className="px-3 py-1.5 flex flex-row items-center mt-1">
+        <li className="mt-1 flex flex-row items-center px-3 py-1.5">
           <p className="flex-1 text-left">Display current time</p>
           <p className="flex-1 text-right">:t:</p>
         </li>
-  
-        <li className="px-3 py-1.5 flex flex-row items-center">
+
+        <li className="flex flex-row items-center px-3 py-1.5">
           <p className="flex-1 text-left">Specific point in time</p>
           <p className="flex-1 text-right">:t&lt;millisecond&gt;:</p>
         </li>
-        
+
         <Separator.Root className="horizontal-separator mx-2"></Separator.Root>
-        
-        <li className="px-3 py-1.5 flex flex-row items-center hover-highlight cursor-pointer" onClick={() => onSelect(new Date())}>
+
+        <li
+          className="hover-highlight flex cursor-pointer flex-row items-center px-3 py-1.5"
+          onClick={() => onSelect(new Date())}
+        >
           <p className="flex-1 text-left">System Time</p>
           <p className="flex-1 text-right">{systemTime}</p>
         </li>
@@ -116,28 +133,30 @@ interface MentionProps {
   onSelect?: (userIdentity: UserIdentityProfileDto) => void;
 }
 
-function MentionMode({className, searchTerm = "", onSelect}: MentionProps) {
+function MentionMode({ className, searchTerm = "", onSelect }: MentionProps) {
   const { conversationId } = useChatContainerContext();
   const setUsers = useUserIdentityStore((state) => state.setUsers);
 
-  const { data, isLoading, isError, isEnabled } = useInfiniteGetMentionableUsersQuery(
-    { conversationId, nameFilter: searchTerm },
-    {
-      enabled: searchTerm.length >= 3,
-      initialPageParam: { after: null },
-      getNextPageParam: (lastPage) => {
-        const pageInfo = lastPage?.mentionableUsers?.pageInfo;
+  const { data, isLoading, isError, isEnabled } =
+    useInfiniteGetMentionableUsersQuery(
+      { conversationId, nameFilter: searchTerm },
+      {
+        enabled: searchTerm.length >= 3,
+        initialPageParam: { after: null },
+        getNextPageParam: (lastPage) => {
+          const pageInfo = lastPage?.mentionableUsers?.pageInfo;
 
-        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-          return { after: pageInfo.endCursor };
-        }
+          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+            return { after: pageInfo.endCursor };
+          }
 
-        return undefined;
+          return undefined;
+        },
       },
-    }
-  );
+    );
 
-  const allElements = data?.pages.flatMap((page) => page?.mentionableUsers.nodes ?? []) ?? [];
+  const allElements =
+    data?.pages.flatMap((page) => page?.mentionableUsers.nodes ?? []) ?? [];
   const [listHeight, setListHeight] = useState(150);
 
   const commonClassName = `bg-gray-725 ring-2 ring-gray-600 rounded-lg flex flex-col justify-center items-center gap-1 text-sm ${className}`;
@@ -145,21 +164,23 @@ function MentionMode({className, searchTerm = "", onSelect}: MentionProps) {
   return (
     <>
       {!isEnabled ? (
-        <div className={`text-center py-3 ${commonClassName}`}>
+        <div className={`py-3 text-center ${commonClassName}`}>
           To search user, type at least 3 characters in their name.
         </div>
       ) : isLoading ? (
-        <div className={`max-h-80 text-center p-1 ${commonClassName}`}>
+        <div className={`max-h-80 p-1 text-center ${commonClassName}`}>
           <>
-            {Array.from({length: 6}, (_, i) => (
-              <UserNameplate.Skeleton key={i} className="p-1"/>
+            {Array.from({ length: 6 }, (_, i) => (
+              <UserNameplate.Skeleton key={i} className="p-1" />
             ))}
           </>
         </div>
       ) : isError || !data ? (
         <div className={`py-3 ${commonClassName}`}>
-          <BsExclamationTriangle className="size-8 fill-white"/>
-          <p className="text-center select-none">Failed to load mentionable users.</p>
+          <BsExclamationTriangle className="size-8 fill-white" />
+          <p className="text-center select-none">
+            Failed to load mentionable users.
+          </p>
         </div>
       ) : (
         <div className={`p-1 ${commonClassName}`}>
@@ -173,15 +194,15 @@ function MentionMode({className, searchTerm = "", onSelect}: MentionProps) {
             computeItemKey={(index) => allElements[index].id}
             components={{
               EmptyPlaceholder: () => (
-                <div className="size-full flex flex-col gap-1 justify-center items-center select-none text-gray-400">
-                  <BsEmojiTear className="size-8"/>
+                <div className="flex size-full flex-col items-center justify-center gap-1 text-gray-400 select-none">
+                  <BsEmojiTear className="size-8" />
                   Nobody here...
                 </div>
               ),
             }}
             itemContent={(_, item) => (
               <UserNameplate.Root
-                className="p-1.5 hover-highlight rounded-md cursor-pointer"
+                className="hover-highlight cursor-pointer rounded-md p-1.5"
                 userId={item.id}
                 avatarVersion={item.avatarVersion}
                 displayName={item.displayName ?? "???"}
@@ -203,4 +224,4 @@ export const Suggestion = {
   Emoji: EmojiMode,
   Time: TimeMode,
   Mention: MentionMode,
-}
+};

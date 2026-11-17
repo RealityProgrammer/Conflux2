@@ -4,3871 +4,3877 @@
  */
 
 export interface paths {
-    "/api/attachments/{attachmentId}/view": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    attachmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{attachmentId}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    attachmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["Register"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfRefreshResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfRefreshResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfRefreshResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/delete-account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["DeleteAccountRequest"];
-                    "text/json": components["schemas"]["DeleteAccountRequest"];
-                    "application/*+json": components["schemas"]["DeleteAccountRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/restore-account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RestoreAccountRequest"];
-                    "text/json": components["schemas"]["RestoreAccountRequest"];
-                    "application/*+json": components["schemas"]["RestoreAccountRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/authorization-info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfUserAuthorizationInfo"];
-                        "application/json": components["schemas"]["ApiResponseOfUserAuthorizationInfo"];
-                        "text/json": components["schemas"]["ApiResponseOfUserAuthorizationInfo"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/resend-confirm-email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/confirm-email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ConfirmEmailRequest"];
-                    "text/json": components["schemas"]["ConfirmEmailRequest"];
-                    "application/*+json": components["schemas"]["ConfirmEmailRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/forgot-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ForgotPasswordRequest"];
-                    "text/json": components["schemas"]["ForgotPasswordRequest"];
-                    "application/*+json": components["schemas"]["ForgotPasswordRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/reset-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ResetPasswordRequest"];
-                    "text/json": components["schemas"]["ResetPasswordRequest"];
-                    "application/*+json": components["schemas"]["ResetPasswordRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/change-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ChangePasswordRequest"];
-                    "text/json": components["schemas"]["ChangePasswordRequest"];
-                    "application/*+json": components["schemas"]["ChangePasswordRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfSessionsQueryResult"];
-                        "application/json": components["schemas"]["ApiResponseOfSessionsQueryResult"];
-                        "text/json": components["schemas"]["ApiResponseOfSessionsQueryResult"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/sessions/{sessionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sessionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/sessions/others": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/calls/direct/{peerId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "X-SignalR-Connection-Id": string;
-                };
-                path: {
-                    peerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfStartCallResult"];
-                        "application/json": components["schemas"]["ApiResponseOfStartCallResult"];
-                        "text/json": components["schemas"]["ApiResponseOfStartCallResult"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/calls/{callId}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    callId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/calls/{callId}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "X-SignalR-Connection-Id": string;
-                };
-                path: {
-                    callId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/calls/{callId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    callId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/calls/{callId}/end": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    callId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/calls/direct": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
-                        "application/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
-                        "text/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/csrf/token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/csrf/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/emojis/{emojiId}/image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    emojiId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/friends/{friendId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    friendId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/friend-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SendRequest"];
-                    "text/json": components["schemas"]["SendRequest"];
-                    "application/*+json": components["schemas"]["SendRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfSendFriendRequestResult"];
-                        "application/json": components["schemas"]["ApiResponseOfSendFriendRequestResult"];
-                        "text/json": components["schemas"]["ApiResponseOfSendFriendRequestResult"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/friend-requests/{requestId}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/friend-requests/{requestId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/friend-requests/{requestId}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    requestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/healthcheck": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth-healthcheck": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/invite": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateInvitationRequest"];
-                    "text/json": components["schemas"]["CreateInvitationRequest"];
-                    "application/*+json": components["schemas"]["CreateInvitationRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfstring"];
-                        "application/json": components["schemas"]["ApiResponseOfstring"];
-                        "text/json": components["schemas"]["ApiResponseOfstring"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/invite/{invitationId}/join": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    invitationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/notifications/unread-counts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
-                        "application/json": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
-                        "text/json": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/me/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        File?: components["schemas"]["IFormFile"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfint"];
-                        "application/json": components["schemas"]["ApiResponseOfint"];
-                        "text/json": components["schemas"]["ApiResponseOfint"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/me/names": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SetNamesRequest"];
-                    "text/json": components["schemas"]["SetNamesRequest"];
-                    "application/*+json": components["schemas"]["SetNamesRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/me/lock-name": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/me/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        "DisplayName.HasValue"?: boolean;
-                        "DisplayName.Value"?: string;
-                        "Pronouns.HasValue"?: boolean;
-                        "Pronouns.Value"?: string;
-                        "Biography.HasValue"?: boolean;
-                        "Biography.Value"?: string;
-                        "ManualPresenceStatus.HasValue"?: boolean;
-                        "ManualPresenceStatus.Value"?: components["schemas"]["PresenceStatus"];
-                        "Avatar.Type"?: components["schemas"]["FileOperationType"];
-                        "Avatar.File"?: components["schemas"]["IFormFile"];
-                        "Banner.Type"?: components["schemas"]["FileOperationType"];
-                        "Banner.File"?: components["schemas"]["IFormFile"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfUpdateProfileResult"];
-                        "application/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
-                        "text/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/users/me/deletion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
-                        "application/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
-                        "text/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/me/emojis/entries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
-                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
-                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{userId}/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    userId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{userId}/banner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    userId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/get-identities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["GetIdentitiesRequest"];
-                    "text/json": components["schemas"]["GetIdentitiesRequest"];
-                    "application/*+json": components["schemas"]["GetIdentitiesRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
-                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
-                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/discover-friend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfFriendSearchResponse"];
-                        "application/json": components["schemas"]["ApiResponseOfFriendSearchResponse"];
-                        "text/json": components["schemas"]["ApiResponseOfFriendSearchResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channel-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateChannelCategoryRequest"];
-                    "text/json": components["schemas"]["CreateChannelCategoryRequest"];
-                    "application/*+json": components["schemas"]["CreateChannelCategoryRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
-                        "application/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
-                        "text/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channel-categories/{categoryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    categoryId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channels/{channelId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfChannelDetailsDto"];
-                        "application/json": components["schemas"]["ApiResponseOfChannelDetailsDto"];
-                        "text/json": components["schemas"]["ApiResponseOfChannelDetailsDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/channels": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateChannelRequest"];
-                    "text/json": components["schemas"]["CreateChannelRequest"];
-                    "application/*+json": components["schemas"]["CreateChannelRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateRoleRequest"];
-                    "text/json": components["schemas"]["CreateRoleRequest"];
-                    "application/*+json": components["schemas"]["CreateRoleRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/roles/{roleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    roleId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    roleId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["PatchRoleRequest"];
-                    "text/json": components["schemas"]["PatchRoleRequest"];
-                    "application/*+json": components["schemas"]["PatchRoleRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/communities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        Name?: string;
-                        Avatar?: components["schemas"]["IFormFile"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerIdentityDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/banner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/details": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerDetailsDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/details/channel-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
-                        "application/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
-                        "text/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/details/authorize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
-                        "application/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
-                        "text/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/emojis/entries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
-                        "application/json": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
-                        "text/json": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/emojis/management": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
-                        "application/json": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
-                        "text/json": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/emojis": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        ShortCode?: string;
-                        Image?: components["schemas"]["IFormFile"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfEmojiDto"];
-                        "application/json": components["schemas"]["ApiResponseOfEmojiDto"];
-                        "text/json": components["schemas"]["ApiResponseOfEmojiDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/emojis/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteEmojiRequest"];
-                    "text/json": components["schemas"]["BulkDeleteEmojiRequest"];
-                    "application/*+json": components["schemas"]["BulkDeleteEmojiRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/communities/{serverId}/members/{userId}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    userId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateMemberRolesRequest"];
-                    "text/json": components["schemas"]["UpdateMemberRolesRequest"];
-                    "application/*+json": components["schemas"]["UpdateMemberRolesRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/conversations/dm/{peerId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    peerId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfDmConversationDetails"];
-                        "application/json": components["schemas"]["ApiResponseOfDmConversationDetails"];
-                        "text/json": components["schemas"]["ApiResponseOfDmConversationDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/servers/{serverId}/channels/{channelId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    serverId: string;
-                    channelId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
-                        "application/json": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
-                        "text/json": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/read-mentions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfMentionSource"];
-                        "application/json": components["schemas"]["ApiResponseOfMentionSource"];
-                        "text/json": components["schemas"]["ApiResponseOfMentionSource"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/pinned-messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    before?: string;
-                    after?: string;
-                };
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    cursor?: string;
-                    direction?: components["schemas"]["MessageLoadDirection"];
-                };
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        Body?: string;
-                        Attachments?: components["schemas"]["IFormFile"][];
-                        /** Format: uuid */
-                        ReplyToId?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages/{messageId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                    messageId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                    messageId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": {
-                        "Body.HasValue"?: boolean;
-                        "Body.Value"?: string;
-                        RemoveAttachmentIds?: string[];
-                        AddAttachments?: components["schemas"]["IFormFileCollection"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfEditedMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfEditedMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfEditedMessageDto"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SearchMessageRequest"];
-                    "text/json": components["schemas"]["SearchMessageRequest"];
-                    "application/*+json": components["schemas"]["SearchMessageRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfMessageSearchPage"];
-                        "application/json": components["schemas"]["ApiResponseOfMessageSearchPage"];
-                        "text/json": components["schemas"]["ApiResponseOfMessageSearchPage"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages/{messageId}/pin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                    messageId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages/{messageId}/unpin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    conversationId: string;
-                    messageId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                        "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/conversations/{conversationId}/messages/{messageId}/reactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    messageId: string;
-                    conversationId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ReactionRequest"];
-                    "text/json": components["schemas"]["ReactionRequest"];
-                    "application/*+json": components["schemas"]["ReactionRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["ApiResponse"];
-                        "application/json": components["schemas"]["ApiResponse"];
-                        "text/json": components["schemas"]["ApiResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  "/api/attachments/{attachmentId}/view": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          attachmentId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/attachments/{attachmentId}/download": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          attachmentId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["Login"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["Register"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfRefreshResponse"];
+            "application/json": components["schemas"]["ApiResponseOfRefreshResponse"];
+            "text/json": components["schemas"]["ApiResponseOfRefreshResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/logout-all": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/delete-account": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["DeleteAccountRequest"];
+          "text/json": components["schemas"]["DeleteAccountRequest"];
+          "application/*+json": components["schemas"]["DeleteAccountRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/restore-account": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["RestoreAccountRequest"];
+          "text/json": components["schemas"]["RestoreAccountRequest"];
+          "application/*+json": components["schemas"]["RestoreAccountRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
+            "application/json": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
+            "text/json": components["schemas"]["ApiResponseOfRestoreAccountResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/authorization-info": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfUserAuthorizationInfo"];
+            "application/json": components["schemas"]["ApiResponseOfUserAuthorizationInfo"];
+            "text/json": components["schemas"]["ApiResponseOfUserAuthorizationInfo"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/resend-confirm-email": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/confirm-email": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ConfirmEmailRequest"];
+          "text/json": components["schemas"]["ConfirmEmailRequest"];
+          "application/*+json": components["schemas"]["ConfirmEmailRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/forgot-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ForgotPasswordRequest"];
+          "text/json": components["schemas"]["ForgotPasswordRequest"];
+          "application/*+json": components["schemas"]["ForgotPasswordRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/reset-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ResetPasswordRequest"];
+          "text/json": components["schemas"]["ResetPasswordRequest"];
+          "application/*+json": components["schemas"]["ResetPasswordRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/change-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ChangePasswordRequest"];
+          "text/json": components["schemas"]["ChangePasswordRequest"];
+          "application/*+json": components["schemas"]["ChangePasswordRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/sessions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfSessionsQueryResult"];
+            "application/json": components["schemas"]["ApiResponseOfSessionsQueryResult"];
+            "text/json": components["schemas"]["ApiResponseOfSessionsQueryResult"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/sessions/{sessionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sessionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth/sessions/others": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/calls/direct/{peerId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "X-SignalR-Connection-Id": string;
+        };
+        path: {
+          peerId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfStartCallResult"];
+            "application/json": components["schemas"]["ApiResponseOfStartCallResult"];
+            "text/json": components["schemas"]["ApiResponseOfStartCallResult"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/calls/{callId}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          callId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/calls/{callId}/accept": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "X-SignalR-Connection-Id": string;
+        };
+        path: {
+          callId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/calls/{callId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          callId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/calls/{callId}/end": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          callId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/calls/direct": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+            "application/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+            "text/json": components["schemas"]["ApiResponseOfGetIncomingDirectCallQueryResult"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/csrf/token": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/csrf/test": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/emojis/{emojiId}/image": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          emojiId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/friends/{friendId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          friendId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/friend-requests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SendRequest"];
+          "text/json": components["schemas"]["SendRequest"];
+          "application/*+json": components["schemas"]["SendRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfSendFriendRequestResult"];
+            "application/json": components["schemas"]["ApiResponseOfSendFriendRequestResult"];
+            "text/json": components["schemas"]["ApiResponseOfSendFriendRequestResult"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/friend-requests/{requestId}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/friend-requests/{requestId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/friend-requests/{requestId}/accept": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          requestId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/healthcheck": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/auth-healthcheck": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/invite": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["CreateInvitationRequest"];
+          "text/json": components["schemas"]["CreateInvitationRequest"];
+          "application/*+json": components["schemas"]["CreateInvitationRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfstring"];
+            "application/json": components["schemas"]["ApiResponseOfstring"];
+            "text/json": components["schemas"]["ApiResponseOfstring"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/invite/{invitationId}/join": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          invitationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/notifications/unread-counts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
+            "application/json": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
+            "text/json": components["schemas"]["ApiResponseOfUnreadNotificationCounts"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/me/avatar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/x-www-form-urlencoded": {
+            File?: components["schemas"]["IFormFile"];
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfint"];
+            "application/json": components["schemas"]["ApiResponseOfint"];
+            "text/json": components["schemas"]["ApiResponseOfint"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/me/names": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SetNamesRequest"];
+          "text/json": components["schemas"]["SetNamesRequest"];
+          "application/*+json": components["schemas"]["SetNamesRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/me/lock-name": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/me/profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/x-www-form-urlencoded": {
+            "DisplayName.HasValue"?: boolean;
+            "DisplayName.Value"?: string;
+            "Pronouns.HasValue"?: boolean;
+            "Pronouns.Value"?: string;
+            "Biography.HasValue"?: boolean;
+            "Biography.Value"?: string;
+            "ManualPresenceStatus.HasValue"?: boolean;
+            "ManualPresenceStatus.Value"?: components["schemas"]["PresenceStatus"];
+            "Avatar.Type"?: components["schemas"]["FileOperationType"];
+            "Avatar.File"?: components["schemas"]["IFormFile"];
+            "Banner.Type"?: components["schemas"]["FileOperationType"];
+            "Banner.File"?: components["schemas"]["IFormFile"];
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+            "application/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+            "text/json": components["schemas"]["ApiResponseOfUpdateProfileResult"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/users/me/deletion": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
+            "application/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
+            "text/json": components["schemas"]["ApiResponseOfAccountDeletionStatusDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/me/emojis/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
+            "application/json": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
+            "text/json": components["schemas"]["ApiResponseOfIReadOnlyListOfServerEmojiGroupDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/{userId}/avatar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          userId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/{userId}/banner": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          userId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/get-identities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["GetIdentitiesRequest"];
+          "text/json": components["schemas"]["GetIdentitiesRequest"];
+          "application/*+json": components["schemas"]["GetIdentitiesRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
+            "application/json": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
+            "text/json": components["schemas"]["ApiResponseOfIReadOnlyListOfUserIdentityProfileDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/users/discover-friend": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          search?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfFriendSearchResponse"];
+            "application/json": components["schemas"]["ApiResponseOfFriendSearchResponse"];
+            "text/json": components["schemas"]["ApiResponseOfFriendSearchResponse"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/channel-categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["CreateChannelCategoryRequest"];
+          "text/json": components["schemas"]["CreateChannelCategoryRequest"];
+          "application/*+json": components["schemas"]["CreateChannelCategoryRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+            "application/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+            "text/json": components["schemas"]["ApiResponseOfChannelCategoryIdentityDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/channel-categories/{categoryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/channels/{channelId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          channelId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfChannelDetailsDto"];
+            "application/json": components["schemas"]["ApiResponseOfChannelDetailsDto"];
+            "text/json": components["schemas"]["ApiResponseOfChannelDetailsDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          channelId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/channels": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["CreateChannelRequest"];
+          "text/json": components["schemas"]["CreateChannelRequest"];
+          "application/*+json": components["schemas"]["CreateChannelRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+            "application/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+            "text/json": components["schemas"]["ApiResponseOfServerChannelIdentityDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/roles": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["CreateRoleRequest"];
+          "text/json": components["schemas"]["CreateRoleRequest"];
+          "application/*+json": components["schemas"]["CreateRoleRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
+            "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+            "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/roles/{roleId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          roleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          roleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["PatchRoleRequest"];
+          "text/json": components["schemas"]["PatchRoleRequest"];
+          "application/*+json": components["schemas"]["PatchRoleRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerRoleDto"];
+            "application/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+            "text/json": components["schemas"]["ApiResponseOfServerRoleDto"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/communities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/x-www-form-urlencoded": {
+            Name?: string;
+            Avatar?: components["schemas"]["IFormFile"];
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerIdentityDto"];
+            "application/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
+            "text/json": components["schemas"]["ApiResponseOfServerIdentityDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/avatar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/banner": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/details": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerDetailsDto"];
+            "application/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
+            "text/json": components["schemas"]["ApiResponseOfServerDetailsDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/details/channel-categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+            "application/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+            "text/json": components["schemas"]["ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/details/authorize": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+            "application/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+            "text/json": components["schemas"]["ApiResponseOfServerMemberAuthorizeInfoDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/emojis/entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
+            "application/json": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
+            "text/json": components["schemas"]["ApiResponseOfListOfEmojiEntryDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/emojis/management": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
+            "application/json": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
+            "text/json": components["schemas"]["ApiResponseOfListOfEmojiManagementDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/emojis": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/x-www-form-urlencoded": {
+            ShortCode?: string;
+            Image?: components["schemas"]["IFormFile"];
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfEmojiDto"];
+            "application/json": components["schemas"]["ApiResponseOfEmojiDto"];
+            "text/json": components["schemas"]["ApiResponseOfEmojiDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/emojis/delete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["BulkDeleteEmojiRequest"];
+          "text/json": components["schemas"]["BulkDeleteEmojiRequest"];
+          "application/*+json": components["schemas"]["BulkDeleteEmojiRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/communities/{serverId}/members/{userId}/roles": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          userId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["UpdateMemberRolesRequest"];
+          "text/json": components["schemas"]["UpdateMemberRolesRequest"];
+          "application/*+json": components["schemas"]["UpdateMemberRolesRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/conversations/dm/{peerId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          peerId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfDmConversationDetails"];
+            "application/json": components["schemas"]["ApiResponseOfDmConversationDetails"];
+            "text/json": components["schemas"]["ApiResponseOfDmConversationDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/servers/{serverId}/channels/{channelId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          serverId: string;
+          channelId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
+            "application/json": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
+            "text/json": components["schemas"]["ApiResponseOfServerChannelConversationDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/read-mentions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfMentionSource"];
+            "application/json": components["schemas"]["ApiResponseOfMentionSource"];
+            "text/json": components["schemas"]["ApiResponseOfMentionSource"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/pinned-messages": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          before?: string;
+          after?: string;
+        };
+        header?: never;
+        path: {
+          conversationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/messages": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          direction?: components["schemas"]["MessageLoadDirection"];
+        };
+        header?: never;
+        path: {
+          conversationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessagePage"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/x-www-form-urlencoded": {
+            Body?: string;
+            Attachments?: components["schemas"]["IFormFile"][];
+            /** Format: uuid */
+            ReplyToId?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/messages/{messageId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+          messageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+          messageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/x-www-form-urlencoded": {
+            "Body.HasValue"?: boolean;
+            "Body.Value"?: string;
+            RemoveAttachmentIds?: string[];
+            AddAttachments?: components["schemas"]["IFormFileCollection"];
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfEditedMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfEditedMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfEditedMessageDto"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/messages/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["SearchMessageRequest"];
+          "text/json": components["schemas"]["SearchMessageRequest"];
+          "application/*+json": components["schemas"]["SearchMessageRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfMessageSearchPage"];
+            "application/json": components["schemas"]["ApiResponseOfMessageSearchPage"];
+            "text/json": components["schemas"]["ApiResponseOfMessageSearchPage"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/messages/{messageId}/pin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+          messageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/messages/{messageId}/unpin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          conversationId: string;
+          messageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "application/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+            "text/json": components["schemas"]["ApiResponseOfTimelineMessageDto"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/conversations/{conversationId}/messages/{messageId}/reactions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          messageId: string;
+          conversationId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ReactionRequest"];
+          "text/json": components["schemas"]["ReactionRequest"];
+          "application/*+json": components["schemas"]["ReactionRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": components["schemas"]["ApiResponse"];
+            "application/json": components["schemas"]["ApiResponse"];
+            "text/json": components["schemas"]["ApiResponse"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        AccountDeletionStatusDto: {
-            /** Format: date-time */
-            scheduledAt: string;
-            /** Format: date-time */
-            deleteAt: string;
-            reason: components["schemas"]["UserAccountDeleteReason"];
-            extraMessage: null | string;
-        };
-        ApiResponse: {
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfAccountDeletionStatusDto: {
-            data: null | components["schemas"]["AccountDeletionStatusDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfChannelCategoryIdentityDto: {
-            data: null | components["schemas"]["ChannelCategoryIdentityDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfChannelDetailsDto: {
-            data: null | components["schemas"]["ChannelDetailsDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfDmConversationDetails: {
-            data: null | components["schemas"]["DmConversationDetails"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfEditedMessageDto: {
-            data: null | components["schemas"]["EditedMessageDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfEmojiDto: {
-            data: null | components["schemas"]["EmojiDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfFriendSearchResponse: {
-            data: null | components["schemas"]["FriendSearchResponse"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfGetIncomingDirectCallQueryResult: {
-            data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfint: {
-            /** Format: int32 */
-            data: number;
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
-            data: null | components["schemas"]["ChannelCategoryDetailDto"][];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfIReadOnlyListOfServerEmojiGroupDto: {
-            data: null | components["schemas"]["ServerEmojiGroupDto"][];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfIReadOnlyListOfUserIdentityProfileDto: {
-            data: null | components["schemas"]["UserIdentityProfileDto"][];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
-            data: null | components["schemas"]["KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfListOfEmojiEntryDto: {
-            data: null | components["schemas"]["EmojiEntryDto"][];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfListOfEmojiManagementDto: {
-            data: null | components["schemas"]["EmojiManagementDto"][];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfLoginResponse: {
-            data: null | components["schemas"]["LoginResponse"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfMentionSource: {
-            data: null | components["schemas"]["MentionSource"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfMessageSearchPage: {
-            data: null | components["schemas"]["MessageSearchPage"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfRefreshResponse: {
-            data: null | components["schemas"]["RefreshResponse"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfRestoreAccountResponse: {
-            data: null | components["schemas"]["RestoreAccountResponse"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfSendFriendRequestResult: {
-            data: null | components["schemas"]["SendFriendRequestResult"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerChannelConversationDetails: {
-            data: null | components["schemas"]["ServerChannelConversationDetails"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerChannelIdentityDto: {
-            data: null | components["schemas"]["ServerChannelIdentityDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerDetailsDto: {
-            data: null | components["schemas"]["ServerDetailsDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerIdentityDto: {
-            data: null | components["schemas"]["ServerIdentityDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerMemberAuthorizeInfoDto: {
-            data: null | components["schemas"]["ServerMemberAuthorizeInfoDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfServerRoleDto: {
-            data: null | components["schemas"]["ServerRoleDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfSessionsQueryResult: {
-            data: null | components["schemas"]["SessionsQueryResult"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfStartCallResult: {
-            data: null | components["schemas"]["StartCallResult"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfstring: {
-            data: null | string;
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfTimelineMessageDto: {
-            data: null | components["schemas"]["TimelineMessageDto"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfTimelineMessagePage: {
-            data: null | components["schemas"]["TimelineMessagePage"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfUnreadNotificationCounts: {
-            data: null | components["schemas"]["UnreadNotificationCounts"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfUpdateProfileResult: {
-            data: null | components["schemas"]["UpdateProfileResult"];
-            error: components["schemas"]["Error"];
-        };
-        ApiResponseOfUserAuthorizationInfo: {
-            data: null | components["schemas"]["UserAuthorizationInfo"];
-            error: components["schemas"]["Error"];
-        };
-        BulkDeleteEmojiRequest: {
-            ids: string[];
-        };
-        ChangePasswordRequest: {
-            oldPassword: string;
-            newPassword: string;
-        };
-        ChannelCategoryDetailDto: {
-            /** Format: uuid */
-            id: null | string;
-            name: null | string;
-            channels: components["schemas"]["ServerChannelIdentityDto"][];
-        };
-        ChannelCategoryIdentityDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-        };
-        ChannelDetailsDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            type: components["schemas"]["ChannelType"];
-            authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
-        };
-        /** @enum {string} */
-        ChannelType: ChannelType;
-        ConfirmEmailRequest: {
-            email: string;
-            confirmationCode: string;
-        };
-        CreateChannelCategoryRequest: {
-            name: string;
-        };
-        CreateChannelRequest: {
-            name: string;
-            type: components["schemas"]["ChannelType"];
-            /** Format: uuid */
-            categoryId: null | string;
-        };
-        CreateInvitationRequest: {
-            /** Format: uuid */
-            serverId: string;
-            /** Format: int32 */
-            maxUses: null | number;
-            expireAfter: components["schemas"]["InvitationExpireAfter"];
-        };
-        CreateRoleRequest: {
-            name: string;
-        };
-        DeleteAccountRequest: {
-            reason: components["schemas"]["UserAccountDeleteReason"];
-            extraMessage: null | string;
-            restorationPassword: string;
-        };
-        DmConversationDetails: {
-            peerProfile: components["schemas"]["UserIdentityProfileDto"];
-            /** Format: uuid */
-            conversationId: string;
-            isFriended: boolean;
-        };
-        EditedMessageDto: {
-            newBody: null | string;
-            attachments: components["schemas"]["MessageAttachmentDto"][];
-        };
-        EmojiDto: {
-            /** Format: uuid */
-            id: string;
-            shortCode: string;
-            /** Format: uuid */
-            serverId: string;
-            /** Format: uuid */
-            creatorId: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        EmojiEntryDto: {
-            /** Format: uuid */
-            id: string;
-            shortCode: string;
-        };
-        EmojiManagementCreatorDto: {
-            /** Format: uuid */
-            userId: string;
-            displayName: string;
-            /** Format: int32 */
-            avatarVersion: null | number;
-        };
-        EmojiManagementDto: {
-            /** Format: uuid */
-            id: string;
-            shortCode: string;
-            /** Format: date-time */
-            createdAt: string;
-            creator: components["schemas"]["EmojiManagementCreatorDto"];
-        };
-        Error: {
-            code?: null | string;
-            message?: null | string;
-            details?: null | string | Record<string, never>;
-        };
-        /** @enum {string} */
-        FileOperationType: FileOperationType;
-        ForgotPasswordRequest: {
-            email: string;
-        };
-        FriendSearchResponse: {
-            status: components["schemas"]["FriendSearchStatus"];
-            result: null | components["schemas"]["FriendSearchResult"];
-        };
-        FriendSearchResult: {
-            userProfile: components["schemas"]["UserIdentityProfileDto"];
-            relationshipStatus: components["schemas"]["UserRelationshipStatus"];
-            /** Format: uuid */
-            friendRequestId: null | string;
-        };
-        /** @enum {string} */
-        FriendSearchStatus: FriendSearchStatus;
-        GetIdentitiesRequest: {
-            ids: string[];
-        };
-        GetIncomingDirectCallQueryResult: {
-            /** Format: uuid */
-            callId: string;
-            callerProfile: components["schemas"]["UserIdentityProfileDto"];
-        };
-        /** Format: binary */
-        IFormFile: string;
-        IFormFileCollection: components["schemas"]["IFormFile"][];
-        /** @enum {string} */
-        InvitationExpireAfter: InvitationExpireAfter;
-        KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
-            /** Format: date-time */
-            beforeKey: string;
-            /** Format: date-time */
-            afterKey: string;
-            hasPreviousPage: boolean;
-            hasNextPage: boolean;
-            elements: components["schemas"]["PinnedMessageDto"][];
-        };
-        LoginRequest: {
-            email: string;
-            password: string;
-        };
-        LoginResponse: {
-            authorization: components["schemas"]["UserAuthorizationInfo"];
-            tokenType: string;
-            accessToken: string;
-        };
-        MemberRoleDto: {
-            /** Format: uuid */
-            id: string;
-            specialRoleType: components["schemas"]["SpecialRoleType"];
-            name: string;
-        };
-        MentionSource: components["schemas"]["MentionSourceMentionFromDm"] | components["schemas"]["MentionSourceMentionFromServer"];
-        MentionSourceMentionFromDm: {
-            /** @enum {string} */
-            $type?: MentionSourceMentionFromDm$type;
-            /** Format: uuid */
-            peerUserId: string;
-            /** Format: uuid */
-            conversationId: string;
-        };
-        MentionSourceMentionFromServer: {
-            /** @enum {string} */
-            $type?: MentionSourceMentionFromServer$type;
-            /** Format: uuid */
-            serverId: string;
-            /** Format: uuid */
-            channelId: string;
-            /** Format: uuid */
-            conversationId: string;
-        };
-        MessageAttachmentDto: {
-            /** Format: uuid */
-            id: string;
-            fileName: string;
-            contentType: string;
-        };
-        /** @enum {string} */
-        MessageLoadDirection: MessageLoadDirection;
-        /** @enum {string} */
-        MessagePinFilter: MessagePinFilter;
-        MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
-        MessagePropertiesCallEndProperties: {
-            /** @enum {integer} */
-            $type?: MessagePropertiesCallEndProperties$type;
-            duration: string;
-        };
-        MessageSearchDto: {
-            /** Format: uuid */
-            id: string;
-            body: null | string;
-            sender: components["schemas"]["UserIdentityProfileDto"];
-            /** Format: date-time */
-            createdAt: string;
-            attachments: components["schemas"]["MessageAttachmentDto"][];
-        };
-        MessageSearchPage: {
-            messages: components["schemas"]["MessageSearchDto"][];
-            hasNextPage: boolean;
-            /** Format: uuid */
-            nextPageCursor: null | string;
-        };
-        /** @enum {string} */
-        MessageType: MessageType;
-        OptionalOfint: null | number;
-        OptionalOfstring: string;
-        PatchRoleRequest: {
-            name: components["schemas"]["OptionalOfstring"];
-            authorizeLevel: components["schemas"]["OptionalOfint"];
-            permissionStates: {
-                CreateRole?: components["schemas"]["PermissionState"];
-                UpdateRole?: components["schemas"]["PermissionState"];
-                DeleteRole?: components["schemas"]["PermissionState"];
-                CreateChannel?: components["schemas"]["PermissionState"];
-                DeleteChannel?: components["schemas"]["PermissionState"];
-                UpdateMemberRoles?: components["schemas"]["PermissionState"];
-                ManageMembers?: components["schemas"]["PermissionState"];
-                KickMembers?: components["schemas"]["PermissionState"];
-                WarnMembers?: components["schemas"]["PermissionState"];
-                BanMembers?: components["schemas"]["PermissionState"];
-                UnbanMembers?: components["schemas"]["PermissionState"];
-                ReadModerationLogs?: components["schemas"]["PermissionState"];
-                CreateInvitation?: components["schemas"]["PermissionState"];
-                SendMessage?: components["schemas"]["PermissionState"];
-                EditMessages?: components["schemas"]["PermissionState"];
-                DeleteMessages?: components["schemas"]["PermissionState"];
-                ManageEmojis?: components["schemas"]["PermissionState"];
-                CreateEmoji?: components["schemas"]["PermissionState"];
-                DeleteEmoji?: components["schemas"]["PermissionState"];
-            };
-        };
-        /** @enum {string} */
-        PermissionState: PermissionState;
-        PinnedMessageDto: {
-            /** Format: uuid */
-            id: string;
-            body: null | string;
-            sender: null | components["schemas"]["PinnedMessageSender"];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            pinnedAt: null | string;
-            /** Format: int32 */
-            attachmentsCount: number;
-        };
-        PinnedMessageSender: {
-            /** Format: uuid */
-            id: string;
-            displayName: null | string;
-            /** Format: int32 */
-            avatarVersion: null | number;
-        };
-        /** @enum {string} */
-        PresenceStatus: PresenceStatus;
-        /** @enum {string} */
-        ReactionAction: ReactionAction;
-        ReactionRequest: {
-            reactionKey: string;
-            action: components["schemas"]["ReactionAction"];
-        };
-        RefreshResponse: {
-            authorization: components["schemas"]["UserAuthorizationInfo"];
-            tokenType: string;
-            accessToken: string;
-        };
-        RegisterRequest: {
-            email: string;
-            password: string;
-            confirmPassword: string;
-        };
-        ResetPasswordRequest: {
-            email: string;
-            token: string;
-            password: string;
-        };
-        RestoreAccountRequest: {
-            restorationPassword: string;
-        };
-        RestoreAccountResponse: {
-            authorization: components["schemas"]["UserAuthorizationInfo"];
-            tokenType: string;
-            accessToken: string;
-        };
-        SearchMessageRequest: {
-            content: null | string;
-            senderIds: null | string[];
-            /** Format: date-time */
-            startDateTime: null | string;
-            /** Format: date-time */
-            endDateTime: null | string;
-            pinFilter: components["schemas"]["MessagePinFilter"];
-            /** Format: uuid */
-            beforeCursor: null | string;
-        };
-        SendFriendRequestResult: {
-            relationshipStatus: components["schemas"]["UserRelationshipStatus"];
-            /** Format: uuid */
-            friendRequestId: string;
-        };
-        SendRequest: {
-            /** Format: uuid */
-            recipientId: string;
-        };
-        ServerChannelConversationDetails: {
-            channelIdentity: components["schemas"]["ServerChannelIdentityDto"];
-            /** Format: uuid */
-            conversationId: string;
-        };
-        ServerChannelIdentityDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            channelType: components["schemas"]["ChannelType"];
-            /** Format: uuid */
-            categoryId: null | string;
-        };
-        ServerChannelNotificationCounts: {
-            /** Format: int32 */
-            mentionsCount: number;
-        };
-        ServerDetailsDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** Format: int32 */
-            avatarVersion: null | number;
-            channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
-            authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
-        };
-        ServerEmojiGroupDto: {
-            serverInfo: components["schemas"]["ServerEmojiGroupInfoDto"];
-            emojiEntries: components["schemas"]["EmojiEntryDto"][];
-        };
-        ServerEmojiGroupInfoDto: {
-            /** Format: uuid */
-            serverId: string;
-            name: string;
-        };
-        ServerIdentityDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** Format: int32 */
-            avatarVersion: null | number;
-        };
-        ServerMemberAuthorizeInfoDto: {
-            /** Format: uuid */
-            memberId: string;
-            /** Format: int32 */
-            authorizeLevel: number;
-            effectivePermissions: components["schemas"]["ServerPermission"][];
-            roles: components["schemas"]["MemberRoleDto"][];
-            isBanned: boolean;
-        };
-        /** @enum {string} */
-        ServerPermission: ServerPermission;
-        ServerRoleDto: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            permissions: {
-                CreateRole?: components["schemas"]["PermissionState"];
-                UpdateRole?: components["schemas"]["PermissionState"];
-                DeleteRole?: components["schemas"]["PermissionState"];
-                CreateChannel?: components["schemas"]["PermissionState"];
-                DeleteChannel?: components["schemas"]["PermissionState"];
-                UpdateMemberRoles?: components["schemas"]["PermissionState"];
-                ManageMembers?: components["schemas"]["PermissionState"];
-                KickMembers?: components["schemas"]["PermissionState"];
-                WarnMembers?: components["schemas"]["PermissionState"];
-                BanMembers?: components["schemas"]["PermissionState"];
-                UnbanMembers?: components["schemas"]["PermissionState"];
-                ReadModerationLogs?: components["schemas"]["PermissionState"];
-                CreateInvitation?: components["schemas"]["PermissionState"];
-                SendMessage?: components["schemas"]["PermissionState"];
-                EditMessages?: components["schemas"]["PermissionState"];
-                DeleteMessages?: components["schemas"]["PermissionState"];
-                ManageEmojis?: components["schemas"]["PermissionState"];
-                CreateEmoji?: components["schemas"]["PermissionState"];
-                DeleteEmoji?: components["schemas"]["PermissionState"];
-            };
-            /** Format: int32 */
-            authorizeLevel: number;
-        };
-        SessionDetails: {
-            /** Format: uuid */
-            sessionId: string;
-            operatingSystemInfo: string;
-            browserInfo: string;
-            device: components["schemas"]["SessionDevice"];
-            /** Format: int64 */
-            lastActivityMs: number;
-        };
-        /** @enum {string} */
-        SessionDevice: SessionDevice;
-        SessionsQueryResult: {
-            currentSession: components["schemas"]["SessionDetails"];
-            allSessions: components["schemas"]["SessionDetails"][];
-        };
-        SetNamesRequest: {
-            userName: string;
-            displayName: string;
-        };
-        /** @enum {string} */
-        SpecialRoleType: SpecialRoleType;
-        StartCallResult: {
-            /** Format: uuid */
-            callId: string;
-            calleeProfile: components["schemas"]["UserIdentityProfileDto"];
-            message: components["schemas"]["TimelineMessageDto"];
-        };
-        TimelineMessageDto: {
-            /** Format: uuid */
-            id: string;
-            type: components["schemas"]["MessageType"];
-            sender: null | components["schemas"]["TimelineMessageSenderDto"];
-            body: null | string;
-            attachments: null | components["schemas"]["MessageAttachmentDto"][];
-            replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
-            properties: null | components["schemas"]["MessageProperties"];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: null | string;
-            /** Format: uuid */
-            conversationId: string;
-            isPinned: boolean;
-            reactionsCounts: null | {
-                [key: string]: number;
-            };
-            userReactionKeys: null | string[];
-        };
-        TimelineMessagePage: {
-            messages: components["schemas"]["TimelineMessageDto"][];
-            hasMoreBefore: null | boolean;
-            hasMoreAfter: null | boolean;
-        };
-        TimelineMessageReplyDto: {
-            /** Format: uuid */
-            id: string;
-            sender: components["schemas"]["TimelineMessageSenderDto"];
-            body: null | string;
-            /** Format: int32 */
-            attachmentsCount: number;
-        };
-        TimelineMessageSenderDto: {
-            /** Format: uuid */
-            id: string;
-            displayName: null | string;
-            /** Format: int32 */
-            avatarVersion: null | number;
-        };
-        UnreadNotificationCounts: {
-            dmMentionCounts: {
-                [key: string]: number;
-            };
-            servers: {
-                [key: string]: {
-                    [key: string]: components["schemas"]["ServerChannelNotificationCounts"];
-                };
-            };
-        };
-        UpdateMemberRolesRequest: {
-            addRoleIds: string[];
-            removeRoleIds: string[];
-        };
-        UpdateProfileResult: {
-            avatarVersion?: components["schemas"]["OptionalOfint"];
-            bannerVersion?: components["schemas"]["OptionalOfint"];
-        };
-        /** @enum {string} */
-        UserAccountDeleteReason: UserAccountDeleteReason;
-        UserAuthorizationInfo: {
-            /** Format: uuid */
-            id: string;
-            isVerified: boolean;
-            isPendingDelete: boolean;
-            isProfileSetup: boolean;
-            roles: string[];
-            permissions: string[];
-        };
-        UserIdentityProfileDto: {
-            /** Format: uuid */
-            id: string;
-            userName: null | string;
-            displayName: null | string;
-            /** Format: int32 */
-            avatarVersion: null | number;
-        };
-        /** @enum {string} */
-        UserRelationshipStatus: UserRelationshipStatus;
+  schemas: {
+    AccountDeletionStatusDto: {
+      /** Format: date-time */
+      scheduledAt: string;
+      /** Format: date-time */
+      deleteAt: string;
+      reason: components["schemas"]["UserAccountDeleteReason"];
+      extraMessage: null | string;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    ApiResponse: {
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfAccountDeletionStatusDto: {
+      data: null | components["schemas"]["AccountDeletionStatusDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfChannelCategoryIdentityDto: {
+      data: null | components["schemas"]["ChannelCategoryIdentityDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfChannelDetailsDto: {
+      data: null | components["schemas"]["ChannelDetailsDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfDmConversationDetails: {
+      data: null | components["schemas"]["DmConversationDetails"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfEditedMessageDto: {
+      data: null | components["schemas"]["EditedMessageDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfEmojiDto: {
+      data: null | components["schemas"]["EmojiDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfFriendSearchResponse: {
+      data: null | components["schemas"]["FriendSearchResponse"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfGetIncomingDirectCallQueryResult: {
+      data: null | components["schemas"]["GetIncomingDirectCallQueryResult"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfint: {
+      /** Format: int32 */
+      data: number;
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfIReadOnlyCollectionOfChannelCategoryDetailDto: {
+      data: null | components["schemas"]["ChannelCategoryDetailDto"][];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfIReadOnlyListOfServerEmojiGroupDto: {
+      data: null | components["schemas"]["ServerEmojiGroupDto"][];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfIReadOnlyListOfUserIdentityProfileDto: {
+      data: null | components["schemas"]["UserIdentityProfileDto"][];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
+      data:
+        | null
+        | components["schemas"]["KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfListOfEmojiEntryDto: {
+      data: null | components["schemas"]["EmojiEntryDto"][];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfListOfEmojiManagementDto: {
+      data: null | components["schemas"]["EmojiManagementDto"][];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfLoginResponse: {
+      data: null | components["schemas"]["LoginResponse"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfMentionSource: {
+      data: null | components["schemas"]["MentionSource"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfMessageSearchPage: {
+      data: null | components["schemas"]["MessageSearchPage"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfRefreshResponse: {
+      data: null | components["schemas"]["RefreshResponse"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfRestoreAccountResponse: {
+      data: null | components["schemas"]["RestoreAccountResponse"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfSendFriendRequestResult: {
+      data: null | components["schemas"]["SendFriendRequestResult"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfServerChannelConversationDetails: {
+      data: null | components["schemas"]["ServerChannelConversationDetails"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfServerChannelIdentityDto: {
+      data: null | components["schemas"]["ServerChannelIdentityDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfServerDetailsDto: {
+      data: null | components["schemas"]["ServerDetailsDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfServerIdentityDto: {
+      data: null | components["schemas"]["ServerIdentityDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfServerMemberAuthorizeInfoDto: {
+      data: null | components["schemas"]["ServerMemberAuthorizeInfoDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfServerRoleDto: {
+      data: null | components["schemas"]["ServerRoleDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfSessionsQueryResult: {
+      data: null | components["schemas"]["SessionsQueryResult"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfStartCallResult: {
+      data: null | components["schemas"]["StartCallResult"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfstring: {
+      data: null | string;
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfTimelineMessageDto: {
+      data: null | components["schemas"]["TimelineMessageDto"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfTimelineMessagePage: {
+      data: null | components["schemas"]["TimelineMessagePage"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfUnreadNotificationCounts: {
+      data: null | components["schemas"]["UnreadNotificationCounts"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfUpdateProfileResult: {
+      data: null | components["schemas"]["UpdateProfileResult"];
+      error: components["schemas"]["Error"];
+    };
+    ApiResponseOfUserAuthorizationInfo: {
+      data: null | components["schemas"]["UserAuthorizationInfo"];
+      error: components["schemas"]["Error"];
+    };
+    BulkDeleteEmojiRequest: {
+      ids: string[];
+    };
+    ChangePasswordRequest: {
+      oldPassword: string;
+      newPassword: string;
+    };
+    ChannelCategoryDetailDto: {
+      /** Format: uuid */
+      id: null | string;
+      name: null | string;
+      channels: components["schemas"]["ServerChannelIdentityDto"][];
+    };
+    ChannelCategoryIdentityDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+    };
+    ChannelDetailsDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      type: components["schemas"]["ChannelType"];
+      authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
+    };
+    /** @enum {string} */
+    ChannelType: ChannelType;
+    ConfirmEmailRequest: {
+      email: string;
+      confirmationCode: string;
+    };
+    CreateChannelCategoryRequest: {
+      name: string;
+    };
+    CreateChannelRequest: {
+      name: string;
+      type: components["schemas"]["ChannelType"];
+      /** Format: uuid */
+      categoryId: null | string;
+    };
+    CreateInvitationRequest: {
+      /** Format: uuid */
+      serverId: string;
+      /** Format: int32 */
+      maxUses: null | number;
+      expireAfter: components["schemas"]["InvitationExpireAfter"];
+    };
+    CreateRoleRequest: {
+      name: string;
+    };
+    DeleteAccountRequest: {
+      reason: components["schemas"]["UserAccountDeleteReason"];
+      extraMessage: null | string;
+      restorationPassword: string;
+    };
+    DmConversationDetails: {
+      peerProfile: components["schemas"]["UserIdentityProfileDto"];
+      /** Format: uuid */
+      conversationId: string;
+      isFriended: boolean;
+    };
+    EditedMessageDto: {
+      newBody: null | string;
+      attachments: components["schemas"]["MessageAttachmentDto"][];
+    };
+    EmojiDto: {
+      /** Format: uuid */
+      id: string;
+      shortCode: string;
+      /** Format: uuid */
+      serverId: string;
+      /** Format: uuid */
+      creatorId: string;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    EmojiEntryDto: {
+      /** Format: uuid */
+      id: string;
+      shortCode: string;
+    };
+    EmojiManagementCreatorDto: {
+      /** Format: uuid */
+      userId: string;
+      displayName: string;
+      /** Format: int32 */
+      avatarVersion: null | number;
+    };
+    EmojiManagementDto: {
+      /** Format: uuid */
+      id: string;
+      shortCode: string;
+      /** Format: date-time */
+      createdAt: string;
+      creator: components["schemas"]["EmojiManagementCreatorDto"];
+    };
+    Error: {
+      code?: null | string;
+      message?: null | string;
+      details?: null | string | Record<string, never>;
+    };
+    /** @enum {string} */
+    FileOperationType: FileOperationType;
+    ForgotPasswordRequest: {
+      email: string;
+    };
+    FriendSearchResponse: {
+      status: components["schemas"]["FriendSearchStatus"];
+      result: null | components["schemas"]["FriendSearchResult"];
+    };
+    FriendSearchResult: {
+      userProfile: components["schemas"]["UserIdentityProfileDto"];
+      relationshipStatus: components["schemas"]["UserRelationshipStatus"];
+      /** Format: uuid */
+      friendRequestId: null | string;
+    };
+    /** @enum {string} */
+    FriendSearchStatus: FriendSearchStatus;
+    GetIdentitiesRequest: {
+      ids: string[];
+    };
+    GetIncomingDirectCallQueryResult: {
+      /** Format: uuid */
+      callId: string;
+      callerProfile: components["schemas"]["UserIdentityProfileDto"];
+    };
+    /** Format: binary */
+    IFormFile: string;
+    IFormFileCollection: components["schemas"]["IFormFile"][];
+    /** @enum {string} */
+    InvitationExpireAfter: InvitationExpireAfter;
+    KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
+      /** Format: date-time */
+      beforeKey: string;
+      /** Format: date-time */
+      afterKey: string;
+      hasPreviousPage: boolean;
+      hasNextPage: boolean;
+      elements: components["schemas"]["PinnedMessageDto"][];
+    };
+    LoginRequest: {
+      email: string;
+      password: string;
+    };
+    LoginResponse: {
+      authorization: components["schemas"]["UserAuthorizationInfo"];
+      tokenType: string;
+      accessToken: string;
+    };
+    MemberRoleDto: {
+      /** Format: uuid */
+      id: string;
+      specialRoleType: components["schemas"]["SpecialRoleType"];
+      name: string;
+    };
+    MentionSource:
+      | components["schemas"]["MentionSourceMentionFromDm"]
+      | components["schemas"]["MentionSourceMentionFromServer"];
+    MentionSourceMentionFromDm: {
+      /** @enum {string} */
+      $type?: MentionSourceMentionFromDm$type;
+      /** Format: uuid */
+      peerUserId: string;
+      /** Format: uuid */
+      conversationId: string;
+    };
+    MentionSourceMentionFromServer: {
+      /** @enum {string} */
+      $type?: MentionSourceMentionFromServer$type;
+      /** Format: uuid */
+      serverId: string;
+      /** Format: uuid */
+      channelId: string;
+      /** Format: uuid */
+      conversationId: string;
+    };
+    MessageAttachmentDto: {
+      /** Format: uuid */
+      id: string;
+      fileName: string;
+      contentType: string;
+    };
+    /** @enum {string} */
+    MessageLoadDirection: MessageLoadDirection;
+    /** @enum {string} */
+    MessagePinFilter: MessagePinFilter;
+    MessageProperties: components["schemas"]["MessagePropertiesCallEndProperties"];
+    MessagePropertiesCallEndProperties: {
+      /** @enum {integer} */
+      $type?: MessagePropertiesCallEndProperties$type;
+      duration: string;
+    };
+    MessageSearchDto: {
+      /** Format: uuid */
+      id: string;
+      body: null | string;
+      sender: components["schemas"]["UserIdentityProfileDto"];
+      /** Format: date-time */
+      createdAt: string;
+      attachments: components["schemas"]["MessageAttachmentDto"][];
+    };
+    MessageSearchPage: {
+      messages: components["schemas"]["MessageSearchDto"][];
+      hasNextPage: boolean;
+      /** Format: uuid */
+      nextPageCursor: null | string;
+    };
+    /** @enum {string} */
+    MessageType: MessageType;
+    OptionalOfint: null | number;
+    OptionalOfstring: string;
+    PatchRoleRequest: {
+      name: components["schemas"]["OptionalOfstring"];
+      authorizeLevel: components["schemas"]["OptionalOfint"];
+      permissionStates: {
+        CreateRole?: components["schemas"]["PermissionState"];
+        UpdateRole?: components["schemas"]["PermissionState"];
+        DeleteRole?: components["schemas"]["PermissionState"];
+        CreateChannel?: components["schemas"]["PermissionState"];
+        DeleteChannel?: components["schemas"]["PermissionState"];
+        UpdateMemberRoles?: components["schemas"]["PermissionState"];
+        ManageMembers?: components["schemas"]["PermissionState"];
+        KickMembers?: components["schemas"]["PermissionState"];
+        WarnMembers?: components["schemas"]["PermissionState"];
+        BanMembers?: components["schemas"]["PermissionState"];
+        UnbanMembers?: components["schemas"]["PermissionState"];
+        ReadModerationLogs?: components["schemas"]["PermissionState"];
+        CreateInvitation?: components["schemas"]["PermissionState"];
+        SendMessage?: components["schemas"]["PermissionState"];
+        EditMessages?: components["schemas"]["PermissionState"];
+        DeleteMessages?: components["schemas"]["PermissionState"];
+        ManageEmojis?: components["schemas"]["PermissionState"];
+        CreateEmoji?: components["schemas"]["PermissionState"];
+        DeleteEmoji?: components["schemas"]["PermissionState"];
+      };
+    };
+    /** @enum {string} */
+    PermissionState: PermissionState;
+    PinnedMessageDto: {
+      /** Format: uuid */
+      id: string;
+      body: null | string;
+      sender: null | components["schemas"]["PinnedMessageSender"];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      pinnedAt: null | string;
+      /** Format: int32 */
+      attachmentsCount: number;
+    };
+    PinnedMessageSender: {
+      /** Format: uuid */
+      id: string;
+      displayName: null | string;
+      /** Format: int32 */
+      avatarVersion: null | number;
+    };
+    /** @enum {string} */
+    PresenceStatus: PresenceStatus;
+    /** @enum {string} */
+    ReactionAction: ReactionAction;
+    ReactionRequest: {
+      reactionKey: string;
+      action: components["schemas"]["ReactionAction"];
+    };
+    RefreshResponse: {
+      authorization: components["schemas"]["UserAuthorizationInfo"];
+      tokenType: string;
+      accessToken: string;
+    };
+    RegisterRequest: {
+      email: string;
+      password: string;
+      confirmPassword: string;
+    };
+    ResetPasswordRequest: {
+      email: string;
+      token: string;
+      password: string;
+    };
+    RestoreAccountRequest: {
+      restorationPassword: string;
+    };
+    RestoreAccountResponse: {
+      authorization: components["schemas"]["UserAuthorizationInfo"];
+      tokenType: string;
+      accessToken: string;
+    };
+    SearchMessageRequest: {
+      content: null | string;
+      senderIds: null | string[];
+      /** Format: date-time */
+      startDateTime: null | string;
+      /** Format: date-time */
+      endDateTime: null | string;
+      pinFilter: components["schemas"]["MessagePinFilter"];
+      /** Format: uuid */
+      beforeCursor: null | string;
+    };
+    SendFriendRequestResult: {
+      relationshipStatus: components["schemas"]["UserRelationshipStatus"];
+      /** Format: uuid */
+      friendRequestId: string;
+    };
+    SendRequest: {
+      /** Format: uuid */
+      recipientId: string;
+    };
+    ServerChannelConversationDetails: {
+      channelIdentity: components["schemas"]["ServerChannelIdentityDto"];
+      /** Format: uuid */
+      conversationId: string;
+    };
+    ServerChannelIdentityDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      channelType: components["schemas"]["ChannelType"];
+      /** Format: uuid */
+      categoryId: null | string;
+    };
+    ServerChannelNotificationCounts: {
+      /** Format: int32 */
+      mentionsCount: number;
+    };
+    ServerDetailsDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: int32 */
+      avatarVersion: null | number;
+      channelCategories: components["schemas"]["ChannelCategoryDetailDto"][];
+      authorizeInfo: components["schemas"]["ServerMemberAuthorizeInfoDto"];
+    };
+    ServerEmojiGroupDto: {
+      serverInfo: components["schemas"]["ServerEmojiGroupInfoDto"];
+      emojiEntries: components["schemas"]["EmojiEntryDto"][];
+    };
+    ServerEmojiGroupInfoDto: {
+      /** Format: uuid */
+      serverId: string;
+      name: string;
+    };
+    ServerIdentityDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: int32 */
+      avatarVersion: null | number;
+    };
+    ServerMemberAuthorizeInfoDto: {
+      /** Format: uuid */
+      memberId: string;
+      /** Format: int32 */
+      authorizeLevel: number;
+      effectivePermissions: components["schemas"]["ServerPermission"][];
+      roles: components["schemas"]["MemberRoleDto"][];
+      isBanned: boolean;
+    };
+    /** @enum {string} */
+    ServerPermission: ServerPermission;
+    ServerRoleDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      permissions: {
+        CreateRole?: components["schemas"]["PermissionState"];
+        UpdateRole?: components["schemas"]["PermissionState"];
+        DeleteRole?: components["schemas"]["PermissionState"];
+        CreateChannel?: components["schemas"]["PermissionState"];
+        DeleteChannel?: components["schemas"]["PermissionState"];
+        UpdateMemberRoles?: components["schemas"]["PermissionState"];
+        ManageMembers?: components["schemas"]["PermissionState"];
+        KickMembers?: components["schemas"]["PermissionState"];
+        WarnMembers?: components["schemas"]["PermissionState"];
+        BanMembers?: components["schemas"]["PermissionState"];
+        UnbanMembers?: components["schemas"]["PermissionState"];
+        ReadModerationLogs?: components["schemas"]["PermissionState"];
+        CreateInvitation?: components["schemas"]["PermissionState"];
+        SendMessage?: components["schemas"]["PermissionState"];
+        EditMessages?: components["schemas"]["PermissionState"];
+        DeleteMessages?: components["schemas"]["PermissionState"];
+        ManageEmojis?: components["schemas"]["PermissionState"];
+        CreateEmoji?: components["schemas"]["PermissionState"];
+        DeleteEmoji?: components["schemas"]["PermissionState"];
+      };
+      /** Format: int32 */
+      authorizeLevel: number;
+    };
+    SessionDetails: {
+      /** Format: uuid */
+      sessionId: string;
+      operatingSystemInfo: string;
+      browserInfo: string;
+      device: components["schemas"]["SessionDevice"];
+      /** Format: int64 */
+      lastActivityMs: number;
+    };
+    /** @enum {string} */
+    SessionDevice: SessionDevice;
+    SessionsQueryResult: {
+      currentSession: components["schemas"]["SessionDetails"];
+      allSessions: components["schemas"]["SessionDetails"][];
+    };
+    SetNamesRequest: {
+      userName: string;
+      displayName: string;
+    };
+    /** @enum {string} */
+    SpecialRoleType: SpecialRoleType;
+    StartCallResult: {
+      /** Format: uuid */
+      callId: string;
+      calleeProfile: components["schemas"]["UserIdentityProfileDto"];
+      message: components["schemas"]["TimelineMessageDto"];
+    };
+    TimelineMessageDto: {
+      /** Format: uuid */
+      id: string;
+      type: components["schemas"]["MessageType"];
+      sender: null | components["schemas"]["TimelineMessageSenderDto"];
+      body: null | string;
+      attachments: null | components["schemas"]["MessageAttachmentDto"][];
+      replyTo: null | components["schemas"]["TimelineMessageReplyDto"];
+      properties: null | components["schemas"]["MessageProperties"];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: null | string;
+      /** Format: uuid */
+      conversationId: string;
+      isPinned: boolean;
+      reactionsCounts: null | {
+        [key: string]: number;
+      };
+      userReactionKeys: null | string[];
+    };
+    TimelineMessagePage: {
+      messages: components["schemas"]["TimelineMessageDto"][];
+      hasMoreBefore: null | boolean;
+      hasMoreAfter: null | boolean;
+    };
+    TimelineMessageReplyDto: {
+      /** Format: uuid */
+      id: string;
+      sender: components["schemas"]["TimelineMessageSenderDto"];
+      body: null | string;
+      /** Format: int32 */
+      attachmentsCount: number;
+    };
+    TimelineMessageSenderDto: {
+      /** Format: uuid */
+      id: string;
+      displayName: null | string;
+      /** Format: int32 */
+      avatarVersion: null | number;
+    };
+    UnreadNotificationCounts: {
+      dmMentionCounts: {
+        [key: string]: number;
+      };
+      servers: {
+        [key: string]: {
+          [
+            key: string
+          ]: components["schemas"]["ServerChannelNotificationCounts"];
+        };
+      };
+    };
+    UpdateMemberRolesRequest: {
+      addRoleIds: string[];
+      removeRoleIds: string[];
+    };
+    UpdateProfileResult: {
+      avatarVersion?: components["schemas"]["OptionalOfint"];
+      bannerVersion?: components["schemas"]["OptionalOfint"];
+    };
+    /** @enum {string} */
+    UserAccountDeleteReason: UserAccountDeleteReason;
+    UserAuthorizationInfo: {
+      /** Format: uuid */
+      id: string;
+      isVerified: boolean;
+      isPendingDelete: boolean;
+      isProfileSetup: boolean;
+      roles: string[];
+      permissions: string[];
+    };
+    UserIdentityProfileDto: {
+      /** Format: uuid */
+      id: string;
+      userName: null | string;
+      displayName: null | string;
+      /** Format: int32 */
+      avatarVersion: null | number;
+    };
+    /** @enum {string} */
+    UserRelationshipStatus: UserRelationshipStatus;
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    Login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-                "text/json": components["schemas"]["LoginRequest"];
-                "application/*+json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": components["schemas"]["ApiResponseOfLoginResponse"];
-                    "application/json": components["schemas"]["ApiResponseOfLoginResponse"];
-                    "text/json": components["schemas"]["ApiResponseOfLoginResponse"];
-                };
-            };
-        };
+  Login: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    Register: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-                "text/json": components["schemas"]["RegisterRequest"];
-                "application/*+json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": components["schemas"]["ApiResponse"];
-                    "application/json": components["schemas"]["ApiResponse"];
-                    "text/json": components["schemas"]["ApiResponse"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+        "text/json": components["schemas"]["LoginRequest"];
+        "application/*+json": components["schemas"]["LoginRequest"];
+      };
     };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/plain": components["schemas"]["ApiResponseOfLoginResponse"];
+          "application/json": components["schemas"]["ApiResponseOfLoginResponse"];
+          "text/json": components["schemas"]["ApiResponseOfLoginResponse"];
+        };
+      };
+    };
+  };
+  Register: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegisterRequest"];
+        "text/json": components["schemas"]["RegisterRequest"];
+        "application/*+json": components["schemas"]["RegisterRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/plain": components["schemas"]["ApiResponse"];
+          "application/json": components["schemas"]["ApiResponse"];
+          "text/json": components["schemas"]["ApiResponse"];
+        };
+      };
+    };
+  };
 }
 export enum ChannelType {
-    Text = "Text",
-    Voice = "Voice"
+  Text = "Text",
+  Voice = "Voice",
 }
 export enum FileOperationType {
-    Set = "Set",
-    NoMod = "NoMod",
-    Delete = "Delete"
+  Set = "Set",
+  NoMod = "NoMod",
+  Delete = "Delete",
 }
 export enum FriendSearchStatus {
-    Success = "Success",
-    NoUser = "NoUser",
-    DisallowSelf = "DisallowSelf"
+  Success = "Success",
+  NoUser = "NoUser",
+  DisallowSelf = "DisallowSelf",
 }
 export enum InvitationExpireAfter {
-    FiveMinutes = "FiveMinutes",
-    FifteenMinutes = "FifteenMinutes",
-    ThirtyMinutes = "ThirtyMinutes",
-    OneHour = "OneHour",
-    TwoHours = "TwoHours",
-    ThreeHours = "ThreeHours",
-    SixHours = "SixHours",
-    TwelveHours = "TwelveHours",
-    OneDay = "OneDay",
-    OneWeek = "OneWeek",
-    TwoWeeks = "TwoWeeks",
-    FourWeeks = "FourWeeks",
-    Infinite = "Infinite"
+  FiveMinutes = "FiveMinutes",
+  FifteenMinutes = "FifteenMinutes",
+  ThirtyMinutes = "ThirtyMinutes",
+  OneHour = "OneHour",
+  TwoHours = "TwoHours",
+  ThreeHours = "ThreeHours",
+  SixHours = "SixHours",
+  TwelveHours = "TwelveHours",
+  OneDay = "OneDay",
+  OneWeek = "OneWeek",
+  TwoWeeks = "TwoWeeks",
+  FourWeeks = "FourWeeks",
+  Infinite = "Infinite",
 }
 export enum MentionSourceMentionFromDm$type {
-    dm = "dm"
+  dm = "dm",
 }
 export enum MentionSourceMentionFromServer$type {
-    server = "server"
+  server = "server",
 }
 export enum MessageLoadDirection {
-    Latest = "Latest",
-    Before = "Before",
-    After = "After",
-    Around = "Around"
+  Latest = "Latest",
+  Before = "Before",
+  After = "After",
+  Around = "Around",
 }
 export enum MessagePinFilter {
-    Unspecified = "Unspecified",
-    Pin = "Pin",
-    Unpin = "Unpin"
+  Unspecified = "Unspecified",
+  Pin = "Pin",
+  Unpin = "Unpin",
 }
 export enum MessagePropertiesCallEndProperties$type {
-    Value1 = 1
+  Value1 = 1,
 }
 export enum MessageType {
-    Message = "Message",
-    CallStart = "CallStart",
-    CallCancel = "CallCancel",
-    CallRejected = "CallRejected",
-    CallEnd = "CallEnd",
-    Pin = "Pin",
-    Unpin = "Unpin"
+  Message = "Message",
+  CallStart = "CallStart",
+  CallCancel = "CallCancel",
+  CallRejected = "CallRejected",
+  CallEnd = "CallEnd",
+  Pin = "Pin",
+  Unpin = "Unpin",
 }
 export enum PermissionState {
-    Inherit = "Inherit",
-    Enable = "Enable",
-    Disable = "Disable"
+  Inherit = "Inherit",
+  Enable = "Enable",
+  Disable = "Disable",
 }
 export enum PresenceStatus {
-    Online = "Online",
-    Offline = "Offline",
-    Idle = "Idle",
-    DoNotDisturb = "DoNotDisturb",
-    Invisible = "Invisible"
+  Online = "Online",
+  Offline = "Offline",
+  Idle = "Idle",
+  DoNotDisturb = "DoNotDisturb",
+  Invisible = "Invisible",
 }
 export enum ReactionAction {
-    Add = "Add",
-    Remove = "Remove"
+  Add = "Add",
+  Remove = "Remove",
 }
 export enum ServerPermission {
-    CreateRole = "CreateRole",
-    UpdateRole = "UpdateRole",
-    DeleteRole = "DeleteRole",
-    CreateChannel = "CreateChannel",
-    DeleteChannel = "DeleteChannel",
-    UpdateMemberRoles = "UpdateMemberRoles",
-    ManageMembers = "ManageMembers",
-    KickMembers = "KickMembers",
-    WarnMembers = "WarnMembers",
-    BanMembers = "BanMembers",
-    UnbanMembers = "UnbanMembers",
-    ReadModerationLogs = "ReadModerationLogs",
-    CreateInvitation = "CreateInvitation",
-    SendMessage = "SendMessage",
-    EditMessages = "EditMessages",
-    DeleteMessages = "DeleteMessages",
-    ManageEmojis = "ManageEmojis",
-    CreateEmoji = "CreateEmoji",
-    DeleteEmoji = "DeleteEmoji"
+  CreateRole = "CreateRole",
+  UpdateRole = "UpdateRole",
+  DeleteRole = "DeleteRole",
+  CreateChannel = "CreateChannel",
+  DeleteChannel = "DeleteChannel",
+  UpdateMemberRoles = "UpdateMemberRoles",
+  ManageMembers = "ManageMembers",
+  KickMembers = "KickMembers",
+  WarnMembers = "WarnMembers",
+  BanMembers = "BanMembers",
+  UnbanMembers = "UnbanMembers",
+  ReadModerationLogs = "ReadModerationLogs",
+  CreateInvitation = "CreateInvitation",
+  SendMessage = "SendMessage",
+  EditMessages = "EditMessages",
+  DeleteMessages = "DeleteMessages",
+  ManageEmojis = "ManageEmojis",
+  CreateEmoji = "CreateEmoji",
+  DeleteEmoji = "DeleteEmoji",
 }
 export enum SessionDevice {
-    Desktop = "Desktop",
-    Phone = "Phone",
-    Tablet = "Tablet",
-    Other = "Other"
+  Desktop = "Desktop",
+  Phone = "Phone",
+  Tablet = "Tablet",
+  Other = "Other",
 }
 export enum SpecialRoleType {
-    None = "None",
-    Default = "Default",
-    Owner = "Owner"
+  None = "None",
+  Default = "Default",
+  Owner = "Owner",
 }
 export enum UserAccountDeleteReason {
-    PrivacyConcern = "PrivacyConcern",
-    AnotherAccount = "AnotherAccount",
-    Bugs = "Bugs",
-    Other = "Other"
+  PrivacyConcern = "PrivacyConcern",
+  AnotherAccount = "AnotherAccount",
+  Bugs = "Bugs",
+  Other = "Other",
 }
 export enum UserRelationshipStatus {
-    Stranger = "Stranger",
-    OutcomingRequest = "OutcomingRequest",
-    IncomingRequest = "IncomingRequest",
-    Friended = "Friended"
+  Stranger = "Stranger",
+  OutcomingRequest = "OutcomingRequest",
+  IncomingRequest = "IncomingRequest",
+  Friended = "Friended",
 }

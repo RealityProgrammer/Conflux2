@@ -1,21 +1,31 @@
-import {BsChatText, BsChevronDown, BsFolder, BsVolumeUp} from "react-icons/bs";
+import {
+  BsChatText,
+  BsChevronDown,
+  BsFolder,
+  BsVolumeUp,
+} from "react-icons/bs";
 import Spinner from "../Spinner.tsx";
-import {Label, Select} from "radix-ui";
+import { Label, Select } from "radix-ui";
 import ErrorText from "../ErrorText.tsx";
-import {Controller, useForm} from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import SelectItem from "../SelectItem.tsx";
 import ModalForm from "../ModalForm.tsx";
-import {z} from "zod";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {serverService} from "../../api/serverService.ts";
-import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import type {ChannelCategoryIdentityDto, ServerChannelIdentityDto, ServiceResponse} from "../../api/types.ts";
-import {toast} from "react-toastify";
-import {useEffect} from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { serverService } from "../../api/serverService.ts";
+import { useCommunityServerContext } from "../../contexts/CommunityServerContext.tsx";
+import type {
+  ChannelCategoryIdentityDto,
+  ServerChannelIdentityDto,
+  ServiceResponse,
+} from "../../api/types.ts";
+import { toast } from "react-toastify";
+import { useEffect } from "react";
 
 const createSchema = z.object({
   type: z.enum(["category", "text", "voice"]),
-  name: z.string()
+  name: z
+    .string()
     .min(1, "Name is required.")
     .max(32, "Name can only have maximum length of 32 characters."),
 });
@@ -34,20 +44,29 @@ export default function CreateCategoryOrChannelModal({
   open,
   onOpenChange,
   categoryId,
-  initialType = undefined
+  initialType = undefined,
 }: CreateCategoryOrChannelModalProps) {
-  const { detailsQueryResult: { data: serverDetails }, appendChannelCategory, appendChannel } = useCommunityServerContext();
-  
+  const {
+    detailsQueryResult: { data: serverDetails },
+    appendChannelCategory,
+    appendChannel,
+  } = useCommunityServerContext();
+
   const formMethods = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
     defaultValues: {
       type: initialType,
-    }
+    },
   });
-  
-  const { reset, register, control, formState: { isSubmitting, errors } } = formMethods;
+
+  const {
+    reset,
+    register,
+    control,
+    formState: { isSubmitting, errors },
+  } = formMethods;
 
   useEffect(() => {
     if (open) {
@@ -56,15 +75,19 @@ export default function CreateCategoryOrChannelModal({
       });
     }
   }, [open, initialType, reset]);
-  
+
   const handleSubmit = async (data: CreateFormValues) => {
     const idempotencyKey = crypto.randomUUID();
-    
+
     switch (data.type) {
       case "category": {
         const response: ServiceResponse<ChannelCategoryIdentityDto> =
-          await serverService.createChannelCategory(idempotencyKey, serverDetails!.id, data.name);
-      
+          await serverService.createChannelCategory(
+            idempotencyKey,
+            serverDetails!.id,
+            data.name,
+          );
+
         if (response.success && response.data) {
           onOpenChange(false);
           appendChannelCategory(response.data);
@@ -73,12 +96,18 @@ export default function CreateCategoryOrChannelModal({
         }
         break;
       }
-      
+
       case "text":
       case "voice": {
         const response: ServiceResponse<ServerChannelIdentityDto> =
-          await serverService.createChannel(idempotencyKey, serverDetails!.id, data.name, data.type, categoryId);
-        
+          await serverService.createChannel(
+            idempotencyKey,
+            serverDetails!.id,
+            data.name,
+            data.type,
+            categoryId,
+          );
+
         if (response.success && response.data) {
           onOpenChange(false);
           appendChannel(response.data);
@@ -88,8 +117,8 @@ export default function CreateCategoryOrChannelModal({
         break;
       }
     }
-  }
-  
+  };
+
   return (
     <ModalForm
       open={open}
@@ -97,31 +126,33 @@ export default function CreateCategoryOrChannelModal({
         if (!open) {
           reset();
         }
-        
+
         onOpenChange(open);
       }}
       formMethods={formMethods}
       contentClassName="centered-dialog w-xl rounded-md text-white"
-      headerIcon={(<BsChatText className="size-10 fill-white"/>)}
+      headerIcon={<BsChatText className="size-10 fill-white" />}
       title={"Create new Channel or Category"}
       subtitle={"Claim the unclaimed territory!"}
       onSubmit={handleSubmit}
-      submitButton={(
+      submitButton={
         <button
           type="submit"
-          className="button-theme-primary px-3 h-10 cursor-pointer rounded-md basis-32 flex flex-row justify-center items-center"
+          className="button-theme-primary flex h-10 basis-32 cursor-pointer flex-row items-center justify-center rounded-md px-3"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
-            <Spinner className="size-5 fill-white"/>
+            <Spinner className="size-5 fill-white" />
           ) : (
             <>Create</>
           )}
         </button>
-      )}
+      }
     >
-      <div className="w-full mb-2">
-        <Label.Root className="label block mb-1" htmlFor="name">Name</Label.Root>
+      <div className="mb-2 w-full">
+        <Label.Root className="label mb-1 block" htmlFor="name">
+          Name
+        </Label.Root>
 
         <input
           type="text"
@@ -130,32 +161,27 @@ export default function CreateCategoryOrChannelModal({
           {...register("name")}
         />
 
-        {errors.name && (
-          <ErrorText>{errors.name.message}</ErrorText>
-        )}
+        {errors.name && <ErrorText>{errors.name.message}</ErrorText>}
       </div>
 
       <div className="w-full">
-        <Label.Root className="label block mb-1">Type</Label.Root>
+        <Label.Root className="label mb-1 block">Type</Label.Root>
 
         <Controller
           control={control}
           name="type"
-          render={({field}) => (
-            <Select.Root
-              value={field.value}
-              onValueChange={field.onChange}
-            >
-              <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
-                <Select.Value placeholder="Select type to create..."/>
-                <Select.Icon className="fill-white flex-none ml-auto">
-                  <BsChevronDown className="size-4"/>
+          render={({ field }) => (
+            <Select.Root value={field.value} onValueChange={field.onChange}>
+              <Select.Trigger className="input-field inline-flex h-10 w-full flex-row items-center gap-2">
+                <Select.Value placeholder="Select type to create..." />
+                <Select.Icon className="ml-auto flex-none fill-white">
+                  <BsChevronDown className="size-4" />
                 </Select.Icon>
               </Select.Trigger>
 
               <Select.Portal>
                 <Select.Content
-                  className="overflow-hidden bg-gray-700 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                  className="w-(--radix-select-trigger-width) overflow-hidden rounded-md bg-gray-700 p-1 text-white"
                   position="popper"
                   side="bottom"
                   sideOffset={4}
@@ -165,20 +191,26 @@ export default function CreateCategoryOrChannelModal({
                       <SelectItem
                         text="Category"
                         value="category"
-                        icon={<BsFolder className="fill-white size-4 flex-none" />}
+                        icon={
+                          <BsFolder className="size-4 flex-none fill-white" />
+                        }
                       />
                     )}
 
                     <SelectItem
                       text="Text Channel"
                       value="text"
-                      icon={<BsChatText className="fill-white size-4 flex-none"/>}
+                      icon={
+                        <BsChatText className="size-4 flex-none fill-white" />
+                      }
                     />
 
                     <SelectItem
                       text="Voice Channel"
                       value="voice"
-                      icon={<BsVolumeUp className="fill-white size-4 flex-none"/>}
+                      icon={
+                        <BsVolumeUp className="size-4 flex-none fill-white" />
+                      }
                     />
                   </Select.Viewport>
                 </Select.Content>
@@ -188,5 +220,5 @@ export default function CreateCategoryOrChannelModal({
         />
       </div>
     </ModalForm>
-  )
+  );
 }

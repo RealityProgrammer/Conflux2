@@ -46,7 +46,7 @@ export function TruncatedText({
           side="top"
           align="center"
           sideOffset={4}
-          className="z-50 max-w-xs rounded-md bg-gray-550 px-2.5 py-1.5 text-sm text-white shadow-lg animate-in fade-in-0 zoom-in-95 wrap-break-word"
+          className="bg-gray-550 animate-in fade-in-0 zoom-in-95 z-50 max-w-xs rounded-md px-2.5 py-1.5 text-sm wrap-break-word text-white shadow-lg"
         >
           {children}
           <Tooltip.Arrow className="fill-gray-550" />

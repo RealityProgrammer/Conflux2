@@ -1,6 +1,11 @@
-import {Tooltip} from "radix-ui";
-import {type HTMLAttributes, useSyncExternalStore} from "react";
-import {intervalToDuration, formatDuration, type DurationUnit, formatDate} from "date-fns";
+import { Tooltip } from "radix-ui";
+import { type HTMLAttributes, useSyncExternalStore } from "react";
+import {
+  intervalToDuration,
+  formatDuration,
+  type DurationUnit,
+  formatDate,
+} from "date-fns";
 
 const ONE_WEEK_SECONDS = 7 * 24 * 60 * 60;
 
@@ -77,7 +82,7 @@ export default function DateTimeText({
 
       <Tooltip.Portal>
         <Tooltip.Content
-          className={`select-none rounded-lg bg-gray-500 px-3 py-2.5 leading-none shadow-xl text-white ${tooltipClassName}`}
+          className={`rounded-lg bg-gray-500 px-3 py-2.5 leading-none text-white shadow-xl select-none ${tooltipClassName}`}
           sideOffset={5}
           side="top"
         >
@@ -86,5 +91,5 @@ export default function DateTimeText({
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>
-  )
+  );
 }

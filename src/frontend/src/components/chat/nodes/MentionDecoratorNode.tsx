@@ -4,12 +4,15 @@ import {
   type LexicalNode,
   type NodeKey,
   type SerializedLexicalNode,
-  type Spread
+  type Spread,
 } from "lexical";
-import type {ReactNode} from "react";
+import type { ReactNode } from "react";
 import Mention from "../Mention.tsx";
 
-export type SerializedMentionNode = Spread<{ userId: string; displayName: string | null; }, SerializedLexicalNode>;
+export type SerializedMentionNode = Spread<
+  { userId: string; displayName: string | null },
+  SerializedLexicalNode
+>;
 
 export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
   __userId: string;
@@ -20,10 +23,18 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
   }
 
   static clone(node: MentionDecoratorNode): MentionDecoratorNode {
-    return new MentionDecoratorNode(node.__userId, node.__displayName, node.__key);
+    return new MentionDecoratorNode(
+      node.__userId,
+      node.__displayName,
+      node.__key,
+    );
   }
 
-  constructor(userId: string, displayName: string | null = null, key?: NodeKey) {
+  constructor(
+    userId: string,
+    displayName: string | null = null,
+    key?: NodeKey,
+  ) {
     super(key);
     this.__userId = userId;
     this.__displayName = displayName;
@@ -58,11 +69,16 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
 
   decorate(): ReactNode {
     return (
-      <Mention userId={this.__userId} fallbackDisplayName={this.__displayName}/>
+      <Mention
+        userId={this.__userId}
+        fallbackDisplayName={this.__displayName}
+      />
     );
   }
 
-  static importJSON(serializedNode: SerializedMentionNode): MentionDecoratorNode {
+  static importJSON(
+    serializedNode: SerializedMentionNode,
+  ): MentionDecoratorNode {
     return new MentionDecoratorNode(serializedNode.userId);
   }
 
@@ -76,10 +92,15 @@ export class MentionDecoratorNode extends DecoratorNode<ReactNode> {
   }
 }
 
-export function $createMentionNode(userId: string, displayName: string | null = null): MentionDecoratorNode {
+export function $createMentionNode(
+  userId: string,
+  displayName: string | null = null,
+): MentionDecoratorNode {
   return new MentionDecoratorNode(userId, displayName);
 }
 
-export function $isMentionNode(node: LexicalNode | null | undefined): node is MentionDecoratorNode {
+export function $isMentionNode(
+  node: LexicalNode | null | undefined,
+): node is MentionDecoratorNode {
   return node instanceof MentionDecoratorNode;
 }

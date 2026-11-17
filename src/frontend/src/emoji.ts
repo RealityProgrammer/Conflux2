@@ -1,7 +1,7 @@
 export type UnicodeEmojiEntry = {
   name: string;
   value: string;
-}
+};
 
 export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "grinning_face", value: "\u{1F600}" },
@@ -418,9 +418,15 @@ export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "person_with_white_cane", value: "\u{1F9D1}\u{200D}\u{1F9AF}" },
   { name: "man_with_white_cane", value: "\u{1F468}\u{200D}\u{1F9AF}" },
   { name: "woman_with_white_cane", value: "\u{1F469}\u{200D}\u{1F9AF}" },
-  { name: "person_in_motorized_wheelchair", value: "\u{1F9D1}\u{200D}\u{1F9BC}" },
+  {
+    name: "person_in_motorized_wheelchair",
+    value: "\u{1F9D1}\u{200D}\u{1F9BC}",
+  },
   { name: "man_in_motorized_wheelchair", value: "\u{1F468}\u{200D}\u{1F9BC}" },
-  { name: "woman_in_motorized_wheelchair", value: "\u{1F469}\u{200D}\u{1F9BC}" },
+  {
+    name: "woman_in_motorized_wheelchair",
+    value: "\u{1F469}\u{200D}\u{1F9BC}",
+  },
   { name: "person_in_manual_wheelchair", value: "\u{1F9D1}\u{200D}\u{1F9BD}" },
   { name: "man_in_manual_wheelchair", value: "\u{1F468}\u{200D}\u{1F9BD}" },
   { name: "woman_in_manual_wheelchair", value: "\u{1F469}\u{200D}\u{1F9BD}" },
@@ -488,7 +494,10 @@ export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "woman_in_lotus_position", value: "\u{1F9D8}\u{200D}\u{2640}" },
   { name: "person_taking_bath", value: "\u{1F6C0}" },
   { name: "person_in_bed", value: "\u{1F6CC}" },
-  { name: "people_holding_hands", value: "\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}" },
+  {
+    name: "people_holding_hands",
+    value: "\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}",
+  },
   { name: "women_holding_hands", value: "\u{1F46D}" },
   { name: "woman_and_man_holding_hands", value: "\u{1F46B}" },
   { name: "men_holding_hands", value: "\u{1F46C}" },
@@ -499,10 +508,19 @@ export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "busts_in_silhouette", value: "\u{1F465}" },
   { name: "people_hugging", value: "\u{1FAC2}" },
   { name: "family", value: "\u{1F46A}" },
-  { name: "family_adult,_adult,_child", value: "\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}" },
-  { name: "family_adult,_adult,_child,_child", value: "\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}" },
+  {
+    name: "family_adult,_adult,_child",
+    value: "\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}",
+  },
+  {
+    name: "family_adult,_adult,_child,_child",
+    value: "\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}",
+  },
   { name: "family_adult,_child", value: "\u{1F9D1}\u{200D}\u{1F9D2}" },
-  { name: "family_adult,_child,_child", value: "\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}" },
+  {
+    name: "family_adult,_child,_child",
+    value: "\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}",
+  },
   { name: "footprints", value: "\u{1F463}" },
   { name: "fingerprint", value: "\u{1FAC6}" },
   { name: "red_hair", value: "\u{1F9B0}" },
@@ -1583,5 +1601,5 @@ export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "keycap_7", value: "\u{0037}\u{FE0F}\u{20E3}" },
   { name: "keycap_8", value: "\u{0038}\u{FE0F}\u{20E3}" },
   { name: "keycap_9", value: "\u{0039}\u{FE0F}\u{20E3}" },
-  { name: "keycap_10", value: "\u{1F51F}" }
+  { name: "keycap_10", value: "\u{1F51F}" },
 ];

@@ -1,6 +1,6 @@
 import IconButton from "./IconButton.tsx";
-import {BsBookmarkFill} from "react-icons/bs";
-import {Select} from "radix-ui";
+import { BsBookmarkFill } from "react-icons/bs";
+import { Select } from "radix-ui";
 import SelectItem from "./SelectItem.tsx";
 
 export type DurationValue = {
@@ -13,7 +13,7 @@ export type DurationValue = {
 export type DurationPreset = {
   label: string;
   value: DurationValue;
-}
+};
 
 export interface DurationInputProps {
   value: DurationValue;
@@ -55,10 +55,15 @@ export default function DurationInput({
     onChange(normalizeDuration(value));
   };
 
-  const renderField = (field: keyof DurationValue, shiftStep: number, shiftControlStep: number, className?: string) => (
+  const renderField = (
+    field: keyof DurationValue,
+    shiftStep: number,
+    shiftControlStep: number,
+    className?: string,
+  ) => (
     <input
       type="number"
-      className={`input-field h-10 text-sm min-w-0 text-center ${className ?? ""}`}
+      className={`input-field h-10 min-w-0 text-center text-sm ${className ?? ""}`}
       value={value?.[field] ?? 0}
       min="0"
       onChange={(e) => {
@@ -69,7 +74,11 @@ export default function DurationInput({
         e.preventDefault();
         const isScrollingUp = e.deltaY < 0; // "up should be negative" <-- utterly deranged
 
-        const step = e.shiftKey ? e.ctrlKey ? shiftControlStep : shiftStep : 1;
+        const step = e.shiftKey
+          ? e.ctrlKey
+            ? shiftControlStep
+            : shiftStep
+          : 1;
         const change = isScrollingUp ? step : -step;
 
         const currentValue = value?.[field] ?? 0;
@@ -82,7 +91,7 @@ export default function DurationInput({
 
   return (
     <div
-      className={`flex flex-row justify-center items-center gap-1 container ${className ?? ""}`}
+      className={`container flex flex-row items-center justify-center gap-1 ${className ?? ""}`}
       onBlur={handleBlur}
     >
       {renderField("days", 7, 28, "flex-1")}
@@ -105,35 +114,34 @@ export default function DurationInput({
         <Select.Root
           onValueChange={(index) => {
             onChange(presets[Number(index)]?.value ?? {});
-          }
-        }>
+          }}
+        >
           <Select.Trigger asChild>
             <IconButton type="button" theme="default">
-              <BsBookmarkFill className="size-4"/>
+              <BsBookmarkFill className="size-4" />
             </IconButton>
           </Select.Trigger>
 
           <Select.Portal>
             <Select.Content
-              className="overflow-hidden bg-gray-700 text-white rounded-md max-h-64"
+              className="max-h-64 overflow-hidden rounded-md bg-gray-700 text-white"
               position="popper"
               side="bottom"
               sideOffset={8}
             >
-              <Select.Viewport className="p-1 size-full overflow-y-auto">
-                  {presets.map((preset, index) => (
-                    <SelectItem
-                      key={index}
-                      text={preset.label}
-                      value={String(index)}
-                    />
-                  ))
-                }
+              <Select.Viewport className="size-full overflow-y-auto p-1">
+                {presets.map((preset, index) => (
+                  <SelectItem
+                    key={index}
+                    text={preset.label}
+                    value={String(index)}
+                  />
+                ))}
               </Select.Viewport>
             </Select.Content>
           </Select.Portal>
         </Select.Root>
       )}
     </div>
-  )
+  );
 }

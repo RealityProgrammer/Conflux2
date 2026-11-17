@@ -1,24 +1,36 @@
-import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import type {
   BackendResponse,
   EditedMessageDto,
   ServiceResponse,
   TimelineMessageDto,
 } from "../api/types.ts";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 import {
   type MessageEditInput,
   type MessageSendInput,
-  useMessageOperationsStore
+  useMessageOperationsStore,
 } from "../store/useMessageOperationsStore.ts";
 import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
-import {useActiveConversationStore} from "../store/useActiveConversationStore.ts";
-import {useConversationContext} from "./ConversationContext.tsx";
-import {type AxiosError, HttpStatusCode} from "axios";
-import {handleAxiosError} from "../api/errorHandling.ts";
-import useSendMessageMutation, {type UseSendMessageMutationVariables} from "../hooks/useSendMessageMutation.ts";
-import useEditMessageMutation, {type UseEditMessageMutationVariables} from "../hooks/useEditMessageMutation.ts";
-import useDeleteMessageMutation, {type UseDeleteMessageMutationVariables} from "../hooks/useDeleteMessageMutation.ts";
+import { useActiveConversationStore } from "../store/useActiveConversationStore.ts";
+import { useConversationContext } from "./ConversationContext.tsx";
+import { type AxiosError, HttpStatusCode } from "axios";
+import { handleAxiosError } from "../api/errorHandling.ts";
+import useSendMessageMutation, {
+  type UseSendMessageMutationVariables,
+} from "../hooks/useSendMessageMutation.ts";
+import useEditMessageMutation, {
+  type UseEditMessageMutationVariables,
+} from "../hooks/useEditMessageMutation.ts";
+import useDeleteMessageMutation, {
+  type UseDeleteMessageMutationVariables,
+} from "../hooks/useDeleteMessageMutation.ts";
 
 interface ChatContainerContextType {
   conversationId: string;
@@ -41,20 +53,28 @@ interface ChatContainerContextType {
   removeEditOperation: (operationIdempotencyKey: string) => void;
 }
 
-const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
+const ChatContainerContext = createContext<ChatContainerContextType | null>(
+  null,
+);
 
 export default function ChatContainerContextProvider({
   children,
-}: {children: ReactNode}) {
+}: {
+  children: ReactNode;
+}) {
   const { detailsQuery } = useConversationContext();
 
   if (!detailsQuery!.isSuccess) {
-    throw new Error("ChatContainerContextProvider can only be used if conversation details query has success query.");
+    throw new Error(
+      "ChatContainerContextProvider can only be used if conversation details query has success query.",
+    );
   }
 
   // set active conversation id
   const conversationId = detailsQuery?.data?.conversationId!;
-  const setActiveConversationId = useActiveConversationStore((state) => state.setActiveConversationId);
+  const setActiveConversationId = useActiveConversationStore(
+    (state) => state.setActiveConversationId,
+  );
 
   useEffect(() => {
     if (!detailsQuery || !detailsQuery.data) {
@@ -70,7 +90,8 @@ export default function ChatContainerContextProvider({
   }, [detailsQuery, setActiveConversationId]);
 
   // setup some states
-  const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
+  const [replyingMessage, setReplyingMessage] =
+    useState<TimelineMessageDto | null>(null);
   const [jumpMessageId, setJumpMessageId] = useState<string | null>(null);
 
   const requestJump = (messageId: string) => setJumpMessageId(messageId);
@@ -87,14 +108,17 @@ export default function ChatContainerContextProvider({
     removeDeletingMessage,
   } = useMessageOperationsStore();
 
-  const sendOperations = useMessageOperationsStore(
-    (state) => state.sendOperationsByConversation[conversationId]
-  ) || [];
-  const editOperations = useMessageOperationsStore(
-    (state) => state.editOperationsByConversation[conversationId]
-  ) || {};
+  const sendOperations =
+    useMessageOperationsStore(
+      (state) => state.sendOperationsByConversation[conversationId],
+    ) || [];
+  const editOperations =
+    useMessageOperationsStore(
+      (state) => state.editOperationsByConversation[conversationId],
+    ) || {};
 
-  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
+  const { appendMessage, updateMessage, deleteMessage } =
+    useTimelineMessageMutations(conversationId);
 
   // message mutations
   const sendMessageMutation = useSendMessageMutation({
@@ -105,14 +129,19 @@ export default function ChatContainerContextProvider({
         conversationId,
       });
     },
-    onSuccess: async (result: TimelineMessageDto, variables: UseSendMessageMutationVariables) => {
+    onSuccess: async (
+      result: TimelineMessageDto,
+      variables: UseSendMessageMutationVariables,
+    ) => {
       removeSendOperation(conversationId, variables.idempotencyKey);
       appendMessage(result);
     },
     onError: (error: Error, variables: UseSendMessageMutationVariables) => {
       toast.error("Failed to send message.");
 
-      const response: ServiceResponse = handleAxiosError(error as AxiosError<BackendResponse>);
+      const response: ServiceResponse = handleAxiosError(
+        error as AxiosError<BackendResponse>,
+      );
 
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
@@ -121,34 +150,47 @@ export default function ChatContainerContextProvider({
 
             setSendOperationError(conversationId, variables.idempotencyKey, {
               type: "validation",
-              messages: Object.values(details).flatMap(p => p),
+              messages: Object.values(details).flatMap((p) => p),
             });
           } else {
-            setSendOperationError(conversationId, variables.idempotencyKey, { type: "unknown" });
+            setSendOperationError(conversationId, variables.idempotencyKey, {
+              type: "unknown",
+            });
           }
           break;
 
         case HttpStatusCode.Forbidden:
-          setSendOperationError(conversationId, variables.idempotencyKey, { type: "forbidden", message: response.error!.message! });
+          setSendOperationError(conversationId, variables.idempotencyKey, {
+            type: "forbidden",
+            message: response.error!.message!,
+          });
           break;
 
         case 0 as HttpStatusCode:
-          setSendOperationError(conversationId, variables.idempotencyKey, { type: "network" });
+          setSendOperationError(conversationId, variables.idempotencyKey, {
+            type: "network",
+          });
           break;
 
         case HttpStatusCode.InternalServerError:
-          setSendOperationError(conversationId, variables.idempotencyKey, { type: "server" });
+          setSendOperationError(conversationId, variables.idempotencyKey, {
+            type: "server",
+          });
           break;
 
         default:
-          setSendOperationError(conversationId, variables.idempotencyKey, { type: "unknown" });
+          setSendOperationError(conversationId, variables.idempotencyKey, {
+            type: "unknown",
+          });
           break;
       }
     },
   });
 
   const retrySendOperation = (idempotencyKey: string) => {
-    const operation = sendOperations.find(o => o.idempotencyKey === idempotencyKey && o.error);
+    const operation = sendOperations.find(
+      (o) => o.idempotencyKey === idempotencyKey && o.error,
+    );
     if (!operation) return;
 
     sendMessageMutation.mutate({
@@ -163,46 +205,68 @@ export default function ChatContainerContextProvider({
       addEditOperation(conversationId, variables.messageId, {
         body: variables.body,
         removeAttachmentIds: variables.removeAttachmentIds,
-        addAttachments: variables.addAttachments
+        addAttachments: variables.addAttachments,
       });
     },
-    onSuccess: async (result: EditedMessageDto, variables: UseEditMessageMutationVariables) => {
+    onSuccess: async (
+      result: EditedMessageDto,
+      variables: UseEditMessageMutationVariables,
+    ) => {
       removeEditOperation(conversationId, variables.messageId);
-      updateMessage(variables.messageId, { newBody: result.newBody, attachments: result.attachments });
+      updateMessage(variables.messageId, {
+        newBody: result.newBody,
+        attachments: result.attachments,
+      });
     },
     onError: (error: Error, variables: UseEditMessageMutationVariables) => {
       toast.error("Failed to edit message.");
 
-      const response: ServiceResponse = handleAxiosError(error as AxiosError<BackendResponse>);
+      const response: ServiceResponse = handleAxiosError(
+        error as AxiosError<BackendResponse>,
+      );
 
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
           if (response.error?.code === "ValidationErrorsOccurred") {
-            const details = response.error.details as Record<"body" | "removeAttachmentIds" | "addAttachments", string[]>;
+            const details = response.error.details as Record<
+              "body" | "removeAttachmentIds" | "addAttachments",
+              string[]
+            >;
 
             setEditOperationError(conversationId, variables.messageId, {
               type: "validation",
-              messages: Object.values(details).flatMap(p => p),
+              messages: Object.values(details).flatMap((p) => p),
             });
           } else {
-            setEditOperationError(conversationId, variables.messageId, { type: "unknown" });
+            setEditOperationError(conversationId, variables.messageId, {
+              type: "unknown",
+            });
           }
           break;
 
         case HttpStatusCode.Forbidden:
-          setEditOperationError(conversationId, variables.messageId, { type: "forbidden", message: response.error!.message! });
+          setEditOperationError(conversationId, variables.messageId, {
+            type: "forbidden",
+            message: response.error!.message!,
+          });
           break;
 
         case HttpStatusCode.InternalServerError:
-          setEditOperationError(conversationId, variables.messageId, { type: "server" });
+          setEditOperationError(conversationId, variables.messageId, {
+            type: "server",
+          });
           break;
 
         case 0 as HttpStatusCode:
-          setEditOperationError(conversationId, variables.messageId, { type: "network" });
+          setEditOperationError(conversationId, variables.messageId, {
+            type: "network",
+          });
           break;
 
         default:
-          setEditOperationError(conversationId, variables.messageId, { type: "unknown" });
+          setEditOperationError(conversationId, variables.messageId, {
+            type: "unknown",
+          });
           break;
       }
     },
@@ -223,7 +287,10 @@ export default function ChatContainerContextProvider({
     onMutate: async (payload: UseDeleteMessageMutationVariables) => {
       addDeletingMessage(conversationId, payload.messageId);
     },
-    onSuccess: async (_result: void, payload: UseDeleteMessageMutationVariables) => {
+    onSuccess: async (
+      _result: void,
+      payload: UseDeleteMessageMutationVariables,
+    ) => {
       deleteMessage(payload.messageId);
     },
     onError: (_error, _payload) => {
@@ -247,7 +314,10 @@ export default function ChatContainerContextProvider({
     setReplyingMessage(null);
   };
 
-  const handleEditMessage = async (messageId: string, input: MessageEditInput) => {
+  const handleEditMessage = async (
+    messageId: string,
+    input: MessageEditInput,
+  ) => {
     if (!conversationId) return;
 
     editMessageMutation.mutate({
@@ -267,33 +337,38 @@ export default function ChatContainerContextProvider({
   };
 
   return (
-    <ChatContainerContext.Provider value={{
-      conversationId,
-      jumpMessageId,
-      requestJump,
-      clearJump,
-      replyingMessage,
-      setReplyingMessage,
-      handleSendMessage,
-      handleEditMessage,
-      handleDeleteMessage,
-      removeSendOperation: (operationIdempotencyKey: string) => {
-        removeSendOperation(conversationId, operationIdempotencyKey);
-      },
-      retrySendOperation,
-      retryEditOperation,
-      removeEditOperation: (operationIdempotencyKey: string) => {
-        removeEditOperation(conversationId, operationIdempotencyKey);
-      },
-    }}>
+    <ChatContainerContext.Provider
+      value={{
+        conversationId,
+        jumpMessageId,
+        requestJump,
+        clearJump,
+        replyingMessage,
+        setReplyingMessage,
+        handleSendMessage,
+        handleEditMessage,
+        handleDeleteMessage,
+        removeSendOperation: (operationIdempotencyKey: string) => {
+          removeSendOperation(conversationId, operationIdempotencyKey);
+        },
+        retrySendOperation,
+        retryEditOperation,
+        removeEditOperation: (operationIdempotencyKey: string) => {
+          removeEditOperation(conversationId, operationIdempotencyKey);
+        },
+      }}
+    >
       {children}
     </ChatContainerContext.Provider>
-  )
+  );
 }
 
 export function useChatContainerContext(): ChatContainerContextType {
   const context = useContext(ChatContainerContext);
-  if (!context) throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
+  if (!context)
+    throw new Error(
+      "useChatContainerContext must be used within an ChatContainerContextProvider.",
+    );
 
   return context;
 }

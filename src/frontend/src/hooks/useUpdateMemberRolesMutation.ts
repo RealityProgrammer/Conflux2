@@ -1,5 +1,5 @@
-import {useMutation, type UseMutationOptions} from "@tanstack/react-query";
-import {serverService} from "../api/serverService.ts";
+import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { serverService } from "../api/serverService.ts";
 
 export interface UseUpdateMemberRolesMutationVariables {
   serverId: string;
@@ -9,15 +9,23 @@ export interface UseUpdateMemberRolesMutationVariables {
 }
 
 export default function useUpdateMemberRolesMutation(
-  options: Omit<UseMutationOptions<void, Error, UseUpdateMemberRolesMutationVariables>, "mutationKey" | "mutationFn">,
+  options: Omit<
+    UseMutationOptions<void, Error, UseUpdateMemberRolesMutationVariables>,
+    "mutationKey" | "mutationFn"
+  >,
 ) {
   return useMutation({
     mutationKey: useUpdateMemberRolesMutation.key,
     mutationFn: async (variables: UseUpdateMemberRolesMutationVariables) => {
-      return await serverService.updateMemberRoles(variables.serverId, variables.userId, variables.addRoleIds, variables.removeRoleIds);
+      return await serverService.updateMemberRoles(
+        variables.serverId,
+        variables.userId,
+        variables.addRoleIds,
+        variables.removeRoleIds,
+      );
     },
     ...options,
   });
 }
 
-useUpdateMemberRolesMutation.key = ["useUpdateMemberRolesMutation"]
+useUpdateMemberRolesMutation.key = ["useUpdateMemberRolesMutation"];

@@ -1,13 +1,23 @@
-import {type HTMLAttributes, useRef, useState} from "react";
-import {BsCalendarFill, BsChevronLeft, BsChevronRight} from "react-icons/bs";
+import { type HTMLAttributes, useRef, useState } from "react";
+import { BsCalendarFill, BsChevronLeft, BsChevronRight } from "react-icons/bs";
 import IconButton from "./IconButton.tsx";
-import {formatDate} from "date-fns";
-import {Popover} from "radix-ui";
+import { formatDate } from "date-fns";
+import { Popover } from "radix-ui";
 
 const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export interface DateTimeRange {
@@ -15,7 +25,10 @@ export interface DateTimeRange {
   end?: Date;
 }
 
-interface DateTimeRangePickerProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
+interface DateTimeRangePickerProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  "onChange"
+> {
   value?: DateTimeRange;
   onChange?: (date: DateTimeRange) => void;
 }
@@ -27,10 +40,14 @@ export default function DateTimeRangePicker({
   ...props
 }: DateTimeRangePickerProps) {
   const isControlled = controlledValue !== undefined;
-  const [uncontrolledValue, setUncontrolledValue] = useState<DateTimeRange | undefined>(undefined);
+  const [uncontrolledValue, setUncontrolledValue] = useState<
+    DateTimeRange | undefined
+  >(undefined);
   const value = isControlled ? controlledValue : uncontrolledValue;
 
-  const setValue = (setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined) => {
+  const setValue = (
+    setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined,
+  ) => {
     const next = setter(value);
 
     if (!isControlled) {
@@ -45,26 +62,29 @@ export default function DateTimeRangePicker({
       {...props}
       className={`relative flex items-center justify-between ${className}`}
     >
-      <p className="text-sm overflow-x-hidden whitespace-nowrap select-none">
+      <p className="overflow-x-hidden text-sm whitespace-nowrap select-none">
         {/* the placeholder and value display */}
         {!value || (!value.start && !value.end) ? (
-          <span className="opacity-30">YYYY/MM/DD HH:mm:ss - YYYY/MM/DD HH:mm:ss</span>
+          <span className="opacity-30">
+            YYYY/MM/DD HH:mm:ss - YYYY/MM/DD HH:mm:ss
+          </span>
         ) : !value.start && value.end ? (
           <span>Until {formatDate(value.end, "yyyy/MM/dd HH:mm:ss")}</span>
         ) : value.start && !value.end ? (
           <span>Since {formatDate(value.start, "yyyy/MM/dd HH:mm:ss")}</span>
         ) : (
-          <span>{formatDate(value.start!, "yyyy/MM/dd HH:mm:ss")} - {formatDate(value.end!, "yyyy/MM/dd HH:mm:ss")}</span>
+          <span>
+            {formatDate(value.start!, "yyyy/MM/dd HH:mm:ss")} -{" "}
+            {formatDate(value.end!, "yyyy/MM/dd HH:mm:ss")}
+          </span>
         )}
       </p>
 
-      <div className="flex items-center pl-2 z-10 shrink-0">
+      <div className="z-10 flex shrink-0 items-center pl-2">
         <Popover.Root>
           <Popover.Trigger asChild>
-            <IconButton
-              theme="default"
-            >
-              <BsCalendarFill className="size-4"/>
+            <IconButton theme="default">
+              <BsCalendarFill className="size-4" />
             </IconButton>
           </Popover.Trigger>
 
@@ -72,10 +92,10 @@ export default function DateTimeRangePicker({
             <Popover.Content
               side="bottom"
               sideOffset={5}
-              className="w-lg border-2 border-gray-600 rounded-lg bg-gray-750 text-white shadow-lg flex flex-col"
+              className="bg-gray-750 flex w-lg flex-col rounded-lg border-2 border-gray-600 text-white shadow-lg"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              <PickerContent value={value} setValue={setValue}/>
+              <PickerContent value={value} setValue={setValue} />
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
@@ -87,20 +107,27 @@ export default function DateTimeRangePicker({
 function PickerContent({
   value,
   setValue,
-}: { value: DateTimeRange | undefined; setValue: (setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined) => void; }) {
+}: {
+  value: DateTimeRange | undefined;
+  setValue: (
+    setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined,
+  ) => void;
+}) {
   const [mode, setMode] = useState<"start" | "end">("start");
   const [viewMode, setViewMode] = useState<"days" | "months" | "years">("days");
 
   const activeDate = mode === "start" ? value?.start : value?.end;
   const [viewYear, setViewYear] = useState<number>(
-    activeDate ? activeDate.getFullYear() : new Date().getFullYear()
+    activeDate ? activeDate.getFullYear() : new Date().getFullYear(),
   );
   const [viewMonth, setViewMonth] = useState<number>(
-    activeDate ? activeDate.getMonth() : new Date().getMonth()
+    activeDate ? activeDate.getMonth() : new Date().getMonth(),
   );
 
   const [yearPageStart, setYearPageStart] = useState<number>(
-    Math.floor((activeDate ? activeDate.getFullYear() : new Date().getFullYear()) / 12) * 12
+    Math.floor(
+      (activeDate ? activeDate.getFullYear() : new Date().getFullYear()) / 12,
+    ) * 12,
   );
 
   const handlePrev = () => {
@@ -136,7 +163,7 @@ function PickerContent({
       const startTime = new Date(
         value.start.getFullYear(),
         value.start.getMonth(),
-        value.start.getDate()
+        value.start.getDate(),
       ).setHours(0, 0, 0, 0);
       return candidateTime < startTime;
     }
@@ -145,7 +172,7 @@ function PickerContent({
       const endTime = new Date(
         value.end.getFullYear(),
         value.end.getMonth(),
-        value.end.getDate()
+        value.end.getDate(),
       ).setHours(0, 0, 0, 0);
       return candidateTime > endTime;
     }
@@ -195,7 +222,7 @@ function PickerContent({
       newDate.setHours(
         existing.getHours(),
         existing.getMinutes(),
-        existing.getSeconds()
+        existing.getSeconds(),
       );
     }
 
@@ -272,12 +299,14 @@ function PickerContent({
 
   return (
     <>
-      <header className="flex-none py-2.5 border-b-2 border-b-gray-600 flex flex-row gap-2 justify-center items-center">
+      <header className="flex flex-none flex-row items-center justify-center gap-2 border-b-2 border-b-gray-600 py-2.5">
         <button
           className={`cursor-pointer text-sm ${mode === "start" ? "font-bold" : ""}`}
           onClick={() => setMode("start")}
         >
-          {value?.start ? formatDate(value.start, "yyyy/MM/dd HH:mm:ss") : "YYYY/MM/DD HH:mm:ss"}
+          {value?.start
+            ? formatDate(value.start, "yyyy/MM/dd HH:mm:ss")
+            : "YYYY/MM/DD HH:mm:ss"}
         </button>
 
         <span>{" - "}</span>
@@ -286,15 +315,21 @@ function PickerContent({
           className={`cursor-pointer text-sm ${mode === "end" ? "font-bold" : ""}`}
           onClick={() => setMode("end")}
         >
-          {value?.end ? formatDate(value.end, "yyyy/MM/dd HH:mm:ss") : "YYYY/MM/DD HH:mm:ss"}
+          {value?.end
+            ? formatDate(value.end, "yyyy/MM/dd HH:mm:ss")
+            : "YYYY/MM/DD HH:mm:ss"}
         </button>
       </header>
 
-      <section className="flex-1 min-h-0 flex flex-row gap-2 p-2">
-        <div className="flex-1 flex flex-col select-none">
+      <section className="flex min-h-0 flex-1 flex-row gap-2 p-2">
+        <div className="flex flex-1 flex-col select-none">
           {/* navigate left right */}
-          <nav className="flex items-center justify-between mb-2 px-1">
-            <IconButton theme="default" onClick={handlePrev} disabled={viewMode === "months"}>
+          <nav className="mb-2 flex items-center justify-between px-1">
+            <IconButton
+              theme="default"
+              onClick={handlePrev}
+              disabled={viewMode === "months"}
+            >
               <BsChevronLeft className="size-4" />
             </IconButton>
 
@@ -304,7 +339,7 @@ function PickerContent({
                   <button
                     type="button"
                     onClick={() => setViewMode("months")}
-                    className="hover:bg-gray-700 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                    className="cursor-pointer rounded px-1.5 py-0.5 transition-colors hover:bg-gray-700"
                   >
                     {monthNames[viewMonth]}
                   </button>
@@ -314,7 +349,7 @@ function PickerContent({
                       setYearPageStart(Math.floor(viewYear / 12) * 12);
                       setViewMode("years");
                     }}
-                    className="hover:bg-gray-700 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                    className="cursor-pointer rounded px-1.5 py-0.5 transition-colors hover:bg-gray-700"
                   >
                     {viewYear}
                   </button>
@@ -328,27 +363,32 @@ function PickerContent({
               ) : null}
             </div>
 
-            <IconButton theme="default" onClick={handleNext} disabled={viewMode === "months"}>
+            <IconButton
+              theme="default"
+              onClick={handleNext}
+              disabled={viewMode === "months"}
+            >
               <BsChevronRight className="size-4" />
             </IconButton>
           </nav>
 
           {viewMode === "days" ? (
             <>
-              <div className="grid grid-cols-7 text-center text-sm font-medium text-gray-400 mb-1">
+              <div className="mb-1 grid grid-cols-7 text-center text-sm font-medium text-gray-400">
                 {weekdays.map((day) => (
                   <span key={day}>{day}</span>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-y-1 text-center text-sm flex-1">
+              <div className="grid flex-1 grid-cols-7 gap-y-1 text-center text-sm">
                 {calendarDays.map((item, idx) => {
                   const isToday =
                     item.day === today.getDate() &&
                     item.month === today.getMonth() &&
                     item.year === today.getFullYear();
 
-                  const selectedDate = mode === "start" ? value?.start : value?.end;
+                  const selectedDate =
+                    mode === "start" ? value?.start : value?.end;
 
                   const isSelected =
                     selectedDate &&
@@ -356,13 +396,15 @@ function PickerContent({
                     item.month === selectedDate.getMonth() &&
                     item.year === selectedDate.getFullYear();
 
-                  const isDisabled = !item.isCurrentMonth || isDateDisabled(item.year, item.month, item.day);
+                  const isDisabled =
+                    !item.isCurrentMonth ||
+                    isDateDisabled(item.year, item.month, item.day);
 
                   if (isDisabled) {
                     return (
                       <span
                         key={idx}
-                        className="flex items-center justify-center text-gray-500 opacity-40 cursor-not-allowed py-1"
+                        className="flex cursor-not-allowed items-center justify-center py-1 text-gray-500 opacity-40"
                       >
                         {item.day}
                       </span>
@@ -373,10 +415,10 @@ function PickerContent({
                     return (
                       <span
                         key={idx}
-                        className="flex items-center justify-center text-gray-500 opacity-40 cursor-not-allowed py-1"
+                        className="flex cursor-not-allowed items-center justify-center py-1 text-gray-500 opacity-40"
                       >
-                    {item.day}
-                  </span>
+                        {item.day}
+                      </span>
                     );
                   }
 
@@ -384,8 +426,10 @@ function PickerContent({
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => handleDateSelect(item.year, item.month, item.day)}
-                      className={`flex items-center justify-center rounded-full size-8 cursor-pointer transition-colors text-white ${
+                      onClick={() =>
+                        handleDateSelect(item.year, item.month, item.day)
+                      }
+                      className={`flex size-8 cursor-pointer items-center justify-center rounded-full text-white transition-colors ${
                         isSelected
                           ? "bg-blue-600 font-bold"
                           : isToday
@@ -400,7 +444,7 @@ function PickerContent({
               </div>
             </>
           ) : viewMode === "months" ? (
-            <div className="grid grid-cols-3 gap-2 flex-1 content-center p-2">
+            <div className="grid flex-1 grid-cols-3 content-center gap-2 p-2">
               {monthNames.map((mName, mIdx) => {
                 const isDisabled = isMonthDisabled(mIdx);
 
@@ -413,52 +457,57 @@ function PickerContent({
                       setViewMonth(mIdx);
                       setViewMode("days");
                     }}
-                    className={`py-2 text-sm rounded-lg button-cursor font-semibold ${
-                      viewMonth === mIdx ? "button-theme-primary" : "button-theme-primary2"
+                    className={`button-cursor rounded-lg py-2 text-sm font-semibold ${
+                      viewMonth === mIdx
+                        ? "button-theme-primary"
+                        : "button-theme-primary2"
                     }`}
                   >
                     {mName.slice(0, 3)}
                   </button>
-                )
-              })}
-            </div>
-          ) : viewMode === "years" ? (
-            <div className="grid grid-cols-3 gap-2 flex-1 content-center p-2">
-              {Array.from({ length: 12 }, (_, i) => yearPageStart + i).map((yr) => {
-                const isDisabled = isYearDisabled(yr);
-
-                return (
-                  <button
-                    key={yr}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() => {
-                      setViewYear(yr);
-                      setViewMode("months");
-                    }}
-                    className={`py-2 text-sm rounded-lg button-cursor font-semibold ${
-                      viewYear === yr ? "button-theme-primary" : "button-theme-primary2"
-                    }`}
-                  >
-                    {yr}
-                  </button>
                 );
               })}
             </div>
-          ) : null}
+          ) : viewMode === "years" ? (
+            <div className="grid flex-1 grid-cols-3 content-center gap-2 p-2">
+              {Array.from({ length: 12 }, (_, i) => yearPageStart + i).map(
+                (yr) => {
+                  const isDisabled = isYearDisabled(yr);
 
+                  return (
+                    <button
+                      key={yr}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => {
+                        setViewYear(yr);
+                        setViewMode("months");
+                      }}
+                      className={`button-cursor rounded-lg py-2 text-sm font-semibold ${
+                        viewYear === yr
+                          ? "button-theme-primary"
+                          : "button-theme-primary2"
+                      }`}
+                    >
+                      {yr}
+                    </button>
+                  );
+                },
+              )}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex-1 flex flex-col justify-center items-center">
-          <TimeClockPicker value={value} setValue={setValue} mode={mode}/>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <TimeClockPicker value={value} setValue={setValue} mode={mode} />
         </div>
       </section>
 
-      <footer className="flex-none py-2 px-3 border-t-2 border-t-gray-600 flex justify-end items-center gap-2 text-xs text-white">
+      <footer className="flex flex-none items-center justify-end gap-2 border-t-2 border-t-gray-600 px-3 py-2 text-xs text-white">
         <button
           type="button"
           onClick={handleClearCurrent}
-          className="button-theme-primary2 cursor-pointer w-20 py-1.5 rounded-md"
+          className="button-theme-primary2 w-20 cursor-pointer rounded-md py-1.5"
         >
           Clear {mode === "start" ? "Start" : "End"}
         </button>
@@ -466,7 +515,7 @@ function PickerContent({
         <button
           type="button"
           onClick={handleClearAll}
-          className="button-theme-primary2 cursor-pointer w-20 py-1.5 rounded-md"
+          className="button-theme-primary2 w-20 cursor-pointer rounded-md py-1.5"
         >
           Clear All
         </button>
@@ -483,11 +532,14 @@ function TimeClockPicker({
   mode,
 }: {
   value: DateTimeRange | undefined;
-  setValue: (setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined) => void;
+  setValue: (
+    setter: (previous: DateTimeRange | undefined) => DateTimeRange | undefined,
+  ) => void;
   mode: "start" | "end";
 }) {
   const clockRef = useRef<HTMLDivElement | null>(null);
-  const activeDate = (mode === "start" ? value?.start : value?.end) || new Date();
+  const activeDate =
+    (mode === "start" ? value?.start : value?.end) || new Date();
 
   const hours = activeDate.getHours();
   const minutes = activeDate.getMinutes();
@@ -519,7 +571,11 @@ function TimeClockPicker({
     }));
   };
 
-  const updateTimeFromPointer = (clientX: number, clientY: number, type: "hour" | "minute" | "second") => {
+  const updateTimeFromPointer = (
+    clientX: number,
+    clientY: number,
+    type: "hour" | "minute" | "second",
+  ) => {
     if (!clockRef.current) return;
 
     const rect = clockRef.current.getBoundingClientRect();
@@ -578,23 +634,23 @@ function TimeClockPicker({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center select-none">
+    <div className="flex flex-1 flex-col items-center justify-center select-none">
       {/* clock face container */}
       <div
         ref={clockRef}
-        className="relative size-40 bg-black/25 rounded-full shadow-[var(--color-violet-500)_0_0_25px] flex items-center justify-center touch-none"
+        className="relative flex size-40 touch-none items-center justify-center rounded-full bg-black/25 shadow-[var(--color-violet-500)_0_0_25px]"
       >
         {/* hour markers */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           {Array.from({ length: 12 }).map((_, i) => {
             const angle = i * 30;
             return (
               <div
                 key={i}
-                className="absolute size-full flex items-start justify-center"
+                className="absolute flex size-full items-start justify-center"
                 style={{ transform: `rotate(${angle}deg)` }}
               >
-                <div className="w-0.5 h-2 bg-white/60 mt-1.5" />
+                <div className="mt-1.5 h-2 w-0.5 bg-white/60" />
               </div>
             );
           })}
@@ -603,38 +659,38 @@ function TimeClockPicker({
         {/* hour hand */}
         <div
           onPointerDown={createPointerHandler("hour")}
-          className="absolute bottom-1/2 left-1/2 w-1.75 h-10 bg-white rounded-full -translate-x-1/2 origin-bottom cursor-pointer z-20 hover:bg-blue-200 transition-colors"
+          className="absolute bottom-1/2 left-1/2 z-20 h-10 w-1.75 origin-bottom -translate-x-1/2 cursor-pointer rounded-full bg-white transition-colors hover:bg-blue-200"
           style={{ transform: `rotate(${hourDegrees}deg)` }}
         />
 
         {/* minute hand */}
         <div
           onPointerDown={createPointerHandler("minute")}
-          className="absolute bottom-1/2 left-1/2 w-1.25 h-14 bg-white/80 rounded-full -translate-x-1/2 origin-bottom cursor-pointer z-20 hover:bg-blue-200 transition-colors"
+          className="absolute bottom-1/2 left-1/2 z-20 h-14 w-1.25 origin-bottom -translate-x-1/2 cursor-pointer rounded-full bg-white/80 transition-colors hover:bg-blue-200"
           style={{ transform: `rotate(${minuteDegrees}deg)` }}
         />
 
         {/* second hand */}
         <div
           onPointerDown={createPointerHandler("second")}
-          className="absolute bottom-1/2 left-1/2 w-0.75 h-18 bg-red-400 rounded-full -translate-x-1/2 origin-bottom cursor-pointer z-20 hover:bg-red-200 transition-colors"
+          className="absolute bottom-1/2 left-1/2 z-20 h-18 w-0.75 origin-bottom -translate-x-1/2 cursor-pointer rounded-full bg-red-400 transition-colors hover:bg-red-200"
           style={{ transform: `rotate(${secondDegrees}deg)` }}
         />
 
         {/* center pivot */}
-        <div className="absolute size-2.25 bg-white rounded-full z-30 shadow-md pointer-events-none" />
+        <div className="pointer-events-none absolute z-30 size-2.25 rounded-full bg-white shadow-md" />
       </div>
 
       {/* Digital Time Readout */}
       <div className="mt-6 text-center text-white">
-        <span className="text-lg font-mono font-semibold tracking-wider">
+        <span className="font-mono text-lg font-semibold tracking-wider">
           {timeString}
         </span>
 
         <button
           type="button"
           onClick={handleToggleAmPm}
-          className="ml-2 text-xs font-bold text-gray-400 hover:text-white cursor-pointer bg-gray-800 px-2 py-0.5 rounded transition-colors"
+          className="ml-2 cursor-pointer rounded bg-gray-800 px-2 py-0.5 text-xs font-bold text-gray-400 transition-colors hover:text-white"
           title="Click to toggle AM/PM"
         >
           {amPm}

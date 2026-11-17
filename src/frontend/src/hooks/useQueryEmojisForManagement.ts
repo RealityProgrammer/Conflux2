@@ -1,8 +1,10 @@
-import {useQuery, type UseQueryResult} from "@tanstack/react-query"
-import {serverService} from "../api/serverService.ts";
-import type {EmojiManagementDto, ServiceResponse} from "../api/types.ts";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { serverService } from "../api/serverService.ts";
+import type { EmojiManagementDto, ServiceResponse } from "../api/types.ts";
 
-export default function useQueryEmojisForManagement(serverId: string): UseQueryResult<EmojiManagementDto[], Error> {
+export default function useQueryEmojisForManagement(
+  serverId: string,
+): UseQueryResult<EmojiManagementDto[], Error> {
   return useQuery({
     queryKey: useQueryEmojisForManagement.getKey(serverId),
     queryFn: async () => {
@@ -18,4 +20,7 @@ export default function useQueryEmojisForManagement(serverId: string): UseQueryR
   });
 }
 
-useQueryEmojisForManagement.getKey = (serverId: string) => ["useQueryEmojisForManagement", serverId];
+useQueryEmojisForManagement.getKey = (serverId: string) => [
+  "useQueryEmojisForManagement",
+  serverId,
+];

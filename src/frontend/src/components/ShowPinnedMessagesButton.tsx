@@ -1,18 +1,22 @@
-import {Popover} from "radix-ui";
+import { Popover } from "radix-ui";
 import IconButton from "./IconButton.tsx";
-import {FaThumbtack} from "react-icons/fa6";
-import {BsExclamationTriangle, BsPinAngleFill} from "react-icons/bs";
+import { FaThumbtack } from "react-icons/fa6";
+import { BsExclamationTriangle, BsPinAngleFill } from "react-icons/bs";
 import MessageBody from "./chat/MessageBody.tsx";
-import {Virtuoso} from "react-virtuoso";
-import {MessageRow} from "./chat/MessageRow.tsx";
+import { Virtuoso } from "react-virtuoso";
+import { MessageRow } from "./chat/MessageRow.tsx";
 import useQueryPinnedMessages from "../hooks/useQueryPinnedMessages.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {MessageDeletedEvent, MessagePinnedEvent, MessageUnpinnedEvent} from "../api/events.ts";
-import {useState} from "react";
-import {useChatContainerContext} from "../contexts/ChatContainerContext.tsx";
-import {queryClient} from "../main.tsx";
-import type {KeyedPaginatedPage, PinnedMessageDto} from "../api/types.ts";
-import type {InfiniteData} from "@tanstack/react-query";
+import type {
+  MessageDeletedEvent,
+  MessagePinnedEvent,
+  MessageUnpinnedEvent,
+} from "../api/events.ts";
+import { useState } from "react";
+import { useChatContainerContext } from "../contexts/ChatContainerContext.tsx";
+import { queryClient } from "../main.tsx";
+import type { KeyedPaginatedPage, PinnedMessageDto } from "../api/types.ts";
+import type { InfiniteData } from "@tanstack/react-query";
 
 export default function ShowPinnedMessagesButton() {
   const { requestJump, conversationId } = useChatContainerContext();
@@ -27,7 +31,8 @@ export default function ShowPinnedMessagesButton() {
     retry: false,
   });
 
-  const allElements: PinnedMessageDto[] = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
+  const allElements: PinnedMessageDto[] =
+    data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -40,7 +45,7 @@ export default function ShowPinnedMessagesButton() {
   const handleClickOnPinnedMessage = (messageId: string) => {
     setIsOpen(false);
     requestJump(messageId);
-  }
+  };
 
   useSignalREvent("MessagePinned", (_event: MessagePinnedEvent) => {
     if (!hasBeenOpened) return;
@@ -50,15 +55,17 @@ export default function ShowPinnedMessagesButton() {
 
     queryClient.invalidateQueries({
       queryKey: useQueryPinnedMessages.getKey(conversationId),
-    })
+    });
   });
 
-  useSignalREvent(["MessageUnpinned", "MessageDeleted"], (event: MessageUnpinnedEvent | MessageDeletedEvent) => {
-    if (!hasBeenOpened) return;
+  useSignalREvent(
+    ["MessageUnpinned", "MessageDeleted"],
+    (event: MessageUnpinnedEvent | MessageDeletedEvent) => {
+      if (!hasBeenOpened) return;
 
-    queryClient.setQueryData<InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>>(
-      useQueryPinnedMessages.getKey(conversationId),
-      (oldData) => {
+      queryClient.setQueryData<
+        InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>
+      >(useQueryPinnedMessages.getKey(conversationId), (oldData) => {
         if (!oldData) return oldData;
 
         return {
@@ -68,15 +75,15 @@ export default function ShowPinnedMessagesButton() {
             elements: page.elements.filter((msg) => msg.id !== event.messageId),
           })),
         };
-      }
-    );
-  });
+      });
+    },
+  );
 
   return (
     <Popover.Root open={isOpen} onOpenChange={handleOpenChange}>
       <Popover.Trigger asChild>
         <IconButton theme="default">
-          <FaThumbtack className="size-5"/>
+          <FaThumbtack className="size-5" />
         </IconButton>
       </Popover.Trigger>
 
@@ -84,18 +91,18 @@ export default function ShowPinnedMessagesButton() {
         <Popover.Content
           sideOffset={5}
           align="end"
-          className="w-96 h-128 max-h-(--radix-popover-content-available-height) border-2 border-gray-600 rounded-lg bg-gray-725 text-white shadow-lg flex flex-col"
+          className="bg-gray-725 flex h-128 max-h-(--radix-popover-content-available-height) w-96 flex-col rounded-lg border-2 border-gray-600 text-white shadow-lg"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <header className="p-2 border-b-2 border-gray-600">
+          <header className="border-b-2 border-gray-600 p-2">
             <p>
-              <BsPinAngleFill className="size-8 fill-white inline mr-2"/>
+              <BsPinAngleFill className="mr-2 inline size-8 fill-white" />
 
               <span className="text-lg font-bold">Pinned messages</span>
             </p>
           </header>
 
-          <section className="flex-1 min-h-0 overflow-y-auto p-2">
+          <section className="min-h-0 flex-1 overflow-y-auto p-2">
             <ContentDisplay
               allElements={allElements}
               isLoading={isLoading}
@@ -120,7 +127,7 @@ function ContentDisplay({
   allElements,
   isLoading,
   isError,
-  onPinnedMessageClick
+  onPinnedMessageClick,
 }: ContentDisplayProps) {
   return (
     <>
@@ -128,22 +135,24 @@ function ContentDisplay({
         <>
           {[...new Array(10).keys()].map((_, index) => (
             <div key={index} className="pb-1">
-              <div className="p-2 border-2 border-gray-600 rounded-md group bg-black/8">
+              <div className="group rounded-md border-2 border-gray-600 bg-black/8 p-2">
                 <MessageRow.HeaderSkeleton>
-                  <MessageRow.BodySkeleton/>
+                  <MessageRow.BodySkeleton />
                 </MessageRow.HeaderSkeleton>
               </div>
             </div>
           ))}
         </>
       ) : isError ? (
-        <div className="size-full flex flex-col gap-1 justify-center items-center">
-          <BsExclamationTriangle className="size-10 fill-white"/>
+        <div className="flex size-full flex-col items-center justify-center gap-1">
+          <BsExclamationTriangle className="size-10 fill-white" />
           <p className="select-none">Failed to load pinned messages</p>
         </div>
       ) : allElements.length == 0 ? (
-        <div className="size-full flex flex-col gap-1 justify-center items-center">
-          <span className="text-sm text-gray-500 select-none">It is so very empty here</span>
+        <div className="flex size-full flex-col items-center justify-center gap-1">
+          <span className="text-sm text-gray-500 select-none">
+            It is so very empty here
+          </span>
         </div>
       ) : (
         <Virtuoso
@@ -153,20 +162,23 @@ function ContentDisplay({
           overscan={5}
           itemContent={(_index, message) => (
             <div className="pb-1">
-              <div className="p-2 border-2 border-gray-600 rounded-md bg-black/8 cursor-pointer" onClick={() => onPinnedMessageClick(message.id)}>
+              <div
+                className="cursor-pointer rounded-md border-2 border-gray-600 bg-black/8 p-2"
+                onClick={() => onPinnedMessageClick(message.id)}
+              >
                 <MessageRow.Row
                   header={{
                     senderDisplayName: message.sender?.displayName ?? "???",
                     senderId: message.sender?.id,
                     senderAvatarVersion: message.sender?.avatarVersion,
-                    avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
+                    avatarAlt: message.sender
+                      ? `Avatar of ${message.sender.displayName ?? "???"}`
+                      : undefined,
                   }}
                   date={new Date(message.createdAt)}
                 >
                   <div className="flex-1 space-y-1">
-                    <MessageBody
-                      content={message.body}
-                    />
+                    <MessageBody content={message.body} />
 
                     {/* TODO: Should we allow attachments in pinned message display? */}
                     {/*{message.attachments && message.attachments.length > 0 && (*/}

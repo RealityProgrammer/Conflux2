@@ -1,11 +1,11 @@
-import {BsPeople, BsPerson} from "react-icons/bs";
-import {Avatar as RadixAvatar} from "radix-ui";
-import {userService} from "../api/userService.ts";
-import {serverService} from "../api/serverService.ts";
-import type {RefObject} from "react";
+import { BsPeople, BsPerson } from "react-icons/bs";
+import { Avatar as RadixAvatar } from "radix-ui";
+import { userService } from "../api/userService.ts";
+import { serverService } from "../api/serverService.ts";
+import type { RefObject } from "react";
 import PresenceStatusIcon from "./PresenceStatusIcon.tsx";
-import type {PresenceStatus} from "../api/schema.ts";
-import {type HTMLAttributes} from "react";
+import type { PresenceStatus } from "../api/schema.ts";
+import { type HTMLAttributes } from "react";
 
 export interface PresenceProps {
   status: PresenceStatus;
@@ -31,16 +31,20 @@ function User({
 }: UserAvatarProps) {
   return (
     <div className={`relative ${className}`} ref={ref} {...props}>
-      <div className="size-full rounded-[inherit] overflow-hidden">
+      <div className="size-full overflow-hidden rounded-[inherit]">
         <RadixAvatar.Root className="size-full">
           <RadixAvatar.Image
             className="size-full object-cover"
-            src={userId && version ? userService.getAvatarUrl(userId, version) : undefined}
+            src={
+              userId && version
+                ? userService.getAvatarUrl(userId, version)
+                : undefined
+            }
             alt={alt}
             draggable={false}
           />
 
-          <RadixAvatar.Fallback className="flex size-full rounded-[inherit] items-center justify-center bg-gray-100">
+          <RadixAvatar.Fallback className="flex size-full items-center justify-center rounded-[inherit] bg-gray-100">
             <BsPerson className="size-5/6 fill-black" />
           </RadixAvatar.Fallback>
         </RadixAvatar.Root>
@@ -49,7 +53,7 @@ function User({
       {presence && (
         <PresenceStatusIcon
           status={presence.status}
-          className={`absolute bottom-0 right-0 translate-x-[20%] translate-y-[20%] rounded-full border-2 border-gray-750 bg-gray-750 ${presence.className ?? ""}`}
+          className={`border-gray-750 bg-gray-750 absolute right-0 bottom-0 translate-x-[20%] translate-y-[20%] rounded-full border-2 ${presence.className ?? ""}`}
         />
       )}
     </div>
@@ -62,34 +66,30 @@ interface ServerAvatarProps extends RadixAvatar.AvatarProps {
   alt?: string;
 }
 
-function Server({
-  serverId,
-  version,
-  alt,
-  ...props
-}: ServerAvatarProps) {
+function Server({ serverId, version, alt, ...props }: ServerAvatarProps) {
   return (
     <RadixAvatar.Root {...props}>
       <RadixAvatar.Image
         className="size-full rounded-[inherit] object-cover"
-        src={serverId && version ? serverService.getAvatarUrl(serverId, version) : undefined}
+        src={
+          serverId && version
+            ? serverService.getAvatarUrl(serverId, version)
+            : undefined
+        }
         alt={alt}
         draggable={false}
       />
 
-      <RadixAvatar.Fallback className="flex size-full rounded-[inherit] items-center justify-center bg-gray-100">
+      <RadixAvatar.Fallback className="flex size-full items-center justify-center rounded-[inherit] bg-gray-100">
         <BsPeople className="size-5/6 fill-black" />
       </RadixAvatar.Fallback>
     </RadixAvatar.Root>
   );
 }
 
-function Skeleton({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
+function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`bg-white/10 animate-pulse ${className}`} {...props}></div>
+    <div className={`animate-pulse bg-white/10 ${className}`} {...props}></div>
   );
 }
 
@@ -97,4 +97,4 @@ export const Avatar = {
   User,
   Server,
   Skeleton,
-}
+};

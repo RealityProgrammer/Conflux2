@@ -1,21 +1,34 @@
-import {type ButtonHTMLAttributes, type MouseEvent, type ReactNode, useState} from "react";
+import {
+  type ButtonHTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+  useState,
+} from "react";
 import Spinner from "./Spinner.tsx";
-import {IconButtonTheme} from "./IconButtonTheme.tsx";
+import { IconButtonTheme } from "./IconButtonTheme.tsx";
 
 const THEME_STYLES: Record<string, string> = {
-  [IconButtonTheme.Default]: 'text-slate-300 hover:text-white disabled:text-slate-200/35',
-  [IconButtonTheme.Success]: 'text-green-400 hover:text-green-600 disabled:text-green-400/35',
-  [IconButtonTheme.Warning]: 'text-yellow-400 hover:text-yellow-500 disabled:text-yellow-400/35',
-  [IconButtonTheme.Danger]: 'text-red-400 hover:text-red-600 disabled:text-red-400/35',
-  [IconButtonTheme.Info]: 'text-sky-400 hover:text-sky-600 disabled:text-sky-400/35',
+  [IconButtonTheme.Default]:
+    "text-slate-300 hover:text-white disabled:text-slate-200/35",
+  [IconButtonTheme.Success]:
+    "text-green-400 hover:text-green-600 disabled:text-green-400/35",
+  [IconButtonTheme.Warning]:
+    "text-yellow-400 hover:text-yellow-500 disabled:text-yellow-400/35",
+  [IconButtonTheme.Danger]:
+    "text-red-400 hover:text-red-600 disabled:text-red-400/35",
+  [IconButtonTheme.Info]:
+    "text-sky-400 hover:text-sky-600 disabled:text-sky-400/35",
 };
 
-interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+interface IconButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "onClick"
+> {
   children?: ReactNode;
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void | Promise<void>;
   isLoading?: boolean;
   setIsLoadingChanged?: (isLoading: boolean) => void;
-  theme?: IconButtonTheme | (string & {});    // & {} so that IconButtonTheme got auto-complete
+  theme?: IconButtonTheme | (string & {}); // & {} so that IconButtonTheme got auto-complete
 }
 
 export default function IconButton({
@@ -25,7 +38,7 @@ export default function IconButton({
   onClick,
   disabled,
   theme = IconButtonTheme.Default,
-  className = '',
+  className = "",
   ...props
 }: IconButtonProps) {
   const [isLoadingInternal, setIsLoadingInternal] = useState(false);
@@ -58,10 +71,10 @@ export default function IconButton({
       {...props}
       onClick={handleClick}
       disabled={isCurrentlyLoading || disabled}
-      className={`inline-flex items-center justify-center button-cursor pointer-events-auto ${themeClass} ${className}`}
+      className={`button-cursor pointer-events-auto inline-flex items-center justify-center ${themeClass} ${className}`}
     >
       {isCurrentlyLoading ? (
-        <Spinner className="size-full fill-white"/>
+        <Spinner className="size-full fill-white" />
       ) : (
         children
       )}

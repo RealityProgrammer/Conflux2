@@ -1,6 +1,11 @@
-import {type MutationStatus, useMutation, type UseMutationOptions, useMutationState} from "@tanstack/react-query";
-import type {ServiceResponse} from "../api/types.ts";
-import {serverService} from "../api/serverService.ts";
+import {
+  type MutationStatus,
+  useMutation,
+  type UseMutationOptions,
+  useMutationState,
+} from "@tanstack/react-query";
+import type { ServiceResponse } from "../api/types.ts";
+import { serverService } from "../api/serverService.ts";
 
 export interface UseChannelDeleteMutationVariables {
   serverId: string;
@@ -16,12 +21,30 @@ export interface UseChannelDeleteMutationState {
 }
 
 export function useChannelDeleteMutation(
-  options?: Omit<UseMutationOptions<ServiceResponse, Error, UseChannelDeleteMutationVariables, unknown>, "mutationFn" | "mutationKey">,
+  options?: Omit<
+    UseMutationOptions<
+      ServiceResponse,
+      Error,
+      UseChannelDeleteMutationVariables,
+      unknown
+    >,
+    "mutationFn" | "mutationKey"
+  >,
 ) {
-  return useMutation<ServiceResponse, Error, UseChannelDeleteMutationVariables, unknown>({
+  return useMutation<
+    ServiceResponse,
+    Error,
+    UseChannelDeleteMutationVariables,
+    unknown
+  >({
     mutationKey: useChannelDeleteMutation.key,
-    mutationFn: async (variables: UseChannelDeleteMutationVariables): Promise<ServiceResponse> => {
-      return serverService.deleteChannel(variables.serverId, variables.channelId);
+    mutationFn: async (
+      variables: UseChannelDeleteMutationVariables,
+    ): Promise<ServiceResponse> => {
+      return serverService.deleteChannel(
+        variables.serverId,
+        variables.channelId,
+      );
     },
     ...options,
   });
@@ -29,12 +52,17 @@ export function useChannelDeleteMutation(
 
 useChannelDeleteMutation.key = ["useChannelDeleteMutation"];
 
-export function useChannelDeleteMutationState(serverId: string, channelId: string): UseChannelDeleteMutationState {
+export function useChannelDeleteMutationState(
+  serverId: string,
+  channelId: string,
+): UseChannelDeleteMutationState {
   const mutations = useMutationState({
     filters: { mutationKey: useChannelDeleteMutation.key },
     select: (mutation) => {
-      const variables = mutation.state.variables as UseChannelDeleteMutationVariables | undefined;
-      const isTarget = variables?.serverId === serverId && variables?.channelId === channelId;
+      const variables = mutation.state.variables as
+        UseChannelDeleteMutationVariables | undefined;
+      const isTarget =
+        variables?.serverId === serverId && variables?.channelId === channelId;
 
       if (!isTarget) return null;
 
@@ -47,12 +75,14 @@ export function useChannelDeleteMutationState(serverId: string, channelId: strin
       };
     },
   });
-  
-  return mutations.filter(m => !!m).pop() || {
-    status: "idle",
-    isPending: false,
-    isSuccess: false,
-    isError: false,
-    error: null,
-  };
+
+  return (
+    mutations.filter((m) => !!m).pop() || {
+      status: "idle",
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    }
+  );
 }

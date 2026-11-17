@@ -29,9 +29,7 @@ function Popover({
 }: PopoverProps) {
   return (
     <RadixPopover.Root open={open} onOpenChange={onOpenChange}>
-      <RadixPopover.Trigger asChild>
-        {trigger}
-      </RadixPopover.Trigger>
+      <RadixPopover.Trigger asChild>{trigger}</RadixPopover.Trigger>
 
       <RadixPopover.Portal>
         <RadixPopover.Content
@@ -46,7 +44,7 @@ function Popover({
         </RadixPopover.Content>
       </RadixPopover.Portal>
     </RadixPopover.Root>
-  )
+  );
 }
 
 export type SelectedEmoji =
@@ -58,42 +56,50 @@ interface GroupsProps {
   searchTerm: string;
 }
 
-function Groups({
-  searchTerm,
-  onSelect,
-}: GroupsProps) {
+function Groups({ searchTerm, onSelect }: GroupsProps) {
   const { data, isLoading, isError } = useUserEmojis();
   const trimmedSearchTerm = searchTerm.trim();
 
-  const filteredData = !data ?
-    [] :
-    !trimmedSearchTerm || trimmedSearchTerm.length === 0 ?
-      data :
-      data.map(group => ({
-        ...group,
-        emojiEntries: group.emojiEntries.filter(e => e.shortCode.includes(trimmedSearchTerm)),
-      })).filter(group => group.emojiEntries.length > 0);
+  const filteredData = !data
+    ? []
+    : !trimmedSearchTerm || trimmedSearchTerm.length === 0
+      ? data
+      : data
+          .map((group) => ({
+            ...group,
+            emojiEntries: group.emojiEntries.filter((e) =>
+              e.shortCode.includes(trimmedSearchTerm),
+            ),
+          }))
+          .filter((group) => group.emojiEntries.length > 0);
 
-  const filteredUnicodeEntries: UnicodeEmojiEntry[] = !trimmedSearchTerm || trimmedSearchTerm.length === 0 ?
-    unicodeEmojiTable :
-    unicodeEmojiTable.filter(e => e.name.includes(trimmedSearchTerm));
+  const filteredUnicodeEntries: UnicodeEmojiEntry[] =
+    !trimmedSearchTerm || trimmedSearchTerm.length === 0
+      ? unicodeEmojiTable
+      : unicodeEmojiTable.filter((e) => e.name.includes(trimmedSearchTerm));
 
   return (
     <>
       {isLoading ? (
-        <div className="size-full flex flex-row justify-center items-center">
+        <div className="flex size-full flex-row items-center justify-center">
           <Spinner className="size-8 fill-white" />
         </div>
       ) : isError || !data ? (
-        <div className="size-full flex flex-col gap-1 justify-center items-center">
+        <div className="flex size-full flex-col items-center justify-center gap-1">
           <BsExclamationTriangle className="size-8 fill-white" />
-          <p className="select-none text-center">Failed to load your emojis.</p>
+          <p className="text-center select-none">Failed to load your emojis.</p>
         </div>
       ) : (
         <Virtuoso
           className="h-full scrollbar-none"
-          totalCount={filteredData.length + Math.sign(filteredUnicodeEntries.length)}  // +1 for built-in emoji table
-          computeItemKey={(index) => index === filteredData.length ? "built-in" : filteredData[index].serverInfo.serverId}
+          totalCount={
+            filteredData.length + Math.sign(filteredUnicodeEntries.length)
+          } // +1 for built-in emoji table
+          computeItemKey={(index) =>
+            index === filteredData.length
+              ? "built-in"
+              : filteredData[index].serverInfo.serverId
+          }
           itemContent={(index: number) => {
             if (index < filteredData.length) {
               const emojiGroup = filteredData[index];
@@ -102,7 +108,9 @@ function Groups({
                 <EmojiGroup.Server
                   groupName={emojiGroup.serverInfo.name}
                   emojiEntries={emojiGroup.emojiEntries}
-                  onSelected={(entry) => onSelect({ type: "server-emoji", ...entry })}
+                  onSelected={(entry) =>
+                    onSelect({ type: "server-emoji", ...entry })
+                  }
                   className="px-2"
                 />
               );
@@ -110,7 +118,9 @@ function Groups({
               return (
                 <EmojiGroup.Unicode
                   entries={filteredUnicodeEntries}
-                  onSelected={(value) => onSelect({ type: "unicode-emoji", ...value })}
+                  onSelected={(value) =>
+                    onSelect({ type: "unicode-emoji", ...value })
+                  }
                   className="px-2"
                 />
               );
@@ -118,7 +128,7 @@ function Groups({
           }}
           components={{
             EmptyPlaceholder: () => (
-              <div className="size-full flex flex-row justify-center items-center">
+              <div className="flex size-full flex-row items-center justify-center">
                 Nothing is here...
               </div>
             ),
@@ -177,26 +187,26 @@ function StandardPopover({
       }}
     >
       <div
-        className="size-full flex flex-col"
+        className="flex size-full flex-col"
         onClickCapture={(e) => {
           shiftPressedRef.current = e.shiftKey;
         }}
       >
-        <header className="flex-none p-2 border-b-2 border-b-gray-600">
-          <div className="flex-1 relative w-full">
-            <BsSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+        <header className="flex-none border-b-2 border-b-gray-600 p-2">
+          <div className="relative w-full flex-1">
+            <BsSearch className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-400" />
 
             <input
               type="text"
               placeholder="Search for emoji..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-10 input-field pl-9 w-full"
+              className="input-field h-10 w-full pl-9"
             />
           </div>
         </header>
 
-        <section className="flex-1 min-h-0">
+        <section className="min-h-0 flex-1">
           <Groups
             searchTerm={searchTerm}
             onSelect={(emoji: SelectedEmoji) => {
@@ -217,4 +227,4 @@ export const EmojiPanel = {
   Popover,
   Groups,
   StandardPopover,
-}
+};

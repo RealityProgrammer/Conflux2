@@ -1,5 +1,5 @@
-import {Virtuoso} from "react-virtuoso";
-import type {ReactNode} from "react";
+import { Virtuoso } from "react-virtuoso";
+import type { ReactNode } from "react";
 import Spinner from "./Spinner.tsx";
 
 interface VirtualizedScrollList2Props<ItemData> {
@@ -31,12 +31,16 @@ export default function VirtualizedScrollList2<ItemData>({
 }: VirtualizedScrollList2Props<ItemData>) {
   return (
     <div className="relative size-full">
-      <div className={`pointer-events-none z-10 absolute top-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
-        showTopLoader ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-      }`}>
+      <div
+        className={`bg-gray-750 pointer-events-none absolute top-2 left-1/2 z-10 -translate-x-1/2 rounded-md p-2 transition-all duration-200 ease-out ${
+          showTopLoader
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-2 opacity-0"
+        }`}
+      >
         <Spinner className="size-6 fill-white" />
       </div>
-      
+
       <Virtuoso
         className={className}
         totalCount={totalCount}
@@ -51,12 +55,16 @@ export default function VirtualizedScrollList2<ItemData>({
         alignToBottom={false}
         endReached={endReached}
       />
-      
-      <div className={`pointer-events-none z-10 absolute bottom-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
-        showBottomLoader ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-      }`}>
-        <Spinner className="size-6 fill-white"/>
+
+      <div
+        className={`bg-gray-750 pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md p-2 transition-all duration-200 ease-out ${
+          showBottomLoader
+            ? "translate-y-0 opacity-100"
+            : "translate-y-2 opacity-0"
+        }`}
+      >
+        <Spinner className="size-6 fill-white" />
       </div>
     </div>
-  )
+  );
 }

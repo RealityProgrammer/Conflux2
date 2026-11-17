@@ -1,4 +1,4 @@
-import {LexicalExtensionComposer} from "@lexical/react/LexicalExtensionComposer";
+import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import {
   defineExtension,
   $getRoot,
@@ -9,33 +9,71 @@ import {
   type RangeSelection,
   type LexicalNode,
   $isTextNode,
-  $isElementNode, $createParagraphNode, $isParagraphNode,
+  $isElementNode,
+  $createParagraphNode,
+  $isParagraphNode,
   SELECTION_CHANGE_COMMAND,
-  mergeRegister, KEY_TAB_COMMAND, INDENT_CONTENT_COMMAND, OUTDENT_CONTENT_COMMAND, $getNodeByKey, ParagraphNode,
-  type UpdateListenerPayload, PASTE_COMMAND, COMMAND_PRIORITY_HIGH, type PasteCommandType,
-  KEY_ARROW_RIGHT_COMMAND, $isDecoratorNode, KEY_ARROW_LEFT_COMMAND, KEY_BACKSPACE_COMMAND, type DecoratorNode,
+  mergeRegister,
+  KEY_TAB_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
+  $getNodeByKey,
+  ParagraphNode,
+  type UpdateListenerPayload,
+  PASTE_COMMAND,
+  COMMAND_PRIORITY_HIGH,
+  type PasteCommandType,
+  KEY_ARROW_RIGHT_COMMAND,
+  $isDecoratorNode,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_BACKSPACE_COMMAND,
+  type DecoratorNode,
   type ElementNode,
 } from "lexical";
-import {RichTextExtension} from "@lexical/rich-text";
-import {HistoryExtension} from "@lexical/history";
-import {ContentEditable} from "@lexical/react/LexicalContentEditable";
-import {OnChangePlugin} from "@lexical/react/LexicalOnChangePlugin";
-import {useLexicalComposerContext} from "@lexical/react/LexicalComposerContext";
-import {useEffect, type Ref, useRef, useImperativeHandle, type RefObject} from "react";
+import { RichTextExtension } from "@lexical/rich-text";
+import { HistoryExtension } from "@lexical/history";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import {
+  useEffect,
+  type Ref,
+  useRef,
+  useImperativeHandle,
+  type RefObject,
+} from "react";
 import {
   KEY_DOWN_COMMAND,
   COMMAND_PRIORITY_LOW,
   type LexicalEditor,
   TextNode,
   $createRangeSelection,
-  $setSelection
+  $setSelection,
 } from "lexical";
-import {$createEmojiNode, $isEmojiNode, EmojiDecoratorNode} from "./nodes/EmojiDecoratorNode.tsx";
-import {$createTimestampNode, TimestampDecoratorNode} from "./nodes/TimestampDecoratorNode.tsx";
-import {findMatchingEmoji} from "../../hooks/useUserEmojis.ts";
-import {ListNode, ListItemNode, registerList, $isListItemNode, registerCheckList} from "@lexical/list";
-import {HeadingNode, QuoteNode, $isQuoteNode} from "@lexical/rich-text";
-import {CodeNode, CodeHighlightNode, $isCodeNode, $createCodeNode, CodeExtension} from "@lexical/code-core";
+import {
+  $createEmojiNode,
+  EmojiDecoratorNode,
+} from "./nodes/EmojiDecoratorNode.tsx";
+import {
+  $createTimestampNode,
+  TimestampDecoratorNode,
+} from "./nodes/TimestampDecoratorNode.tsx";
+import { findMatchingEmoji } from "../../hooks/useUserEmojis.ts";
+import {
+  ListNode,
+  ListItemNode,
+  registerList,
+  $isListItemNode,
+  registerCheckList,
+} from "@lexical/list";
+import { HeadingNode, QuoteNode, $isQuoteNode } from "@lexical/rich-text";
+import {
+  CodeNode,
+  CodeHighlightNode,
+  $isCodeNode,
+  $createCodeNode,
+  CodeExtension,
+} from "@lexical/code-core";
 import {
   registerMarkdownShortcuts,
   $convertToMarkdownString,
@@ -54,28 +92,60 @@ import {
   AutoLinkNode,
   registerAutoLink,
   type LinkMatcher,
-  createLinkMatcherWithRegExp
+  createLinkMatcherWithRegExp,
 } from "@lexical/link";
-import {$createMarkdownMarkerNode, $isMarkdownMarkerNode, MarkdownMarkerNode} from "./nodes/MarkdownMarkerNode.tsx";
-import {$createMentionNode, MentionDecoratorNode} from "./nodes/MentionDecoratorNode.tsx";
-import {globals} from "animejs";
-import editor = globals.editor;
+import {
+  $createMarkdownMarkerNode,
+  $isMarkdownMarkerNode,
+  MarkdownMarkerNode,
+} from "./nodes/MarkdownMarkerNode.tsx";
+import {
+  $createMentionNode,
+  MentionDecoratorNode,
+} from "./nodes/MentionDecoratorNode.tsx";
 
 // TODO: Design toolbar
 // TODO: Table in the design toolbar
 
 export type SuggestionData =
   | { type: "mode"; startColonIndex: number }
-  | { type: "emoji"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; }
-  | { type: "time"; startColonIndex: number; modeIndex: number; startPayloadIndex: number; milliseconds: number; rawValue: string; }
-  | { type: "mention", startColonIndex: number; modeIndex: number; startPayloadIndex: number; searchTerm: string; };
+  | {
+      type: "emoji";
+      startColonIndex: number;
+      modeIndex: number;
+      startPayloadIndex: number;
+      searchTerm: string;
+    }
+  | {
+      type: "time";
+      startColonIndex: number;
+      modeIndex: number;
+      startPayloadIndex: number;
+      milliseconds: number;
+      rawValue: string;
+    }
+  | {
+      type: "mention";
+      startColonIndex: number;
+      modeIndex: number;
+      startPayloadIndex: number;
+      searchTerm: string;
+    };
 
 export interface MessageTextboxEditorRef {
   reset: () => void;
   focus: () => void;
   insertText: (text: string, startOffset: number, endOffset: number) => void;
-  insertEmojiNode: (emojiId: string, startOffset: number, endOffset: number) => void;
-  insertMentionNode: (user: { id: string; name: string }, startOffset: number, endOffset: number) => void;
+  insertEmojiNode: (
+    emojiId: string,
+    startOffset: number,
+    endOffset: number,
+  ) => void;
+  insertMentionNode: (
+    user: { id: string; name: string },
+    startOffset: number,
+    endOffset: number,
+  ) => void;
   convertToMarkdownString: () => string;
   insertAtLastSelection: (content: string | (() => LexicalNode)) => void;
 }
@@ -89,7 +159,8 @@ interface MessageTextboxEditorProps {
   ref?: Ref<MessageTextboxEditorRef>;
 }
 
-const URL_MATCHER = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)([A-Za-z0-9.-]+\.[a-z]{2,}(?:\/[+~%\/.\w-_]*)?\??[-+=&;%@.\w_]*#?\w*)?)/i;
+const URL_MATCHER =
+  /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)([A-Za-z0-9.-]+\.[a-z]{2,}(?:\/[+~%\/.\w-_]*)?\??[-+=&;%@.\w_]*#?\w*)?)/i;
 
 const LINK_MATCHERS: LinkMatcher[] = [
   createLinkMatcherWithRegExp(URL_MATCHER, (text) => {
@@ -114,72 +185,105 @@ export const MARKDOWN_MARKER_TRANSFORMER: TextMatchTransformer = {
 };
 
 export function registerMarkdownSyntaxHighlighter(editor: LexicalEditor) {
-  return editor.registerUpdateListener(({ editorState, dirtyElements, tags }: UpdateListenerPayload) => {
-    if (tags.has("markdown-highlight")) {
-      return;
-    }
-
-    let hasParagraphChanges = false;
-    editorState.read(() => {
-      for (const [nodeKey] of dirtyElements) {
-        const node = $getNodeByKey(nodeKey);
-        if ($isParagraphNode(node)) {
-          hasParagraphChanges = true;
-          break;
-        }
+  return editor.registerUpdateListener(
+    ({ editorState, dirtyElements, tags }: UpdateListenerPayload) => {
+      if (tags.has("markdown-highlight")) {
+        return;
       }
-    });
 
-    if (!hasParagraphChanges) return;
-
-    editor.update(() => {
-      const selection = $getSelection();
-      let savedAnchorOffset = -1;
-      let savedFocusOffset = -1;
-
-      if ($isRangeSelection(selection)) {
-        const anchorNode = selection.anchor.getNode();
-        const focusNode = selection.focus.getNode();
-
+      let hasParagraphChanges = false;
+      editorState.read(() => {
         for (const [nodeKey] of dirtyElements) {
-          const paragraph = $getNodeByKey(nodeKey);
-          if ($isParagraphNode(paragraph)) {
-            if (paragraph.isParentOf(anchorNode) || paragraph === anchorNode) {
-              savedAnchorOffset = getAbsoluteOffset(paragraph, anchorNode, selection.anchor.offset);
-            }
-            if (paragraph.isParentOf(focusNode) || paragraph === focusNode) {
-              savedFocusOffset = getAbsoluteOffset(paragraph, focusNode, selection.focus.offset);
-            }
-          }
-        }
-      }
-
-      let hasChangedParagraph = false;
-
-      for (const [nodeKey] of dirtyElements) {
-        const paragraph = $getNodeByKey(nodeKey);
-
-        if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
-          if (processParagraph(paragraph)) {
-            hasChangedParagraph = true;
-          }
-        }
-      }
-
-      if (hasChangedParagraph && savedAnchorOffset !== -1 && $isRangeSelection(selection)) {
-        for (const [nodeKey] of dirtyElements) {
-          const paragraph = $getNodeByKey(nodeKey);
-          if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
-            restoreSelection(paragraph, savedAnchorOffset, savedFocusOffset !== -1 ? savedFocusOffset : savedAnchorOffset);
+          const node = $getNodeByKey(nodeKey);
+          if ($isParagraphNode(node)) {
+            hasParagraphChanges = true;
             break;
           }
         }
-      }
-    }, { tag: "markdown-highlight" });
-  });
+      });
+
+      if (!hasParagraphChanges) return;
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          let savedAnchorOffset = -1;
+          let savedFocusOffset = -1;
+
+          if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
+            const focusNode = selection.focus.getNode();
+
+            for (const [nodeKey] of dirtyElements) {
+              const paragraph = $getNodeByKey(nodeKey);
+              if ($isParagraphNode(paragraph)) {
+                if (
+                  paragraph.isParentOf(anchorNode) ||
+                  paragraph === anchorNode
+                ) {
+                  savedAnchorOffset = getAbsoluteOffset(
+                    paragraph,
+                    anchorNode,
+                    selection.anchor.offset,
+                  );
+                }
+                if (
+                  paragraph.isParentOf(focusNode) ||
+                  paragraph === focusNode
+                ) {
+                  savedFocusOffset = getAbsoluteOffset(
+                    paragraph,
+                    focusNode,
+                    selection.focus.offset,
+                  );
+                }
+              }
+            }
+          }
+
+          let hasChangedParagraph = false;
+
+          for (const [nodeKey] of dirtyElements) {
+            const paragraph = $getNodeByKey(nodeKey);
+
+            if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
+              if (processParagraph(paragraph)) {
+                hasChangedParagraph = true;
+              }
+            }
+          }
+
+          if (
+            hasChangedParagraph &&
+            savedAnchorOffset !== -1 &&
+            $isRangeSelection(selection)
+          ) {
+            for (const [nodeKey] of dirtyElements) {
+              const paragraph = $getNodeByKey(nodeKey);
+              if ($isParagraphNode(paragraph) && paragraph.isAttached()) {
+                restoreSelection(
+                  paragraph,
+                  savedAnchorOffset,
+                  savedFocusOffset !== -1
+                    ? savedFocusOffset
+                    : savedAnchorOffset,
+                );
+                break;
+              }
+            }
+          }
+        },
+        { tag: "markdown-highlight" },
+      );
+    },
+  );
 }
 
-function getAbsoluteOffset(paragraph: ParagraphNode, targetNode: LexicalNode, localOffset: number): number {
+function getAbsoluteOffset(
+  paragraph: ParagraphNode,
+  targetNode: LexicalNode,
+  localOffset: number,
+): number {
   let offset = 0;
 
   function walk(node: LexicalNode): boolean {
@@ -213,7 +317,11 @@ function getAbsoluteOffset(paragraph: ParagraphNode, targetNode: LexicalNode, lo
   return found ? offset : -1;
 }
 
-function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, targetFocusOffset: number) {
+function restoreSelection(
+  paragraph: ParagraphNode,
+  targetAnchorOffset: number,
+  targetFocusOffset: number,
+) {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) return;
 
@@ -261,8 +369,14 @@ function restoreSelection(paragraph: ParagraphNode, targetAnchorOffset: number, 
   if (!anchorNode || !focusNode) {
     const lastText = findLastTextNode(paragraph);
     if (lastText) {
-      if (!anchorNode) { anchorNode = lastText; anchorLocal = lastText.getTextContentSize(); }
-      if (!focusNode)  { focusNode = lastText;  focusLocal = lastText.getTextContentSize(); }
+      if (!anchorNode) {
+        anchorNode = lastText;
+        anchorLocal = lastText.getTextContentSize();
+      }
+      if (!focusNode) {
+        focusNode = lastText;
+        focusLocal = lastText.getTextContentSize();
+      }
     }
   }
 
@@ -290,12 +404,16 @@ function processParagraph(paragraph: ParagraphNode): boolean {
   const fullText = paragraph.getTextContent();
   if (!/[*_~]/.test(fullText)) return false; // no markers, nothing to highlight, bail out
 
-  const pattern = /(?<!\\)(\*\*\*|___|\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))(.*?)(\1)/g;
+  const pattern =
+    /(?<!\\)(\*\*\*|___|\*\*|__|~~|(?<!\*)\*(?!\*)|(?<!_)_(?!_))(.*?)(\1)/g;
   const matches = [...fullText.matchAll(pattern)];
 
   let hasMarkers = false;
   for (const child of paragraph.getChildren()) {
-    if ($isMarkdownMarkerNode(child)) { hasMarkers = true; break; }
+    if ($isMarkdownMarkerNode(child)) {
+      hasMarkers = true;
+      break;
+    }
   }
 
   if (matches.length === 0 && !hasMarkers) return false;
@@ -350,7 +468,9 @@ function processParagraph(paragraph: ParagraphNode): boolean {
       continue;
     }
 
-    const formatsToApply: ("bold" | "italic" | "strikethrough" | "underline")[] = [];
+    const formatsToApply: (
+      "bold" | "italic" | "strikethrough" | "underline"
+    )[] = [];
     if (marker === "*" || marker === "_") {
       formatsToApply.push("italic");
     } else if (marker === "**") {
@@ -432,7 +552,7 @@ function processParagraph(paragraph: ParagraphNode): boolean {
 const CHAT_MARKDOWN_TRANSFORMERS = [
   HEADING,
   QUOTE,
-  CHECK_LIST,       // must be before UNORDERED_LIST and ORDERED_LIST
+  CHECK_LIST, // must be before UNORDERED_LIST and ORDERED_LIST
   UNORDERED_LIST,
   ORDERED_LIST,
   INLINE_CODE,
@@ -469,7 +589,11 @@ export const MarkdownSyntaxExtension = defineExtension({
 
 export const CustomTransformExtension = defineExtension({
   name: "CustomTransformExtension",
-  nodes: () => [EmojiDecoratorNode, TimestampDecoratorNode, MentionDecoratorNode],
+  nodes: () => [
+    EmojiDecoratorNode,
+    TimestampDecoratorNode,
+    MentionDecoratorNode,
+  ],
   register(editor) {
     return editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
       if (!textNode.isAttached()) return;
@@ -538,7 +662,8 @@ export const CustomTransformExtension = defineExtension({
       const timeMatch = text.match(/:t(\d*):/);
       if (timeMatch) {
         const fullMatch = timeMatch[0];
-        const timestampStr = timeMatch[1].length === 0 ? new Date().getTime() : timeMatch[1];
+        const timestampStr =
+          timeMatch[1].length === 0 ? new Date().getTime() : timeMatch[1];
         const index = timeMatch.index!;
 
         let targetNode = textNode;
@@ -587,10 +712,7 @@ export const LinkExtension = defineExtension({
       registerAutoLink(editor, {
         matchers: LINK_MATCHERS,
         changeHandlers: [],
-        excludeParents: [
-          $isCodeNode,
-          $isQuoteNode,
-        ]
+        excludeParents: [$isCodeNode, $isQuoteNode],
       }),
     );
   },
@@ -652,95 +774,114 @@ export default function MessageTextboxEditor({
   ref,
 }: MessageTextboxEditorProps) {
   const editorRef = useRef<LexicalEditor | null>(null);
-  const lastSelectionRef = useRef<{ nodeKey: string; offset: number } | null>(null);
+  const lastSelectionRef = useRef<{ nodeKey: string; offset: number } | null>(
+    null,
+  );
 
-  useImperativeHandle(ref, () => ({
-    reset: () => {
-      editorRef.current?.update(() => {
-        $getRoot().clear();
-      });
-    },
-    focus: () => {
-      editorRef.current?.focus();
-    },
-    insertText: (text: string, startOffset: number, endOffset: number) => {
-      editorRef.current?.update(() => {
-        selectRangeByGlobalOffsets(startOffset, endOffset);
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          selection.insertText(text);
-        }
-      });
-    },
-    insertEmojiNode: (emojiId: string, startOffset: number, endOffset: number) => {
-      editorRef.current?.update(() => {
-        selectRangeByGlobalOffsets(startOffset, endOffset);
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          const emojiNode = $createEmojiNode(emojiId);
-          selection.insertNodes([emojiNode]);
-          emojiNode.insertAfter($createTextNode(" "));
-        }
-      });
-    },
-    insertMentionNode: (user: { id: string; name: string }, startOffset: number, endOffset: number) => {
-      editorRef.current?.update(() => {
-        selectRangeByGlobalOffsets(startOffset, endOffset);
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          const mentionNode = $createMentionNode(user.id, user.name);
-          selection.insertNodes([mentionNode]);
-          mentionNode.insertAfter($createTextNode(" "));
-        }
-      });
-    },
-    convertToMarkdownString: (): string => {
-      return editorRef.current?.read(() => {
-        return $convertToMarkdownString(CHAT_MARKDOWN_TRANSFORMERS);
-      }) ?? "";
-    },
-    insertAtLastSelection: (content: string | (() => LexicalNode)) => {
-      editorRef.current?.update(() => {
-        const saved = lastSelectionRef.current;
-
-        if (saved) {
-          const node = $getNodeByKey(saved.nodeKey);
-
-          if (node && $isTextNode(node)) {
-            const selection = $createRangeSelection();
-
-            selection.anchor.set(node.__key, saved.offset, "text");
-            selection.focus.set(node.__key, saved.offset, "text");
-            $setSelection(selection);
-
-            if (typeof content === "string") {
-              selection.insertText(content);
-            } else {
-              selection.insertNodes([content()]);
-            }
-            return;
-          }
-        }
-
+  useImperativeHandle(
+    ref,
+    () => ({
+      reset: () => {
+        editorRef.current?.update(() => {
+          $getRoot().clear();
+        });
+      },
+      focus: () => {
         editorRef.current?.focus();
-        const fallbackSelection = $getSelection();
+      },
+      insertText: (text: string, startOffset: number, endOffset: number) => {
+        editorRef.current?.update(() => {
+          selectRangeByGlobalOffsets(startOffset, endOffset);
+          const selection = $getSelection();
 
-        if ($isRangeSelection(fallbackSelection)) {
-          if (typeof content === "string") {
-            fallbackSelection.insertText(content);
-          } else {
-            fallbackSelection.insertNodes([content()]);
+          if ($isRangeSelection(selection)) {
+            selection.insertText(text);
           }
-        }
-      });
-    },
-  }), []);
+        });
+      },
+      insertEmojiNode: (
+        emojiId: string,
+        startOffset: number,
+        endOffset: number,
+      ) => {
+        editorRef.current?.update(() => {
+          selectRangeByGlobalOffsets(startOffset, endOffset);
+          const selection = $getSelection();
+
+          if ($isRangeSelection(selection)) {
+            const emojiNode = $createEmojiNode(emojiId);
+            selection.insertNodes([emojiNode]);
+            emojiNode.insertAfter($createTextNode(" "));
+          }
+        });
+      },
+      insertMentionNode: (
+        user: { id: string; name: string },
+        startOffset: number,
+        endOffset: number,
+      ) => {
+        editorRef.current?.update(() => {
+          selectRangeByGlobalOffsets(startOffset, endOffset);
+          const selection = $getSelection();
+
+          if ($isRangeSelection(selection)) {
+            const mentionNode = $createMentionNode(user.id, user.name);
+            selection.insertNodes([mentionNode]);
+            mentionNode.insertAfter($createTextNode(" "));
+          }
+        });
+      },
+      convertToMarkdownString: (): string => {
+        return (
+          editorRef.current?.read(() => {
+            return $convertToMarkdownString(CHAT_MARKDOWN_TRANSFORMERS);
+          }) ?? ""
+        );
+      },
+      insertAtLastSelection: (content: string | (() => LexicalNode)) => {
+        editorRef.current?.update(() => {
+          const saved = lastSelectionRef.current;
+
+          if (saved) {
+            const node = $getNodeByKey(saved.nodeKey);
+
+            if (node && $isTextNode(node)) {
+              const selection = $createRangeSelection();
+
+              selection.anchor.set(node.__key, saved.offset, "text");
+              selection.focus.set(node.__key, saved.offset, "text");
+              $setSelection(selection);
+
+              if (typeof content === "string") {
+                selection.insertText(content);
+              } else {
+                selection.insertNodes([content()]);
+              }
+              return;
+            }
+          }
+
+          editorRef.current?.focus();
+          const fallbackSelection = $getSelection();
+
+          if ($isRangeSelection(fallbackSelection)) {
+            if (typeof content === "string") {
+              fallbackSelection.insertText(content);
+            } else {
+              fallbackSelection.insertNodes([content()]);
+            }
+          }
+        });
+      },
+    }),
+    [],
+  );
 
   return (
-    <LexicalExtensionComposer extension={lexicalExtensions} contentEditable={null}>
+    <LexicalExtensionComposer
+      extension={lexicalExtensions}
+      contentEditable={null}
+    >
       <TextArea
         initialValue={initialValue}
         onTextChange={onTextChange}
@@ -803,7 +944,10 @@ function TextArea({
             if ($isRangeSelection(selection)) {
               const node = selection.anchor.getNode();
 
-              const blockContainer = node.getParents().find((p) => $isCodeNode(p) || $isQuoteNode(p)) ||
+              const blockContainer =
+                node
+                  .getParents()
+                  .find((p) => $isCodeNode(p) || $isQuoteNode(p)) ||
                 ($isCodeNode(node) || $isQuoteNode(node) ? node : null);
 
               if (blockContainer) {
@@ -831,7 +975,7 @@ function TextArea({
 
         return false;
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 
@@ -856,8 +1000,11 @@ function TextArea({
               const node = selection.anchor.getNode();
 
               isCode = $isCodeNode(node) || node.getParents().some($isCodeNode);
-              isQuote = $isQuoteNode(node) || node.getParents().some($isQuoteNode);
-              isListItem = $isListItemNode(node) || node.getParents().some($isListItemNode);
+              isQuote =
+                $isQuoteNode(node) || node.getParents().some($isQuoteNode);
+              isListItem =
+                $isListItemNode(node) ||
+                node.getParents().some($isListItemNode);
             }
           });
 
@@ -875,7 +1022,7 @@ function TextArea({
 
         return false;
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor, onEnterSend]);
 
@@ -889,7 +1036,8 @@ function TextArea({
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const node = selection.anchor.getNode();
-            isListItem = $isListItemNode(node) || node.getParents().some($isListItemNode);
+            isListItem =
+              $isListItemNode(node) || node.getParents().some($isListItemNode);
           }
         });
 
@@ -898,14 +1046,14 @@ function TextArea({
           event.preventDefault();
           editor.dispatchCommand(
             event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND,
-            undefined
+            undefined,
           );
           return true;
         }
 
         return false; // Let standard tab behavior happen elsewhere
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 
@@ -931,7 +1079,7 @@ function TextArea({
         });
         return false;
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 
@@ -940,7 +1088,11 @@ function TextArea({
     return editor.registerCommand(
       PASTE_COMMAND,
       (event: PasteCommandType) => {
-        if (!(event instanceof ClipboardEvent) || !event.clipboardData || !onImagePaste) {
+        if (
+          !(event instanceof ClipboardEvent) ||
+          !event.clipboardData ||
+          !onImagePaste
+        ) {
           return false;
         }
 
@@ -966,8 +1118,8 @@ function TextArea({
 
         return hasHandledImage;
       },
-      COMMAND_PRIORITY_HIGH
-    )
+      COMMAND_PRIORITY_HIGH,
+    );
   }, [editor, onImagePaste]);
 
   // suggestion listener
@@ -1005,7 +1157,10 @@ function TextArea({
             type: "emoji",
             startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
             modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
-            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(
+              node,
+              localColonIdx + 2,
+            ),
             searchTerm: emojiMatch[1] || "",
           });
           return;
@@ -1016,12 +1171,17 @@ function TextArea({
           const localColonIdx = timeMatch.index!;
           const rawValue = timeMatch[1];
           const rawValTrimmed = rawValue.trim();
-          const milliseconds = rawValTrimmed ? Number(rawValTrimmed) || 0 : Date.now();
+          const milliseconds = rawValTrimmed
+            ? Number(rawValTrimmed) || 0
+            : Date.now();
           onSuggestionChange({
             type: "time",
             startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
             modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
-            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(
+              node,
+              localColonIdx + 2,
+            ),
             milliseconds,
             rawValue,
           });
@@ -1035,7 +1195,10 @@ function TextArea({
             type: "mention",
             startColonIndex: getGlobalOffsetForNodeOffset(node, localColonIdx),
             modeIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 1),
-            startPayloadIndex: getGlobalOffsetForNodeOffset(node, localColonIdx + 2),
+            startPayloadIndex: getGlobalOffsetForNodeOffset(
+              node,
+              localColonIdx + 2,
+            ),
             searchTerm: mentionMatch[1] || "",
           });
           return;
@@ -1044,7 +1207,10 @@ function TextArea({
         if (textBeforeCursor.endsWith(":")) {
           onSuggestionChange({
             type: "mode",
-            startColonIndex: getGlobalOffsetForNodeOffset(node, textBeforeCursor.length - 1),
+            startColonIndex: getGlobalOffsetForNodeOffset(
+              node,
+              textBeforeCursor.length - 1,
+            ),
           });
           return;
         }
@@ -1117,7 +1283,7 @@ function TextArea({
 
         return false;
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 
@@ -1137,14 +1303,26 @@ function TextArea({
 
         const previousSibling = node.getPreviousSibling();
 
-        if (offset === 0 && $isDecoratorNode(previousSibling) && previousSibling.isIsolated()) {
+        if (
+          offset === 0 &&
+          $isDecoratorNode(previousSibling) &&
+          previousSibling.isIsolated()
+        ) {
           const emojiNode = node.getPreviousSibling()!;
           const prevSibling = emojiNode.getPreviousSibling();
 
           const newSelection = $createRangeSelection();
           if (prevSibling && $isTextNode(prevSibling)) {
-            newSelection.anchor.set(prevSibling.__key, prevSibling.getTextContentSize(), "text");
-            newSelection.focus.set(prevSibling.__key, prevSibling.getTextContentSize(), "text");
+            newSelection.anchor.set(
+              prevSibling.__key,
+              prevSibling.getTextContentSize(),
+              "text",
+            );
+            newSelection.focus.set(
+              prevSibling.__key,
+              prevSibling.getTextContentSize(),
+              "text",
+            );
           } else {
             const parent = emojiNode.getParent();
 
@@ -1161,7 +1339,7 @@ function TextArea({
 
         return false;
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 
@@ -1181,7 +1359,12 @@ function TextArea({
         // check if we are at the end of a text node and the next sibling is an emoji
         const nextSibling = node.getNextSibling();
 
-        if ($isTextNode(node) && offset === node.getTextContentSize() && $isDecoratorNode(nextSibling) && nextSibling.isIsolated()) {
+        if (
+          $isTextNode(node) &&
+          offset === node.getTextContentSize() &&
+          $isDecoratorNode(nextSibling) &&
+          nextSibling.isIsolated()
+        ) {
           const emojiNode = node.getNextSibling()!;
           const nextEmojiSibling = emojiNode.getNextSibling();
 
@@ -1204,19 +1387,23 @@ function TextArea({
 
         return false;
       },
-      COMMAND_PRIORITY_LOW
+      COMMAND_PRIORITY_LOW,
     );
   }, [editor]);
 
   return (
     <>
-      <ContentEditable className="input-field min-h-9 max-h-48 w-full text-sm py-2 px-3 outline-none whitespace-pre-wrap break-all overflow-y-auto leading-relaxed relative"/>
-      <LexicalSyncPlugin onTextChange={onTextChange}/>
+      <ContentEditable className="input-field relative max-h-48 min-h-9 w-full overflow-y-auto px-3 py-2 text-sm leading-relaxed break-all whitespace-pre-wrap outline-none" />
+      <LexicalSyncPlugin onTextChange={onTextChange} />
     </>
   );
 }
 
-function LexicalSyncPlugin({ onTextChange }: { onTextChange?: (text: string, cursor: number) => void }) {
+function LexicalSyncPlugin({
+  onTextChange,
+}: {
+  onTextChange?: (text: string, cursor: number) => void;
+}) {
   const lastRef = useRef<{ text: string; cursor: number } | null>(null);
 
   return (
@@ -1251,7 +1438,10 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
     let result = 0;
 
     $forEachLeaf((leaf, start) => {
-      if (leaf === anchorNode) { result = start + anchorOffset; return true; }
+      if (leaf === anchorNode) {
+        result = start + anchorOffset;
+        return true;
+      }
       return false;
     });
 
@@ -1268,7 +1458,10 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
 
     let anchorStart = -1;
     $forEachLeaf((leaf, start) => {
-      if (anchorNode.isParentOf(leaf)) { anchorStart = start; return true; }
+      if (anchorNode.isParentOf(leaf)) {
+        anchorStart = start;
+        return true;
+      }
       return false;
     });
 
@@ -1279,10 +1472,16 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
 
       function walk(node: LexicalNode): boolean {
         if (done) return true;
-        if (node === anchorNode) { result = running + childSum; done = true; return true; }
+        if (node === anchorNode) {
+          result = running + childSum;
+          done = true;
+          return true;
+        }
 
         if ($isElementNode(node)) {
-          for (const child of node.getChildren()) { if (walk(child)) return true; }
+          for (const child of node.getChildren()) {
+            if (walk(child)) return true;
+          }
           return false;
         }
 
@@ -1300,7 +1499,10 @@ function getGlobalCursorOffset(selection: RangeSelection): number {
   return 0;
 }
 
-function getGlobalOffsetForNodeOffset(node: TextNode, localOffset: number): number {
+function getGlobalOffsetForNodeOffset(
+  node: TextNode,
+  localOffset: number,
+): number {
   let result = 0;
 
   $forEachLeaf((leaf, start) => {
@@ -1316,8 +1518,16 @@ function getGlobalOffsetForNodeOffset(node: TextNode, localOffset: number): numb
 }
 
 function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
-  let startPoint: { node: LexicalNode; offset: number; type: "text" | "element" } | null = null;
-  let endPoint: { node: LexicalNode; offset: number; type: "text" | "element" } | null = null;
+  let startPoint: {
+    node: LexicalNode;
+    offset: number;
+    type: "text" | "element";
+  } | null = null;
+  let endPoint: {
+    node: LexicalNode;
+    offset: number;
+    type: "text" | "element";
+  } | null = null;
 
   $forEachLeaf((node, start, size) => {
     if (!startPoint && startOffset <= start + size) {
@@ -1353,29 +1563,52 @@ function selectRangeByGlobalOffsets(startOffset: number, endOffset: number) {
   if (!startPoint || !endPoint) {
     let lastLeaf: LexicalNode = null!;
 
-    $forEachLeaf((node) => { lastLeaf = node; return false; });
+    $forEachLeaf((node) => {
+      lastLeaf = node;
+      return false;
+    });
 
     if (lastLeaf) {
       const lastLeafParent = (lastLeaf as LexicalNode).getParent();
 
-      const fallback = lastLeaf != null && $isTextNode(lastLeaf)
-        ? { node: lastLeaf, offset: lastLeaf.getTextContentSize(), type: "text" as const }
-        : lastLeafParent ? { node: lastLeafParent, offset: lastLeafParent.getChildren().length, type: "element" as const } : null;
+      const fallback =
+        lastLeaf != null && $isTextNode(lastLeaf)
+          ? {
+              node: lastLeaf,
+              offset: lastLeaf.getTextContentSize(),
+              type: "text" as const,
+            }
+          : lastLeafParent
+            ? {
+                node: lastLeafParent,
+                offset: lastLeafParent.getChildren().length,
+                type: "element" as const,
+              }
+            : null;
 
-      if (fallback) { startPoint ??= fallback; endPoint ??= fallback; }
+      if (fallback) {
+        startPoint ??= fallback;
+        endPoint ??= fallback;
+      }
     }
   }
 
   if (startPoint && endPoint) {
     const selection = $createRangeSelection();
 
-    selection.anchor.set(startPoint.node.getKey(), startPoint.offset, startPoint.type);
+    selection.anchor.set(
+      startPoint.node.getKey(),
+      startPoint.offset,
+      startPoint.type,
+    );
     selection.focus.set(endPoint.node.getKey(), endPoint.offset, endPoint.type);
     $setSelection(selection);
   }
 }
 
-function $isIsolatedDecoratorNode(node: LexicalNode | null | undefined): node is DecoratorNode<any> {
+function $isIsolatedDecoratorNode(
+  node: LexicalNode | null | undefined,
+): node is DecoratorNode<any> {
   return node != null && $isDecoratorNode(node) && node.isIsolated();
 }
 
@@ -1415,7 +1648,9 @@ function $placeCaretAtGap(parent: ElementNode, index: number) {
 }
 
 // walk tree depth first, collect the node start offset and size along the way
-function $forEachLeaf(fn: (node: LexicalNode, start: number, size: number) => boolean) {
+function $forEachLeaf(
+  fn: (node: LexicalNode, start: number, size: number) => boolean,
+) {
   let offset = 0;
 
   function walk(node: LexicalNode): boolean {

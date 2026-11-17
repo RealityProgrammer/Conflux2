@@ -1,6 +1,6 @@
-import {BsCheckLg} from "react-icons/bs";
-import {Select} from "radix-ui";
-import type {HTMLAttributes, ReactNode} from "react";
+import { BsCheckLg } from "react-icons/bs";
+import { Select } from "radix-ui";
+import type { HTMLAttributes, ReactNode } from "react";
 
 export interface SelectItemProps extends HTMLAttributes<HTMLDivElement> {
   text: string;
@@ -17,18 +17,18 @@ export default function SelectItem({
 }: SelectItemProps) {
   return (
     <Select.Item
-      className={`dropdown-item-default flex flex-row items-center w-full gap-2 ${className}`}
+      className={`dropdown-item-default flex w-full flex-row items-center gap-2 ${className}`}
       value={value}
       {...props}
     >
       {icon}
 
-      <span className="flex-1 text-left truncate min-w-0 py-0.5">
+      <span className="min-w-0 flex-1 truncate py-0.5 text-left">
         <Select.ItemText>{text}</Select.ItemText>
       </span>
 
-      <Select.ItemIndicator className="flex-none flex items-center">
-        <BsCheckLg className="fill-white size-4" />
+      <Select.ItemIndicator className="flex flex-none items-center">
+        <BsCheckLg className="size-4 fill-white" />
       </Select.ItemIndicator>
     </Select.Item>
   );

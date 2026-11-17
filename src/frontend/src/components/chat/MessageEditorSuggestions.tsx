@@ -1,8 +1,11 @@
-import {Suggestion} from "./Suggestion.tsx";
-import type {MessageTextboxEditorRef, SuggestionData} from "./MessageTextboxEditor.tsx";
-import type {UserIdentityProfileDto} from "../../api/types.ts";
-import type {RefObject} from "react";
-import type {SelectedEmoji} from "./EmojiPanel.tsx";
+import { Suggestion } from "./Suggestion.tsx";
+import type {
+  MessageTextboxEditorRef,
+  SuggestionData,
+} from "./MessageTextboxEditor.tsx";
+import type { UserIdentityProfileDto } from "../../api/types.ts";
+import type { RefObject } from "react";
+import type { SelectedEmoji } from "./EmojiPanel.tsx";
 
 interface BaseProps {
   suggestion: SuggestionData | null;
@@ -25,23 +28,23 @@ function Base({
     <>
       {suggestion.type === "mode" ? (
         <Suggestion.Mode
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          className="absolute inset-x-2 bottom-full z-10 -translate-y-2 shadow-xl"
           onSelect={onSuggestionModeSelected}
         />
       ) : suggestion.type === "emoji" ? (
         <Suggestion.Emoji
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          className="absolute inset-x-2 bottom-full z-10 -translate-y-2 shadow-xl"
           searchTerm={suggestion.searchTerm ?? ""}
           onSelect={onEmojiSelected}
         />
       ) : suggestion.type === "time" ? (
         <Suggestion.Time
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          className="absolute inset-x-2 bottom-full z-10 -translate-y-2 shadow-xl"
           onSelect={onTimestampSelected}
         />
       ) : suggestion.type === "mention" ? (
         <Suggestion.Mention
-          className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
+          className="absolute inset-x-2 bottom-full z-10 -translate-y-2 shadow-xl"
           searchTerm={suggestion.searchTerm ?? ""}
           onSelect={onMentionUserSelected}
         />
@@ -66,27 +69,47 @@ function Default({
       suggestion={suggestion}
       onSuggestionModeSelected={(mode) => {
         // cursor is after the start colon, insert the mode directly
-        textboxEditorRef.current?.insertText(mode, suggestion!.startColonIndex + 1, cursorPosition);
+        textboxEditorRef.current?.insertText(
+          mode,
+          suggestion!.startColonIndex + 1,
+          cursorPosition,
+        );
       }}
       onEmojiSelected={(emoji) => {
         // replace from the starting colon with the full formatted emoji tag and a trailing space
         switch (emoji.type) {
           case "server-emoji":
-            textboxEditorRef.current?.insertEmojiNode(emoji.id, suggestion!.startColonIndex, cursorPosition);
+            textboxEditorRef.current?.insertEmojiNode(
+              emoji.id,
+              suggestion!.startColonIndex,
+              cursorPosition,
+            );
             break;
 
           case "unicode-emoji":
-            textboxEditorRef.current?.insertText(emoji.value, suggestion!.startColonIndex, cursorPosition);
+            textboxEditorRef.current?.insertText(
+              emoji.value,
+              suggestion!.startColonIndex,
+              cursorPosition,
+            );
             break;
         }
       }}
       onTimestampSelected={(timestamp) => {
         // replace from the starting colon with the formatted timestamp tag and a trailing space
-        textboxEditorRef.current?.insertText(`:t${timestamp.getTime()}: `, suggestion!.startColonIndex, cursorPosition);
+        textboxEditorRef.current?.insertText(
+          `:t${timestamp.getTime()}: `,
+          suggestion!.startColonIndex,
+          cursorPosition,
+        );
       }}
       onMentionUserSelected={(user) => {
         // replace from the starting colon with the mention node and a trailing space
-        textboxEditorRef.current?.insertMentionNode({id: user.id, name: user.displayName ?? "???"}, suggestion!.startColonIndex, cursorPosition);
+        textboxEditorRef.current?.insertMentionNode(
+          { id: user.id, name: user.displayName ?? "???" },
+          suggestion!.startColonIndex,
+          cursorPosition,
+        );
       }}
     />
   );
@@ -95,4 +118,4 @@ function Default({
 export const MessageEditorSuggestions = {
   Base,
   Default,
-}
+};

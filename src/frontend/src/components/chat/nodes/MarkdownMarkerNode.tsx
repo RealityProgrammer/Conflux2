@@ -1,8 +1,14 @@
-import {type EditorConfig, type LexicalNode, type NodeKey, type SerializedTextNode, TextNode} from "lexical";
+import {
+  type EditorConfig,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedTextNode,
+  TextNode,
+} from "lexical";
 
 export class MarkdownMarkerNode extends TextNode {
   static getType(): string {
-    return 'markdown-marker';
+    return "markdown-marker";
   }
 
   static clone(node: MarkdownMarkerNode): MarkdownMarkerNode {
@@ -32,8 +38,9 @@ export class MarkdownMarkerNode extends TextNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
-    dom.style.color = 'color-mix(in oklab, var(--color-gray-400) 70%, transparent)';
-    dom.className = 'editor-markdown-marker';
+    dom.style.color =
+      "color-mix(in oklab, var(--color-gray-400) 70%, transparent)";
+    dom.className = "editor-markdown-marker";
     return dom;
   }
 
@@ -53,7 +60,7 @@ export class MarkdownMarkerNode extends TextNode {
   exportJSON(): SerializedTextNode {
     return {
       ...super.exportJSON(),
-      type: 'markdown-marker',
+      type: "markdown-marker",
     };
   }
 }
@@ -62,6 +69,8 @@ export function $createMarkdownMarkerNode(text: string): MarkdownMarkerNode {
   return new MarkdownMarkerNode(text);
 }
 
-export function $isMarkdownMarkerNode(node: LexicalNode | null | undefined): node is MarkdownMarkerNode {
+export function $isMarkdownMarkerNode(
+  node: LexicalNode | null | undefined,
+): node is MarkdownMarkerNode {
   return node instanceof MarkdownMarkerNode;
 }

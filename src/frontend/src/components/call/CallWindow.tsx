@@ -1,13 +1,13 @@
-import {useEffect, useRef} from "react";
+import { useEffect, useRef } from "react";
 import interact from "interactjs";
-import type {ResizeEvent} from "@interactjs/actions/resize/plugin";
-import type {InteractEvent} from "@interactjs/core/InteractEvent";
+import type { ResizeEvent } from "@interactjs/actions/resize/plugin";
+import type { InteractEvent } from "@interactjs/core/InteractEvent";
 import CallWindowContent from "./CallWindowContent.tsx";
-import type {Call} from "../../store/useCallStore.ts";
+import type { Call } from "../../store/useCallStore.ts";
 
 let highestZIndex = 1;
 
-export default function CallWindow({call}: {call: Call}) {
+export default function CallWindow({ call }: { call: Call }) {
   const windowRef = useRef<HTMLDivElement>(null);
 
   const bringToFront = () => {
@@ -28,7 +28,7 @@ export default function CallWindow({call}: {call: Call}) {
         edges: { left: true, right: true, bottom: true, top: false },
         modifiers: [
           interact.modifiers.restrictEdges({
-            outer: 'parent',
+            outer: "parent",
           }),
 
           interact.modifiers.restrictSize({
@@ -42,24 +42,26 @@ export default function CallWindow({call}: {call: Call}) {
             const target = event.target as HTMLElement | null;
             if (!target) return;
 
-            let x: number = (parseFloat(target.getAttribute('data-x') || "0") || 0);
-            let y: number = (parseFloat(target.getAttribute('data-y') || "0") || 0);
+            let x: number =
+              parseFloat(target.getAttribute("data-x") || "0") || 0;
+            let y: number =
+              parseFloat(target.getAttribute("data-y") || "0") || 0;
 
-            target.style.width = event.rect.width + 'px';
-            target.style.height = event.rect.height + 'px';
+            target.style.width = event.rect.width + "px";
+            target.style.height = event.rect.height + "px";
 
             x += event.deltaRect?.left ?? 0;
             y += event.deltaRect?.top ?? 0;
 
-            target.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+            target.style.transform = "translate(" + x + "px," + y + "px)";
 
-            target.setAttribute('data-x', String(x));
-            target.setAttribute('data-y', String(y));
+            target.setAttribute("data-x", String(x));
+            target.setAttribute("data-y", String(y));
           },
         },
       })
       .draggable({
-        allowFrom: '.drag-handle',
+        allowFrom: ".drag-handle",
         inertia: true,
         modifiers: [
           interact.modifiers.restrictRect({
@@ -73,15 +75,19 @@ export default function CallWindow({call}: {call: Call}) {
             const target = event.target as HTMLElement | null;
             if (!target) return;
 
-            const x: number = (parseFloat(target.getAttribute("data-x") || "0") || 0) + event.dx;
-            const y: number = (parseFloat(target.getAttribute('data-y') || "0") || 0) + event.dy;
+            const x: number =
+              (parseFloat(target.getAttribute("data-x") || "0") || 0) +
+              event.dx;
+            const y: number =
+              (parseFloat(target.getAttribute("data-y") || "0") || 0) +
+              event.dy;
 
-            target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+            target.style.transform = "translate(" + x + "px, " + y + "px)";
 
-            target.setAttribute('data-x', String(x));
-            target.setAttribute('data-y', String(y));
+            target.setAttribute("data-x", String(x));
+            target.setAttribute("data-y", String(y));
           },
-        }
+        },
       });
 
     return () => {
@@ -93,13 +99,13 @@ export default function CallWindow({call}: {call: Call}) {
     <div
       ref={windowRef}
       onPointerDown={bringToFront}
-      className="select-none pointer-events-auto absolute bg-gray-750 shadow-md border-2 border-gray-600 rounded-lg overflow-hidden flex flex-col"
+      className="bg-gray-750 pointer-events-auto absolute flex flex-col overflow-hidden rounded-lg border-2 border-gray-600 shadow-md select-none"
       style={{
         width: "400px",
         height: "225px",
       }}
     >
-      <CallWindowContent call={call}/>
+      <CallWindowContent call={call} />
     </div>
-  )
+  );
 }

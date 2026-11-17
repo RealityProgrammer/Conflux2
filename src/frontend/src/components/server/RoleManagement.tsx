@@ -1,42 +1,52 @@
-import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
+import { useCommunityServerContext } from "../../contexts/CommunityServerContext.tsx";
 import {
   type GetServerRolesByServerIdQuery,
   useInfiniteGetAssignableServerRolesQuery,
-  useInfiniteGetServerRolesByServerIdQuery
+  useInfiniteGetServerRolesByServerIdQuery,
 } from "../../graphql/infiniteQueries.ts";
-import {useEffect, useRef, useState, type ReactNode} from "react";
-import {BsCircleFill, BsPlusLg, BsTrashFill} from "react-icons/bs";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BsCircleFill, BsPlusLg, BsTrashFill } from "react-icons/bs";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import PermissionStatesPill from "./PermissionStatesPill.tsx";
-import {Accordion, Separator} from "radix-ui";
+import { Accordion, Separator } from "radix-ui";
 import IconButton from "../IconButton.tsx";
-import {z} from "zod";
-import {Controller, type SubmitHandler, useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
-import {FaSave} from "react-icons/fa";
-import {FaPencil, FaXmark} from "react-icons/fa6";
+import { z } from "zod";
+import { Controller, type SubmitHandler, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ServerPermission, SpecialRoleType } from "../../graphql/types.ts";
+import { FaSave } from "react-icons/fa";
+import { FaPencil, FaXmark } from "react-icons/fa6";
 import ErrorPopover from "../ErrorPopover.tsx";
-import {serverService} from "../../api/serverService.ts";
+import { serverService } from "../../api/serverService.ts";
 import Spinner from "../Spinner.tsx";
-import {toast} from "react-toastify";
-import type {ServerRoleDto} from "../../api/types.ts";
-import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
-import {PermissionState} from "../../api/schema.ts";
-import {useDebounceValue} from "usehooks-ts";
+import { toast } from "react-toastify";
+import type { ServerRoleDto } from "../../api/types.ts";
+import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
+import { PermissionState } from "../../api/schema.ts";
+import { useDebounceValue } from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {ServerRoleCreatedEvent, ServerRoleDeletedEvent} from "../../api/events.ts";
-import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
-import {Avatar} from "../Avatar.tsx";
+import type {
+  ServerRoleCreatedEvent,
+  ServerRoleDeletedEvent,
+} from "../../api/events.ts";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesOnBlock,
+} from "../../contexts/UnsavedChangesContext.tsx";
+import { Avatar } from "../Avatar.tsx";
 import AlertDialog from "../AlertActionDialog.tsx";
 
-type RoleDisplayElement = NonNullable<NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]>[number];
+type RoleDisplayElement = NonNullable<
+  NonNullable<GetServerRolesByServerIdQuery["communityServerRoles"]>["nodes"]
+>[number];
 
 export default function RoleManagement() {
-  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+  } = useCommunityServerContext();
   const serverId = serverDetails!.id;
-  
+
   const { guard } = useUnsavedChanges();
 
   const queryClient = useQueryClient();
@@ -44,33 +54,36 @@ export default function RoleManagement() {
 
   const [roleName, setRoleName] = useDebounceValue("", 500);
 
-  const {
-    data,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    isLoading,
-  } = useInfiniteGetServerRolesByServerIdQuery({
-    serverId,
-    nameFilter: roleName,
-    after: null,
-  }, {
-    initialPageParam: { after: null },
-    getNextPageParam: (lastPage: GetServerRolesByServerIdQuery): { after: string } | undefined => {
-      const pageInfo = lastPage?.communityServerRoles?.pageInfo;
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } =
+    useInfiniteGetServerRolesByServerIdQuery(
+      {
+        serverId,
+        nameFilter: roleName,
+        after: null,
+      },
+      {
+        initialPageParam: { after: null },
+        getNextPageParam: (
+          lastPage: GetServerRolesByServerIdQuery,
+        ): { after: string } | undefined => {
+          const pageInfo = lastPage?.communityServerRoles?.pageInfo;
 
-      if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-        return { after: pageInfo.endCursor };
-      }
+          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+            return { after: pageInfo.endCursor };
+          }
 
-      return undefined;
-    },
-    staleTime: 0,
-  });
+          return undefined;
+        },
+        staleTime: 0,
+      },
+    );
 
   const invalidateRoleQuery = () => {
     queryClient.invalidateQueries({
-      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, after: null }),
+      queryKey: useInfiniteGetServerRolesByServerIdQuery.getKey({
+        serverId,
+        after: null,
+      }),
     });
 
     queryClient.invalidateQueries({
@@ -80,17 +93,24 @@ export default function RoleManagement() {
 
   const updateRoleData = (role: ServerRoleDto) => {
     queryClient.setQueryData<InfiniteData<GetServerRolesByServerIdQuery>>(
-      useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, nameFilter: roleName, after: null }),
-      (oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
+      useInfiniteGetServerRolesByServerIdQuery.getKey({
+        serverId,
+        nameFilter: roleName,
+        after: null,
+      }),
+      (
+        oldData:
+          NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined,
+      ): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
         if (!oldData) return oldData;
 
         return {
           ...oldData,
-          pages: oldData.pages.map(page => ({
+          pages: oldData.pages.map((page) => ({
             ...page,
             communityServerRoles: {
               ...page.communityServerRoles!,
-              nodes: page.communityServerRoles?.nodes!.map(node => {
+              nodes: page.communityServerRoles?.nodes!.map((node) => {
                 if (node.id !== role.id) {
                   return node;
                 }
@@ -99,47 +119,63 @@ export default function RoleManagement() {
                   ...node,
                   name: role.name,
                   authorizeLevel: role.authorizeLevel,
-                  permissions: Object.keys(role.permissions).map((key: string) => {
-                    return {
-                      permission: key as ServerPermission,
-                      state: role.permissions[key as ServerPermission] ?? PermissionState.Inherit,
-                    }
-                  }),
+                  permissions: Object.keys(role.permissions).map(
+                    (key: string) => {
+                      return {
+                        permission: key as ServerPermission,
+                        state:
+                          role.permissions[key as ServerPermission] ??
+                          PermissionState.Inherit,
+                      };
+                    },
+                  ),
                 };
               }),
             },
           })),
         };
-      }
+      },
     );
   };
 
   const deleteRoleData = (roleId: string) => {
     queryClient.setQueryData<InfiniteData<GetServerRolesByServerIdQuery>>(
-      useInfiniteGetServerRolesByServerIdQuery.getKey({ serverId, nameFilter: roleName, after: null }),
-      (oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
+      useInfiniteGetServerRolesByServerIdQuery.getKey({
+        serverId,
+        nameFilter: roleName,
+        after: null,
+      }),
+      (
+        oldData:
+          NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined,
+      ): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
         if (!oldData) return oldData;
 
         return {
           ...oldData,
-          pages: oldData.pages.map(page => ({
+          pages: oldData.pages.map((page) => ({
             ...page,
             communityServerRoles: {
               ...page.communityServerRoles!,
-              nodes: page.communityServerRoles?.nodes!.filter(node => node.id !== roleId),
+              nodes: page.communityServerRoles?.nodes!.filter(
+                (node) => node.id !== roleId,
+              ),
             },
           })),
         };
-      }
+      },
     );
   };
 
   const allRoles: RoleDisplayElement[] =
-    data?.pages.flatMap((page: GetServerRolesByServerIdQuery): RoleDisplayElement[] => page?.communityServerRoles?.nodes ?? []) ?? [];
+    data?.pages.flatMap(
+      (page: GetServerRolesByServerIdQuery): RoleDisplayElement[] =>
+        page?.communityServerRoles?.nodes ?? [],
+    ) ?? [];
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | undefined>();
 
-  const selectedRole = allRoles.find(role => role.id === selectedRoleId);
+  const selectedRole = allRoles.find((role) => role.id === selectedRoleId);
 
   const handleSelectRoleId = guard((role: RoleDisplayElement) => {
     setSelectedRoleId(role.id);
@@ -158,15 +194,16 @@ export default function RoleManagement() {
 
   return (
     <>
-      <header className="flex-none mb-0">
+      <header className="mb-0 flex-none">
         <h3 className="text-xl font-bold text-white">Role Management</h3>
         <p className="text-sm text-gray-400">
-          Where power trips are just a click away. Handle with care (or don't, we're not your mom).
+          Where power trips are just a click away. Handle with care (or don't,
+          we're not your mom).
         </p>
       </header>
 
-      <div className="flex-1 flex gap-2 min-h-0 overflow-hidden">
-        <section className="w-64 flex flex-col bg-gray-700 rounded-lg border-2 border-gray-600">
+      <div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
+        <section className="flex w-64 flex-col rounded-lg border-2 border-gray-600 bg-gray-700">
           <RoleList
             roles={allRoles}
             isLoading={isLoading}
@@ -182,7 +219,9 @@ export default function RoleManagement() {
           />
         </section>
 
-        <section className={`flex-1 bg-gray-700 rounded-lg p-3 overflow-y-auto border-gray-600 border-2 space-y-2 transition-colors`}>
+        <section
+          className={`flex-1 space-y-2 overflow-y-auto rounded-lg border-2 border-gray-600 bg-gray-700 p-3 transition-colors`}
+        >
           {selectedRoleId && selectedRole ? (
             <RoleDetails
               key={selectedRoleId}
@@ -193,7 +232,7 @@ export default function RoleManagement() {
               deleteRoleData={deleteRoleData}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-500 select-none">
+            <div className="flex h-full items-center justify-center text-gray-500 select-none">
               Select a role to view details
             </div>
           )}
@@ -216,9 +255,12 @@ type RoleListProps = {
 };
 
 const createRoleSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .min(1, { message: "Name cannot be empty." })
-    .max(32, { message: "Name can only have maximum length of 32 characters." }),
+    .max(32, {
+      message: "Name can only have maximum length of 32 characters.",
+    }),
 });
 
 type CreateRoleFormValues = z.infer<typeof createRoleSchema>;
@@ -234,9 +276,12 @@ function RoleList({
   selectedRoleId,
   setSelectedRole,
 }: RoleListProps) {
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
   const serverId = serverDetails!.id;
-  
+
   const {
     reset,
     register,
@@ -267,17 +312,23 @@ function RoleList({
     }
   }, [watchedName]);
 
-  const handleCreateRole: SubmitHandler<CreateRoleFormValues> = async (data: CreateRoleFormValues) => {
+  const handleCreateRole: SubmitHandler<CreateRoleFormValues> = async (
+    data: CreateRoleFormValues,
+  ) => {
     if (!idempotencyKeyRef.current) {
       idempotencyKeyRef.current = crypto.randomUUID();
     }
 
-    const response = await serverService.createRole(serverId, data.name, idempotencyKeyRef.current);
+    const response = await serverService.createRole(
+      serverId,
+      data.name,
+      idempotencyKeyRef.current,
+    );
 
     if (response.success) {
       invalidateRoleQuery();
       idempotencyKeyRef.current = null;
-      
+
       reset(data);
     } else {
       toast.error("Failed to create role.");
@@ -292,18 +343,15 @@ function RoleList({
 
   return (
     <>
-      <form 
-        onSubmit={handleSubmit(handleCreateRole)} 
-        className="flex flex-row items-center gap-1 border-b-2 border-b-gray-600 p-2 overflow-x-hidden"
+      <form
+        onSubmit={handleSubmit(handleCreateRole)}
+        className="flex flex-row items-center gap-1 overflow-x-hidden border-b-2 border-b-gray-600 p-2"
       >
-        <ErrorPopover
-          open={!!errors.name}
-          content={errors.name?.message}
-        >
+        <ErrorPopover open={!!errors.name} content={errors.name?.message}>
           <input
             type="text"
             placeholder="New role name"
-            className="flex-1 input-field h-8 text-sm min-w-0"
+            className="input-field h-8 min-w-0 flex-1 text-sm"
             {...register("name")}
             onBlur={(e) => {
               register("name").onBlur(e);
@@ -319,12 +367,12 @@ function RoleList({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-none p-1.5 button-theme-primary rounded cursor-pointer"
+            className="button-theme-primary flex-none cursor-pointer rounded p-1.5"
           >
             {isSubmitting ? (
-              <Spinner className="size-4 fill-white"/>
+              <Spinner className="size-4 fill-white" />
             ) : (
-              <BsPlusLg className="size-4"/>
+              <BsPlusLg className="size-4" />
             )}
           </button>
         )}
@@ -345,15 +393,17 @@ function RoleList({
 
           return (
             <button
-              className={`w-full flex flex-row text-left items-center hover-highlight gap-2 px-2 cursor-pointer ${selectedRoleId === role.id ? "bg-white/8" : ""}`}
+              className={`hover-highlight flex w-full cursor-pointer flex-row items-center gap-2 px-2 text-left ${selectedRoleId === role.id ? "bg-white/8" : ""}`}
               onClick={() => setSelectedRole(role)}
             >
-              <BsCircleFill className="flex-none size-2.5 fill-blue-500"/>
+              <BsCircleFill className="size-2.5 flex-none fill-blue-500" />
 
               <span className="flex-1 truncate text-sm">{role.name}</span>
-              <span className="flex-none truncate text-gray-500 text-xs">{role.numMembers}</span>
+              <span className="flex-none truncate text-xs text-gray-500">
+                {role.numMembers}
+              </span>
             </button>
-          )
+          );
         }}
         hideVerticalScrollbar={true}
       />
@@ -362,9 +412,13 @@ function RoleList({
 }
 
 const updateRoleSchema = z.object({
-  name: z.string().min(1, {error: "Name cannot be empty."}).max(32, {error: "Name can only have maximum length of 32 characters."}),
-  authorizeLevel: z.number({error: "A valid integer number is required."})
-    .int({error: "A valid integer number is required."})
+  name: z
+    .string()
+    .min(1, { error: "Name cannot be empty." })
+    .max(32, { error: "Name can only have maximum length of 32 characters." }),
+  authorizeLevel: z
+    .number({ error: "A valid integer number is required." })
+    .int({ error: "A valid integer number is required." })
     .refine((val) => val === -1 || (val >= 1 && val <= 500000), {
       message: "Value must be a positive integer between 1 and 500000.",
     }),
@@ -380,7 +434,7 @@ type RoleDetailsProps = {
   setIsEditingRole: (value: boolean) => void;
   updateRoleData: (value: ServerRoleDto) => void;
   deleteRoleData: (roleId: string) => void;
-}
+};
 
 function RoleDetails({
   role,
@@ -389,13 +443,18 @@ function RoleDetails({
   updateRoleData,
   deleteRoleData,
 }: RoleDetailsProps) {
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
   const serverId = serverDetails!.id;
-  
+
   const { setDirty } = useUnsavedChanges();
 
-  const isEditable = serverDetails!.authorizeInfo.authorizeLevel >= role.authorizeLevel && role.specialRoleType != SpecialRoleType.Owner;
-  
+  const isEditable =
+    serverDetails!.authorizeInfo.authorizeLevel >= role.authorizeLevel &&
+    role.specialRoleType != SpecialRoleType.Owner;
+
   const formRef = useRef<HTMLFormElement | null>(null);
   const {
     register,
@@ -412,11 +471,19 @@ function RoleDetails({
     defaultValues: {
       name: role.name,
       authorizeLevel: role.authorizeLevel,
-      permissions: role.specialRoleType === SpecialRoleType.Owner ? Object.values(ServerPermission).reduce((acc, curr) => {
-        return {...acc, [curr]: PermissionState.Enable };
-      }, {}) : Object.values(ServerPermission).reduce((acc, curr) => {
-        return {...acc, [curr]: role.permissions.find(p => p.permission === curr)?.state ?? PermissionState.Inherit}
-      }, {}),
+      permissions:
+        role.specialRoleType === SpecialRoleType.Owner
+          ? Object.values(ServerPermission).reduce((acc, curr) => {
+              return { ...acc, [curr]: PermissionState.Enable };
+            }, {})
+          : Object.values(ServerPermission).reduce((acc, curr) => {
+              return {
+                ...acc,
+                [curr]:
+                  role.permissions.find((p) => p.permission === curr)?.state ??
+                  PermissionState.Inherit,
+              };
+            }, {}),
     },
   });
 
@@ -434,36 +501,42 @@ function RoleDetails({
     toast.warning("You have unsaved role changes.");
   });
 
-  const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
+  const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (
+    data: UpdateRoleFormValues,
+  ) => {
     if (!isEditable) return;
-    
-    let updatedPermissionStates: Record<ServerPermission, PermissionState> | undefined = undefined;
+
+    let updatedPermissionStates:
+      Record<ServerPermission, PermissionState> | undefined = undefined;
     if (dirtyFields.permissions) {
       updatedPermissionStates = {} as Record<ServerPermission, PermissionState>;
-      
+
       for (const [key, isDirty] of Object.entries(dirtyFields.permissions)) {
         if (!isDirty) continue;
 
-        updatedPermissionStates[key as ServerPermission] = data.permissions[key as ServerPermission];
+        updatedPermissionStates[key as ServerPermission] =
+          data.permissions[key as ServerPermission];
       }
     }
-    
-    const response = await serverService.updateRole(
-      serverId,
-      role.id,
-      {
-        name: dirtyFields.name ? data.name : undefined,
-        authorizeLevel: dirtyFields.authorizeLevel ? data.authorizeLevel : undefined,
-        permissionStates: updatedPermissionStates ?? {} as Record<ServerPermission, PermissionState>,
-      }
-    );
-  
+
+    const response = await serverService.updateRole(serverId, role.id, {
+      name: dirtyFields.name ? data.name : undefined,
+      authorizeLevel: dirtyFields.authorizeLevel
+        ? data.authorizeLevel
+        : undefined,
+      permissionStates:
+        updatedPermissionStates ??
+        ({} as Record<ServerPermission, PermissionState>),
+    });
+
     if (response.success && response.data) {
       updateRoleData(response.data);
       reset(data);
       setIsEditingRole(false);
     } else {
-      setError("root", {message: response.error?.message ?? "Unknown error."});
+      setError("root", {
+        message: response.error?.message ?? "Unknown error.",
+      });
     }
   };
 
@@ -478,18 +551,18 @@ function RoleDetails({
   };
 
   return (
-    <form 
-      ref={formRef} 
+    <form
+      ref={formRef}
       onSubmit={handleSubmit(handleUpdateRole)}
       onAnimationEnd={() => {
         formRef.current?.classList.remove("animate-horizontalShake");
       }}
     >
-      <header className="flex flex-row items-center justify-between mb-2">
-        <div className="flex flex-row gap-2 items-center">
+      <header className="mb-2 flex flex-row items-center justify-between">
+        <div className="flex flex-row items-center gap-2">
           {isEditingRole && role.specialRoleType === SpecialRoleType.None ? (
             <input
-              className="h-7 input-field w-48"
+              className="input-field h-7 w-48"
               defaultValue={getValues("name")}
               {...register("name")}
             />
@@ -497,7 +570,7 @@ function RoleDetails({
             <h4 className="text-xl font-semibold text-white">{role.name}</h4>
           )}
 
-          <span className="text-xs bg-gray-600 px-2 py-0.5 rounded ml-1">
+          <span className="ml-1 rounded bg-gray-600 px-2 py-0.5 text-xs">
             {role.numMembers} members
           </span>
         </div>
@@ -506,24 +579,32 @@ function RoleDetails({
           <>
             {isEditingRole ? (
               <div className="flex flex-row gap-2">
-                <IconButton type="button" theme="danger" onClick={() => {
-                  setIsEditingRole(false);
-                  reset();
-                }} disabled={isSubmitting}>
-                  <FaXmark className="size-5"/>
+                <IconButton
+                  type="button"
+                  theme="danger"
+                  onClick={() => {
+                    setIsEditingRole(false);
+                    reset();
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <FaXmark className="size-5" />
                 </IconButton>
 
                 {isSubmitting ? (
-                  <Spinner className="size-5 fill-white"/>
+                  <Spinner className="size-5 fill-white" />
                 ) : (
                   <IconButton type="submit" theme="info">
-                    <FaSave className="size-5"/>
+                    <FaSave className="size-5" />
                   </IconButton>
                 )}
               </div>
-              ) : (
-              <IconButton theme="info" onClick={() => setIsEditingRole(!isEditingRole)}>
-                <FaPencil className="size-5"/>
+            ) : (
+              <IconButton
+                theme="info"
+                onClick={() => setIsEditingRole(!isEditingRole)}
+              >
+                <FaPencil className="size-5" />
               </IconButton>
             )}
           </>
@@ -531,26 +612,24 @@ function RoleDetails({
       </header>
 
       <section>
-        <h4 className="group-label">
-          General Information
-        </h4>
+        <h4 className="group-label">General Information</h4>
 
-        <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
+        <ul className="flex flex-col rounded-lg border-2 border-gray-600 bg-gray-700 p-3 text-sm font-medium text-zinc-300 shadow-sm">
           <li className="flex items-center justify-between gap-2 px-2.5">
             <span>Created By</span>
 
-            <div className="flex flex-row items-center gap-2 px-3 py-1 rounded-md ring ring-gray-550">
+            <div className="ring-gray-550 flex flex-row items-center gap-2 rounded-md px-3 py-1 ring">
               <Avatar.User
                 userId={role.creatorUser!.id}
                 version={role.creatorUser?.avatarVersion}
-                className="flex-none size-5 rounded-full overflow-hidden"
+                className="size-5 flex-none overflow-hidden rounded-full"
               />
 
               <span className="flex-1 text-sm font-medium text-zinc-200">
                 {role.creatorUser?.displayName ?? "Deleted User"}
               </span>
 
-              <span className="flex-1 text-xs text-zinc-500 ml-1 border-l border-zinc-700 pl-2">
+              <span className="ml-1 flex-1 border-l border-zinc-700 pl-2 text-xs text-zinc-500">
                 <DateTimeText value={new Date(role.createdAt)} />
               </span>
             </div>
@@ -578,41 +657,34 @@ function RoleDetails({
               >
                 <input
                   type="text"
-                  className="input-field h-[29.6px] text-sm w-64"
+                  className="input-field h-[29.6px] w-64 text-sm"
                   placeholder="Enter Authorize Level"
                   {...register("authorizeLevel", {
-                    setValueAs: (value) => (value === "" || value == null ? null : Number(value))
+                    setValueAs: (value) =>
+                      value === "" || value == null ? null : Number(value),
                   })}
                 />
               </ErrorPopover>
             ) : (
-              <span className="font-mono">
-                {role.authorizeLevel}
-              </span>
+              <span className="font-mono">{role.authorizeLevel}</span>
             )}
           </li>
         </ul>
       </section>
 
-      <section className="space-y-1 mt-2">
-        <h4 className="group-label">
-          Permissions
-        </h4>
+      <section className="mt-2 space-y-1">
+        <h4 className="group-label">Permissions</h4>
 
-        <Accordion.Root
-          type="multiple"
-        >
-          <PermissionGroupAccordion 
-            header="Role"
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+        <Accordion.Root type="multiple">
+          <PermissionGroupAccordion header="Role">
+            <ul className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Create Role</span>
 
                 <Controller
                   control={control}
                   name="permissions.CreateRole"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.CreateRole}
                       content={errors.permissions?.CreateRole?.message}
@@ -633,7 +705,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.UpdateRole"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.UpdateRole}
                       content={errors.permissions?.UpdateRole?.message}
@@ -654,7 +726,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.DeleteRole"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.DeleteRole}
                       content={errors.permissions?.DeleteRole?.message}
@@ -671,17 +743,15 @@ function RoleDetails({
             </ul>
           </PermissionGroupAccordion>
 
-          <PermissionGroupAccordion
-            header="Channel"
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+          <PermissionGroupAccordion header="Channel">
+            <ul className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Create Channel</span>
 
                 <Controller
                   control={control}
                   name="permissions.CreateChannel"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.CreateChannel}
                       content={errors.permissions?.CreateChannel?.message}
@@ -702,7 +772,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.DeleteChannel"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.DeleteChannel}
                       content={errors.permissions?.DeleteChannel?.message}
@@ -718,18 +788,16 @@ function RoleDetails({
               </li>
             </ul>
           </PermissionGroupAccordion>
-          
-          <PermissionGroupAccordion 
-            header="Conversation"
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+
+          <PermissionGroupAccordion header="Conversation">
+            <ul className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Send Messages</span>
 
                 <Controller
                   control={control}
                   name="permissions.SendMessage"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.SendMessage}
                       content={errors.permissions?.SendMessage?.message}
@@ -750,7 +818,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.EditMessages"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.EditMessages}
                       content={errors.permissions?.EditMessages?.message}
@@ -771,7 +839,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.DeleteMessages"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.DeleteMessages}
                       content={errors.permissions?.DeleteMessages?.message}
@@ -788,17 +856,15 @@ function RoleDetails({
             </ul>
           </PermissionGroupAccordion>
 
-          <PermissionGroupAccordion
-            header="Member"
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+          <PermissionGroupAccordion header="Member">
+            <ul className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Manage Members</span>
 
                 <Controller
                   control={control}
                   name="permissions.ManageMembers"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.ManageMembers}
                       content={errors.permissions?.ManageMembers?.message}
@@ -819,7 +885,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.UpdateMemberRoles"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.UpdateMemberRoles}
                       content={errors.permissions?.UpdateMemberRoles?.message}
@@ -840,7 +906,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.WarnMembers"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.WarnMembers}
                       content={errors.permissions?.WarnMembers?.message}
@@ -861,7 +927,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.KickMembers"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.KickMembers}
                       content={errors.permissions?.KickMembers?.message}
@@ -882,7 +948,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.BanMembers"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.BanMembers}
                       content={errors.permissions?.BanMembers?.message}
@@ -903,7 +969,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.UnbanMembers"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.UnbanMembers}
                       content={errors.permissions?.UnbanMembers?.message}
@@ -920,17 +986,15 @@ function RoleDetails({
             </ul>
           </PermissionGroupAccordion>
 
-          <PermissionGroupAccordion
-            header="Emoji"
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+          <PermissionGroupAccordion header="Emoji">
+            <ul className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Manage Emojis</span>
 
                 <Controller
                   control={control}
                   name="permissions.ManageEmojis"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.ManageEmojis}
                       content={errors.permissions?.ManageEmojis?.message}
@@ -951,7 +1015,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.CreateEmoji"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.CreateEmoji}
                       content={errors.permissions?.CreateEmoji?.message}
@@ -972,7 +1036,7 @@ function RoleDetails({
                 <Controller
                   control={control}
                   name="permissions.DeleteEmoji"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.DeleteEmoji}
                       content={errors.permissions?.DeleteEmoji?.message}
@@ -988,18 +1052,16 @@ function RoleDetails({
               </li>
             </ul>
           </PermissionGroupAccordion>
-          
-          <PermissionGroupAccordion 
-            header="Miscellaneous"
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-2">
+
+          <PermissionGroupAccordion header="Miscellaneous">
+            <ul className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <li className="flex flex-row items-center gap-2 text-sm">
                 <span className="flex-1">Read Log</span>
 
                 <Controller
                   control={control}
                   name="permissions.ReadModerationLogs"
-                  render={({field}) => (
+                  render={({ field }) => (
                     <ErrorPopover
                       open={!!errors.permissions?.ReadModerationLogs}
                       content={errors.permissions?.ReadModerationLogs?.message}
@@ -1018,58 +1080,63 @@ function RoleDetails({
         </Accordion.Root>
       </section>
 
-      {hasPermission(ServerPermission.DeleteRole) && isEditable && role.specialRoleType === SpecialRoleType.None && !isEditingRole && (
-        <div className="flex flex-row justify-end mt-2">
-          <AlertDialog
-            title="Delete Role"
-            subtitle="Never seen again..."
-            headerIcon={(
-              <BsTrashFill className="size-10 fill-white"/>
-            )}
-            contentClassName="centered-dialog w-128 text-white bg-gray-650 outline-none"
-            trigger={(
-              <button
-                type="button"
-                className="button-theme-danger p-2 rounded-md cursor-pointer ml-auto"
-              >
-                Delete Role
-              </button>
-            )}
-            cancelButton={(
-              <button
-                type="button"
-                className="button-cursor px-3 py-2"
-              >
-                Cancel
-              </button>
-            )}
-            actionButton={(
-              <button
-                type="button"
-                className="button-theme-danger button-cursor px-3 py-2 rounded-md"
-                onClick={handleDeleteRole}
-              >
-                Delete Role
-              </button>
-            )}
-          >
-            <div className="p-3">
-              Are you sure you want to delete this role? This action cannot be reverted...
-            </div>
-          </AlertDialog>
-        </div>
-      )}
+      {hasPermission(ServerPermission.DeleteRole) &&
+        isEditable &&
+        role.specialRoleType === SpecialRoleType.None &&
+        !isEditingRole && (
+          <div className="mt-2 flex flex-row justify-end">
+            <AlertDialog
+              title="Delete Role"
+              subtitle="Never seen again..."
+              headerIcon={<BsTrashFill className="size-10 fill-white" />}
+              contentClassName="centered-dialog w-128 text-white bg-gray-650 outline-none"
+              trigger={
+                <button
+                  type="button"
+                  className="button-theme-danger ml-auto cursor-pointer rounded-md p-2"
+                >
+                  Delete Role
+                </button>
+              }
+              cancelButton={
+                <button type="button" className="button-cursor px-3 py-2">
+                  Cancel
+                </button>
+              }
+              actionButton={
+                <button
+                  type="button"
+                  className="button-theme-danger button-cursor rounded-md px-3 py-2"
+                  onClick={handleDeleteRole}
+                >
+                  Delete Role
+                </button>
+              }
+            >
+              <div className="p-3">
+                Are you sure you want to delete this role? This action cannot be
+                reverted...
+              </div>
+            </AlertDialog>
+          </div>
+        )}
     </form>
   );
 }
 
 function PermissionGroupAccordion({
   header,
-  children
-} : { header: string, children: ReactNode }) {
+  children,
+}: {
+  header: string;
+  children: ReactNode;
+}) {
   return (
-    <Accordion.Item value={header} className="border-2 border-gray-600 rounded-md mt-1">
-      <Accordion.Trigger className="text-left text-sm text-gray-300 cursor-pointer hover-highlight w-full p-2">
+    <Accordion.Item
+      value={header}
+      className="mt-1 rounded-md border-2 border-gray-600"
+    >
+      <Accordion.Trigger className="hover-highlight w-full cursor-pointer p-2 text-left text-sm text-gray-300">
         {header}
       </Accordion.Trigger>
 
@@ -1077,5 +1144,5 @@ function PermissionGroupAccordion({
         {children}
       </Accordion.Content>
     </Accordion.Item>
-  )
+  );
 }

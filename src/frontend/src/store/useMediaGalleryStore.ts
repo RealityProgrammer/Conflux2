@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface MediaGalleryOptions {
   downloadUrlProvider?: (attachmentIndex: number) => string | Promise<string>;
@@ -16,7 +16,11 @@ interface MediaGalleryStoreType {
   viewIndex: number;
   options?: MediaGalleryOptions;
 
-  setElements: (elements: MediaGalleryElement[], viewIndex: number, options?: MediaGalleryOptions) => void;
+  setElements: (
+    elements: MediaGalleryElement[],
+    viewIndex: number,
+    options?: MediaGalleryOptions,
+  ) => void;
   clearElements: () => void;
   previousElement: () => void;
   nextElement: () => void;
@@ -27,27 +31,50 @@ export const useMediaGalleryStore = create<MediaGalleryStoreType>((set) => ({
   viewIndex: -1,
   options: undefined,
 
-  setElements: (elements: MediaGalleryElement[], viewIndex: number, options?: MediaGalleryOptions) => set(() => {
-    return { elements, viewIndex: Math.min(Math.max(viewIndex, 0), elements.length - 1), options };
-  }),
+  setElements: (
+    elements: MediaGalleryElement[],
+    viewIndex: number,
+    options?: MediaGalleryOptions,
+  ) =>
+    set(() => {
+      return {
+        elements,
+        viewIndex: Math.min(Math.max(viewIndex, 0), elements.length - 1),
+        options,
+      };
+    }),
 
-  clearElements: () => set(() => {
-    return { elements: undefined, viewIndex: -1 };
-  }),
+  clearElements: () =>
+    set(() => {
+      return { elements: undefined, viewIndex: -1 };
+    }),
 
-  previousElement: () => set((state) => {
-    if (state.viewIndex === -1 || !state.elements || state.elements.length === 0) return {};
+  previousElement: () =>
+    set((state) => {
+      if (
+        state.viewIndex === -1 ||
+        !state.elements ||
+        state.elements.length === 0
+      )
+        return {};
 
-    return {
-      viewIndex: (state.viewIndex === 0 ? state.elements.length : state.viewIndex) - 1,
-    }
-  }),
+      return {
+        viewIndex:
+          (state.viewIndex === 0 ? state.elements.length : state.viewIndex) - 1,
+      };
+    }),
 
-  nextElement: () => set((state) => {
-    if (state.viewIndex === -1 || !state.elements || state.elements.length === 0) return {};
+  nextElement: () =>
+    set((state) => {
+      if (
+        state.viewIndex === -1 ||
+        !state.elements ||
+        state.elements.length === 0
+      )
+        return {};
 
-    return {
-      viewIndex: (state.viewIndex + 1) % state.elements.length,
-    }
-  }),
-}))
+      return {
+        viewIndex: (state.viewIndex + 1) % state.elements.length,
+      };
+    }),
+}));

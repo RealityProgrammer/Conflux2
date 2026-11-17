@@ -1,22 +1,22 @@
-import {type ReactNode} from "react";
+import { type ReactNode } from "react";
 
 interface NamesProps {
   displayName: string;
   userName: string;
 }
 
-function Names({displayName, userName}: NamesProps) {
+function Names({ displayName, userName }: NamesProps) {
   return (
     <p>
-      <span className="text-xl font-bold truncate">{displayName}</span>
-      <span className="text-sm ml-1 truncate text-stone-300">@{userName}</span>
+      <span className="truncate text-xl font-bold">{displayName}</span>
+      <span className="ml-1 truncate text-sm text-stone-300">@{userName}</span>
     </p>
   );
 }
 
-function FieldContainer({children}: {children: ReactNode}) {
+function FieldContainer({ children }: { children: ReactNode }) {
   return (
-    <div className="grid grid-cols-1 gap-y-1.5 text-sm p-1.5 text-white border-2 border-gray-600 rounded-md bg-black/10">
+    <div className="grid grid-cols-1 gap-y-1.5 rounded-md border-2 border-gray-600 bg-black/10 p-1.5 text-sm text-white">
       {children}
     </div>
   );
@@ -27,9 +27,9 @@ interface FieldProps {
   value: ReactNode;
 }
 
-function Field({label, value}: FieldProps) {
+function Field({ label, value }: FieldProps) {
   return (
-    <div className="flex flex-row gap-2 items-center justify-between bg-white/10 p-2 rounded-md">
+    <div className="flex flex-row items-center justify-between gap-2 rounded-md bg-white/10 p-2">
       {label}
       {value}
     </div>
@@ -78,22 +78,23 @@ interface BioProps {
   displayName: string;
 }
 
-function Bio({children, displayName}: BioProps) {
-  const randomTitle = HUMOROUS_TITLES[Math.floor(Math.random() * HUMOROUS_TITLES.length)]
-  
+function Bio({ children, displayName }: BioProps) {
+  const randomTitle =
+    HUMOROUS_TITLES[Math.floor(Math.random() * HUMOROUS_TITLES.length)];
+
   return (
-    <div className="flex flex-col gap-2 p-3 bg-white/5 border border-white/10 rounded-lg hover-highlight">
-      <blockquote className="relative pl-3 border-l-2 border-violet-500 text-sm text-gray-200 italic leading-relaxed">
+    <div className="hover-highlight flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-3">
+      <blockquote className="relative border-l-2 border-violet-500 pl-3 text-sm leading-relaxed text-gray-200 italic">
         {children}
       </blockquote>
 
       <span className="text-xs text-gray-400">
         -{" "}
-        <span className="text-white font-semibold text-xs">{displayName}</span>
-        , {randomTitle}
+        <span className="text-xs font-semibold text-white">{displayName}</span>,{" "}
+        {randomTitle}
       </span>
     </div>
-  )
+  );
 }
 
 export const UserProfile = {
@@ -101,4 +102,4 @@ export const UserProfile = {
   FieldContainer,
   Field,
   Bio,
-}
+};

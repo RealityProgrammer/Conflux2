@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export function usePreviewUrl(
   value: File | string | null | undefined,
-  fallbackUrl?: string | null
+  fallbackUrl?: string | null,
 ): string | null {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
