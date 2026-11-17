@@ -1,5 +1,5 @@
 import { TimelineItem } from "./TimelineItem.ts";
-import type { TimelineMessageDto } from "../../api/types.ts";
+import type {BackendResponse, TimelineMessageDto} from "../../api/types.ts";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { TimelineContext } from "./TimelineContext.ts";
 import { ContextMenu } from "radix-ui";
@@ -115,10 +115,19 @@ function MessageView({ message, showHeader, context }: MessageViewProps) {
     });
   };
 
+  const displayMaximumUniqueReactionsToast = () => {
+    toast.error("Message has reached maximum amount of unique reactions.");
+  };
+
   const reactionMutation = useMessageReactionMutation({
     onError: (error: Error) => {
-      if (error instanceof AxiosError) {
-        console.log(error);
+      if (error instanceof AxiosError && error.response) {
+        const response = error.response.data as BackendResponse;
+
+        if (response.error.code === "MessageUniqueReactionLimit") {
+          displayMaximumUniqueReactionsToast();
+          return;
+        }
       }
 
       toast.error("Failed to react to message.");
@@ -130,36 +139,42 @@ function MessageView({ message, showHeader, context }: MessageViewProps) {
     ? Object.entries(message.reactionsCounts)
     : [];
 
+  const hasMaxUniqueReactions = reactionsCountsEntries.length >= 25;
+
   const handleEmojiSelect = (emoji: SelectedEmoji) => {
     switch (emoji.type) {
       case "server-emoji": {
         const reactionKey: `emoji.${string}` = `emoji.${emoji.id}`;
-        const hasReacted =
-          message.userReactionKeys &&
-          message.userReactionKeys.includes(reactionKey);
-        const action = hasReacted ? "remove" : "add";
+        const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+
+        if (hasMaxUniqueReactions && !hasReacted) {
+          displayMaximumUniqueReactionsToast();
+          return;
+        }
 
         reactionMutation.mutate({
           conversationId,
           messageId: message.id,
           reactionKey,
-          action,
+          action: hasReacted ? "remove" : "add",
         });
         break;
       }
 
       case "unicode-emoji": {
         const reactionKey: `unicode.${string}` = `unicode.${emoji.value}`;
-        const hasReacted =
-          message.userReactionKeys &&
-          message.userReactionKeys.includes(reactionKey);
-        const action = hasReacted ? "remove" : "add";
+        const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+
+        if (hasMaxUniqueReactions && !hasReacted) {
+          displayMaximumUniqueReactionsToast();
+          return;
+        }
 
         reactionMutation.mutate({
           conversationId,
           messageId: message.id,
           reactionKey,
-          action,
+          action: hasReacted ? "remove" : "add",
         });
         break;
       }
@@ -186,10 +201,6 @@ function MessageView({ message, showHeader, context }: MessageViewProps) {
 
     setIsEmojiPanelOpen(true);
   };
-
-  const canAddNewEmoji = message.reactionsCounts
-    ? Object.keys(message.reactionsCounts).length < 25
-    : true;
 
   return (
     <ContextMenu.Root>
@@ -282,7 +293,7 @@ function MessageView({ message, showHeader, context }: MessageViewProps) {
                       },
                     )}
 
-                    {canAddNewEmoji && (
+                    {!hasMaxUniqueReactions && (
                       <IconButton
                         theme="default"
                         onClick={(e) =>

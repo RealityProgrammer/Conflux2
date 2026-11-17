@@ -25,41 +25,43 @@ public sealed class ConversationMessagesController(
         if (request.Body.AsSpan().Trim().IsEmpty && request.Attachments is not { Length: > 0 }) {
             return BadRequest(new ApiResponse(Errors.EmptyMessageContent()));
         }
-        
+
         UploadFile[] attachments;
-        
+
         if (request.Attachments is { Length: > 0 }) {
             attachments = new UploadFile[request.Attachments.Length];
-            
+
             for (int i = 0; i < attachments.Length; i++) {
                 try {
                     attachments[i] = new(request.Attachments[i].FileName, request.Attachments[i].OpenReadStream());
-                } catch {
+                }
+                catch {
                     foreach (var attachment in attachments) {
                         if (attachment.Stream != null!) {
                             await attachment.Stream.DisposeAsync();
                         }
                     }
-        
+
                     return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.OperationFailure("open attachment stream")));
                 }
             }
-        } else {
+        }
+        else {
             attachments = [];
         }
 
         try {
             var result = await sender.Send(new SendMessageCommand(
-                conversationId, 
-                request.Body, 
-                attachments, 
+                conversationId,
+                request.Body,
+                attachments,
                 request.ReplyToId
             ), cancellationToken);
 
             if (result.IsSuccess) {
                 return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
             }
-        
+
             return result.Error.Code switch {
                 nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
                 nameof(Errors.RequireActiveAccount) or nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
@@ -67,7 +69,8 @@ public sealed class ConversationMessagesController(
                 nameof(Errors.AttachmentUploadFailure) => StatusCode(StatusCodes.Status502BadGateway, new ApiResponse(result.Error)),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.UnexpectedError())),
             };
-        } finally {
+        }
+        finally {
             foreach (var stream in attachments) {
                 await stream.Stream.DisposeAsync();
             }
@@ -82,30 +85,32 @@ public sealed class ConversationMessagesController(
         CancellationToken cancellationToken
     ) {
         UploadFile[] addAttachmentFiles;
-        
+
         if (request.AddAttachments is { Count: > 0 }) {
             addAttachmentFiles = new UploadFile[request.AddAttachments.Count];
-            
+
             for (int i = 0; i < addAttachmentFiles.Length; i++) {
                 try {
                     addAttachmentFiles[i] = new(request.AddAttachments[i].FileName, request.AddAttachments[i].OpenReadStream());
-                } catch {
+                }
+                catch {
                     foreach (var attachment in addAttachmentFiles) {
                         if (attachment.Stream != null!) {
                             await attachment.Stream.DisposeAsync();
                         }
                     }
-        
+
                     return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(Errors.OperationFailure("open attachment stream")));
                 }
             }
-        } else {
+        }
+        else {
             addAttachmentFiles = [];
         }
-        
+
         var result = await sender.Send(new EditMessageCommand(
-            conversationId, 
-            messageId, 
+            conversationId,
+            messageId,
             request.Body,
             request.RemoveAttachmentIds ?? [],
             addAttachmentFiles
@@ -132,7 +137,7 @@ public sealed class ConversationMessagesController(
         if (result.IsSuccess) {
             return NoContent();
         }
-        
+
         return result.Error.Code switch {
             nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
@@ -150,7 +155,7 @@ public sealed class ConversationMessagesController(
         CancellationToken cancellationToken
     ) {
         var result = await sender.Send(
-            new QueryTimelineMessages(conversationId, direction, cursorMessageId, 50), 
+            new QueryTimelineMessages(conversationId, direction, cursorMessageId, 50),
             cancellationToken
         );
 
@@ -197,7 +202,7 @@ public sealed class ConversationMessagesController(
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
-        
+
         return result.Error.Code switch {
             nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
@@ -206,7 +211,7 @@ public sealed class ConversationMessagesController(
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
-    
+
     [HttpPost("{messageId:guid}/unpin"), Idempotent(5), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<TimelineMessageDto>>> UnpinMessage(
         Guid conversationId,
@@ -217,7 +222,7 @@ public sealed class ConversationMessagesController(
         if (result.IsSuccess) {
             return Ok(new ApiResponse<TimelineMessageDto>(result.Value, Error.None));
         }
-        
+
         return result.Error.Code switch {
             nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
@@ -229,20 +234,21 @@ public sealed class ConversationMessagesController(
 
     [HttpPost("{messageId:guid}/reactions")]
     public async Task<ActionResult<ApiResponse>> SetReaction(
-        Guid messageId, 
+        Guid messageId,
         [FromBody] ReactionRequest request
     ) {
         var result = await sender.Send(new ToggleReactionCommand(messageId, request.ReactionKey, request.Action));
-        
+
         if (result.IsSuccess) {
             return Ok(new ApiResponse(Error.None));
         }
-        
+
         return result.Error.Code switch {
             nameof(Errors.RequireActiveAccount) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             nameof(Errors.Forbidden) => StatusCode(StatusCodes.Status403Forbidden, new ApiResponse(result.Error)),
             nameof(Errors.ResourceNotFound) => NotFound(new ApiResponse(result.Error)),
+            nameof(Errors.MessageUniqueReactionLimit) or nameof(Errors.ValidationErrorsOccurred) => BadRequest(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
         };
     }
@@ -252,7 +258,7 @@ public sealed class ConversationMessagesController(
         IFormFile[]? Attachments,
         Guid? ReplyToId
     );
-    
+
     public sealed record EditMessageRequest(
         Facet.Optional<string?> Body,
         List<Guid>? RemoveAttachmentIds,
@@ -261,11 +267,11 @@ public sealed class ConversationMessagesController(
 
     public sealed record SearchMessageRequest(
         string? Content,
-		List<Guid>? SenderIds,
-		DateTimeOffset? StartDateTime,
-		DateTimeOffset? EndDateTime,
-		MessagePinFilter PinFilter,
-		Guid? BeforeCursor
+        List<Guid>? SenderIds,
+        DateTimeOffset? StartDateTime,
+        DateTimeOffset? EndDateTime,
+        MessagePinFilter PinFilter,
+        Guid? BeforeCursor
     );
 
     public sealed record ReactionRequest(string ReactionKey, ReactionAction Action);
