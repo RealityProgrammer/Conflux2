@@ -1,6 +1,6 @@
-import {type components} from "./schema.ts";
-import type {GetUserIdentityProfileQuery} from "../graphql/queries.ts";
-import type {HttpStatusCode} from "axios";
+import { type components } from "./schema.ts";
+import type { GetUserIdentityProfileQuery } from "../graphql/queries.ts";
+import type { HttpStatusCode } from "axios";
 
 // requests
 export type LoginRequest = components["schemas"]["LoginRequest"];
@@ -70,8 +70,14 @@ export type MentionSource = components["schemas"]["MentionSource"];
 export type MessageSearchDto = components["schemas"]["MessageSearchDto"];
 export type MessageSearchPage = components["schemas"]["MessageSearchPage"];
 export type EmojiEntryDto = components["schemas"]["EmojiEntryDto"];
+export type ReactionAction = components["schemas"]["ReactionAction"];
 
 export type MessageItemReactionDto = {
   messageId: string;
   reactionsCounts: Record<string, number>;
+};
+
+export type UserReactionActionDto = {
+  messageId: string;
+  reactionActions: Record<string, ReactionAction>;
 };

@@ -3,30 +3,31 @@ import type {
   MessageAttachmentDto,
   TimelineMessageDto,
 } from "../../api/types.ts";
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
-import {conversationService} from "../../api/conversationService.ts";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { conversationService } from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   MessageDeletedEvent,
   MessageEditedEvent,
-  MessageReceivedEvent, ReactionsCountsSynchronizedEvent
+  MessageReceivedEvent, ReactionsActionsSynchronizedEvent, ReactionsCountsSynchronizedEvent
 } from "../../api/events.ts";
-import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
+import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
 import useTimelineItems from "../../hooks/useTimelineItems.ts";
-import type {TimelineContext} from "./TimelineContext.ts";
-import {Virtuoso, type VirtuosoHandle} from "react-virtuoso";
+import type { TimelineContext } from "./TimelineContext.ts";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import useQueryTimelineMessages from "../../hooks/useQueryTimelineMessages.ts";
-import {MessageRow} from "./MessageRow.tsx";
-import {MessageItem} from "./MessageItem.tsx";
+import { MessageRow } from "./MessageRow.tsx";
+import { MessageItem } from "./MessageItem.tsx";
 import DeleteMessageConfirmationDialog from "./DeleteMessageConfirmationDialog.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
-import {DateSeparator} from "./DateSeparator.tsx";
-import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
+import { DateSeparator } from "./DateSeparator.tsx";
+import { useMediaGalleryStore } from "../../store/useMediaGalleryStore.ts";
 import Spinner from "../Spinner.tsx";
-import {FaArrowDown} from "react-icons/fa6";
+import { FaArrowDown } from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
-import {useMentionCountStore} from "../../store/useMentionCountStore.ts";
+import { useMentionCountStore } from "../../store/useMentionCountStore.ts";
 import EditMessageModal from "./EditMessageModal.tsx";
+import { ReactionAction } from "../../api/schema.ts";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
@@ -92,7 +93,7 @@ export function ChatView({
     })();
   }, [conversationId]);
 
-  const { appendMessage, updateMessage, updatePinStatus, deleteMessage, updateReactionsCounts } = useTimelineMessageMutations(conversationId);
+  const { appendMessage, updateMessage, updatePinStatus, deleteMessage, updateReactionsCounts, updateUserReactionKeys } = useTimelineMessageMutations(conversationId);
 
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
@@ -106,15 +107,15 @@ export function ChatView({
 
     prevAllowEditRef.current = allowEditMessage;
   }, [allowEditMessage]);
-  
+
   const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const prevAllowDeleteRef = useRef(allowDeleteMessage);
-  
+
   useEffect(() => {
     if (prevAllowDeleteRef.current && !allowDeleteMessage) {
       setDeletingMessage(undefined);
     }
-    
+
     prevAllowDeleteRef.current = allowDeleteMessage;
   }, [allowDeleteMessage]);
 
@@ -159,7 +160,7 @@ export function ChatView({
 
     scrollRafRef.current = requestAnimationFrame(() => {
       const scroller = scrollerRef.current;
-      
+
       if (scroller) {
         const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
         userAtBottomRef.current = distance <= BOTTOM_THRESHOLD;
@@ -234,7 +235,7 @@ export function ChatView({
 
   const prevKeyRef = useRef(virtualKey);
   const isAtBottomRef = useRef(false);
-  
+
   if (prevKeyRef.current !== virtualKey) {
     prevKeyRef.current = virtualKey;
     setFirstItemIndex(START_INDEX);
@@ -389,6 +390,26 @@ export function ChatView({
     }
   });
 
+  useSignalREvent("ReactionsActionsSynchronized", async (event: ReactionsActionsSynchronizedEvent) => {
+    for (const actions of event.actions) {
+      updateUserReactionKeys(actions.messageId, (prev: string[]): string[] => {
+        let updatedKeys: string[] = [...prev];
+
+        for (const [reactionKey, action] of Object.entries(actions.reactionActions)) {
+          if (action === ReactionAction.Add) {
+            if (!updatedKeys.includes(reactionKey)) {
+              updatedKeys.push(reactionKey);
+            } else {
+              updatedKeys = updatedKeys.filter((k) => k !== reactionKey);
+            }
+          }
+        }
+
+        return updatedKeys;
+      });
+    }
+  });
+
   const timelineContext: TimelineContext = {
     actions: {
       onMessageDeleteTrigger: setDeletingMessage,
@@ -475,7 +496,7 @@ export function ChatView({
             {[...new Array(20).keys()].map((_, index) => (
               <div key={index} className="px-2">
                 <MessageRow.HeaderSkeleton>
-                  <MessageRow.BodySkeleton/>
+                  <MessageRow.BodySkeleton />
                 </MessageRow.HeaderSkeleton>
               </div>
             ))}
@@ -490,10 +511,9 @@ export function ChatView({
             <Spinner className="size-6 fill-white" />
           </div>
 
-          <div className={`pointer-events-none z-10 absolute bottom-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
-            isFetchingNextPage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-          }`}>
-            <Spinner className="size-6 fill-white"/>
+          <div className={`pointer-events-none z-10 absolute bottom-2 left-1/2 -translate-x-1/2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${isFetchingNextPage ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            }`}>
+            <Spinner className="size-6 fill-white" />
           </div>
 
           <Virtuoso
@@ -529,12 +549,11 @@ export function ChatView({
 
           <IconButton
             theme="default"
-            className={`z-10 absolute bottom-2 right-2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${
-              showScrollBottom ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
-            }`}
+            className={`z-10 absolute bottom-2 right-2 bg-gray-750 p-2 rounded-md transition-all duration-200 ease-out ${showScrollBottom ? "pointer-events-auto opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
+              }`}
             onClick={handleScrollToBottom}
           >
-            <FaArrowDown className="size-6"/>
+            <FaArrowDown className="size-6" />
           </IconButton>
         </div>
       )}

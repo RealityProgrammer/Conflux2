@@ -1,8 +1,9 @@
 import type {
   ChannelCategoryIdentityDto, TimelineMessageDto, ServerChannelIdentityDto, ServerRoleDto, UserIdentityProfileDto,
   EditedMessageDto, EmojiDto, MentionSource, MessageItemReactionDto,
+  UserReactionActionDto,
 } from "./types.ts";
-import {type PresenceStatus} from "../graphql/types.ts";
+import { type PresenceStatus } from "../graphql/types.ts";
 
 export type FriendRequestReceivedEvent = {
   requestId: string;
@@ -214,4 +215,8 @@ export type UserJoinedServerEvent = {
 export type ReactionsCountsSynchronizedEvent = {
   conversationId: string;
   messages: MessageItemReactionDto[];
+}
+
+export type ReactionsActionsSynchronizedEvent = {
+  actions: UserReactionActionDto[];
 }

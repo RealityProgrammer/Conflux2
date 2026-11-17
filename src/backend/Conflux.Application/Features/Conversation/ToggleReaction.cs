@@ -1,14 +1,12 @@
 using Conflux.Application.Enums;
 using Conflux.Application.Services;
 using Conflux.Domain;
-using Conflux.Domain.Enums;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 namespace Conflux.Application.Features.Conversation;
 
 public sealed record ToggleReactionCommand(
-    Guid MessageId, 
+    Guid MessageId,
     string ReactionKey,
     ReactionAction Action
 ) : ICommand<Result>;
@@ -19,7 +17,7 @@ public sealed class ToggleReactionCommandValidator : AbstractValidator<ToggleRea
         RuleFor(c => c.Action)
             .IsInEnum()
             .WithMessage("{PropertyName} is undefined.");
-        
+
         RuleFor(c => c.ReactionKey)
             .Must(k => k.StartsWith("unicode.") || k.StartsWith("emoji."))
             .WithMessage("{PropertyName} must starts with \"unicode.\" or \"server.\" prefix.");

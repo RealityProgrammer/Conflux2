@@ -1,5 +1,7 @@
-import {useMutation, type UseMutationOptions} from "@tanstack/react-query";
-import {conversationService} from "../api/conversationService.ts";
+import { useMutation, useQueryClient, type InfiniteData, type UseMutationOptions } from "@tanstack/react-query";
+import { conversationService } from "../api/conversationService.ts";
+import type { TimelineMessagePage } from "../api/types.ts";
+import useQueryTimelineMessages from "./useQueryTimelineMessages.ts";
 
 interface UseMessageReactionMutationVariables {
   conversationId: string;
@@ -8,15 +10,130 @@ interface UseMessageReactionMutationVariables {
   action: "add" | "remove";
 }
 
+type ReactionsSnapshot = {
+  reactionsCounts: Record<string, number>;
+  userReactionKeys: string[];
+}
+
+type OnMutateResult = {
+  reactionsSnapshot: ReactionsSnapshot | null;
+}
+
 export default function useMessageReactionMutation(
-  options: Omit<UseMutationOptions<void, Error, UseMessageReactionMutationVariables, unknown>, "mutationFn" | "mutationKey">
+  options: Omit<UseMutationOptions<void, Error, UseMessageReactionMutationVariables, unknown>, "mutationFn" | "mutationKey" | "onMutate">
 ) {
+  const queryClient = useQueryClient();
+
+  const { onError, ...otherOptions } = options;
+
   return useMutation<void, Error, UseMessageReactionMutationVariables, unknown>({
     mutationKey: useMessageReactionMutation.key,
-    mutationFn: async (variables: UseMessageReactionMutationVariables): Promise<void> => {
-      return await conversationService.toggleReaction(variables.conversationId, variables.messageId, variables.reactionKey, variables.action);
+    mutationFn: async ({ conversationId, messageId, reactionKey, action }: UseMessageReactionMutationVariables): Promise<void> => {
+      return await conversationService.toggleReaction(conversationId, messageId, reactionKey, action);
     },
-    ...options,
+    onMutate: ({ conversationId, messageId, reactionKey, action }: UseMessageReactionMutationVariables): OnMutateResult => {
+      queryClient.cancelQueries({ queryKey: useQueryTimelineMessages.getKey(conversationId) });
+
+      let previousSnapshot: ReactionsSnapshot | null = null;
+
+      queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
+        { queryKey: useQueryTimelineMessages.getKey(conversationId) },
+        (oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
+          if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+            return oldData;
+          }
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+              if (!page || !page.messages.some(m => m.id === messageId)) {
+                return page;
+              }
+
+              return {
+                ...page,
+                messages: page.messages.map(msg => {
+                  if (msg.id !== messageId) return msg;
+
+                  // save the snapshot to revert when failure happen
+                  previousSnapshot = { reactionsCounts: msg.reactionsCounts, userReactionKeys: msg.userReactionKeys };
+
+                  const counts = { ...(msg.reactionsCounts || {}) };
+                  let userKeys = [...(msg.userReactionKeys || [])];
+                  const currentCount = counts[reactionKey] || 0;
+
+                  if (action === "add") {
+                    counts[reactionKey] = currentCount + 1;
+
+                    if (!userKeys.includes(reactionKey)) userKeys.push(reactionKey);
+                  } else {
+                    const newCount = currentCount - 1;
+
+                    if (newCount <= 0) {
+                      delete counts[reactionKey];
+                    } else {
+                      counts[reactionKey] = newCount;
+                    }
+
+                    userKeys = userKeys.filter((k) => k !== reactionKey);
+                  }
+
+                  return {
+                    ...msg,
+                    reactionsCounts: counts,
+                    userReactionKeys: userKeys,
+                  };
+                }),
+              };
+            }),
+          }
+        },
+      );
+
+      return { reactionsSnapshot: previousSnapshot };
+    },
+    onError: (error: Error, variables: UseMessageReactionMutationVariables, onMutateResult: OnMutateResult, context) => {
+      const { reactionsSnapshot } = onMutateResult;
+
+      if (reactionsSnapshot) {
+        const { conversationId, messageId } = variables;
+
+        queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
+          { queryKey: useQueryTimelineMessages.getKey(conversationId) },
+          (oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
+            if (!oldData || !oldData.pages || oldData.pages.length === 0) {
+              return oldData;
+            }
+
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+                if (!page || !page.messages.some(m => m.id === messageId)) {
+                  return page;
+                }
+
+                return {
+                  ...page,
+                  messages: page.messages.map(msg => {
+                    if (msg.id !== messageId) return msg;
+
+                    return {
+                      ...msg,
+                      reactionsCounts: reactionsSnapshot.reactionsCounts,
+                      userReactionKeys: reactionsSnapshot.userReactionKeys,
+                    };
+                  }),
+                };
+              }),
+            }
+          },
+        );
+      }
+
+      onError?.(error, variables, onMutateResult, context);
+    },
+
+    ...otherOptions,
   })
 }
 

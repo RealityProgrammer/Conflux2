@@ -169,7 +169,16 @@ function MessageView({
                           key={reactionKey}
                           className={`flex-none flex flex-row gap-1 items-center border-2 ${hasReacted ? "border-gray-500 bg-white/10" : "border-gray-600 bg-black/8"} hover-highlight rounded-md px-1.5 py-0.75 select-none cursor-pointer`}
                           onClick={() => {
+                            const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+                            const action = hasReacted ? "remove" : "add";
 
+                            reactionMutation.mutate({
+                              conversationId,
+                              messageId: message.id,
+                              // @ts-ignore
+                              reactionKey,
+                              action,
+                            });
                           }}
                         >
                           {serverEmojiId ? (
@@ -209,26 +218,28 @@ function MessageView({
                 switch (emoji.type) {
                   case "server-emoji": {
                     const reactionKey: `emoji.${string}` = `emoji.${emoji.id}`;
-                    if (message.userReactionKeys && message.userReactionKeys.includes(reactionKey)) break;
+                    const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+                    const action = hasReacted ? "remove" : "add";
 
                     reactionMutation.mutate({
                       conversationId,
                       messageId: message.id,
                       reactionKey,
-                      action: "add",
+                      action,
                     });
                     break;
                   }
 
                   case "unicode-emoji": {
                     const reactionKey: `unicode.${string}` = `unicode.${emoji.value}`;
-                    if (message.userReactionKeys && message.userReactionKeys.includes(reactionKey)) break;
+                    const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+                    const action = hasReacted ? "remove" : "add";
 
                     reactionMutation.mutate({
                       conversationId,
                       messageId: message.id,
                       reactionKey,
-                      action: "add",
+                      action,
                     });
                     break;
                   }
@@ -247,7 +258,7 @@ function MessageView({
             </IconButton>
           </section>
         </div>
-      </ContextMenu.Trigger>
+      </ContextMenu.Trigger >
 
       <ContextMenu.Portal>
         <ContextMenu.Content
@@ -317,6 +328,6 @@ function MessageView({
           )}
         </ContextMenu.Content>
       </ContextMenu.Portal>
-    </ContextMenu.Root>
+    </ContextMenu.Root >
   );
 }

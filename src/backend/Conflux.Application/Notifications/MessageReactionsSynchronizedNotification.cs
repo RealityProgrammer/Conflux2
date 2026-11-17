@@ -3,9 +3,8 @@ using Conflux.Application.Enums;
 namespace Conflux.Application.Notifications;
 
 public sealed record UserReactionActionDto(
-    Guid UserId,
-    string ReactionKey,
-    ReactionAction Action
+    Guid MessageId,
+    Dictionary<string, ReactionAction> ReactionActions
 );
 
 public sealed record MessageItemReactionDto(

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Conflux.WebApi.Notifications.Conversation;
 
 public sealed record ReactionsCountsSynchronizedEvent(Guid ConversationId, IReadOnlyCollection<MessageItemReactionDto> Messages);
-public sealed record ReceiveMessageReactionsConfirmationEvent(IReadOnlyCollection<UserReactionActionDto> Actions);
+public sealed record ReactionsActionsSynchronizedEvent(IReadOnlyCollection<UserReactionActionDto> Actions);
 
 internal sealed class MessageReactionsSynchronizedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext
@@ -23,7 +23,7 @@ internal sealed class MessageReactionsSynchronizedNotificationHandler(
         foreach ((Guid userId, List<UserReactionActionDto> actions) in notification.UserActionsPerUser) {
             await hubContext.Clients
                 .User(userId.ToString())
-                .ReceiveMessageReactionsConfirmation(new(actions), cancellationToken);
+                .ReactionsActionsSynchronized(new(actions), cancellationToken);
         }
     }
 }

@@ -50,7 +50,7 @@ internal sealed class MessageReactionBatcher(
                 ],
             });
         }
-        
+
         RedisKey reactionDeltaKey = GetDeltaKey(messageId);
         RedisValue field = $"{userId}:{reactionKey}";
 
@@ -76,9 +76,9 @@ internal sealed class MessageReactionBatcher(
                 var batch = _database.CreateBatch();
                 var addActiveTask = batch.SetAddAsync(activeReactionsKey, reactionKey);
                 var expireTask = batch.KeyExpireAsync(activeReactionsKey, TimeSpan.FromDays(7));
-                
+
                 batch.Execute();
-                
+
                 await Task.WhenAll(addActiveTask, expireTask);
             }
         }
@@ -98,16 +98,16 @@ internal sealed class MessageReactionBatcher(
                 return Result.Success();
             }
         }
-        
+
         string messageIdString = messageId.ToString();
 
         var finalBatch = _database.CreateBatch();
         var setHashTask = finalBatch.HashSetAsync(reactionDeltaKey, field, (int)action);
         var setDirtyTask = finalBatch.SetAddAsync("message:reactions_dirty", messageIdString);
         finalBatch.Execute();
-        
+
         await Task.WhenAll(setHashTask, setDirtyTask);
-        
+
         return Result.Success();
     }
 
@@ -117,7 +117,7 @@ internal sealed class MessageReactionBatcher(
 
         if (reactionKeys is { Count: > 0 }) {
             var batch = _database.CreateBatch();
-            
+
             var setAddTask = batch.SetAddAsync(activeReactionsKey, [
                 ..reactionKeys.Select(k => {
                     return k.SourceType switch {
@@ -128,9 +128,9 @@ internal sealed class MessageReactionBatcher(
                 }),
             ]);
             var keyExpireTask = batch.KeyExpireAsync(activeReactionsKey, TimeSpan.FromDays(7));
-            
+
             batch.Execute();
-            
+
             await Task.WhenAll(setAddTask, keyExpireTask);
         }
     }
@@ -139,33 +139,32 @@ internal sealed class MessageReactionBatcher(
         RedisValue[] dirtyMessageIdValues = await _database.SetMembersAsync("message:reactions_dirty");
         if (dirtyMessageIdValues.Length == 0) return;
 
-        List<Guid> dirtyMessageIds = [..dirtyMessageIdValues.Select(v => Guid.Parse((string)v!))];
-        
+        List<Guid> dirtyMessageIds = [.. dirtyMessageIdValues.Select(v => Guid.Parse((string)v!))];
+
         var redisBatch = _database.CreateBatch();
         List<Task> redisCleanupTasks = [];
         List<string> processedMessageIdsKeys = [];
 
         List<Guid> successfullySyncedMessageIds = [];
-        Dictionary<Guid, List<UserReactionActionDto>> messageUserActions = new(dirtyMessageIds.Count);
+        Dictionary<Guid, Dictionary<Guid, Dictionary<string, ReactionAction>>> rawUserActionsPerMessage = new();
         Dictionary<Guid, MessageReactionCountSummaryData> summaries;
-        
+
         var reactionDeltas = new Dictionary<(ReactionIconSourceType IconSource, string Key), (HashSet<Guid> Adds, HashSet<Guid> Removes)>();
-        
+
         await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try {
             foreach (var messageId in dirtyMessageIds) {
                 RedisKey deltaKey = GetDeltaKey(messageId);
-                
+
                 HashEntry[] entries = await _database.HashGetAllAsync(deltaKey);
                 if (entries.Length == 0) {
                     processedMessageIdsKeys.Add(messageId.ToString());
                     continue;
                 }
-                
+
                 reactionDeltas.Clear();
-                var actionsForThisMessage = new List<UserReactionActionDto>();
-                
+
                 foreach (var entry in entries) {
                     string field = entry.Name!; // format: "{userId}:{reactionKey}" (reactionKey is "unicode.{value} or "emoji.{value}"
                     int colonIndex = field.IndexOf(':');
@@ -191,11 +190,21 @@ internal sealed class MessageReactionBatcher(
                         default:
                             continue;
                     }
-                    
+
                     string reactionKey = remainder[(dotIndex + 1)..].ToString();
                     ReactionAction action = (ReactionAction)(int)entry.Value;
-                    
-                    actionsForThisMessage.Add(new(userId, remainder.ToString(), action));
+
+                    if (!rawUserActionsPerMessage.TryGetValue(userId, out var messageDict)) {
+                        messageDict = [];
+                        rawUserActionsPerMessage[userId] = messageDict;
+                    }
+
+                    if (!messageDict.TryGetValue(messageId, out var reactionMap)) {
+                        reactionMap = [];
+                        messageDict[messageId] = reactionMap;
+                    }
+
+                    reactionMap[reactionKey] = action;
 
                     var mapKey = (iconSource, reactionKey);
                     if (!reactionDeltas.TryGetValue(mapKey, out var deltaBucket)) {
@@ -207,7 +216,8 @@ internal sealed class MessageReactionBatcher(
                     if (action == ReactionAction.Add) {
                         deltaBucket.Adds.Add(userId);
                         deltaBucket.Removes.Remove(userId);
-                    } else {
+                    }
+                    else {
                         deltaBucket.Removes.Add(userId);
                         deltaBucket.Adds.Remove(userId);
                     }
@@ -216,57 +226,75 @@ internal sealed class MessageReactionBatcher(
                 foreach (var kvp in reactionDeltas) {
                     (ReactionIconSourceType iconSource, string reactionKey) = kvp.Key;
                     (HashSet<Guid> adds, HashSet<Guid> removes) = kvp.Value;
-                
+
                     switch (iconSource) {
                         case ReactionIconSourceType.Unicode:
                             await messageReactionRepository.UpdateUnicodeReaction(messageId, reactionKey, adds, removes, cancellationToken);
                             break;
-                        
+
                         case ReactionIconSourceType.Emoji:
                             Guid emojiId = Guid.Parse(reactionKey);
                             await messageReactionRepository.UpdateEmojiReaction(messageId, emojiId, adds, removes, cancellationToken);
                             break;
-                        
+
                         default: continue;
                     }
                 }
-                
-                messageUserActions[messageId] = actionsForThisMessage;
+
                 redisCleanupTasks.Add(redisBatch.KeyDeleteAsync(deltaKey));
                 processedMessageIdsKeys.Add(messageId.ToString());
                 successfullySyncedMessageIds.Add(messageId);
             }
-            
+
             if (processedMessageIdsKeys.Count > 0) {
                 redisCleanupTasks.Add(redisBatch.SetRemoveAsync("message:reactions_dirty", processedMessageIdsKeys.Select(id => (RedisValue)id).ToArray()));
             }
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            
+
             // write, read and commit
             if (successfullySyncedMessageIds.Count > 0) {
                 summaries = await messageReactionRepository.GetReactionSummariesAsync(successfullySyncedMessageIds, cancellationToken);
-            } else {
+
+                foreach (var messageId in successfullySyncedMessageIds) {
+                    RedisKey activeReactionsKey = GetActiveReactionsKey(messageId);
+
+                    // Clear out stale active keys
+                    redisCleanupTasks.Add(redisBatch.KeyDeleteAsync(activeReactionsKey));
+
+                    if (summaries.TryGetValue(messageId, out var summary) && summary.ReactionsCounts.Count > 0) {
+                        redisCleanupTasks.Add(redisBatch.SetAddAsync(activeReactionsKey, [
+                            ..summary.ReactionsCounts.Keys.Select(k => (RedisValue)k)
+                        ]));
+
+                        redisCleanupTasks.Add(redisBatch.KeyExpireAsync(activeReactionsKey, TimeSpan.FromDays(7)));
+                    }
+                }
+            }
+            else {
                 summaries = [];
             }
-            
+
             await unitOfWork.CommitAsync(cancellationToken);
-            
+
             redisBatch.Execute();
             await Task.WhenAll(redisCleanupTasks);
-        } catch (OperationCanceledException) {
+        }
+        catch (OperationCanceledException) {
             await unitOfWork.RollbackAsync(CancellationToken.None);
             throw;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.LogError(e, "Exception thrown while synchronizing message reactions.");
             return;
         }
-        
+
+        // publish notifications
         var syncedMessagesDict = successfullySyncedMessageIds
             .Where(summaries.ContainsKey)
             .Select(id => {
                 var s = summaries[id];
-                
+
                 return new {
                     s.ConversationId,
                     MessageItem = new MessageItemReactionDto(
@@ -280,16 +308,19 @@ internal sealed class MessageReactionBatcher(
                 g => g.Key,
                 g => new MessageReactionSyncDto(g.Select(x => x.MessageItem).ToList())
             );
-        
-        var userActionsPerUser = messageUserActions
-            .Values
-            .SelectMany(actions => actions)
-            .GroupBy(action => action.UserId)
-            .ToDictionary(g => g.Key, g => g.ToList());
+
+        Dictionary<Guid, List<UserReactionActionDto>> actionsPerUser = rawUserActionsPerMessage
+            .ToDictionary(
+                userKvp => userKvp.Key,
+                userKvp => userKvp.Value.Select(msgKvp => new UserReactionActionDto(
+                    msgKvp.Key,
+                    msgKvp.Value
+                )).ToList()
+            );
 
         var notification = new MessageReactionsSynchronizedNotification(
             syncedMessagesDict,
-            userActionsPerUser
+            actionsPerUser
         );
 
         await publisher.Publish(notification, cancellationToken);

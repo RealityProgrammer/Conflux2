@@ -4,7 +4,10 @@ using Conflux.Domain.Entities;
 namespace Conflux.Domain.Repositories;
 
 public interface IMessageReactionRepository : IRepository<MessageReaction> {
-    Task<List<ReactionIconSource>> GetMessageReactionKeys(Guid messageId, CancellationToken cancellationToken = default);
+    Task<List<ReactionIconSource>> GetMessageReactionKeys(
+        Guid messageId,
+        CancellationToken cancellationToken = default
+    );
 
     Task UpdateUnicodeReaction(
         Guid messageId,
@@ -21,9 +24,9 @@ public interface IMessageReactionRepository : IRepository<MessageReaction> {
         IReadOnlyCollection<Guid> removeUserIds,
         CancellationToken cancellationToken = default
     );
-    
+
     Task<Dictionary<Guid, MessageReactionCountSummaryData>> GetReactionSummariesAsync(
-        IReadOnlyCollection<Guid> messageIds, 
+        IReadOnlyCollection<Guid> messageIds,
         CancellationToken cancellationToken = default
     );
 }

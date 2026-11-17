@@ -1574,4 +1574,14 @@ export const unicodeEmojiTable: UnicodeEmojiEntry[] = [
   { name: "rainbow_flag", value: "\u{1F3F3}\u{200D}\u{1F308}" },
   { name: "transgender_flag", value: "\u{1F3F3}\u{200D}\u{26A7}" },
   { name: "pirate_flag", value: "\u{1F3F4}\u{200D}\u{2620}" },
+  { name: "keycap_1", value: "\u{0031}\u{FE0F}\u{20E3}" },
+  { name: "keycap_2", value: "\u{0032}\u{FE0F}\u{20E3}" },
+  { name: "keycap_3", value: "\u{0033}\u{FE0F}\u{20E3}" },
+  { name: "keycap_4", value: "\u{0034}\u{FE0F}\u{20E3}" },
+  { name: "keycap_5", value: "\u{0035}\u{FE0F}\u{20E3}" },
+  { name: "keycap_6", value: "\u{0036}\u{FE0F}\u{20E3}" },
+  { name: "keycap_7", value: "\u{0037}\u{FE0F}\u{20E3}" },
+  { name: "keycap_8", value: "\u{0038}\u{FE0F}\u{20E3}" },
+  { name: "keycap_9", value: "\u{0039}\u{FE0F}\u{20E3}" },
+  { name: "keycap_10", value: "\u{1F51F}" }
 ];

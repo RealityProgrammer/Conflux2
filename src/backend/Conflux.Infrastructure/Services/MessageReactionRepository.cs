@@ -16,7 +16,7 @@ internal sealed class MessageReactionRepository(
     }
 
     public async Task<List<ReactionIconSource>> GetMessageReactionKeys(
-        Guid messageId, 
+        Guid messageId,
         CancellationToken cancellationToken = default
     ) {
         return await dbContext.MessageReactions
@@ -26,9 +26,9 @@ internal sealed class MessageReactionRepository(
     }
 
     public async Task UpdateUnicodeReaction(
-        Guid messageId, 
-        string unicodeValue, 
-        IReadOnlyCollection<Guid> addUserIds, 
+        Guid messageId,
+        string unicodeValue,
+        IReadOnlyCollection<Guid> addUserIds,
         IReadOnlyCollection<Guid> removeUserIds,
         CancellationToken cancellationToken = default
     ) {
@@ -54,14 +54,14 @@ internal sealed class MessageReactionRepository(
     }
 
     public async Task UpdateEmojiReaction(
-        Guid messageId, 
-        Guid emojiId, 
-        IReadOnlyCollection<Guid> addUserIds, 
+        Guid messageId,
+        Guid emojiId,
+        IReadOnlyCollection<Guid> addUserIds,
         IReadOnlyCollection<Guid> removeUserIds,
         CancellationToken cancellationToken = default
     ) {
-         await dbContext.Database.ExecuteSqlAsync(
-             $$"""
+        await dbContext.Database.ExecuteSqlAsync(
+            $$"""
              INSERT INTO 
                  "MessageReactions"("Id", "MessageId", "IconSource", "UnicodeValue", "EmojiId", "UserIds")
              VALUES
@@ -77,12 +77,12 @@ internal sealed class MessageReactionRepository(
              DELETE FROM "MessageReactions" 
              WHERE "MessageId" = {{messageId}} AND "IconSource" = 1 AND "EmojiId" = {{emojiId}} AND cardinality("UserIds") = 0;
              """,
-             cancellationToken
-         );
+            cancellationToken
+        );
     }
-    
+
     public async Task<Dictionary<Guid, MessageReactionCountSummaryData>> GetReactionSummariesAsync(
-        IReadOnlyCollection<Guid> messageIds, 
+        IReadOnlyCollection<Guid> messageIds,
         CancellationToken cancellationToken = default
     ) {
         if (messageIds.Count == 0) return [];
