@@ -161,6 +161,7 @@ function MessageView({
                   <ul className="flex flex-row flex-wrap gap-1 text-sm">
                     {reactionsCountsEntries.map(([reactionKey, reactionCount]) => {
                       const serverEmojiId = reactionKey.startsWith("emoji.") ? reactionKey.slice("emoji.".length) : undefined;
+                      const unicodeValue = reactionKey.startsWith("unicode.") ? reactionKey.slice("unicode.".length) : undefined;
                       const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
 
                       return (
@@ -177,7 +178,9 @@ function MessageView({
                               className="size-6"
                             />
                           ) : (
-                            <div className="size-6 bg-red-500"></div>
+                            <span className="size-6 flex items-center justify-center text-[20px] leading-none">
+                              {unicodeValue}
+                            </span>
                           )}
 
                           {reactionCount}
