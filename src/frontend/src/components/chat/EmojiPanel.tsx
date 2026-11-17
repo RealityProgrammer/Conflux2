@@ -1,12 +1,12 @@
-import {BsEmojiWinkFill, BsExclamationTriangle, BsSearch} from "react-icons/bs";
-import type {EmojiEntryDto} from "../../api/types.ts";
-import {Virtuoso} from "react-virtuoso";
-import {EmojiGroup} from "./EmojiGroup.tsx";
+import { BsExclamationTriangle, BsSearch } from "react-icons/bs";
+import type { EmojiEntryDto } from "../../api/types.ts";
+import { Virtuoso } from "react-virtuoso";
+import { EmojiGroup } from "./EmojiGroup.tsx";
 import useUserEmojis from "../../hooks/useUserEmojis.ts";
-import {type UnicodeEmojiEntry, unicodeEmojiTable} from "../../emoji.ts";
+import { type UnicodeEmojiEntry, unicodeEmojiTable } from "../../emoji.ts";
 import Spinner from "../Spinner.tsx";
-import {type ReactNode, useRef, useState} from "react";
-import {Popover as RadixPopover} from "radix-ui";
+import { type ReactNode, useRef, useState } from "react";
+import { Popover as RadixPopover } from "radix-ui";
 
 interface PopoverProps {
   trigger: ReactNode;
@@ -82,11 +82,11 @@ function Groups({
     <>
       {isLoading ? (
         <div className="size-full flex flex-row justify-center items-center">
-          <Spinner className="size-8 fill-white"/>
+          <Spinner className="size-8 fill-white" />
         </div>
       ) : isError || !data ? (
         <div className="size-full flex flex-col gap-1 justify-center items-center">
-          <BsExclamationTriangle className="size-8 fill-white"/>
+          <BsExclamationTriangle className="size-8 fill-white" />
           <p className="select-none text-center">Failed to load your emojis.</p>
         </div>
       ) : (
@@ -110,7 +110,7 @@ function Groups({
               return (
                 <EmojiGroup.Unicode
                   entries={filteredUnicodeEntries}
-                  onSelected={(value) => onSelect({ type: "unicode-emoji", ...value }) }
+                  onSelected={(value) => onSelect({ type: "unicode-emoji", ...value })}
                   className="px-2"
                 />
               );

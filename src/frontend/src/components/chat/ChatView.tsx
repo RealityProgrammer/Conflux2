@@ -493,7 +493,7 @@ export function ChatView({
       {isLoading ? (
         <div className="flex-1 min-h-0 mb-2 overflow-hidden">
           <div className="space-y-1">
-            {[...new Array(20).keys()].map((_, index) => (
+            {Array.from({ length: 20 }, (_, index) => (
               <div key={index} className="px-2">
                 <MessageRow.HeaderSkeleton>
                   <MessageRow.BodySkeleton />

@@ -9,6 +9,7 @@ import {
   BsArrowReturnLeft,
   BsCopy, BsEmojiWinkFill,
   BsPencilFill,
+  BsPlusLg,
   BsTrashFill
 } from "react-icons/bs";
 import { useAuth } from "../../contexts/AuthContext.tsx";
@@ -21,7 +22,7 @@ import usePinMessageMutation, { type UsePinMessageVariables } from "../../hooks/
 import { MessageRow } from "./MessageRow.tsx";
 import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
-import { EmojiPanel } from "./EmojiPanel.tsx";
+import { EmojiPanel, type SelectedEmoji } from "./EmojiPanel.tsx";
 import { Emoji } from "../Emoji.tsx";
 import useMessageReactionMutation from "../../hooks/useMessageReactionMutation.ts";
 
@@ -120,6 +121,38 @@ function MessageView({
   const isHighlighted = context.states.highlightedMessageId === message.id;
   const reactionsCountsEntries = message.reactionsCounts ? Object.entries(message.reactionsCounts) : [];
 
+  const handleEmojiSelect = (emoji: SelectedEmoji) => {
+    switch (emoji.type) {
+      case "server-emoji": {
+        const reactionKey: `emoji.${string}` = `emoji.${emoji.id}`;
+        const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+        const action = hasReacted ? "remove" : "add";
+
+        reactionMutation.mutate({
+          conversationId,
+          messageId: message.id,
+          reactionKey,
+          action,
+        });
+        break;
+      }
+
+      case "unicode-emoji": {
+        const reactionKey: `unicode.${string}` = `unicode.${emoji.value}`;
+        const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
+        const action = hasReacted ? "remove" : "add";
+
+        reactionMutation.mutate({
+          conversationId,
+          messageId: message.id,
+          reactionKey,
+          action,
+        });
+        break;
+      }
+    }
+  };
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
@@ -158,7 +191,7 @@ function MessageView({
                 )}
 
                 {reactionsCountsEntries.length > 0 && (
-                  <ul className="flex flex-row flex-wrap gap-1 text-sm">
+                  <ul className="flex flex-row items-center flex-wrap gap-1 text-sm">
                     {reactionsCountsEntries.map(([reactionKey, reactionCount]) => {
                       const serverEmojiId = reactionKey.startsWith("emoji.") ? reactionKey.slice("emoji.".length) : undefined;
                       const unicodeValue = reactionKey.startsWith("unicode.") ? reactionKey.slice("unicode.".length) : undefined;
@@ -196,6 +229,18 @@ function MessageView({
                         </li>
                       );
                     })}
+
+                    <EmojiPanel.StandardPopover
+                      onOpenChange={(open: boolean) => setIsEmojiPopoverOpen(open)}
+                      side="right"
+                      contentClassName="emoji-standard-panel"
+                      trigger={(
+                        <IconButton theme="default">
+                          <BsEmojiWinkFill className="size-5" />
+                        </IconButton>
+                      )}
+                      onSelect={handleEmojiSelect}
+                    />
                   </ul>
                 )}
               </div>
@@ -214,37 +259,7 @@ function MessageView({
                   <BsEmojiWinkFill className="size-5 ml-auto" />
                 </IconButton>
               )}
-              onSelect={(emoji) => {
-                switch (emoji.type) {
-                  case "server-emoji": {
-                    const reactionKey: `emoji.${string}` = `emoji.${emoji.id}`;
-                    const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
-                    const action = hasReacted ? "remove" : "add";
-
-                    reactionMutation.mutate({
-                      conversationId,
-                      messageId: message.id,
-                      reactionKey,
-                      action,
-                    });
-                    break;
-                  }
-
-                  case "unicode-emoji": {
-                    const reactionKey: `unicode.${string}` = `unicode.${emoji.value}`;
-                    const hasReacted = message.userReactionKeys && message.userReactionKeys.includes(reactionKey);
-                    const action = hasReacted ? "remove" : "add";
-
-                    reactionMutation.mutate({
-                      conversationId,
-                      messageId: message.id,
-                      reactionKey,
-                      action,
-                    });
-                    break;
-                  }
-                }
-              }}
+              onSelect={handleEmojiSelect}
             />
 
             {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
@@ -265,6 +280,21 @@ function MessageView({
           className="w-64 overflow-hidden rounded-md bg-gray-725 shadow-lg p-1 text-white text-sm border border-gray-500 space-y-1"
           alignOffset={5}
         >
+          <EmojiPanel.StandardPopover
+            onOpenChange={(open: boolean) => setIsEmojiPopoverOpen(open)}
+            side="right"
+            contentClassName="emoji-standard-panel"
+            trigger={(
+              <ContextMenu.Item
+                className="dropdown-item-default"
+                onSelect={(e) => e.preventDefault()}
+              >
+                Add Reactions <BsEmojiWinkFill className="size-4 ml-auto" />
+              </ContextMenu.Item>
+            )}
+            onSelect={handleEmojiSelect}
+          />
+
           <ContextMenu.Item
             className="dropdown-item-default"
             onSelect={handleReplyTrigger}
@@ -322,7 +352,7 @@ function MessageView({
                   }
                 }}
               >
-                Copy text <BsCopy className="fill-white size-4 ml-auto" />
+                Copy Text <BsCopy className="fill-white size-4 ml-auto" />
               </ContextMenu.Item>
             </>
           )}
