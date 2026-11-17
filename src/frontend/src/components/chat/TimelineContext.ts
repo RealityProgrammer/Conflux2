@@ -1,4 +1,5 @@
-import type {MessageAttachmentDto, TimelineMessageDto} from "../../api/types.ts";
+import type { MessageAttachmentDto, TimelineMessageDto } from "../../api/types.ts";
+import type { SelectedEmoji } from "./EmojiPanel.tsx";
 
 export interface TimelineContext {
   actions: {
@@ -16,6 +17,13 @@ export interface TimelineContext {
     removeEditOperation: (messageId: string) => void;
 
     updateMessagePin: (messageId: string, isPinned: boolean) => void;
+
+    onEmojiPanelOpen: (
+      anchor: HTMLElement,
+      side: "top" | "bottom" | "left" | "right",
+      onSelect: (emoji: SelectedEmoji) => void,
+      onOpenChange?: (open: boolean) => void,
+    ) => void;
   };
 
   states: {

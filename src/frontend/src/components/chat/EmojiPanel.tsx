@@ -134,6 +134,7 @@ interface StandardPopoverProps {
   side: "top" | "bottom" | "left" | "right";
   contentClassName?: string;
   onSelect: (value: SelectedEmoji) => void;
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -142,16 +143,22 @@ function StandardPopover({
   contentClassName,
   onSelect,
   side,
+  open,
   onOpenChange,
 }: StandardPopoverProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+
+  const isControlled = open !== undefined;
+  const isOpen = isControlled ? open : uncontrolledOpen;
 
   const shiftPressedRef = useRef(false);
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    onOpenChange?.(open);
+  const handleOpenChange = (next: boolean) => {
+    if (!isControlled) setUncontrolledOpen(next);
+    if (!next) setSearchTerm("");
+
+    onOpenChange?.(next);
   };
 
   return (

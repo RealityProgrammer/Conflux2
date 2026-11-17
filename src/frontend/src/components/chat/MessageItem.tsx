@@ -2,7 +2,7 @@ import { TimelineItem } from "./TimelineItem.ts";
 import type {
   TimelineMessageDto,
 } from "../../api/types.ts";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { TimelineContext } from "./TimelineContext.ts";
 import { ContextMenu } from "radix-ui";
 import {
@@ -67,7 +67,7 @@ function MessageView({
   const { conversationId } = useChatContainerContext();
   const { appendMessage } = useTimelineMessageMutations(conversationId);
 
-  const [isEmojiPopoverOpen, setIsEmojiPopoverOpen] = useState(false);
+  const [isEmojiPanelOpen, setIsEmojiPanelOpen] = useState(false);
 
   const handleReplyTrigger = () => {
     context.actions.onMessageReplyTrigger(message);
@@ -153,6 +153,27 @@ function MessageView({
     }
   };
 
+  const handleEmojiSelectRef = useRef(handleEmojiSelect);
+  useEffect(() => {
+    handleEmojiSelectRef.current = handleEmojiSelect;
+  });
+
+  const handleEmojiPanelOpen = (
+    anchor: HTMLElement,
+    side: "top" | "bottom" | "left" | "right",
+  ) => {
+    context.actions.onEmojiPanelOpen(
+      anchor,
+      side,
+      (emoji) => handleEmojiSelectRef.current(emoji),
+      (open) => {
+        if (!open) setIsEmojiPanelOpen(false);
+      },
+    );
+
+    setIsEmojiPanelOpen(true);
+  };
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger
@@ -230,45 +251,39 @@ function MessageView({
                       );
                     })}
 
-                    <EmojiPanel.StandardPopover
-                      onOpenChange={(open: boolean) => setIsEmojiPopoverOpen(open)}
-                      side="right"
-                      contentClassName="emoji-standard-panel"
-                      trigger={(
-                        <IconButton theme="default">
-                          <BsEmojiWinkFill className="size-5" />
-                        </IconButton>
-                      )}
-                      onSelect={handleEmojiSelect}
-                    />
+                    <IconButton theme="default" onClick={(e) => handleEmojiPanelOpen(e.currentTarget, "right")}>
+                      <BsEmojiWinkFill className="size-5" />
+                    </IconButton>
                   </ul>
                 )}
               </div>
             </MessageRow.Row>
           </div>
 
-          <section className={`${isEmojiPopoverOpen ? "flex" : "hidden group-hover:flex"} flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1`}>
-            <EmojiPanel.StandardPopover
-              onOpenChange={(open: boolean) => {
-                setIsEmojiPopoverOpen(open);
-              }}
-              side="left"
-              contentClassName="emoji-standard-panel"
-              trigger={(
-                <IconButton theme="default" className="size-5">
-                  <BsEmojiWinkFill className="size-5 ml-auto" />
-                </IconButton>
-              )}
-              onSelect={handleEmojiSelect}
-            />
+          <section className={`${isEmojiPanelOpen ? "flex" : "hidden group-hover:flex"} flex-row items-center gap-2 absolute right-2 top-0 -translate-y-1/2 bg-gray-600 border-2 border-gray-500 rounded-md shadow-md px-2 py-1`}>
+            <IconButton
+              theme="default"
+              className="size-5"
+              onClick={(e) => handleEmojiPanelOpen(e.currentTarget, "left")}
+            >
+              <BsEmojiWinkFill className="size-5 ml-auto" />
+            </IconButton>
 
             {auth.userAuthorization?.id && auth.userAuthorization.id === message.sender!.id && (
-              <IconButton theme="default" className="size-5" onClick={handleEditTrigger}>
+              <IconButton
+                theme="default"
+                className="size-5"
+                onClick={handleEditTrigger}
+              >
                 <FaPencil className="size-5 ml-auto" />
               </IconButton>
             )}
 
-            <IconButton theme="default" className="size-5" onClick={handleReplyTrigger}>
+            <IconButton
+              theme="default"
+              className="size-5"
+              onClick={handleReplyTrigger}
+            >
               <BsArrowReturnLeft className="size-5 ml-auto" />
             </IconButton>
           </section>
@@ -280,20 +295,15 @@ function MessageView({
           className="w-64 overflow-hidden rounded-md bg-gray-725 shadow-lg p-1 text-white text-sm border border-gray-500 space-y-1"
           alignOffset={5}
         >
-          <EmojiPanel.StandardPopover
-            onOpenChange={(open: boolean) => setIsEmojiPopoverOpen(open)}
-            side="right"
-            contentClassName="emoji-standard-panel"
-            trigger={(
-              <ContextMenu.Item
-                className="dropdown-item-default"
-                onSelect={(e) => e.preventDefault()}
-              >
-                Add Reactions <BsEmojiWinkFill className="size-4 ml-auto" />
-              </ContextMenu.Item>
-            )}
-            onSelect={handleEmojiSelect}
-          />
+          <ContextMenu.Item
+            className="dropdown-item-default"
+            onSelect={(e) => {
+              e.preventDefault();
+              handleEmojiPanelOpen(e.currentTarget as HTMLElement, "right");
+            }}
+          >
+            Add Reactions <BsEmojiWinkFill className="size-4 ml-auto" />
+          </ContextMenu.Item>
 
           <ContextMenu.Item
             className="dropdown-item-default"

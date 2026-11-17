@@ -28,14 +28,29 @@ import IconButton from "../IconButton.tsx";
 import { useMentionCountStore } from "../../store/useMentionCountStore.ts";
 import EditMessageModal from "./EditMessageModal.tsx";
 import { ReactionAction } from "../../api/schema.ts";
+import { EmojiPanel, type SelectedEmoji } from "./EmojiPanel.tsx";
 
 const LATEST_BUTTON_THRESHOLD = 2000;
 const START_INDEX = 100_000_000;
 const BOTTOM_THRESHOLD = 150;
 
+type EmojiPanelSide = "top" | "bottom" | "left" | "right";
+
+interface EmojiPanelRequest {
+  getRect: () => DOMRect;
+  side: EmojiPanelSide;
+  onSelect: (emoji: SelectedEmoji) => void;
+  onOpenChange?: (open: boolean) => void;
+}
+
 interface ChatViewProps {
   allowDeleteMessage?: boolean;
   allowEditMessage?: boolean;
+}
+
+function createRectGetter(element: HTMLElement): () => DOMRect {
+  const fallbackRect = element.getBoundingClientRect();
+  return () => (element.isConnected ? element.getBoundingClientRect() : fallbackRect);
 }
 
 export function ChatView({
@@ -367,6 +382,56 @@ export function ChatView({
     });
   };
 
+  // shared emoji panel, one emoji standard popover instance for the whole chat view.
+  const [emojiPanel, setEmojiPanelState] = useState<EmojiPanelRequest | null>(null);
+  const emojiPanelRequestRef = useRef<EmojiPanelRequest | null>(null);
+  const emojiPanelTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const setEmojiPanel = (next: EmojiPanelRequest | null) => {
+    const prev = emojiPanelRequestRef.current;
+    if (prev && prev !== next) prev.onOpenChange?.(false);
+
+    emojiPanelRequestRef.current = next;
+    setEmojiPanelState(next);
+  };
+
+  const handleEmojiPanelOpen = (
+    anchor: HTMLElement,
+    side: EmojiPanelSide,
+    onSelect: (emoji: SelectedEmoji) => void,
+    onOpenChange?: (open: boolean) => void,
+  ) => {
+    setEmojiPanel({ getRect: createRectGetter(anchor), side, onSelect, onOpenChange });
+  };
+
+  // keep the emoji panel glue to the trigger when resize or scroll
+  useEffect(() => {
+    if (!emojiPanel) return;
+
+    const updateTriggerPosition = () => {
+      const trigger = emojiPanelTriggerRef.current;
+      if (!trigger) return;
+
+      const rect = emojiPanel.getRect();
+      trigger.style.left = `${rect.left}px`;
+      trigger.style.top = `${rect.top}px`;
+      trigger.style.width = `${rect.width}px`;
+      trigger.style.height = `${rect.height}px`;
+    };
+
+    updateTriggerPosition();
+
+    window.addEventListener("scroll", updateTriggerPosition, true);
+    window.addEventListener("resize", updateTriggerPosition);
+
+    return () => {
+      window.removeEventListener("scroll", updateTriggerPosition, true);
+      window.removeEventListener("resize", updateTriggerPosition);
+    };
+  }, [emojiPanel]);
+
+  const emojiPanelRect = emojiPanel?.getRect();
+
   // signalr events
   useSignalREvent("MessageReceived", async (event: MessageReceivedEvent) => {
     if (event.message.conversationId !== conversationId) return;
@@ -436,6 +501,8 @@ export function ChatView({
       retryEditOperation,
       removeEditOperation,
       updateMessagePin: (messageId: string, isPinned: boolean) => updatePinStatus(messageId, isPinned),
+
+      onEmojiPanelOpen: handleEmojiPanelOpen,
     },
     states: {
       // editingMessageDraft: editingMessageDraft,
@@ -585,6 +652,34 @@ export function ChatView({
             setDeletingMessage(undefined);
           }
         }}
+      />
+
+      <EmojiPanel.StandardPopover
+        open={!!emojiPanel}
+        side={emojiPanel?.side ?? "right"}
+        contentClassName="emoji-standard-panel"
+        trigger={
+          <button
+            ref={emojiPanelTriggerRef}
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            style={{
+              position: "fixed",
+              left: emojiPanelRect?.left ?? 0,
+              top: emojiPanelRect?.top ?? 0,
+              width: emojiPanelRect?.width ?? 0,
+              height: emojiPanelRect?.height ?? 0,
+              pointerEvents: "none",
+              visibility: "hidden",
+            }}
+          />
+        }
+        onSelect={(emoji) => emojiPanel?.onSelect(emoji)}
+        onOpenChange={(open) => {
+          if (!open) setEmojiPanel(null);
+        }}
+        disableFocusOutsideClose
       />
     </div>
   );
