@@ -15,5 +15,17 @@ internal sealed class ConversationConfiguration : IEntityTypeConfiguration<Conve
             .HasForeignKey(m => m.ConversationId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);  // delete messages if the conversation is deleted
+        
+        builder.HasOne(c => c.FriendRequest)
+            .WithOne(fr => fr.Conversation)
+            .HasForeignKey<Conversation>(c => c.FriendRequestId)
+            .HasPrincipalKey<FriendRequest>(fr => fr.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(c => c.Channel)
+            .WithOne(c => c.Conversation)
+            .HasForeignKey<Conversation>(c => c.ChannelId)
+            .HasPrincipalKey<Channel>(c => c.Id)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

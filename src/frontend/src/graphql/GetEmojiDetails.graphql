@@ -5,9 +5,7 @@ query GetEmojiDetails($id: UUID!) {
             id
             name
             description
-            avatar {
-                version
-            }
+            avatarVersion
             numMembers
         }
     }

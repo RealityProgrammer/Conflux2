@@ -4,20 +4,21 @@ using Conflux.Domain.Dto;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
+using Facet.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Frozen;
 
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class ServerPermissionsProvider(
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerPermissionsCacheService cacheService,
     IServerDefaultRoleAuthorizeProvider defaultRoleAuthorizeProvider,
     TimeProvider timeProvider
 ) : IServerPermissionsProvider {
     private static readonly ServerPermission[] AllPermissions = Enum.GetValues<ServerPermission>();
 
-    private static readonly FrozenSet<ServerPermission> OwnerEffectivePermissions = [..AllPermissions];
+    private static readonly HashSet<ServerPermission> OwnerEffectivePermissions = [..AllPermissions];
     
     public async Task<Result<ServerMemberAuthorizeInfoDto>> GetUserAuthorizeInfo(
         Guid serverId, 
@@ -28,7 +29,7 @@ internal sealed class ServerPermissionsProvider(
             return Result<ServerMemberAuthorizeInfoDto>.Success(cached);
         }
 
-        CommunityServerMember? member = await memberReadRepository.AsQueryable()
+        CommunityServerMember? member = await memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.MemberRoles)
@@ -48,7 +49,7 @@ internal sealed class ServerPermissionsProvider(
                 member.Id,
                 int.MaxValue,
                 OwnerEffectivePermissions,
-                [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))],
+                [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.SpecialRoleType, r.Role.Name))],
                 false
             );
             
@@ -78,7 +79,7 @@ internal sealed class ServerPermissionsProvider(
         CancellationToken cancellationToken = default
     ) {
         // fetch server and user id from member and call GetUserPermissions, should be fast enough
-        var ids = await memberReadRepository.AsQueryable().AsNoTracking()
+        var ids = await memberRepository.AsQueryable().AsNoTracking()
             .Where(r => r.CommunityServerId == serverId && r.Id == memberId)
             .Select(r => new {
                 r.CommunityServerId,
@@ -104,7 +105,7 @@ internal sealed class ServerPermissionsProvider(
         Dictionary<Guid, Result<ServerMemberAuthorizeInfoDto>> results = new(userIds.Count);
         Dictionary<Guid, ServerMemberAuthorizeInfoDto> dtosToCache = new(userIds.Count);
 
-        List<CommunityServerMember> members = await memberReadRepository.AsQueryable()
+        List<CommunityServerMember> members = await memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && userIds.Contains(m.UserId))
             .Include(m => m.MemberRoles)
@@ -133,7 +134,7 @@ internal sealed class ServerPermissionsProvider(
                     member.Id,
                     int.MaxValue,
                     OwnerEffectivePermissions,
-                    [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.Name))],
+                    [.. member.MemberRoles.Select(r => new MemberRoleDto(r.Role.Id, r.Role.SpecialRoleType, r.Role.Name))],
                     false
                 );
 
@@ -194,7 +195,7 @@ internal sealed class ServerPermissionsProvider(
             effectivePermissions,
             [..member.MemberRoles
                 .OrderByDescending(mr => mr.Role.AuthorizeLevel)
-                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.Name))
+                .Select(mr => new MemberRoleDto(mr.Role.Id, mr.Role.SpecialRoleType, mr.Role.Name))
             ],
             member.BanExpireAt != null && member.BanExpireAt <= currentTime
         );

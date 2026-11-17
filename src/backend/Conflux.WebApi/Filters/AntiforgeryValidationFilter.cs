@@ -5,8 +5,13 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Conflux.WebApi.Filters;
 
-internal sealed class AntiforgeryValidationFilter(IAntiforgery antiforgery) : IAsyncAuthorizationFilter {
+internal sealed class AntiforgeryValidationFilter(IAntiforgery antiforgery, IWebHostEnvironment env) : IAsyncAuthorizationFilter {
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context) {
+        // bypass antiforgery token for development environment
+        if (env.IsDevelopment()) {
+            return;
+        }
+        
         if (context.ActionDescriptor.EndpointMetadata.OfType<IgnoreAntiforgeryTokenAttribute>().Any()) {
             return;
         }

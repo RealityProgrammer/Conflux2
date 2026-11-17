@@ -12,11 +12,8 @@ public class CommunityServer : IHasCreatedAt {
     public Guid OwnerUserId { get; set; }
     public ApplicationUser OwnerUser { get; set; } = null!;
     
-    public Guid? AvatarId { get; set; }
-    public MediaItem? Avatar { get; set; }
-    
-    public Guid? BannerId { get; set; }
-    public MediaItem? Banner { get; set; }
+    public int? AvatarVersion { get; set; }
+    public int? BannerVersion { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 

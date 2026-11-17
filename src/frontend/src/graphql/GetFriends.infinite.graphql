@@ -18,9 +18,7 @@ query GetFriends($after: String, $nameFilter: String) {
                 id
                 userName
                 displayName
-                avatar {
-                    version
-                }
+                avatarVersion
             }
         }
     }

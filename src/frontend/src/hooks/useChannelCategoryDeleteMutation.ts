@@ -1,6 +1,11 @@
-import {type MutationStatus, useMutation, type UseMutationOptions, useMutationState} from "@tanstack/react-query";
-import type {ServiceResponse} from "../api/types.ts";
-import {communityServerService} from "../api/communityServerService.ts";
+import {
+  type MutationStatus,
+  useMutation,
+  type UseMutationOptions,
+  useMutationState,
+} from "@tanstack/react-query";
+import type { ServiceResponse } from "../api/types.ts";
+import { serverService } from "../api/serverService.ts";
 
 export interface UseChannelCategoryDeleteMutationVariables {
   serverId: string;
@@ -16,23 +21,47 @@ export interface UseChannelCategoryDeleteMutationState {
 }
 
 export function useChannelCategoryDeleteMutation(
-  options?: Omit<UseMutationOptions<ServiceResponse, Error, UseChannelCategoryDeleteMutationVariables, unknown>, "mutationFn" | "mutationKey">,
+  options?: Omit<
+    UseMutationOptions<
+      ServiceResponse,
+      Error,
+      UseChannelCategoryDeleteMutationVariables,
+      unknown
+    >,
+    "mutationFn" | "mutationKey"
+  >,
 ) {
-  return useMutation<ServiceResponse, Error, UseChannelCategoryDeleteMutationVariables, unknown>({
+  return useMutation<
+    ServiceResponse,
+    Error,
+    UseChannelCategoryDeleteMutationVariables,
+    unknown
+  >({
     mutationKey: ["channelCategoryDelete"],
-    mutationFn: async (variables: UseChannelCategoryDeleteMutationVariables): Promise<ServiceResponse> => {
-      return communityServerService.deleteChannelCategory(variables.serverId, variables.categoryId);
+    mutationFn: async (
+      variables: UseChannelCategoryDeleteMutationVariables,
+    ): Promise<ServiceResponse> => {
+      return serverService.deleteChannelCategory(
+        variables.serverId,
+        variables.categoryId,
+      );
     },
     ...options,
   });
 }
 
-export function useChannelCategoryDeleteMutationState(serverId: string, categoryId: string) {
+export function useChannelCategoryDeleteMutationState(
+  serverId: string,
+  categoryId: string,
+) {
   const mutations = useMutationState({
     filters: { mutationKey: ["channelCategoryDelete"] },
     select: (mutation) => {
-      const variables = mutation.state.variables as UseChannelCategoryDeleteMutationVariables | undefined;
-      const isTarget = variables?.serverId === serverId && variables?.categoryId === categoryId;
+      const variables = mutation.state.variables as
+        UseChannelCategoryDeleteMutationVariables | undefined;
+      const isTarget =
+        variables?.serverId === serverId &&
+        variables?.categoryId === categoryId;
 
       if (!isTarget) return null;
 
@@ -45,12 +74,14 @@ export function useChannelCategoryDeleteMutationState(serverId: string, category
       };
     },
   });
-  
-  return mutations.filter(m => !!m).pop() || {
-    status: "idle",
-    isPending: false,
-    isSuccess: false,
-    isError: false,
-    error: null,
-  };
+
+  return (
+    mutations.filter((m) => !!m).pop() || {
+      status: "idle",
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    }
+  );
 }

@@ -19,24 +19,24 @@ public sealed record BulkDeleteEmojiCommand(
 public sealed record EmojiDeletedNotification(Guid ServerId, List<Guid> EmojiIds) : INotification;
 
 public sealed class BulkDeleteEmojiHandler(
-    IEmojiWriteRepository emojiWriteRepository,
+    IEmojiRepository emojiRepository,
     IPublisher publisher,
     IEmojiMediaService mediaService,
-    IServerEmojiCacheProvider cacheProvider,
+    IServerEmojiCacheService cacheService,
     ILogger<BulkDeleteEmojiHandler> logger
 ) : ICommandHandler<BulkDeleteEmojiCommand, Result<int>> {
     public async ValueTask<Result<int>> Handle(BulkDeleteEmojiCommand command, CancellationToken cancellationToken) {
         var serverId = command.ServerId;
         var emojiIds = command.EmojiIds;
         
-        int deletedCount = await emojiWriteRepository
+        int deletedCount = await emojiRepository
             .AsQueryable()
             .Where(e => e.ServerId == serverId && emojiIds.Contains(e.Id))
             .ExecuteDeleteAsync(cancellationToken);
 
         // unrecoverable procedure...
         if (deletedCount > 0) {
-            await cacheProvider.Remove(serverId);
+            await cacheService.Remove(serverId);
             
             try {
                 Result result = await mediaService.Delete(emojiIds, CancellationToken.None);

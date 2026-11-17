@@ -1,14 +1,15 @@
 import type {
   AccountDeletionStatusDto,
-  BackendResponse, ServerEmojiGroupDto,
+  BackendResponse,
+  ServerEmojiGroupDto,
   ServiceResponse,
   UpdateProfileResult,
 } from "./types.ts";
-import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
-import {apiClient} from "./client.ts";
-import {handleAxiosError} from "./errorHandling.ts";
-import {authService} from "./authService.ts";
-import type {PresenceStatus} from "../graphql/types.ts";
+import { type AxiosError, type AxiosResponse, HttpStatusCode } from "axios";
+import { apiClient } from "./client.ts";
+import { handleAxiosError } from "./errorHandling.ts";
+import { authService } from "./authService.ts";
+import type { PresenceStatus } from "../graphql/types.ts";
 
 export const sessionUserService = {
   uploadAvatar: async (file: File): Promise<ServiceResponse<number>> => {
@@ -16,13 +17,14 @@ export const sessionUserService = {
       const formData = new FormData();
       formData.set("File", file);
 
-      const response: AxiosResponse<BackendResponse<number>> = await apiClient.postForm("/users/me/avatar", formData);
+      const response: AxiosResponse<BackendResponse<number>> =
+        await apiClient.postForm("/users/me/avatar", formData);
 
       return {
         success: true,
         statusCode: response.status,
         data: response.data.data,
-      }
+      };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse<number>>;
       return handleAxiosError(axiosError);
@@ -37,14 +39,17 @@ export const sessionUserService = {
       return {
         success: true,
         statusCode: response.status,
-      }
+      };
     } catch (error) {
       const axiosError = error as AxiosError<BackendResponse>;
       return handleAxiosError(axiosError);
     }
   },
 
-  setNames: async (userName: string, displayName: string): Promise<ServiceResponse> => {
+  setNames: async (
+    userName: string,
+    displayName: string,
+  ): Promise<ServiceResponse> => {
     try {
       const response = await apiClient.post("/users/me/names", {
         userName,
@@ -128,22 +133,10 @@ export const sessionUserService = {
       }
 
       const response: AxiosResponse<BackendResponse<UpdateProfileResult>> =
-        await apiClient.patchForm<BackendResponse<UpdateProfileResult>>(`users/me/profile`, formData);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<UpdateProfileResult>>;
-      return handleAxiosError(axiosError);
-    }
-  },
-  
-  getAccountDeletionStatus: async (): Promise<ServiceResponse<AccountDeletionStatusDto>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<AccountDeletionStatusDto>> = await apiClient.get("/users/me/deletion");
+        await apiClient.patchForm<BackendResponse<UpdateProfileResult>>(
+          `users/me/profile`,
+          formData,
+        );
 
       return {
         success: true,
@@ -151,15 +144,19 @@ export const sessionUserService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatusDto>>;
+      const axiosError = error as AxiosError<
+        BackendResponse<UpdateProfileResult>
+      >;
       return handleAxiosError(axiosError);
     }
   },
 
-  getEmojiEntryGroups: async (): Promise<ServiceResponse<ServerEmojiGroupDto[]>> => {
+  getAccountDeletionStatus: async (): Promise<
+    ServiceResponse<AccountDeletionStatusDto>
+  > => {
     try {
-      const response: AxiosResponse<BackendResponse<ServerEmojiGroupDto[]>> =
-        await apiClient.get("/users/me/emojis/entries");
+      const response: AxiosResponse<BackendResponse<AccountDeletionStatusDto>> =
+        await apiClient.get("/users/me/deletion");
 
       return {
         success: true,
@@ -167,8 +164,17 @@ export const sessionUserService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<ServerEmojiGroupDto[]>>;
+      const axiosError = error as AxiosError<
+        BackendResponse<AccountDeletionStatusDto>
+      >;
       return handleAxiosError(axiosError);
     }
   },
-}
+
+  getEmojiEntryGroups: async (): Promise<ServerEmojiGroupDto[]> => {
+    const response: AxiosResponse<BackendResponse<ServerEmojiGroupDto[]>> =
+      await apiClient.get("/users/me/emojis/entries");
+
+    return response.data!.data!;
+  },
+};

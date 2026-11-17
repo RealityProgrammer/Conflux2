@@ -12,7 +12,6 @@ type Query
   @authorize
   @authorize
   @authorize
-  @authorize
   @authorize {
   communityServerMembers(
     "Returns the first _n_ elements from the list."
@@ -24,6 +23,7 @@ type Query
     "Returns the elements in the list that come before the specified cursor."
     before: String
     serverId: UUID!
+    order: [CommunityServerMemberSortInput!] @cost(weight: "10")
   ): CommunityServerMemberConnection!
     @listSize(
       assumedSize: 50
@@ -118,6 +118,28 @@ type Query
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
+  conversationParticipants(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    conversationId: UUID!
+    where: ConversationParticipantFilterInput @cost(weight: "10")
+    order: [ConversationParticipantSortInput!] @cost(weight: "10")
+  ): ConversationParticipantConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  conversation(id: UUID!): Conversation @cost(weight: "10")
   directConversations(
     "Returns the first _n_ elements from the list."
     first: Int
@@ -130,6 +152,26 @@ type Query
     where: ConversationFilterInput @cost(weight: "10")
     order: [ConversationSortInput!] @cost(weight: "10")
   ): ConversationConnection!
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 20
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  mentionableUsers(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    conversationId: UUID!
+    where: ApplicationUserFilterInput @cost(weight: "10")
+  ): ApplicationUserConnection!
     @listSize(
       assumedSize: 50
       slicingArguments: ["first", "last"]
@@ -180,7 +222,8 @@ type Query
     )
     @cost(weight: "10")
   invitation(id: String!): Invitation @cost(weight: "10")
-  pinnedMessages(
+  notification(id: UUID!): Notification @cost(weight: "10")
+  notifications(
     "Returns the first _n_ elements from the list."
     first: Int
     "Returns the elements in the list that come after the specified cursor."
@@ -189,9 +232,8 @@ type Query
     last: Int
     "Returns the elements in the list that come before the specified cursor."
     before: String
-    conversationId: UUID!
-    order: [PinnedMessageDtoSortInput!] @cost(weight: "10")
-  ): PinnedMessageDtoConnection!
+    where: NotificationFilterInput @cost(weight: "10")
+  ): NotificationConnection!
     @listSize(
       assumedSize: 50
       slicingArguments: ["first", "last"]
@@ -228,9 +270,6 @@ type Query
 type Mutation @authorize @authorize {
   updateManualPresenceStatus(input: UpdateManualPresenceStatusInput!): UpdateManualPresenceStatusPayload!
     @cost(weight: "10")
-  updateCommunityServerMemberRoles(
-    input: UpdateCommunityServerMemberRolesInput!
-  ): UpdateCommunityServerMemberRolesPayload! @cost(weight: "10")
   kickCommunityServerMember(input: KickCommunityServerMemberInput!): KickCommunityServerMemberPayload!
     @cost(weight: "10")
   banCommunityServerMember(input: BanCommunityServerMemberInput!): BanCommunityServerMemberPayload!
@@ -245,10 +284,8 @@ type ApplicationUser {
   id: UUID!
   userName: String
   displayName: String
-  avatarId: UUID
-  avatar: MediaItem
-  bannerId: UUID
-  banner: MediaItem
+  avatarVersion: Int
+  bannerVersion: Int
   biography: String
   pronouns: String
   createdAt: DateTime!
@@ -258,6 +295,26 @@ type ApplicationUser {
   manualPresenceStatus: PresenceStatus @cost(weight: "10")
   effectivePresenceStatus: PresenceStatus! @cost(weight: "10")
   numMutualFriends: Int! @cost(weight: "10")
+  friendRelationship: UserRelationshipStatus @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type ApplicationUserConnection {
+  "A list of edges."
+  edges: [ApplicationUserEdge!]
+  "A flattened list of the nodes"
+  nodes: [ApplicationUser!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ApplicationUserEdge {
+  "The item at the end of the edge."
+  node: ApplicationUser!
+  "A cursor for use in pagination."
+  cursor: String!
 }
 
 type BanCommunityServerMemberPayload {
@@ -269,7 +326,6 @@ type Channel {
   name: String!
   createdAt: DateTime!
   conversation: Conversation!
-  conversationId: UUID!
   channelCategoryId: UUID
   channelCategory: ChannelCategory
 }
@@ -287,10 +343,8 @@ type CommunityServer {
   id: UUID!
   name: String!
   description: String
-  avatarId: UUID
-  avatar: MediaItem
-  bannerId: UUID
-  banner: MediaItem
+  avatarVersion: Int
+  bannerVersion: Int
   createdAt: DateTime!
   creatorUserId: UUID!
   creatorUser: ApplicationUser
@@ -329,6 +383,9 @@ type CommunityServerMember {
   createdAt: DateTime!
   roles: [CommunityServerRole!]!
   banExpireAt: DateTime
+  highestAuthorizeLevel: Int!
+  highestAuthorizeRoleId: UUID!
+  highestAuthorizeRole: CommunityServerRole!
   authorizeInfo: MemberAuthorizeInfo! @cost(weight: "10")
   status: MembershipStatus!
   numWarn: Int! @cost(weight: "10")
@@ -412,6 +469,32 @@ type ConversationEdge {
   cursor: String!
 }
 
+type ConversationParticipant {
+  conversation: Conversation!
+  conversationId: UUID!
+  user: ApplicationUser!
+  userId: UUID!
+}
+
+"A connection to a list of items."
+type ConversationParticipantConnection {
+  "A list of edges."
+  edges: [ConversationParticipantEdge!]
+  "A flattened list of the nodes"
+  nodes: [ConversationParticipant!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ConversationParticipantEdge {
+  "The item at the end of the edge."
+  node: ConversationParticipant!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
 type Emoji {
   id: UUID!
   createdAt: DateTime!
@@ -422,7 +505,7 @@ type Emoji {
 
 type FriendRequest {
   id: UUID!
-  directConversation: Conversation
+  conversation: Conversation
   createdAt: DateTime!
   receiver: ApplicationUser!
   receiverUserId: UUID!
@@ -468,13 +551,8 @@ type KickCommunityServerMemberPayload {
 
 type MediaItem {
   id: UUID!
-  version: Int!
+  version: Short!
   fileName: String
-  contentType: String!
-}
-
-type MediaItemDto {
-  version: Int!
   contentType: String!
 }
 
@@ -484,10 +562,45 @@ type MemberAuthorizeInfo {
   isBanned: Boolean!
 }
 
-type MessageAttachmentDto {
+type MentionMessageSource {
+  source: MentionSource!
+  messageId: UUID!
+}
+
+type MentionNotificationPayload implements INotificationPayload {
+  source: MentionMessageSource!
+  typeName: String!
+}
+
+type MentionSource {
+  conversationId: UUID!
+}
+
+type Notification {
   id: UUID!
-  name: String!
-  type: String!
+  type: NotificationType!
+  createdAt: DateTime!
+  isRead: Boolean!
+  payload: INotificationPayload @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type NotificationConnection {
+  "A list of edges."
+  edges: [NotificationEdge!]
+  "A flattened list of the nodes"
+  nodes: [Notification!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type NotificationEdge {
+  "The item at the end of the edge."
+  node: Notification!
+  "A cursor for use in pagination."
+  cursor: String!
 }
 
 "A cursor that points to a specific page."
@@ -512,36 +625,6 @@ type PageInfo {
   forwardCursors: [PageCursor!]!
   "A list of cursors to continue paginating backwards."
   backwardCursors: [PageCursor!]!
-}
-
-type PinnedMessageDto {
-  id: UUID!
-  body: String
-  attachments: [MessageAttachmentDto!]!
-  senderUserId: UUID!
-  sender: TimelineMessageSenderDto
-  createdAt: DateTime!
-  updatedAt: DateTime
-  pinnedAt: DateTime
-}
-
-"A connection to a list of items."
-type PinnedMessageDtoConnection {
-  "A list of edges."
-  edges: [PinnedMessageDtoEdge!]
-  "A flattened list of the nodes"
-  nodes: [PinnedMessageDto!]
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "Identifies the total count of items in the connection."
-  totalCount: Int! @cost(weight: "10")
-}
-
-type PinnedMessageDtoEdge {
-  "The item at the end of the edge."
-  node: PinnedMessageDto!
-  "A cursor for use in pagination."
-  cursor: String!
 }
 
 type RolePermission {
@@ -582,18 +665,7 @@ type ServerModerationLogEdge {
   cursor: String!
 }
 
-type TimelineMessageSenderDto {
-  id: UUID!
-  displayName: String!
-  avatar: MediaItemDto
-}
-
 type UnbanCommunityServerMemberPayload {
-  memberId: UUID!
-}
-
-type UpdateCommunityServerMemberRolesPayload {
-  member: CommunityServerMember! @cost(weight: "10")
   memberId: UUID!
 }
 
@@ -605,14 +677,16 @@ type WarnCommunityServerMemberPayload {
   memberId: UUID!
 }
 
+interface INotificationPayload {
+  typeName: String!
+}
+
 input ApplicationUserFilterInput {
   and: [ApplicationUserFilterInput!]
   or: [ApplicationUserFilterInput!]
   isUserNameLocked: BooleanOperationFilterInput
-  avatarId: UuidOperationFilterInput
-  avatar: MediaItemFilterInput
-  bannerId: UuidOperationFilterInput
-  banner: MediaItemFilterInput
+  avatarVersion: IntOperationFilterInput
+  bannerVersion: IntOperationFilterInput
   displayName: StringOperationFilterInput
   biography: StringOperationFilterInput
   pronouns: StringOperationFilterInput
@@ -625,6 +699,7 @@ input ApplicationUserFilterInput {
   joinedCommunityServers: ListFilterInputTypeOfCommunityServerMemberFilterInput
   conversationParticipants: ListFilterInputTypeOfConversationParticipantFilterInput
   accountDeletions: ListFilterInputTypeOfUserAccountDeletionFilterInput
+  notifications: ListFilterInputTypeOfNotificationFilterInput
   id: UuidOperationFilterInput
   userName: StringOperationFilterInput
   normalizedUserName: StringOperationFilterInput
@@ -644,10 +719,8 @@ input ApplicationUserFilterInput {
 
 input ApplicationUserSortInput {
   isUserNameLocked: SortEnumType @cost(weight: "10")
-  avatarId: SortEnumType @cost(weight: "10")
-  avatar: MediaItemSortInput @cost(weight: "10")
-  bannerId: SortEnumType @cost(weight: "10")
-  banner: MediaItemSortInput @cost(weight: "10")
+  avatarVersion: SortEnumType @cost(weight: "10")
+  bannerVersion: SortEnumType @cost(weight: "10")
   displayName: SortEnumType @cost(weight: "10")
   biography: SortEnumType @cost(weight: "10")
   pronouns: SortEnumType @cost(weight: "10")
@@ -709,7 +782,6 @@ input ChannelFilterInput {
   id: UuidOperationFilterInput
   type: ChannelTypeOperationFilterInput
   name: StringOperationFilterInput
-  conversationId: UuidOperationFilterInput
   conversation: ConversationFilterInput
   communityServerId: UuidOperationFilterInput
   communityServer: CommunityServerFilterInput
@@ -722,7 +794,6 @@ input ChannelSortInput {
   id: SortEnumType @cost(weight: "10")
   type: SortEnumType @cost(weight: "10")
   name: SortEnumType @cost(weight: "10")
-  conversationId: SortEnumType @cost(weight: "10")
   conversation: ConversationSortInput @cost(weight: "10")
   communityServerId: SortEnumType @cost(weight: "10")
   communityServer: CommunityServerSortInput @cost(weight: "10")
@@ -748,10 +819,8 @@ input CommunityServerFilterInput {
   creatorUser: ApplicationUserFilterInput
   ownerUserId: UuidOperationFilterInput
   ownerUser: ApplicationUserFilterInput
-  avatarId: UuidOperationFilterInput
-  avatar: MediaItemFilterInput
-  bannerId: UuidOperationFilterInput
-  banner: MediaItemFilterInput
+  avatarVersion: IntOperationFilterInput
+  bannerVersion: IntOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   channelCategories: ListFilterInputTypeOfChannelCategoryFilterInput
   channels: ListFilterInputTypeOfChannelFilterInput
@@ -773,6 +842,9 @@ input CommunityServerMemberFilterInput {
   createdAt: DateTimeOperationFilterInput
   status: MembershipStatusOperationFilterInput
   banExpireAt: DateTimeOperationFilterInput
+  highestAuthorizeLevel: IntOperationFilterInput
+  highestAuthorizeRoleId: UuidOperationFilterInput
+  highestAuthorizeRole: CommunityServerRoleFilterInput
   memberRoles: ListFilterInputTypeOfCommunityServerMemberRoleFilterInput
   roles: ListFilterInputTypeOfCommunityServerRoleFilterInput
 }
@@ -795,6 +867,9 @@ input CommunityServerMemberSortInput {
   createdAt: SortEnumType @cost(weight: "10")
   status: SortEnumType @cost(weight: "10")
   banExpireAt: SortEnumType @cost(weight: "10")
+  highestAuthorizeLevel: SortEnumType @cost(weight: "10")
+  highestAuthorizeRoleId: SortEnumType @cost(weight: "10")
+  highestAuthorizeRole: CommunityServerRoleSortInput @cost(weight: "10")
 }
 
 input CommunityServerRoleFilterInput {
@@ -814,6 +889,18 @@ input CommunityServerRoleFilterInput {
   members: ListFilterInputTypeOfCommunityServerMemberFilterInput
 }
 
+input CommunityServerRoleSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  communityServerId: SortEnumType @cost(weight: "10")
+  communityServer: CommunityServerSortInput @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  authorizeLevel: SortEnumType @cost(weight: "10")
+  specialRoleType: SortEnumType @cost(weight: "10")
+  creatorUser: ApplicationUserSortInput @cost(weight: "10")
+  creatorUserId: SortEnumType @cost(weight: "10")
+}
+
 input CommunityServerSortInput {
   id: SortEnumType @cost(weight: "10")
   name: SortEnumType @cost(weight: "10")
@@ -822,10 +909,8 @@ input CommunityServerSortInput {
   creatorUser: ApplicationUserSortInput @cost(weight: "10")
   ownerUserId: SortEnumType @cost(weight: "10")
   ownerUser: ApplicationUserSortInput @cost(weight: "10")
-  avatarId: SortEnumType @cost(weight: "10")
-  avatar: MediaItemSortInput @cost(weight: "10")
-  bannerId: SortEnumType @cost(weight: "10")
-  banner: MediaItemSortInput @cost(weight: "10")
+  avatarVersion: SortEnumType @cost(weight: "10")
+  bannerVersion: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
 }
 
@@ -836,10 +921,11 @@ input ConversationFilterInput {
   type: ConversationTypeOperationFilterInput
   latestMessageAt: DateTimeOperationFilterInput
   messages: ListFilterInputTypeOfMessageFilterInput
-  channel: ChannelFilterInput
   participants: ListFilterInputTypeOfConversationParticipantFilterInput
   friendRequestId: UuidOperationFilterInput
   friendRequest: FriendRequestFilterInput
+  channelId: UuidOperationFilterInput
+  channel: ChannelFilterInput
 }
 
 input ConversationParticipantFilterInput {
@@ -851,13 +937,21 @@ input ConversationParticipantFilterInput {
   user: ApplicationUserFilterInput
 }
 
+input ConversationParticipantSortInput {
+  conversationId: SortEnumType @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
+  userId: SortEnumType @cost(weight: "10")
+  user: ApplicationUserSortInput @cost(weight: "10")
+}
+
 input ConversationSortInput {
   id: SortEnumType @cost(weight: "10")
   type: SortEnumType @cost(weight: "10")
   latestMessageAt: SortEnumType @cost(weight: "10")
-  channel: ChannelSortInput @cost(weight: "10")
   friendRequestId: SortEnumType @cost(weight: "10")
   friendRequest: FriendRequestSortInput @cost(weight: "10")
+  channelId: SortEnumType @cost(weight: "10")
+  channel: ChannelSortInput @cost(weight: "10")
 }
 
 input ConversationTypeOperationFilterInput {
@@ -920,7 +1014,7 @@ input FriendRequestFilterInput {
   status: FriendRequestStatusOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   updatedAt: DateTimeOperationFilterInput
-  directConversation: ConversationFilterInput
+  conversation: ConversationFilterInput
 }
 
 input FriendRequestSortInput {
@@ -932,7 +1026,7 @@ input FriendRequestSortInput {
   status: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
   updatedAt: SortEnumType @cost(weight: "10")
-  directConversation: ConversationSortInput @cost(weight: "10")
+  conversation: ConversationSortInput @cost(weight: "10")
 }
 
 input FriendRequestStatusOperationFilterInput {
@@ -940,6 +1034,12 @@ input FriendRequestStatusOperationFilterInput {
   neq: FriendRequestStatus @cost(weight: "10")
   in: [FriendRequestStatus!] @cost(weight: "10")
   nin: [FriendRequestStatus!] @cost(weight: "10")
+}
+
+input INotificationPayloadFilterInput {
+  and: [INotificationPayloadFilterInput!]
+  or: [INotificationPayloadFilterInput!]
+  typeName: StringOperationFilterInput
 }
 
 input IntOperationFilterInput {
@@ -1054,6 +1154,20 @@ input ListFilterInputTypeOfMessageFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
+input ListFilterInputTypeOfMessageReactionFilterInput {
+  all: MessageReactionFilterInput @cost(weight: "10")
+  none: MessageReactionFilterInput @cost(weight: "10")
+  some: MessageReactionFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfNotificationFilterInput {
+  all: NotificationFilterInput @cost(weight: "10")
+  none: NotificationFilterInput @cost(weight: "10")
+  some: NotificationFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
 input ListFilterInputTypeOfRolePermissionFilterInput {
   all: RolePermissionFilterInput @cost(weight: "10")
   none: RolePermissionFilterInput @cost(weight: "10")
@@ -1075,9 +1189,11 @@ input ListFilterInputTypeOfUserAccountDeletionFilterInput {
   any: Boolean @cost(weight: "10")
 }
 
-input MediaItemDtoSortInput {
-  version: SortEnumType @cost(weight: "10")
-  contentType: SortEnumType @cost(weight: "10")
+input ListUuidOperationFilterInput {
+  all: UuidOperationFilterInput @cost(weight: "10")
+  none: UuidOperationFilterInput @cost(weight: "10")
+  some: UuidOperationFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
 }
 
 input MediaItemFilterInput {
@@ -1087,19 +1203,10 @@ input MediaItemFilterInput {
   type: MediaItemTypeOperationFilterInput
   contentType: StringOperationFilterInput
   fileName: StringOperationFilterInput
-  version: IntOperationFilterInput
+  version: ShortOperationFilterInput
+  order: ShortOperationFilterInput
   messageId: UuidOperationFilterInput
   message: MessageFilterInput
-}
-
-input MediaItemSortInput {
-  id: SortEnumType @cost(weight: "10")
-  type: SortEnumType @cost(weight: "10")
-  contentType: SortEnumType @cost(weight: "10")
-  fileName: SortEnumType @cost(weight: "10")
-  version: SortEnumType @cost(weight: "10")
-  messageId: SortEnumType @cost(weight: "10")
-  message: MessageSortInput @cost(weight: "10")
 }
 
 input MediaItemTypeOperationFilterInput {
@@ -1123,6 +1230,7 @@ input MessageFilterInput {
   type: MessageTypeOperationFilterInput
   body: StringOperationFilterInput
   attachments: ListFilterInputTypeOfMediaItemFilterInput
+  searchVector: NpgsqlTsVectorFilterInput
   properties: MessagePropertiesFilterInput
   senderUserId: UuidOperationFilterInput
   sender: ApplicationUserFilterInput
@@ -1134,6 +1242,7 @@ input MessageFilterInput {
   replyToId: UuidOperationFilterInput
   replyTo: MessageFilterInput
   replies: ListFilterInputTypeOfMessageFilterInput
+  reaction: ListFilterInputTypeOfMessageReactionFilterInput
   pinnedAt: DateTimeOperationFilterInput
 }
 
@@ -1142,20 +1251,17 @@ input MessagePropertiesFilterInput {
   or: [MessagePropertiesFilterInput!]
 }
 
-input MessageSortInput {
-  id: SortEnumType @cost(weight: "10")
-  type: SortEnumType @cost(weight: "10")
-  body: SortEnumType @cost(weight: "10")
-  senderUserId: SortEnumType @cost(weight: "10")
-  sender: ApplicationUserSortInput @cost(weight: "10")
-  conversationId: SortEnumType @cost(weight: "10")
-  conversation: ConversationSortInput @cost(weight: "10")
-  createdAt: SortEnumType @cost(weight: "10")
-  updatedAt: SortEnumType @cost(weight: "10")
-  deletedAt: SortEnumType @cost(weight: "10")
-  replyToId: SortEnumType @cost(weight: "10")
-  replyTo: MessageSortInput @cost(weight: "10")
-  pinnedAt: SortEnumType @cost(weight: "10")
+input MessageReactionFilterInput {
+  and: [MessageReactionFilterInput!]
+  or: [MessageReactionFilterInput!]
+  id: UuidOperationFilterInput
+  messageId: UuidOperationFilterInput
+  message: MessageFilterInput
+  iconSource: ReactionIconSourceTypeOperationFilterInput
+  unicodeValue: StringOperationFilterInput
+  emojiId: UuidOperationFilterInput
+  emoji: EmojiFilterInput
+  userIds: ListUuidOperationFilterInput
 }
 
 input MessageTypeOperationFilterInput {
@@ -1165,6 +1271,32 @@ input MessageTypeOperationFilterInput {
   nin: [MessageType!] @cost(weight: "10")
 }
 
+input NotificationFilterInput {
+  and: [NotificationFilterInput!]
+  or: [NotificationFilterInput!]
+  id: UuidOperationFilterInput
+  userId: UuidOperationFilterInput
+  user: ApplicationUserFilterInput
+  type: NotificationTypeOperationFilterInput
+  payload: INotificationPayloadFilterInput
+  isRead: BooleanOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  readAt: DateTimeOperationFilterInput
+}
+
+input NotificationTypeOperationFilterInput {
+  eq: NotificationType @cost(weight: "10")
+  neq: NotificationType @cost(weight: "10")
+  in: [NotificationType!] @cost(weight: "10")
+  nin: [NotificationType!] @cost(weight: "10")
+}
+
+input NpgsqlTsVectorFilterInput {
+  and: [NpgsqlTsVectorFilterInput!]
+  or: [NpgsqlTsVectorFilterInput!]
+  count: IntOperationFilterInput
+}
+
 input PermissionStateOperationFilterInput {
   eq: PermissionState @cost(weight: "10")
   neq: PermissionState @cost(weight: "10")
@@ -1172,21 +1304,18 @@ input PermissionStateOperationFilterInput {
   nin: [PermissionState!] @cost(weight: "10")
 }
 
-input PinnedMessageDtoSortInput {
-  id: SortEnumType @cost(weight: "10")
-  body: SortEnumType @cost(weight: "10")
-  senderUserId: SortEnumType @cost(weight: "10")
-  sender: TimelineMessageSenderDtoSortInput @cost(weight: "10")
-  createdAt: SortEnumType @cost(weight: "10")
-  updatedAt: SortEnumType @cost(weight: "10")
-  pinnedAt: SortEnumType @cost(weight: "10")
-}
-
 input PresenceStatusOperationFilterInput {
   eq: PresenceStatus @cost(weight: "10")
   neq: PresenceStatus @cost(weight: "10")
   in: [PresenceStatus!] @cost(weight: "10")
   nin: [PresenceStatus!] @cost(weight: "10")
+}
+
+input ReactionIconSourceTypeOperationFilterInput {
+  eq: ReactionIconSourceType @cost(weight: "10")
+  neq: ReactionIconSourceType @cost(weight: "10")
+  in: [ReactionIconSourceType!] @cost(weight: "10")
+  nin: [ReactionIconSourceType!] @cost(weight: "10")
 }
 
 input RolePermissionFilterInput {
@@ -1242,6 +1371,21 @@ input ServerPermissionOperationFilterInput {
   nin: [ServerPermission!] @cost(weight: "10")
 }
 
+input ShortOperationFilterInput {
+  eq: Short @cost(weight: "10")
+  neq: Short @cost(weight: "10")
+  in: [Short] @cost(weight: "10")
+  nin: [Short] @cost(weight: "10")
+  gt: Short @cost(weight: "10")
+  ngt: Short @cost(weight: "10")
+  gte: Short @cost(weight: "10")
+  ngte: Short @cost(weight: "10")
+  lt: Short @cost(weight: "10")
+  nlt: Short @cost(weight: "10")
+  lte: Short @cost(weight: "10")
+  nlte: Short @cost(weight: "10")
+}
+
 input SpecialRoleTypeOperationFilterInput {
   eq: SpecialRoleType @cost(weight: "10")
   neq: SpecialRoleType @cost(weight: "10")
@@ -1265,12 +1409,6 @@ input StringOperationFilterInput {
   ilike: String @cost(weight: "10")
 }
 
-input TimelineMessageSenderDtoSortInput {
-  id: SortEnumType @cost(weight: "10")
-  displayName: SortEnumType @cost(weight: "10")
-  avatar: MediaItemDtoSortInput @cost(weight: "10")
-}
-
 input UnbanCommunityServerMemberInput {
   serverId: UUID!
   memberId: UUID!
@@ -1289,12 +1427,6 @@ input UnsignedIntOperationFilterInput {
   nlt: UnsignedInt @cost(weight: "10")
   lte: UnsignedInt @cost(weight: "10")
   nlte: UnsignedInt @cost(weight: "10")
-}
-
-input UpdateCommunityServerMemberRolesInput {
-  serverId: UUID!
-  memberId: UUID!
-  roleIds: [UUID!]!
 }
 
 input UpdateManualPresenceStatusInput {
@@ -1386,10 +1518,6 @@ enum InvitationStatus {
 }
 
 enum MediaItemType {
-  UserAvatar
-  UserBanner
-  ServerAvatar
-  ServerBanner
   MessageAttachment
 }
 
@@ -1409,6 +1537,10 @@ enum MessageType {
   Unpin
 }
 
+enum NotificationType {
+  Mention
+}
+
 enum PermissionState {
   Inherit
   Enable
@@ -1421,6 +1553,11 @@ enum PresenceStatus {
   Idle
   DoNotDisturb
   Invisible
+}
+
+enum ReactionIconSourceType {
+  Unicode
+  Emoji
 }
 
 enum ServerModerationAction {
@@ -1476,6 +1613,13 @@ enum UserAccountDeleteStatus {
   Deleted
 }
 
+enum UserRelationshipStatus {
+  Stranger
+  OutcomingRequest
+  IncomingRequest
+  Friended
+}
+
 "The `DateTime` scalar type represents a date and time with time zone offset information."
 scalar DateTime
   @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
@@ -1483,6 +1627,10 @@ scalar DateTime
 "The `Duration` scalar type represents a duration of time."
 scalar Duration
   @specifiedBy(url: "https://scalars.graphql.org/chillicream/duration.html")
+
+"The `Short` scalar type represents a signed 16-bit integer."
+scalar Short
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/short.html")
 
 "The `UnsignedInt` scalar type represents an unsigned 32-bit integer."
 scalar UnsignedInt

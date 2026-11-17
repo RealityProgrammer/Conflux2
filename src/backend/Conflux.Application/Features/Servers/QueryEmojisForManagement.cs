@@ -11,23 +11,22 @@ public sealed record QueryEmojisForManagement(Guid ServerId) : IQuery<Result<Lis
 };
 
 public sealed class QueryEmojisForManagementHandler(
-    IEmojiReadRepository emojiReadRepository
+    IEmojiRepository emojiRepository
 ) : IQueryHandler<QueryEmojisForManagement, Result<List<EmojiManagementDto>>> {
     public async ValueTask<Result<List<EmojiManagementDto>>> Handle(
         QueryEmojisForManagement query, 
         CancellationToken cancellationToken
     ) {
-        var results = await emojiReadRepository
+        var results = await emojiRepository
             .AsQueryable()
             .Where(e => e.ServerId == query.ServerId)
             .OrderBy(e => e.ShortCode)
             .Include(e => e.Creator)
-            .ThenInclude(e => e.Avatar)
             .Select(e => new EmojiManagementDto(
                 e.Id,
                 e.ShortCode,
                 e.CreatedAt,
-                new(e.CreatorId, e.Creator.DisplayName!, e.Creator.Avatar == null ? null : e.Creator.Avatar.Version)
+                new(e.CreatorId, e.Creator.DisplayName!, e.Creator.AvatarVersion)
             ))
             .ToListAsync(cancellationToken);
         

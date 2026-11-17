@@ -1,3 +1,4 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
@@ -6,9 +7,6 @@ using Conflux.WebApi.Helpers;
 using GreenDonut.Data;
 using HotChocolate.Authorization;
 using HotChocolate.Types.Pagination;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Queries;
 
@@ -16,15 +14,13 @@ namespace Conflux.WebApi.GraphQL.Queries;
 internal static partial class CommunityServerQuery {
     [UseConnection(DefaultPageSize = 20, MaxPageSize = 50)]
     public static async Task<PageConnection<CommunityServer>> GetJoinedServers(
-        ClaimsPrincipal claimsPrincipal,
         QueryContext<CommunityServer> queryContext,
         PagingArguments pagingArgs,
+        [Service] ICurrentUserService currentUserService,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
     ) {
-        var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+        if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 

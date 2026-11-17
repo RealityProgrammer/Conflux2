@@ -10,11 +10,6 @@ internal sealed class ChannelConfiguration : IEntityTypeConfiguration<Channel> {
         builder.Property(c => c.Name)
             .HasMaxLength(32);
         
-        builder.HasOne(c => c.Conversation)
-            .WithOne(c => c.Channel)
-            .HasForeignKey<Channel>(c => c.ConversationId)
-            .OnDelete(DeleteBehavior.Cascade);
-        
         builder.HasOne(c => c.CommunityServer)
             .WithMany(s => s.Channels)
             .HasForeignKey(c => c.CommunityServerId)

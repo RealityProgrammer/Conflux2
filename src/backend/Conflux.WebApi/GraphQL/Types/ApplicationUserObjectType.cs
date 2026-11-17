@@ -1,7 +1,10 @@
 using Conflux.Application.Services;
+using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
+using Conflux.WebApi.Helpers;
 using HotChocolate.Resolvers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -17,16 +20,14 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
         descriptor.Field(u => u.Id).IsProjected();
         descriptor.Field(u => u.UserName);
         descriptor.Field(u => u.DisplayName);
-        descriptor.Field(u => u.AvatarId);
-        descriptor.Field(u => u.Avatar).Type<MediaItemObjectType>();
-        descriptor.Field(u => u.BannerId);
-        descriptor.Field(u => u.Banner).Type<MediaItemObjectType>();
+        descriptor.Field(u => u.AvatarVersion);
+        descriptor.Field(u => u.BannerVersion);
         descriptor.Field(u => u.Biography);
         descriptor.Field(u => u.Pronouns);
         descriptor.Field(u => u.CreatedAt);
         descriptor.Field(u => u.LastSeenAt);
         descriptor.Field("email")
-            .ParentRequires<ApplicationUser>(u => u.Email)
+            .ParentRequires<ApplicationUser>(u => u.Email!)
             .Type<StringType>()
             .Resolve((context, _) => {
                 var user = context.Parent<ApplicationUser>();
@@ -38,8 +39,9 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
 
                 return null;
             });
+        
         descriptor.Field("phoneNumber")
-            .ParentRequires<ApplicationUser>(u => u.PhoneNumber)
+            .ParentRequires<ApplicationUser>(u => u.PhoneNumber!)
             .Type<StringType>()
             .Resolve((context, _) => {
                 var user = context.Parent<ApplicationUser>();
@@ -65,7 +67,7 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
             })
             .Resolve(async (context, cancellationContext) => {
                 var targetUser = context.Parent<ApplicationUser>();
-                var dataLoader = context.DataLoader<EffectivePresenceByIdDataLoader>();
+                var dataLoader = context.DataLoader<IEffectivePresenceByIdDataLoader>();
                 
                 return await dataLoader.LoadAsync(targetUser.Id, cancellationContext);
             });
@@ -75,6 +77,16 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
             .Resolve(async context => {
                 var targetUser = context.Parent<ApplicationUser>();
                 var dataLoader = context.DataLoader<IMutualFriendsCountDataLoader>();
+
+                return await dataLoader.LoadAsync(targetUser.Id, context.RequestAborted);
+            });
+
+        descriptor.Field("friendRelationship")
+            .Type<EnumType<UserRelationshipStatus>>()
+            .ParentRequires<ApplicationUser>(u => new { u.Id })
+            .Resolve(async context => {
+                var targetUser = context.Parent<ApplicationUser>();
+                var dataLoader = context.DataLoader<IRelationshipStatusesDataLoader>();
 
                 return await dataLoader.LoadAsync(targetUser.Id, context.RequestAborted);
             });
@@ -179,7 +191,7 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
 
         var results = new Dictionary<Guid, PresenceStatus>();
         var missingKeys = new List<Guid>();
-
+        
         var redisKeys = keys.Select(id => (RedisKey)$"presence:manual:{id}").ToArray();
         var cachedValues = await redisDatabase.StringGetAsync(redisKeys);
 
@@ -224,10 +236,62 @@ public sealed class ApplicationUserObjectType : ObjectType<ApplicationUser> {
     }
 
     [DataLoader]
-    public static async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetEffectivePresenceByIdAsync(
+    public static async Task<IReadOnlyDictionary<Guid, PresenceStatus>> GetEffectivePresenceById(
         IReadOnlyList<Guid> keys,
         [Service] IPresenceService presenceService
     ) {
         return await presenceService.GetEffectivePresenceStatuses(keys);
+    }
+
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<Guid, UserRelationshipStatus?>> GetRelationshipStatuses(
+        IReadOnlyList<Guid> targetUserIds,
+        [Service] ICurrentUserService currentUserService,
+        [Service] IFriendRequestRepository friendRequestRepository,
+        CancellationToken cancellationToken = default
+    ) {
+        if (currentUserService.UserId is not { } userId) {
+            throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
+        }
+
+        var requestInfos = await friendRequestRepository
+            .AsQueryable()
+            .Where(r => r.SenderUserId == userId || r.ReceiverUserId == userId)
+            .Select(r => new {
+                r.SenderUserId,
+                r.ReceiverUserId,
+                r.Status
+            })
+            .ToDictionaryAsync(
+                x => x.SenderUserId == userId ? x.ReceiverUserId : x.SenderUserId,
+                x => x,
+                cancellationToken
+            );
+
+        var results = new Dictionary<Guid, UserRelationshipStatus?>();
+
+        foreach (var targetUserId in targetUserIds) {
+            if (requestInfos.TryGetValue(targetUserId, out var requestInfo)) {
+                switch (requestInfo.Status) {
+                    case FriendRequestStatus.None or FriendRequestStatus.Rejected or FriendRequestStatus.Canceled:
+                        results.Add(targetUserId, UserRelationshipStatus.Stranger);
+                        break;
+                    
+                    case FriendRequestStatus.Pending:
+                        results.Add(targetUserId, requestInfo.SenderUserId == userId ? UserRelationshipStatus.OutcomingRequest : UserRelationshipStatus.IncomingRequest);
+                        break;
+                    
+                    case FriendRequestStatus.Accepted:
+                        results.Add(targetUserId, UserRelationshipStatus.Friended);
+                        break;
+                }
+            } else if (targetUserId == userId) {
+                results.Add(targetUserId, null);
+            } else {
+                results.Add(targetUserId, UserRelationshipStatus.Stranger);
+            }
+        }
+        
+        return results;
     }
 }

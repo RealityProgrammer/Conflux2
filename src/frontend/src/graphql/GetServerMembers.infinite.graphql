@@ -1,0 +1,24 @@
+query GetServerMembers($serverId: UUID!, $after: String) {
+    communityServerMembers(
+        serverId: $serverId,
+        order: { highestAuthorizeLevel: DESC, user: { displayName: ASC } },
+        after: $after
+    ) {
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+
+        nodes {
+            user {
+                id
+                displayName
+                avatarVersion
+            }
+            highestAuthorizeRole {
+                id
+                name
+            }
+        }
+    }
+}

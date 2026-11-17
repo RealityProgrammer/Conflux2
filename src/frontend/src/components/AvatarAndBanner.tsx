@@ -1,29 +1,28 @@
-import type {CSSProperties, ReactNode} from "react";
-import {Avatar as RadixAvatar} from "radix-ui";
-import {Avatar, type PresenceProps} from "./Avatar.tsx";
-import {userService} from "../api/userService.ts";
-import {communityServerService} from "../api/communityServerService.ts";
-import {BsExclamationTriangle} from "react-icons/bs";
+import type { CSSProperties, ReactNode } from "react";
+import { Avatar as RadixAvatar } from "radix-ui";
+import { Avatar, type PresenceProps } from "./Avatar.tsx";
+import { userService } from "../api/userService.ts";
+import { serverService } from "../api/serverService.ts";
+import { BsExclamationTriangle } from "react-icons/bs";
 
 export type ImageProfile = {
   src?: string;
   alt?: string;
   fallback?: ReactNode;
   rootClassName?: string;
-}
+};
 
 interface TemplateProps {
   avatar: ImageProfile;
   banner: ImageProfile;
 }
 
-export function Template({
-  avatar,
-  banner,
-}: TemplateProps) {
+export function Template({ avatar, banner }: TemplateProps) {
   return (
-    <div className="relative w-full aspect-video mb-11">
-      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${banner.rootClassName ?? ""}`}>
+    <div className="relative mb-11 aspect-video w-full">
+      <RadixAvatar.Root
+        className={`block aspect-video overflow-hidden ${banner.rootClassName ?? ""}`}
+      >
         <RadixAvatar.Image
           className="size-full object-cover"
           src={banner.src}
@@ -32,8 +31,10 @@ export function Template({
 
         {banner.fallback}
       </RadixAvatar.Root>
-      
-      <RadixAvatar.Root className={`absolute left-2 -bottom-11 size-21 overflow-hidden rounded-full ${avatar.rootClassName ?? ""}`}>
+
+      <RadixAvatar.Root
+        className={`absolute -bottom-11 left-2 size-21 overflow-hidden rounded-full ${avatar.rootClassName ?? ""}`}
+      >
         <RadixAvatar.Image
           className="size-full object-contain"
           src={avatar.src}
@@ -49,11 +50,11 @@ export function Template({
 interface UserProps {
   userId: string;
   bannerClassName?: string;
-  bannerVersion?: number;
+  bannerVersion: number | null | undefined;
   bannerAlt?: string;
   bannerFallbackColor?: CSSProperties["backgroundColor"];
   avatarClassName?: string;
-  avatarVersion?: number;
+  avatarVersion: number | null | undefined;
   avatarAlt?: string;
   presence?: PresenceProps;
 }
@@ -70,24 +71,29 @@ function User({
   presence,
 }: UserProps) {
   return (
-    <div className="relative w-full aspect-video mb-11">
-      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${bannerClassName}`}>
+    <div className="relative mb-11 aspect-video w-full">
+      <RadixAvatar.Root
+        className={`block aspect-video overflow-hidden ${bannerClassName}`}
+      >
         <RadixAvatar.Image
           className="size-full object-cover"
-          src={bannerVersion ? userService.getBannerUrl(userId, bannerVersion) : undefined}
+          src={
+            bannerVersion
+              ? userService.getBannerUrl(userId, bannerVersion)
+              : undefined
+          }
           alt={bannerAlt}
         />
 
-        <RadixAvatar.Fallback 
+        <RadixAvatar.Fallback
           className="block size-full"
           style={{
             backgroundColor: bannerFallbackColor,
           }}
-        >
-        </RadixAvatar.Fallback>
+        ></RadixAvatar.Fallback>
       </RadixAvatar.Root>
-      
-      <div className="absolute left-2 -bottom-11">
+
+      <div className="absolute -bottom-11 left-2">
         <Avatar.User
           userId={userId}
           version={avatarVersion}
@@ -122,11 +128,17 @@ function Server({
   avatarAlt,
 }: ServerProps) {
   return (
-    <div className="relative w-full aspect-video mb-11">
-      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${bannerClassName}`}>
+    <div className="relative mb-11 aspect-video w-full">
+      <RadixAvatar.Root
+        className={`block aspect-video overflow-hidden ${bannerClassName}`}
+      >
         <RadixAvatar.Image
           className="size-full object-cover"
-          src={bannerVersion ? communityServerService.getBannerUrl(serverId, bannerVersion) : undefined}
+          src={
+            bannerVersion
+              ? serverService.getBannerUrl(serverId, bannerVersion)
+              : undefined
+          }
           alt={bannerAlt}
         />
 
@@ -135,11 +147,10 @@ function Server({
           style={{
             backgroundColor: bannerFallbackColor,
           }}
-        >
-        </RadixAvatar.Fallback>
+        ></RadixAvatar.Fallback>
       </RadixAvatar.Root>
 
-      <div className="absolute left-2 -bottom-11">
+      <div className="absolute -bottom-11 left-2">
         <Avatar.Server
           serverId={serverId}
           version={avatarVersion}
@@ -154,34 +165,36 @@ function Server({
 function Error() {
   return (
     <AvatarAndBanner.Template
-      banner={{fallback: (
-          <div
-            className="bg-red-300 size-full flex flex-row justify-center items-center"
-          >
-            <BsExclamationTriangle className="size-8 fill-red-500 animate-pulse"/>
+      banner={{
+        fallback: (
+          <div className="flex size-full flex-row items-center justify-center bg-red-300">
+            <BsExclamationTriangle className="size-8 animate-pulse fill-red-500" />
           </div>
-        )}}
-      avatar={{fallback: (
-          <div className="bg-red-300 border-4 border-gray-725 size-full overflow-hidden rounded-full flex flex-col gap-1 justify-center items-center">
-            <BsExclamationTriangle className="size-12 fill-red-500 animate-pulse"/>
+        ),
+      }}
+      avatar={{
+        fallback: (
+          <div className="border-gray-725 flex size-full flex-col items-center justify-center gap-1 overflow-hidden rounded-full border-4 bg-red-300">
+            <BsExclamationTriangle className="size-12 animate-pulse fill-red-500" />
           </div>
-        )}}
+        ),
+      }}
     />
-  )
+  );
 }
 
 interface SkeletonProps {
   avatarClassName?: string;
 }
 
-function Skeleton({
-  avatarClassName = "",
-}: SkeletonProps) {
+function Skeleton({ avatarClassName = "" }: SkeletonProps) {
   return (
-    <div className="relative w-full aspect-video mb-11">
-      <div className="size-full aspect-video overflow-hidden animate-pulse bg-white/10"></div>
+    <div className="relative mb-11 aspect-video w-full">
+      <div className="aspect-video size-full animate-pulse overflow-hidden bg-white/10"></div>
 
-      <div className={`absolute left-2 -bottom-11 size-21 animate-pulse bg-white/10 ${avatarClassName}`}></div>
+      <div
+        className={`absolute -bottom-11 left-2 size-21 animate-pulse bg-white/10 ${avatarClassName}`}
+      ></div>
     </div>
   );
 }
@@ -192,4 +205,4 @@ export const AvatarAndBanner = {
   Server,
   Error,
   Skeleton,
-}
+};

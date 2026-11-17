@@ -1,20 +1,24 @@
 import type {
   BackendResponse,
-  DirectConversationSummary, GetIncomingDirectCallQueryResult,
+  GetIncomingDirectCallQueryResult,
   ServiceResponse,
   StartCallResult,
   TimelineMessageDto,
 } from "./types.ts";
-import type {AxiosError, AxiosResponse} from "axios";
-import {apiClient} from "./client.ts";
-import {handleAxiosError} from "./errorHandling.ts";
+import type { AxiosError, AxiosResponse } from "axios";
+import { apiClient } from "./client.ts";
+import { handleAxiosError } from "./errorHandling.ts";
 
 export const directConversationService = {
-  getDirectConversationSummary: async (peerId: string): Promise<ServiceResponse<DirectConversationSummary>> => {
+  getIncomingCall: async (): Promise<
+    ServiceResponse<GetIncomingDirectCallQueryResult>
+  > => {
     try {
-      const response: AxiosResponse<BackendResponse<DirectConversationSummary>> =
-        await apiClient.post<BackendResponse<DirectConversationSummary>>(
-          `/conversations/direct/${encodeURIComponent(peerId)}`
+      const response: AxiosResponse<
+        BackendResponse<GetIncomingDirectCallQueryResult>
+      > =
+        await apiClient.get<BackendResponse<GetIncomingDirectCallQueryResult>>(
+          `calls/direct`,
         );
 
       return {
@@ -23,32 +27,20 @@ export const directConversationService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<DirectConversationSummary>>;
+      const axiosError = error as AxiosError<
+        BackendResponse<GetIncomingDirectCallQueryResult>
+      >;
       return handleAxiosError(axiosError);
     }
   },
 
-  getIncomingCall: async (): Promise<ServiceResponse<GetIncomingDirectCallQueryResult>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<GetIncomingDirectCallQueryResult>> =
-        await apiClient.get<BackendResponse<GetIncomingDirectCallQueryResult>>(`calls/direct`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<GetIncomingDirectCallQueryResult>>;
-      return handleAxiosError(axiosError);
-    }
-  },
-
-  startDirectCall: async (peerId: string): Promise<ServiceResponse<StartCallResult>> => {
+  startDirectCall: async (
+    peerId: string,
+  ): Promise<ServiceResponse<StartCallResult>> => {
     try {
       const response: AxiosResponse<BackendResponse<StartCallResult>> =
         await apiClient.post<BackendResponse<StartCallResult>>(
-          `/calls/direct/${encodeURIComponent(peerId)}`
+          `/calls/direct/${encodeURIComponent(peerId)}`,
         );
 
       return {
@@ -62,11 +54,13 @@ export const directConversationService = {
     }
   },
 
-  cancelDirectCall: async (callId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  cancelDirectCall: async (
+    callId: string,
+  ): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/calls/${encodeURIComponent(callId)}/cancel`
+          `/calls/${encodeURIComponent(callId)}/cancel`,
         );
 
       return {
@@ -75,7 +69,9 @@ export const directConversationService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<TimelineMessageDto>>;
+      const axiosError = error as AxiosError<
+        BackendResponse<TimelineMessageDto>
+      >;
       return handleAxiosError(axiosError);
     }
   },
@@ -84,7 +80,7 @@ export const directConversationService = {
     try {
       const response: AxiosResponse<BackendResponse> =
         await apiClient.patch<BackendResponse>(
-          `/calls/${encodeURIComponent(callId)}/accept`
+          `/calls/${encodeURIComponent(callId)}/accept`,
         );
 
       return {
@@ -97,11 +93,13 @@ export const directConversationService = {
     }
   },
 
-  rejectDirectCall: async (callId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  rejectDirectCall: async (
+    callId: string,
+  ): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/calls/${encodeURIComponent(callId)}/reject`
+          `/calls/${encodeURIComponent(callId)}/reject`,
         );
 
       return {
@@ -110,16 +108,20 @@ export const directConversationService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<TimelineMessageDto>>;
+      const axiosError = error as AxiosError<
+        BackendResponse<TimelineMessageDto>
+      >;
       return handleAxiosError(axiosError);
     }
   },
 
-  endDirectCall: async (callId: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  endDirectCall: async (
+    callId: string,
+  ): Promise<ServiceResponse<TimelineMessageDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
         await apiClient.patch<BackendResponse<TimelineMessageDto>>(
-          `/calls/${encodeURIComponent(callId)}/end`
+          `/calls/${encodeURIComponent(callId)}/end`,
         );
 
       return {
@@ -128,8 +130,10 @@ export const directConversationService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse<TimelineMessageDto>>;
+      const axiosError = error as AxiosError<
+        BackendResponse<TimelineMessageDto>
+      >;
       return handleAxiosError(axiosError);
     }
   },
-}
+};

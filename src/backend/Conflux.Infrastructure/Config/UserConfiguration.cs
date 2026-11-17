@@ -5,14 +5,15 @@ namespace Conflux.Infrastructure.Config;
 
 public sealed class UserConfiguration : IEntityTypeConfiguration<ApplicationUser> {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder) {
-        builder.HasOne(u => u.Avatar)
-            .WithOne()
-            .HasForeignKey<ApplicationUser>(u => u.AvatarId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(u => u.Banner)
-            .WithOne()
-            .HasForeignKey<ApplicationUser>(u => u.BannerId)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.Property(u => u.DisplayName)
+            .HasMaxLength(48);
+        
+        builder.Property(u => u.Biography)
+            .HasMaxLength(255);
+        
+        builder.Property(u => u.Pronouns)
+            .HasMaxLength(32);
+        
+        builder.HasQueryFilter("IgnoreDeletedUsers", u => u.DeletedAt == null);
     }
 }

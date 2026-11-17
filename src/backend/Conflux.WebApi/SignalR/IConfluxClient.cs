@@ -12,43 +12,47 @@ public interface IConfluxClient {
     Task FriendRequestAccepted(FriendRequestAcceptedEvent data, CancellationToken cancellationToken = default);
     Task FriendRequestRejected(FriendRequestRejectedEvent data, CancellationToken cancellationToken = default);
     Task Unfriended(UnfriendedEvent data, CancellationToken cancellationToken = default);
-    
+
     Task MessageReceived(MessageReceivedEvent data, CancellationToken cancellationToken = default);
     Task MessageEdited(MessageEditedEvent data, CancellationToken cancellationToken = default);
     Task MessageDeleted(MessageDeletedEvent data, CancellationToken cancellationToken = default);
     Task MessagePinned(MessagePinnedEvent data, CancellationToken cancellationToken = default);
     Task MessageUnpinned(MessageUnpinnedEvent data, CancellationToken cancellationToken = default);
-    
+    Task MessageMentionReceived(MessageMentionReceivedData data, CancellationToken cancellationToken = default);
+
     Task DirectConversationUpdated(DirectConversationUpdatedEvent data, CancellationToken cancellationToken = default);
-    
+
     Task ServerRoleCreated(ServerRoleCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerDefaultRoleUpdated(ServerDefaultRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleUpdated(ServerRoleUpdatedEvent data, CancellationToken cancellationToken = default);
     Task ServerRoleDeleted(ServerRoleDeletedEvent data, CancellationToken cancellationToken = default);
-    
+
     Task ServerChannelCategoryCreated(ServerChannelCategoryCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerChannelCategoryDeleted(ServerChannelCategoryDeletedEvent data, CancellationToken cancellationToken = default);
-    
+
     Task ServerChannelCreated(ServerChannelCreatedEvent data, CancellationToken cancellationToken = default);
     Task ServerChannelDeleted(ServerChannelDeletedEvent data, CancellationToken cancellationToken = default);
-    
+
     Task MemberRolesUpdated(MemberRolesUpdatedEvent data, CancellationToken cancellationToken = default);
-    
+
     Task KickedFromServer(Guid serverId, CancellationToken cancellationToken = default);
     Task BannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
     Task UnbannedFromServer(Guid serverId, CancellationToken cancellationToken = default);
-    
+
+    Task JoinedServer(JoinedServerEvent data, CancellationToken cancellationToken = default);
+    Task LeftServer(LeftServerEvent data, CancellationToken cancellationToken = default);
+    Task UserJoinedServer(UserJoinedServerEvent data, CancellationToken cancellationToken = default);
+    Task UserLeftServer(UserLeftServerEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberKicked(ServerMemberKickedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberWarned(ServerMemberWarnedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberBanned(ServerMemberBannedEvent data, CancellationToken cancellationToken = default);
     Task ServerMemberUnbanned(ServerMemberUnbannedEvent data, CancellationToken cancellationToken = default);
-    Task JoinedServer(JoinedServerEvent data, CancellationToken cancellationToken = default);
     Task CreatedServer(CreatedServerEvent data, CancellationToken cancellationToken = default);
     Task EmojiCreated(EmojiCreatedEvent data, CancellationToken cancellationToken = default);
     Task EmojiDeleted(EmojiDeletedEvent data, CancellationToken cancellationToken = default);
 
     Task UpdateModerationLog(CancellationToken cancellationToken = default);
-    
+
     Task UserTyping(UserTypingEvent data, CancellationToken cancellationToken = default);
     Task PresenceUpdated(UserPresenceChangedEvent data, CancellationToken cancellationToken = default);
 
@@ -62,4 +66,7 @@ public interface IConfluxClient {
     Task ReceiveCallOffer(string userIdentifier, string sdp);
     Task ReceiveCallAnswer(string userIdentifier, string sdp);
     Task ReceiveIceCandidate(string userIdentifier, string sdp);
+
+    Task ReactionsCountsSynchronized(ReactionsCountsSynchronizedEvent data, CancellationToken cancellationToken = default);
+    Task ReactionsActionsSynchronized(ReactionsActionsSynchronizedEvent data, CancellationToken cancellationToken = default);
 }

@@ -1,24 +1,26 @@
-import {BsThreeDotsVertical} from "react-icons/bs";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import IconButton from "./IconButton.tsx";
-import {DropdownMenu} from "radix-ui";
-import type {ReactNode} from "react";
+import { DropdownMenu } from "radix-ui";
+import type { ReactNode } from "react";
 
 interface MoreActionsButtonProps {
   children: ReactNode;
 }
 
-export default function MoreActionsButton({children}: MoreActionsButtonProps) {
+export default function MoreActionsButton({
+  children,
+}: MoreActionsButtonProps) {
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
         <IconButton className="size-6" theme="default">
-          <BsThreeDotsVertical className="size-6"/>
+          <BsThreeDotsVertical className="size-6" />
         </IconButton>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          className="min-w-50 rounded-lg bg-gray-600 p-1.5 shadow-lg text-white"
+          className="min-w-50 rounded-lg bg-gray-600 p-1.5 text-white shadow-lg"
           sideOffset={5}
         >
           {children}

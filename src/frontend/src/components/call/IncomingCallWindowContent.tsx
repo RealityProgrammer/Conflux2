@@ -1,66 +1,77 @@
-import {type IncomingDirectCall, useCallStore} from "../../store/useCallStore.ts";
+import {
+  type IncomingDirectCall,
+  useCallStore,
+} from "../../store/useCallStore.ts";
 import CallWindowHeader from "./CallWindowHeader.tsx";
 import IconButton from "../IconButton.tsx";
-import {BsTelephoneInboundFill, BsTelephoneXFill} from "react-icons/bs";
-import {useEffect, useRef, useState} from "react";
-import {createTimeline} from "animejs";
+import { BsTelephoneInboundFill, BsTelephoneXFill } from "react-icons/bs";
+import { useEffect, useRef, useState } from "react";
+import { createTimeline } from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {DirectCallCanceledEvent} from "../../api/events.ts";
-import {useTimeout} from "usehooks-ts";
+import type { DirectCallCanceledEvent } from "../../api/events.ts";
+import { useTimeout } from "usehooks-ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
-import {useAuth} from "../../contexts/AuthContext.tsx";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
 import MediaFeed from "./MediaFeed.tsx";
 import CallControl from "./CallControl.tsx";
-import {toast} from "react-toastify";
-import type {ServiceResponse, TimelineMessageDto} from "../../api/types.ts";
-import {directConversationService} from "../../api/directConversationService.ts";
-import {useRouteLoaderData} from "react-router";
-import type {DirectMessagePageLoaderProps} from "../../router.tsx";
+import { toast } from "react-toastify";
+import type { ServiceResponse, TimelineMessageDto } from "../../api/types.ts";
+import { directConversationService } from "../../api/directConversationService.ts";
+import { useRouteLoaderData } from "react-router";
+import type { DirectMessagePageLoaderProps } from "../../router.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
-import {Avatar} from "../Avatar.tsx";
+import { Avatar } from "../Avatar.tsx";
 
-export default function IncomingCallWindowContent({call}: {call: IncomingDirectCall}) {
+export default function IncomingCallWindowContent({
+  call,
+}: {
+  call: IncomingDirectCall;
+}) {
   if (call.state === "dialing") {
-    return <IncomingPhase call={call}/>
+    return <IncomingPhase call={call} />;
   }
 
   if (call.state === "canceled") {
-    return <CanceledPhase call={call}/>
+    return <CanceledPhase call={call} />;
   }
 
   if (call.state === "dropped") {
-    return <DroppedPhase call={call}/>
+    return <DroppedPhase call={call} />;
   }
 
   if (call.state === "rejected") {
-    return <RejectedPhase call={call}/>
+    return <RejectedPhase call={call} />;
   }
 
   if (call.state === "active") {
-    return <ActivePhase call={call}/>
+    return <ActivePhase call={call} />;
   }
 
   if (call.state === "ended") {
-    return <EndedPhase call={call}/>
+    return <EndedPhase call={call} />;
   }
 
   return null;
 }
 
-function IncomingPhase({call}: {call: IncomingDirectCall}) {
+function IncomingPhase({ call }: { call: IncomingDirectCall }) {
   const updateCallState = useCallStore((state) => state.updateCallState);
 
   // TODO: not do this shit
-  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
+  const loaderData = useRouteLoaderData("dm") as
+    DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(
+    loaderData?.conversationId ?? "",
+  );
 
   const handleRejectCall = async () => {
-    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectDirectCall(call.id);
+    const response: ServiceResponse<TimelineMessageDto> =
+      await directConversationService.rejectDirectCall(call.id);
 
     if (response.success) {
-      updateCallState(call.id, "rejected")
+      updateCallState(call.id, "rejected");
       appendMessage(response.data!);
     } else {
       toast.error(`Failed to deny call.`);
@@ -69,7 +80,8 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
   };
 
   const handleAcceptCall = async () => {
-    const response: ServiceResponse = await directConversationService.acceptDirectCall(call.id);
+    const response: ServiceResponse =
+      await directConversationService.acceptDirectCall(call.id);
 
     if (response.success) {
       updateCallState(call.id, "active");
@@ -77,7 +89,7 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
       toast.error(`Failed to accept call.`);
       console.error("Failed to accept call:", response.error);
     }
-  }
+  };
 
   const callerAvatarRef = useRef<HTMLDivElement | null>(null);
   const rippleRef = useRef<HTMLDivElement | null>(null);
@@ -96,28 +108,40 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
       duration: 600,
     });
 
-    timeline.add(rippleRef.current, {
-      scale: 2,
-      borderWidth: "25px",
-      ease: "linear",
-      duration: 500,
-    }, 600);
+    timeline.add(
+      rippleRef.current,
+      {
+        scale: 2,
+        borderWidth: "25px",
+        ease: "linear",
+        duration: 500,
+      },
+      600,
+    );
 
-    timeline.add(rippleRef.current, {
-      opacity: 0,
-      ease: "linear",
-      duration: 400,
-    }, 700);
+    timeline.add(
+      rippleRef.current,
+      {
+        opacity: 0,
+        ease: "linear",
+        duration: 400,
+      },
+      700,
+    );
 
-    timeline.add(callerAvatarRef.current, {
-      scale: 1,
-      ease: "outQuart",
-      duration: 600,
-    }, 600);
+    timeline.add(
+      callerAvatarRef.current,
+      {
+        scale: 1,
+        ease: "outQuart",
+        duration: 600,
+      },
+      600,
+    );
 
     return () => {
       timeline.cancel();
-    }
+    };
   }, []);
 
   useSignalREvent("DirectCallCanceled", (event: DirectCallCanceledEvent) => {
@@ -128,40 +152,50 @@ function IncomingPhase({call}: {call: IncomingDirectCall}) {
 
   return (
     <>
-      <CallWindowHeader title={`Incoming call from ${call.callerProfile.displayName}`}/>
+      <CallWindowHeader
+        title={`Incoming call from ${call.callerProfile.displayName}`}
+      />
 
-      <section className="flex-1 bg-black flex flex-col justify-center items-center gap-2 @container-size relative overflow-hidden">
+      <section className="@container-size relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden bg-black">
         <Avatar.User
           ref={callerAvatarRef}
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
-          style={{ transform: "scale(1)"}}
+          className="aspect-square w-[min(25cqw,25cqh)] rounded-full"
+          style={{ transform: "scale(1)" }}
         />
         <div
           ref={rippleRef}
-          className="absolute size-64 bg-none border-white/45 rounded-full"
+          className="absolute size-64 rounded-full border-white/45 bg-none"
           style={{ transform: "scale(0)", opacity: 1, borderWidth: 0 }}
         ></div>
 
         <p className="text-sm select-none">{call.callerProfile.displayName}</p>
 
-        <div className="absolute bottom-2 flex flex-row gap-4 p-2 bg-gray-650 border-2 border-gray-600 rounded-lg">
-          <IconButton className="size-8" theme="danger" onClick={handleRejectCall}>
-            <BsTelephoneXFill className="size-7"/>
+        <div className="bg-gray-650 absolute bottom-2 flex flex-row gap-4 rounded-lg border-2 border-gray-600 p-2">
+          <IconButton
+            className="size-8"
+            theme="danger"
+            onClick={handleRejectCall}
+          >
+            <BsTelephoneXFill className="size-7" />
           </IconButton>
 
-          <IconButton className="size-8" theme="success" onClick={handleAcceptCall}>
-            <BsTelephoneInboundFill className="size-7"/>
+          <IconButton
+            className="size-8"
+            theme="success"
+            onClick={handleAcceptCall}
+          >
+            <BsTelephoneInboundFill className="size-7" />
           </IconButton>
         </div>
       </section>
     </>
-  )
+  );
 }
 
-function CanceledPhase({call}: {call: IncomingDirectCall}) {
+function CanceledPhase({ call }: { call: IncomingDirectCall }) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
@@ -170,21 +204,21 @@ function CanceledPhase({call}: {call: IncomingDirectCall}) {
 
   return (
     <>
-      <CallWindowHeader title="Call canceled"/>
+      <CallWindowHeader title="Call canceled" />
 
-      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+      <div className="@container-size flex flex-1 flex-col items-center justify-center bg-black">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version} 
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
+          className="aspect-square w-[min(25cqw,25cqh)] rounded-full"
         />
       </div>
     </>
-  )
+  );
 }
 
-function RejectedPhase({call}: {call: IncomingDirectCall}) {
+function RejectedPhase({ call }: { call: IncomingDirectCall }) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
@@ -193,21 +227,21 @@ function RejectedPhase({call}: {call: IncomingDirectCall}) {
 
   return (
     <>
-      <CallWindowHeader title="Call rejected"/>
+      <CallWindowHeader title="Call rejected" />
 
-      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+      <div className="@container-size flex flex-1 flex-col items-center justify-center bg-black">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
+          className="aspect-square w-[min(25cqw,25cqh)] rounded-full"
         />
       </div>
     </>
-  )
+  );
 }
 
-function DroppedPhase({call}: {call: IncomingDirectCall}) {
+function DroppedPhase({ call }: { call: IncomingDirectCall }) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
@@ -216,27 +250,30 @@ function DroppedPhase({call}: {call: IncomingDirectCall}) {
 
   return (
     <>
-      <CallWindowHeader title="Call dropped"/>
+      <CallWindowHeader title="Call dropped" />
 
-      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+      <div className="@container-size flex flex-1 flex-col items-center justify-center bg-black">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
+          className="aspect-square w-[min(25cqw,25cqh)] rounded-full"
         />
       </div>
     </>
-  )
+  );
 }
 
-function ActivePhase({call}: {call: IncomingDirectCall}) {
+function ActivePhase({ call }: { call: IncomingDirectCall }) {
   const { userProfile } = useAuth();
   const updateCallState = useCallStore((state) => state.updateCallState);
   const [isEndingCall, setIsEndingCall] = useState(false);
 
-  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
+  const loaderData = useRouteLoaderData("dm") as
+    DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(
+    loaderData?.conversationId ?? "",
+  );
 
   const {
     stream,
@@ -254,12 +291,16 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     audioOutputDevices,
   } = useUserMedia({});
 
-  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] = useState<string | undefined>();
+  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] =
+    useState<string | undefined>();
 
   useEffect(() => {
     if (!selectedAudioDeviceOutputId && audioOutputDevices.length > 0) {
-      const defaultDevice = audioOutputDevices.find(d => d.deviceId === "default");
-      const initialId = defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
+      const defaultDevice = audioOutputDevices.find(
+        (d) => d.deviceId === "default",
+      );
+      const initialId =
+        defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
 
       setSelectedAudioDeviceOutputId(initialId);
     }
@@ -273,12 +314,16 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
     isVideoDisabled,
   });
   const remoteStream = remoteStreams[callerId];
-  const remoteState = remoteMediaStates[callerId] || { videoDisabled: false, audioMuted: false };
+  const remoteState = remoteMediaStates[callerId] || {
+    videoDisabled: false,
+    audioMuted: false,
+  };
 
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(call.id);
+    const response: ServiceResponse<TimelineMessageDto> =
+      await directConversationService.endDirectCall(call.id);
 
     if (response.success) {
       updateCallState(call.id, "ended");
@@ -292,19 +337,21 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
 
   return (
     <>
-      <CallWindowHeader title={`On call with ${call.callerProfile!.displayName}`}/>
+      <CallWindowHeader
+        title={`On call with ${call.callerProfile!.displayName}`}
+      />
 
-      <div className="flex-1 bg-black @container-size relative flex flex-col justify-center items-center">
+      <div className="@container-size relative flex flex-1 flex-col items-center justify-center bg-black">
         {/*Local video */}
-        <div className="z-10 absolute top-2 left-2 w-48 aspect-video ring-2 ring-gray-600 rounded-lg bg-gray-900 overflow-hidden flex flex-col justify-center items-center">
+        <div className="absolute top-2 left-2 z-10 flex aspect-video w-48 flex-col items-center justify-center overflow-hidden rounded-lg bg-gray-900 ring-2 ring-gray-600">
           {isAcquiringMedia ? (
-            <Spinner className="size-8 fill-white"/>
+            <Spinner className="size-8 fill-white" />
           ) : (
             <MediaFeed
               stream={stream}
               isLocal
               peerId={userProfile?.id}
-              peerAvatarVersion={userProfile?.avatar?.version}
+              peerAvatarVersion={userProfile?.avatarVersion}
               isVideoEnabled={!isVideoDisabled}
             />
           )}
@@ -314,9 +361,9 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
         <MediaFeed
           stream={remoteStream}
           peerId={callerId}
-          peerAvatarVersion={call.callerProfile.avatar?.version}
+          peerAvatarVersion={call.callerProfile.avatarVersion}
           displayName={call.callerProfile.displayName ?? "???"}
-          className="object-contain size-full"
+          className="size-full object-contain"
           audioOutputDeviceId={selectedAudioDeviceOutputId}
           isVideoEnabled={!remoteState.videoDisabled}
           isAudioEnabled={!remoteState.audioMuted}
@@ -344,7 +391,7 @@ function ActivePhase({call}: {call: IncomingDirectCall}) {
   );
 }
 
-function EndedPhase({call}: {call: IncomingDirectCall}) {
+function EndedPhase({ call }: { call: IncomingDirectCall }) {
   const endCall = useCallStore((state) => state.endCall);
 
   useTimeout(() => {
@@ -353,16 +400,16 @@ function EndedPhase({call}: {call: IncomingDirectCall}) {
 
   return (
     <>
-      <CallWindowHeader title="Call ended"/>
+      <CallWindowHeader title="Call ended" />
 
-      <div className="flex-1 bg-black @container-size flex flex-col justify-center items-center">
+      <div className="@container-size flex flex-1 flex-col items-center justify-center bg-black">
         <Avatar.User
           userId={call.callerProfile.id}
-          version={call.callerProfile.avatar?.version}
+          version={call.callerProfile.avatarVersion}
           alt="Caller avatar"
-          className="w-[min(25cqw,25cqh)] aspect-square rounded-full"
+          className="aspect-square w-[min(25cqw,25cqh)] rounded-full"
         />
       </div>
     </>
-  )
+  );
 }

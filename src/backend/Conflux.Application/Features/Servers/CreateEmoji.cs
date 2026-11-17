@@ -1,10 +1,13 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using Humanizer;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Conflux.Application.Features.Servers;
@@ -12,35 +15,36 @@ namespace Conflux.Application.Features.Servers;
 public sealed record CreateEmojiCommand(
     Guid ServerId,
     string ShortCode,
-    Stream ImageStream
+    Stream Image
 ) : ICommand<Result<EmojiDto>>, IServerCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [ServerPermission.ManageEmojis, ServerPermission.CreateEmoji];
 }
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 public sealed partial class CreateEmojiCommandValidator : AbstractValidator<CreateEmojiCommand> {
-    private static readonly long MaxFileSizeInBytes = (long)256.Kilobytes().Bytes;
-    
-    public CreateEmojiCommandValidator() {
+    public CreateEmojiCommandValidator(IOptions<MediaOptions> mediaOptions) {
+        var options = mediaOptions.Value;
+        
         RuleFor(command => command.ShortCode)
             .NotNull()
             .NotEmpty()
-            .WithMessage("ShortCode is required.")
+            .WithMessage(ValidationMessages.PropertyRequired)
             .Matches(ShortCodeRegex())
-            .WithMessage("ShortCode can only contain letters, numbers, dashes, and underscores.")
+            .WithMessage("{PropertyName} can only contain letters, numbers, dashes, and underscores.")
             .MaximumLength(48)
-            .WithMessage("ShortCode cannot exceed {MaxLength} characters.");
+            .WithMessage(ValidationMessages.StringMaxLength);
 
-        RuleFor(command => command.ImageStream)
+        RuleFor(command => command.Image)
             .NotNull()
-            .WithMessage("Emoji image stream is required.")
+            .WithMessage(ValidationMessages.PropertyRequired)
             .Must(stream => {
                 if (stream.CanSeek) {
-                    return stream.Length <= MaxFileSizeInBytes;
+                    return stream.Length <= options.MaxEmojiSize;
                 }
 
                 return true;
             })
-            .WithMessage("Emoji image stream cannot exceed 256KB.");
+            .WithMessage($"{{PropertyName}} cannot exceed {options.MaxEmojiSize.Bytes().Kilobytes}KB.");
     }
     
     [GeneratedRegex(@"^[\w\-]+$", RegexOptions.None | RegexOptions.ECMAScript, matchTimeoutMilliseconds: 1000)]
@@ -52,12 +56,11 @@ public sealed record EmojiCreatedNotification(Guid ServerId, EmojiDto Emoji) : I
 public sealed partial class CreateEmojiHandler(
     ICurrentUserService currentUserService,
     IPublisher publisher,
-    IEmojiWriteRepository emojiWriteRepository,
-    ICommunityServerReadRepository communityServerReadRepository,
-    IEmojiReadRepository emojiReadRepository,
+    IEmojiRepository emojiRepository,
+    ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
     IEmojiMediaService mediaService,
-    IServerEmojiCacheProvider cacheProvider,
+    IServerEmojiCacheService cacheService,
     ILogger<CreateEmojiHandler> logger
 ) : ICommandHandler<CreateEmojiCommand, Result<EmojiDto>> {
     private const int MaxEmojiCount = 50;
@@ -69,13 +72,13 @@ public sealed partial class CreateEmojiHandler(
         
         Guid serverId = command.ServerId;
 
-        if (!await communityServerReadRepository.Exists(serverId, cancellationToken)) {
+        if (!await communityServerRepository.Exists(serverId, cancellationToken)) {
             return Errors.ResourceNotFound("Community Server", [
                 new(nameof(CommunityServer.Id), serverId.ToString()),
             ]);
         }
         
-        int emojiCount = await emojiReadRepository.CountByServerId(serverId, cancellationToken);
+        int emojiCount = await emojiRepository.CountByServerId(serverId, cancellationToken);
         if (emojiCount >= MaxEmojiCount) {
             return Errors.ServerEmojiLimit();
         }
@@ -86,7 +89,7 @@ public sealed partial class CreateEmojiHandler(
             CreatorId = userId,
         };
         
-        emojiWriteRepository.Add(emoji);
+        emojiRepository.Add(emoji);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -101,7 +104,7 @@ public sealed partial class CreateEmojiHandler(
         // upload the avatar picture
         Result uploadResult;
         try {
-            uploadResult = await mediaService.Upload(emoji.Id, command.ImageStream, cancellationToken);
+            uploadResult = await mediaService.Upload(emoji.Id, command.Image, cancellationToken);
         } catch (OperationCanceledException) {
             await RollbackDatabase();
             throw;
@@ -114,10 +117,10 @@ public sealed partial class CreateEmojiHandler(
 
         if (!uploadResult.IsSuccess) {
             await RollbackDatabase();
-            return Errors.OperationFailure("create emoji");
+            return uploadResult.Error;
         }
         
-        await cacheProvider.Remove(serverId);
+        await cacheService.Remove(serverId);
 
         EmojiDto dto = new(emoji);
         await publisher.Publish(new EmojiCreatedNotification(serverId, dto), CancellationToken.None);
@@ -125,7 +128,7 @@ public sealed partial class CreateEmojiHandler(
         return Result<EmojiDto>.Success(dto);
 
         async Task RollbackDatabase() {
-            emojiWriteRepository.Remove(emoji);
+            emojiRepository.Remove(emoji);
             
             try {
                 await unitOfWork.SaveChangesAsync(CancellationToken.None);

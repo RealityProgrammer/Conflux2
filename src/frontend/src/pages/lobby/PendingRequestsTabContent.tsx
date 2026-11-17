@@ -1,103 +1,113 @@
-import {DropdownMenu} from "radix-ui";
-import {type InfiniteData, useQueryClient} from "@tanstack/react-query";
-import {type ServiceResponse} from "../../api/types.ts";
-import {UserNameplate} from "../../components/UserNameplate.tsx";
+import { DropdownMenu } from "radix-ui";
+import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
+import { UserNameplate } from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
 import type {
   FriendRequestAcceptedEvent,
   FriendRequestCanceledEvent,
   FriendRequestReceivedEvent,
-  FriendRequestRejectedEvent
+  FriendRequestRejectedEvent,
 } from "../../api/events.ts";
-import useFriendActions from "../../hooks/useFriendActions.ts";
-import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
+import { FriendActionButtons } from "../../components/FriendActionButtons.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
 import {
   type GetPendingFriendRequestsQuery,
-  useInfiniteGetPendingFriendRequestsQuery
+  useInfiniteGetPendingFriendRequestsQuery,
 } from "../../graphql/infiniteQueries.ts";
-import {useAuth} from "../../contexts/AuthContext.tsx";
+import { useAuth } from "../../contexts/AuthContext.tsx";
+import { toast } from "react-toastify";
 
 export default function PendingRequestsTabContent() {
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    fetchNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteGetPendingFriendRequestsQuery(
-    { after: null },
-    {
-      initialPageParam: { after: null },
-      getNextPageParam: (lastPage: GetPendingFriendRequestsQuery) => {
-        const pageInfo = lastPage?.friendRequests?.pageInfo;
+  const { data, fetchNextPage, isFetchingNextPage, hasNextPage, isLoading } =
+    useInfiniteGetPendingFriendRequestsQuery(
+      { after: null },
+      {
+        initialPageParam: { after: null },
+        getNextPageParam: (lastPage: GetPendingFriendRequestsQuery) => {
+          const pageInfo = lastPage?.friendRequests?.pageInfo;
 
-        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-          return { after: pageInfo.endCursor };
-        }
+          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+            return { after: pageInfo.endCursor };
+          }
 
-        return undefined;
+          return undefined;
+        },
       },
-    }
-  )
+    );
 
-  const allElements = data?.pages.flatMap((page) => page?.friendRequests.nodes ?? []) ?? [];
+  const allElements =
+    data?.pages.flatMap((page) => page?.friendRequests.nodes ?? []) ?? [];
 
-  const removeCacheElement = (otherUserId: string) => {
+  const removeCacheElement = (requestId: string) => {
     queryClient.setQueryData<InfiniteData<GetPendingFriendRequestsQuery>>(
-      useInfiniteGetPendingFriendRequestsQuery.getKey({after: null}),
+      useInfiniteGetPendingFriendRequestsQuery.getKey({ after: null }),
       (oldData) => {
         if (!oldData || oldData.pages.length === 0) return oldData;
 
-        const elementExists = oldData.pages.some(page =>
-          page?.friendRequests.nodes!.some(element => element.otherUser!.id === otherUserId)
+        const elementExists = oldData.pages.some((page) =>
+          page?.friendRequests.nodes!.some(
+            (element) => element.id === requestId,
+          ),
         );
 
         if (!elementExists) return oldData;
-        
+
         return {
           ...oldData,
           pages: oldData.pages.map((page) => ({
             ...page,
             friendRequests: {
               ...page.friendRequests,
-              nodes: page.friendRequests.nodes ?
-                page.friendRequests.nodes.filter(n => n.otherUser!.id !== otherUserId) :
-                page.friendRequests.nodes,
-            }
+              nodes: page.friendRequests.nodes
+                ? page.friendRequests.nodes.filter((n) => n.id !== requestId)
+                : page.friendRequests.nodes,
+            },
           })),
         };
-      }
+      },
     );
   };
 
-  useSignalREvent("FriendRequestReceived", async (_event: FriendRequestReceivedEvent) => {
-    queryClient.invalidateQueries({
-      queryKey: useInfiniteGetPendingFriendRequestsQuery.getKey({}),
-    });
-  });
+  useSignalREvent(
+    "FriendRequestReceived",
+    async (_event: FriendRequestReceivedEvent) => {
+      queryClient.invalidateQueries({
+        queryKey: useInfiniteGetPendingFriendRequestsQuery.getKey({}),
+      });
+    },
+  );
 
-  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
-    removeCacheElement(event.rejecterUserId);
-  });
+  useSignalREvent(
+    "FriendRequestRejected",
+    (event: FriendRequestRejectedEvent) => {
+      removeCacheElement(event.requestId);
+    },
+  );
 
-  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
-    removeCacheElement(event.acceptorUserId);
-  });
+  useSignalREvent(
+    "FriendRequestAccepted",
+    (event: FriendRequestAcceptedEvent) => {
+      removeCacheElement(event.requestId);
+    },
+  );
 
-  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
-    removeCacheElement(event.senderUserId);
-  });
+  useSignalREvent(
+    "FriendRequestCanceled",
+    (event: FriendRequestCanceledEvent) => {
+      removeCacheElement(event.requestId);
+    },
+  );
 
   return (
-    <div className="flex flex-col gap-2 h-full">
-      <div className="flex-1 overflow-hidden border-2 border-gray-600 rounded-md">
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex-1 overflow-hidden rounded-md border-2 border-gray-600">
         {isLoading ? (
           <>
-            {Array.from({length: 20}).map((_, index) => (
-              <UserNameplate.Skeleton key={index} className="p-1.5"/>
+            {Array.from({ length: 20 }).map((_, index) => (
+              <UserNameplate.Skeleton key={index} className="p-1.5" />
             ))}
           </>
         ) : (
@@ -105,15 +115,22 @@ export default function PendingRequestsTabContent() {
             totalCount={allElements.length}
             computeItemKey={(index) => allElements[index].id}
             atBottomThreshold={120}
-            endReached={() => fetchNextPage()}
+            endReached={() => {
+              if (hasNextPage && !isFetchingNextPage && !isLoading) {
+                fetchNextPage();
+              }
+            }}
             overscan={10}
             renderItem={(index) => {
               return (
-                <Row element={allElements[index]} removeCacheElement={removeCacheElement}/>
+                <Row
+                  element={allElements[index]}
+                  removeCacheElement={removeCacheElement}
+                />
               );
             }}
             renderEmpty={() => (
-              <div className="size-full flex flex-row justify-center items-center text-gray-500">
+              <div className="flex size-full flex-row items-center justify-center text-gray-500">
                 <span className="select-none">There is nothing here...</span>
               </div>
             )}
@@ -126,133 +143,81 @@ export default function PendingRequestsTabContent() {
 }
 
 interface RowProps {
-  element: NonNullable<GetPendingFriendRequestsQuery["friendRequests"]["nodes"]>[number];
+  element: NonNullable<
+    GetPendingFriendRequestsQuery["friendRequests"]["nodes"]
+  >[number];
   removeCacheElement: (userId: string) => void;
 }
 
-function Row({
-  element, 
-  removeCacheElement
-}: RowProps) {
-  const {mutation, activeAction} = useFriendActions(element.otherUser!.id);
+function Row({ element, removeCacheElement }: RowProps) {
   const { userProfile } = useAuth();
-
-  const handleAccept = () => {
-    mutation.mutate('accept', {
-      onSuccess: (response: ServiceResponse) => {
-        if (response.success) {
-          removeCacheElement(element.otherUser!.id);
-        }
-      },
-    });
-  }
-
-  const handleReject = () => {
-    mutation.mutate('reject', {
-      onSuccess: (response: ServiceResponse) => {
-        if (response.success) {
-          removeCacheElement(element.otherUser!.id);
-        }
-      },
-    });
-  }
-
-  const handleCancel = () => {
-    mutation.mutate('cancel', {
-      onSuccess: (response: ServiceResponse) => {
-        if (response.success) {
-          removeCacheElement(element.id);
-        }
-      },
-    });
-  }
 
   return (
     <UserNameplate.Root
       userId={element.otherUser!.id}
-      avatarVersion={element.otherUser?.avatar?.version}
+      avatarVersion={element.otherUser?.avatarVersion}
       userName={element.otherUser!.userName!}
       displayName={element.otherUser!.displayName!}
-      className="w-full p-1.5 hover-highlight"
+      className="hover-highlight w-full p-1.5"
     >
       {userProfile!.id === element.senderUserId ? (
         <>
           <FriendActionButtons.Cancel
-            isExecuting={!!activeAction}
+            requestId={element.id}
             className="size-6"
-            onClick={handleCancel}/>
+            onSuccess={() => {
+              removeCacheElement(element.id);
+            }}
+            onError={() => {
+              toast.error("Failed to cancel friend request.");
+            }}
+          />
 
-          <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
+          <DropdownMenu.Separator className="horizontal-separator my-1.5" />
         </>
       ) : (
         <>
           <FriendActionButtons.Reject
-            isExecuting={!!activeAction}
+            requestId={element.id}
             className="size-6"
-            onClick={handleReject}/>
+            onSuccess={() => {
+              removeCacheElement(element.id);
+            }}
+            onError={() => {
+              toast.error("Failed to reject friend request.");
+            }}
+          />
 
           <FriendActionButtons.Accept
-            isExecuting={!!activeAction}
+            requestId={element.id}
             className="size-6"
-            onClick={handleAccept}/>
+            onSuccess={() => {
+              removeCacheElement(element.id);
+            }}
+            onError={() => {
+              toast.error("Failed to accept friend request.");
+            }}
+          />
 
-          <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
+          <DropdownMenu.Separator className="horizontal-separator my-1.5" />
         </>
       )}
 
       <MoreActionsButton>
-        <DropdownMenu.Item className="dropdown-item-default">
+        <DropdownMenu.Item disabled className="dropdown-item-default">
           Visit Profile
         </DropdownMenu.Item>
 
-        <DropdownMenu.Item className="dropdown-item-default">
-          Direct Message
-        </DropdownMenu.Item>
+        <DropdownMenu.Separator className="horizontal-separator my-1.5" />
 
-        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
-
-        {userProfile!.id === element.senderUserId ? (
-          <>
-            <DropdownMenu.Item
-              className="dropdown-item-danger"
-              disabled={!!activeAction}
-              onSelect={handleCancel}
-            >
-              Cancel Request
-            </DropdownMenu.Item>
-
-            <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
-          </>
-        ) : (
-          <>
-            <DropdownMenu.Item
-              className="dropdown-item-default"
-              disabled={!!activeAction}
-              onSelect={handleReject}
-            >
-              Reject Request
-            </DropdownMenu.Item>
-
-            <DropdownMenu.Item 
-              className="dropdown-item-default"
-              disabled={!!activeAction}
-              onSelect={handleReject}
-            >
-              Accept Request
-            </DropdownMenu.Item>
-
-            <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
-          </>
-        )}
-
-        <DropdownMenu.Item className="dropdown-item-danger">
+        <DropdownMenu.Item disabled className="dropdown-item-danger">
           Block
         </DropdownMenu.Item>
 
-        <DropdownMenu.Item className="dropdown-item-danger">
+        <DropdownMenu.Item disabled className="dropdown-item-danger">
           Report User
         </DropdownMenu.Item>
       </MoreActionsButton>
     </UserNameplate.Root>
-  )
+  );
 }

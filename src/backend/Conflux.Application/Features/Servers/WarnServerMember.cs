@@ -10,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record WarnServerMemberCommand(
     Guid ServerId,
-    Guid InteractingMemberId,
+    Guid InteractMemberUserId,
     string? Reason
 ) : ICommand<Result>, IServerMemberInteractCommand {
     public IEnumerable<ServerPermission> RequiredPermissions => [
@@ -23,9 +23,8 @@ public sealed record WarnServerMemberCommand(
 public sealed class WarnServerMemberCommandValidator : AbstractValidator<WarnServerMemberCommand> {
     public WarnServerMemberCommandValidator() {
         RuleFor(c => c.Reason)
-            .Length(256)
-            .When(c => !string.IsNullOrEmpty(c.Reason))
-            .WithMessage("Reason cannot exceed 256 characters.");
+            .MaximumLength(256)
+            .WithMessage(ValidationMessages.StringMaxLength);
     }
 }
 
@@ -37,8 +36,8 @@ public sealed record ServerMemberWarnedNotification(
 
 public sealed class WarnServerMemberHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository memberReadRepository,
-    IServerModerationLogWriteRepository moderationLogWriteRepository,
+    IServerMemberRepository memberRepository,
+    IServerModerationLogRepository moderationLogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<WarnServerMemberCommand> logger
@@ -46,9 +45,9 @@ public sealed class WarnServerMemberHandler(
     public async ValueTask<Result> Handle(WarnServerMemberCommand command, CancellationToken cancellationToken) {
         Guid executorUserId = currentUserService.UserId!.Value;
         Guid serverId = command.ServerId;
-        Guid interactingMemberId = command.InteractingMemberId;
+        Guid interactMemberUserId = command.InteractMemberUserId;
         
-        var executorMemberId = memberReadRepository.AsQueryable()
+        var executorMemberId = memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == executorUserId)
             .Select(m => m.Id)
@@ -62,15 +61,15 @@ public sealed class WarnServerMemberHandler(
             ]);
         }
         
-        CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
+        CommunityServerMember? affectedMember = await memberRepository.AsQueryable()
+            .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
             return Errors.ResourceNotFound("Server member", [
                 new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
-                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactMemberUserId.ToString()),
             ]);
         }
         
@@ -87,7 +86,7 @@ public sealed class WarnServerMemberHandler(
                 AffectedMember = affectedMember,
             };
             
-            moderationLogWriteRepository.Add(log);
+            moderationLogRepository.Add(log);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await mediator.Publish(new ServerMemberWarnedNotification(command.ServerId, affectedMember.UserId, affectedMember.Id), CancellationToken.None);
             

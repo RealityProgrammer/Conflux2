@@ -6,7 +6,7 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class MediaItemRepository(
     ApplicationDbContext context
-) : IMediaItemReadRepository, IMediaItemWriteRepository {
+) : IMediaItemRepository {
     public IQueryable<MediaItem> AsQueryable() {
         return context.MediaItems;
     }

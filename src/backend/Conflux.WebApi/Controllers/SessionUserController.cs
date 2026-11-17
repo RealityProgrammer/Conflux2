@@ -1,27 +1,19 @@
 using Conflux.Application.Dto;
-using Conflux.Application.Features.Friends;
 using Conflux.Application.Features.Identity;
 using Conflux.Application.Features.Users;
-using Conflux.Application.Options;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
 using Conflux.Domain.Enums;
-using Conflux.WebApi.Attributes;
 using Conflux.WebApi.Dto;
-using Humanizer;
 using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
-[ApiController]
-[Route("api/users/me")]
-[Authorize]
+[ApiController, Route("api/users/me"), Authorize]
 public sealed class SessionUserController(
     ISender sender
 ) : ControllerBase {
@@ -41,7 +33,7 @@ public sealed class SessionUserController(
             default,
             default,
             default,
-            new(avatarStream, true),
+            new(avatarStream),
             default
         ));
 
@@ -53,28 +45,6 @@ public sealed class SessionUserController(
             nameof(Errors.NoUserFoundFromId) => BadRequest(new ApiResponse(result.Error)),
             nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
             _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error)),
-        };
-    }
-    
-    [HttpDelete("avatar")]
-    public async Task<ActionResult<ApiResponse>> DeleteAvatar() {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await sender.Send(new DeleteUserAvatarCommand(userId));
-        
-        if (result.IsSuccess) {
-            return NoContent();
-        }
-
-        return result.Error.Code switch {
-            nameof(Errors.ResourceNotFound) => NoContent(),
-            nameof(Errors.NoUserFoundFromId) => BadRequest(result.Error),
-            nameof(Errors.InvalidIdentifier) => Unauthorized(new ApiResponse(result.Error)),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse(result.Error))
         };
     }
     
@@ -124,15 +94,15 @@ public sealed class SessionUserController(
         await using var avatarStream = request.Avatar.Type == FileOperationType.Set ? request.Avatar.File!.OpenReadStream() : Stream.Null;
         await using var bannerStream = request.Banner.Type == FileOperationType.Set ? request.Banner.File!.OpenReadStream() : Stream.Null;
 
-        PatchField<Stream?> avatarField = request.Avatar.Type switch {
-            FileOperationType.Delete => new(null, true),
-            FileOperationType.Set => new(avatarStream, true),
+        Facet.Optional<Stream?> avatarField = request.Avatar.Type switch {
+            FileOperationType.Delete => new(null),
+            FileOperationType.Set => new(avatarStream),
             _ => default,
         };
         
-        PatchField<Stream?> bannerField = request.Banner.Type switch {
-            FileOperationType.Delete => new(null, true),
-            FileOperationType.Set => new(bannerStream, true),
+        Facet.Optional<Stream?> bannerField = request.Banner.Type switch {
+            FileOperationType.Delete => new(null),
+            FileOperationType.Set => new(bannerStream),
             _ => default,
         };
         
@@ -193,77 +163,15 @@ public sealed class SessionUserController(
         [Required(ErrorMessage = "Display name is required."), StringLength(48, MinimumLength = 8, ErrorMessage = "Display name must be between 8 and 48 characters.")]
         string DisplayName
     );
-    
-    public sealed record UploadAvatarRequest(IFormFile File) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
-            if (File == null!) {
-                yield return new("Avatar file is required.", [ nameof(File) ]);
-            } else {
-                var options = context.GetRequiredService<IOptions<MediaOptions>>().Value;
-                
-                if (File.Length > options.MaxAvatarSize) {
-                    yield return new($"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", [ nameof(File) ]);
-                }
-            }
-        }
-    }
+
+    public sealed record UploadAvatarRequest(IFormFile File);
 
     public sealed record UpdateProfileRequest(
-        PatchField<string> DisplayName,
-        PatchField<string> Pronouns,
-        PatchField<string> Biography,
-        PatchField<PresenceStatus> ManualPresenceStatus,
+        Facet.Optional<string> DisplayName,
+        Facet.Optional<string> Pronouns,
+        Facet.Optional<string> Biography,
+        Facet.Optional<PresenceStatus> ManualPresenceStatus,
         AvatarOperationInput Avatar,
         AvatarOperationInput Banner
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-            List<ValidationResult> results = [];
-            
-            if (DisplayName.IsSet) {
-                string displayName = DisplayName.Value;
-
-                if (string.IsNullOrEmpty(displayName)) {
-                    results.Add(new("Display name is not empty or nullable.", [nameof(DisplayName)]));
-                } else if (displayName.Length > 32) {
-                    results.Add(new("Display name can only have maximum length of 32 characters.", [nameof(DisplayName)]));
-                }
-            }
-
-            if (Pronouns is { IsSet: true, Value.Length: > 32 }) {
-                results.Add(new("Pronouns can only have maximum length of 32 characters.", [nameof(Pronouns)]));
-            }
-            
-            if (Biography is { IsSet: true, Value.Length: > 255 }) {
-                results.Add(new("Biography can only have maximum length of 255 characters.", [nameof(Biography)]));
-            }
-
-            if (ManualPresenceStatus.IsSet && !Enum.IsDefined(ManualPresenceStatus.Value)) {
-                results.Add(new("Undefined PresenceStatus value.", [nameof(ManualPresenceStatus)]));
-            }
-
-            var options = validationContext.GetRequiredService<IOptions<MediaOptions>>().Value;
-
-            if (Avatar.Type == FileOperationType.Set) {
-                if (Avatar.File is { } avatarFile) {
-                    if (avatarFile.Length > options.MaxAvatarSize) {
-                        results.Add(new($"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", [nameof(Avatar)]));
-                    }
-                } else {
-                    results.Add(new("Avatar is required for Set operation.", [nameof(Avatar)]));
-                }
-            }
-
-            if (Banner.Type == FileOperationType.Set) {
-                if (Banner.File is { } avatarFile) {
-                    if (avatarFile.Length > options.MaxBannerSize) {
-                        results.Add(new($"Banner must be smaller than {options.MaxBannerSize.Bytes():MB}.", [nameof(Banner)]));
-                    }
-                } else {
-                    results.Add(new("Banner is required for Set operation.", [nameof(Banner)]));
-                }
-            }
-
-            return results;
-        }
-    }
+    );
 }

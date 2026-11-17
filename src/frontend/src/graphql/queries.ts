@@ -1,12 +1,21 @@
 /** Internal type. DO NOT USE DIRECTLY. */
 type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** Internal type. DO NOT USE DIRECTLY. */
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
-import { graphqlFetcher } from '../api/client';
-import type * as Types from './types';
+export type Incremental<T> =
+  | T
+  | {
+      [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never;
+    };
+import { graphqlFetcher } from "../api/client";
+import type * as Types from "./types";
 
-import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
-import { useMutation, useQuery, type UseMutationOptions, type UseQueryOptions } from '@tanstack/react-query';
+import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+import {
+  useMutation,
+  useQuery,
+  type UseMutationOptions,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
 export type BanServerMemberMutationVariables = Exact<{
   serverId: string;
   memberId: string;
@@ -14,58 +23,139 @@ export type BanServerMemberMutationVariables = Exact<{
   duration?: string | null | undefined;
 }>;
 
-
-export type BanServerMemberMutation = { banCommunityServerMember: { memberId: string } };
+export type BanServerMemberMutation = {
+  banCommunityServerMember: { memberId: string };
+};
 
 export type GetEmojiDetailsQueryVariables = Exact<{
   id: string;
 }>;
 
-
-export type GetEmojiDetailsQuery = { emoji: { shortCode: string, server: { id: string, name: string, description: string | null, numMembers: number, avatar: { version: number } | null } } | null };
+export type GetEmojiDetailsQuery = {
+  emoji: {
+    shortCode: string;
+    server: {
+      id: string;
+      name: string;
+      description: string | null;
+      avatarVersion: number | null;
+      numMembers: number;
+    };
+  } | null;
+};
 
 export type GetInvitationSummaryQueryVariables = Exact<{
   id: string;
 }>;
 
+export type GetInvitationSummaryQuery = {
+  invitation: {
+    status: Types.InvitationStatus;
+    communityServer: {
+      id: string;
+      name: string;
+      avatarVersion: number | null;
+      numMembers: number;
+    } | null;
+  } | null;
+};
 
-export type GetInvitationSummaryQuery = { invitation: { status: Types.InvitationStatus, communityServer: { id: string, name: string, numMembers: number, avatar: { version: number } | null } | null } | null };
+export type GetSessionUserAccountInfoQueryVariables = Exact<{
+  [key: string]: never;
+}>;
 
-export type GetSessionUserAccountInfoQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetSessionUserAccountInfoQuery = {
+  sessionUser: { email: string | null; phoneNumber: string | null } | null;
+};
 
+export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{
+  [key: string]: never;
+}>;
 
-export type GetSessionUserAccountInfoQuery = { sessionUser: { email: string | null, phoneNumber: string | null } | null };
+export type GetSessionUserManualPresenceStatusQuery = {
+  sessionUser: { manualPresenceStatus: Types.PresenceStatus | null } | null;
+};
 
-export type GetSessionUserManualPresenceStatusQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetSessionUserProfileSettingInfoQueryVariables = Exact<{
+  [key: string]: never;
+}>;
 
-
-export type GetSessionUserManualPresenceStatusQuery = { sessionUser: { manualPresenceStatus: Types.PresenceStatus | null } | null };
-
-export type GetSessionUserProfileSettingInfoQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetSessionUserProfileSettingInfoQuery = { sessionUser: { id: string, userName: string | null, displayName: string | null, biography: string | null, pronouns: string | null, createdAt: string, manualPresenceStatus: Types.PresenceStatus | null, avatar: { version: number } | null, banner: { version: number } | null } | null };
+export type GetSessionUserProfileSettingInfoQuery = {
+  sessionUser: {
+    id: string;
+    userName: string | null;
+    displayName: string | null;
+    avatarVersion: number | null;
+    bannerVersion: number | null;
+    biography: string | null;
+    pronouns: string | null;
+    createdAt: string;
+    manualPresenceStatus: Types.PresenceStatus | null;
+  } | null;
+};
 
 export type GetUserFullProfileQueryVariables = Exact<{
   id: string;
 }>;
 
-
-export type GetUserFullProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, biography: string | null, pronouns: string | null, createdAt: string, numMutualFriends: number, effectivePresenceStatus: Types.PresenceStatus, avatar: { version: number } | null, banner: { version: number } | null } | null };
+export type GetUserFullProfileQuery = {
+  user: {
+    id: string;
+    userName: string | null;
+    displayName: string | null;
+    avatarVersion: number | null;
+    bannerVersion: number | null;
+    biography: string | null;
+    pronouns: string | null;
+    createdAt: string;
+    numMutualFriends: number;
+    effectivePresenceStatus: Types.PresenceStatus;
+  } | null;
+};
 
 export type GetUserIdentityProfileQueryVariables = Exact<{
   id: string;
 }>;
 
-
-export type GetUserIdentityProfileQuery = { user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null } | null };
+export type GetUserIdentityProfileQuery = {
+  user: {
+    id: string;
+    userName: string | null;
+    displayName: string | null;
+    avatarVersion: number | null;
+  } | null;
+};
 
 export type InspectMemberQueryVariables = Exact<{
   id: string;
 }>;
 
-
-export type InspectMemberQuery = { communityServerMemberForAdmin: { id: string, createdAt: string, status: Types.MembershipStatus, banExpireAt: string | null, numWarn: number, user: { id: string, userName: string | null, displayName: string | null, avatar: { version: number } | null }, roles: Array<{ id: string, name: string, authorizeLevel: number, specialRoleType: Types.SpecialRoleType }>, authorizeInfo: { authorizeLevel: number, permissions: Array<Types.ServerPermission>, isBanned: boolean } } | null };
+export type InspectMemberQuery = {
+  communityServerMemberForAdmin: {
+    id: string;
+    createdAt: string;
+    status: Types.MembershipStatus;
+    banExpireAt: string | null;
+    numWarn: number;
+    user: {
+      id: string;
+      userName: string | null;
+      displayName: string | null;
+      avatarVersion: number | null;
+    };
+    roles: Array<{
+      id: string;
+      name: string;
+      authorizeLevel: number;
+      specialRoleType: Types.SpecialRoleType;
+    }>;
+    authorizeInfo: {
+      authorizeLevel: number;
+      permissions: Array<Types.ServerPermission>;
+      isBanned: boolean;
+    };
+  } | null;
+};
 
 export type KickServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -73,32 +163,26 @@ export type KickServerMemberMutationVariables = Exact<{
   reason?: string | null | undefined;
 }>;
 
-
-export type KickServerMemberMutation = { kickCommunityServerMember: { memberId: string } };
+export type KickServerMemberMutation = {
+  kickCommunityServerMember: { memberId: string };
+};
 
 export type UnbanServerMemberMutationVariables = Exact<{
   serverId: string;
   memberId: string;
 }>;
 
-
-export type UnbanServerMemberMutation = { unbanCommunityServerMember: { memberId: string } };
+export type UnbanServerMemberMutation = {
+  unbanCommunityServerMember: { memberId: string };
+};
 
 export type UpdateManualPresenceStatusMutationVariables = Exact<{
   value: Types.PresenceStatus;
 }>;
 
-
-export type UpdateManualPresenceStatusMutation = { updateManualPresenceStatus: { userId: string } };
-
-export type UpdateMemberRolesMutationVariables = Exact<{
-  serverId: string;
-  memberId: string;
-  roleIds: Array<string> | string;
-}>;
-
-
-export type UpdateMemberRolesMutation = { updateCommunityServerMemberRoles: { memberId: string } };
+export type UpdateManualPresenceStatusMutation = {
+  updateManualPresenceStatus: { userId: string };
+};
 
 export type WarnServerMemberMutationVariables = Exact<{
   serverId: string;
@@ -106,15 +190,17 @@ export type WarnServerMemberMutationVariables = Exact<{
   reason?: string | null | undefined;
 }>;
 
-
-export type WarnServerMemberMutation = { warnCommunityServerMember: { memberId: string } };
-
+export type WarnServerMemberMutation = {
+  warnCommunityServerMember: { memberId: string };
+};
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
   implements DocumentTypeDecoration<TResult, TVariables>
 {
-  __apiType?: NonNullable<DocumentTypeDecoration<TResult, TVariables>['__apiType']>;
+  __apiType?: NonNullable<
+    DocumentTypeDecoration<TResult, TVariables>["__apiType"]
+  >;
   private value: string;
   public __meta__?: Record<string, any> | undefined;
 
@@ -140,20 +226,41 @@ export const BanServerMemberDocument = new TypedDocumentString(`
     `);
 
 export const useBanServerMemberMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<BanServerMemberMutation, TError, BanServerMemberMutationVariables, TContext>) => {
-    
-    return useMutation<BanServerMemberMutation, TError, BanServerMemberMutationVariables, TContext>(
-      {
-    mutationKey: ['BanServerMember'],
-    mutationFn: (variables?: BanServerMemberMutationVariables) => graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(BanServerMemberDocument, variables)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    BanServerMemberMutation,
+    TError,
+    BanServerMemberMutationVariables,
+    TContext
+  >,
+) => {
+  return useMutation<
+    BanServerMemberMutation,
+    TError,
+    BanServerMemberMutationVariables,
+    TContext
+  >({
+    mutationKey: ["BanServerMember"],
+    mutationFn: (variables?: BanServerMemberMutationVariables) =>
+      graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(
+        BanServerMemberDocument,
+        variables,
+      )(),
+    ...options,
+  });
+};
 
-
-useBanServerMemberMutation.fetcher = (variables: BanServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(BanServerMemberDocument, variables, options);
+useBanServerMemberMutation.fetcher = (
+  variables: BanServerMemberMutationVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<BanServerMemberMutation, BanServerMemberMutationVariables>(
+    BanServerMemberDocument,
+    variables,
+    options,
+  );
 
 export const GetEmojiDetailsDocument = new TypedDocumentString(`
     query GetEmojiDetails($id: UUID!) {
@@ -163,9 +270,7 @@ export const GetEmojiDetailsDocument = new TypedDocumentString(`
       id
       name
       description
-      avatar {
-        version
-      }
+      avatarVersion
       numMembers
     }
   }
@@ -173,25 +278,41 @@ export const GetEmojiDetailsDocument = new TypedDocumentString(`
     `);
 
 export const useGetEmojiDetailsQuery = <
-      TData = GetEmojiDetailsQuery,
-      TError = unknown
-    >(
-      variables: GetEmojiDetailsQueryVariables,
-      options?: Omit<UseQueryOptions<GetEmojiDetailsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetEmojiDetailsQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetEmojiDetailsQuery, TError, TData>(
-      {
-    queryKey: ['GetEmojiDetails', variables],
-    queryFn: graphqlFetcher<GetEmojiDetailsQuery, GetEmojiDetailsQueryVariables>(GetEmojiDetailsDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetEmojiDetailsQuery,
+  TError = unknown,
+>(
+  variables: GetEmojiDetailsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetEmojiDetailsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetEmojiDetailsQuery, TError, TData>["queryKey"];
+  },
+) => {
+  return useQuery<GetEmojiDetailsQuery, TError, TData>({
+    queryKey: ["GetEmojiDetails", variables],
+    queryFn: graphqlFetcher<
+      GetEmojiDetailsQuery,
+      GetEmojiDetailsQueryVariables
+    >(GetEmojiDetailsDocument, variables),
+    ...options,
+  });
+};
 
-useGetEmojiDetailsQuery.getKey = (variables: GetEmojiDetailsQueryVariables) => ['GetEmojiDetails', variables];
+useGetEmojiDetailsQuery.getKey = (variables: GetEmojiDetailsQueryVariables) => [
+  "GetEmojiDetails",
+  variables,
+];
 
-
-useGetEmojiDetailsQuery.fetcher = (variables: GetEmojiDetailsQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetEmojiDetailsQuery, GetEmojiDetailsQueryVariables>(GetEmojiDetailsDocument, variables, options);
+useGetEmojiDetailsQuery.fetcher = (
+  variables: GetEmojiDetailsQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<GetEmojiDetailsQuery, GetEmojiDetailsQueryVariables>(
+    GetEmojiDetailsDocument,
+    variables,
+    options,
+  );
 
 export const GetInvitationSummaryDocument = new TypedDocumentString(`
     query GetInvitationSummary($id: String!) {
@@ -199,9 +320,7 @@ export const GetInvitationSummaryDocument = new TypedDocumentString(`
     communityServer {
       id
       name
-      avatar {
-        version
-      }
+      avatarVersion
       numMembers
     }
     status
@@ -210,25 +329,44 @@ export const GetInvitationSummaryDocument = new TypedDocumentString(`
     `);
 
 export const useGetInvitationSummaryQuery = <
-      TData = GetInvitationSummaryQuery,
-      TError = unknown
-    >(
-      variables: GetInvitationSummaryQueryVariables,
-      options?: Omit<UseQueryOptions<GetInvitationSummaryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetInvitationSummaryQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetInvitationSummaryQuery, TError, TData>(
-      {
-    queryKey: ['GetInvitationSummary', variables],
-    queryFn: graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetInvitationSummaryQuery,
+  TError = unknown,
+>(
+  variables: GetInvitationSummaryQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetInvitationSummaryQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetInvitationSummaryQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+) => {
+  return useQuery<GetInvitationSummaryQuery, TError, TData>({
+    queryKey: ["GetInvitationSummary", variables],
+    queryFn: graphqlFetcher<
+      GetInvitationSummaryQuery,
+      GetInvitationSummaryQueryVariables
+    >(GetInvitationSummaryDocument, variables),
+    ...options,
+  });
+};
 
-useGetInvitationSummaryQuery.getKey = (variables: GetInvitationSummaryQueryVariables) => ['GetInvitationSummary', variables];
+useGetInvitationSummaryQuery.getKey = (
+  variables: GetInvitationSummaryQueryVariables,
+) => ["GetInvitationSummary", variables];
 
-
-useGetInvitationSummaryQuery.fetcher = (variables: GetInvitationSummaryQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(GetInvitationSummaryDocument, variables, options);
+useGetInvitationSummaryQuery.fetcher = (
+  variables: GetInvitationSummaryQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<GetInvitationSummaryQuery, GetInvitationSummaryQueryVariables>(
+    GetInvitationSummaryDocument,
+    variables,
+    options,
+  );
 
 export const GetSessionUserAccountInfoDocument = new TypedDocumentString(`
     query GetSessionUserAccountInfo {
@@ -240,27 +378,52 @@ export const GetSessionUserAccountInfoDocument = new TypedDocumentString(`
     `);
 
 export const useGetSessionUserAccountInfoQuery = <
-      TData = GetSessionUserAccountInfoQuery,
-      TError = unknown
-    >(
-      variables?: GetSessionUserAccountInfoQueryVariables,
-      options?: Omit<UseQueryOptions<GetSessionUserAccountInfoQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSessionUserAccountInfoQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetSessionUserAccountInfoQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetSessionUserAccountInfo'] : ['GetSessionUserAccountInfo', variables],
-    queryFn: graphqlFetcher<GetSessionUserAccountInfoQuery, GetSessionUserAccountInfoQueryVariables>(GetSessionUserAccountInfoDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetSessionUserAccountInfoQuery,
+  TError = unknown,
+>(
+  variables?: GetSessionUserAccountInfoQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSessionUserAccountInfoQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSessionUserAccountInfoQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+) => {
+  return useQuery<GetSessionUserAccountInfoQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetSessionUserAccountInfo"]
+        : ["GetSessionUserAccountInfo", variables],
+    queryFn: graphqlFetcher<
+      GetSessionUserAccountInfoQuery,
+      GetSessionUserAccountInfoQueryVariables
+    >(GetSessionUserAccountInfoDocument, variables),
+    ...options,
+  });
+};
 
-useGetSessionUserAccountInfoQuery.getKey = (variables?: GetSessionUserAccountInfoQueryVariables) => variables === undefined ? ['GetSessionUserAccountInfo'] : ['GetSessionUserAccountInfo', variables];
+useGetSessionUserAccountInfoQuery.getKey = (
+  variables?: GetSessionUserAccountInfoQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetSessionUserAccountInfo"]
+    : ["GetSessionUserAccountInfo", variables];
 
+useGetSessionUserAccountInfoQuery.fetcher = (
+  variables?: GetSessionUserAccountInfoQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<
+    GetSessionUserAccountInfoQuery,
+    GetSessionUserAccountInfoQueryVariables
+  >(GetSessionUserAccountInfoDocument, variables, options);
 
-useGetSessionUserAccountInfoQuery.fetcher = (variables?: GetSessionUserAccountInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetSessionUserAccountInfoQuery, GetSessionUserAccountInfoQueryVariables>(GetSessionUserAccountInfoDocument, variables, options);
-
-export const GetSessionUserManualPresenceStatusDocument = new TypedDocumentString(`
+export const GetSessionUserManualPresenceStatusDocument =
+  new TypedDocumentString(`
     query GetSessionUserManualPresenceStatus {
   sessionUser {
     manualPresenceStatus
@@ -269,38 +432,59 @@ export const GetSessionUserManualPresenceStatusDocument = new TypedDocumentStrin
     `);
 
 export const useGetSessionUserManualPresenceStatusQuery = <
-      TData = GetSessionUserManualPresenceStatusQuery,
-      TError = unknown
-    >(
-      variables?: GetSessionUserManualPresenceStatusQueryVariables,
-      options?: Omit<UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetSessionUserManualPresenceStatusQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetSessionUserManualPresenceStatus'] : ['GetSessionUserManualPresenceStatus', variables],
-    queryFn: graphqlFetcher<GetSessionUserManualPresenceStatusQuery, GetSessionUserManualPresenceStatusQueryVariables>(GetSessionUserManualPresenceStatusDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetSessionUserManualPresenceStatusQuery,
+  TError = unknown,
+>(
+  variables?: GetSessionUserManualPresenceStatusQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSessionUserManualPresenceStatusQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSessionUserManualPresenceStatusQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+) => {
+  return useQuery<GetSessionUserManualPresenceStatusQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetSessionUserManualPresenceStatus"]
+        : ["GetSessionUserManualPresenceStatus", variables],
+    queryFn: graphqlFetcher<
+      GetSessionUserManualPresenceStatusQuery,
+      GetSessionUserManualPresenceStatusQueryVariables
+    >(GetSessionUserManualPresenceStatusDocument, variables),
+    ...options,
+  });
+};
 
-useGetSessionUserManualPresenceStatusQuery.getKey = (variables?: GetSessionUserManualPresenceStatusQueryVariables) => variables === undefined ? ['GetSessionUserManualPresenceStatus'] : ['GetSessionUserManualPresenceStatus', variables];
+useGetSessionUserManualPresenceStatusQuery.getKey = (
+  variables?: GetSessionUserManualPresenceStatusQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetSessionUserManualPresenceStatus"]
+    : ["GetSessionUserManualPresenceStatus", variables];
 
+useGetSessionUserManualPresenceStatusQuery.fetcher = (
+  variables?: GetSessionUserManualPresenceStatusQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<
+    GetSessionUserManualPresenceStatusQuery,
+    GetSessionUserManualPresenceStatusQueryVariables
+  >(GetSessionUserManualPresenceStatusDocument, variables, options);
 
-useGetSessionUserManualPresenceStatusQuery.fetcher = (variables?: GetSessionUserManualPresenceStatusQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetSessionUserManualPresenceStatusQuery, GetSessionUserManualPresenceStatusQueryVariables>(GetSessionUserManualPresenceStatusDocument, variables, options);
-
-export const GetSessionUserProfileSettingInfoDocument = new TypedDocumentString(`
+export const GetSessionUserProfileSettingInfoDocument =
+  new TypedDocumentString(`
     query GetSessionUserProfileSettingInfo {
   sessionUser {
     id
     userName
     displayName
-    avatar {
-      version
-    }
-    banner {
-      version
-    }
+    avatarVersion
+    bannerVersion
     biography
     pronouns
     createdAt
@@ -310,25 +494,49 @@ export const GetSessionUserProfileSettingInfoDocument = new TypedDocumentString(
     `);
 
 export const useGetSessionUserProfileSettingInfoQuery = <
-      TData = GetSessionUserProfileSettingInfoQuery,
-      TError = unknown
-    >(
-      variables?: GetSessionUserProfileSettingInfoQueryVariables,
-      options?: Omit<UseQueryOptions<GetSessionUserProfileSettingInfoQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSessionUserProfileSettingInfoQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetSessionUserProfileSettingInfoQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetSessionUserProfileSettingInfo'] : ['GetSessionUserProfileSettingInfo', variables],
-    queryFn: graphqlFetcher<GetSessionUserProfileSettingInfoQuery, GetSessionUserProfileSettingInfoQueryVariables>(GetSessionUserProfileSettingInfoDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetSessionUserProfileSettingInfoQuery,
+  TError = unknown,
+>(
+  variables?: GetSessionUserProfileSettingInfoQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSessionUserProfileSettingInfoQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSessionUserProfileSettingInfoQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+) => {
+  return useQuery<GetSessionUserProfileSettingInfoQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetSessionUserProfileSettingInfo"]
+        : ["GetSessionUserProfileSettingInfo", variables],
+    queryFn: graphqlFetcher<
+      GetSessionUserProfileSettingInfoQuery,
+      GetSessionUserProfileSettingInfoQueryVariables
+    >(GetSessionUserProfileSettingInfoDocument, variables),
+    ...options,
+  });
+};
 
-useGetSessionUserProfileSettingInfoQuery.getKey = (variables?: GetSessionUserProfileSettingInfoQueryVariables) => variables === undefined ? ['GetSessionUserProfileSettingInfo'] : ['GetSessionUserProfileSettingInfo', variables];
+useGetSessionUserProfileSettingInfoQuery.getKey = (
+  variables?: GetSessionUserProfileSettingInfoQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetSessionUserProfileSettingInfo"]
+    : ["GetSessionUserProfileSettingInfo", variables];
 
-
-useGetSessionUserProfileSettingInfoQuery.fetcher = (variables?: GetSessionUserProfileSettingInfoQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetSessionUserProfileSettingInfoQuery, GetSessionUserProfileSettingInfoQueryVariables>(GetSessionUserProfileSettingInfoDocument, variables, options);
+useGetSessionUserProfileSettingInfoQuery.fetcher = (
+  variables?: GetSessionUserProfileSettingInfoQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<
+    GetSessionUserProfileSettingInfoQuery,
+    GetSessionUserProfileSettingInfoQueryVariables
+  >(GetSessionUserProfileSettingInfoDocument, variables, options);
 
 export const GetUserFullProfileDocument = new TypedDocumentString(`
     query GetUserFullProfile($id: UUID!) {
@@ -336,12 +544,8 @@ export const GetUserFullProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    avatar {
-      version
-    }
-    banner {
-      version
-    }
+    avatarVersion
+    bannerVersion
     biography
     pronouns
     createdAt
@@ -352,25 +556,44 @@ export const GetUserFullProfileDocument = new TypedDocumentString(`
     `);
 
 export const useGetUserFullProfileQuery = <
-      TData = GetUserFullProfileQuery,
-      TError = unknown
-    >(
-      variables: GetUserFullProfileQueryVariables,
-      options?: Omit<UseQueryOptions<GetUserFullProfileQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserFullProfileQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetUserFullProfileQuery, TError, TData>(
-      {
-    queryKey: ['GetUserFullProfile', variables],
-    queryFn: graphqlFetcher<GetUserFullProfileQuery, GetUserFullProfileQueryVariables>(GetUserFullProfileDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetUserFullProfileQuery,
+  TError = unknown,
+>(
+  variables: GetUserFullProfileQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserFullProfileQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserFullProfileQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+) => {
+  return useQuery<GetUserFullProfileQuery, TError, TData>({
+    queryKey: ["GetUserFullProfile", variables],
+    queryFn: graphqlFetcher<
+      GetUserFullProfileQuery,
+      GetUserFullProfileQueryVariables
+    >(GetUserFullProfileDocument, variables),
+    ...options,
+  });
+};
 
-useGetUserFullProfileQuery.getKey = (variables: GetUserFullProfileQueryVariables) => ['GetUserFullProfile', variables];
+useGetUserFullProfileQuery.getKey = (
+  variables: GetUserFullProfileQueryVariables,
+) => ["GetUserFullProfile", variables];
 
-
-useGetUserFullProfileQuery.fetcher = (variables: GetUserFullProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserFullProfileQuery, GetUserFullProfileQueryVariables>(GetUserFullProfileDocument, variables, options);
+useGetUserFullProfileQuery.fetcher = (
+  variables: GetUserFullProfileQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<GetUserFullProfileQuery, GetUserFullProfileQueryVariables>(
+    GetUserFullProfileDocument,
+    variables,
+    options,
+  );
 
 export const GetUserIdentityProfileDocument = new TypedDocumentString(`
     query GetUserIdentityProfile($id: UUID!) {
@@ -378,33 +601,49 @@ export const GetUserIdentityProfileDocument = new TypedDocumentString(`
     id
     userName
     displayName
-    avatar {
-      version
-    }
+    avatarVersion
   }
 }
     `);
 
 export const useGetUserIdentityProfileQuery = <
-      TData = GetUserIdentityProfileQuery,
-      TError = unknown
-    >(
-      variables: GetUserIdentityProfileQueryVariables,
-      options?: Omit<UseQueryOptions<GetUserIdentityProfileQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserIdentityProfileQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<GetUserIdentityProfileQuery, TError, TData>(
-      {
-    queryKey: ['GetUserIdentityProfile', variables],
-    queryFn: graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables),
-    ...options
-  }
-    )};
+  TData = GetUserIdentityProfileQuery,
+  TError = unknown,
+>(
+  variables: GetUserIdentityProfileQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUserIdentityProfileQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUserIdentityProfileQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+) => {
+  return useQuery<GetUserIdentityProfileQuery, TError, TData>({
+    queryKey: ["GetUserIdentityProfile", variables],
+    queryFn: graphqlFetcher<
+      GetUserIdentityProfileQuery,
+      GetUserIdentityProfileQueryVariables
+    >(GetUserIdentityProfileDocument, variables),
+    ...options,
+  });
+};
 
-useGetUserIdentityProfileQuery.getKey = (variables: GetUserIdentityProfileQueryVariables) => ['GetUserIdentityProfile', variables];
+useGetUserIdentityProfileQuery.getKey = (
+  variables: GetUserIdentityProfileQueryVariables,
+) => ["GetUserIdentityProfile", variables];
 
-
-useGetUserIdentityProfileQuery.fetcher = (variables: GetUserIdentityProfileQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<GetUserIdentityProfileQuery, GetUserIdentityProfileQueryVariables>(GetUserIdentityProfileDocument, variables, options);
+useGetUserIdentityProfileQuery.fetcher = (
+  variables: GetUserIdentityProfileQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<
+    GetUserIdentityProfileQuery,
+    GetUserIdentityProfileQueryVariables
+  >(GetUserIdentityProfileDocument, variables, options);
 
 export const InspectMemberDocument = new TypedDocumentString(`
     query InspectMember($id: UUID!) {
@@ -415,9 +654,7 @@ export const InspectMemberDocument = new TypedDocumentString(`
       id
       userName
       displayName
-      avatar {
-        version
-      }
+      avatarVersion
     }
     roles {
       id
@@ -438,25 +675,41 @@ export const InspectMemberDocument = new TypedDocumentString(`
     `);
 
 export const useInspectMemberQuery = <
-      TData = InspectMemberQuery,
-      TError = unknown
-    >(
-      variables: InspectMemberQueryVariables,
-      options?: Omit<UseQueryOptions<InspectMemberQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<InspectMemberQuery, TError, TData>['queryKey'] }
-    ) => {
-    
-    return useQuery<InspectMemberQuery, TError, TData>(
-      {
-    queryKey: ['InspectMember', variables],
-    queryFn: graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables),
-    ...options
-  }
-    )};
+  TData = InspectMemberQuery,
+  TError = unknown,
+>(
+  variables: InspectMemberQueryVariables,
+  options?: Omit<
+    UseQueryOptions<InspectMemberQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<InspectMemberQuery, TError, TData>["queryKey"];
+  },
+) => {
+  return useQuery<InspectMemberQuery, TError, TData>({
+    queryKey: ["InspectMember", variables],
+    queryFn: graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(
+      InspectMemberDocument,
+      variables,
+    ),
+    ...options,
+  });
+};
 
-useInspectMemberQuery.getKey = (variables: InspectMemberQueryVariables) => ['InspectMember', variables];
+useInspectMemberQuery.getKey = (variables: InspectMemberQueryVariables) => [
+  "InspectMember",
+  variables,
+];
 
-
-useInspectMemberQuery.fetcher = (variables: InspectMemberQueryVariables, options?: RequestInit['headers']) => graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(InspectMemberDocument, variables, options);
+useInspectMemberQuery.fetcher = (
+  variables: InspectMemberQueryVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<InspectMemberQuery, InspectMemberQueryVariables>(
+    InspectMemberDocument,
+    variables,
+    options,
+  );
 
 export const KickServerMemberDocument = new TypedDocumentString(`
     mutation KickServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
@@ -469,20 +722,41 @@ export const KickServerMemberDocument = new TypedDocumentString(`
     `);
 
 export const useKickServerMemberMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<KickServerMemberMutation, TError, KickServerMemberMutationVariables, TContext>) => {
-    
-    return useMutation<KickServerMemberMutation, TError, KickServerMemberMutationVariables, TContext>(
-      {
-    mutationKey: ['KickServerMember'],
-    mutationFn: (variables?: KickServerMemberMutationVariables) => graphqlFetcher<KickServerMemberMutation, KickServerMemberMutationVariables>(KickServerMemberDocument, variables)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    KickServerMemberMutation,
+    TError,
+    KickServerMemberMutationVariables,
+    TContext
+  >,
+) => {
+  return useMutation<
+    KickServerMemberMutation,
+    TError,
+    KickServerMemberMutationVariables,
+    TContext
+  >({
+    mutationKey: ["KickServerMember"],
+    mutationFn: (variables?: KickServerMemberMutationVariables) =>
+      graphqlFetcher<
+        KickServerMemberMutation,
+        KickServerMemberMutationVariables
+      >(KickServerMemberDocument, variables)(),
+    ...options,
+  });
+};
 
-
-useKickServerMemberMutation.fetcher = (variables: KickServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<KickServerMemberMutation, KickServerMemberMutationVariables>(KickServerMemberDocument, variables, options);
+useKickServerMemberMutation.fetcher = (
+  variables: KickServerMemberMutationVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<KickServerMemberMutation, KickServerMemberMutationVariables>(
+    KickServerMemberDocument,
+    variables,
+    options,
+  );
 
 export const UnbanServerMemberDocument = new TypedDocumentString(`
     mutation UnbanServerMember($serverId: UUID!, $memberId: UUID!) {
@@ -493,20 +767,41 @@ export const UnbanServerMemberDocument = new TypedDocumentString(`
     `);
 
 export const useUnbanServerMemberMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<UnbanServerMemberMutation, TError, UnbanServerMemberMutationVariables, TContext>) => {
-    
-    return useMutation<UnbanServerMemberMutation, TError, UnbanServerMemberMutationVariables, TContext>(
-      {
-    mutationKey: ['UnbanServerMember'],
-    mutationFn: (variables?: UnbanServerMemberMutationVariables) => graphqlFetcher<UnbanServerMemberMutation, UnbanServerMemberMutationVariables>(UnbanServerMemberDocument, variables)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UnbanServerMemberMutation,
+    TError,
+    UnbanServerMemberMutationVariables,
+    TContext
+  >,
+) => {
+  return useMutation<
+    UnbanServerMemberMutation,
+    TError,
+    UnbanServerMemberMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UnbanServerMember"],
+    mutationFn: (variables?: UnbanServerMemberMutationVariables) =>
+      graphqlFetcher<
+        UnbanServerMemberMutation,
+        UnbanServerMemberMutationVariables
+      >(UnbanServerMemberDocument, variables)(),
+    ...options,
+  });
+};
 
-
-useUnbanServerMemberMutation.fetcher = (variables: UnbanServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UnbanServerMemberMutation, UnbanServerMemberMutationVariables>(UnbanServerMemberDocument, variables, options);
+useUnbanServerMemberMutation.fetcher = (
+  variables: UnbanServerMemberMutationVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<UnbanServerMemberMutation, UnbanServerMemberMutationVariables>(
+    UnbanServerMemberDocument,
+    variables,
+    options,
+  );
 
 export const UpdateManualPresenceStatusDocument = new TypedDocumentString(`
     mutation UpdateManualPresenceStatus($value: PresenceStatus!) {
@@ -517,46 +812,40 @@ export const UpdateManualPresenceStatusDocument = new TypedDocumentString(`
     `);
 
 export const useUpdateManualPresenceStatusMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<UpdateManualPresenceStatusMutation, TError, UpdateManualPresenceStatusMutationVariables, TContext>) => {
-    
-    return useMutation<UpdateManualPresenceStatusMutation, TError, UpdateManualPresenceStatusMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateManualPresenceStatus'],
-    mutationFn: (variables?: UpdateManualPresenceStatusMutationVariables) => graphqlFetcher<UpdateManualPresenceStatusMutation, UpdateManualPresenceStatusMutationVariables>(UpdateManualPresenceStatusDocument, variables)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    UpdateManualPresenceStatusMutation,
+    TError,
+    UpdateManualPresenceStatusMutationVariables,
+    TContext
+  >,
+) => {
+  return useMutation<
+    UpdateManualPresenceStatusMutation,
+    TError,
+    UpdateManualPresenceStatusMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateManualPresenceStatus"],
+    mutationFn: (variables?: UpdateManualPresenceStatusMutationVariables) =>
+      graphqlFetcher<
+        UpdateManualPresenceStatusMutation,
+        UpdateManualPresenceStatusMutationVariables
+      >(UpdateManualPresenceStatusDocument, variables)(),
+    ...options,
+  });
+};
 
-
-useUpdateManualPresenceStatusMutation.fetcher = (variables: UpdateManualPresenceStatusMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateManualPresenceStatusMutation, UpdateManualPresenceStatusMutationVariables>(UpdateManualPresenceStatusDocument, variables, options);
-
-export const UpdateMemberRolesDocument = new TypedDocumentString(`
-    mutation UpdateMemberRoles($serverId: UUID!, $memberId: UUID!, $roleIds: [UUID!]!) {
-  updateCommunityServerMemberRoles(
-    input: {serverId: $serverId, memberId: $memberId, roleIds: $roleIds}
-  ) {
-    memberId
-  }
-}
-    `);
-
-export const useUpdateMemberRolesMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<UpdateMemberRolesMutation, TError, UpdateMemberRolesMutationVariables, TContext>) => {
-    
-    return useMutation<UpdateMemberRolesMutation, TError, UpdateMemberRolesMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateMemberRoles'],
-    mutationFn: (variables?: UpdateMemberRolesMutationVariables) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables)(),
-    ...options
-  }
-    )};
-
-
-useUpdateMemberRolesMutation.fetcher = (variables: UpdateMemberRolesMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<UpdateMemberRolesMutation, UpdateMemberRolesMutationVariables>(UpdateMemberRolesDocument, variables, options);
+useUpdateManualPresenceStatusMutation.fetcher = (
+  variables: UpdateManualPresenceStatusMutationVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<
+    UpdateManualPresenceStatusMutation,
+    UpdateManualPresenceStatusMutationVariables
+  >(UpdateManualPresenceStatusDocument, variables, options);
 
 export const WarnServerMemberDocument = new TypedDocumentString(`
     mutation WarnServerMember($serverId: UUID!, $memberId: UUID!, $reason: String) {
@@ -569,17 +858,38 @@ export const WarnServerMemberDocument = new TypedDocumentString(`
     `);
 
 export const useWarnServerMemberMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(options?: UseMutationOptions<WarnServerMemberMutation, TError, WarnServerMemberMutationVariables, TContext>) => {
-    
-    return useMutation<WarnServerMemberMutation, TError, WarnServerMemberMutationVariables, TContext>(
-      {
-    mutationKey: ['WarnServerMember'],
-    mutationFn: (variables?: WarnServerMemberMutationVariables) => graphqlFetcher<WarnServerMemberMutation, WarnServerMemberMutationVariables>(WarnServerMemberDocument, variables)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: UseMutationOptions<
+    WarnServerMemberMutation,
+    TError,
+    WarnServerMemberMutationVariables,
+    TContext
+  >,
+) => {
+  return useMutation<
+    WarnServerMemberMutation,
+    TError,
+    WarnServerMemberMutationVariables,
+    TContext
+  >({
+    mutationKey: ["WarnServerMember"],
+    mutationFn: (variables?: WarnServerMemberMutationVariables) =>
+      graphqlFetcher<
+        WarnServerMemberMutation,
+        WarnServerMemberMutationVariables
+      >(WarnServerMemberDocument, variables)(),
+    ...options,
+  });
+};
 
-
-useWarnServerMemberMutation.fetcher = (variables: WarnServerMemberMutationVariables, options?: RequestInit['headers']) => graphqlFetcher<WarnServerMemberMutation, WarnServerMemberMutationVariables>(WarnServerMemberDocument, variables, options);
+useWarnServerMemberMutation.fetcher = (
+  variables: WarnServerMemberMutationVariables,
+  options?: RequestInit["headers"],
+) =>
+  graphqlFetcher<WarnServerMemberMutation, WarnServerMemberMutationVariables>(
+    WarnServerMemberDocument,
+    variables,
+    options,
+  );

@@ -6,7 +6,6 @@ using Conflux.Domain.Repositories;
 namespace Conflux.Application.Features.Friends;
 
 public sealed record UnfriendCommand(
-    Guid InvokerUserId, 
     Guid FriendUserId
 ) : ICommand<Result>;
 

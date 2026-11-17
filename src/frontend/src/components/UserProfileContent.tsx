@@ -1,11 +1,11 @@
-import {Separator} from "radix-ui";
-import {FaBirthdayCake} from "react-icons/fa";
-import {FaHandshake, FaMarsAndVenus} from "react-icons/fa6";
-import type {PresenceStatus} from "../graphql/types.ts";
-import {TruncatedText} from "./TruncatedText.tsx";
-import {AvatarAndBanner} from "./AvatarAndBanner.tsx";
-import type {CSSProperties} from "react";
-import {UserProfile} from "./UserProfile.tsx";
+import { Separator } from "radix-ui";
+import { FaBirthdayCake } from "react-icons/fa";
+import { FaHandshake, FaMarsAndVenus } from "react-icons/fa6";
+import type { PresenceStatus } from "../graphql/types.ts";
+import { TruncatedText } from "./TruncatedText.tsx";
+import { AvatarAndBanner } from "./AvatarAndBanner.tsx";
+import type { CSSProperties } from "react";
+import { UserProfile } from "./UserProfile.tsx";
 
 interface UserProfileContentProps {
   userId: string;
@@ -42,7 +42,7 @@ export default function UserProfileContent({
   pronouns,
   bio,
   friendedDate,
-  mutualFriendsCount
+  mutualFriendsCount,
 }: UserProfileContentProps) {
   return (
     <>
@@ -59,29 +59,26 @@ export default function UserProfileContent({
       />
 
       <div className="px-2">
-        <UserProfile.Names
-          displayName={displayName}
-          userName={username}
-        />
+        <UserProfile.Names displayName={displayName} userName={username} />
 
-        <div className="grid grid-cols-2 gap-x-2 text-sm mt-2 text-gray-500">
-          <p className="mt-1 min-w-0 flex items-center gap-2">
-            <FaBirthdayCake className="flex-none size-4 fill-gray-50"/>
+        <div className="mt-2 grid grid-cols-2 gap-x-2 text-sm text-gray-500">
+          <p className="mt-1 flex min-w-0 items-center gap-2">
+            <FaBirthdayCake className="size-4 flex-none fill-gray-50" />
 
             {joinDate ? new Date(joinDate).toLocaleDateString() : "-"}
           </p>
 
           {friendedDate && (
-            <p className="mt-1 min-w-0 flex items-center gap-2">
-              <FaHandshake className="flex-none size-4 fill-gray-50 mr-2"/>
+            <p className="mt-1 flex min-w-0 items-center gap-2">
+              <FaHandshake className="mr-2 size-4 flex-none fill-gray-50" />
 
               {new Date(friendedDate).toLocaleDateString()}
             </p>
           )}
 
           {pronouns && (
-            <p className="mt-1 min-w-0 flex items-center gap-2">
-              <FaMarsAndVenus className="flex-none size-4 fill-gray-50 mr-2"/>
+            <p className="mt-1 flex min-w-0 items-center gap-2">
+              <FaMarsAndVenus className="mr-2 size-4 flex-none fill-gray-50" />
 
               <TruncatedText>{pronouns}</TruncatedText>
             </p>
@@ -90,7 +87,11 @@ export default function UserProfileContent({
 
         {bio && (
           <>
-            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+            <Separator.Root
+              orientation="horizontal"
+              decorative
+              className="horizontal-separator my-2"
+            />
 
             <p className="group-label">About me</p>
 
@@ -100,8 +101,14 @@ export default function UserProfileContent({
 
         {mutualFriendsCount && (
           <>
-            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
-            <span className="text-xs block">{mutualFriendsCount} mutual friends.</span>
+            <Separator.Root
+              orientation="horizontal"
+              decorative
+              className="horizontal-separator my-2"
+            />
+            <span className="block text-xs">
+              {mutualFriendsCount} mutual friends.
+            </span>
           </>
         )}
       </div>

@@ -1,4 +1,3 @@
-using Conflux.Application.Enums;
 using Conflux.Application.Features.Servers;
 using Conflux.Domain;
 using Conflux.Domain.Dto;
@@ -11,9 +10,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Conflux.WebApi.Controllers.Server;
 
-[ApiController]
-[Route("api/communities/{serverId:guid}/channels")]
-[Authorize]
+[ApiController, Route("api/communities/{serverId:guid}/channels"), Authorize]
 public sealed class ChannelController(ISender sender) : ControllerBase {
     [HttpGet("{channelId:guid}")]
     public async Task<ActionResult<ApiResponse<ChannelDetailsDto>>> GetSummary(Guid serverId, Guid channelId) {
@@ -35,8 +32,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
         };
     }
     
-    [HttpPost]
-    [Idempotent(15)]
+    [HttpPost, Idempotent(15), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<ServerChannelIdentityDto>>> CreateChannels(
         Guid serverId,
         [FromBody] CreateChannelRequest request
@@ -59,7 +55,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
         };
     }
     
-    [HttpDelete("{channelId:guid}")]
+    [HttpDelete("{channelId:guid}"), ValidateAntiForgeryToken]
     public async Task<ActionResult> DeleteChannel(Guid serverId, Guid channelId) {
         var result = await sender.Send(new DeleteServerChannelCommand(serverId, channelId));
         
@@ -75,7 +71,7 @@ public sealed class ChannelController(ISender sender) : ControllerBase {
     }
     
     public sealed record CreateChannelRequest(
-        [StringLength(32, ErrorMessage = "{0} can only have maximum length of {1} characters.")] string Name,
+        string Name,
         ChannelType Type,
         Guid? CategoryId
     );

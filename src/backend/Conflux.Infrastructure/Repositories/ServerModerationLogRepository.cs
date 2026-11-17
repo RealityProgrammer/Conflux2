@@ -5,7 +5,7 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class ServerModerationLogRepository(
     ApplicationDbContext dbContext
-) : IServerModerationLogReadRepository, IServerModerationLogWriteRepository {
+) : IServerModerationLogRepository {
     public void Add(ServerModerationLog value) {
         dbContext.ServerModerationLogs.Add(value);
     }

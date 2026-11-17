@@ -25,6 +25,9 @@ public sealed class CommunityServerMemberObjectType : ObjectType<CommunityServer
         descriptor.Field(m => m.CreatedAt);
         descriptor.Field(m => m.Roles);
         descriptor.Field(m => m.BanExpireAt);
+        descriptor.Field(m => m.HighestAuthorizeLevel);
+        descriptor.Field(m => m.HighestAuthorizeRoleId);
+        descriptor.Field(m => m.HighestAuthorizeRole);
         descriptor.Field("authorizeInfo")
             .Type<NonNullType<MemberAuthorizeInfoObjectType>>()
             .ParentRequires<CommunityServerMember>(m => new {

@@ -1,5 +1,5 @@
-import {formatDate} from "date-fns";
-import type {HTMLAttributes} from "react";
+import { formatDate } from "date-fns";
+import type { HTMLAttributes } from "react";
 
 interface TimestampProps extends HTMLAttributes<HTMLSpanElement> {
   date: Date;
@@ -14,10 +14,10 @@ export default function Timestamp({
 }: TimestampProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-white/10 text-white text-sm rounded-md font-mono ${className}`}
+      className={`inline-flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 font-mono text-sm text-white ${className}`}
       {...props}
     >
       {formatDate(date, formatString)}
     </span>
-  )
+  );
 }

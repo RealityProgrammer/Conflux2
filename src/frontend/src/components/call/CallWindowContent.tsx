@@ -1,10 +1,13 @@
-import {type Call, useCallStore} from "../../store/useCallStore.ts";
+import { type Call, useCallStore } from "../../store/useCallStore.ts";
 import OutgoingCallWindowContent from "./OutgoingCallWindowContent.tsx";
 import IncomingCallWindowContent from "./IncomingCallWindowContent.tsx";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {DirectCallDroppedEvent, DirectCallEndedEvent} from "../../api/events.ts";
+import type {
+  DirectCallDroppedEvent,
+  DirectCallEndedEvent,
+} from "../../api/events.ts";
 
-export default function CallWindowContent({call}: {call: Call}) {
+export default function CallWindowContent({ call }: { call: Call }) {
   const updateCallState = useCallStore((state) => state.updateCallState);
 
   useSignalREvent("DirectCallDropped", (event: DirectCallDroppedEvent) => {
@@ -20,11 +23,11 @@ export default function CallWindowContent({call}: {call: Call}) {
   });
 
   if (call.type === "outgoing_direct") {
-    return <OutgoingCallWindowContent call={call}/>
+    return <OutgoingCallWindowContent call={call} />;
   }
 
   if (call.type === "incoming_direct") {
-    return <IncomingCallWindowContent call={call}/>
+    return <IncomingCallWindowContent call={call} />;
   }
 
   return null;

@@ -1,22 +1,31 @@
 import type {
   ChannelCategoryIdentityDto,
   ServerChannelIdentityDto,
-  ServerDetailsDto, ServerMemberAuthorizeInfoDto,
-  ServiceError, ServiceResponse
+  ServerDetailsDto,
+  ServerMemberAuthorizeInfoDto,
+  ServiceError,
+  ServiceResponse,
 } from "../api/types.ts";
-import {createContext, type ReactNode, useContext} from "react";
-import {type QueryKey, useQuery, useQueryClient, type UseQueryResult} from "@tanstack/react-query";
-import {communityServerService} from "../api/communityServerService.ts";
+import { createContext, type ReactNode, useContext } from "react";
+import {
+  type QueryKey,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+} from "@tanstack/react-query";
+import { serverService } from "../api/serverService.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {
   ServerChannelCategoryCreatedEvent,
   ServerChannelCategoryDeletedEvent,
-  ServerChannelCreatedEvent, ServerChannelDeletedEvent
+  ServerChannelCreatedEvent,
+  ServerChannelDeletedEvent,
 } from "../api/events.ts";
-import {ServerPermission} from "../api/schema.ts";
+import { ServerPermission, SpecialRoleType } from "../api/schema.ts";
 
 interface CommunityServerContextType {
   detailsQueryResult: UseQueryResult<ServerDetailsDto, ServiceError>;
+  isOwner: boolean;
 
   appendChannelCategory: (category: ChannelCategoryIdentityDto) => void;
   removeChannelCategory: (id: string) => void;
@@ -24,10 +33,14 @@ interface CommunityServerContextType {
   removeChannel: (id: string) => void;
   hasPermission: (permission: ServerPermission) => boolean;
   refreshPermission: () => Promise<void>;
-  updatePermission: (value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">) => void;
+  updatePermission: (
+    value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">,
+  ) => void;
 }
 
-const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
+const CommunityServerContext = createContext<CommunityServerContextType | null>(
+  null,
+);
 
 interface CommunityServerContextProviderProps {
   serverId: string | undefined;
@@ -45,29 +58,28 @@ export default function CommunityServerContextProvider({
     enabled: !!serverId,
     queryKey: detailsQueryKey,
     queryFn: async (): Promise<ServerDetailsDto> => {
-      const response = await communityServerService.getDetails(serverId!);
-      
-      if (response.success) {
-        return response.data!;
-      }
-      
-      throw response.error;
+      return await serverService.getDetails(serverId!);
     },
-    staleTime: 15 * 60 * 1000,
+    staleTime: 45 * 60 * 1000,
     retry: (failureCount, error: ServiceError) => {
-      if (error.code === "NETWORK_ERROR" || error.code === "REQUEST_SETUP_ERROR") {
+      if (
+        error.code === "NETWORK_ERROR" ||
+        error.code === "REQUEST_SETUP_ERROR"
+      ) {
         return failureCount <= 3;
       }
-      
+
       return false;
     },
   });
 
-  const updateServerDetails = (updater: (value: ServerDetailsDto) => Partial<ServerDetailsDto>) => {
+  const updateServerDetails = (
+    updater: (value: ServerDetailsDto) => Partial<ServerDetailsDto>,
+  ) => {
     queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
-      return {...oldData, ...updater(oldData)};
+      return { ...oldData, ...updater(oldData) };
     });
   };
 
@@ -81,22 +93,28 @@ export default function CommunityServerContextProvider({
             name: category.name,
             channels: [],
           },
-        ]
-      }
+        ],
+      };
     });
   };
 
   const removeChannelCategory = (id: string) => {
     updateServerDetails((oldData) => {
-      const removingCategory = oldData.channelCategories.find(c => c.id === id);
-      
+      const removingCategory = oldData.channelCategories.find(
+        (c) => c.id === id,
+      );
+
       if (!removingCategory) {
         return {};
       }
 
-      let updatedChannelCategories = oldData.channelCategories.filter(c => c.id !== id);
-      const nullCategoryExists = updatedChannelCategories.some((c) => c.id == null);
-      
+      let updatedChannelCategories = oldData.channelCategories.filter(
+        (c) => c.id !== id,
+      );
+      const nullCategoryExists = updatedChannelCategories.some(
+        (c) => c.id == null,
+      );
+
       // if there is a category with null id, append the channels to it, else create a category with null id
       if (nullCategoryExists) {
         updatedChannelCategories = updatedChannelCategories.map((c) => {
@@ -115,37 +133,36 @@ export default function CommunityServerContextProvider({
           channels: removingCategory.channels,
         });
       }
-      
+
       return {
         ...oldData,
         channelCategories: updatedChannelCategories,
       };
     });
   };
-  
+
   const appendChannel = (channel: ServerChannelIdentityDto) => {
     updateServerDetails((oldData) => {
       if (oldData.channelCategories.length === 0) {
         return {
-          channelCategories: [{
-            id: null,
-            name: null,
-            channels: [channel],
-          }],
+          channelCategories: [
+            {
+              id: null,
+              name: null,
+              channels: [channel],
+            },
+          ],
         };
       }
 
       return {
-        channelCategories: oldData.channelCategories.map(category => {
+        channelCategories: oldData.channelCategories.map((category) => {
           if (category.id !== channel.categoryId) return category;
-          
+
           return {
             ...category,
-            channels: [
-              ...category.channels,
-              channel,
-            ]
-          }
+            channels: [...category.channels, channel],
+          };
         }),
       };
     });
@@ -154,7 +171,7 @@ export default function CommunityServerContextProvider({
   const removeChannel = (id: string) => {
     updateServerDetails((oldData) => {
       return {
-        channelCategories: oldData.channelCategories.map(category => {
+        channelCategories: oldData.channelCategories.map((category) => {
           const channelIndex = category.channels.findIndex((c) => c.id === id);
 
           if (channelIndex === -1) {
@@ -163,34 +180,36 @@ export default function CommunityServerContextProvider({
 
           const updatedChannels = [
             ...category.channels.slice(0, channelIndex),
-            ...category.channels.slice(channelIndex + 1)
+            ...category.channels.slice(channelIndex + 1),
           ];
 
           return {
             ...category,
             channels: updatedChannels,
-          }
+          };
         }),
       };
     });
   };
-  
+
   const hasPermission = (permission: ServerPermission): boolean => {
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return false;
-    
-    return detailsQueryResult.data.authorizeInfo.effectivePermissions.includes(permission);
+
+    return detailsQueryResult.data.authorizeInfo.effectivePermissions.includes(
+      permission,
+    );
   };
-  
+
   const refreshPermission = async () => {
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return;
-    
-    const response: ServiceResponse<ServerMemberAuthorizeInfoDto> = 
-      await communityServerService.getMemberAuthorizeInfo(detailsQueryResult.data.id);
-    
+
+    const response: ServiceResponse<ServerMemberAuthorizeInfoDto> =
+      await serverService.getMemberAuthorizeInfo(detailsQueryResult.data.id);
+
     if (response.success && response.data) {
       queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
         if (!oldData) return oldData;
-        
+
         return {
           ...oldData,
           authorizeInfo: response.data!,
@@ -198,8 +217,10 @@ export default function CommunityServerContextProvider({
       });
     }
   };
-  
-  const updatePermission = (value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">) => {
+
+  const updatePermission = (
+    value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">,
+  ) => {
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return;
 
     queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
@@ -210,54 +231,72 @@ export default function CommunityServerContextProvider({
         authorizeInfo: {
           ...oldData.authorizeInfo,
           ...value,
-        }
+        },
       };
     });
   };
 
-  useSignalREvent("ServerChannelCategoryCreated", (event: ServerChannelCategoryCreatedEvent) => {
-    if (event.serverId !== serverId) {
-      return;
-    }
+  useSignalREvent(
+    "ServerChannelCategoryCreated",
+    (event: ServerChannelCategoryCreatedEvent) => {
+      if (event.serverId !== serverId) {
+        return;
+      }
 
-    appendChannelCategory(event.categoryIdentity);
-  });
+      appendChannelCategory(event.categoryIdentity);
+    },
+  );
 
-  useSignalREvent("ServerChannelCategoryDeleted", (event: ServerChannelCategoryDeletedEvent) => {
-    if (event.serverId !== serverId) {
-      return;
-    }
+  useSignalREvent(
+    "ServerChannelCategoryDeleted",
+    (event: ServerChannelCategoryDeletedEvent) => {
+      if (event.serverId !== serverId) {
+        return;
+      }
 
-    removeChannelCategory(event.categoryId);
-  });
+      removeChannelCategory(event.categoryId);
+    },
+  );
 
-  useSignalREvent("ServerChannelCreated", async (event: ServerChannelCreatedEvent) => {
-    if (event.serverId !== serverId) {
-      return;
-    }
+  useSignalREvent(
+    "ServerChannelCreated",
+    async (event: ServerChannelCreatedEvent) => {
+      if (event.serverId !== serverId) {
+        return;
+      }
 
-    appendChannel(event.channel);
-  });
+      appendChannel(event.channel);
+    },
+  );
 
-  useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
-    if (event.serverId !== serverId) {
-      return;
-    }
+  useSignalREvent(
+    "ServerChannelDeleted",
+    (event: ServerChannelDeletedEvent) => {
+      if (event.serverId !== serverId) {
+        return;
+      }
 
-    removeChannel(event.channelId);
-  });
+      removeChannel(event.channelId);
+    },
+  );
 
   return (
-    <CommunityServerContext.Provider value={{
-      detailsQueryResult,
-      appendChannelCategory,
-      removeChannelCategory,
-      appendChannel,
-      removeChannel,
-      hasPermission,
-      refreshPermission,
-      updatePermission
-    }}>
+    <CommunityServerContext.Provider
+      value={{
+        detailsQueryResult,
+        appendChannelCategory,
+        removeChannelCategory,
+        appendChannel,
+        removeChannel,
+        hasPermission,
+        refreshPermission,
+        updatePermission,
+        isOwner:
+          detailsQueryResult.data?.authorizeInfo.roles.some(
+            (r) => r.specialRoleType === SpecialRoleType.Owner,
+          ) ?? false,
+      }}
+    >
       {children}
     </CommunityServerContext.Provider>
   );
@@ -265,7 +304,10 @@ export default function CommunityServerContextProvider({
 
 export function useCommunityServerContext(): CommunityServerContextType {
   const context = useContext(CommunityServerContext);
-  if (!context) throw new Error("useChatContainerContext must be used within an CommunityServerContextProvider.");
+  if (!context)
+    throw new Error(
+      "useChatContainerContext must be used within an CommunityServerContextProvider.",
+    );
 
   return context;
 }

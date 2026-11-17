@@ -1,15 +1,16 @@
 import {
   BsCameraVideoFill,
-  BsCameraVideoOffFill, BsChevronDown,
+  BsCameraVideoOffFill,
+  BsChevronDown,
   BsGearFill,
   BsMicFill,
   BsMicMuteFill,
-  BsTelephoneXFill
+  BsTelephoneXFill,
 } from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
-import {Label, Popover, Select, Separator} from "radix-ui";
-import {FaXmark} from "react-icons/fa6";
-import type {MediaDeviceOption} from "../../hooks/useUserMedia.ts";
+import { Label, Popover, Select, Separator } from "radix-ui";
+import { FaXmark } from "react-icons/fa6";
+import type { MediaDeviceOption } from "../../hooks/useUserMedia.ts";
 import SelectItem from "../SelectItem.tsx";
 
 interface CallControlProps {
@@ -52,36 +53,39 @@ export default function CallControl({
   handleAudioOutputDeviceChange,
 }: CallControlProps) {
   return (
-    <div className="absolute left-1/2 bottom-2 -translate-x-1/2 flex flex-col items-center gap-2 z-50">
+    <div className="absolute bottom-2 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-2">
       <Popover.Root>
         <Popover.Anchor>
-          <div className="flex flex-row items-center gap-3 p-2 bg-gray-675 rounded-lg border-2 border-gray-600">
-            <IconButton
-              isLoading={false}
-              theme="default"
-              onClick={toggleAudio}
-            >
-              {isAudioMuted ? <BsMicMuteFill className="size-6"/> : <BsMicFill className="size-6"/>}
+          <div className="bg-gray-675 flex flex-row items-center gap-3 rounded-lg border-2 border-gray-600 p-2">
+            <IconButton isLoading={false} theme="default" onClick={toggleAudio}>
+              {isAudioMuted ? (
+                <BsMicMuteFill className="size-6" />
+              ) : (
+                <BsMicFill className="size-6" />
+              )}
             </IconButton>
 
-            <IconButton
-              isLoading={false}
-              theme="default"
-              onClick={toggleVideo}
-            >
-              {isVideoDisabled ? <BsCameraVideoOffFill className="size-6"/> : <BsCameraVideoFill className="size-6"/>}
+            <IconButton isLoading={false} theme="default" onClick={toggleVideo}>
+              {isVideoDisabled ? (
+                <BsCameraVideoOffFill className="size-6" />
+              ) : (
+                <BsCameraVideoFill className="size-6" />
+              )}
             </IconButton>
 
             <Popover.Trigger asChild>
-              <IconButton
-                theme="default"
-              >
-                <BsGearFill className="size-6"/>
+              <IconButton theme="default">
+                <BsGearFill className="size-6" />
               </IconButton>
             </Popover.Trigger>
 
-            <IconButton isLoading={false} theme="danger" disabled={isEndingCall} onClick={handleCallEnd}>
-              <BsTelephoneXFill className="size-6"/>
+            <IconButton
+              isLoading={false}
+              theme="danger"
+              disabled={isEndingCall}
+              onClick={handleCallEnd}
+            >
+              <BsTelephoneXFill className="size-6" />
             </IconButton>
 
             {/*<Dialog*/}
@@ -113,7 +117,6 @@ export default function CallControl({
             {/*>*/}
             {/*  Are you sure you want to end this call?*/}
             {/*</Dialog>*/}
-
           </div>
         </Popover.Anchor>
 
@@ -122,43 +125,48 @@ export default function CallControl({
             side="top"
             align="center"
             sideOffset={6}
-            className="z-2001 text-white text-sm w-80 bg-gray-725 border-2 border-gray-600 rounded-lg p-2 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95"
+            className="bg-gray-725 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 z-2001 w-80 rounded-lg border-2 border-gray-600 p-2 text-sm text-white"
           >
-            <header className="flex justify-between items-center">
-              <h3 className="text-white font-medium">Device Settings</h3>
+            <header className="flex items-center justify-between">
+              <h3 className="font-medium text-white">Device Settings</h3>
 
               <Popover.Close asChild>
-                <IconButton
-                  theme="default"
-                >
-                  <FaXmark className="size-4"/>
+                <IconButton theme="default">
+                  <FaXmark className="size-4" />
                 </IconButton>
               </Popover.Close>
             </header>
 
-            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+            <Separator.Root
+              orientation="horizontal"
+              decorative
+              className="horizontal-separator my-2"
+            />
 
             <p className="group-label">Video</p>
 
             <Label.Root className="label mb-1 block">Input Device</Label.Root>
 
-            <Select.Root value={selectedVideoDeviceId} onValueChange={handleVideoDeviceChange}>
-              <Select.Trigger className="w-full input-field h-8 inline-flex flex-row items-center gap-2 ">
-                <Select.Value placeholder="Select device..."/>
-                <Select.Icon className="fill-white flex-none ml-auto">
-                  <BsChevronDown className="size-4"/>
+            <Select.Root
+              value={selectedVideoDeviceId}
+              onValueChange={handleVideoDeviceChange}
+            >
+              <Select.Trigger className="input-field inline-flex h-8 w-full flex-row items-center gap-2">
+                <Select.Value placeholder="Select device..." />
+                <Select.Icon className="ml-auto flex-none fill-white">
+                  <BsChevronDown className="size-4" />
                 </Select.Icon>
               </Select.Trigger>
 
               <Select.Portal>
                 <Select.Content
-                  className="z-2001 overflow-hidden bg-gray-650 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                  className="bg-gray-650 z-2001 w-(--radix-select-trigger-width) overflow-hidden rounded-md p-1 text-white"
                   position="popper"
                   side="bottom"
                   sideOffset={4}
                 >
                   <Select.Viewport>
-                    {videoDevices.map(videoDevice => (
+                    {videoDevices.map((videoDevice) => (
                       <SelectItem
                         key={videoDevice.deviceId}
                         text={videoDevice.label}
@@ -170,29 +178,36 @@ export default function CallControl({
               </Select.Portal>
             </Select.Root>
 
-            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+            <Separator.Root
+              orientation="horizontal"
+              decorative
+              className="horizontal-separator my-2"
+            />
 
             <p className="group-label">Audio</p>
 
             <Label.Root className="label mb-1 block">Input Device</Label.Root>
 
-            <Select.Root value={selectedAudioInputDeviceId} onValueChange={handleAudioInputDeviceChange}>
-              <Select.Trigger className="w-full input-field h-8 inline-flex flex-row items-center gap-2">
-                <Select.Value placeholder="Select device..."/>
-                <Select.Icon className="fill-white flex-none ml-auto">
-                  <BsChevronDown className="size-4"/>
+            <Select.Root
+              value={selectedAudioInputDeviceId}
+              onValueChange={handleAudioInputDeviceChange}
+            >
+              <Select.Trigger className="input-field inline-flex h-8 w-full flex-row items-center gap-2">
+                <Select.Value placeholder="Select device..." />
+                <Select.Icon className="ml-auto flex-none fill-white">
+                  <BsChevronDown className="size-4" />
                 </Select.Icon>
               </Select.Trigger>
 
               <Select.Portal>
                 <Select.Content
-                  className="z-2001 overflow-hidden bg-gray-650 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                  className="bg-gray-650 z-2001 w-(--radix-select-trigger-width) overflow-hidden rounded-md p-1 text-white"
                   position="popper"
                   side="bottom"
                   sideOffset={4}
                 >
                   <Select.Viewport>
-                    {audioInputDevices.map(audioDevice => (
+                    {audioInputDevices.map((audioDevice) => (
                       <SelectItem
                         key={audioDevice.deviceId}
                         text={audioDevice.label}
@@ -206,23 +221,26 @@ export default function CallControl({
 
             <Label.Root className="label mb-1 block">Output Device</Label.Root>
 
-            <Select.Root value={selectedAudioOutputDeviceId} onValueChange={handleAudioOutputDeviceChange}>
-              <Select.Trigger className="w-full input-field h-8 inline-flex flex-row items-center gap-2">
-                <Select.Value placeholder="Select device..."/>
-                <Select.Icon className="fill-white flex-none ml-auto">
-                  <BsChevronDown className="size-4"/>
+            <Select.Root
+              value={selectedAudioOutputDeviceId}
+              onValueChange={handleAudioOutputDeviceChange}
+            >
+              <Select.Trigger className="input-field inline-flex h-8 w-full flex-row items-center gap-2">
+                <Select.Value placeholder="Select device..." />
+                <Select.Icon className="ml-auto flex-none fill-white">
+                  <BsChevronDown className="size-4" />
                 </Select.Icon>
               </Select.Trigger>
 
               <Select.Portal>
                 <Select.Content
-                  className="z-2001 overflow-hidden bg-gray-650 text-white rounded-md p-1 w-(--radix-select-trigger-width)"
+                  className="bg-gray-650 z-2001 w-(--radix-select-trigger-width) overflow-hidden rounded-md p-1 text-white"
                   position="popper"
                   side="bottom"
                   sideOffset={4}
                 >
                   <Select.Viewport>
-                    {audioOutputDevices.map(audioDevice => (
+                    {audioOutputDevices.map((audioDevice) => (
                       <SelectItem
                         key={audioDevice.deviceId}
                         text={audioDevice.label}
@@ -237,5 +255,5 @@ export default function CallControl({
         </Popover.Portal>
       </Popover.Root>
     </div>
-  )
+  );
 }

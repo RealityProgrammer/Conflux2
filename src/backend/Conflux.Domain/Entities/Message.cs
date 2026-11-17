@@ -1,4 +1,5 @@
 using Conflux.Domain.Enums;
+using NpgsqlTypes;
 
 namespace Conflux.Domain.Entities;
 
@@ -7,7 +8,8 @@ public class Message : IHasCreatedAt {
     public MessageType Type { get; set; }
     
     public string? Body { get; set; }
-    public virtual ICollection<MediaItem> Attachments { get; set; } = [];
+    public virtual IList<MediaItem> Attachments { get; set; } = [];
+    public NpgsqlTsVector SearchVector { get; set; } = null!;
     
     public MessageProperties? Properties { get; set; }
     
@@ -24,6 +26,8 @@ public class Message : IHasCreatedAt {
     public Guid? ReplyToId { get; set; }
     public Message? ReplyTo { get; set; }
     public virtual ICollection<Message> Replies { get; set; } = null!;
+
+    public ICollection<MessageReaction> Reaction { get; set; } = [];
     
     public DateTimeOffset? PinnedAt { get; set; }
 }

@@ -1,66 +1,80 @@
-import {Label, Select, Separator, Avatar as RadixAvatar} from "radix-ui";
-import {Controller, FormProvider, type SubmitHandler, useForm, useFormContext, useWatch} from "react-hook-form";
-import {z} from "zod";
-import {PresenceStatus} from "../../graphql/types.ts";
-import {BsChevronDown, BsPerson} from "react-icons/bs";
+import { Label, Select, Separator, Avatar as RadixAvatar } from "radix-ui";
+import {
+  Controller,
+  FormProvider,
+  type SubmitHandler,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
+import { z } from "zod";
+import { PresenceStatus } from "../../graphql/types.ts";
+import { BsChevronDown, BsPerson } from "react-icons/bs";
 import SelectItem from "../../components/SelectItem.tsx";
 import PresenceStatusIcon from "../../components/PresenceStatusIcon.tsx";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {FaRepeat, FaXmark} from "react-icons/fa6";
-import {useAuth} from "../../contexts/AuthContext.tsx";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FaRepeat, FaXmark } from "react-icons/fa6";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import Spinner from "../../components/Spinner.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
-import {sessionUserService} from "../../api/sessionUserService.ts";
-import {toast} from "react-toastify";
-import {usePresence} from "../../contexts/PresenceContext.tsx";
+import { sessionUserService } from "../../api/sessionUserService.ts";
+import { toast } from "react-toastify";
+import { usePresence } from "../../contexts/PresenceContext.tsx";
 import SelectableImageInput from "../../components/SelectableImageInput.tsx";
 import {
   type GetSessionUserProfileSettingInfoQuery,
-  useGetSessionUserProfileSettingInfoQuery
+  useGetSessionUserProfileSettingInfoQuery,
 } from "../../graphql/queries.ts";
-import {userService} from "../../api/userService.ts";
+import { userService } from "../../api/userService.ts";
 import IconButton from "../../components/IconButton.tsx";
-import {useQueryClient} from "@tanstack/react-query";
-import {usePreviewUrl} from "../../hooks/usePreviewUrl.ts";
-import {hash} from "../../utils/hashing.ts";
-import {AvatarAndBanner} from "../../components/AvatarAndBanner.tsx";
-import {UserProfile} from "../../components/UserProfile.tsx";
-import type {ServiceResponse, UpdateProfileResult} from "../../api/types.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePreviewUrl } from "../../hooks/usePreviewUrl.ts";
+import { hash } from "../../utils/hashing.ts";
+import { AvatarAndBanner } from "../../components/AvatarAndBanner.tsx";
+import { UserProfile } from "../../components/UserProfile.tsx";
+import type { ServiceResponse, UpdateProfileResult } from "../../api/types.ts";
 
 export default function ProfilePage() {
   return (
     <>
-      <h1 className="font-bold text-2xl">Profile</h1>
-      <p className="text-gray-400 text-sm">This is where you configure your profile, I have nothing else to say.</p>
+      <h1 className="text-2xl font-bold">Profile</h1>
+      <p className="text-sm text-gray-400">
+        This is where you configure your profile, I have nothing else to say.
+      </p>
 
-      <Separator.Root className="horizontal-separator my-2"/>
+      <Separator.Root className="horizontal-separator my-2" />
 
-      <ProfileForm/>
+      <ProfileForm />
     </>
-  )
+  );
 }
 
 const profileSchema = z.object({
-  displayName: z.string()
+  displayName: z
+    .string()
     .min(1, { error: "Display name is required." })
     .max(48, "Display name can only have maximum length of 48 characters."),
 
-  pronouns: z.string()
+  pronouns: z
+    .string()
     .max(32, "Pronouns can only have maximum length of 32 characters.")
     .optional(),
 
-  bio: z.string()
+  bio: z
+    .string()
     .max(255, "Biography can only have maximum length of 255 characters.")
     .optional(),
 
   presence: z.enum(PresenceStatus),
 
-  avatar: z.file()
+  avatar: z
+    .file()
     .max(4194304, "Avatar can only have maximum size of 4MB (4194304 bytes).")
     .optional()
     .nullable(),
 
-  banner: z.file()
+  banner: z
+    .file()
     .max(5242880, "Banner can only have maximum size of 5MB (5242880 bytes).")
     .optional()
     .nullable(),
@@ -78,8 +92,7 @@ function ProfileForm() {
     {
       enabled: !!auth.userProfile,
       staleTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
-    }
+    },
   );
 
   const formMethods = useForm<UpdateProfileFormValues>({
@@ -98,23 +111,31 @@ function ProfileForm() {
       displayName: data?.sessionUser?.displayName ?? "",
       bio: data?.sessionUser?.biography ?? "",
       pronouns: data?.sessionUser?.pronouns ?? "",
-      presence: data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Online,
-    }
+      presence:
+        data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Online,
+    },
   });
 
-  const { reset, handleSubmit, formState: { dirtyFields, isDirty } } = formMethods;
+  const {
+    reset,
+    handleSubmit,
+    formState: { dirtyFields, isDirty },
+  } = formMethods;
 
-  const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (data: UpdateProfileFormValues) => {
+  const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (
+    data: UpdateProfileFormValues,
+  ) => {
     if (!isDirty) return;
 
-    const response: ServiceResponse<UpdateProfileResult> = await sessionUserService.updateProfile(
-      dirtyFields.displayName ? data.displayName : undefined,
-      dirtyFields.pronouns ? data.pronouns : undefined,
-      dirtyFields.bio ? data.bio : undefined,
-      dirtyFields.presence ? data.presence : undefined,
-      data.avatar,
-      data.banner
-    );
+    const response: ServiceResponse<UpdateProfileResult> =
+      await sessionUserService.updateProfile(
+        dirtyFields.displayName ? data.displayName : undefined,
+        dirtyFields.pronouns ? data.pronouns : undefined,
+        dirtyFields.bio ? data.bio : undefined,
+        dirtyFields.presence ? data.presence : undefined,
+        data.avatar,
+        data.banner,
+      );
 
     if (response.success) {
       reset({
@@ -122,36 +143,20 @@ function ProfileForm() {
         avatar: undefined,
         banner: undefined,
       });
-      
+
       auth.updateUserProfile({
         displayName: data.displayName,
-        // avatar: response.data?.avatarVersion !== undefined ? {
-        //   version: response.data.avatarVersion,
-        // } : undefined,
+        avatarVersion: response.data?.avatarVersion,
+        // bannerVersion: response.data?.bannerVersion,
       });
-      
-      if (response.data?.avatarVersion !== undefined) {
-        auth.updateUserProfile({
-          avatar: response.data?.avatarVersion === null ? null : {
-            version: response.data.avatarVersion,
-          }
-        });
-      }
-      
-      // TODO: Update banner
-      // if (response.data?.bannerVersion !== undefined) {
-      //   auth.updateUserProfile({
-      //     banner: response.data?.bannerVersion === null ? null : {
-      //       version: response.data.bannerVersion,
-      //     }
-      //   });
-      // }
 
       if (dirtyFields.presence) {
         presence.updateManualStatus(data.presence, "client");
       }
 
-      await queryClient.invalidateQueries({ queryKey: useGetSessionUserProfileSettingInfoQuery.getKey({}) });
+      await queryClient.invalidateQueries({
+        queryKey: useGetSessionUserProfileSettingInfoQuery.getKey({}),
+      });
 
       toast.success("Profile updated successfully.");
     } else {
@@ -161,65 +166,97 @@ function ProfileForm() {
 
   return (
     <FormProvider {...formMethods}>
-      <form className="relative overflow-y-hidden" onSubmit={handleSubmit(onSubmit)}>
-      {(!auth.userProfile?.id || isLoading || isError) && (
-        <div className="absolute z-10 inset-0 flex flex-col justify-center items-center backdrop-blur-xs">
-          <Spinner className="size-10 fill-white mb-2"/>
-          <span>Please wait...</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-3 px-2 overflow-y-hidden">
-        <section className="overflow-y-auto col-span-2">
-          <p className="group-label">Fields</p>
-
-          <FormFields userData={data?.sessionUser}/>
-          <FormButtons/>
-        </section>
-
-        <section className="overflow-y-auto">
-          <p className="group-label">Display</p>
-
-          <div className="flex flex-row justify-center rounded-xl">
-            <Displayer userData={data?.sessionUser}/>
+      <form
+        className="relative overflow-y-hidden"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        {(!auth.userProfile?.id || isLoading || isError) && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-xs">
+            <Spinner className="mb-2 size-10 fill-white" />
+            <span>Please wait...</span>
           </div>
-        </section>
-      </div>
-    </form>
+        )}
+
+        <div className="grid grid-cols-3 gap-3 overflow-y-hidden px-2">
+          <section className="col-span-2 overflow-y-auto">
+            <p className="group-label">Fields</p>
+
+            <FormFields userData={data?.sessionUser} />
+            <FormButtons />
+          </section>
+
+          <section className="overflow-y-auto">
+            <p className="group-label">Display</p>
+
+            <div className="flex flex-row justify-center rounded-xl">
+              <Displayer userData={data?.sessionUser} />
+            </div>
+          </section>
+        </div>
+      </form>
     </FormProvider>
-  )
+  );
 }
 
 function FormFields({
   userData,
-}: { userData: GetSessionUserProfileSettingInfoQuery["sessionUser"] | undefined }) {
-  const { control, resetField, formState: { errors } } = useFormContext<UpdateProfileFormValues>();
+}: {
+  userData: GetSessionUserProfileSettingInfoQuery["sessionUser"] | undefined;
+}) {
+  const {
+    control,
+    resetField,
+    formState: { errors },
+  } = useFormContext<UpdateProfileFormValues>();
 
   return (
     <div className="grid grid-cols-2 gap-2">
       <div>
         <Label.Root className="label mb-1 block">Avatar</Label.Root>
 
-        <div className="flex flex-row justify-center items-center w-full">
+        <div className="flex w-full flex-row items-center justify-center">
           <Controller
             control={control}
             name="avatar"
             render={({ field }) => (
-              <div className="flex flex-row gap-2 w-full justify-center">
+              <div className="flex w-full flex-row justify-center gap-2">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : null : field.value : undefined}
+                  value={
+                    userData
+                      ? field.value === undefined
+                        ? userData.avatarVersion
+                          ? userService.getAvatarUrl(
+                              userData.id,
+                              userData.avatarVersion,
+                            )
+                          : null
+                        : field.value
+                      : undefined
+                  }
                   onChange={field.onChange}
-                  className="flex-1 aspect-square max-w-48 max-h-48 rounded-full overflow-hidden"
-                  fallback={() => (<BsPerson className="fill-black size-5/6"/>)}
+                  className="aspect-square max-h-48 max-w-48 flex-1 overflow-hidden rounded-full"
+                  fallback={() => <BsPerson className="size-5/6 fill-black" />}
                 />
 
-                <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
-                  <IconButton type="button" theme="default" onClick={() => resetField("avatar")} disabled={field.value === undefined}>
-                    <FaRepeat className="size-5"/>
+                <div className="flex flex-col gap-2 self-start rounded-md border-2 border-gray-600 bg-black/10 p-2 shadow-md">
+                  <IconButton
+                    type="button"
+                    theme="default"
+                    onClick={() => resetField("avatar")}
+                    disabled={field.value === undefined}
+                  >
+                    <FaRepeat className="size-5" />
                   </IconButton>
 
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
-                    <FaXmark className="size-5"/>
+                  <IconButton
+                    type="button"
+                    theme="danger"
+                    onClick={() => {
+                      field.onChange(null);
+                    }}
+                    disabled={field.value === null}
+                  >
+                    <FaXmark className="size-5" />
                   </IconButton>
                 </div>
               </div>
@@ -231,35 +268,58 @@ function FormFields({
       <div>
         <Label.Root className="label mb-1 block">Banner</Label.Root>
 
-        <div className="flex flex-row justify-center items-center w-full">
+        <div className="flex w-full flex-row items-center justify-center">
           <Controller
             control={control}
             name="banner"
             render={({ field }) => (
-              <div className="flex flex-row gap-2 w-full">
+              <div className="flex w-full flex-row gap-2">
                 <SelectableImageInput
-                  value={userData ? field.value === undefined ? userData.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : null : field.value : undefined}
+                  value={
+                    userData
+                      ? field.value === undefined
+                        ? userData.bannerVersion
+                          ? userService.getBannerUrl(
+                              userData.id,
+                              userData.bannerVersion,
+                            )
+                          : null
+                        : field.value
+                      : undefined
+                  }
                   onChange={field.onChange}
-                  className="flex-1 aspect-video"
+                  className="aspect-video flex-1"
                   fallback={() => {
                     return (
                       <span
                         className="size-full"
                         style={{
-                          backgroundColor: `hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`
-                        }}>
-                      </span>
+                          backgroundColor: `hsl(${Math.abs(hash(userData?.id ?? "")) % 360}, 60%, 40%)`,
+                        }}
+                      ></span>
                     );
                   }}
                 />
 
-                <div className="p-2 rounded-md bg-black/10 shadow-md self-start border-2 border-gray-600 flex flex-col gap-2">
-                  <IconButton type="button" theme="default" onClick={() => resetField("banner")} disabled={field.value === undefined}>
-                    <FaRepeat className="size-5"/>
+                <div className="flex flex-col gap-2 self-start rounded-md border-2 border-gray-600 bg-black/10 p-2 shadow-md">
+                  <IconButton
+                    type="button"
+                    theme="default"
+                    onClick={() => resetField("banner")}
+                    disabled={field.value === undefined}
+                  >
+                    <FaRepeat className="size-5" />
                   </IconButton>
 
-                  <IconButton type="button" theme="danger" onClick={() => { field.onChange(null) }} disabled={field.value === null}>
-                    <FaXmark className="size-5"/>
+                  <IconButton
+                    type="button"
+                    theme="danger"
+                    onClick={() => {
+                      field.onChange(null);
+                    }}
+                    disabled={field.value === null}
+                  >
+                    <FaXmark className="size-5" />
                   </IconButton>
                 </div>
               </div>
@@ -282,7 +342,7 @@ function FormFields({
               <input
                 {...field}
                 type="text"
-                className="input-field h-10 px-3 w-full"
+                className="input-field h-10 w-full px-3"
               />
             </ErrorPopover>
           )}
@@ -294,9 +354,10 @@ function FormFields({
 
         <input
           type="text"
-          className="input-field h-10 px-3 w-full"
+          className="input-field h-10 w-full px-3"
           disabled
-          readOnly aria-readonly="true"
+          readOnly
+          aria-readonly="true"
           value={userData?.userName ?? ""}
         />
       </div>
@@ -315,7 +376,7 @@ function FormFields({
               <input
                 {...field}
                 type="text"
-                className="input-field h-10 px-3 w-full"
+                className="input-field h-10 w-full px-3"
               />
             </ErrorPopover>
           )}
@@ -328,14 +389,11 @@ function FormFields({
         <Controller
           control={control}
           name="bio"
-          render={({ field}) => (
-            <ErrorPopover
-              open={!!errors.bio}
-              content={errors.bio?.message}
-            >
+          render={({ field }) => (
+            <ErrorPopover open={!!errors.bio} content={errors.bio?.message}>
               <textarea
                 {...field}
-                className="input-field h-40 px-3 py-2 w-full resize-none"
+                className="input-field h-40 w-full resize-none px-3 py-2"
               />
             </ErrorPopover>
           )}
@@ -350,16 +408,16 @@ function FormFields({
           name="presence"
           render={({ field }) => (
             <Select.Root value={field.value} onValueChange={field.onChange}>
-              <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2 ">
-                <Select.Value/>
-                <Select.Icon className="fill-white flex-none ml-auto">
-                  <BsChevronDown className="size-4"/>
+              <Select.Trigger className="input-field inline-flex h-10 w-full flex-row items-center gap-2">
+                <Select.Value />
+                <Select.Icon className="ml-auto flex-none fill-white">
+                  <BsChevronDown className="size-4" />
                 </Select.Icon>
               </Select.Trigger>
 
               <Select.Portal>
                 <Select.Content
-                  className="overflow-hidden bg-gray-700 text-white rounded-md p-1 w-(--radix-select-trigger-width) border-2 border-gray-600"
+                  className="w-(--radix-select-trigger-width) overflow-hidden rounded-md border-2 border-gray-600 bg-gray-700 p-1 text-white"
                   position="popper"
                   side="bottom"
                   sideOffset={4}
@@ -368,25 +426,45 @@ function FormFields({
                     <SelectItem
                       text="Online"
                       value={PresenceStatus.Online}
-                      icon={<PresenceStatusIcon status={PresenceStatus.Online} className="size-3 flex-none"/>}
+                      icon={
+                        <PresenceStatusIcon
+                          status={PresenceStatus.Online}
+                          className="size-3 flex-none"
+                        />
+                      }
                     />
 
                     <SelectItem
                       text="Idle"
                       value={PresenceStatus.Idle}
-                      icon={<PresenceStatusIcon status={PresenceStatus.Idle} className="size-3 flex-none"/>}
+                      icon={
+                        <PresenceStatusIcon
+                          status={PresenceStatus.Idle}
+                          className="size-3 flex-none"
+                        />
+                      }
                     />
 
                     <SelectItem
                       text="Do not disturb"
                       value={PresenceStatus.DoNotDisturb}
-                      icon={<PresenceStatusIcon status={PresenceStatus.DoNotDisturb} className="size-3 flex-none"/>}
+                      icon={
+                        <PresenceStatusIcon
+                          status={PresenceStatus.DoNotDisturb}
+                          className="size-3 flex-none"
+                        />
+                      }
                     />
 
                     <SelectItem
                       text="Invisible"
                       value={PresenceStatus.Invisible}
-                      icon={<PresenceStatusIcon status={PresenceStatus.Invisible} className="size-3 flex-none"/>}
+                      icon={
+                        <PresenceStatusIcon
+                          status={PresenceStatus.Invisible}
+                          className="size-3 flex-none"
+                        />
+                      }
                     />
                   </Select.Viewport>
                 </Select.Content>
@@ -396,17 +474,20 @@ function FormFields({
         />
       </div>
     </div>
-  )
+  );
 }
 
 function FormButtons() {
-  const { reset, formState: { isSubmitting } } = useFormContext();
+  const {
+    reset,
+    formState: { isSubmitting },
+  } = useFormContext();
 
   return (
-    <div className="flex flex-row justify-start items-center gap-2 mt-3">
+    <div className="mt-3 flex flex-row items-center justify-start gap-2">
       <button
         type="button"
-        className="button-theme-danger w-32 py-2 cursor-pointer rounded-md"
+        className="button-theme-danger w-32 cursor-pointer rounded-md py-2"
         onClick={() => {
           reset();
         }}
@@ -416,11 +497,11 @@ function FormButtons() {
 
       <button
         type="submit"
-        className="button-theme-primary w-32 py-2 button-cursor rounded-md flex flex-row justify-center items-center"
+        className="button-theme-primary button-cursor flex w-32 flex-row items-center justify-center rounded-md py-2"
         disabled={isSubmitting}
       >
         {isSubmitting ? (
-          <Spinner className="size-6 fill-white"/>
+          <Spinner className="size-6 fill-white" />
         ) : (
           "Save Profile"
         )}
@@ -431,16 +512,28 @@ function FormButtons() {
 
 function Displayer({
   userData,
-}: { userData: GetSessionUserProfileSettingInfoQuery["sessionUser"] | undefined }) {
+}: {
+  userData: GetSessionUserProfileSettingInfoQuery["sessionUser"] | undefined;
+}) {
   const { userProfile } = useAuth();
   const { control } = useFormContext<UpdateProfileFormValues>();
   const watchedValues = useWatch({ control });
 
-  const avatarDisplayUrl = usePreviewUrl(watchedValues.avatar, userData?.avatar?.version ? userService.getAvatarUrl(userData.id, userData.avatar.version) : undefined);
-  const bannerDisplayUrl = usePreviewUrl(watchedValues.banner, userData?.banner?.version ? userService.getBannerUrl(userData.id, userData.banner.version) : undefined);
+  const avatarDisplayUrl = usePreviewUrl(
+    watchedValues.avatar,
+    userData?.avatarVersion
+      ? userService.getAvatarUrl(userData.id, userData.avatarVersion)
+      : undefined,
+  );
+  const bannerDisplayUrl = usePreviewUrl(
+    watchedValues.banner,
+    userData?.bannerVersion
+      ? userService.getBannerUrl(userData.id, userData.bannerVersion)
+      : undefined,
+  );
 
   return (
-    <div className="w-80 h-128 border-2 border-gray-600 rounded-xl overflow-hidden @container overflow-y-auto scrollbar-none pb-2">
+    <div className="@container h-128 w-80 scrollbar-none overflow-hidden overflow-y-auto rounded-xl border-2 border-gray-600 pb-2">
       <AvatarAndBanner.Template
         avatar={{
           src: avatarDisplayUrl ?? undefined,
@@ -457,17 +550,22 @@ function Displayer({
           alt: "Preview Banner",
           rootClassName: "",
           fallback: (
-            <RadixAvatar.Fallback className="block size-full" style={{
-              backgroundColor: `hsl(${Math.abs(hash(userProfile?.id ?? "???")) % 360}, 60%, 40%)`,
-            }}>
-            </RadixAvatar.Fallback>
-          )
+            <RadixAvatar.Fallback
+              className="block size-full"
+              style={{
+                backgroundColor: `hsl(${Math.abs(hash(userProfile?.id ?? "???")) % 360}, 60%, 40%)`,
+              }}
+            ></RadixAvatar.Fallback>
+          ),
         }}
         // presence={{status: watchedValues.presence, className: "size-8 border-4!"}}
       />
 
-      <div className="px-2 space-y-2">
-        <UserProfile.Names displayName={watchedValues.displayName ?? "???"} userName={userProfile?.userName ?? "???"}/>
+      <div className="space-y-2 px-2">
+        <UserProfile.Names
+          displayName={watchedValues.displayName ?? "???"}
+          userName={userProfile?.userName ?? "???"}
+        />
 
         <UserProfile.FieldContainer>
           {[...Array(5).keys()].map((_, index) => (
@@ -481,7 +579,11 @@ function Displayer({
 
         {watchedValues.bio && (
           <>
-            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2"/>
+            <Separator.Root
+              orientation="horizontal"
+              decorative
+              className="horizontal-separator my-2"
+            />
 
             <span className="group-label mb-1">About me</span>
 

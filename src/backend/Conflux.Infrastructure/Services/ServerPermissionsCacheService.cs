@@ -8,7 +8,7 @@ namespace Conflux.Infrastructure.Services;
 
 internal sealed class ServerPermissionsCacheService(
     IConnectionMultiplexer connectionMultiplexer,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerRoleVersioningService roleVersioningService,
     ILogger<ServerPermissionsCacheService> logger
 ) : IServerPermissionsCacheService {
@@ -62,7 +62,7 @@ internal sealed class ServerPermissionsCacheService(
     }
 
     public async Task DeleteMemberAuthorizeInfo(Guid memberId, CancellationToken cancellationToken = default) {
-        var ids = await memberReadRepository.AsQueryable()
+        var ids = await memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.Id == memberId)
             .Select(m => new {

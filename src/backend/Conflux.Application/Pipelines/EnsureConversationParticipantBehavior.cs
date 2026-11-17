@@ -1,5 +1,7 @@
 using Conflux.Application.Features;
 using Conflux.Application.Services;
+using Conflux.Domain;
+using Conflux.Domain.Entities;
 using Conflux.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +9,10 @@ namespace Conflux.Application.Pipelines;
 
 internal sealed class EnsureConversationParticipantBehavior<TRequest, TResponse>(
     ICurrentUserService currentUserService,
+    IConversationRepository conversationRepository,
     IConversationParticipantRepository conversationParticipantRepository,
     IUnitOfWork unitOfWork
-) : IPipelineBehavior<TRequest, TResponse> where TRequest : IConversationCommand {
+) : IPipelineBehavior<TRequest, TResponse> where TRequest : IConversationCommand where TResponse : IResult<TResponse> {
     public async ValueTask<TResponse> Handle(
         TRequest message, 
         MessageHandlerDelegate<TRequest, TResponse> next, 
@@ -17,6 +20,16 @@ internal sealed class EnsureConversationParticipantBehavior<TRequest, TResponse>
     ) {
         if (currentUserService.UserId is not { } userId) {
             return await next(message, cancellationToken);
+        }
+        
+        var conversationExists = await conversationRepository
+            .AsQueryable()
+            .AnyAsync(c => c.Id == message.ConversationId, cancellationToken);
+
+        if (!conversationExists) {
+            return TResponse.Failure(Errors.ResourceNotFound("Conversation", [
+                new(nameof(Conversation.Id), message.ConversationId.ToString()),
+            ]));
         }
         
         var exists = await conversationParticipantRepository

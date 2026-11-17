@@ -15,15 +15,12 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers.Server;
 
-[ApiController]
-[Route("api/communities")]
-[Authorize]
+[ApiController, Route("api/communities"), Authorize]
 public sealed class ServerController(
     IMediator mediator,
     IServerMediaService serverMediaService
 ) : ControllerBase {
-    [HttpPost]
-    [Idempotent(360)]
+    [HttpPost, Idempotent(120), ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<ServerIdentityDto>>> CreateCommunityServer([FromForm] CreateServerRequest serverRequest) {
         await using var stream = serverRequest.Avatar?.OpenReadStream();
         var result = await mediator.Send(new CreateServerCommand(serverRequest.Name, stream));
@@ -36,51 +33,20 @@ public sealed class ServerController(
     }
     
     [HttpGet("{serverId:guid}/avatar")]
-    public async Task<ActionResult> GetAvatarUrl(Guid serverId, CancellationToken cancellationToken) {
-        var mediaInfo = await serverMediaService.GetAvatar(serverId, cancellationToken);
-        if (mediaInfo == null) return NotFound();
-        
-        Response.GetTypedHeaders().CacheControl = new() {
-            Public = true,
-            MaxAge = TimeSpan.FromDays(30),
-        };
-        
-        return File(
-            mediaInfo.Stream, 
-            mediaInfo.ContentType, 
-            null, 
-            new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{mediaInfo.Version}\"")
-        );
+    public RedirectResult GetAvatarMediaRedirect(Guid serverId, CancellationToken cancellationToken) {
+        string preSignedUrl = serverMediaService.GetAvatarPreSignedUrl(serverId, TimeSpan.FromHours(3));
+        return Redirect(preSignedUrl);
     }
     
     [HttpGet("{serverId:guid}/banner")]
-    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Client)]
-    public async Task<ActionResult> GetBannerUrl(Guid serverId, CancellationToken cancellationToken) {
-        var mediaInfo = await serverMediaService.GetBanner(serverId, cancellationToken);
-        if (mediaInfo == null) return NotFound();
-        
-        Response.GetTypedHeaders().CacheControl = new() {
-            Public = true,
-            MaxAge = TimeSpan.FromDays(30),
-        };
-        
-        return File(
-            mediaInfo.Stream, 
-            mediaInfo.ContentType, 
-            null, 
-            new Microsoft.Net.Http.Headers.EntityTagHeaderValue($"\"{mediaInfo.Version}\"")
-        );
+    public RedirectResult GetBannerMediaRedirect(Guid serverId, CancellationToken cancellationToken) {
+        string preSignedUrl = serverMediaService.GetBannerPreSignedUrl(serverId, TimeSpan.FromHours(3));
+        return Redirect(preSignedUrl);
     }
 
     [HttpGet("{serverId:guid}/details")]
     public async Task<ActionResult<ApiResponse<ServerDetailsDto>>> GetDetails(Guid serverId) {
-        var idClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out Guid userId)) {
-            return BadRequest(new ApiResponse(Errors.InvalidIdentifier()));
-        }
-        
-        var result = await mediator.Send(new GetServerDetailsQuery(serverId, userId));
+        var result = await mediator.Send(new GetServerDetailsQuery(serverId));
 
         if (result.IsSuccess) {
             return Ok(new ApiResponse<ServerDetailsDto>(result.Value!, Error.None));
@@ -132,12 +98,12 @@ public sealed class ServerController(
         };
     }
 
-    [HttpPost("{serverId:guid}/leave")]
+    [HttpDelete("{serverId:guid}")]
     public async Task<ActionResult<ApiResponse>> LeaveServer(Guid serverId) {
         var result = await mediator.Send(new LeaveServerCommand(serverId));
         
         if (result.IsSuccess) {
-            return Ok(new ApiResponse(Error.None));
+            return NoContent();
         }
         
         return result.Error.Code switch {
@@ -148,29 +114,7 @@ public sealed class ServerController(
     }
 
     public sealed record CreateServerRequest(
-        [Required] string Name, 
+        string Name,
         IFormFile? Avatar
-    ) : IValidatableObject {
-        public IEnumerable<ValidationResult> Validate(ValidationContext context) {
-            var results = new List<ValidationResult>();
-
-            if (Name.Length > 48) {
-                results.Add(new(
-                    "Name can only have maximum length of 48 characters.", 
-                    [nameof(Name)]
-                ));
-            }
-            
-            var options = context.GetRequiredService<IOptions<MediaOptions>>().Value;
-                
-            if (Avatar != null && Avatar.Length > options.MaxAvatarSize) {
-                results.Add(new(
-                    $"Avatar must be smaller than {options.MaxAvatarSize.Bytes():MB}.", 
-                    [nameof(Avatar)]
-                ));
-            }
-
-            return results;
-        }
-    }
+    );
 }

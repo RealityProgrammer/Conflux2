@@ -1,13 +1,16 @@
-import {useEffect, useRef} from "react";
-import {useSignalR} from "../contexts/SignalRContext.tsx";
+import { useEffect, useEffectEvent } from "react";
+import { useSignalR } from "../contexts/SignalRContext.tsx";
 
-export default function useSignalREvent(methodNames: string[] | string, callback: (...args: any[]) => void | any) {
-  const {connection, isConnected} = useSignalR();
-  const callbackRef = useRef(callback);
+export default function useSignalREvent(
+  methodNames: string[] | string,
+  callback: (...args: any[]) => void | any,
+) {
+  const { connection, isConnected } = useSignalR();
+  const onSignalREvent = useEffectEvent(callback);
 
-  useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
+  const eventsKey = Array.isArray(methodNames)
+    ? methodNames.join(",")
+    : methodNames;
 
   useEffect(() => {
     if (!connection || !isConnected) {
@@ -15,21 +18,19 @@ export default function useSignalREvent(methodNames: string[] | string, callback
       return;
     }
 
-    const handler: (...args: any[]) => any = (...args: any[]) => callbackRef.current(...args);
+    const handler: (...args: any[]) => any = (...args: any[]) =>
+      onSignalREvent(...args);
+    const methods = Array.isArray(methodNames) ? methodNames : [methodNames];
 
-    if (!Array.isArray(methodNames)) {
-      connection.on(methodNames, handler);
-      return () => connection.off(methodNames, handler);
-    }
-
-    for (let methodName of methodNames) {
+    for (let methodName of methods) {
+      connection.off(methodName, handler);
       connection.on(methodName, handler);
     }
 
     return () => {
-      for (let methodName of methodNames) {
+      for (let methodName of methods) {
         connection.off(methodName, handler);
       }
-    }
-  }, [connection, isConnected, methodNames]);
+    };
+  }, [connection, isConnected, eventsKey]);
 }

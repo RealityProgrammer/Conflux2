@@ -1,14 +1,14 @@
-import {useDebounceValue} from "usehooks-ts";
-import {createContext, useContext, useEffect, useRef, useState} from "react";
-import {Dialog as RadixDialog, Label, Popover, Separator} from "radix-ui";
+import { useDebounceValue } from "usehooks-ts";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Dialog as RadixDialog, Label, Popover, Separator } from "radix-ui";
 import {
   type SearchServerMemberForAdminQuery,
   useInfiniteGetAssignableServerRolesQuery,
   useInfiniteSearchServerMemberForAdminQuery,
 } from "../../graphql/infiniteQueries.ts";
-import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
+import { useCommunityServerContext } from "../../contexts/CommunityServerContext.tsx";
 import VirtualizedScrollList from "../VirtualizedScrollList.tsx";
-import {UserNameplate} from "../UserNameplate.tsx";
+import { UserNameplate } from "../UserNameplate.tsx";
 import DateTimeText from "../DateTimeText.tsx";
 import {
   type InspectMemberQuery,
@@ -16,47 +16,65 @@ import {
   useInspectMemberQuery,
   useKickServerMemberMutation,
   useUnbanServerMemberMutation,
-  useUpdateMemberRolesMutation,
-  useWarnServerMemberMutation
+  useWarnServerMemberMutation,
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
-import {BsCheck, BsCircleFill, BsExclamationTriangle, BsHammer} from "react-icons/bs";
+import {
+  BsCheck,
+  BsCircleFill,
+  BsExclamationTriangle,
+  BsHammer,
+} from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
-import {FaPlus, FaXmark} from "react-icons/fa6";
-import {FaSave} from "react-icons/fa";
-import {Controller, type SubmitHandler, useForm} from "react-hook-form";
-import {z} from "zod";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {MembershipStatus, ServerPermission, SpecialRoleType} from "../../graphql/types.ts";
-import {useQueryClient} from "@tanstack/react-query";
-import {toast} from "react-toastify";
+import { FaPlus, FaXmark } from "react-icons/fa6";
+import { FaSave } from "react-icons/fa";
+import { Controller, type SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  MembershipStatus,
+  ServerPermission,
+  SpecialRoleType,
+} from "../../graphql/types.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   MemberRolesUpdatedEvent,
   ServerMemberKickedEvent,
   ServerMemberWarnedEvent,
   ServerRoleCreatedEvent,
-  ServerRoleUpdatedEvent
+  ServerRoleUpdatedEvent,
 } from "../../api/events.ts";
 import ModalForm from "../ModalForm.tsx";
 import ErrorText from "../ErrorText.tsx";
-import DurationInput, {type DurationValue} from "../DurationInput.tsx";
+import DurationInput, { type DurationValue } from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
-import {useUnsavedChanges, useUnsavedChangesOnBlock} from "../../contexts/UnsavedChangesContext.tsx";
-import {Avatar} from "../Avatar.tsx";
+import {
+  useUnsavedChanges,
+  useUnsavedChangesOnBlock,
+} from "../../contexts/UnsavedChangesContext.tsx";
+import { Avatar } from "../Avatar.tsx";
+import useUpdateMemberRolesMutation from "../../hooks/useUpdateMemberRolesMutation.ts";
 
 type InspectingMemberContextResult = {
-  inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
+  inspectingMemberInfo: NonNullable<
+    InspectMemberQuery["communityServerMemberForAdmin"]
+  >;
   refreshInspectingMemberInfo: () => void;
   setBanExpiredAt: (value: string | null) => void;
   setWarnCount: (value: number) => void;
   setMembershipStatus: (value: MembershipStatus) => void;
-}
+};
 
-const InspectingMemberContext = createContext<InspectingMemberContextResult | undefined>(undefined);
+const InspectingMemberContext = createContext<
+  InspectingMemberContextResult | undefined
+>(undefined);
 
 export default function MemberManagement() {
-  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+  } = useCommunityServerContext();
   const { guard } = useUnsavedChanges();
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,29 +86,40 @@ export default function MemberManagement() {
 
   const [isShowingSearchResults, setIsShowingSearchResults] = useState(false);
 
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteSearchServerMemberForAdminQuery({
-    serverId: serverDetails!.id,
-    after: null,
-    search: searchValue,
-  }, {
-    enabled: !!searchValue,
-    initialPageParam: { after: null },
-    getNextPageParam: (lastPage: SearchServerMemberForAdminQuery): { after: string } | undefined => {
-      const pageInfo = lastPage?.serverMemberSearchForAdmin?.pageInfo;
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    useInfiniteSearchServerMemberForAdminQuery(
+      {
+        serverId: serverDetails!.id,
+        after: null,
+        search: searchValue,
+      },
+      {
+        enabled: !!searchValue,
+        initialPageParam: { after: null },
+        getNextPageParam: (
+          lastPage: SearchServerMemberForAdminQuery,
+        ): { after: string } | undefined => {
+          const pageInfo = lastPage?.serverMemberSearchForAdmin?.pageInfo;
 
-      if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-        return { after: pageInfo.endCursor };
-      }
+          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+            return { after: pageInfo.endCursor };
+          }
 
-      return undefined;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+          return undefined;
+        },
+        staleTime: 0,
+      },
+    );
 
-  const allMembers = data?.pages.flatMap((page) => page?.serverMemberSearchForAdmin?.nodes ?? []) ?? [];
+  const allMembers =
+    data?.pages.flatMap(
+      (page) => page?.serverMemberSearchForAdmin?.nodes ?? [],
+    ) ?? [];
 
-  const [inspectingMemberId, setInspectingMemberId] = useState<string | undefined>(undefined);
-  
+  const [inspectingMemberId, setInspectingMemberId] = useState<
+    string | undefined
+  >(undefined);
+
   const handleSwitchInspectingMember = guard((memberId: string) => {
     setIsShowingSearchResults(false);
     setInspectingMemberId(memberId);
@@ -98,20 +127,24 @@ export default function MemberManagement() {
 
   return (
     <>
-      <header className="flex-none mb-0">
+      <header className="mb-0 flex-none">
         <h3 className="text-xl font-bold text-white">Member Management</h3>
         <p className="text-sm text-gray-400">
           Inspecting member like a <s>creep</s> private detective...
         </p>
       </header>
 
-      <main className="flex-1 flex flex-col space-y-2">
-        <Popover.Root open={isShowingSearchResults} onOpenChange={setIsShowingSearchResults} modal={false}>
+      <main className="flex flex-1 flex-col space-y-2">
+        <Popover.Root
+          open={isShowingSearchResults}
+          onOpenChange={setIsShowingSearchResults}
+          modal={false}
+        >
           <Popover.Anchor asChild>
             <input
               ref={inputRef}
               type="text"
-              className="flex-none w-full h-11 input-field text-sm"
+              className="input-field h-11 w-full flex-none text-sm"
               placeholder="Enter name, user ID or member ID..."
               onChange={(e) => {
                 const value = e.target.value;
@@ -128,7 +161,7 @@ export default function MemberManagement() {
             <Popover.Content
               side="bottom"
               sideOffset={5}
-              className="w-(--radix-popover-trigger-width) max-h-64 overflow-hidden border-2 border-gray-600 bg-gray-700 text-white rounded-lg shadow-lg"
+              className="max-h-64 w-(--radix-popover-trigger-width) overflow-hidden rounded-lg border-2 border-gray-600 bg-gray-700 text-white shadow-lg"
               onWheel={(e) => e.stopPropagation()}
               onOpenAutoFocus={(e) => e.preventDefault()}
               onInteractOutside={(e) => {
@@ -149,14 +182,13 @@ export default function MemberManagement() {
                   fetchNextPage();
                 }}
                 renderEmpty={() => (
-                  <p className="text-white text-center text-sm py-3">Nobody here...</p>
+                  <p className="py-3 text-center text-sm text-white">
+                    Nobody here...
+                  </p>
                 )}
                 renderSkeletonItem={(index: number) => {
                   return (
-                    <UserNameplate.Skeleton
-                      key={index}
-                      className="p-1 h-12"
-                    />
+                    <UserNameplate.Skeleton key={index} className="h-12 p-1" />
                   );
                 }}
                 renderItem={(itemIndex) => {
@@ -166,10 +198,10 @@ export default function MemberManagement() {
                     <UserNameplate.Root
                       key={member.id}
                       userId={member.user.id}
-                      avatarVersion={member.user.avatar?.version}
+                      avatarVersion={member.user.avatarVersion}
                       displayName={member.user.displayName ?? "???"}
                       userName={member.user.userName ?? "???"}
-                      className="p-1 hover-highlight cursor-pointer w-full"
+                      className="hover-highlight w-full cursor-pointer p-1"
                       onClick={() => {
                         handleSwitchInspectingMember(member.id);
                       }}
@@ -182,12 +214,14 @@ export default function MemberManagement() {
           </Popover.Portal>
         </Popover.Root>
 
-        <div className="flex-1 min-h-0 border-2 border-gray-600 rounded-lg p-2">
+        <div className="min-h-0 flex-1 rounded-lg border-2 border-gray-600 p-2">
           {inspectingMemberId ? (
-            <MemberInformation memberId={inspectingMemberId}/>
+            <MemberInformation memberId={inspectingMemberId} />
           ) : (
-            <div className="size-full flex flex-row justify-center items-center">
-              <p className="select-none text-gray-500">Gotta search for the member first, boss...</p>
+            <div className="flex size-full flex-row items-center justify-center">
+              <p className="text-gray-500 select-none">
+                Gotta search for the member first, boss...
+              </p>
             </div>
           )}
         </div>
@@ -196,103 +230,121 @@ export default function MemberManagement() {
   );
 }
 
-function MemberInformation({memberId}: {memberId: string}) {
+function MemberInformation({ memberId }: { memberId: string }) {
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useInspectMemberQuery(
     { id: memberId },
     {
       staleTime: 5 * 60 * 1000, // 5 minutes
-    }
+    },
   );
 
   if (isLoading) {
     return (
-      <div className="size-full flex flex-row justify-center items-center">
-        <Spinner className="size-8 fill-white"/>
+      <div className="flex size-full flex-row items-center justify-center">
+        <Spinner className="size-8 fill-white" />
       </div>
     );
   }
 
   if (isError || !data?.communityServerMemberForAdmin) {
     return (
-      <div className="size-full flex flex-col justify-center items-center gap-y-2">
-        <BsExclamationTriangle className="size-8 fill-white"/>
+      <div className="flex size-full flex-col items-center justify-center gap-y-2">
+        <BsExclamationTriangle className="size-8 fill-white" />
         <span>Failed to load member information...</span>
       </div>
     );
   }
 
   const refreshInspectingMemberInfo = () => {
-    queryClient.invalidateQueries({queryKey: useInspectMemberQuery.getKey({id: memberId})});
+    queryClient.invalidateQueries({
+      queryKey: useInspectMemberQuery.getKey({ id: memberId }),
+    });
   };
 
   const setBanExpiredAt = (value: string | null) => {
-    queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
-      if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
+    queryClient.setQueryData<InspectMemberQuery>(
+      useInspectMemberQuery.getKey({ id: memberId }),
+      (oldData) => {
+        if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
 
-      return {
-        ...oldData,
-        communityServerMemberForAdmin: {
-          ...oldData.communityServerMemberForAdmin,
-          banExpireAt: value,
-        },
-      };
-    });
+        return {
+          ...oldData,
+          communityServerMemberForAdmin: {
+            ...oldData.communityServerMemberForAdmin,
+            banExpireAt: value,
+          },
+        };
+      },
+    );
   };
 
   const setWarnCount = (value: number) => {
-    queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
-      if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
+    queryClient.setQueryData<InspectMemberQuery>(
+      useInspectMemberQuery.getKey({ id: memberId }),
+      (oldData) => {
+        if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
 
-      return {
-        ...oldData,
-        communityServerMemberForAdmin: {
-          ...oldData.communityServerMemberForAdmin,
-          numWarn: value,
-        },
-      };
-    });
+        return {
+          ...oldData,
+          communityServerMemberForAdmin: {
+            ...oldData.communityServerMemberForAdmin,
+            numWarn: value,
+          },
+        };
+      },
+    );
   };
 
   const setMembershipStatus = (value: MembershipStatus) => {
-    queryClient.setQueryData<InspectMemberQuery>(useInspectMemberQuery.getKey({id: memberId}), (oldData) => {
-      if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
+    queryClient.setQueryData<InspectMemberQuery>(
+      useInspectMemberQuery.getKey({ id: memberId }),
+      (oldData) => {
+        if (!oldData || !oldData.communityServerMemberForAdmin) return oldData;
 
-      return {
-        ...oldData,
-        communityServerMemberForAdmin: {
-          ...oldData.communityServerMemberForAdmin,
-          status: value,
-        },
-      };
-    });
+        return {
+          ...oldData,
+          communityServerMemberForAdmin: {
+            ...oldData.communityServerMemberForAdmin,
+            status: value,
+          },
+        };
+      },
+    );
   };
 
   return (
-    <InspectingMemberContext.Provider value={{
-      inspectingMemberInfo: data.communityServerMemberForAdmin,
-      refreshInspectingMemberInfo,
-      setBanExpiredAt,
-      setWarnCount,
-      setMembershipStatus,
-    }}>
-      <MemberInformationContent/>
+    <InspectingMemberContext.Provider
+      value={{
+        inspectingMemberInfo: data.communityServerMemberForAdmin,
+        refreshInspectingMemberInfo,
+        setBanExpiredAt,
+        setWarnCount,
+        setMembershipStatus,
+      }}
+    >
+      <MemberInformationContent />
     </InspectingMemberContext.Provider>
-  )
+  );
 }
 
 const updateMemberInformationSchema = z.object({
   roleIds: z.string().array(),
 });
 
-type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationSchema>;
+type UpdateMemberInformationFormValues = z.infer<
+  typeof updateMemberInformationSchema
+>;
 
 function MemberInformationContent() {
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
   const serverId = serverDetails!.id;
-  
+
   const { setDirty } = useUnsavedChanges();
-  
+
   const {
     inspectingMemberInfo,
     refreshInspectingMemberInfo,
@@ -300,23 +352,25 @@ function MemberInformationContent() {
     setWarnCount,
     setBanExpiredAt,
   } = useContext(InspectingMemberContext)!;
-  
+
   const formRef = useRef<HTMLFormElement | null>(null);
-  
+
   const {
     handleSubmit,
     control,
-    formState: { isDirty, isSubmitting },
+    formState: { isDirty, isSubmitting, defaultValues },
     reset,
   } = useForm<UpdateMemberInformationFormValues>({
     resolver: zodResolver(updateMemberInformationSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
     defaultValues: {
-      roleIds: inspectingMemberInfo.roles.filter(r => r.specialRoleType === SpecialRoleType.None).map(r => r.id),
-    }
+      roleIds: inspectingMemberInfo.roles
+        .filter((r) => r.specialRoleType === SpecialRoleType.None)
+        .map((r) => r.id),
+    },
   });
-  
+
   useEffect(() => {
     setDirty(isDirty);
   }, [setDirty, isDirty]);
@@ -334,7 +388,9 @@ function MemberInformationContent() {
   const updateMemberRolesMutation = useUpdateMemberRolesMutation({
     onSuccess: (_data, variables) => {
       reset({
-        roleIds: Array.isArray(variables.roleIds) ? variables.roleIds : [variables.roleIds],
+        roleIds: (defaultValues?.roleIds ?? [])
+          .filter((r) => r && !variables.removeRoleIds.includes(r))
+          .concat(variables.addRoleIds),
       });
 
       refreshInspectingMemberInfo();
@@ -342,20 +398,33 @@ function MemberInformationContent() {
 
     onError: (_error, _variables) => {
       toast.error("Failed to update member roles.");
-    }
+    },
   });
 
-  const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (value: UpdateMemberInformationFormValues) => {
+  const onSubmitModification: SubmitHandler<
+    UpdateMemberInformationFormValues
+  > = async (value: UpdateMemberInformationFormValues) => {
+    const addRoleIds = value.roleIds.filter(
+      (id) => !defaultValues!.roleIds!.includes(id),
+    );
+
+    const removeRoleIds =
+      (defaultValues?.roleIds?.filter(
+        (id) => !value.roleIds.includes(id!),
+      ) as string[]) ?? ([] as string[]);
+
     await updateMemberRolesMutation.mutateAsync({
       serverId,
-      memberId: inspectingMemberInfo.id,
-      roleIds: value.roleIds,
+      userId: inspectingMemberInfo.user.id,
+      addRoleIds,
+      removeRoleIds,
     });
   };
 
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (event.serverId !== serverId) return;
-    if (!inspectingMemberInfo.roles.map(r => r.id).includes(event.roleId)) return;
+    if (!inspectingMemberInfo.roles.map((r) => r.id).includes(event.roleId))
+      return;
 
     refreshInspectingMemberInfo();
   });
@@ -387,58 +456,66 @@ function MemberInformationContent() {
 
   return (
     <>
-      <form 
-        ref={formRef} 
+      <form
+        ref={formRef}
         onSubmit={handleSubmit(onSubmitModification)}
         className="relative overflow-y-hidden"
         onAnimationEnd={() => {
           formRef.current?.classList.remove("animate-horizontalShake");
         }}
       >
-        <section className={`absolute ${isDirty ? 'top-2 translate-y-0' : 'top-0 -translate-y-full'} right-2 transition-transform duration-400 ease-in-out p-2 bg-black/15 rounded-md flex flex-row items-center gap-2`}>
-          <IconButton type="button" theme="danger" onClick={() => {
-            reset();
-          }}>
-            <FaXmark className="size-6"/>
+        <section
+          className={`absolute ${isDirty ? "top-2 translate-y-0" : "top-0 -translate-y-full"} right-2 flex flex-row items-center gap-2 rounded-md bg-black/15 p-2 transition-transform duration-400 ease-in-out`}
+        >
+          <IconButton
+            type="button"
+            theme="danger"
+            onClick={() => {
+              reset();
+            }}
+          >
+            <FaXmark className="size-6" />
           </IconButton>
 
           {isSubmitting ? (
-            <Spinner className="size-6 fill-white"/>
+            <Spinner className="size-6 fill-white" />
           ) : (
             <IconButton type="submit" theme="default">
-              <FaSave className="size-6"/>
+              <FaSave className="size-6" />
             </IconButton>
           )}
         </section>
 
         <div>
           <div className="space-y-2">
-            <h4 className="group-label">
-              User Information
-            </h4>
+            <h4 className="group-label">User Information</h4>
 
             <div className="flex flex-row items-center gap-2">
               <Avatar.User
                 userId={inspectingMemberInfo.user.id}
-                version={inspectingMemberInfo.user.avatar?.version}
-                className="flex-none size-10 rounded-full overflow-hidden"
+                version={inspectingMemberInfo.user.avatarVersion}
+                className="size-10 flex-none overflow-hidden rounded-full"
               />
 
-              <span className="font-semibold">{inspectingMemberInfo.user.displayName}</span>
-              <span className="text-sm text-gray-400">@{inspectingMemberInfo.user.userName}</span>
+              <span className="font-semibold">
+                {inspectingMemberInfo.user.displayName}
+              </span>
+              <span className="text-sm text-gray-400">
+                @{inspectingMemberInfo.user.userName}
+              </span>
             </div>
           </div>
 
-          <div className="space-y-2 mt-2">
-            <h4 className="group-label">
-              Member Information
-            </h4>
+          <div className="mt-2 space-y-2">
+            <h4 className="group-label">Member Information</h4>
 
-            <ul className="bg-gray-700 border-2 border-gray-600 rounded-lg p-3 flex flex-col shadow-sm text-sm font-medium text-zinc-300">
+            <ul className="flex flex-col rounded-lg border-2 border-gray-600 bg-gray-700 p-3 text-sm font-medium text-zinc-300 shadow-sm">
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Join Date</span>
 
-                <DateTimeText value={new Date(inspectingMemberInfo.createdAt)}/>
+                <DateTimeText
+                  value={new Date(inspectingMemberInfo.createdAt)}
+                />
               </li>
 
               <Separator.Root className="horizontal-separator my-3" />
@@ -446,28 +523,33 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-0.5">
                 <span className="flex-1">Roles</span>
 
-                <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-                  {inspectingMemberInfo.roles.sort(r => r.authorizeLevel).map((r) => {
-                    return (
-                      <span key={r.id} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm shadow-sm">
-                        <BsCircleFill className="size-2 fill-blue-500"/>
+                <span className="flex flex-1 flex-row flex-wrap justify-end gap-2">
+                  {inspectingMemberInfo.roles
+                    .sort((r) => r.authorizeLevel)
+                    .map((r) => {
+                      return (
+                        <span
+                          key={r.id}
+                          className="flex flex-row items-center gap-2 rounded-sm bg-black/12 px-2 py-0.5 shadow-sm"
+                        >
+                          <BsCircleFill className="size-2 fill-blue-500" />
 
-                        {r.name}
-                      </span>
-                    )
-                  })}
+                          {r.name}
+                        </span>
+                      );
+                    })}
 
                   {hasPermission(ServerPermission.UpdateMemberRoles) && (
                     <Controller
                       control={control}
                       name="roleIds"
-                      render={({field}) => {
+                      render={({ field }) => {
                         return (
                           <RoleModificationButton
                             value={field.value}
                             onChange={field.onChange}
                           />
-                        )
+                        );
                       }}
                     />
                   )}
@@ -479,7 +561,9 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Authorize Level</span>
 
-                <span className="font-mono">{inspectingMemberInfo.authorizeInfo.authorizeLevel}</span>
+                <span className="font-mono">
+                  {inspectingMemberInfo.authorizeInfo.authorizeLevel}
+                </span>
               </li>
 
               <Separator.Root className="horizontal-separator my-3" />
@@ -488,14 +572,19 @@ function MemberInformationContent() {
                 <span>Permissions</span>
 
                 {inspectingMemberInfo.authorizeInfo.permissions?.length > 0 ? (
-                  <span className="flex-1 flex flex-row justify-end flex-wrap gap-2">
-                    {inspectingMemberInfo.authorizeInfo.permissions.map((permission) => {
-                      return (
-                        <span key={permission} className="flex flex-row items-center gap-2 px-2 py-0.5 bg-black/12 rounded-sm">
-                          {permission}
-                        </span>
-                      )
-                    })}
+                  <span className="flex flex-1 flex-row flex-wrap justify-end gap-2">
+                    {inspectingMemberInfo.authorizeInfo.permissions.map(
+                      (permission) => {
+                        return (
+                          <span
+                            key={permission}
+                            className="flex flex-row items-center gap-2 rounded-sm bg-black/12 px-2 py-0.5"
+                          >
+                            {permission}
+                          </span>
+                        );
+                      },
+                    )}
                   </span>
                 ) : (
                   <span className="text-gray-500 select-none">None</span>
@@ -515,7 +604,9 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Warn Count</span>
 
-                <span className="font-mono">{inspectingMemberInfo.numWarn}</span>
+                <span className="font-mono">
+                  {inspectingMemberInfo.numWarn}
+                </span>
               </li>
 
               {inspectingMemberInfo.banExpireAt && (
@@ -525,10 +616,15 @@ function MemberInformationContent() {
                   <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                     <span>Ban Expired At</span>
 
-                    {inspectingMemberInfo.banExpireAt === "9999-12-31T23:59:59.9999999Z" ? (
-                      <span className="text-red-600">Death of the universe</span>
+                    {inspectingMemberInfo.banExpireAt ===
+                    "9999-12-31T23:59:59.9999999Z" ? (
+                      <span className="text-red-600">
+                        Death of the universe
+                      </span>
                     ) : (
-                      <DateTimeText value={new Date(inspectingMemberInfo.banExpireAt)}/>
+                      <DateTimeText
+                        value={new Date(inspectingMemberInfo.banExpireAt)}
+                      />
                     )}
                   </li>
                 </>
@@ -539,7 +635,7 @@ function MemberInformationContent() {
       </form>
 
       {inspectingMemberInfo.id !== serverDetails!.authorizeInfo.memberId && (
-        <MemberActions/>
+        <MemberActions />
       )}
     </>
   );
@@ -553,30 +649,38 @@ function MemberActions() {
   };
 
   return (
-    <div className="space-y-2 mt-2">
-      <h4 className="group-label">
-        Actions
-      </h4>
+    <div className="mt-2 space-y-2">
+      <h4 className="group-label">Actions</h4>
 
       <div className="flex flex-row items-center gap-3">
-        <KickMemberButton/>
-        <WarnMemberButton/>
-        <BanMemberButton refreshBanExpireInfo={refreshBanExpireInfo}/>
-        <UnbanMemberButton onUnbanned={() => refreshInspectingMemberInfo()}/>
+        <KickMemberButton />
+        <WarnMemberButton />
+        <BanMemberButton refreshBanExpireInfo={refreshBanExpireInfo} />
+        <UnbanMemberButton onUnbanned={() => refreshInspectingMemberInfo()} />
       </div>
     </div>
   );
 }
 
 const reasonSchema = z.object({
-  reason: z.string().max(256, { error: "Reason can only have maximum length of 256 characters." }).optional(),
+  reason: z
+    .string()
+    .max(256, {
+      error: "Reason can only have maximum length of 256 characters.",
+    })
+    .optional(),
 });
 
 type KickMemberFormValues = z.infer<typeof reasonSchema>;
 
 function KickMemberButton() {
-  const { inspectingMemberInfo, setMembershipStatus } = useContext(InspectingMemberContext)!;
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const { inspectingMemberInfo, setMembershipStatus } = useContext(
+    InspectingMemberContext,
+  )!;
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
   const serverId = serverDetails!.id;
 
   const [openModal, setOpenModal] = useState(false);
@@ -587,7 +691,11 @@ function KickMemberButton() {
     reValidateMode: "onSubmit",
   });
 
-  const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+  const {
+    register,
+    reset,
+    formState: { isSubmitting, errors },
+  } = formMethods;
 
   const kickMember = useKickServerMemberMutation({
     onSuccess: async () => {
@@ -601,20 +709,30 @@ function KickMemberButton() {
     },
   });
 
-  const handleSubmit: SubmitHandler<KickMemberFormValues> = async (data: KickMemberFormValues) => {
-    kickMember.mutate({ serverId: serverId, memberId: inspectingMemberInfo.id, reason: data.reason });
+  const handleSubmit: SubmitHandler<KickMemberFormValues> = async (
+    data: KickMemberFormValues,
+  ) => {
+    kickMember.mutate({
+      serverId: serverId,
+      memberId: inspectingMemberInfo.id,
+      reason: data.reason,
+    });
   };
 
   return (
     <>
       <button
         type="button"
-        disabled={inspectingMemberInfo.status !== MembershipStatus.Active || !hasPermission(ServerPermission.KickMembers) || isSubmitting}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger2 cursor-pointer flex justify-center items-center"
+        disabled={
+          inspectingMemberInfo.status !== MembershipStatus.Active ||
+          !hasPermission(ServerPermission.KickMembers) ||
+          isSubmitting
+        }
+        className="button-theme-danger2 button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenModal(true)}
       >
         {isSubmitting ? (
-          <Spinner className="size-6 fill-white"/>
+          <Spinner className="size-6 fill-white" />
         ) : (
           <>Kick Member</>
         )}
@@ -631,32 +749,34 @@ function KickMemberButton() {
               reset();
             }
           }}
-          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          headerIcon={<BsHammer className="size-10 fill-white" />}
           title="Kick Member"
           subtitle="Throw them into the grass field"
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           formMethods={formMethods}
-          submitButton={(
+          submitButton={
             <button
               type="submit"
-              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              className="button-theme-primary button-cursor flex h-10 w-32 flex-row items-center justify-center rounded-md"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <Spinner className="size-5 fill-white"/>
+                <Spinner className="size-5 fill-white" />
               ) : (
                 <>Kick Member</>
               )}
             </button>
-          )}
+          }
           onSubmit={handleSubmit}
         >
           <p>
-            Are you sure you want to kick this member?<br/>
-            User can only rejoin the server if they have a valid invitation link.
+            Are you sure you want to kick this member?
+            <br />
+            User can only rejoin the server if they have a valid invitation
+            link.
           </p>
 
-          <Label.Root className="block label mt-2 mb-1">Reason</Label.Root>
+          <Label.Root className="label mt-2 mb-1 block">Reason</Label.Root>
 
           <textarea
             className="input-field h-32 w-full resize-none px-3 py-2"
@@ -670,15 +790,20 @@ function KickMemberButton() {
         </ModalForm>
       )}
     </>
-  )
+  );
 }
 
 type WarnMemberFormValues = z.infer<typeof reasonSchema>;
 
 function WarnMemberButton() {
-  const { inspectingMemberInfo, setWarnCount } = useContext(InspectingMemberContext)!;
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
-  
+  const { inspectingMemberInfo, setWarnCount } = useContext(
+    InspectingMemberContext,
+  )!;
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
+
   const [openDialog, setOpenDialog] = useState(false);
 
   const warnMutation = useWarnServerMemberMutation({
@@ -702,22 +827,32 @@ function WarnMemberButton() {
     reValidateMode: "onSubmit",
   });
 
-  const { register, reset, formState: { isSubmitting, errors } } = formMethods;
+  const {
+    register,
+    reset,
+    formState: { isSubmitting, errors },
+  } = formMethods;
 
   const handleSubmit = (data: WarnMemberFormValues) => {
-    warnMutation.mutate({ serverId: serverDetails!.id, memberId: inspectingMemberInfo.id, reason: data.reason });
-  }
+    warnMutation.mutate({
+      serverId: serverDetails!.id,
+      memberId: inspectingMemberInfo.id,
+      reason: data.reason,
+    });
+  };
 
   return (
     <>
       <button
         type="button"
-        disabled={!hasPermission(ServerPermission.WarnMembers) || warnMutation.isPending}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-warning cursor-pointer flex justify-center items-center"
+        disabled={
+          !hasPermission(ServerPermission.WarnMembers) || warnMutation.isPending
+        }
+        className="button-theme-warning button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenDialog(true)}
       >
         {warnMutation.isPending ? (
-          <Spinner className="size-6 fill-white"/>
+          <Spinner className="size-6 fill-white" />
         ) : (
           <>Warn Member</>
         )}
@@ -734,31 +869,32 @@ function WarnMemberButton() {
               reset();
             }
           }}
-          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          headerIcon={<BsHammer className="size-10 fill-white" />}
           title="Warn Member"
           subtitle="Somebody has been naughty..."
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           formMethods={formMethods}
-          submitButton={(
+          submitButton={
             <button
               type="submit"
-              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              className="button-theme-primary button-cursor flex h-10 w-32 flex-row items-center justify-center rounded-md"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <Spinner className="size-5 fill-white"/>
+                <Spinner className="size-5 fill-white" />
               ) : (
                 <>Warn Member</>
               )}
             </button>
-          )}
+          }
           onSubmit={handleSubmit}
         >
           <p>
-            Are you sure you want to warn this member?<br/>
+            Are you sure you want to warn this member?
+            <br />
           </p>
 
-          <Label.Root className="block label mt-2 mb-1">Reason</Label.Root>
+          <Label.Root className="label mt-2 mb-1 block">Reason</Label.Root>
 
           <textarea
             className="input-field h-32 w-full resize-none px-3 py-2"
@@ -772,22 +908,37 @@ function WarnMemberButton() {
         </ModalForm>
       )}
     </>
-  )
+  );
 }
 
-const banMemberSchema = reasonSchema.and(z.object({
-  duration: z.custom<DurationValue>().refine(val => {
-    return val.days != 0 || val.hours != 0 || val.minutes != 0 || val.seconds != 0;
-  }, { error: "Duration should not be zero." }),
-}));
+const banMemberSchema = reasonSchema.and(
+  z.object({
+    duration: z.custom<DurationValue>().refine(
+      (val) => {
+        return (
+          val.days != 0 ||
+          val.hours != 0 ||
+          val.minutes != 0 ||
+          val.seconds != 0
+        );
+      },
+      { error: "Duration should not be zero." },
+    ),
+  }),
+);
 
 type BanMemberFormValues = z.infer<typeof banMemberSchema>;
 
 function BanMemberButton({
   refreshBanExpireInfo,
-}: {refreshBanExpireInfo: () => void}) {
+}: {
+  refreshBanExpireInfo: () => void;
+}) {
   const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -801,7 +952,12 @@ function BanMemberButton({
     reValidateMode: "onSubmit",
   });
 
-  const { register, reset, control, formState: { isSubmitting, errors } } = formMethods;
+  const {
+    register,
+    reset,
+    control,
+    formState: { isSubmitting, errors },
+  } = formMethods;
 
   const banMutation = useBanServerMemberMutation({
     onSuccess: async () => {
@@ -815,12 +971,19 @@ function BanMemberButton({
     },
   });
 
-  const handleSubmit: SubmitHandler<BanMemberFormValues> = async (data: BanMemberFormValues) => {
+  const handleSubmit: SubmitHandler<BanMemberFormValues> = async (
+    data: BanMemberFormValues,
+  ) => {
     // https://scalars.graphql.org/chillicream/duration.html
     const duration = data.duration;
     const durationString = `P${duration.days}DT${duration.hours}H${duration.minutes}M${duration.seconds}S`;
 
-    banMutation.mutate({ serverId: serverDetails!.id, memberId: inspectingMemberInfo.id, reason: data.reason, duration: durationString });
+    banMutation.mutate({
+      serverId: serverDetails!.id,
+      memberId: inspectingMemberInfo.id,
+      reason: data.reason,
+      duration: durationString,
+    });
   };
 
   return (
@@ -828,11 +991,11 @@ function BanMemberButton({
       <button
         type="button"
         disabled={!hasPermission(ServerPermission.BanMembers) || isSubmitting}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-danger cursor-pointer flex justify-center items-center"
+        className="button-theme-danger button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenDialog(true)}
       >
         {isSubmitting ? (
-          <Spinner className="size-6 fill-white"/>
+          <Spinner className="size-6 fill-white" />
         ) : (
           <>Ban Member</>
         )}
@@ -849,32 +1012,34 @@ function BanMemberButton({
               reset();
             }
           }}
-          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
+          headerIcon={<BsHammer className="size-10 fill-white" />}
           title="Ban Member"
           subtitle="The council have decided to exile this nerd"
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-160"
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           formMethods={formMethods}
-          submitButton={(
+          submitButton={
             <button
               type="submit"
-              className="button-theme-primary cursor-pointer h-10 rounded-md w-32 flex flex-row justify-center items-center"
+              className="button-theme-primary button-cursor flex h-10 w-32 flex-row items-center justify-center rounded-md"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <Spinner className="size-5 fill-white"/>
+                <Spinner className="size-5 fill-white" />
               ) : (
                 <>Ban Member</>
               )}
             </button>
-          )}
+          }
           onSubmit={handleSubmit}
         >
           <p>
-            Are you sure you want to ban this member?<br/>
-            You can unban them later, but the action will be logged in the moderation log.
+            Are you sure you want to ban this member?
+            <br />
+            You can unban them later, but the action will be logged in the
+            moderation log.
           </p>
 
-          <Label.Root className="block label mt-2 mb-1">Reason</Label.Root>
+          <Label.Root className="label mt-2 mb-1 block">Reason</Label.Root>
 
           <textarea
             className="input-field h-32 w-full resize-none px-3 py-2"
@@ -886,34 +1051,59 @@ function BanMemberButton({
             <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
           )}
 
-          <Label.Root className="block label mt-2 mb-1">Duration</Label.Root>
+          <Label.Root className="label mt-2 mb-1 block">Duration</Label.Root>
 
           <Controller
             control={control}
             name="duration"
-            render={({field}) => {
+            render={({ field }) => {
               return (
-                <div className="flex flex-row justify-center items-center">
+                <div className="flex flex-row items-center justify-center">
                   <DurationInput
                     value={field.value}
                     onChange={field.onChange}
                     className="w-3/5"
                     presets={[
-                      {label: "Infinite", value: { days: 9999999, hours: 23, minutes: 59, seconds: 59 }},
-                      {label: "1 year", value: { days: 365, hours: 0, minutes: 0, seconds: 0 }},
-                      {label: "1 month", value: { days: 28, hours: 0, minutes: 0, seconds: 0 }},
-                      {label: "1 week", value: { days: 7, hours: 0, minutes: 0, seconds: 0 }},
-                      {label: "1 day", value: { days: 1, hours: 0, minutes: 0, seconds: 0 }},
-                      {label: "1 hour", value: { days: 0, hours: 1, minutes: 0, seconds: 0 }},
+                      {
+                        label: "Infinite",
+                        value: {
+                          days: 9999999,
+                          hours: 23,
+                          minutes: 59,
+                          seconds: 59,
+                        },
+                      },
+                      {
+                        label: "1 year",
+                        value: { days: 365, hours: 0, minutes: 0, seconds: 0 },
+                      },
+                      {
+                        label: "1 month",
+                        value: { days: 28, hours: 0, minutes: 0, seconds: 0 },
+                      },
+                      {
+                        label: "1 week",
+                        value: { days: 7, hours: 0, minutes: 0, seconds: 0 },
+                      },
+                      {
+                        label: "1 day",
+                        value: { days: 1, hours: 0, minutes: 0, seconds: 0 },
+                      },
+                      {
+                        label: "1 hour",
+                        value: { days: 0, hours: 1, minutes: 0, seconds: 0 },
+                      },
                     ]}
                   />
                 </div>
-              )
+              );
             }}
           />
 
           {errors.duration && (
-            <ErrorText className="mt-1 block text-center">{errors.duration.message}</ErrorText>
+            <ErrorText className="mt-1 block text-center">
+              {errors.duration.message}
+            </ErrorText>
           )}
         </ModalForm>
       )}
@@ -921,11 +1111,12 @@ function BanMemberButton({
   );
 }
 
-function UnbanMemberButton({
-  onUnbanned
-}: {onUnbanned: () => void}) {
+function UnbanMemberButton({ onUnbanned }: { onUnbanned: () => void }) {
   const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
-  const { detailsQueryResult: { data: serverDetails }, hasPermission } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+    hasPermission,
+  } = useCommunityServerContext();
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -944,12 +1135,16 @@ function UnbanMemberButton({
     <>
       <button
         type="button"
-        disabled={!hasPermission(ServerPermission.BanMembers) || unbanMutation.isPending || !inspectingMemberInfo.banExpireAt}
-        className="flex-1 px-4 h-12 text-sm text-white rounded-lg button-theme-success cursor-pointer flex justify-center items-center"
+        disabled={
+          !hasPermission(ServerPermission.BanMembers) ||
+          unbanMutation.isPending ||
+          !inspectingMemberInfo.banExpireAt
+        }
+        className="button-theme-success button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenDialog(true)}
       >
         {unbanMutation.isPending ? (
-          <Spinner className="size-6 fill-white"/>
+          <Spinner className="size-6 fill-white" />
         ) : (
           <>Unban Member</>
         )}
@@ -967,34 +1162,40 @@ function UnbanMemberButton({
           }}
           title="Unban Member"
           subtitle="Feeling funny today, might unban a guy for a change."
-          headerIcon={(<BsHammer className="size-10 fill-white"/>)}
-          contentClassName="centered-dialog rounded-xl text-white bg-gray-650 outline-none w-128"
-          footerContent={(
-            <div className="w-full flex flex-row justify-end p-3 gap-3">
+          headerIcon={<BsHammer className="size-10 fill-white" />}
+          contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
+          footerContent={
+            <div className="flex w-full flex-row justify-end gap-3 p-3">
               <RadixDialog.Close
                 type="button"
-                className="cursor-pointer basis-20 outline-none"
+                className="basis-20 cursor-pointer outline-none"
               >
                 Cancel
               </RadixDialog.Close>
 
               <button
                 type="submit"
-                className="button-theme-primary cursor-pointer h-10 rounded-md w-40 flex flex-row justify-center items-center"
+                className="button-theme-primary button-cursor flex h-10 w-40 flex-row items-center justify-center rounded-md"
                 disabled={unbanMutation.isPending}
-                onClick={() => unbanMutation.mutate({ serverId: serverDetails!.id, memberId: inspectingMemberInfo.id })}
+                onClick={() =>
+                  unbanMutation.mutate({
+                    serverId: serverDetails!.id,
+                    memberId: inspectingMemberInfo.id,
+                  })
+                }
               >
                 {unbanMutation.isPending ? (
-                  <Spinner className="size-5 fill-white"/>
+                  <Spinner className="size-5 fill-white" />
                 ) : (
                   <>Unban Member</>
                 )}
               </button>
             </div>
-          )}
+          }
         >
-          <div className="px-4 py-2">
-            Are you sure you want to unban this member?<br/>
+          <div className="panel-padding">
+            Are you sure you want to unban this member?
+            <br />
           </div>
         </Dialog>
       )}
@@ -1012,61 +1213,78 @@ function RoleModificationButton({
   onChange,
 }: RoleModificationButtonProps) {
   const queryClient = useQueryClient();
-  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
-  
+  const {
+    detailsQueryResult: { data: serverDetails },
+  } = useCommunityServerContext();
+
   const serverId = serverDetails!.id;
   const authorizeLevel = serverDetails!.authorizeInfo.authorizeLevel;
-  
+
   const [searchValue, setSearchValue] = useDebounceValue("", 500);
 
-  const {
-    data,
-    isLoading,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteGetAssignableServerRolesQuery(
-    { serverId, nameFilter: searchValue, after: null, authorizeLevel, },
-    {
-      initialPageParam: { after: null },
-      getNextPageParam: (lastPage) => {
-        const pageInfo = lastPage?.communityServerRoles?.pageInfo;
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useInfiniteGetAssignableServerRolesQuery(
+      { serverId, nameFilter: searchValue, after: null, authorizeLevel },
+      {
+        initialPageParam: { after: null },
+        getNextPageParam: (lastPage) => {
+          const pageInfo = lastPage?.communityServerRoles?.pageInfo;
 
-        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-          return { after: pageInfo.endCursor };
-        }
+          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+            return { after: pageInfo.endCursor };
+          }
 
-        return undefined;
+          return undefined;
+        },
+        staleTime: 30 * 60 * 1000,
       },
-      staleTime: 30 * 60 * 1000,
-    }
-  );
+    );
 
-  const allElements = data?.pages.flatMap((page) => page?.communityServerRoles?.nodes ?? []) ?? [];
+  const allElements =
+    data?.pages.flatMap((page) => page?.communityServerRoles?.nodes ?? []) ??
+    [];
 
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId, authorizeLevel})});
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({
+        serverId,
+        authorizeLevel,
+      }),
+    });
   });
 
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (serverId !== event.serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId, authorizeLevel})});
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({
+        serverId,
+        authorizeLevel,
+      }),
+    });
   });
 
   useSignalREvent("MemberRolesUpdated", (event: MemberRolesUpdatedEvent) => {
     if (event.serverId !== serverId) return;
 
-    queryClient.invalidateQueries({queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({serverId, authorizeLevel})});
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetAssignableServerRolesQuery.getKey({
+        serverId,
+        authorizeLevel,
+      }),
+    });
   });
 
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <IconButton theme="default" className="size-6 bg-black/12 rounded-sm shadow-sm">
-          <FaPlus className="size-4"/>
+        <IconButton
+          theme="default"
+          className="size-6 rounded-sm bg-black/12 shadow-sm"
+        >
+          <FaPlus className="size-4" />
         </IconButton>
       </Popover.Trigger>
 
@@ -1075,15 +1293,15 @@ function RoleModificationButton({
           side="top"
           sideOffset={5}
           align="center"
-          className="rounded-lg bg-gray-650 text-sm font-medium text-white shadow-lg h-64 overflow-hidden flex flex-col gap-1"
+          className="bg-gray-650 flex h-64 flex-col gap-1 overflow-hidden rounded-lg text-sm font-medium text-white shadow-lg"
           onWheel={(e) => e.stopPropagation()}
           onOpenAutoFocus={(e) => e.stopPropagation()}
         >
-          <div className="px-1 pt-1 flex-none">
+          <div className="flex-none px-1 pt-1">
             <input
               type="text"
               placeholder="Enter name"
-              className="text-sm input-field py-2 px-2"
+              className="input-field px-2 py-2 text-sm"
               onChange={(e) => setSearchValue(e.target.value)}
             />
           </div>
@@ -1101,13 +1319,16 @@ function RoleModificationButton({
               fetchNextPage();
             }}
             renderSkeletonItem={(index) => (
-              <li className="h-8 flex flex-row items-center gap-2 px-1" key={index}>
-                <BsCircleFill className="size-2.5 fill-white/10 animate-pulse"/>
-                <span className="h-4 w-32 bg-white/10 animate-pulse rounded"></span>
+              <li
+                className="flex h-8 flex-row items-center gap-2 px-1"
+                key={index}
+              >
+                <BsCircleFill className="size-2.5 animate-pulse fill-white/10" />
+                <span className="h-4 w-32 animate-pulse rounded bg-white/10"></span>
               </li>
             )}
             renderEmpty={() => (
-              <div className="flex flex-1 select-none items-center justify-center text-gray-400">
+              <div className="flex flex-1 items-center justify-center text-gray-400 select-none">
                 No assignable role...
               </div>
             )}
@@ -1118,7 +1339,7 @@ function RoleModificationButton({
               return (
                 <button
                   type="button"
-                  className="dropdown-item-default flex flex-row items-center w-full gap-2"
+                  className="dropdown-item-default flex w-full flex-row items-center gap-2"
                   onClick={() => {
                     if (isSelected) {
                       onChange(value.filter((id) => id !== role.id));
@@ -1127,13 +1348,15 @@ function RoleModificationButton({
                     }
                   }}
                 >
-                  <BsCircleFill className="size-2.5 fill-blue-500"/>
+                  <BsCircleFill className="size-2.5 fill-blue-500" />
 
-                  <span className="flex-1 text-left truncate min-w-0">
+                  <span className="min-w-0 flex-1 truncate text-left">
                     {role.name}
                   </span>
 
-                  {isSelected && <BsCheck className="size-5 fill-white flex-none" />}
+                  {isSelected && (
+                    <BsCheck className="size-5 flex-none fill-white" />
+                  )}
                 </button>
               );
             }}
@@ -1144,5 +1367,5 @@ function RoleModificationButton({
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
-  )
+  );
 }

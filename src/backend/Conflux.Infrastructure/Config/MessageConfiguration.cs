@@ -23,6 +23,18 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
                 v => JsonSerializer.Serialize(v, JsonOptions),
                 v => JsonSerializer.Deserialize<MessageProperties>(v, JsonOptions)!
             );
+
+        builder.Property(m => m.SearchVector)
+            .HasComputedColumnSql(
+                """to_tsvector('simple', COALESCE("Body", ''))""",
+                stored: true
+            );
+
+        builder.HasIndex(m => m.SearchVector)
+            .HasMethod("GIN")
+            .HasFilter("""
+                       "DeletedAt" IS NULL
+                       """);
             
         // relationship
         builder.HasOne(m => m.Sender)
@@ -46,6 +58,6 @@ internal sealed class MessageConfiguration : IEntityTypeConfiguration<Message> {
         });
         
         // filters
-        builder.HasQueryFilter("SoftDeletionFilter", b => b.DeletedAt == null);
+        builder.HasQueryFilter("IgnoreDeletedMessages", b => b.DeletedAt == null);
     }
 }

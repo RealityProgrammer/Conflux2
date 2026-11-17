@@ -13,7 +13,7 @@ public sealed class FriendRequestObjectType : ObjectType<FriendRequest> {
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(r => r.Id).IsProjected();
-        descriptor.Field(r => r.DirectConversation);
+        descriptor.Field(r => r.Conversation);
         descriptor.Field(r => r.CreatedAt);
         descriptor.Field(r => r.Receiver);
         descriptor.Field(r => r.ReceiverUserId);

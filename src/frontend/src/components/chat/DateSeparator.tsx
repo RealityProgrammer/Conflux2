@@ -1,12 +1,12 @@
-import {TimelineItem} from "./TimelineItem.ts";
-import type {TimelineContext} from "./TimelineContext.ts";
-import {type ReactNode} from "react";
-import {Separator} from "radix-ui";
-import {formatDate} from "date-fns";
+import { TimelineItem } from "./TimelineItem.ts";
+import type { TimelineContext } from "./TimelineContext.ts";
+import { type ReactNode } from "react";
+import { Separator } from "radix-ui";
+import { formatDate } from "date-fns";
 
 type DateSeparatorProps = {
   date: Date;
-}
+};
 
 export class DateSeparator extends TimelineItem<DateSeparatorProps> {
   constructor(data: DateSeparatorProps) {
@@ -19,13 +19,21 @@ export class DateSeparator extends TimelineItem<DateSeparatorProps> {
 
   render(_context: TimelineContext): ReactNode {
     return (
-      <div className="w-full flex flex-row justify-center items-center gap-2 px-3">
-        <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>
+      <div className="flex w-full flex-row items-center justify-center gap-2 px-3">
+        <Separator.Root
+          decorative
+          className="horizontal-separator my-3 flex-1"
+        />
 
-        <span className="flex-none text-xs font-semibold text-gray-400 select-none">{formatDate(this.data.date, "PPP")}</span>
+        <span className="flex-none text-xs font-semibold text-gray-400 select-none">
+          {formatDate(this.data.date, "PPP")}
+        </span>
 
-        <Separator.Root decorative className="flex-1 horizontal-separator my-3"/>
+        <Separator.Root
+          decorative
+          className="horizontal-separator my-3 flex-1"
+        />
       </div>
-    )
+    );
   }
 }

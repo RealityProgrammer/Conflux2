@@ -1,11 +1,11 @@
-import {useEffect, useRef, useState} from "react";
-import {BsCameraVideoOffFill, BsMicMuteFill} from "react-icons/bs";
-import {Avatar} from "../Avatar.tsx";
+import { useEffect, useRef, useState } from "react";
+import { BsCameraVideoOffFill, BsMicMuteFill } from "react-icons/bs";
+import { Avatar } from "../Avatar.tsx";
 
 interface StreamVideoProps {
   stream: MediaStream | null;
   peerId?: string;
-  peerAvatarVersion?: number;
+  peerAvatarVersion: number | null | undefined;
   displayName?: string;
   isLocal?: boolean;
   className?: string;
@@ -19,7 +19,7 @@ export default function MediaFeed({
   peerId,
   peerAvatarVersion,
   displayName,
-  className = '',
+  className = "",
   audioOutputDeviceId,
   isLocal,
   isVideoEnabled = true,
@@ -37,8 +37,18 @@ export default function MediaFeed({
     }
 
     const updateTrackState = () => {
-      setHasVideo(stream.getVideoTracks().some((t) => t.enabled && !t.muted && t.readyState === "live") && isVideoEnabled);
-      setHasAudio(stream.getAudioTracks().some((t) => t.enabled && !t.muted && t.readyState === "live") && isAudioEnabled);
+      setHasVideo(
+        stream
+          .getVideoTracks()
+          .some((t) => t.enabled && !t.muted && t.readyState === "live") &&
+          isVideoEnabled,
+      );
+      setHasAudio(
+        stream
+          .getAudioTracks()
+          .some((t) => t.enabled && !t.muted && t.readyState === "live") &&
+          isAudioEnabled,
+      );
     };
 
     const attached = new Set<MediaStreamTrack>();
@@ -113,7 +123,9 @@ export default function MediaFeed({
   }, [stream]);
 
   return (
-    <div className={`relative flex items-center justify-center bg-gray-900 overflow-hidden ${className}`}>
+    <div
+      className={`relative flex items-center justify-center overflow-hidden bg-gray-900 ${className}`}
+    >
       {/* always mounted so that audio be playing */}
       <video
         ref={videoRef}
@@ -124,26 +136,24 @@ export default function MediaFeed({
       />
 
       {!hasVideo && (
-        <div className="flex flex-col items-center justify-center gap-2 p-2 max-w-full max-h-full">
+        <div className="flex max-h-full max-w-full flex-col items-center justify-center gap-2 p-2">
           <Avatar.User
             userId={peerId}
             version={peerAvatarVersion}
             alt={`${displayName}'s avatar`}
-            className="size-12 shrink-0 aspect-square rounded-full ring-2 ring-gray-700 overflow-hidden shadow-lg select-none object-cover"
+            className="aspect-square size-12 shrink-0 overflow-hidden rounded-full object-cover shadow-lg ring-2 ring-gray-700 select-none"
           />
 
           {displayName && (
-            <span className="text-sm font-medium text-gray-200 select-none truncate">
+            <span className="truncate text-sm font-medium text-gray-200 select-none">
               {displayName}
             </span>
           )}
 
           <div className="flex items-center gap-2">
-            <BsCameraVideoOffFill className="size-4 fill-red-500"/>
+            <BsCameraVideoOffFill className="size-4 fill-red-500" />
 
-            {!hasAudio && (
-              <BsMicMuteFill className="size-4 fill-red-500"/>
-            )}
+            {!hasAudio && <BsMicMuteFill className="size-4 fill-red-500" />}
           </div>
         </div>
       )}

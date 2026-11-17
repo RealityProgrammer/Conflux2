@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Conflux.Application.Services.Implementations;
 
 internal sealed class UserMediaService(
-    IUserRepository userRepository,
     IBlobStorage blobStorage,
     IFileFormatInspector fileFormatInspector
 ) : IUserMediaService {
@@ -94,41 +93,49 @@ internal sealed class UserMediaService(
         return await blobStorage.Delete(GetBannerBackupKey(userId), cancellationToken);
     }
 
-    public async Task<AvatarMediaItemInfo?> GetAvatar(Guid userId, CancellationToken cancellationToken = default) {
-        Stream? attachmentStream = await blobStorage.GetStream(GetAvatarKey(userId), cancellationToken);
-        if (attachmentStream == null) return null;
-        
-        var info = await userRepository
-            .AsQueryable()
-            .Where(u => u.Id == userId)
-            .Select(u => u.Avatar != null ? new { u.Avatar.ContentType, u.Avatar.Version } : null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (info == null) {
-            await blobStorage.Delete(GetAvatarKey(userId), cancellationToken);
-            return null;
-        }
-
-        return new(attachmentStream, info.ContentType, info.Version);
+    public string GetAvatarPreSignedUrl(Guid userId, TimeSpan expireIn) {
+        return blobStorage.GeneratePreSignedUrl(GetAvatarKey(userId), expireIn);
     }
 
-    public async Task<BannerMediaItemInfo?> GetBanner(Guid userId, CancellationToken cancellationToken = default) {
-        Stream? attachmentStream = await blobStorage.GetStream(GetBannerKey(userId), cancellationToken);
-        if (attachmentStream == null) return null;
-        
-        var info = await userRepository
-            .AsQueryable()
-            .Where(u => u.Id == userId)
-            .Select(u => u.Banner != null ? new { u.Banner.ContentType, u.Banner.Version } : null)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (info == null) {
-            await blobStorage.Delete(GetAvatarKey(userId), cancellationToken);
-            return null;
-        }
-
-        return new(attachmentStream, info.ContentType, info.Version);
+    public string GetBannerPreSignedUrl(Guid userId, TimeSpan expireIn) {
+        return blobStorage.GeneratePreSignedUrl(GetBannerKey(userId), expireIn);
     }
+
+    // public async Task<AvatarMediaItemInfo?> GetAvatar(Guid userId, CancellationToken cancellationToken = default) {
+    //     Stream? attachmentStream = await blobStorage.GetStream(GetAvatarKey(userId), cancellationToken);
+    //     if (attachmentStream == null) return null;
+    //     
+    //     var info = await userRepository
+    //         .AsQueryable()
+    //         .Where(u => u.Id == userId)
+    //         .Select(u => u.Avatar != null ? new { u.Avatar.ContentType, u.Avatar.Version } : null)
+    //         .FirstOrDefaultAsync(cancellationToken);
+    //
+    //     if (info == null) {
+    //         await blobStorage.Delete(GetAvatarKey(userId), cancellationToken);
+    //         return null;
+    //     }
+    //
+    //     return new(attachmentStream, info.ContentType, info.Version);
+    // }
+    //
+    // public async Task<BannerMediaItemInfo?> GetBanner(Guid userId, CancellationToken cancellationToken = default) {
+    //     Stream? attachmentStream = await blobStorage.GetStream(GetBannerKey(userId), cancellationToken);
+    //     if (attachmentStream == null) return null;
+    //     
+    //     var info = await userRepository
+    //         .AsQueryable()
+    //         .Where(u => u.Id == userId)
+    //         .Select(u => u.Banner != null ? new { u.Banner.ContentType, u.Banner.Version } : null)
+    //         .FirstOrDefaultAsync(cancellationToken);
+    //
+    //     if (info == null) {
+    //         await blobStorage.Delete(GetAvatarKey(userId), cancellationToken);
+    //         return null;
+    //     }
+    //
+    //     return new(attachmentStream, info.ContentType, info.Version);
+    // }
 
     private Result<Image> ValidateImageFormat(Stream stream) {
         if (fileFormatInspector.DetermineFileFormat(stream) is not { } fileFormat) {

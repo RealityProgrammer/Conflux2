@@ -8,9 +8,7 @@ query GetJoinedCommunityServer($after: String) {
         nodes {
             id
             name
-            avatar {
-                version
-            }
+            avatarVersion
         }
     }
 }

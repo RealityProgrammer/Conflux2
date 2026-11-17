@@ -1,23 +1,24 @@
-import {useCommunityServerContext} from "../../contexts/CommunityServerContext.tsx";
-import {Controller, useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {InvitationExpireAfter} from "../../api/schema.ts";
-import {z} from "zod";
-import {invitationService} from "../../api/invitationService.ts";
-import {toast} from "react-toastify";
-import {BsChevronDown, BsCopy, BsPersonPlus} from "react-icons/bs";
-import {Label, Select} from "radix-ui";
+import { useCommunityServerContext } from "../../contexts/CommunityServerContext.tsx";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { InvitationExpireAfter } from "../../api/schema.ts";
+import { z } from "zod";
+import { invitationService } from "../../api/invitationService.ts";
+import { toast } from "react-toastify";
+import { BsChevronDown, BsCopy, BsPersonPlus } from "react-icons/bs";
+import { Label, Select } from "radix-ui";
 import ErrorText from "../ErrorText.tsx";
-import {HttpStatusCode} from "axios";
+import { HttpStatusCode } from "axios";
 import ModalForm from "../ModalForm.tsx";
 import SelectItem from "../SelectItem.tsx";
-import {useState} from "react";
-import {useInterval} from "usehooks-ts";
-
+import { useState } from "react";
+import { useInterval } from "usehooks-ts";
 
 const createInvitationSchema = z.object({
   expireAfter: z.enum(InvitationExpireAfter),
-  maxUses: z.number().int({ error: "A valid positive integer is required." })
+  maxUses: z
+    .number()
+    .int({ error: "A valid positive integer is required." })
     .min(1, { error: "Max uses must be at least 1." })
     .max(500000, { error: "Max uses must be less than or equal to 500000." })
     .nullable()
@@ -49,9 +50,11 @@ interface CreateInvitationDialogProps {
 
 export default function CreateInvitationDialog({
   open,
-  onOpenChange
+  onOpenChange,
 }: CreateInvitationDialogProps) {
-  const { detailsQueryResult: { data: serverDetails } } = useCommunityServerContext();
+  const {
+    detailsQueryResult: { data: serverDetails },
+  } = useCommunityServerContext();
 
   const formMethods = useForm<CreateInvitationFormValues>({
     resolver: zodResolver(createInvitationSchema),
@@ -65,21 +68,35 @@ export default function CreateInvitationDialog({
 
   const handleGetInvitation = async (value: CreateInvitationFormValues) => {
     if (!serverDetails?.id) return;
-    
-    const response = await invitationService.createInvitation(serverDetails.id, value.expireAfter, value.maxUses ?? null);
+
+    const response = await invitationService.createInvitation(
+      serverDetails.id,
+      value.expireAfter,
+      value.maxUses ?? null,
+    );
 
     if (response.success) {
       try {
-        await navigator.clipboard.writeText(`${window.location.origin}/invite/${response.data}`);
+        await navigator.clipboard.writeText(
+          `${window.location.origin}/invite/${response.data}`,
+        );
         formMethods.reset();
         onOpenChange(false);
         toast.success("Invitation link has been copied to clipboard.");
       } catch {
-        toast.error("Failed to copy invitation link to clipboard, possible API error?");
+        toast.error(
+          "Failed to copy invitation link to clipboard, possible API error?",
+        );
       }
     } else {
-      if (response.statusCode === HttpStatusCode.BadRequest && response.error?.code === "ValidationErrorsOccurred") {
-        const details = response.error.details as Record<"expireAfter" | "maxUses", string[]>;
+      if (
+        response.statusCode === HttpStatusCode.BadRequest &&
+        response.error?.code === "ValidationErrorsOccurred"
+      ) {
+        const details = response.error.details as Record<
+          "expireAfter" | "maxUses",
+          string[]
+        >;
 
         if (details.expireAfter && details.expireAfter.length > 0) {
           formMethods.setError("expireAfter", {
@@ -90,7 +107,7 @@ export default function CreateInvitationDialog({
         if (details.maxUses && details.maxUses.length > 0) {
           formMethods.setError("maxUses", {
             message: details.maxUses[0],
-          })
+          });
         }
       } else {
         formMethods.setError("root", {
@@ -105,65 +122,69 @@ export default function CreateInvitationDialog({
       open={open}
       onOpenChange={onOpenChange}
       formMethods={formMethods}
-      contentClassName="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-128 -translate-x-1/2 -translate-y-1/2 rounded-md text-white"
-      headerIcon={(<BsPersonPlus className="size-10 fill-white"/>)}
+      contentClassName="centered-dialog w-xl text-white"
+      headerIcon={<BsPersonPlus className="size-10 fill-white" />}
       title="Grab an invitation"
       subtitle="Invite people to the fun gang"
-      submitButton={(<GetInvitationLinkButton/>)}
+      submitButton={<GetInvitationLinkButton />}
       onSubmit={handleGetInvitation}
     >
       <div className="w-full">
-        <Label.Root className="label block mb-1">Expire after</Label.Root>
+        <Label.Root className="label mb-1 block">Expire after</Label.Root>
 
         <Controller
           control={formMethods.control}
           name="expireAfter"
-          render={({field}) => (
+          render={({ field }) => (
             <>
               <Select.Root value={field.value} onValueChange={field.onChange}>
-                <Select.Trigger className="w-full input-field h-10 inline-flex flex-row items-center gap-2">
-                  <Select.Value placeholder="Select time"/>
-                  <Select.Icon className="fill-white flex-none ml-auto">
-                    <BsChevronDown className="size-4"/>
+                <Select.Trigger className="input-field inline-flex h-10 w-full flex-row items-center gap-2">
+                  <Select.Value placeholder="Select time" />
+                  <Select.Icon className="ml-auto flex-none fill-white">
+                    <BsChevronDown className="size-4" />
                   </Select.Icon>
                 </Select.Trigger>
 
                 <Select.Portal>
                   <Select.Content
-                    className="overflow-hidden bg-gray-700 text-white rounded-md w-(--radix-select-trigger-width) max-h-64"
+                    className="max-h-64 w-(--radix-select-trigger-width) overflow-hidden rounded-md bg-gray-700 text-white"
                     position="popper"
                     side="bottom"
                     sideOffset={4}
                   >
-                    <Select.Viewport className="p-1 size-full overflow-y-auto">
-                      { INVITATION_OPTIONS.map(e => (
+                    <Select.Viewport className="size-full overflow-y-auto p-1">
+                      {INVITATION_OPTIONS.map((e) => (
                         <SelectItem
                           key={e.value}
                           text={e.label}
                           value={e.value}
                         />
-                      ))
-                      }
+                      ))}
                     </Select.Viewport>
                   </Select.Content>
                 </Select.Portal>
               </Select.Root>
 
               {formMethods.formState.errors.expireAfter && (
-                <ErrorText>{formMethods.formState.errors.expireAfter.message}</ErrorText>
+                <ErrorText>
+                  {formMethods.formState.errors.expireAfter.message}
+                </ErrorText>
               )}
             </>
           )}
         />
 
-        <Label.Root className="label block mb-1 mt-3" htmlFor="maxUses">Max uses</Label.Root>
+        <Label.Root className="label mt-3 mb-1 block" htmlFor="maxUses">
+          Max uses
+        </Label.Root>
 
         <input
           type="number"
-          className="w-full input-field h-11"
+          className="input-field h-11 w-full"
           placeholder="Enter max number of uses"
           {...formMethods.register("maxUses", {
-            setValueAs: (value) => (value === "" || value == null ? null : Number(value)),
+            setValueAs: (value) =>
+              value === "" || value == null ? null : Number(value),
           })}
         />
 
@@ -172,18 +193,21 @@ export default function CreateInvitationDialog({
         )}
 
         {formMethods.formState.errors.root && (
-          <ErrorText className="mt-2">{formMethods.formState.errors.root.message}</ErrorText>
+          <ErrorText className="mt-2">
+            {formMethods.formState.errors.root.message}
+          </ErrorText>
         )}
       </div>
     </ModalForm>
   );
 }
 
-function GetInvitationLinkButton({...props}) {
-  const CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+function GetInvitationLinkButton({ ...props }) {
+  const CHARACTERS =
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const generateRandomInvitationId = (length: number): string => {
-    let result = '';
+    let result = "";
 
     for (let i = 0; i < length; i++) {
       const randomInd = Math.floor(Math.random() * CHARACTERS.length);
@@ -193,24 +217,28 @@ function GetInvitationLinkButton({...props}) {
     return result;
   };
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const [fakeInvitationId, setFakeInvitationId] = useState(() => generateRandomInvitationId(12));
+  const [fakeInvitationId, setFakeInvitationId] = useState(() =>
+    generateRandomInvitationId(12),
+  );
 
   useInterval(() => {
     setFakeInvitationId(generateRandomInvitationId(12));
   }, 100);
 
   return (
-    <div className="flex-1 min-w-0 input-field h-11 px-3 flex items-center gap-2">
-      <span className="truncate flex-1 text-gray-500 select-none">{baseUrl}/invite/{fakeInvitationId}</span>
+    <div className="input-field flex h-11 min-w-0 flex-1 items-center gap-2 px-3">
+      <span className="flex-1 truncate text-gray-500 select-none">
+        {baseUrl}/invite/{fakeInvitationId}
+      </span>
 
       <button
         type="submit"
-        className="flex-none cursor-pointer rounded-md button-theme-primary p-2"
+        className="button-theme-primary flex-none cursor-pointer rounded-md p-2"
         {...props}
       >
-        <BsCopy className="size-4 fill-white"/>
+        <BsCopy className="size-4 fill-white" />
       </button>
     </div>
   );

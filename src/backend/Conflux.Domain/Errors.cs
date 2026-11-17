@@ -50,6 +50,9 @@ public static class Errors {
     
     public static Error OperationFailure(string doWhat) =>
         new(nameof(OperationFailure), $"Failed to {doWhat}.");
+    
+    public static Error OperationFailure(string doWhat, string? because) =>
+        new(nameof(OperationFailure), $"Failed to {doWhat}{(string.IsNullOrEmpty(because) ? '.' : $" because {because}.")}");
 
     public static Error Discontinued(string description) => new(nameof(Discontinued), description);
 
@@ -180,4 +183,7 @@ public static class Errors {
     
     public static Error ServerEmojiLimit() =>
         new(nameof(ServerEmojiLimit), "Server has hit emoji limit.");
+
+    public static Error MessageUniqueReactionLimit(int count) =>
+        new(nameof(MessageUniqueReactionLimit), $"Message has hit unique reaction limit ({count}).");
 }

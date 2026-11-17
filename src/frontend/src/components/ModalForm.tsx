@@ -1,7 +1,18 @@
-import {cloneElement, isValidElement, type ReactElement, type ReactNode, useId} from "react";
-import {type FieldValues, FormProvider, type SubmitHandler, type UseFormReturn} from "react-hook-form";
+import {
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useId,
+} from "react";
+import {
+  type FieldValues,
+  FormProvider,
+  type SubmitHandler,
+  type UseFormReturn,
+} from "react-hook-form";
 import Dialog from "./Dialog.tsx";
-import {Dialog as RadixDialog} from "radix-ui"
+import { Dialog as RadixDialog } from "radix-ui";
 
 export interface ModalFormProps<TFieldValues extends FieldValues> {
   open?: boolean;
@@ -35,11 +46,11 @@ export default function ModalForm<TFieldValues extends FieldValues>({
   const formId = useId();
 
   const footerContent = (
-    <div className="w-full flex flex-row justify-end p-3 gap-3">
+    <div className="flex w-full flex-row justify-end gap-3 p-3">
       {onClear && (
         <button
           type="button"
-          className="flex-none button-theme-danger cursor-pointer rounded-md px-6 mr-auto outline-none"
+          className="button-theme-danger mr-auto flex-none cursor-pointer rounded-md px-6 outline-none"
           onClick={onClear}
         >
           Clear
@@ -48,17 +59,20 @@ export default function ModalForm<TFieldValues extends FieldValues>({
 
       <RadixDialog.Close
         type="button"
-        className="cursor-pointer basis-20 outline-none"
+        className="basis-20 cursor-pointer outline-none"
       >
         Cancel
       </RadixDialog.Close>
 
       {isValidElement(submitButton)
-        ? cloneElement(submitButton as ReactElement<{ form?: string; type?: string }>, {
-          form: formId,
-          type: (submitButton.props as any).type ?? "submit",
-        }) : submitButton
-      }
+        ? cloneElement(
+            submitButton as ReactElement<{ form?: string; type?: string }>,
+            {
+              form: formId,
+              type: (submitButton.props as any).type ?? "submit",
+            },
+          )
+        : submitButton}
     </div>
   );
 
@@ -67,7 +81,7 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       open={open}
       onOpenChange={(open) => {
         onOpenChange?.(open);
-        
+
         if (!open) {
           formMethods.reset();
         }
@@ -82,7 +96,7 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       <FormProvider {...formMethods}>
         <form
           id={formId}
-          className="px-4 py-2"
+          className="panel-padding"
           onSubmit={formMethods.handleSubmit(onSubmit)}
         >
           {children}

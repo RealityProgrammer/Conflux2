@@ -1,4 +1,5 @@
 using Conflux.Application.Features.Servers;
+using Conflux.Application.Services;
 using Conflux.Domain.Enums;
 using Conflux.WebApi.SignalR;
 using Facet;
@@ -16,7 +17,8 @@ public sealed partial record ServerMemberKickedEvent;
 
 internal sealed class MemberKickedNotificationHandler(
     IHubContext<GatewayHub, IConfluxClient> hubContext,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IConnectionTracker connectionTracker
 ) : INotificationHandler<ServerMemberKickedNotification> {
     public async ValueTask Handle(ServerMemberKickedNotification notification, CancellationToken cancellationToken) {
         string? connectionId = 
@@ -26,6 +28,19 @@ internal sealed class MemberKickedNotificationHandler(
         await hubContext.Clients
             .User(notification.KickedMemberUserId.ToString())
             .KickedFromServer(notification.ServerId, cancellationToken);
+        
+        // remove the connections of kicked users from the server group
+        if (await connectionTracker.GetConnections(notification.KickedMemberUserId) is { Count: > 0 } kickedUserConnectionIds) {
+            var serverGroupName = SignalRGroupNameProvider.GetServerGroupName(notification.ServerId);
+            
+            foreach (var connection in kickedUserConnectionIds) {
+                await hubContext.Groups.RemoveFromGroupAsync(
+                    connection,
+                    serverGroupName,
+                    cancellationToken
+                );
+            }
+        }
         
         // broadcast the notification to members with ManageMembers role (except the executor connection).
         string groupName = SignalRGroupNameProvider.GetServerPermissionGroupName(notification.ServerId, ServerPermission.ManageMembers);

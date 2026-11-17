@@ -19,7 +19,7 @@ public sealed class RefreshHandler(
     IJwtStorage jwtStorage,
     IJwtProvider jwtProvider,
     ISessionService sessionService,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
+    IAccountDeleteCacheService accountDeleteCacheService
 ) : ICommandHandler<RefreshCommand, Result<RefreshResult>> {
     public async ValueTask<Result<RefreshResult>> Handle(RefreshCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
@@ -28,7 +28,7 @@ public sealed class RefreshHandler(
             return Errors.InvalidCredentials();
         }
         
-        var deleteStatus = await accountDeleteStatusCacheProvider.Check(user.Id, cancellationToken);
+        var deleteStatus = await accountDeleteCacheService.Check(user.Id, cancellationToken);
         
         if (deleteStatus is not AccountDeletionStatus.None and not AccountDeletionStatus.Pending) {
             return Errors.InvalidCredentials();

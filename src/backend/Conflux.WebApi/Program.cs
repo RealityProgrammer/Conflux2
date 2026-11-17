@@ -11,7 +11,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Amazon.S3;
 using Conflux.Application.Converters;
-using Conflux.Application.Dto;
 using Conflux.Application.Features.Servers;
 using Conflux.Application.FileFormats;
 using Conflux.Application.Options;
@@ -35,14 +34,11 @@ using Conflux.WebApi.Schema;
 using Conflux.WebApi.Services;
 using Conflux.WebApi.Services.Implementations;
 using Conflux.WebApi.SignalR;
-using Conflux.WebApi.Workers;
 using FileSignatures;
 using FileSignatures.Formats;
 using FluentValidation;
 using HotChocolate.Execution;
 using HotChocolate.Types.Descriptors;
-using Mediator;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -60,7 +56,6 @@ using System.Threading.RateLimiting;
 using UAParser.Extensions;
 using CallingService = Conflux.Infrastructure.Services.CallingService;
 using Error = Conflux.Domain.Error;
-using InvitationCleanupWorker = Conflux.WebApi.Workers.InvitationCleanupWorker;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -275,10 +270,10 @@ builder.Services.AddMediator(options => {
     ];
     options.ServiceLifetime = ServiceLifetime.Scoped;
 });
-builder.Services.AddValidatorsFromAssemblyContaining(typeof(CreateEmojiCommandValidator));
+builder.Services.AddValidatorsFromAssemblyContaining(typeof(KickServerMemberCommandValidator));
 builder.Services
     .AddSingleton<JoinTracker>()
-    .AddSingleton<ISignalRConnectionTracker, SignalRConnectionTracker>()
+    .AddSingleton<IConnectionTracker, ConnectionTracker>()
     .AddScoped<ITypingIndicatorService, TypingIndicatorService>();
 
 builder.Services.AddSignalR()
@@ -291,76 +286,48 @@ builder.Services.AddSignalR()
 // Conflux services.
 builder.Services
     .AddScoped<ICurrentUserService, CurrentUserService>()
-    .AddScoped<IAccountDeleteStatusCacheProvider, AccountDeleteStatusCacheProvider>()
-    .AddScoped<IAccountPurgingService, AccountPurgingService>()
-        
+    .AddScoped<IAccountDeleteCacheService, AccountDeleteCacheService>()
     .AddScoped<IConversationAuthorizeService, ConversationAuthorizeService>()
     .AddScoped<IConversationAuthorizeStrategy, DirectConversationAuthorizeStrategy>()
     .AddScoped<IConversationAuthorizeStrategy, ServerConversationAuthorizeStrategy>()
-    
     .AddSingleton<ISessionService, SessionService>()
     .AddScoped<IJwtProvider, JwtProvider>()
     .AddScoped<IJwtStorage, JwtStorage>()
-    
     .AddScoped<IServerPermissionsProvider, ServerPermissionsProvider>()
     .AddScoped<IServerPermissionsCacheService, ServerPermissionsCacheService>()
     .AddScoped<IServerDefaultRoleAuthorizeProvider, ServerDefaultRoleAuthorizeProvider>()
     .AddScoped<IServerRoleVersioningService, ServerRoleVersioningService>()
     .AddScoped<IConversationMetadataProvider, ConversationMetadataProvider>()
-    
     .AddSingleton<IEmailQueue, EmailQueue>()
     .AddSingleton<IMailService, MailService>()
     .AddScoped<IAuthMailService, AuthMailService>()
-    
     .AddScoped<IPresenceCacheService, PresenceCacheService>()
     .AddScoped<IPresenceService, PresenceService>()
-    
     .AddScoped<IUnitOfWork, UnitOfWork>()
-    
     .AddScoped<IDirectConversationProvider, DirectConversationProvider>()
     .AddScoped<IConversationParticipantsProvider, ConversationParticipantsProvider>()
-    
-    .AddScoped<IServerEmojiCacheProvider, ServerEmojiCacheProvider>()
-    
-    .AddScoped<IServerMemberReadRepository, ServerMemberRepository>()
-    .AddScoped<IServerMemberWriteRepository>(services =>
-        (ServerMemberRepository)services.GetRequiredService<IServerMemberReadRepository>()
-    )
-    
+    .AddScoped<IServerEmojiCacheService, ServerEmojiCacheService>()
+    .AddScoped<IServerEmojiProvider, ServerEmojiProvider>()
+    .AddScoped<IEmojiValidationService, EmojiValidationService>()
+    .AddScoped<IServerMemberRepository, ServerMemberRepository>()
     .AddScoped<IUserRepository, UserRepository>()
     .AddScoped<IFriendRequestRepository, FriendRequestRepository>()
     .AddScoped<IConversationRepository, ConversationRepository>()
     .AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>()
     .AddScoped<IMessageRepository, MessageRepository>()
-    
-    .AddScoped<IMediaItemReadRepository, MediaItemRepository>()
-    .AddScoped<IMediaItemWriteRepository>(services =>
-        (MediaItemRepository)services.GetRequiredService<IMediaItemReadRepository>()
-    )
-    
-    .AddScoped<ICommunityServerReadRepository, CommunityServerRepository>()
-    .AddScoped<ICommunityServerWriteRepository>(services =>
-        (CommunityServerRepository)services.GetRequiredService<ICommunityServerReadRepository>())
-    
+    .AddScoped<IMediaItemRepository, MediaItemRepository>()
+    .AddScoped<ICommunityServerRepository, CommunityServerRepository>()
     .AddScoped<IChannelCategoryRepository, ChannelCategoryRepository>()
     .AddScoped<IInvitationRepository, InvitationRepository>()
     .AddScoped<ICommunityServerRoleRepository, CommunityServerRoleRepository>()
     .AddScoped<IChannelRepository, ChannelRepository>()
-    .AddScoped<IServerModerationLogReadRepository, ServerModerationLogRepository>()
-    .AddScoped<IServerModerationLogWriteRepository>(services => 
-        (ServerModerationLogRepository)services.GetRequiredService<IServerModerationLogReadRepository>()
-    )
+    .AddScoped<IServerModerationLogRepository, ServerModerationLogRepository>()
     .AddScoped<ICallingService, CallingService>()
-    
-    .AddScoped<IUserAccountDeletionReadRepository, UserAccountDeletionRepository>()
-    .AddScoped<IUserAccountDeletionWriteRepository>(services => 
-        (UserAccountDeletionRepository)services.GetRequiredService<IUserAccountDeletionReadRepository>()
-    )
-    
-    .AddScoped<IEmojiReadRepository, EmojiRepository>()
-    .AddScoped<IEmojiWriteRepository>(services => 
-        (EmojiRepository)services.GetRequiredService<IEmojiReadRepository>()
-    );
+    .AddScoped<IUserAccountDeletionRepository, UserAccountDeletionRepository>()
+    .AddScoped<INotificationRepository, NotificationRepository>()
+    .AddScoped<IEmojiRepository, EmojiRepository>()
+    .AddScoped<IMessageReactionRepository, MessageReactionRepository>()
+    .AddScoped<IMessageReactionBatcher, MessageReactionBatcher>();
 
 // blob service.
 builder.Services.AddSingleton<IAmazonS3>((services) => {
@@ -400,12 +367,17 @@ builder.Services
 // https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0#antiforgery-with-addcontrollers
 builder.Services.AddControllersWithViews(options => {
     options.Filters.Add<AntiforgeryValidationFilter>();
-    options.ModelBinderProviders.Insert(0, new PatchFieldModelBinderProvider());
     options.ModelBinderProviders.Insert(0, new OptionalModelBinderProvider());
 }).AddJsonOptions(options => {
+    // converters
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.JsonSerializerOptions.Converters.Add(new OptionalConverterFactory());
     
+    // naming stuffs
+    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+    
+    // resolver and stuffs for Optional to not serialize stuffs (no idea if it works)
     var existingResolver = options.JsonSerializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
     options.JsonSerializerOptions.TypeInfoResolver = existingResolver.WithAddedModifier(static typeInfo => {
         if (typeInfo.Kind != JsonTypeInfoKind.Object) return;
@@ -423,7 +395,7 @@ builder.Services.AddControllersWithViews(options => {
         var validationErrors = context.ModelState
             .Where(ms => ms.Value!.Errors.Count > 0)
             .ToDictionary(
-                kvp => JsonNamingPolicy.CamelCase.ConvertName(kvp.Key), // blame the frontend
+                kvp => JsonNamingPolicy.CamelCase.ConvertName(kvp.Key), // also camel-case
                 kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
             );
 
@@ -498,7 +470,7 @@ builder.Services.AddOpenApi(options => {
                 return Task.CompletedTask;
             }
             
-            if (typeDef == typeof(PatchField<>) || typeDef == typeof(Facet.Optional<>)) {
+            if (typeDef == typeof(Facet.Optional<>)) {
                 var elementType = targetType.GetGenericArguments()[0];
                 
                 schema.Properties?.Clear();
@@ -610,7 +582,6 @@ builder.Services.AddOpenApi(options => {
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
-    options.SchemaFilter<PatchFieldSchemaFilter>();
     options.SchemaFilter<OptionalSchemaFilter>();
     
     options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme {
@@ -646,12 +617,11 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>((services, options) =
 
 // jobs/workers
 builder.Services
-    .AddHostedService<InvitationCleanupWorker>()
     .AddHostedService<CallCleanupWorker>()
     .AddHostedService<EmailBackgroundWorker>()
-    .AddHostedService<LoginSessionCleanupWorker>()
-    .AddHostedService<PurgePendingDeleteAccountsWorker>()
-    .AddHostedService<ConnectionCleanupWorker>();
+    .AddHostedService<ConnectionCleanupWorker>()
+    .AddHostedService<DailyPurgeWorker>()
+    .AddHostedService<MessageReactionSynchronizeWorker>();
 
 var app = builder.Build();
 
@@ -696,7 +666,9 @@ app.UseRateLimiter();
 if (app.Environment.IsDevelopment()) {
     // swagger
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options => {
+        options.ConfigObject.AdditionalItems["withCredentials"] = true;
+    });
     app.MapOpenApi();
     
     // http logging to print incoming requests and outcoming responses.

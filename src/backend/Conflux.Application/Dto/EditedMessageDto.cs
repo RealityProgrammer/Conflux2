@@ -1,3 +1,5 @@
+using Conflux.Domain.Dto;
+
 namespace Conflux.Application.Dto;
 
-public sealed record EditedMessageDto(Guid Id, string? NewBody);
+public sealed record EditedMessageDto(string? NewBody, IReadOnlyCollection<MessageAttachmentDto> Attachments);

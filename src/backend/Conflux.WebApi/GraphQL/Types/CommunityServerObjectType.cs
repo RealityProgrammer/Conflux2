@@ -13,10 +13,8 @@ public sealed class CommunityServerObjectType : ObjectType<CommunityServer> {
         descriptor.Field(s => s.Id);
         descriptor.Field(s => s.Name);
         descriptor.Field(s => s.Description);
-        descriptor.Field(s => s.AvatarId);
-        descriptor.Field(s => s.Avatar).Type<MediaItemObjectType>();
-        descriptor.Field(s => s.BannerId);
-        descriptor.Field(s => s.Banner).Type<MediaItemObjectType>();
+        descriptor.Field(s => s.AvatarVersion);
+        descriptor.Field(s => s.BannerVersion);
         descriptor.Field(s => s.CreatedAt);
         descriptor.Field(s => s.CreatorUserId);
         descriptor.Field(s => s.CreatorUser).Type<ApplicationUserObjectType>();

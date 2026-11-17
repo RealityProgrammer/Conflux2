@@ -1,151 +1,203 @@
-import {type AxiosError, type AxiosResponse, HttpStatusCode} from "axios";
+import { type AxiosResponse } from "axios";
 import type {
   BackendResponse,
   TimelineMessageDto,
-  ServiceResponse,
-  TimelineMessagePage, MessageReadStrategy
+  TimelineMessagePage,
+  DmConversationDetails,
+  ServerChannelConversationDetails,
+  MentionSource,
+  MessageSearchPage,
+  EditedMessageDto,
+  KeyedPaginatedPage,
+  PinnedMessageDto,
 } from "./types.ts";
-import {handleAxiosError} from "./errorHandling.ts";
-import {apiClient} from "./client.ts";
+import { apiClient } from "./client.ts";
+import type { SearchRequest } from "../store/useHistoryConversationSearchStore.ts";
 
 export const conversationService = {
-  sendMessage: async (conversationId: string, idempotencyKey: string, body: string | null, attachments?: File[], replyToId?: string): Promise<ServiceResponse<TimelineMessageDto>> => {
+  getDmConversationDetails: async (
+    peerId: string,
+  ): Promise<DmConversationDetails> => {
+    const response: AxiosResponse<BackendResponse<DmConversationDetails>> =
+      await apiClient.get(`/conversations/dm/${encodeURIComponent(peerId)}`);
+
+    return response.data.data!;
+  },
+
+  getServerChannelConversationDetails: async (
+    serverId: string,
+    channelId: string,
+  ): Promise<ServerChannelConversationDetails> => {
+    const response: AxiosResponse<
+      BackendResponse<ServerChannelConversationDetails>
+    > = await apiClient.get(
+      `/conversations/servers/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(channelId)}`,
+    );
+
+    return response.data.data!;
+  },
+
+  sendMessage: async (
+    conversationId: string,
+    idempotencyKey: string,
+    body: string | null,
+    attachments: File[],
+    replyToId: string | null,
+  ): Promise<TimelineMessageDto> => {
     const trimmedBody = body?.trim();
 
     if (!trimmedBody && !attachments) {
-      return {
-        success: false,
-        statusCode: HttpStatusCode.BadRequest,
-      };
+      throw new Error("Empty message content.");
     }
 
-    try {
-      const formData = new FormData();
-
-      if (trimmedBody) {
-        formData.append("body", trimmedBody);
-      }
-
-      if (attachments) {
-        for (let i = 0; i < attachments.length; i++) {
-          formData.append("attachments", attachments[i]);
-        }
-      }
-
-      if (replyToId) {
-        formData.append("replyToId", replyToId);
-      }
-
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.postForm(
+    const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
+      await apiClient.postForm(
         `conversations/${encodeURIComponent(conversationId)}/messages`,
-        formData,
-        { headers: { "Idempotency-Key": idempotencyKey } }
+        { body: trimmedBody, attachments, replyToId },
+        { headers: { "Idempotency-Key": idempotencyKey } },
       );
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data.data!;
   },
 
-  editMessage: async (conversationId: string, messageId: string, newBody: string | null): Promise<ServiceResponse> => {
-    const trimmedBody = newBody?.trim();
+  editMessage: async (
+    conversationId: string,
+    messageId: string,
+    body?: string | null,
+    removeAttachmentIds?: string[],
+    newAttachments?: File[],
+  ): Promise<EditedMessageDto> => {
+    const trimmedBody = body?.trim() ?? "";
 
-    try {
-      const formData = new FormData();
+    const response: AxiosResponse<BackendResponse<EditedMessageDto>> =
+      await apiClient.patchForm(
+        `/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+        {
+          body: trimmedBody,
+          removeAttachmentIds,
+          addAttachments: newAttachments,
+        },
+      );
 
-      if (trimmedBody) {
-        formData.append("body", trimmedBody);
-      }
-
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.patchForm(`/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`, formData);
-
-      return {
-        success: true,
-        statusCode: response.status,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data.data!;
   },
 
-  deleteMessage: async (conversationId: string, messageId: string): Promise<ServiceResponse> => {
-    try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete(`conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
-
-      return {
-        success: true,
-        statusCode: response.status,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+  deleteMessage: async (
+    conversationId: string,
+    messageId: string,
+  ): Promise<void> => {
+    await apiClient.delete(
+      `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+    );
   },
 
-  readTimelineMessages: async (conversationId: string, readStrategy: MessageReadStrategy): Promise<ServiceResponse<TimelineMessagePage>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<TimelineMessagePage>> =
-        await apiClient.post(`/conversations/${encodeURIComponent(conversationId)}/messages/read`, {
-          readStrategy,
-        });
+  queryTimelineMessages: async (
+    conversationId: string,
+    loadDirection: "Around" | "Before" | "After" | "Latest",
+    cursorMessageId?: string,
+  ): Promise<TimelineMessagePage> => {
+    const params = new URLSearchParams();
+    params.set("direction", loadDirection);
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
+    if (cursorMessageId) {
+      params.set("cursor", cursorMessageId);
     }
+
+    const response: AxiosResponse<BackendResponse<TimelineMessagePage>> =
+      await apiClient.get(
+        `/conversations/${encodeURIComponent(conversationId)}/messages?${params.toString()}`,
+      );
+
+    return response.data.data!;
   },
 
-  getAttachmentUrl: (attachmentId: string, forceRefresh: boolean): string => {
-    let refreshParam: string;
+  queryPinnedMessages: async (
+    conversationId: string,
+    before?: string,
+    after?: string,
+  ): Promise<KeyedPaginatedPage<string, PinnedMessageDto>> => {
+    const params = new URLSearchParams();
 
-    if (forceRefresh) {
-      const params = new URLSearchParams();
-      params.append("t", new Date().getTime().toString());
-      refreshParam = `?${params.toString()}`;
-    } else {
-      refreshParam = "";
+    if (before) {
+      params.set("before", before);
+    } else if (after) {
+      params.set("after", after);
     }
 
-    return `/api/attachments/${encodeURIComponent(attachmentId)}${refreshParam}`;
+    const response: AxiosResponse<
+      BackendResponse<KeyedPaginatedPage<string, PinnedMessageDto>>
+    > = await apiClient.get(
+      `/conversations/${encodeURIComponent(conversationId)}/pinned-messages?${params.toString()}`,
+    );
+
+    return response.data.data!;
+  },
+
+  getAttachmentViewUrl: (attachmentId: string): string => {
+    return `/api/attachments/${encodeURIComponent(attachmentId)}/view`;
   },
 
   getAttachmentDownloadUrl: (attachmentId: string): string => {
-    const searchParams = new URLSearchParams();
-    searchParams.append("download", "true");
-
-    return `/api/attachments/${encodeURIComponent(attachmentId)}?${searchParams.toString()}`;
+    return `/api/attachments/${encodeURIComponent(attachmentId)}/download`;
   },
 
-  pinMessage: async (idempotencyKey: string, conversationId: string, messageId: string, action: "pin" | "unpin"): Promise<ServiceResponse<TimelineMessageDto>> => {
-    try {
-      const response: AxiosResponse<BackendResponse<TimelineMessageDto>> = await apiClient.post(
+  pinMessage: async (
+    idempotencyKey: string,
+    conversationId: string,
+    messageId: string,
+    action: "pin" | "unpin",
+  ): Promise<TimelineMessageDto> => {
+    const response: AxiosResponse<BackendResponse<TimelineMessageDto>> =
+      await apiClient.post(
         `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/${encodeURIComponent(action)}`,
         {},
-        { headers: { "Idempotency-Key": idempotencyKey } }
+        { headers: { "Idempotency-Key": idempotencyKey } },
       );
 
-      return {
-        success: true,
-        statusCode: response.status,
-        data: response.data.data,
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError<BackendResponse>;
-      return handleAxiosError(axiosError);
-    }
+    return response.data.data!;
   },
-}
+
+  markMentionNotificationsAsRead: async (
+    conversationId: string,
+  ): Promise<MentionSource | null> => {
+    const response: AxiosResponse<BackendResponse<MentionSource | null>> =
+      await apiClient.post(
+        `conversations/${encodeURIComponent(conversationId)}/read-mentions`,
+      );
+
+    return response.data.data ?? null;
+  },
+
+  searchMessage: async (
+    conversationId: string,
+    request: SearchRequest,
+    beforeCursor: string | null,
+  ): Promise<MessageSearchPage> => {
+    const response: AxiosResponse<BackendResponse<MessageSearchPage>> =
+      await apiClient.post(
+        `conversations/${encodeURIComponent(conversationId)}/messages/search`,
+        {
+          content: request.content,
+          senderIds: request.senderIds,
+          startDateTime: request.timeRange?.start,
+          endDateTime: request.timeRange?.end,
+          pinFilter: request.pin,
+          beforeCursor,
+        },
+      );
+
+    return response.data.data!;
+  },
+
+  toggleReaction: async (
+    conversationId: string,
+    messageId: string,
+    reactionKey: `${"unicode" | "emoji"}.${string}`,
+    action: "add" | "remove",
+  ): Promise<void> => {
+    await apiClient.post(
+      `conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/reactions`,
+      { reactionKey, action },
+    );
+  },
+};

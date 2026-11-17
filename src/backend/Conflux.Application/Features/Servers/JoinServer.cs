@@ -1,4 +1,3 @@
-using Conflux.Application.Extensions;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -11,17 +10,17 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record JoinServerCommand(string InvitationId) : ICommand<Result>;
 
-public sealed record ServerJoinedNotification(Guid UserId, Guid ServerId) : INotification;
+public sealed record UserJoinedServerNotification(Guid ServerId, Guid MemberUserId, Guid MemberId) : INotification;
 
 public sealed class JoinServerHandler(
     ICurrentUserService currentUserService,
     IInvitationRepository invitationRepository,
-    IServerMemberWriteRepository memberWriteRepository,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
+    ICommunityServerRoleRepository serverRoleRepository,
     IUnitOfWork unitOfWork,
-    ILogger<JoinServerHandler> logger,
     TimeProvider timeProvider,
-    IPublisher publisher
+    IPublisher publisher,
+    ILogger<JoinServerHandler> logger
 ) : ICommandHandler<JoinServerCommand, Result> {
     private const int MaxRetries = 5;
     
@@ -46,6 +45,8 @@ public sealed class JoinServerHandler(
                         new(nameof(Invitation.Id), command.InvitationId),
                     ]);
                 }
+                
+                var serverId = invitation.CommunityServerId;
 
                 // check invitation expire and max used
                 var now = timeProvider.GetUtcNow();
@@ -61,8 +62,8 @@ public sealed class JoinServerHandler(
                 }
 
                 // check member status
-                var member = await memberReadRepository.AsQueryable()
-                    .Where(m => m.CommunityServerId == invitation.CommunityServerId && m.UserId == userId)
+                var member = await memberRepository.AsQueryable()
+                    .Where(m => m.CommunityServerId == serverId && m.UserId == userId)
                     .FirstOrDefaultAsync(cancellationToken);
 
                 if (member is { Status: MembershipStatus.Active }) {
@@ -74,24 +75,36 @@ public sealed class JoinServerHandler(
                 invitation.CurrentUses++;
                 invitation.LastUsedAt = now;
 
+                // assign the highest authorize role info to the default role, no need to create a n-n join row because
+                // all member always have default role (implicitly).
+                var defaultRoleInfo = await serverRoleRepository
+                    .AsQueryable()
+                    .Where(r => r.CommunityServerId == serverId && r.SpecialRoleType == SpecialRoleType.Default)
+                    .Select(r => new { r.Id, r.AuthorizeLevel })
+                    .SingleAsync(cancellationToken);
+
                 if (member != null) {
                     member.Status = MembershipStatus.Active;
                     member.CreatedAt = now;
+                    member.HighestAuthorizeRoleId = defaultRoleInfo.Id;
+                    member.HighestAuthorizeLevel = defaultRoleInfo.AuthorizeLevel;
                 } else {
-                    CommunityServerMember newMember = new() {
+                    member = new() {
                         UserId = userId,
-                        CommunityServerId = invitation.CommunityServerId,
+                        CommunityServerId = serverId,
                         Status = MembershipStatus.Active,
+                        HighestAuthorizeRoleId = defaultRoleInfo.Id,
+                        HighestAuthorizeLevel = defaultRoleInfo.AuthorizeLevel,
                     };
 
-                    memberWriteRepository.Add(newMember);
+                    memberRepository.Add(member);
                 }
 
-                // attemp save, might throw concurrency exception
+                // attempt save, might throw concurrency exception
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitAsync(cancellationToken);
 
-                await publisher.Publish(new ServerJoinedNotification(userId, invitation.CommunityServerId), CancellationToken.None);
+                await publisher.Publish(new UserJoinedServerNotification(serverId, userId, member.Id), CancellationToken.None);
                 
                 return Result.Success();
             } catch (DbUpdateConcurrencyException) {

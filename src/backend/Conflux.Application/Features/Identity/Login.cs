@@ -23,7 +23,7 @@ public sealed class LoginHandler(
     SignInManager<ApplicationUser> signInManager,
     IJwtProvider jwtProvider,
     ISessionService sessionService,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider
+    IAccountDeleteCacheService accountDeleteCacheService
 ) : ICommandHandler<LoginCommand, Result<LoginResult>> {
     public async ValueTask<Result<LoginResult>> Handle(LoginCommand command, CancellationToken cancellationToken) {
         var user = await userManager.FindByEmailAsync(command.Email);
@@ -33,7 +33,7 @@ public sealed class LoginHandler(
             return Errors.InvalidCredentials();
         }
 
-        var deleteStatus = await accountDeleteStatusCacheProvider.Check(user.Id, cancellationToken);
+        var deleteStatus = await accountDeleteCacheService.Check(user.Id, cancellationToken);
 
         if (deleteStatus is not AccountDeletionStatus.None and not AccountDeletionStatus.Pending) {
             return Errors.InvalidCredentials();

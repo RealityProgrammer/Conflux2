@@ -1,18 +1,19 @@
-import Markdown, {type Components} from "react-markdown";
+import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
-import {isValidElement, lazy, useEffect} from "react";
-import {requestExternalLinkNavigate} from "../../store/useExternalLinkDialog.ts";
-import {visit} from "unist-util-visit";
-import type {Literal, Node, Parent} from "unist";
-import {Emoji} from "../Emoji.tsx";
-import {Separator, Tooltip} from "radix-ui";
-import {Avatar} from "../Avatar.tsx";
-import {useGetEmojiDetailsQuery} from "../../graphql/queries.ts";
-import {useDeadEmojiStore} from "../../store/useDeadEmojiStore.ts";
+import { isValidElement, lazy, useEffect } from "react";
+import { requestExternalLinkNavigate } from "../../store/useExternalLinkDialog.ts";
+import { visit } from "unist-util-visit";
+import type { Literal, Node, Parent } from "unist";
+import { Emoji } from "../Emoji.tsx";
+import { Separator, Tooltip } from "radix-ui";
+import { Avatar } from "../Avatar.tsx";
+import { useGetEmojiDetailsQuery } from "../../graphql/queries.ts";
+import { useDeadEmojiStore } from "../../store/useDeadEmojiStore.ts";
 import Timestamp from "./Timestamp.tsx";
+import Mention from "./Mention.tsx";
 const CodeBlock = lazy(() => import("./CodeBlock.tsx"));
 
 interface MessageContentProps {
@@ -22,98 +23,106 @@ interface MessageContentProps {
 
 function remarkCustomTokens() {
   return (tree: Node) => {
-    visit(tree, "text", (node: any, index: number | undefined, parent: Parent | undefined) => {
-      if (!parent || parent.type === "code" || parent.type === "inlineCode") {
-        // TODO: also ignore quote and blockquote
-        return;
-      }
+    visit(
+      tree,
+      "text",
+      (node: any, index: number | undefined, parent: Parent | undefined) => {
+        if (!parent || parent.type === "code" || parent.type === "inlineCode") {
+          // TODO: also ignore quote and blockquote
+          return;
+        }
 
-      const value = node.value;
+        const value = node.value;
 
-      const regex = /:t(\d+):|:e([\da-f-]+):/g
-      if (!regex.test(value)) return;
+        const regex = /:t(\d+):|:e([\da-f\-]+):|:m([\da-f\-]+):/g;
+        if (!regex.test(value)) return;
 
-      regex.lastIndex = 0;
-      let match;
-      let lastIndex = 0;
-      const newChildren: Node[] = [];
+        regex.lastIndex = 0;
+        let match;
+        let lastIndex = 0;
+        const newChildren: Node[] = [];
 
-      while ((match = regex.exec(value)) !== null) {
-        const matchStart = match.index;
-        const matchEnd = regex.lastIndex;
+        while ((match = regex.exec(value)) !== null) {
+          const matchStart = match.index;
+          const matchEnd = regex.lastIndex;
 
-        if (matchStart > lastIndex) {
+          if (matchStart > lastIndex) {
+            newChildren.push({
+              type: "text",
+              value: value.slice(lastIndex, matchStart),
+            } as Literal);
+          }
+
+          const timestampMatch = match[1];
+          const emojiMatch = match[2];
+          const mentionMatch = match[3];
+
+          if (timestampMatch) {
+            const ms = Number(timestampMatch) || 0;
+            newChildren.push({
+              type: "html",
+              value: `<span data-chat-timestamp="${ms}"></span>`,
+            } as Literal);
+          } else if (emojiMatch) {
+            newChildren.push({
+              type: "html",
+              value: `<span data-chat-emoji="${emojiMatch}"></span>`,
+            } as Literal);
+          } else if (mentionMatch) {
+            newChildren.push({
+              type: "html",
+              value: `<span data-chat-mention-userid="${mentionMatch}"></span>`,
+            } as Literal);
+          }
+
+          lastIndex = matchEnd;
+        }
+
+        if (lastIndex < value.length) {
           newChildren.push({
             type: "text",
-            value: value.slice(lastIndex, matchStart),
+            value: value.slice(lastIndex),
           } as Literal);
         }
 
-        const timestampMatch = match[1];
-        const emojiMatch = match[2];
-
-        if (timestampMatch !== undefined) {
-          const ms = Number(timestampMatch) || 0;
-          newChildren.push({
-            type: "html",
-            value: `<span data-chat-timestamp="${ms}"></span>`,
-          } as Literal);
+        if (index !== undefined && parent.children) {
+          parent.children.splice(index, 1, ...newChildren);
+          return index + newChildren.length;
         }
-        else if (emojiMatch !== undefined) {
-          newChildren.push({
-            type: "html",
-            value: `<span data-chat-emoji="${emojiMatch}"></span>`,
-          } as Literal);
-        }
-        // TODO: @ mention
-
-        lastIndex = matchEnd;
-      }
-
-      if (lastIndex < value.length) {
-        newChildren.push({
-          type: "text",
-          value: value.slice(lastIndex),
-        } as Literal);
-      }
-
-      if (index !== undefined && parent.children) {
-        parent.children.splice(index, 1, ...newChildren);
-        return index + newChildren.length;
-      }
-    });
+      },
+    );
   };
 }
 
 const markdownComponents: Components = {
   // heading
   h1: ({ children, node, ...props }) => (
-    <h1 className="message-h1 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h1 className="message-h1 wrap-break-word whitespace-pre-wrap" {...props}>
       {children}
     </h1>
   ),
   h2: ({ children, node, ...props }) => (
-    <h2 className="message-h2 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h2 className="message-h2 wrap-break-word whitespace-pre-wrap" {...props}>
       {children}
     </h2>
   ),
   h3: ({ children, node, ...props }) => (
-    <h3 className="message-h3 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h3 className="message-h3 wrap-break-word whitespace-pre-wrap" {...props}>
       {children}
     </h3>
   ),
   h4: ({ children, node, ...props }) => (
-    <h4 className="message-h4 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h4 className="message-h4 wrap-break-word whitespace-pre-wrap" {...props}>
       {children}
     </h4>
   ),
   h5: ({ children, node, ...props }) => (
-    <h5 className="message-h5 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h5 className="message-h5 wrap-break-word whitespace-pre-wrap" {...props}>
       {children}
     </h5>
   ),
   h6: ({ children, node, ...props }) => (
-    <h6 className="message-h6 whitespace-pre-wrap wrap-break-word" {...props}>
+    <h6 className="message-h6 wrap-break-word whitespace-pre-wrap" {...props}>
       {children}
     </h6>
   ),
@@ -127,9 +136,7 @@ const markdownComponents: Components = {
 
       const code = String(codeProps.children).replace(/\n$/, "");
 
-      return (
-        <CodeBlock language={match?.[1]} code={code}/>
-      );
+      return <CodeBlock language={match?.[1]} code={code} />;
     }
 
     return <pre {...props}>{children}</pre>;
@@ -147,10 +154,13 @@ const markdownComponents: Components = {
   },
 
   ul: ({ children, className = "", node, ...props }) => {
-    const isTaskList = className?.includes('contains-task-list');
+    const isTaskList = className?.includes("contains-task-list");
 
     return (
-      <ul className={`${isTaskList ? "list-none ml-1 pl-5" : "message-ul"} ${className}`} {...props}>
+      <ul
+        className={`${isTaskList ? "ml-1 list-none pl-5" : "message-ul"} ${className}`}
+        {...props}
+      >
         {children}
       </ul>
     );
@@ -163,37 +173,40 @@ const markdownComponents: Components = {
     );
   },
   li: ({ children, className = "", node, ...props }) => {
-    const isTaskListItem = className?.includes('task-list-item');
+    const isTaskListItem = className?.includes("task-list-item");
 
     return (
-      <li className={`${isTaskListItem ? "message-task-li" : "message-li"} wrap-break-word ${className}`} {...props}>
+      <li
+        className={`${isTaskListItem ? "message-task-li" : "message-li"} wrap-break-word ${className}`}
+        {...props}
+      >
         {children}
       </li>
     );
   },
 
   p: ({ children, node, ...props }) => (
-    <p className="mb-2 last:mb-0 whitespace-pre-wrap wrap-break-word" {...props}>
+    <p
+      className="mb-2 wrap-break-word whitespace-pre-wrap last:mb-0"
+      {...props}
+    >
       {children}
     </p>
   ),
 
   // link
-  a: ({children, node, className = "", href, ...props}) => {
+  a: ({ children, node, className = "", href, ...props }) => {
     if (href?.startsWith("#")) {
       return (
-        <a
-          className={`${className} text-blue-400 cursor-pointer`}
-          {...props}
-        >
+        <a className={`${className} cursor-pointer text-blue-400`} {...props}>
           {children}
         </a>
-      )
+      );
     } else {
       return (
         <a
           target="_blank"
-          className={`${className} text-blue-400 cursor-pointer`}
+          className={`${className} cursor-pointer text-blue-400`}
           onClick={(e) => {
             e.preventDefault();
             if (!href) return;
@@ -203,26 +216,38 @@ const markdownComponents: Components = {
         >
           {children}
         </a>
-      )
+      );
     }
   },
 
   // table
   table: ({ children, node, ...props }) => (
-    <div className="w-full overflow-x-auto my-3 border border-gray-500 rounded-md">
-      <table className="w-full text-left border-collapse min-w-0" {...props}>
+    <div className="my-3 w-full overflow-x-auto rounded-md border border-gray-500">
+      <table className="w-full min-w-0 border-collapse text-left" {...props}>
         {children}
       </table>
     </div>
   ),
   thead: ({ children, node, ...props }) => (
-    <thead className="bg-white/5 border-b border-gray-500" {...props}>{children}</thead>
+    <thead className="border-b border-gray-500 bg-white/5" {...props}>
+      {children}
+    </thead>
   ),
   th: ({ children, node, ...props }) => (
-    <th className="px-3 py-2 font-semibold border-r border-gray-500 last:border-r-0 whitespace-pre-wrap wrap-break-word" {...props}>{children}</th>
+    <th
+      className="border-r border-gray-500 px-3 py-2 font-semibold wrap-break-word whitespace-pre-wrap last:border-r-0"
+      {...props}
+    >
+      {children}
+    </th>
   ),
   td: ({ children, node, ...props }) => (
-    <td className="px-3 py-2 border-t border-r border-gray-500 last:border-r-0 whitespace-pre-wrap wrap-break-word" {...props}>{children}</td>
+    <td
+      className="border-t border-r border-gray-500 px-3 py-2 wrap-break-word whitespace-pre-wrap last:border-r-0"
+      {...props}
+    >
+      {children}
+    </td>
   ),
 
   // section
@@ -230,21 +255,23 @@ const markdownComponents: Components = {
     if (className?.includes("footnotes")) {
       return (
         <section
-          className={`border-t border-gray-500 text-xs text-gray-300 mt-4 pt-3 ${className}`}
+          className={`mt-4 border-t border-gray-500 pt-3 text-xs text-gray-300 ${className}`}
         >
           {children}
         </section>
       );
     } else {
       return (
-        <section className={className} {...props}>{children}</section>
+        <section className={className} {...props}>
+          {children}
+        </section>
       );
     }
   },
 
   // input
   input: ({ type, checked, node, ...props }) => {
-    if (type === 'checkbox') {
+    if (type === "checkbox") {
       return (
         <input
           type="checkbox"
@@ -261,10 +288,7 @@ const markdownComponents: Components = {
 
   // blockquote
   blockquote: ({ children, ...props }) => (
-    <blockquote
-      className="message-quote"
-      {...props}
-    >
+    <blockquote className="message-quote" {...props}>
       {children}
     </blockquote>
   ),
@@ -272,30 +296,35 @@ const markdownComponents: Components = {
   img: ({ ...props }) => (
     <img
       loading="lazy"
-      className="max-w-48 max-h-48 rounded-md my-1 border border-gray-600 object-contain"
+      className="my-1 max-h-48 max-w-48 rounded-md border border-gray-600 object-contain"
       {...props}
     />
   ),
-  
-  span: ({...props}) => {
-    const timestampAttribute: string = (props as any)["data-chat-timestamp"] as string;
-    
+
+  span: ({ ...props }) => {
+    const timestampAttribute: string = (props as any)[
+      "data-chat-timestamp"
+    ] as string;
+
     if (timestampAttribute) {
       const timeMillisecond = Number(timestampAttribute);
 
-      return (
-        <Timestamp date={new Date(timeMillisecond)}/>
-      );
+      return <Timestamp date={new Date(timeMillisecond)} />;
     }
-    
+
     const emojiAttribute: string = (props as any)["data-chat-emoji"] as string;
     if (emojiAttribute) {
-      return (
-        <EmojiWithTooltip emojiId={emojiAttribute}/>
-      );
+      return <EmojiWithTooltip emojiId={emojiAttribute} />;
     }
-    
-    return <span {...props}></span>
+
+    const mentionUserIdAttribute: string = (props as any)[
+      "data-chat-mention-userid"
+    ] as string;
+    if (mentionUserIdAttribute) {
+      return <Mention userId={mentionUserIdAttribute} />;
+    }
+
+    return <span {...props}></span>;
   },
 };
 
@@ -306,13 +335,15 @@ export default function MessageBody({
   return (
     <>
       {content && content.length > 0 && (
-        <div className={`text-sm leading-6 w-full ${className}`}>
+        <div className={`w-full text-sm leading-6 ${className}`}>
           <Markdown
-            remarkPlugins={[[remarkGfm, {  }], remarkMath, remarkCustomTokens]}
-            rehypePlugins={[rehypeRaw, [ rehypeKatex, { strict: "warn" }]]}
+            remarkPlugins={[[remarkGfm, {}], remarkMath, remarkCustomTokens]}
+            rehypePlugins={[rehypeRaw, [rehypeKatex, { strict: "warn" }]]}
             children={content}
             components={markdownComponents}
           />
+
+          {/* TODO: Edited status display */}
         </div>
       )}
     </>
@@ -323,14 +354,16 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
   const isKnownDead = useDeadEmojiStore((state) => state.isDead(emojiId));
   const markAsDead = useDeadEmojiStore((state) => state.markAsDead);
 
-  const { data, isLoading, isError } = useGetEmojiDetailsQuery({
-    id: emojiId,
-  }, {
-    enabled: !isKnownDead,
-    staleTime: 30 * 60 * 1000,  // 30 min stale time
-    refetchOnWindowFocus: false,
-    retry: 3,
-  });
+  const { data, isLoading, isError } = useGetEmojiDetailsQuery(
+    {
+      id: emojiId,
+    },
+    {
+      enabled: !isKnownDead,
+      staleTime: 30 * 60 * 1000, // 30 min stale time
+      retry: 3,
+    },
+  );
 
   const isNotFound = !isLoading && !isError && data?.emoji === null;
 
@@ -344,17 +377,22 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
     return (
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <Emoji.Root emojiId={emojiId} className="size-6 inline-block align-text-bottom" />
+          <Emoji.Root
+            emojiId={emojiId}
+            className="inline-block size-6 align-text-bottom"
+          />
         </Tooltip.Trigger>
 
         <Tooltip.Portal>
           <Tooltip.Content
             side="top"
             sideOffset={5}
-            className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm"
+            className="bg-gray-750 rounded-lg border-2 border-gray-600 p-2 text-sm text-white shadow-lg"
           >
             <p className="font-mono text-xs text-gray-400">:unknown_emoji:</p>
-            <p className="text-[10px] text-gray-500">This emoji no longer exists.</p>
+            <p className="text-[10px] text-gray-500">
+              This emoji no longer exists.
+            </p>
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -365,15 +403,20 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
     return (
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <Emoji.Root emojiId={emojiId} className="size-6 inline-block align-text-bottom" />
+          <Emoji.Root
+            emojiId={emojiId}
+            className="inline-block size-6 align-text-bottom"
+          />
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content
             side="top"
             sideOffset={5}
-            className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm"
+            className="bg-gray-750 rounded-lg border-2 border-gray-600 p-2 text-sm text-white shadow-lg"
           >
-            <p className="text-xs text-red-400">Failed to load emoji details.</p>
+            <p className="text-xs text-red-400">
+              Failed to load emoji details.
+            </p>
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -385,7 +428,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
       <Tooltip.Trigger asChild>
         <Emoji.Root
           emojiId={emojiId}
-          className="size-6 inline-block align-text-bottom"
+          className="inline-block size-6 align-text-bottom"
         />
       </Tooltip.Trigger>
 
@@ -393,47 +436,46 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
         <Tooltip.Content
           side="top"
           sideOffset={5}
-          className="bg-gray-750 rounded-lg shadow-lg text-white p-2 border-2 border-gray-600 text-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-150 space-y-2"
+          className="bg-gray-750 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 space-y-2 rounded-lg border-2 border-gray-600 p-2 text-sm text-white shadow-lg duration-150"
         >
           <div className="flex flex-row items-center gap-2">
-            <Emoji.Root
-              emojiId={emojiId}
-              className="size-10 flex-none"
-            />
+            <Emoji.Root emojiId={emojiId} className="size-10 flex-none" />
 
             {data && data.emoji && !isLoading ? (
               <p className="flex-1 font-mono">:{data.emoji.shortCode}:</p>
             ) : (
-              <div className="w-1/2 h-5 rounded-full bg-white/10 animate-pulse"></div>
+              <div className="h-5 w-1/2 animate-pulse rounded-full bg-white/10"></div>
             )}
           </div>
 
-          <Separator.Root className="horizontal-separator"/>
+          <Separator.Root className="horizontal-separator" />
 
           <div className="select-none">
             <p>This emoji is from:</p>
 
-            <div className="flex flex-row items-center gap-2 mt-2">
+            <div className="mt-2 flex flex-row items-center gap-2">
               {data && data.emoji && !isLoading ? (
                 <Avatar.Server
                   serverId={data.emoji.server.id}
-                  version={data.emoji.server.avatar?.version}
-                  className="flex-none size-10 rounded-full overflow-hidden"
+                  version={data.emoji.server.avatarVersion}
+                  className="size-10 flex-none overflow-hidden rounded-full"
                 />
               ) : (
-                <Avatar.Skeleton className="flex-none size-10 rounded-full"/>
+                <Avatar.Skeleton className="size-10 flex-none rounded-full" />
               )}
 
               <div className="flex-1">
                 {data && data.emoji && !isLoading ? (
                   <>
                     <p className="font-semibold">{data.emoji.server.name}</p>
-                    <p className="text-xs">{data.emoji.server.numMembers} members</p>
+                    <p className="text-xs">
+                      {data.emoji.server.numMembers} members
+                    </p>
                   </>
                 ) : (
                   <>
-                    <div className="h-5 w-1/2 bg-white/10 animate-pulse rounded-full"></div>
-                    <div className="h-4 w-1/3 bg-white/10 animate-pulse rounded-full mt-1"></div>
+                    <div className="h-5 w-1/2 animate-pulse rounded-full bg-white/10"></div>
+                    <div className="mt-1 h-4 w-1/3 animate-pulse rounded-full bg-white/10"></div>
                   </>
                 )}
               </div>

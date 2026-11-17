@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="conflux@localhost" uuid="4f6af7f5-9303-48cc-8066-5ef644897473">
+    <data-source source="LOCAL" name="conflux@localhost" uuid="9f01e42b-d455-46cc-98fd-e470a6cda777">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <configured-by-url>true</configured-by-url>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/conflux?logServerErrorDetail=true&amp;password=uy.M1ANuVJdeyfE!TrDA9T&amp;user=postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/conflux</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface DeadEmojiState {
   deadEmojiIds: string[];
@@ -24,8 +24,8 @@ export const useDeadEmojiStore = create<DeadEmojiState>()(
       },
     }),
     {
-      name: 'dead-emojis-cache-store',
+      name: "dead-emojis-cache-store",
       storage: createJSONStorage(() => sessionStorage),
-    }
-  )
+    },
+  ),
 );

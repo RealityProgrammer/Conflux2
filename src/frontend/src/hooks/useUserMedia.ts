@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface MediaDeviceOption {
   deviceId: string;
@@ -22,7 +22,10 @@ interface UseUserMediaResult {
   isAudioMuted: boolean;
   isVideoDisabled: boolean;
   error: Error | null;
-  startStream: (audioDeviceId?: string, videoDeviceId?: string) => Promise<MediaStream | null>;
+  startStream: (
+    audioDeviceId?: string,
+    videoDeviceId?: string,
+  ) => Promise<MediaStream | null>;
   stopStream: () => void;
   toggleAudio: () => void;
   toggleVideo: () => void;
@@ -36,14 +39,22 @@ export default function useUserMedia({
   initialAudioInputDeviceId,
 }: UseUserMediaProps): UseUserMediaResult {
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceOption[]>([]);
-  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceOption[]>([]);
+  const [audioInputDevices, setAudioInputDevices] = useState<
+    MediaDeviceOption[]
+  >([]);
+  const [audioOutputDevices, setAudioOutputDevices] = useState<
+    MediaDeviceOption[]
+  >([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceOption[]>([]);
 
   const [isAcquiringMedia, setIsAcquiringMedia] = useState(false);
 
-  const [selectedAudioInputId, setSelectedAudioInputId] = useState<string | undefined>(initialAudioInputDeviceId);
-  const [selectedVideoInputId, setSelectedVideoInputId] = useState<string | undefined>(initialVideoInputDeviceId);
+  const [selectedAudioInputId, setSelectedAudioInputId] = useState<
+    string | undefined
+  >(initialAudioInputDeviceId);
+  const [selectedVideoInputId, setSelectedVideoInputId] = useState<
+    string | undefined
+  >(initialVideoInputDeviceId);
 
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoDisabled, setIsVideoDisabled] = useState(false);
@@ -96,7 +107,10 @@ export default function useUserMedia({
     }
   };
 
-  const startStream = async (audioDeviceId?: string, videoDeviceId?: string): Promise<MediaStream | null> => {
+  const startStream = async (
+    audioDeviceId?: string,
+    videoDeviceId?: string,
+  ): Promise<MediaStream | null> => {
     const currentRequestId = ++requestIdRef.current;
     const oldStream = streamRef.current;
 
@@ -105,13 +119,18 @@ export default function useUserMedia({
 
     const constraints: MediaStreamConstraints = {
       audio: audioDeviceId ? { deviceId: { exact: audioDeviceId } } : true,
-      video: videoDeviceId ?
-        { deviceId: { exact: videoDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } :
-        { width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: videoDeviceId
+        ? {
+            deviceId: { exact: videoDeviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          }
+        : { width: { ideal: 1280 }, height: { ideal: 720 } },
     };
 
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const mediaStream =
+        await navigator.mediaDevices.getUserMedia(constraints);
 
       // if component unmounted or a newer startStream call was made, stop tracks immediately
       if (!isMountedRef.current || currentRequestId !== requestIdRef.current) {
@@ -142,7 +161,9 @@ export default function useUserMedia({
       }
 
       mediaStream.getAudioTracks().forEach((t) => (t.enabled = !isAudioMuted));
-      mediaStream.getVideoTracks().forEach((t) => (t.enabled = !isVideoDisabled));
+      mediaStream
+        .getVideoTracks()
+        .forEach((t) => (t.enabled = !isVideoDisabled));
 
       setStream(mediaStream);
 
@@ -154,7 +175,8 @@ export default function useUserMedia({
         return null;
       }
 
-      const mediaError = err instanceof Error ? err : new Error("Failed to acquire user media");
+      const mediaError =
+        err instanceof Error ? err : new Error("Failed to acquire user media");
       setError(mediaError);
       console.error("getUserMedia error:", err);
       return null;
@@ -165,12 +187,16 @@ export default function useUserMedia({
     }
   };
 
-  const changeAudioInputDevice = (deviceId: string): Promise<MediaStream | null> => {
+  const changeAudioInputDevice = (
+    deviceId: string,
+  ): Promise<MediaStream | null> => {
     setSelectedAudioInputId(deviceId);
     return startStream(deviceId, selectedVideoInputId);
   };
 
-  const changeVideoInputDevice = (deviceId: string): Promise<MediaStream | null> => {
+  const changeVideoInputDevice = (
+    deviceId: string,
+  ): Promise<MediaStream | null> => {
     setSelectedVideoInputId(deviceId);
     return startStream(selectedAudioInputId, deviceId);
   };
@@ -207,7 +233,10 @@ export default function useUserMedia({
 
     navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange);
     return () => {
-      navigator.mediaDevices.removeEventListener("devicechange", handleDeviceChange);
+      navigator.mediaDevices.removeEventListener(
+        "devicechange",
+        handleDeviceChange,
+      );
     };
   }, [updateDeviceList]);
 

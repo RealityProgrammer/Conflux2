@@ -6,14 +6,21 @@ import {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
-  useRef
+  useRef,
 } from "react";
-import {type ReactVirtualizer, useVirtualizer, type VirtualItem} from "@tanstack/react-virtual";
+import {
+  type ReactVirtualizer,
+  useVirtualizer,
+  type VirtualItem,
+} from "@tanstack/react-virtual";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
-export type EstimateHeightTarget = 'previousLoader' | 'nextLoader' | { itemIndex: number };
+export type EstimateHeightTarget =
+  "previousLoader" | "nextLoader" | { itemIndex: number };
 
-export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<typeof ScrollArea.Root> {
+export interface VirtualizedScrollListProps extends ComponentPropsWithoutRef<
+  typeof ScrollArea.Root
+> {
   virtualizerRef?: RefObject<ReactVirtualizer<HTMLDivElement, Element>>;
   viewportRef?: RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
@@ -80,20 +87,21 @@ export default function VirtualizedScrollList({
     count: virtualCount,
     getScrollElement: () => scrollViewportRef.current,
     estimateSize: (index) => {
-      if (hasPreviousPage && index == 0) return estimateSize('previousLoader');
-      if (hasNextPage && index == virtualCount - 1) return estimateSize('nextLoader');
+      if (hasPreviousPage && index == 0) return estimateSize("previousLoader");
+      if (hasNextPage && index == virtualCount - 1)
+        return estimateSize("nextLoader");
 
-      return estimateSize({itemIndex: index - prevOffset});
+      return estimateSize({ itemIndex: index - prevOffset });
     },
     overscan,
     getItemKey: (index) => {
-      if (index === 0 && hasPreviousPage) return '__loader-prev';
-      if (index === virtualCount - 1 && hasNextPage) return '__loader-next';
+      if (index === 0 && hasPreviousPage) return "__loader-prev";
+      if (index === virtualCount - 1 && hasNextPage) return "__loader-next";
 
       const itemIndex = index - prevOffset;
 
       return keyExtractor(itemIndex);
-    }
+    },
   });
 
   useImperativeHandle(virtualizerRef, () => virtualizer, [virtualizer]);
@@ -104,9 +112,14 @@ export default function VirtualizedScrollList({
 
   useLayoutEffect(() => {
     const currentTotalSize = virtualizer.getTotalSize();
-    const currentFirstItemKey = itemCount > 0 && keyExtractor ? keyExtractor(0) : null;
+    const currentFirstItemKey =
+      itemCount > 0 && keyExtractor ? keyExtractor(0) : null;
 
-    if (currentFirstItemKey !== null && prevFirstItemKey.current !== null && currentFirstItemKey !== prevFirstItemKey.current) {
+    if (
+      currentFirstItemKey !== null &&
+      prevFirstItemKey.current !== null &&
+      currentFirstItemKey !== prevFirstItemKey.current
+    ) {
       const sizeDiff = currentTotalSize - prevTotalSize.current;
       if (scrollViewportRef.current && sizeDiff > 0) {
         scrollViewportRef.current.scrollTop += sizeDiff;
@@ -130,27 +143,52 @@ export default function VirtualizedScrollList({
 
   // trigger previous page load
   useEffect(() => {
-    if (justPrepended.current || !fetchPreviousPage || virtualItems.length === 0) return;
+    if (
+      justPrepended.current ||
+      !fetchPreviousPage ||
+      virtualItems.length === 0
+    )
+      return;
 
     const firstVirtualItem = virtualItems[0];
-    if (firstVirtualItem.index === 0 && hasPreviousPage && !isFetchingPreviousPage) {
+    if (
+      firstVirtualItem.index === 0 &&
+      hasPreviousPage &&
+      !isFetchingPreviousPage
+    ) {
       fetchPreviousPage();
     }
-  }, [virtualItems, hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage]);
+  }, [
+    virtualItems,
+    hasPreviousPage,
+    isFetchingPreviousPage,
+    fetchPreviousPage,
+  ]);
 
   // trigger next page load
   useEffect(() => {
     if (!fetchNextPage || virtualItems.length === 0) return;
 
     const lastVirtualItem = virtualItems.at(-1)!;
-    if (lastVirtualItem.index >= virtualCount - 1 && hasNextPage && !isFetchingNextPage) {
+    if (
+      lastVirtualItem.index >= virtualCount - 1 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
       fetchNextPage();
     }
-  }, [virtualItems, itemCount, virtualCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [
+    virtualItems,
+    itemCount,
+    virtualCount,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
 
   return (
     <ScrollArea.Root
-      className={`overflow-hidden ${className ?? ''}`}
+      className={`overflow-hidden ${className ?? ""}`}
       type={hideVerticalScrollbar ? "scroll" : "hover"}
       {...props}
     >
@@ -163,7 +201,7 @@ export default function VirtualizedScrollList({
           }
         }}
         className={`size-full [&>div]:flex! [&>div]:min-h-full [&>div]:flex-col ${viewportClassName || ""}`}
-        style={{overflowAnchor: 'none'}}
+        style={{ overflowAnchor: "none" }}
       >
         {itemCount === 0 && !isLoading ? (
           renderEmpty?.()
@@ -171,15 +209,21 @@ export default function VirtualizedScrollList({
           /* Rendering items skeleton */
           renderSkeletonItem && (
             <>
-              {Array.from({length: pageSize}).map((_, index: number) => renderSkeletonItem(index))}
+              {Array.from({ length: pageSize }).map((_, index: number) =>
+                renderSkeletonItem(index),
+              )}
             </>
           )
         ) : (
           /* Virtualized List Container */
-          <ul className={`relative w-full ${containerClassName ?? ""}`} style={{height: `${totalHeight}px`}}>
+          <ul
+            className={`relative w-full ${containerClassName ?? ""}`}
+            style={{ height: `${totalHeight}px` }}
+          >
             {virtualItems.map((virtualItem) => {
               const isLoaderPrev = hasPreviousPage && virtualItem.index === 0;
-              const isLoaderNext = hasNextPage && virtualItem.index === virtualCount - 1;
+              const isLoaderNext =
+                hasNextPage && virtualItem.index === virtualCount - 1;
 
               const itemIndex = virtualItem.index - prevOffset;
 
@@ -189,18 +233,17 @@ export default function VirtualizedScrollList({
                   // according to https://tanstack.com/virtual/latest/docs/api/virtualizer#measureelement-2
                   data-index={virtualItem.index}
                   ref={virtualizer.measureElement}
-                  className={`absolute left-0 top-0 flex w-full`}
+                  className={`absolute top-0 left-0 flex w-full`}
                   style={{
                     transform: `translateY(${virtualItem.start}px)`,
                     height: `${virtualItem.size}px`,
                   }}
                 >
-                  {isLoaderPrev ?
-                    renderFetchingPrevious && renderFetchingPrevious() :
-                    isLoaderNext ?
-                      renderFetchingNext && renderFetchingNext() :
-                      renderItem(itemIndex, virtualItem)
-                  }
+                  {isLoaderPrev
+                    ? renderFetchingPrevious && renderFetchingPrevious()
+                    : isLoaderNext
+                      ? renderFetchingNext && renderFetchingNext()
+                      : renderItem(itemIndex, virtualItem)}
                 </li>
               );
             })}
@@ -209,12 +252,12 @@ export default function VirtualizedScrollList({
       </ScrollArea.Viewport>
 
       <ScrollArea.Scrollbar
-        className={`flex w-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight ${
-          hideVerticalScrollbar ? "opacity-0 pointer-events-none" : ""
+        className={`hover-highlight flex w-2 touch-none p-0.5 transition-colors duration-160 ease-out select-none ${
+          hideVerticalScrollbar ? "pointer-events-none opacity-0" : ""
         }`}
         orientation="vertical"
       >
-        <ScrollArea.Thumb className="relative flex-1 rounded-[10px] bg-gray-400" />
+        <ScrollArea.Thumb className="relative flex-1 rounded-full bg-gray-400" />
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   );

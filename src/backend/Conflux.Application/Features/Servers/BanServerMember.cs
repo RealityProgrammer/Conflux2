@@ -10,7 +10,7 @@ namespace Conflux.Application.Features.Servers;
 
 public sealed record BanServerMemberCommand(
     Guid ServerId,
-    Guid InteractingMemberId,
+    Guid InteractMemberUserId,
     string? Reason,
     TimeSpan? Duration
 ) : ICommand<Result>, IServerMemberInteractCommand {
@@ -24,14 +24,12 @@ public sealed record BanServerMemberCommand(
 public sealed class BanServerMemberCommandValidator : AbstractValidator<BanServerMemberCommand> {
     public BanServerMemberCommandValidator() {
         RuleFor(c => c.Reason)
-            .Length(256)
-            .When(c => !string.IsNullOrEmpty(c.Reason))
-            .WithMessage("Reason cannot exceed 256 characters.");
+            .MaximumLength(256)
+            .WithMessage(ValidationMessages.StringMaxLength);
 
         RuleFor(c => c.Duration)
             .GreaterThan(TimeSpan.Zero)
-            .When(c => c.Duration != null)
-            .WithMessage("Duration must be a positive time span.");
+            .WithMessage(ValidationMessages.TimeSpanPositive);
     }
 }
 
@@ -43,9 +41,9 @@ public sealed record ServerMemberBannedNotification(
 
 public sealed class BanServerMemberHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository memberReadRepository,
+    IServerMemberRepository memberRepository,
     IServerPermissionsCacheService permissionsCacheService,
-    IServerModerationLogWriteRepository moderationLogWriteRepository,
+    IServerModerationLogRepository moderationLogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<BanServerMemberCommand> logger,
@@ -54,9 +52,9 @@ public sealed class BanServerMemberHandler(
     public async ValueTask<Result> Handle(BanServerMemberCommand command, CancellationToken cancellationToken) {
         Guid executorUserId = currentUserService.UserId!.Value;
         Guid serverId = command.ServerId;
-        Guid interactingMemberId = command.InteractingMemberId;
+        Guid interactMemberUserId = command.InteractMemberUserId;
         
-        var executorMemberId = memberReadRepository.AsQueryable()
+        var executorMemberId = memberRepository.AsQueryable()
             .AsNoTracking()
             .Where(m => m.CommunityServerId == serverId && m.UserId == executorUserId)
             .Select(m => m.Id)
@@ -70,15 +68,15 @@ public sealed class BanServerMemberHandler(
             ]);
         }
         
-        CommunityServerMember? affectedMember = await memberReadRepository.AsQueryable()
-            .Where(m => m.CommunityServerId == serverId && m.Id == interactingMemberId)
+        CommunityServerMember? affectedMember = await memberRepository.AsQueryable()
+            .Where(m => m.CommunityServerId == serverId && m.UserId == interactMemberUserId)
             .Include(m => m.Roles)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (affectedMember == null) {
             return Errors.ResourceNotFound("Server member", [
                 new(nameof(CommunityServerMember.CommunityServerId), serverId.ToString()),
-                new(nameof(CommunityServerMember.UserId), interactingMemberId.ToString()),
+                new(nameof(CommunityServerMember.UserId), interactMemberUserId.ToString()),
             ]);
         }
 
@@ -116,7 +114,7 @@ public sealed class BanServerMemberHandler(
                 AffectedMember = affectedMember,
             };
             
-            moderationLogWriteRepository.Add(log);
+            moderationLogRepository.Add(log);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             // delete the permission cache
@@ -127,7 +125,7 @@ public sealed class BanServerMemberHandler(
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception e) {
-            logger.LogError(e, "Exception thrown while banning member {memberId}.", interactingMemberId);
+            logger.LogError(e, "Exception thrown while banning member.");
             return Errors.UnexpectedError();
         }
     }

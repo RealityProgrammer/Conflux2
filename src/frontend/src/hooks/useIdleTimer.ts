@@ -1,7 +1,7 @@
-import {useEffect, useRef, useState} from "react";
-import {useSignalR} from "../contexts/SignalRContext.tsx";
+import { useEffect, useRef, useState } from "react";
+import { useSignalR } from "../contexts/SignalRContext.tsx";
 
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000;   // 5 minutes
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const THROTTLE_MS = 1000;
 
 export default function useIdleTimer() {
@@ -19,7 +19,7 @@ export default function useIdleTimer() {
     isIdleRef.current = nextIdle;
     setIsIdle(nextIdle);
 
-    invokeSafely('SetAutoIdle', nextIdle);
+    invokeSafely("SetAutoIdle", nextIdle);
   };
 
   const startIdleTimer = () => {
@@ -49,7 +49,7 @@ export default function useIdleTimer() {
   };
 
   useEffect(() => {
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -60,14 +60,16 @@ export default function useIdleTimer() {
       }
     };
 
-    events.forEach((evt) => window.addEventListener(evt, handleActivity, { passive: true }));
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    events.forEach((evt) =>
+      window.addEventListener(evt, handleActivity, { passive: true }),
+    );
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     startIdleTimer();
 
     return () => {
       events.forEach((evt) => window.removeEventListener(evt, handleActivity));
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (idleTimerRef.current) {
         clearTimeout(idleTimerRef.current);
       }

@@ -43,7 +43,7 @@ public sealed class InvitationObjectType : ObjectType<Invitation> {
                 var userIdClaim = httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         
                 if (Guid.TryParse(userIdClaim, out var userId)) {
-                    var memberRepo = ctx.Service<IServerMemberReadRepository>();
+                    var memberRepo = ctx.Service<IServerMemberRepository>();
         
                     bool isJoined = await memberRepo.IsUserJoined(
                         userId,

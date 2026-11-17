@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface DialogState {
   isOpen: boolean;
@@ -9,18 +9,18 @@ interface DialogState {
 
 export const useExternalLinkDialog = create<DialogState>((set) => ({
   isOpen: false,
-  url: '',
+  url: "",
   openDialog: (url) => set({ isOpen: true, url }),
-  closeDialog: () => set({ isOpen: false, url: '' }),
+  closeDialog: () => set({ isOpen: false, url: "" }),
 }));
 
 export const requestExternalLinkNavigate = (url: string): void => {
   const targetUrl = new URL(url, window.location.origin);
   const isExternalUrl = targetUrl.hostname !== window.location.hostname;
-  
+
   if (isExternalUrl) {
     useExternalLinkDialog.getState().openDialog(url);
   } else {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 };

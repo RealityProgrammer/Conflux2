@@ -1,8 +1,15 @@
-import {DecoratorNode, type NodeKey, type EditorConfig, type SerializedLexicalNode, type Spread, type LexicalNode} from "lexical";
+import {
+  DecoratorNode,
+  type NodeKey,
+  type EditorConfig,
+  type SerializedLexicalNode,
+  type Spread,
+  type LexicalNode,
+} from "lexical";
 import { type ReactNode } from "react";
 import Timestamp from "../Timestamp.tsx";
 
-export type SerializedTimeNode = Spread<
+export type SerializedTimestampNode = Spread<
   {
     timestamp: number;
   },
@@ -10,30 +17,30 @@ export type SerializedTimeNode = Spread<
 >;
 
 export class TimestampDecoratorNode extends DecoratorNode<ReactNode> {
-  _timestamp: number;
+  __timestamp: number;
 
   static getType(): string {
-    return "time-decorator";
+    return "timestamp-decorator";
   }
 
   static clone(node: TimestampDecoratorNode): TimestampDecoratorNode {
-    return new TimestampDecoratorNode(node._timestamp, node.__key);
+    return new TimestampDecoratorNode(node.__timestamp, node.__key);
   }
 
   constructor(timestamp: number, key?: NodeKey) {
     super(key);
-    this._timestamp = timestamp;
+    this.__timestamp = timestamp;
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
     const dom = document.createElement("span");
     dom.style.display = "inline-block";
     dom.contentEditable = "false";
-    dom.style.userSelect = "none"
+    dom.style.userSelect = "none";
     return dom;
   }
 
-  updateDOM(): false {
+  updateDOM(): boolean {
     return false;
   }
 
@@ -41,33 +48,41 @@ export class TimestampDecoratorNode extends DecoratorNode<ReactNode> {
     return true;
   }
 
+  isIsolated(): boolean {
+    return true;
+  }
+
   getTextContent(): string {
-    return `:t${this._timestamp}:`;
+    return `:t${this.__timestamp}:`;
   }
 
   decorate(): ReactNode {
-    return (
-      <Timestamp date={new Date(this._timestamp)}/>
-    );
+    return <Timestamp date={new Date(this.__timestamp)} />;
   }
 
-  static importJSON(serializedNode: SerializedTimeNode): TimestampDecoratorNode {
-    return $createTimeNode(serializedNode.timestamp);
+  static importJSON(
+    serializedNode: SerializedTimestampNode,
+  ): TimestampDecoratorNode {
+    return $createTimestampNode(serializedNode.timestamp);
   }
 
-  exportJSON(): SerializedTimeNode {
+  exportJSON(): SerializedTimestampNode {
     return {
-      type: "time-decorator",
+      type: TimestampDecoratorNode.getType(),
       version: 1,
-      timestamp: this._timestamp,
+      timestamp: this.__timestamp,
     };
   }
 }
 
-export function $createTimeNode(timestamp: number): TimestampDecoratorNode {
+export function $createTimestampNode(
+  timestamp: number,
+): TimestampDecoratorNode {
   return new TimestampDecoratorNode(timestamp);
 }
 
-export function $isTimeNode(node: LexicalNode | null | undefined): node is TimestampDecoratorNode {
+export function $isTimestampNode(
+  node: LexicalNode | null | undefined,
+): node is TimestampDecoratorNode {
   return node instanceof TimestampDecoratorNode;
 }

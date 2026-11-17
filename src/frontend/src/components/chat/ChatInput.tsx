@@ -1,52 +1,49 @@
 import IconButton from "../IconButton.tsx";
-import {BsCameraVideo, BsMusicNote, BsPaperclip, BsSend, BsTrash, BsX} from "react-icons/bs";
-import {
-  type ChangeEvent,
-  useEffect,
-  useRef,
-  useState
-} from "react";
-import {ScrollArea} from "radix-ui";
-import type {TimelineMessageDto} from "../../api/types.ts";
-import {useChatContainerContext} from "../../contexts/ChatContainerContext.tsx";
-import {useTypingEmitter} from "../../hooks/useTypingEmitter.ts";
-import {useMediaGalleryStore} from "../../store/useMediaGalleryStore.ts";
-import {Suggestion} from "./Suggestion.tsx";
-import MessageTextboxEditor, {type MessageTextboxEditorRef, type SuggestionData} from "./MessageTextboxEditor.tsx";
+import { BsEmojiWinkFill, BsPaperclip, BsX } from "react-icons/bs";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { ScrollArea } from "radix-ui";
+import { useChatContainerContext } from "../../contexts/ChatContainerContext.tsx";
+import { useTypingEmitter } from "../../hooks/useTypingEmitter.ts";
+import { useMediaGalleryStore } from "../../store/useMediaGalleryStore.ts";
+import MessageTextboxEditor, {
+  type MessageTextboxEditorRef,
+  type SuggestionData,
+} from "./MessageTextboxEditor.tsx";
+import { FaPaperPlane, FaXmark } from "react-icons/fa6";
+import { Attachment } from "./Attachment.tsx";
+import MessageAttachmentInput from "./MessageAttachmentInput.tsx";
+import { MessageEditorSuggestions } from "./MessageEditorSuggestions.tsx";
+import { EmojiPanel } from "./EmojiPanel.tsx";
+import { $createEmojiNode } from "./nodes/EmojiDecoratorNode.tsx";
+import { $createTextNode } from "lexical";
 
 export interface ChatInputProps {
   disabled?: boolean;
 }
 
-export type MessageInput = {
-  messageBody: string;
-  attachments: File[];
-  replyingMessage: TimelineMessageDto | null;
-}
-
-export interface AttachmentThumbnailProps {
-  file: File;
-  previewUrl?: string;
-  onRemove: () => void;
-  onClick: () => void;
-}
-
-type AttachmentItem = {
+export type AttachmentItem = {
   id: string;
   file: File;
   previewUrl?: string;
-}
+};
 
-export default function ChatInput({disabled}: ChatInputProps) {
-  const {conversationId, replyingMessage, handleSendMessage, setReplyingMessage} = useChatContainerContext();
+export default function ChatInput({ disabled }: ChatInputProps) {
+  const setGalleryElements = useMediaGalleryStore((state) => state.setElements);
+
+  const {
+    conversationId,
+    replyingMessage,
+    handleSendMessage,
+    setReplyingMessage,
+  } = useChatContainerContext();
 
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [messageBody, setMessageBody] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  const [suggestion, setSuggestion] = useState<SuggestionData | undefined>(undefined);
+  const [suggestion, setSuggestion] = useState<SuggestionData | null>(null);
 
   const notifyTyping = useTypingEmitter(conversationId);
 
@@ -69,14 +66,16 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
-  const handleAttachmentChanged = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
+  const handleAttachmentChanged = (
+    e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
+  ) => {
     const files = e.target.files;
 
     if (!files || !files.length) {
       return;
     }
 
-    const newAttachments = Array.from(files).map<AttachmentItem>(file => {
+    const newAttachments = Array.from(files).map<AttachmentItem>((file) => {
       const objectURL = URL.createObjectURL(file);
 
       return {
@@ -86,8 +85,11 @@ export default function ChatInput({disabled}: ChatInputProps) {
       };
     });
 
-    setAttachments([...attachments, ...newAttachments]);
-    e.target.value = '';    // reset so that same file can be selected again (for some reason lmao)
+    setAttachments((prev: AttachmentItem[]): AttachmentItem[] => [
+      ...prev,
+      ...newAttachments,
+    ]);
+    e.target.value = "";
   };
 
   const attachmentsRef = useRef<AttachmentItem[]>([]);
@@ -97,7 +99,7 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   useEffect(() => {
     return () => {
-      attachmentsRef.current.forEach(item => {
+      attachmentsRef.current.forEach((item) => {
         if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
       });
     };
@@ -105,17 +107,18 @@ export default function ChatInput({disabled}: ChatInputProps) {
 
   const handleRemoveAttachment = (id: string): void => {
     setAttachments((prev: AttachmentItem[]) => {
-      const toRemove = prev.find(item => item.id === id);
+      const toRemove = prev.find((item) => item.id === id);
 
       if (toRemove?.previewUrl) {
         URL.revokeObjectURL(toRemove.previewUrl);
       }
 
-      return prev.filter(item => item.id !== id);
+      return prev.filter((item) => item.id !== id);
     });
   };
 
-  const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
+  const isSendable: boolean =
+    !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
   const handleSend = () => {
     if (!isSendable || !textboxEditorRef.current) return;
@@ -123,12 +126,12 @@ export default function ChatInput({disabled}: ChatInputProps) {
     const convertedBody = textboxEditorRef.current.convertToMarkdownString();
 
     handleSendMessage?.({
-      messageBody: convertedBody,
-      attachments: attachments.map(attachment => attachment.file),
-      replyingMessage: replyingMessage,
+      body: convertedBody,
+      attachments: attachments.map((attachment) => attachment.file),
+      replyingMessageId: replyingMessage?.id ?? null,
     });
 
-    attachments.forEach(item => {
+    attachments.forEach((item) => {
       if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
     });
 
@@ -137,113 +140,108 @@ export default function ChatInput({disabled}: ChatInputProps) {
     setAttachments([]);
   };
 
-  const setGalleryElements = useMediaGalleryStore(state => state.setElements);
-
   return (
-    <footer className="relative flex-none px-2 py-1 border-t-2 border-t-gray-600 flex flex-col gap-2 text-white">
-      {suggestion && (
-        <>
-          {suggestion.type === "mode" ? (
-            <Suggestion.Mode
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              onSelect={(mode) => {
-                // cursor is after the start colon, insert the mode directly
-                textboxEditorRef.current?.insertText(mode, suggestion.startColonIndex + 1, cursorPosition);
-              }}
-            />
-          ) : suggestion.type === "emoji" ? (
-            <Suggestion.Emoji
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              searchTerm={suggestion.searchTerm ?? ""}
-              onSelect={(emojiId) => {
-                // replace from the starting colon with the full formatted emoji tag and a trailing space
-                textboxEditorRef.current?.insertEmojiNode(emojiId, suggestion.startColonIndex, cursorPosition);
-              }}
-            />
-          ) : suggestion.type === "time" ? (
-            <Suggestion.Time
-              className="z-10 absolute bottom-full -translate-y-2 inset-x-2 shadow-xl"
-              onSelectSystemTime={() => {
-                // replace from the starting colon with the formatted timestamp tag and a trailing space
-                textboxEditorRef.current?.insertText(`:t${new Date().getTime()}: `, suggestion.startColonIndex, cursorPosition);
-              }}
-            />
-          ) : null}
-        </>
-      )}
+    <footer className="relative flex flex-none flex-col gap-2 border-t-2 border-t-gray-600 px-2 py-1 text-white">
+      <MessageEditorSuggestions.Default
+        suggestion={suggestion}
+        textboxEditorRef={textboxEditorRef}
+        cursorPosition={cursorPosition}
+      />
 
       {replyingMessage && (
-        <section className="flex flex-col min-w-0">
-          <div className="flex flex-row gap-2 mb-1">
-            <p className="text-sm flex-1">Replying to:</p>
+        <section className="flex min-w-0 flex-col">
+          <div className="mb-1 flex flex-row gap-2">
+            <p className="flex-1 text-sm">Replying to:</p>
 
-            <IconButton isLoading={false} theme="default" className="ml-auto flex-none" onClick={() => setReplyingMessage(null)}>
-              <BsX className="size-5 cursor-pointer"/>
+            <IconButton
+              isLoading={false}
+              theme="default"
+              className="ml-auto flex-none"
+              onClick={() => setReplyingMessage(null)}
+            >
+              <BsX className="size-5 cursor-pointer" />
             </IconButton>
           </div>
 
           {/* https://stackoverflow.com/a/79634869 */}
           {replyingMessage.body && (
-            <p className="min-w-0 overflow-hidden text-sm bg-white/5 px-2 py-1 rounded-md border border-gray-600">
-              <span className="line-clamp-2 break-all">{replyingMessage.body}</span>
+            <p className="mt-1 min-w-0 overflow-hidden rounded-md border border-gray-600 bg-white/5 px-2 py-1 text-sm">
+              <span className="line-clamp-2 break-all">
+                {replyingMessage.body}
+              </span>
             </p>
           )}
 
-          {replyingMessage.attachments && replyingMessage.attachments.length > 0 && (
-            <span className="text-sm">{replyingMessage.attachments.length} attachment{replyingMessage.attachments.length > 1 ? 's' : ''}</span>
-          )}
+          {replyingMessage.attachments &&
+            replyingMessage.attachments.length > 0 && (
+              <span className="mt-1 text-sm">
+                With {replyingMessage.attachments.length} attachment
+                {replyingMessage.attachments.length > 1 ? "s" : ""}
+              </span>
+            )}
         </section>
       )}
 
       {attachments.length > 0 && (
-        <ScrollArea.Root className="h-32 w-full overflow-hidden">
-          <ScrollArea.Viewport className="size-full min-h-0">
-            <div className="flex flex-row gap-2 w-max h-32 pr-4 pb-3">
-              {attachments.map((item, index) => (
-                <AttachmentThumbnail
-                  key={item.id}
-                  file={item.file}
-                  onRemove={() => handleRemoveAttachment(item.id)}
-                  previewUrl={item.previewUrl}
-                  onClick={() => {
-                    setGalleryElements(attachments.map(attachment => ({
-                      id: attachment.id,
+        <ScrollArea.Root className="w-full">
+          <ScrollArea.Viewport className="size-full">
+            <div className="flex flex-row items-center gap-4">
+              {attachments.map((attachment, index) => (
+                <div key={index} className="relative h-13 shrink-0">
+                  <Attachment.FilePill
+                    key={index}
+                    file={{
+                      type: attachment.file.type,
+                      src: attachment.previewUrl ?? "",
                       fileName: attachment.file.name,
-                      mediaType: attachment.file.type,
-                      src: attachment.previewUrl!,
-                    })), index);
-                  }}
-                />
+                    }}
+                    className="hover-highlight h-full max-w-64 cursor-pointer overflow-hidden rounded-md border-2 border-gray-600 pr-4"
+                    onClick={() => {
+                      setGalleryElements(
+                        attachments.map((attachment) => ({
+                          id: attachment.id,
+                          fileName: attachment.file.name,
+                          mediaType: attachment.file.type,
+                          src: attachment.previewUrl!,
+                        })),
+                        index,
+                        {},
+                      );
+                    }}
+                  />
+
+                  <button
+                    className="button-theme-danger absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 border-gray-600 p-1"
+                    onClick={() => handleRemoveAttachment(attachment.id)}
+                  >
+                    <FaXmark className="size-3 fill-white" />
+                  </button>
+                </div>
               ))}
             </div>
           </ScrollArea.Viewport>
 
           <ScrollArea.Scrollbar
-            className="flex flex-col h-2 touch-none select-none p-0.5 transition-colors duration-160 ease-out hover-highlight"
+            className="hover-highlight flex h-2 touch-none flex-col p-0.5 transition-colors duration-160 ease-out select-none"
             orientation="horizontal"
           >
-            <ScrollArea.Thumb
-              className="relative flex-1 rounded-[10px] bg-gray-400 before:absolute before:left-1/2 before:top-1/2 before:size-full before:min-h-11 before:min-w-11 before:-translate-x-1/2 before:-translate-y-1/2"/>
+            <ScrollArea.Thumb className="relative flex-1 rounded-full bg-gray-400" />
           </ScrollArea.Scrollbar>
         </ScrollArea.Root>
       )}
 
       <section className="flex flex-row items-end gap-2">
-        <input
+        <MessageAttachmentInput
           ref={fileInputRef}
-          type="file"
-          accept="image/jpeg, image/png, image/gif, audio/ogg, audio/wav, audio/mp4, audio/mpeg, audio/vorbis, video/H263, video/H264, video/H265, video/mp4, video/ogg"
-          multiple
-          hidden
           onChange={handleAttachmentChanged}
         />
 
         <IconButton
-          className="flex-none mb-2"
+          className="mb-2 flex-none"
           disabled={disabled}
           onClick={handleAttachmentButtonClick}
         >
-          <BsPaperclip className="size-6"/>
+          <BsPaperclip className="size-6" />
         </IconButton>
 
         <MessageTextboxEditor
@@ -251,59 +249,52 @@ export default function ChatInput({disabled}: ChatInputProps) {
           onTextChange={handleInput}
           onEnterSend={handleSend}
           onSuggestionChange={setSuggestion}
+          onImagePaste={(file) => {
+            setAttachments((prev: AttachmentItem[]): AttachmentItem[] => {
+              const objectUrl = URL.createObjectURL(file);
+
+              return [
+                ...prev,
+                { id: crypto.randomUUID(), file, previewUrl: objectUrl },
+              ];
+            });
+          }}
+        />
+
+        <EmojiPanel.StandardPopover
+          side="top"
+          trigger={
+            <IconButton className="mb-2 flex-none" isLoading={false}>
+              <BsEmojiWinkFill className="size-6" />
+            </IconButton>
+          }
+          contentClassName="emoji-standard-panel"
+          onSelect={(emoji) => {
+            switch (emoji.type) {
+              case "server-emoji":
+                textboxEditorRef.current?.insertAtLastSelection(() =>
+                  $createEmojiNode(emoji.id),
+                );
+                break;
+
+              case "unicode-emoji":
+                textboxEditorRef.current?.insertAtLastSelection(() =>
+                  $createTextNode(emoji.value),
+                );
+                break;
+            }
+          }}
         />
 
         <IconButton
-          className="flex-none mb-2"
+          className="mb-2 flex-none"
           disabled={!isSendable}
           isLoading={false}
           onClick={handleSend}
         >
-          <BsSend className="size-6"/>
+          <FaPaperPlane className="size-6" />
         </IconButton>
       </section>
     </footer>
-  );
-}
-
-function AttachmentThumbnail({file, previewUrl, onRemove, onClick}: AttachmentThumbnailProps) {
-  return (
-    <div
-      className={`flex-none overflow-hidden h-full aspect-square rounded-md relative group ${file.type.startsWith('image/') ? "" : "border border-gray-500 hover:border-gray-400 transition-colors duration-200"}`}>
-      {file.type.startsWith("image") && previewUrl ? (
-        <img
-          src={previewUrl}
-          alt={file.name}
-          onClick={onClick}
-          className="size-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-        />
-      ) : file.type.startsWith("video") ? (
-        <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
-          <BsCameraVideo className="size-6 fill-white"/>
-        </div>
-      ) : file.type.startsWith("audio") ? (
-        <div className="size-full flex flex-row justify-center items-center cursor-pointer" onClick={onClick}>
-          <BsMusicNote className="size-6 fill-white"/>
-        </div>
-      ) : (
-        <div
-          onClick={onClick}
-          className="size-full flex flex-col items-center justify-center p-2 text-xs text-center text-gray-300 bg-gray-800 cursor-pointer hover:bg-gray-700 transition-colors"
-        >
-          <span className="truncate w-full font-medium">{file.name}</span>
-        </div>
-      )}
-
-      <IconButton
-        isLoading={false} theme="danger"
-        className="size-6 absolute top-0 right-0 rounded-md invisible group-hover:visible"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove();
-        }}
-      >
-        <BsTrash className="size-5"/>
-      </IconButton>
-    </div>
   );
 }

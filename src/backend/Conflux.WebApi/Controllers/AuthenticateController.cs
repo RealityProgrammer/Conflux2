@@ -15,7 +15,7 @@ using Error = Conflux.Domain.Error;
 
 namespace Conflux.WebApi.Controllers;
 
-[Authorize, ApiController, Route("api/auth")]
+[ApiController, Route("api/auth"), Authorize]
 public sealed class AuthenticateController(
     ISender sender,
     IUserAgentParser userAgentParser,
@@ -100,7 +100,7 @@ public sealed class AuthenticateController(
     public async Task<ActionResult<ApiResponse>> Register([FromBody] RegisterRequest request) {
         if (request.Password != request.ConfirmPassword) {
             return BadRequest(new ApiResponse(Errors.ValidationErrorsOccurred(new() {
-                ["confirmPassword"] = ["Passwords are mismatch."],
+                [nameof(RegisterRequest.ConfirmPassword)] = ["Passwords are mismatch."],
             })));
         }
         
@@ -437,8 +437,8 @@ public sealed class AuthenticateController(
     public sealed record ConfirmEmailRequest(string Email, string ConfirmationCode);
     
     public sealed record DeleteAccountRequest(
-        [Required] UserAccountDeleteReason Reason, 
-        [MaxLength(255)] string? ExtraMessage,
+        UserAccountDeleteReason Reason, 
+        string? ExtraMessage,
         string RestorationPassword
     );
 

@@ -12,9 +12,8 @@ public sealed record QueryEmojiEntries : ICommand<Result<IReadOnlyList<ServerEmo
 
 public sealed class QueryEmojiEntriesHandler(
     ICurrentUserService currentUserService,
-    IServerMemberReadRepository serverMemberReadRepository,
-    IServerEmojiCacheProvider serverEmojiCacheProvider,
-    IEmojiReadRepository emojiReadRepository
+    IServerMemberRepository serverMemberRepository,
+    IServerEmojiProvider serverEmojiProvider
 ) : ICommandHandler<QueryEmojiEntries, Result<IReadOnlyList<ServerEmojiGroupDto>>> {
     public async ValueTask<Result<IReadOnlyList<ServerEmojiGroupDto>>> Handle(
         QueryEmojiEntries command, 
@@ -25,7 +24,7 @@ public sealed class QueryEmojiEntriesHandler(
         }
 
         // get joined server ids
-        List<ServerEmojiGroupInfoDto> joinedServers = await serverMemberReadRepository
+        List<ServerEmojiGroupInfoDto> joinedServers = await serverMemberRepository
             .AsQueryable()
             .Where(m => m.UserId == userId && m.Status == MembershipStatus.Active)
             .Include(m => m.CommunityServer)
@@ -36,56 +35,19 @@ public sealed class QueryEmojiEntriesHandler(
             return Result<IReadOnlyList<ServerEmojiGroupDto>>.Success([]);
         }
 
-        // get all cache hits
+        var entries = await serverEmojiProvider.GetEntries(
+            [..joinedServers.Select(m => m.ServerId)],
+            cancellationToken
+        );
+
         List<ServerEmojiGroupDto> resultGroups = [];
-        List<ServerEmojiGroupInfoDto> cacheMissServers = [];
-        
-        foreach (var server in joinedServers) {
-            if (await serverEmojiCacheProvider.Get(server.ServerId) is { } cached) {
-                if (cached.Count > 0) { // ignore server with 0 emoji
-                    resultGroups.Add(new(server, cached));
-                }
-            } else {
-                cacheMissServers.Add(server);
+
+        foreach (var joinedServer in joinedServers) {
+            if (!entries.TryGetValue(joinedServer.ServerId, out var entry)) {
+                continue;
             }
-        }
-
-        // early return if all servers had cached their emoji entries already
-        if (cacheMissServers.Count == 0) {
-            return Result<IReadOnlyList<ServerEmojiGroupDto>>.Success(resultGroups);
-        }
-
-        List<Guid> cacheMissServerIds = cacheMissServers.Select(s => s.ServerId).ToList();
-        
-        // query and backfill missing.
-        var rawEntries = await emojiReadRepository
-            .AsQueryable()
-            .Where(e => cacheMissServerIds.Contains(e.ServerId))
-            .OrderBy(e => e.ServerId)
-            .ThenBy(e => e.ShortCode)
-            .Select(e => new {
-                e.ServerId,
-                EmojiDto = new EmojiEntryDto(e.Id, e.ShortCode)
-            })
-            .ToListAsync(cancellationToken);
-        
-        Dictionary<Guid, List<EmojiEntryDto>> queriedGrouped = rawEntries
-            .GroupBy(x => x.ServerId)
-            .ToDictionary(
-                g => g.Key, 
-                g => g.Select(x => x.EmojiDto).ToList()
-            )
-            .ToDictionary();
-        
-        foreach (var server in cacheMissServers) {
-            // Ensure even servers with 0 emojis get an empty list initialized
-            var entries = queriedGrouped.TryGetValue(server.ServerId, out var list) ? list : [];
             
-            await serverEmojiCacheProvider.Set(server.ServerId, entries);
-
-            if (entries.Count > 0) {    // ignore server with 0 emoji
-                resultGroups.Add(new(server, entries));
-            }
+            resultGroups.Add(new(joinedServer, entry));
         }
         
         return Result<IReadOnlyList<ServerEmojiGroupDto>>.Success(resultGroups);

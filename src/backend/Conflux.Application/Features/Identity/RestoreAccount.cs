@@ -11,9 +11,9 @@ public sealed record RestoreAccountCommand(string Password) : ICommand<Result>, 
 
 public sealed class RestoreAccountHandler(
     ICurrentUserService currentUserService,
-    IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
+    IUserAccountDeletionRepository accountDeletionRepository,
     TimeProvider timeProvider,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
+    IAccountDeleteCacheService accountDeleteCacheService,
     IPasswordHasher<object> passwordHasher,
     IUnitOfWork unitOfWork
 ) : ICommandHandler<RestoreAccountCommand, Result> {
@@ -26,7 +26,7 @@ public sealed class RestoreAccountHandler(
         }
 
         // ensure having a deletion and still in grace-period
-        var deletion = await accountDeletionWriteRepository
+        var deletion = await accountDeletionRepository
             .AsQueryable()
             .FirstOrDefaultAsync(d => d.UserId == userId && d.Status == UserAccountDeleteStatus.Pending, cancellationToken);
 
@@ -58,7 +58,7 @@ public sealed class RestoreAccountHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
-        await accountDeleteStatusCacheProvider.Remove(userId);
+        await accountDeleteCacheService.Remove(userId);
         return Result.Success();
     }
 }

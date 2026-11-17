@@ -1,9 +1,8 @@
-import type {ReactNode} from "react";
-import type {TimelineContext} from "./TimelineContext.ts";
+import type { ReactNode } from "react";
+import type { TimelineContext } from "./TimelineContext.ts";
 
 export abstract class TimelineItem<T = any> {
-  protected constructor(public data: T) {
-  }
+  protected constructor(public data: T) {}
 
   abstract getKey(): string;
   abstract render(context: TimelineContext): ReactNode;

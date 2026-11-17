@@ -16,8 +16,8 @@ public interface IUserMediaService {
     Task<Result> RestoreBanner(Guid userId, CancellationToken cancellationToken = default);
     Task<Result> DeleteBannerBackup(Guid userId, CancellationToken cancellationToken = default);
     
-    Task<AvatarMediaItemInfo?> GetAvatar(Guid userId, CancellationToken cancellationToken = default);
-    Task<BannerMediaItemInfo?> GetBanner(Guid userId, CancellationToken cancellationToken = default);
+    string GetAvatarPreSignedUrl(Guid userId, TimeSpan expireIn);
+    string GetBannerPreSignedUrl(Guid userId, TimeSpan expireIn);
     
     Task Purge(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken = default);
 }

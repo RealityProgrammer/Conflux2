@@ -2,49 +2,69 @@ export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string; }
-  String: { input: string; output: string; }
-  Boolean: { input: boolean; output: boolean; }
-  Int: { input: number; output: number; }
-  Float: { input: number; output: number; }
+  ID: { input: string; output: string };
+  String: { input: string; output: string };
+  Boolean: { input: boolean; output: boolean };
+  Int: { input: number; output: number };
+  Float: { input: number; output: number };
   /** The `DateTime` scalar type represents a date and time with time zone offset information. */
-  DateTime: { input: string; output: string; }
+  DateTime: { input: string; output: string };
   /** The `Duration` scalar type represents a duration of time. */
-  Duration: { input: string; output: string; }
+  Duration: { input: string; output: string };
+  /** The `Short` scalar type represents a signed 16-bit integer. */
+  Short: { input: unknown; output: unknown };
   /** The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562. */
-  UUID: { input: string; output: string; }
+  UUID: { input: string; output: string };
   /** The `UnsignedInt` scalar type represents an unsigned 32-bit integer. */
-  UnsignedInt: { input: unknown; output: unknown; }
+  UnsignedInt: { input: unknown; output: unknown };
 };
 
 export type ApplicationUser = {
-  __typename?: 'ApplicationUser';
-  avatar?: Maybe<MediaItem>;
-  avatarId?: Maybe<Scalars['UUID']['output']>;
-  banner?: Maybe<MediaItem>;
-  bannerId?: Maybe<Scalars['UUID']['output']>;
-  biography?: Maybe<Scalars['String']['output']>;
-  createdAt: Scalars['DateTime']['output'];
-  displayName?: Maybe<Scalars['String']['output']>;
+  __typename?: "ApplicationUser";
+  avatarVersion?: Maybe<Scalars["Int"]["output"]>;
+  bannerVersion?: Maybe<Scalars["Int"]["output"]>;
+  biography?: Maybe<Scalars["String"]["output"]>;
+  createdAt: Scalars["DateTime"]["output"];
+  displayName?: Maybe<Scalars["String"]["output"]>;
   effectivePresenceStatus: PresenceStatus;
-  email?: Maybe<Scalars['String']['output']>;
-  id: Scalars['UUID']['output'];
-  lastSeenAt: Scalars['DateTime']['output'];
+  email?: Maybe<Scalars["String"]["output"]>;
+  friendRelationship?: Maybe<UserRelationshipStatus>;
+  id: Scalars["UUID"]["output"];
+  lastSeenAt: Scalars["DateTime"]["output"];
   manualPresenceStatus?: Maybe<PresenceStatus>;
-  numMutualFriends: Scalars['Int']['output'];
-  phoneNumber?: Maybe<Scalars['String']['output']>;
-  pronouns?: Maybe<Scalars['String']['output']>;
-  userName?: Maybe<Scalars['String']['output']>;
+  numMutualFriends: Scalars["Int"]["output"];
+  phoneNumber?: Maybe<Scalars["String"]["output"]>;
+  pronouns?: Maybe<Scalars["String"]["output"]>;
+  userName?: Maybe<Scalars["String"]["output"]>;
+};
+
+/** A connection to a list of items. */
+export type ApplicationUserConnection = {
+  __typename?: "ApplicationUserConnection";
+  /** A list of edges. */
+  edges?: Maybe<Array<ApplicationUserEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<ApplicationUser>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars["Int"]["output"];
+};
+
+export type ApplicationUserEdge = {
+  __typename?: "ApplicationUserEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: ApplicationUser;
 };
 
 export type ApplicationUserFilterInput = {
   accessFailedCount?: InputMaybe<IntOperationFilterInput>;
   accountDeletions?: InputMaybe<ListFilterInputTypeOfUserAccountDeletionFilterInput>;
   and?: InputMaybe<Array<ApplicationUserFilterInput>>;
-  avatar?: InputMaybe<MediaItemFilterInput>;
-  avatarId?: InputMaybe<UuidOperationFilterInput>;
-  banner?: InputMaybe<MediaItemFilterInput>;
-  bannerId?: InputMaybe<UuidOperationFilterInput>;
+  avatarVersion?: InputMaybe<IntOperationFilterInput>;
+  bannerVersion?: InputMaybe<IntOperationFilterInput>;
   biography?: InputMaybe<StringOperationFilterInput>;
   concurrencyStamp?: InputMaybe<StringOperationFilterInput>;
   conversationParticipants?: InputMaybe<ListFilterInputTypeOfConversationParticipantFilterInput>;
@@ -62,6 +82,7 @@ export type ApplicationUserFilterInput = {
   manualPresenceStatus?: InputMaybe<PresenceStatusOperationFilterInput>;
   normalizedEmail?: InputMaybe<StringOperationFilterInput>;
   normalizedUserName?: InputMaybe<StringOperationFilterInput>;
+  notifications?: InputMaybe<ListFilterInputTypeOfNotificationFilterInput>;
   or?: InputMaybe<Array<ApplicationUserFilterInput>>;
   passwordHash?: InputMaybe<StringOperationFilterInput>;
   phoneNumber?: InputMaybe<StringOperationFilterInput>;
@@ -76,10 +97,8 @@ export type ApplicationUserFilterInput = {
 
 export type ApplicationUserSortInput = {
   accessFailedCount?: InputMaybe<SortEnumType>;
-  avatar?: InputMaybe<MediaItemSortInput>;
-  avatarId?: InputMaybe<SortEnumType>;
-  banner?: InputMaybe<MediaItemSortInput>;
-  bannerId?: InputMaybe<SortEnumType>;
+  avatarVersion?: InputMaybe<SortEnumType>;
+  bannerVersion?: InputMaybe<SortEnumType>;
   biography?: InputMaybe<SortEnumType>;
   concurrencyStamp?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
@@ -107,49 +126,48 @@ export type ApplicationUserSortInput = {
 /** Defines when a policy shall be executed. */
 export enum ApplyPolicy {
   /** After the resolver was executed. */
-  AfterResolver = 'AFTER_RESOLVER',
+  AfterResolver = "AFTER_RESOLVER",
   /** Before the resolver was executed. */
-  BeforeResolver = 'BEFORE_RESOLVER',
+  BeforeResolver = "BEFORE_RESOLVER",
   /** The policy is applied in the validation step before the execution. */
-  Validation = 'VALIDATION'
+  Validation = "VALIDATION",
 }
 
 export type BanCommunityServerMemberInput = {
-  duration?: InputMaybe<Scalars['Duration']['input']>;
-  memberId: Scalars['UUID']['input'];
-  reason?: InputMaybe<Scalars['String']['input']>;
-  serverId: Scalars['UUID']['input'];
+  duration?: InputMaybe<Scalars["Duration"]["input"]>;
+  memberId: Scalars["UUID"]["input"];
+  reason?: InputMaybe<Scalars["String"]["input"]>;
+  serverId: Scalars["UUID"]["input"];
 };
 
 export type BanCommunityServerMemberPayload = {
-  __typename?: 'BanCommunityServerMemberPayload';
-  memberId: Scalars['UUID']['output'];
+  __typename?: "BanCommunityServerMemberPayload";
+  memberId: Scalars["UUID"]["output"];
 };
 
 export type BooleanOperationFilterInput = {
-  eq?: InputMaybe<Scalars['Boolean']['input']>;
-  neq?: InputMaybe<Scalars['Boolean']['input']>;
+  eq?: InputMaybe<Scalars["Boolean"]["input"]>;
+  neq?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 export type Channel = {
-  __typename?: 'Channel';
+  __typename?: "Channel";
   channelCategory?: Maybe<ChannelCategory>;
-  channelCategoryId?: Maybe<Scalars['UUID']['output']>;
+  channelCategoryId?: Maybe<Scalars["UUID"]["output"]>;
   conversation: Conversation;
-  conversationId: Scalars['UUID']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['UUID']['output'];
-  name: Scalars['String']['output'];
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["UUID"]["output"];
+  name: Scalars["String"]["output"];
 };
 
 export type ChannelCategory = {
-  __typename?: 'ChannelCategory';
+  __typename?: "ChannelCategory";
   channels?: Maybe<Array<Maybe<Channel>>>;
   communityServer: CommunityServer;
-  communityServerId: Scalars['UUID']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['UUID']['output'];
-  name: Scalars['String']['output'];
+  communityServerId: Scalars["UUID"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["UUID"]["output"];
+  name: Scalars["String"]["output"];
 };
 
 export type ChannelCategoryFilterInput = {
@@ -178,7 +196,6 @@ export type ChannelFilterInput = {
   communityServer?: InputMaybe<CommunityServerFilterInput>;
   communityServerId?: InputMaybe<UuidOperationFilterInput>;
   conversation?: InputMaybe<ConversationFilterInput>;
-  conversationId?: InputMaybe<UuidOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   name?: InputMaybe<StringOperationFilterInput>;
@@ -192,7 +209,6 @@ export type ChannelSortInput = {
   communityServer?: InputMaybe<CommunityServerSortInput>;
   communityServerId?: InputMaybe<SortEnumType>;
   conversation?: InputMaybe<ConversationSortInput>;
-  conversationId?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   name?: InputMaybe<SortEnumType>;
@@ -200,8 +216,8 @@ export type ChannelSortInput = {
 };
 
 export enum ChannelType {
-  Text = 'Text',
-  Voice = 'Voice'
+  Text = "Text",
+  Voice = "Voice",
 }
 
 export type ChannelTypeOperationFilterInput = {
@@ -212,27 +228,25 @@ export type ChannelTypeOperationFilterInput = {
 };
 
 export type CommunityServer = {
-  __typename?: 'CommunityServer';
-  avatar?: Maybe<MediaItem>;
-  avatarId?: Maybe<Scalars['UUID']['output']>;
-  banner?: Maybe<MediaItem>;
-  bannerId?: Maybe<Scalars['UUID']['output']>;
+  __typename?: "CommunityServer";
+  avatarVersion?: Maybe<Scalars["Int"]["output"]>;
+  bannerVersion?: Maybe<Scalars["Int"]["output"]>;
   channelCategories?: Maybe<Array<Maybe<ChannelCategory>>>;
   channels?: Maybe<Array<Maybe<Channel>>>;
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   creatorUser?: Maybe<ApplicationUser>;
-  creatorUserId: Scalars['UUID']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['UUID']['output'];
-  name: Scalars['String']['output'];
-  numMembers: Scalars['Int']['output'];
+  creatorUserId: Scalars["UUID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  name: Scalars["String"]["output"];
+  numMembers: Scalars["Int"]["output"];
   ownerUser?: Maybe<ApplicationUser>;
-  ownerUserId: Scalars['UUID']['output'];
+  ownerUserId: Scalars["UUID"]["output"];
 };
 
 /** A connection to a list of items. */
 export type CommunityServerConnection = {
-  __typename?: 'CommunityServerConnection';
+  __typename?: "CommunityServerConnection";
   /** A list of edges. */
   edges?: Maybe<Array<CommunityServerEdge>>;
   /** A flattened list of the nodes */
@@ -240,23 +254,21 @@ export type CommunityServerConnection = {
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 export type CommunityServerEdge = {
-  __typename?: 'CommunityServerEdge';
+  __typename?: "CommunityServerEdge";
   /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The item at the end of the edge. */
   node: CommunityServer;
 };
 
 export type CommunityServerFilterInput = {
   and?: InputMaybe<Array<CommunityServerFilterInput>>;
-  avatar?: InputMaybe<MediaItemFilterInput>;
-  avatarId?: InputMaybe<UuidOperationFilterInput>;
-  banner?: InputMaybe<MediaItemFilterInput>;
-  bannerId?: InputMaybe<UuidOperationFilterInput>;
+  avatarVersion?: InputMaybe<IntOperationFilterInput>;
+  bannerVersion?: InputMaybe<IntOperationFilterInput>;
   channelCategories?: InputMaybe<ListFilterInputTypeOfChannelCategoryFilterInput>;
   channels?: InputMaybe<ListFilterInputTypeOfChannelFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -276,23 +288,26 @@ export type CommunityServerFilterInput = {
 };
 
 export type CommunityServerMember = {
-  __typename?: 'CommunityServerMember';
+  __typename?: "CommunityServerMember";
   authorizeInfo: MemberAuthorizeInfo;
-  banExpireAt?: Maybe<Scalars['DateTime']['output']>;
+  banExpireAt?: Maybe<Scalars["DateTime"]["output"]>;
   communityServer: CommunityServer;
-  communityServerId: Scalars['UUID']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['UUID']['output'];
-  numWarn: Scalars['Int']['output'];
+  communityServerId: Scalars["UUID"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  highestAuthorizeLevel: Scalars["Int"]["output"];
+  highestAuthorizeRole: CommunityServerRole;
+  highestAuthorizeRoleId: Scalars["UUID"]["output"];
+  id: Scalars["UUID"]["output"];
+  numWarn: Scalars["Int"]["output"];
   roles: Array<CommunityServerRole>;
   status: MembershipStatus;
   user: ApplicationUser;
-  userId: Scalars['UUID']['output'];
+  userId: Scalars["UUID"]["output"];
 };
 
 /** A connection to a list of items. */
 export type CommunityServerMemberConnection = {
-  __typename?: 'CommunityServerMemberConnection';
+  __typename?: "CommunityServerMemberConnection";
   /** A list of edges. */
   edges?: Maybe<Array<CommunityServerMemberEdge>>;
   /** A flattened list of the nodes */
@@ -300,13 +315,13 @@ export type CommunityServerMemberConnection = {
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 export type CommunityServerMemberEdge = {
-  __typename?: 'CommunityServerMemberEdge';
+  __typename?: "CommunityServerMemberEdge";
   /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The item at the end of the edge. */
   node: CommunityServerMember;
 };
@@ -317,6 +332,9 @@ export type CommunityServerMemberFilterInput = {
   communityServer?: InputMaybe<CommunityServerFilterInput>;
   communityServerId?: InputMaybe<UuidOperationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  highestAuthorizeLevel?: InputMaybe<IntOperationFilterInput>;
+  highestAuthorizeRole?: InputMaybe<CommunityServerRoleFilterInput>;
+  highestAuthorizeRoleId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   memberRoles?: InputMaybe<ListFilterInputTypeOfCommunityServerMemberRoleFilterInput>;
   or?: InputMaybe<Array<CommunityServerMemberFilterInput>>;
@@ -340,6 +358,9 @@ export type CommunityServerMemberSortInput = {
   communityServer?: InputMaybe<CommunityServerSortInput>;
   communityServerId?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
+  highestAuthorizeLevel?: InputMaybe<SortEnumType>;
+  highestAuthorizeRole?: InputMaybe<CommunityServerRoleSortInput>;
+  highestAuthorizeRoleId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
   status?: InputMaybe<SortEnumType>;
   user?: InputMaybe<ApplicationUserSortInput>;
@@ -347,23 +368,23 @@ export type CommunityServerMemberSortInput = {
 };
 
 export type CommunityServerRole = {
-  __typename?: 'CommunityServerRole';
-  authorizeLevel: Scalars['Int']['output'];
+  __typename?: "CommunityServerRole";
+  authorizeLevel: Scalars["Int"]["output"];
   communityServer: CommunityServer;
-  communityServerId: Scalars['UUID']['output'];
-  createdAt: Scalars['DateTime']['output'];
+  communityServerId: Scalars["UUID"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
   creatorUser?: Maybe<ApplicationUser>;
-  creatorUserId?: Maybe<Scalars['UUID']['output']>;
-  id: Scalars['UUID']['output'];
-  name: Scalars['String']['output'];
-  numMembers: Scalars['Int']['output'];
+  creatorUserId?: Maybe<Scalars["UUID"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  name: Scalars["String"]["output"];
+  numMembers: Scalars["Int"]["output"];
   permissions: Array<RolePermission>;
   specialRoleType: SpecialRoleType;
 };
 
 /** A connection to a list of items. */
 export type CommunityServerRoleConnection = {
-  __typename?: 'CommunityServerRoleConnection';
+  __typename?: "CommunityServerRoleConnection";
   /** A list of edges. */
   edges?: Maybe<Array<CommunityServerRoleEdge>>;
   /** A flattened list of the nodes */
@@ -371,13 +392,13 @@ export type CommunityServerRoleConnection = {
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 export type CommunityServerRoleEdge = {
-  __typename?: 'CommunityServerRoleEdge';
+  __typename?: "CommunityServerRoleEdge";
   /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The item at the end of the edge. */
   node: CommunityServerRole;
 };
@@ -399,11 +420,21 @@ export type CommunityServerRoleFilterInput = {
   specialRoleType?: InputMaybe<SpecialRoleTypeOperationFilterInput>;
 };
 
+export type CommunityServerRoleSortInput = {
+  authorizeLevel?: InputMaybe<SortEnumType>;
+  communityServer?: InputMaybe<CommunityServerSortInput>;
+  communityServerId?: InputMaybe<SortEnumType>;
+  createdAt?: InputMaybe<SortEnumType>;
+  creatorUser?: InputMaybe<ApplicationUserSortInput>;
+  creatorUserId?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  specialRoleType?: InputMaybe<SortEnumType>;
+};
+
 export type CommunityServerSortInput = {
-  avatar?: InputMaybe<MediaItemSortInput>;
-  avatarId?: InputMaybe<SortEnumType>;
-  banner?: InputMaybe<MediaItemSortInput>;
-  bannerId?: InputMaybe<SortEnumType>;
+  avatarVersion?: InputMaybe<SortEnumType>;
+  bannerVersion?: InputMaybe<SortEnumType>;
   createdAt?: InputMaybe<SortEnumType>;
   creatorUser?: InputMaybe<ApplicationUserSortInput>;
   creatorUserId?: InputMaybe<SortEnumType>;
@@ -415,16 +446,16 @@ export type CommunityServerSortInput = {
 };
 
 export type Conversation = {
-  __typename?: 'Conversation';
+  __typename?: "Conversation";
   channel?: Maybe<Channel>;
-  id: Scalars['UUID']['output'];
-  latestMessageAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars["UUID"]["output"];
+  latestMessageAt?: Maybe<Scalars["DateTime"]["output"]>;
   peerUser?: Maybe<ApplicationUser>;
 };
 
 /** A connection to a list of items. */
 export type ConversationConnection = {
-  __typename?: 'ConversationConnection';
+  __typename?: "ConversationConnection";
   /** A list of edges. */
   edges?: Maybe<Array<ConversationEdge>>;
   /** A flattened list of the nodes */
@@ -432,13 +463,13 @@ export type ConversationConnection = {
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 export type ConversationEdge = {
-  __typename?: 'ConversationEdge';
+  __typename?: "ConversationEdge";
   /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The item at the end of the edge. */
   node: Conversation;
 };
@@ -446,6 +477,7 @@ export type ConversationEdge = {
 export type ConversationFilterInput = {
   and?: InputMaybe<Array<ConversationFilterInput>>;
   channel?: InputMaybe<ChannelFilterInput>;
+  channelId?: InputMaybe<UuidOperationFilterInput>;
   friendRequest?: InputMaybe<FriendRequestFilterInput>;
   friendRequestId?: InputMaybe<UuidOperationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
@@ -454,6 +486,35 @@ export type ConversationFilterInput = {
   or?: InputMaybe<Array<ConversationFilterInput>>;
   participants?: InputMaybe<ListFilterInputTypeOfConversationParticipantFilterInput>;
   type?: InputMaybe<ConversationTypeOperationFilterInput>;
+};
+
+export type ConversationParticipant = {
+  __typename?: "ConversationParticipant";
+  conversation: Conversation;
+  conversationId: Scalars["UUID"]["output"];
+  user: ApplicationUser;
+  userId: Scalars["UUID"]["output"];
+};
+
+/** A connection to a list of items. */
+export type ConversationParticipantConnection = {
+  __typename?: "ConversationParticipantConnection";
+  /** A list of edges. */
+  edges?: Maybe<Array<ConversationParticipantEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<ConversationParticipant>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars["Int"]["output"];
+};
+
+export type ConversationParticipantEdge = {
+  __typename?: "ConversationParticipantEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: ConversationParticipant;
 };
 
 export type ConversationParticipantFilterInput = {
@@ -465,8 +526,16 @@ export type ConversationParticipantFilterInput = {
   userId?: InputMaybe<UuidOperationFilterInput>;
 };
 
+export type ConversationParticipantSortInput = {
+  conversation?: InputMaybe<ConversationSortInput>;
+  conversationId?: InputMaybe<SortEnumType>;
+  user?: InputMaybe<ApplicationUserSortInput>;
+  userId?: InputMaybe<SortEnumType>;
+};
+
 export type ConversationSortInput = {
   channel?: InputMaybe<ChannelSortInput>;
+  channelId?: InputMaybe<SortEnumType>;
   friendRequest?: InputMaybe<FriendRequestSortInput>;
   friendRequestId?: InputMaybe<SortEnumType>;
   id?: InputMaybe<SortEnumType>;
@@ -475,8 +544,8 @@ export type ConversationSortInput = {
 };
 
 export enum ConversationType {
-  Direct = 'Direct',
-  Server = 'Server'
+  Direct = "Direct",
+  Server = "Server",
 }
 
 export type ConversationTypeOperationFilterInput = {
@@ -487,42 +556,42 @@ export type ConversationTypeOperationFilterInput = {
 };
 
 export type DateTimeOperationFilterInput = {
-  eq?: InputMaybe<Scalars['DateTime']['input']>;
-  gt?: InputMaybe<Scalars['DateTime']['input']>;
-  gte?: InputMaybe<Scalars['DateTime']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
-  lt?: InputMaybe<Scalars['DateTime']['input']>;
-  lte?: InputMaybe<Scalars['DateTime']['input']>;
-  neq?: InputMaybe<Scalars['DateTime']['input']>;
-  ngt?: InputMaybe<Scalars['DateTime']['input']>;
-  ngte?: InputMaybe<Scalars['DateTime']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
-  nlt?: InputMaybe<Scalars['DateTime']['input']>;
-  nlte?: InputMaybe<Scalars['DateTime']['input']>;
+  eq?: InputMaybe<Scalars["DateTime"]["input"]>;
+  gt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  gte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["DateTime"]["input"]>>>;
+  lt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  lte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  neq?: InputMaybe<Scalars["DateTime"]["input"]>;
+  ngt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  ngte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["DateTime"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  nlte?: InputMaybe<Scalars["DateTime"]["input"]>;
 };
 
 export type DurationOperationFilterInput = {
-  eq?: InputMaybe<Scalars['Duration']['input']>;
-  gt?: InputMaybe<Scalars['Duration']['input']>;
-  gte?: InputMaybe<Scalars['Duration']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['Duration']['input']>>>;
-  lt?: InputMaybe<Scalars['Duration']['input']>;
-  lte?: InputMaybe<Scalars['Duration']['input']>;
-  neq?: InputMaybe<Scalars['Duration']['input']>;
-  ngt?: InputMaybe<Scalars['Duration']['input']>;
-  ngte?: InputMaybe<Scalars['Duration']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['Duration']['input']>>>;
-  nlt?: InputMaybe<Scalars['Duration']['input']>;
-  nlte?: InputMaybe<Scalars['Duration']['input']>;
+  eq?: InputMaybe<Scalars["Duration"]["input"]>;
+  gt?: InputMaybe<Scalars["Duration"]["input"]>;
+  gte?: InputMaybe<Scalars["Duration"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["Duration"]["input"]>>>;
+  lt?: InputMaybe<Scalars["Duration"]["input"]>;
+  lte?: InputMaybe<Scalars["Duration"]["input"]>;
+  neq?: InputMaybe<Scalars["Duration"]["input"]>;
+  ngt?: InputMaybe<Scalars["Duration"]["input"]>;
+  ngte?: InputMaybe<Scalars["Duration"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["Duration"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["Duration"]["input"]>;
+  nlte?: InputMaybe<Scalars["Duration"]["input"]>;
 };
 
 export type Emoji = {
-  __typename?: 'Emoji';
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['UUID']['output'];
+  __typename?: "Emoji";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["UUID"]["output"];
   server: CommunityServer;
-  serverId: Scalars['UUID']['output'];
-  shortCode: Scalars['String']['output'];
+  serverId: Scalars["UUID"]["output"];
+  shortCode: Scalars["String"]["output"];
 };
 
 export type EmojiFilterInput = {
@@ -538,21 +607,21 @@ export type EmojiFilterInput = {
 };
 
 export type FriendRequest = {
-  __typename?: 'FriendRequest';
-  createdAt: Scalars['DateTime']['output'];
-  directConversation?: Maybe<Conversation>;
-  id: Scalars['UUID']['output'];
+  __typename?: "FriendRequest";
+  conversation?: Maybe<Conversation>;
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["UUID"]["output"];
   otherUser?: Maybe<ApplicationUser>;
   receiver: ApplicationUser;
-  receiverUserId: Scalars['UUID']['output'];
+  receiverUserId: Scalars["UUID"]["output"];
   sender: ApplicationUser;
-  senderUserId: Scalars['UUID']['output'];
+  senderUserId: Scalars["UUID"]["output"];
   status: FriendRequestStatus;
 };
 
 /** A connection to a list of items. */
 export type FriendRequestConnection = {
-  __typename?: 'FriendRequestConnection';
+  __typename?: "FriendRequestConnection";
   /** A list of edges. */
   edges?: Maybe<Array<FriendRequestEdge>>;
   /** A flattened list of the nodes */
@@ -560,21 +629,21 @@ export type FriendRequestConnection = {
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 export type FriendRequestEdge = {
-  __typename?: 'FriendRequestEdge';
+  __typename?: "FriendRequestEdge";
   /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The item at the end of the edge. */
   node: FriendRequest;
 };
 
 export type FriendRequestFilterInput = {
   and?: InputMaybe<Array<FriendRequestFilterInput>>;
+  conversation?: InputMaybe<ConversationFilterInput>;
   createdAt?: InputMaybe<DateTimeOperationFilterInput>;
-  directConversation?: InputMaybe<ConversationFilterInput>;
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<FriendRequestFilterInput>>;
   receiver?: InputMaybe<ApplicationUserFilterInput>;
@@ -586,8 +655,8 @@ export type FriendRequestFilterInput = {
 };
 
 export type FriendRequestSortInput = {
+  conversation?: InputMaybe<ConversationSortInput>;
   createdAt?: InputMaybe<SortEnumType>;
-  directConversation?: InputMaybe<ConversationSortInput>;
   id?: InputMaybe<SortEnumType>;
   receiver?: InputMaybe<ApplicationUserSortInput>;
   receiverUserId?: InputMaybe<SortEnumType>;
@@ -598,11 +667,11 @@ export type FriendRequestSortInput = {
 };
 
 export enum FriendRequestStatus {
-  Accepted = 'Accepted',
-  Canceled = 'Canceled',
-  None = 'None',
-  Pending = 'Pending',
-  Rejected = 'Rejected'
+  Accepted = "Accepted",
+  Canceled = "Canceled",
+  None = "None",
+  Pending = "Pending",
+  Rejected = "Rejected",
 }
 
 export type FriendRequestStatusOperationFilterInput = {
@@ -612,30 +681,40 @@ export type FriendRequestStatusOperationFilterInput = {
   nin?: InputMaybe<Array<FriendRequestStatus>>;
 };
 
+export type INotificationPayload = {
+  typeName: Scalars["String"]["output"];
+};
+
+export type INotificationPayloadFilterInput = {
+  and?: InputMaybe<Array<INotificationPayloadFilterInput>>;
+  or?: InputMaybe<Array<INotificationPayloadFilterInput>>;
+  typeName?: InputMaybe<StringOperationFilterInput>;
+};
+
 export type IntOperationFilterInput = {
-  eq?: InputMaybe<Scalars['Int']['input']>;
-  gt?: InputMaybe<Scalars['Int']['input']>;
-  gte?: InputMaybe<Scalars['Int']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['Int']['input']>>>;
-  lt?: InputMaybe<Scalars['Int']['input']>;
-  lte?: InputMaybe<Scalars['Int']['input']>;
-  neq?: InputMaybe<Scalars['Int']['input']>;
-  ngt?: InputMaybe<Scalars['Int']['input']>;
-  ngte?: InputMaybe<Scalars['Int']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['Int']['input']>>>;
-  nlt?: InputMaybe<Scalars['Int']['input']>;
-  nlte?: InputMaybe<Scalars['Int']['input']>;
+  eq?: InputMaybe<Scalars["Int"]["input"]>;
+  gt?: InputMaybe<Scalars["Int"]["input"]>;
+  gte?: InputMaybe<Scalars["Int"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["Int"]["input"]>>>;
+  lt?: InputMaybe<Scalars["Int"]["input"]>;
+  lte?: InputMaybe<Scalars["Int"]["input"]>;
+  neq?: InputMaybe<Scalars["Int"]["input"]>;
+  ngt?: InputMaybe<Scalars["Int"]["input"]>;
+  ngte?: InputMaybe<Scalars["Int"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["Int"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["Int"]["input"]>;
+  nlte?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type Invitation = {
-  __typename?: 'Invitation';
+  __typename?: "Invitation";
   communityServer?: Maybe<CommunityServer>;
-  communityServerId: Scalars['UUID']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  currentUses: Scalars['Int']['output'];
-  expiresAt?: Maybe<Scalars['DateTime']['output']>;
-  id: Scalars['String']['output'];
-  maxUses?: Maybe<Scalars['Int']['output']>;
+  communityServerId: Scalars["UUID"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  currentUses: Scalars["Int"]["output"];
+  expiresAt?: Maybe<Scalars["DateTime"]["output"]>;
+  id: Scalars["String"]["output"];
+  maxUses?: Maybe<Scalars["Int"]["output"]>;
   status: InvitationStatus;
 };
 
@@ -654,138 +733,148 @@ export type InvitationFilterInput = {
 };
 
 export enum InvitationStatus {
-  AlreadyJoinedServer = 'AlreadyJoinedServer',
-  Expired = 'Expired',
-  MaxUsesReached = 'MaxUsesReached',
-  Valid = 'Valid'
+  AlreadyJoinedServer = "AlreadyJoinedServer",
+  Expired = "Expired",
+  MaxUsesReached = "MaxUsesReached",
+  Valid = "Valid",
 }
 
 export type KickCommunityServerMemberInput = {
-  memberId: Scalars['UUID']['input'];
-  reason?: InputMaybe<Scalars['String']['input']>;
-  serverId: Scalars['UUID']['input'];
+  memberId: Scalars["UUID"]["input"];
+  reason?: InputMaybe<Scalars["String"]["input"]>;
+  serverId: Scalars["UUID"]["input"];
 };
 
 export type KickCommunityServerMemberPayload = {
-  __typename?: 'KickCommunityServerMemberPayload';
-  memberId: Scalars['UUID']['output'];
+  __typename?: "KickCommunityServerMemberPayload";
+  memberId: Scalars["UUID"]["output"];
 };
 
 export type ListFilterInputTypeOfChannelCategoryFilterInput = {
   all?: InputMaybe<ChannelCategoryFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<ChannelCategoryFilterInput>;
   some?: InputMaybe<ChannelCategoryFilterInput>;
 };
 
 export type ListFilterInputTypeOfChannelFilterInput = {
   all?: InputMaybe<ChannelFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<ChannelFilterInput>;
   some?: InputMaybe<ChannelFilterInput>;
 };
 
 export type ListFilterInputTypeOfCommunityServerMemberFilterInput = {
   all?: InputMaybe<CommunityServerMemberFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<CommunityServerMemberFilterInput>;
   some?: InputMaybe<CommunityServerMemberFilterInput>;
 };
 
 export type ListFilterInputTypeOfCommunityServerMemberRoleFilterInput = {
   all?: InputMaybe<CommunityServerMemberRoleFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<CommunityServerMemberRoleFilterInput>;
   some?: InputMaybe<CommunityServerMemberRoleFilterInput>;
 };
 
 export type ListFilterInputTypeOfCommunityServerRoleFilterInput = {
   all?: InputMaybe<CommunityServerRoleFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<CommunityServerRoleFilterInput>;
   some?: InputMaybe<CommunityServerRoleFilterInput>;
 };
 
 export type ListFilterInputTypeOfConversationParticipantFilterInput = {
   all?: InputMaybe<ConversationParticipantFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<ConversationParticipantFilterInput>;
   some?: InputMaybe<ConversationParticipantFilterInput>;
 };
 
 export type ListFilterInputTypeOfEmojiFilterInput = {
   all?: InputMaybe<EmojiFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<EmojiFilterInput>;
   some?: InputMaybe<EmojiFilterInput>;
 };
 
 export type ListFilterInputTypeOfFriendRequestFilterInput = {
   all?: InputMaybe<FriendRequestFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<FriendRequestFilterInput>;
   some?: InputMaybe<FriendRequestFilterInput>;
 };
 
 export type ListFilterInputTypeOfInvitationFilterInput = {
   all?: InputMaybe<InvitationFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<InvitationFilterInput>;
   some?: InputMaybe<InvitationFilterInput>;
 };
 
 export type ListFilterInputTypeOfMediaItemFilterInput = {
   all?: InputMaybe<MediaItemFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<MediaItemFilterInput>;
   some?: InputMaybe<MediaItemFilterInput>;
 };
 
 export type ListFilterInputTypeOfMessageFilterInput = {
   all?: InputMaybe<MessageFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<MessageFilterInput>;
   some?: InputMaybe<MessageFilterInput>;
 };
 
+export type ListFilterInputTypeOfMessageReactionFilterInput = {
+  all?: InputMaybe<MessageReactionFilterInput>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
+  none?: InputMaybe<MessageReactionFilterInput>;
+  some?: InputMaybe<MessageReactionFilterInput>;
+};
+
+export type ListFilterInputTypeOfNotificationFilterInput = {
+  all?: InputMaybe<NotificationFilterInput>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
+  none?: InputMaybe<NotificationFilterInput>;
+  some?: InputMaybe<NotificationFilterInput>;
+};
+
 export type ListFilterInputTypeOfRolePermissionFilterInput = {
   all?: InputMaybe<RolePermissionFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<RolePermissionFilterInput>;
   some?: InputMaybe<RolePermissionFilterInput>;
 };
 
 export type ListFilterInputTypeOfServerModerationLogFilterInput = {
   all?: InputMaybe<ServerModerationLogFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<ServerModerationLogFilterInput>;
   some?: InputMaybe<ServerModerationLogFilterInput>;
 };
 
 export type ListFilterInputTypeOfUserAccountDeletionFilterInput = {
   all?: InputMaybe<UserAccountDeletionFilterInput>;
-  any?: InputMaybe<Scalars['Boolean']['input']>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
   none?: InputMaybe<UserAccountDeletionFilterInput>;
   some?: InputMaybe<UserAccountDeletionFilterInput>;
 };
 
+export type ListUuidOperationFilterInput = {
+  all?: InputMaybe<UuidOperationFilterInput>;
+  any?: InputMaybe<Scalars["Boolean"]["input"]>;
+  none?: InputMaybe<UuidOperationFilterInput>;
+  some?: InputMaybe<UuidOperationFilterInput>;
+};
+
 export type MediaItem = {
-  __typename?: 'MediaItem';
-  contentType: Scalars['String']['output'];
-  fileName?: Maybe<Scalars['String']['output']>;
-  id: Scalars['UUID']['output'];
-  version: Scalars['Int']['output'];
-};
-
-export type MediaItemDto = {
-  __typename?: 'MediaItemDto';
-  contentType: Scalars['String']['output'];
-  version: Scalars['Int']['output'];
-};
-
-export type MediaItemDtoSortInput = {
-  contentType?: InputMaybe<SortEnumType>;
-  version?: InputMaybe<SortEnumType>;
+  __typename?: "MediaItem";
+  contentType: Scalars["String"]["output"];
+  fileName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  version: Scalars["Short"]["output"];
 };
 
 export type MediaItemFilterInput = {
@@ -796,26 +885,13 @@ export type MediaItemFilterInput = {
   message?: InputMaybe<MessageFilterInput>;
   messageId?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<MediaItemFilterInput>>;
+  order?: InputMaybe<ShortOperationFilterInput>;
   type?: InputMaybe<MediaItemTypeOperationFilterInput>;
-  version?: InputMaybe<IntOperationFilterInput>;
-};
-
-export type MediaItemSortInput = {
-  contentType?: InputMaybe<SortEnumType>;
-  fileName?: InputMaybe<SortEnumType>;
-  id?: InputMaybe<SortEnumType>;
-  message?: InputMaybe<MessageSortInput>;
-  messageId?: InputMaybe<SortEnumType>;
-  type?: InputMaybe<SortEnumType>;
-  version?: InputMaybe<SortEnumType>;
+  version?: InputMaybe<ShortOperationFilterInput>;
 };
 
 export enum MediaItemType {
-  MessageAttachment = 'MessageAttachment',
-  ServerAvatar = 'ServerAvatar',
-  ServerBanner = 'ServerBanner',
-  UserAvatar = 'UserAvatar',
-  UserBanner = 'UserBanner'
+  MessageAttachment = "MessageAttachment",
 }
 
 export type MediaItemTypeOperationFilterInput = {
@@ -826,16 +902,16 @@ export type MediaItemTypeOperationFilterInput = {
 };
 
 export type MemberAuthorizeInfo = {
-  __typename?: 'MemberAuthorizeInfo';
-  authorizeLevel: Scalars['Int']['output'];
-  isBanned: Scalars['Boolean']['output'];
+  __typename?: "MemberAuthorizeInfo";
+  authorizeLevel: Scalars["Int"]["output"];
+  isBanned: Scalars["Boolean"]["output"];
   permissions: Array<ServerPermission>;
 };
 
 export enum MembershipStatus {
-  Active = 'Active',
-  Kicked = 'Kicked',
-  Left = 'Left'
+  Active = "Active",
+  Kicked = "Kicked",
+  Left = "Left",
 }
 
 export type MembershipStatusOperationFilterInput = {
@@ -845,11 +921,21 @@ export type MembershipStatusOperationFilterInput = {
   nin?: InputMaybe<Array<MembershipStatus>>;
 };
 
-export type MessageAttachmentDto = {
-  __typename?: 'MessageAttachmentDto';
-  id: Scalars['UUID']['output'];
-  name: Scalars['String']['output'];
-  type: Scalars['String']['output'];
+export type MentionMessageSource = {
+  __typename?: "MentionMessageSource";
+  messageId: Scalars["UUID"]["output"];
+  source: MentionSource;
+};
+
+export type MentionNotificationPayload = INotificationPayload & {
+  __typename?: "MentionNotificationPayload";
+  source: MentionMessageSource;
+  typeName: Scalars["String"]["output"];
+};
+
+export type MentionSource = {
+  __typename?: "MentionSource";
+  conversationId: Scalars["UUID"]["output"];
 };
 
 export type MessageFilterInput = {
@@ -864,9 +950,11 @@ export type MessageFilterInput = {
   or?: InputMaybe<Array<MessageFilterInput>>;
   pinnedAt?: InputMaybe<DateTimeOperationFilterInput>;
   properties?: InputMaybe<MessagePropertiesFilterInput>;
+  reaction?: InputMaybe<ListFilterInputTypeOfMessageReactionFilterInput>;
   replies?: InputMaybe<ListFilterInputTypeOfMessageFilterInput>;
   replyTo?: InputMaybe<MessageFilterInput>;
   replyToId?: InputMaybe<UuidOperationFilterInput>;
+  searchVector?: InputMaybe<NpgsqlTsVectorFilterInput>;
   sender?: InputMaybe<ApplicationUserFilterInput>;
   senderUserId?: InputMaybe<UuidOperationFilterInput>;
   type?: InputMaybe<MessageTypeOperationFilterInput>;
@@ -878,30 +966,27 @@ export type MessagePropertiesFilterInput = {
   or?: InputMaybe<Array<MessagePropertiesFilterInput>>;
 };
 
-export type MessageSortInput = {
-  body?: InputMaybe<SortEnumType>;
-  conversation?: InputMaybe<ConversationSortInput>;
-  conversationId?: InputMaybe<SortEnumType>;
-  createdAt?: InputMaybe<SortEnumType>;
-  deletedAt?: InputMaybe<SortEnumType>;
-  id?: InputMaybe<SortEnumType>;
-  pinnedAt?: InputMaybe<SortEnumType>;
-  replyTo?: InputMaybe<MessageSortInput>;
-  replyToId?: InputMaybe<SortEnumType>;
-  sender?: InputMaybe<ApplicationUserSortInput>;
-  senderUserId?: InputMaybe<SortEnumType>;
-  type?: InputMaybe<SortEnumType>;
-  updatedAt?: InputMaybe<SortEnumType>;
+export type MessageReactionFilterInput = {
+  and?: InputMaybe<Array<MessageReactionFilterInput>>;
+  emoji?: InputMaybe<EmojiFilterInput>;
+  emojiId?: InputMaybe<UuidOperationFilterInput>;
+  iconSource?: InputMaybe<ReactionIconSourceTypeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  message?: InputMaybe<MessageFilterInput>;
+  messageId?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<MessageReactionFilterInput>>;
+  unicodeValue?: InputMaybe<StringOperationFilterInput>;
+  userIds?: InputMaybe<ListUuidOperationFilterInput>;
 };
 
 export enum MessageType {
-  CallCancel = 'CallCancel',
-  CallEnd = 'CallEnd',
-  CallRejected = 'CallRejected',
-  CallStart = 'CallStart',
-  Message = 'Message',
-  Pin = 'Pin',
-  Unpin = 'Unpin'
+  CallCancel = "CallCancel",
+  CallEnd = "CallEnd",
+  CallRejected = "CallRejected",
+  CallStart = "CallStart",
+  Message = "Message",
+  Pin = "Pin",
+  Unpin = "Unpin",
 }
 
 export type MessageTypeOperationFilterInput = {
@@ -912,75 +997,124 @@ export type MessageTypeOperationFilterInput = {
 };
 
 export type Mutation = {
-  __typename?: 'Mutation';
+  __typename?: "Mutation";
   banCommunityServerMember: BanCommunityServerMemberPayload;
   kickCommunityServerMember: KickCommunityServerMemberPayload;
   unbanCommunityServerMember: UnbanCommunityServerMemberPayload;
-  updateCommunityServerMemberRoles: UpdateCommunityServerMemberRolesPayload;
   updateManualPresenceStatus: UpdateManualPresenceStatusPayload;
   warnCommunityServerMember: WarnCommunityServerMemberPayload;
 };
-
 
 export type MutationBanCommunityServerMemberArgs = {
   input: BanCommunityServerMemberInput;
 };
 
-
 export type MutationKickCommunityServerMemberArgs = {
   input: KickCommunityServerMemberInput;
 };
-
 
 export type MutationUnbanCommunityServerMemberArgs = {
   input: UnbanCommunityServerMemberInput;
 };
 
-
-export type MutationUpdateCommunityServerMemberRolesArgs = {
-  input: UpdateCommunityServerMemberRolesInput;
-};
-
-
 export type MutationUpdateManualPresenceStatusArgs = {
   input: UpdateManualPresenceStatusInput;
 };
-
 
 export type MutationWarnCommunityServerMemberArgs = {
   input: WarnCommunityServerMemberInput;
 };
 
+export type Notification = {
+  __typename?: "Notification";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["UUID"]["output"];
+  isRead: Scalars["Boolean"]["output"];
+  payload?: Maybe<INotificationPayload>;
+  type: NotificationType;
+};
+
+/** A connection to a list of items. */
+export type NotificationConnection = {
+  __typename?: "NotificationConnection";
+  /** A list of edges. */
+  edges?: Maybe<Array<NotificationEdge>>;
+  /** A flattened list of the nodes */
+  nodes?: Maybe<Array<Notification>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars["Int"]["output"];
+};
+
+export type NotificationEdge = {
+  __typename?: "NotificationEdge";
+  /** A cursor for use in pagination. */
+  cursor: Scalars["String"]["output"];
+  /** The item at the end of the edge. */
+  node: Notification;
+};
+
+export type NotificationFilterInput = {
+  and?: InputMaybe<Array<NotificationFilterInput>>;
+  createdAt?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  isRead?: InputMaybe<BooleanOperationFilterInput>;
+  or?: InputMaybe<Array<NotificationFilterInput>>;
+  payload?: InputMaybe<INotificationPayloadFilterInput>;
+  readAt?: InputMaybe<DateTimeOperationFilterInput>;
+  type?: InputMaybe<NotificationTypeOperationFilterInput>;
+  user?: InputMaybe<ApplicationUserFilterInput>;
+  userId?: InputMaybe<UuidOperationFilterInput>;
+};
+
+export enum NotificationType {
+  Mention = "Mention",
+}
+
+export type NotificationTypeOperationFilterInput = {
+  eq?: InputMaybe<NotificationType>;
+  in?: InputMaybe<Array<NotificationType>>;
+  neq?: InputMaybe<NotificationType>;
+  nin?: InputMaybe<Array<NotificationType>>;
+};
+
+export type NpgsqlTsVectorFilterInput = {
+  and?: InputMaybe<Array<NpgsqlTsVectorFilterInput>>;
+  count?: InputMaybe<IntOperationFilterInput>;
+  or?: InputMaybe<Array<NpgsqlTsVectorFilterInput>>;
+};
+
 /** A cursor that points to a specific page. */
 export type PageCursor = {
-  __typename?: 'PageCursor';
+  __typename?: "PageCursor";
   /** The cursor. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The page number. */
-  page: Scalars['Int']['output'];
+  page: Scalars["Int"]["output"];
 };
 
 /** Information about pagination in a connection. */
 export type PageInfo = {
-  __typename?: 'PageInfo';
+  __typename?: "PageInfo";
   /** A list of cursors to continue paginating backwards. */
   backwardCursors: Array<PageCursor>;
   /** When paginating forwards, the cursor to continue. */
-  endCursor?: Maybe<Scalars['String']['output']>;
+  endCursor?: Maybe<Scalars["String"]["output"]>;
   /** A list of cursors to continue paginating forwards. */
   forwardCursors: Array<PageCursor>;
   /** Indicates whether more edges exist following the set defined by the clients arguments. */
-  hasNextPage: Scalars['Boolean']['output'];
+  hasNextPage: Scalars["Boolean"]["output"];
   /** Indicates whether more edges exist prior the set defined by the clients arguments. */
-  hasPreviousPage: Scalars['Boolean']['output'];
+  hasPreviousPage: Scalars["Boolean"]["output"];
   /** When paginating backwards, the cursor to continue. */
-  startCursor?: Maybe<Scalars['String']['output']>;
+  startCursor?: Maybe<Scalars["String"]["output"]>;
 };
 
 export enum PermissionState {
-  Disable = 'Disable',
-  Enable = 'Enable',
-  Inherit = 'Inherit'
+  Disable = "Disable",
+  Enable = "Enable",
+  Inherit = "Inherit",
 }
 
 export type PermissionStateOperationFilterInput = {
@@ -990,55 +1124,12 @@ export type PermissionStateOperationFilterInput = {
   nin?: InputMaybe<Array<PermissionState>>;
 };
 
-export type PinnedMessageDto = {
-  __typename?: 'PinnedMessageDto';
-  attachments: Array<MessageAttachmentDto>;
-  body?: Maybe<Scalars['String']['output']>;
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['UUID']['output'];
-  pinnedAt?: Maybe<Scalars['DateTime']['output']>;
-  sender?: Maybe<TimelineMessageSenderDto>;
-  senderUserId: Scalars['UUID']['output'];
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
-};
-
-/** A connection to a list of items. */
-export type PinnedMessageDtoConnection = {
-  __typename?: 'PinnedMessageDtoConnection';
-  /** A list of edges. */
-  edges?: Maybe<Array<PinnedMessageDtoEdge>>;
-  /** A flattened list of the nodes */
-  nodes?: Maybe<Array<PinnedMessageDto>>;
-  /** Information to aid in pagination. */
-  pageInfo: PageInfo;
-  /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
-};
-
-export type PinnedMessageDtoEdge = {
-  __typename?: 'PinnedMessageDtoEdge';
-  /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
-  /** The item at the end of the edge. */
-  node: PinnedMessageDto;
-};
-
-export type PinnedMessageDtoSortInput = {
-  body?: InputMaybe<SortEnumType>;
-  createdAt?: InputMaybe<SortEnumType>;
-  id?: InputMaybe<SortEnumType>;
-  pinnedAt?: InputMaybe<SortEnumType>;
-  sender?: InputMaybe<TimelineMessageSenderDtoSortInput>;
-  senderUserId?: InputMaybe<SortEnumType>;
-  updatedAt?: InputMaybe<SortEnumType>;
-};
-
 export enum PresenceStatus {
-  DoNotDisturb = 'DoNotDisturb',
-  Idle = 'Idle',
-  Invisible = 'Invisible',
-  Offline = 'Offline',
-  Online = 'Online'
+  DoNotDisturb = "DoNotDisturb",
+  Idle = "Idle",
+  Invisible = "Invisible",
+  Offline = "Offline",
+  Online = "Online",
 }
 
 export type PresenceStatusOperationFilterInput = {
@@ -1049,7 +1140,7 @@ export type PresenceStatusOperationFilterInput = {
 };
 
 export type Query = {
-  __typename?: 'Query';
+  __typename?: "Query";
   communityServer?: Maybe<CommunityServer>;
   communityServerMember?: Maybe<CommunityServerMember>;
   communityServerMemberByServerAndUserId?: Maybe<CommunityServerMember>;
@@ -1057,13 +1148,17 @@ export type Query = {
   communityServerMembers: CommunityServerMemberConnection;
   communityServerRole?: Maybe<CommunityServerRole>;
   communityServerRoles: CommunityServerRoleConnection;
+  conversation?: Maybe<Conversation>;
+  conversationParticipants: ConversationParticipantConnection;
   directConversations: ConversationConnection;
   emoji?: Maybe<Emoji>;
   friendRequests: FriendRequestConnection;
   friends: FriendRequestConnection;
   invitation?: Maybe<Invitation>;
   joinedServers: CommunityServerConnection;
-  pinnedMessages: PinnedMessageDtoConnection;
+  mentionableUsers: ApplicationUserConnection;
+  notification?: Maybe<Notification>;
+  notifications: NotificationConnection;
   serverMemberSearch: CommunityServerMemberConnection;
   serverMemberSearchForAdmin: CommunityServerMemberConnection;
   serverModerationLogs: ServerModerationLogConnection;
@@ -1071,150 +1166,171 @@ export type Query = {
   user?: Maybe<ApplicationUser>;
 };
 
-
 export type QueryCommunityServerArgs = {
-  id: Scalars['UUID']['input'];
+  id: Scalars["UUID"]["input"];
 };
-
 
 export type QueryCommunityServerMemberArgs = {
-  id: Scalars['UUID']['input'];
+  id: Scalars["UUID"]["input"];
 };
-
 
 export type QueryCommunityServerMemberByServerAndUserIdArgs = {
-  serverId: Scalars['UUID']['input'];
-  userId: Scalars['UUID']['input'];
+  serverId: Scalars["UUID"]["input"];
+  userId: Scalars["UUID"]["input"];
 };
-
 
 export type QueryCommunityServerMemberForAdminArgs = {
-  id: Scalars['UUID']['input'];
+  id: Scalars["UUID"]["input"];
 };
-
 
 export type QueryCommunityServerMembersArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
-  serverId: Scalars['UUID']['input'];
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  order?: InputMaybe<Array<CommunityServerMemberSortInput>>;
+  serverId: Scalars["UUID"]["input"];
 };
-
 
 export type QueryCommunityServerRoleArgs = {
-  id: Scalars['UUID']['input'];
+  id: Scalars["UUID"]["input"];
 };
 
-
 export type QueryCommunityServerRolesArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
-  serverId: Scalars['UUID']['input'];
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  serverId: Scalars["UUID"]["input"];
   where?: InputMaybe<CommunityServerRoleFilterInput>;
 };
 
+export type QueryConversationArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type QueryConversationParticipantsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  conversationId: Scalars["UUID"]["input"];
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  order?: InputMaybe<Array<ConversationParticipantSortInput>>;
+  where?: InputMaybe<ConversationParticipantFilterInput>;
+};
 
 export type QueryDirectConversationsArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<ConversationSortInput>>;
   where?: InputMaybe<ConversationFilterInput>;
 };
 
-
 export type QueryEmojiArgs = {
-  id: Scalars['UUID']['input'];
+  id: Scalars["UUID"]["input"];
 };
 
-
 export type QueryFriendRequestsArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<FriendRequestSortInput>>;
   where?: InputMaybe<FriendRequestFilterInput>;
 };
 
-
 export type QueryFriendsArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
-  nameFilter?: InputMaybe<Scalars['String']['input']>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  nameFilter?: InputMaybe<Scalars["String"]["input"]>;
   order?: InputMaybe<Array<FriendRequestSortInput>>;
 };
 
-
 export type QueryInvitationArgs = {
-  id: Scalars['String']['input'];
+  id: Scalars["String"]["input"];
 };
-
 
 export type QueryJoinedServersArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-
-export type QueryPinnedMessagesArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  conversationId: Scalars['UUID']['input'];
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
-  order?: InputMaybe<Array<PinnedMessageDtoSortInput>>;
+export type QueryMentionableUsersArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  conversationId: Scalars["UUID"]["input"];
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<ApplicationUserFilterInput>;
 };
 
+export type QueryNotificationArgs = {
+  id: Scalars["UUID"]["input"];
+};
+
+export type QueryNotificationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<NotificationFilterInput>;
+};
 
 export type QueryServerMemberSearchArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
-  search?: InputMaybe<Scalars['String']['input']>;
-  serverId: Scalars['UUID']['input'];
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  search?: InputMaybe<Scalars["String"]["input"]>;
+  serverId: Scalars["UUID"]["input"];
 };
-
 
 export type QueryServerMemberSearchForAdminArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
-  search?: InputMaybe<Scalars['String']['input']>;
-  serverId: Scalars['UUID']['input'];
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
+  search?: InputMaybe<Scalars["String"]["input"]>;
+  serverId: Scalars["UUID"]["input"];
 };
 
-
 export type QueryServerModerationLogsArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  before?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Int']['input']>;
-  last?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  before?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  last?: InputMaybe<Scalars["Int"]["input"]>;
   order?: InputMaybe<Array<ServerModerationLogSortInput>>;
-  serverId: Scalars['UUID']['input'];
+  serverId: Scalars["UUID"]["input"];
   where?: InputMaybe<ServerModerationLogFilterInput>;
 };
 
-
 export type QueryUserArgs = {
-  id: Scalars['UUID']['input'];
+  id: Scalars["UUID"]["input"];
+};
+
+export enum ReactionIconSourceType {
+  Emoji = "Emoji",
+  Unicode = "Unicode",
+}
+
+export type ReactionIconSourceTypeOperationFilterInput = {
+  eq?: InputMaybe<ReactionIconSourceType>;
+  in?: InputMaybe<Array<ReactionIconSourceType>>;
+  neq?: InputMaybe<ReactionIconSourceType>;
+  nin?: InputMaybe<Array<ReactionIconSourceType>>;
 };
 
 export type RolePermission = {
-  __typename?: 'RolePermission';
+  __typename?: "RolePermission";
   permission: ServerPermission;
   role: CommunityServerRole;
-  roleId: Scalars['UUID']['output'];
+  roleId: Scalars["UUID"]["output"];
   state: PermissionState;
 };
 
@@ -1228,10 +1344,10 @@ export type RolePermissionFilterInput = {
 };
 
 export enum ServerModerationAction {
-  Ban = 'Ban',
-  Kick = 'Kick',
-  Unban = 'Unban',
-  Warn = 'Warn'
+  Ban = "Ban",
+  Kick = "Kick",
+  Unban = "Unban",
+  Warn = "Warn",
 }
 
 export type ServerModerationActionOperationFilterInput = {
@@ -1242,21 +1358,21 @@ export type ServerModerationActionOperationFilterInput = {
 };
 
 export type ServerModerationLog = {
-  __typename?: 'ServerModerationLog';
+  __typename?: "ServerModerationLog";
   action: ServerModerationAction;
   affectedMember?: Maybe<CommunityServerMember>;
-  affectedMemberId?: Maybe<Scalars['UUID']['output']>;
-  banDuration?: Maybe<Scalars['Duration']['output']>;
-  createdAt: Scalars['DateTime']['output'];
+  affectedMemberId?: Maybe<Scalars["UUID"]["output"]>;
+  banDuration?: Maybe<Scalars["Duration"]["output"]>;
+  createdAt: Scalars["DateTime"]["output"];
   executorMember?: Maybe<CommunityServerMember>;
-  executorMemberId?: Maybe<Scalars['UUID']['output']>;
-  id: Scalars['UUID']['output'];
-  reason?: Maybe<Scalars['String']['output']>;
+  executorMemberId?: Maybe<Scalars["UUID"]["output"]>;
+  id: Scalars["UUID"]["output"];
+  reason?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** A connection to a list of items. */
 export type ServerModerationLogConnection = {
-  __typename?: 'ServerModerationLogConnection';
+  __typename?: "ServerModerationLogConnection";
   /** A list of edges. */
   edges?: Maybe<Array<ServerModerationLogEdge>>;
   /** A flattened list of the nodes */
@@ -1264,13 +1380,13 @@ export type ServerModerationLogConnection = {
   /** Information to aid in pagination. */
   pageInfo: PageInfo;
   /** Identifies the total count of items in the connection. */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 export type ServerModerationLogEdge = {
-  __typename?: 'ServerModerationLogEdge';
+  __typename?: "ServerModerationLogEdge";
   /** A cursor for use in pagination. */
-  cursor: Scalars['String']['output'];
+  cursor: Scalars["String"]["output"];
   /** The item at the end of the edge. */
   node: ServerModerationLog;
 };
@@ -1306,25 +1422,25 @@ export type ServerModerationLogSortInput = {
 };
 
 export enum ServerPermission {
-  BanMembers = 'BanMembers',
-  CreateChannel = 'CreateChannel',
-  CreateEmoji = 'CreateEmoji',
-  CreateInvitation = 'CreateInvitation',
-  CreateRole = 'CreateRole',
-  DeleteChannel = 'DeleteChannel',
-  DeleteEmoji = 'DeleteEmoji',
-  DeleteMessages = 'DeleteMessages',
-  DeleteRole = 'DeleteRole',
-  EditMessages = 'EditMessages',
-  KickMembers = 'KickMembers',
-  ManageEmojis = 'ManageEmojis',
-  ManageMembers = 'ManageMembers',
-  ReadModerationLogs = 'ReadModerationLogs',
-  SendMessage = 'SendMessage',
-  UnbanMembers = 'UnbanMembers',
-  UpdateMemberRoles = 'UpdateMemberRoles',
-  UpdateRole = 'UpdateRole',
-  WarnMembers = 'WarnMembers'
+  BanMembers = "BanMembers",
+  CreateChannel = "CreateChannel",
+  CreateEmoji = "CreateEmoji",
+  CreateInvitation = "CreateInvitation",
+  CreateRole = "CreateRole",
+  DeleteChannel = "DeleteChannel",
+  DeleteEmoji = "DeleteEmoji",
+  DeleteMessages = "DeleteMessages",
+  DeleteRole = "DeleteRole",
+  EditMessages = "EditMessages",
+  KickMembers = "KickMembers",
+  ManageEmojis = "ManageEmojis",
+  ManageMembers = "ManageMembers",
+  ReadModerationLogs = "ReadModerationLogs",
+  SendMessage = "SendMessage",
+  UnbanMembers = "UnbanMembers",
+  UpdateMemberRoles = "UpdateMemberRoles",
+  UpdateRole = "UpdateRole",
+  WarnMembers = "WarnMembers",
 }
 
 export type ServerPermissionOperationFilterInput = {
@@ -1334,15 +1450,30 @@ export type ServerPermissionOperationFilterInput = {
   nin?: InputMaybe<Array<ServerPermission>>;
 };
 
+export type ShortOperationFilterInput = {
+  eq?: InputMaybe<Scalars["Short"]["input"]>;
+  gt?: InputMaybe<Scalars["Short"]["input"]>;
+  gte?: InputMaybe<Scalars["Short"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["Short"]["input"]>>>;
+  lt?: InputMaybe<Scalars["Short"]["input"]>;
+  lte?: InputMaybe<Scalars["Short"]["input"]>;
+  neq?: InputMaybe<Scalars["Short"]["input"]>;
+  ngt?: InputMaybe<Scalars["Short"]["input"]>;
+  ngte?: InputMaybe<Scalars["Short"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["Short"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["Short"]["input"]>;
+  nlte?: InputMaybe<Scalars["Short"]["input"]>;
+};
+
 export enum SortEnumType {
-  Asc = 'ASC',
-  Desc = 'DESC'
+  Asc = "ASC",
+  Desc = "DESC",
 }
 
 export enum SpecialRoleType {
-  Default = 'Default',
-  None = 'None',
-  Owner = 'Owner'
+  Default = "Default",
+  None = "None",
+  Owner = "Owner",
 }
 
 export type SpecialRoleTypeOperationFilterInput = {
@@ -1354,68 +1485,43 @@ export type SpecialRoleTypeOperationFilterInput = {
 
 export type StringOperationFilterInput = {
   and?: InputMaybe<Array<StringOperationFilterInput>>;
-  contains?: InputMaybe<Scalars['String']['input']>;
-  endsWith?: InputMaybe<Scalars['String']['input']>;
-  eq?: InputMaybe<Scalars['String']['input']>;
-  ilike?: InputMaybe<Scalars['String']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-  ncontains?: InputMaybe<Scalars['String']['input']>;
-  nendsWith?: InputMaybe<Scalars['String']['input']>;
-  neq?: InputMaybe<Scalars['String']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-  nstartsWith?: InputMaybe<Scalars['String']['input']>;
+  contains?: InputMaybe<Scalars["String"]["input"]>;
+  endsWith?: InputMaybe<Scalars["String"]["input"]>;
+  eq?: InputMaybe<Scalars["String"]["input"]>;
+  ilike?: InputMaybe<Scalars["String"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["String"]["input"]>>>;
+  ncontains?: InputMaybe<Scalars["String"]["input"]>;
+  nendsWith?: InputMaybe<Scalars["String"]["input"]>;
+  neq?: InputMaybe<Scalars["String"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["String"]["input"]>>>;
+  nstartsWith?: InputMaybe<Scalars["String"]["input"]>;
   or?: InputMaybe<Array<StringOperationFilterInput>>;
-  startsWith?: InputMaybe<Scalars['String']['input']>;
-};
-
-export type TimelineMessageSenderDto = {
-  __typename?: 'TimelineMessageSenderDto';
-  avatar?: Maybe<MediaItemDto>;
-  displayName: Scalars['String']['output'];
-  id: Scalars['UUID']['output'];
-};
-
-export type TimelineMessageSenderDtoSortInput = {
-  avatar?: InputMaybe<MediaItemDtoSortInput>;
-  displayName?: InputMaybe<SortEnumType>;
-  id?: InputMaybe<SortEnumType>;
+  startsWith?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type UnbanCommunityServerMemberInput = {
-  memberId: Scalars['UUID']['input'];
-  serverId: Scalars['UUID']['input'];
+  memberId: Scalars["UUID"]["input"];
+  serverId: Scalars["UUID"]["input"];
 };
 
 export type UnbanCommunityServerMemberPayload = {
-  __typename?: 'UnbanCommunityServerMemberPayload';
-  memberId: Scalars['UUID']['output'];
+  __typename?: "UnbanCommunityServerMemberPayload";
+  memberId: Scalars["UUID"]["output"];
 };
 
 export type UnsignedIntOperationFilterInput = {
-  eq?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  gt?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  gte?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['UnsignedInt']['input']>>>;
-  lt?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  lte?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  neq?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  ngt?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  ngte?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['UnsignedInt']['input']>>>;
-  nlt?: InputMaybe<Scalars['UnsignedInt']['input']>;
-  nlte?: InputMaybe<Scalars['UnsignedInt']['input']>;
-};
-
-export type UpdateCommunityServerMemberRolesInput = {
-  memberId: Scalars['UUID']['input'];
-  roleIds: Array<Scalars['UUID']['input']>;
-  serverId: Scalars['UUID']['input'];
-};
-
-export type UpdateCommunityServerMemberRolesPayload = {
-  __typename?: 'UpdateCommunityServerMemberRolesPayload';
-  member: CommunityServerMember;
-  memberId: Scalars['UUID']['output'];
+  eq?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  gt?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  gte?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["UnsignedInt"]["input"]>>>;
+  lt?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  lte?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  neq?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  ngt?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  ngte?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["UnsignedInt"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
+  nlte?: InputMaybe<Scalars["UnsignedInt"]["input"]>;
 };
 
 export type UpdateManualPresenceStatusInput = {
@@ -1423,15 +1529,15 @@ export type UpdateManualPresenceStatusInput = {
 };
 
 export type UpdateManualPresenceStatusPayload = {
-  __typename?: 'UpdateManualPresenceStatusPayload';
-  userId: Scalars['UUID']['output'];
+  __typename?: "UpdateManualPresenceStatusPayload";
+  userId: Scalars["UUID"]["output"];
 };
 
 export enum UserAccountDeleteReason {
-  AnotherAccount = 'AnotherAccount',
-  Bugs = 'Bugs',
-  Other = 'Other',
-  PrivacyConcern = 'PrivacyConcern'
+  AnotherAccount = "AnotherAccount",
+  Bugs = "Bugs",
+  Other = "Other",
+  PrivacyConcern = "PrivacyConcern",
 }
 
 export type UserAccountDeleteReasonOperationFilterInput = {
@@ -1442,9 +1548,9 @@ export type UserAccountDeleteReasonOperationFilterInput = {
 };
 
 export enum UserAccountDeleteStatus {
-  Canceled = 'Canceled',
-  Deleted = 'Deleted',
-  Pending = 'Pending'
+  Canceled = "Canceled",
+  Deleted = "Deleted",
+  Pending = "Pending",
 }
 
 export type UserAccountDeleteStatusOperationFilterInput = {
@@ -1468,28 +1574,35 @@ export type UserAccountDeletionFilterInput = {
   userId?: InputMaybe<UuidOperationFilterInput>;
 };
 
+export enum UserRelationshipStatus {
+  Friended = "Friended",
+  IncomingRequest = "IncomingRequest",
+  OutcomingRequest = "OutcomingRequest",
+  Stranger = "Stranger",
+}
+
 export type UuidOperationFilterInput = {
-  eq?: InputMaybe<Scalars['UUID']['input']>;
-  gt?: InputMaybe<Scalars['UUID']['input']>;
-  gte?: InputMaybe<Scalars['UUID']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
-  lt?: InputMaybe<Scalars['UUID']['input']>;
-  lte?: InputMaybe<Scalars['UUID']['input']>;
-  neq?: InputMaybe<Scalars['UUID']['input']>;
-  ngt?: InputMaybe<Scalars['UUID']['input']>;
-  ngte?: InputMaybe<Scalars['UUID']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
-  nlt?: InputMaybe<Scalars['UUID']['input']>;
-  nlte?: InputMaybe<Scalars['UUID']['input']>;
+  eq?: InputMaybe<Scalars["UUID"]["input"]>;
+  gt?: InputMaybe<Scalars["UUID"]["input"]>;
+  gte?: InputMaybe<Scalars["UUID"]["input"]>;
+  in?: InputMaybe<Array<InputMaybe<Scalars["UUID"]["input"]>>>;
+  lt?: InputMaybe<Scalars["UUID"]["input"]>;
+  lte?: InputMaybe<Scalars["UUID"]["input"]>;
+  neq?: InputMaybe<Scalars["UUID"]["input"]>;
+  ngt?: InputMaybe<Scalars["UUID"]["input"]>;
+  ngte?: InputMaybe<Scalars["UUID"]["input"]>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars["UUID"]["input"]>>>;
+  nlt?: InputMaybe<Scalars["UUID"]["input"]>;
+  nlte?: InputMaybe<Scalars["UUID"]["input"]>;
 };
 
 export type WarnCommunityServerMemberInput = {
-  memberId: Scalars['UUID']['input'];
-  reason?: InputMaybe<Scalars['String']['input']>;
-  serverId: Scalars['UUID']['input'];
+  memberId: Scalars["UUID"]["input"];
+  reason?: InputMaybe<Scalars["String"]["input"]>;
+  serverId: Scalars["UUID"]["input"];
 };
 
 export type WarnCommunityServerMemberPayload = {
-  __typename?: 'WarnCommunityServerMemberPayload';
-  memberId: Scalars['UUID']['output'];
+  __typename?: "WarnCommunityServerMemberPayload";
+  memberId: Scalars["UUID"]["output"];
 };

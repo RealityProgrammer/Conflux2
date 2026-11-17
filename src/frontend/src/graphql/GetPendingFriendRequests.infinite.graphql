@@ -18,9 +18,7 @@ query GetPendingFriendRequests($after: String) {
                 id
                 userName
                 displayName
-                avatar {
-                    version
-                }
+                avatarVersion
             }
             senderUserId
         }

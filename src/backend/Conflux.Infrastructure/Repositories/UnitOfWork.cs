@@ -8,6 +8,14 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork {
     private IDbContextTransaction? _transaction;
 
+    public void MarkAsAdded(object entity) {
+        dbContext.Entry(entity).State = EntityState.Added;
+    }
+
+    public void MarkAsModified(object entity) {
+        dbContext.Entry(entity).State = EntityState.Modified;
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) {
         try {
             return await dbContext.SaveChangesAsync(cancellationToken);

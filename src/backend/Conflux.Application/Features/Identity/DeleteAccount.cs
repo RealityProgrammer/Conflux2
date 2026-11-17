@@ -15,15 +15,26 @@ public sealed record DeleteAccountCommand(
     string RestorationPassword
 ) : ICommand<Result>;
 
+public sealed class DeleteAccountCommandValidator : AbstractValidator<DeleteAccountCommand> {
+    public DeleteAccountCommandValidator() {
+        RuleFor(c => c.ExtraMessage)
+            .MaximumLength(255)
+            .WithMessage(ValidationMessages.StringMaxLength);
+
+        RuleFor(c => c.RestorationPassword)
+            .NotEmpty()
+            .NotNull()
+            .WithMessage(ValidationMessages.PropertyRequired);
+    }
+}
+
 public sealed class DeleteAccountHandler(
     ICurrentUserService currentUserService,
-    IUserRepository userRepository,
-    IUserAccountDeletionReadRepository accountDeletionReadRepository,
-    IUserAccountDeletionWriteRepository accountDeletionWriteRepository,
+    IUserAccountDeletionRepository userAccountDeletionRepository,
     IUnitOfWork unitOfWork,
     ILogger<DeleteAccountHandler> logger,
     ISessionService sessionService,
-    IAccountDeleteStatusCacheProvider accountDeleteStatusCacheProvider,
+    IAccountDeleteCacheService accountDeleteCacheService,
     IPasswordHasher<object> passwordHasher
 ) : ICommandHandler<DeleteAccountCommand, Result> {
     public async ValueTask<Result> Handle(DeleteAccountCommand command, CancellationToken cancellationToken) {
@@ -34,7 +45,7 @@ public sealed class DeleteAccountHandler(
         // no need to check if account already have a request here, RequiresActiveAccountBehavior already done it
         
         // if user is already having a pending request, return success
-        bool hasPendingRequest = await accountDeletionReadRepository
+        bool hasPendingRequest = await userAccountDeletionRepository
             .AsQueryable()
             .Where(r => r.UserId == userId && r.Status == UserAccountDeleteStatus.Pending)
             .AnyAsync(cancellationToken);
@@ -53,7 +64,7 @@ public sealed class DeleteAccountHandler(
             RestorationPasswordHash = hashedPassword,
         };
 
-        accountDeletionWriteRepository.Add(request);
+        userAccountDeletionRepository.Add(request);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -72,7 +83,7 @@ public sealed class DeleteAccountHandler(
         }
 
         await sessionService.RemoveAllSessions(userId);
-        await accountDeleteStatusCacheProvider.Remove(userId);
+        await accountDeleteCacheService.Remove(userId);
 
         return Result.Success();
     }

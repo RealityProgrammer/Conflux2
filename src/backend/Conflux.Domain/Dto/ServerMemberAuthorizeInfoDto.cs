@@ -7,7 +7,7 @@ namespace Conflux.Domain.Dto;
 public sealed partial record ServerMemberAuthorizeInfoDto(
     Guid MemberId,
     int AuthorizeLevel,
-    IReadOnlySet<ServerPermission> EffectivePermissions,
+    HashSet<ServerPermission> EffectivePermissions,
     MemberRoleDto[] Roles,
     bool IsBanned
 );
@@ -15,5 +15,6 @@ public sealed partial record ServerMemberAuthorizeInfoDto(
 [MemoryPackable]
 public sealed partial record MemberRoleDto(
     Guid Id,
+    SpecialRoleType SpecialRoleType,
     string Name
 );

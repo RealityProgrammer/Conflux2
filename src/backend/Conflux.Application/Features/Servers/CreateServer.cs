@@ -1,4 +1,5 @@
 using Conflux.Application.Dto;
+using Conflux.Application.Options;
 using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
@@ -6,8 +7,11 @@ using Conflux.Domain.Enums;
 using Conflux.Domain.Repositories;
 using FileSignatures;
 using FileSignatures.Formats;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Conflux.Application.Features.Servers;
 
@@ -16,6 +20,24 @@ public sealed record CreateServerCommand(
     Stream? AvatarStream
 ) : ICommand<Result<ServerIdentityDto>>;
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+public sealed class CreateServerCommandValidator : AbstractValidator<CreateServerCommand> {
+    public CreateServerCommandValidator(IOptions<MediaOptions> mediaOptions) {
+        var options = mediaOptions.Value;
+        
+        RuleFor(c => c.Name)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage(ValidationMessages.PropertyRequired)
+            .Length(1, 48)
+            .WithMessage(ValidationMessages.StringLengthBetween);
+
+        RuleFor(c => c.AvatarStream)
+            .Must(stream => stream == null || stream.Length <= options.MaxAvatarSize)
+            .WithMessage($"Server avatar must be smaller or equals to {options.MaxAvatarSize.Bytes().Megabytes}MB ({options.MaxAvatarSize} bytes).");
+    }
+}
+
 public sealed record ServerCreatedNotification(
     Guid CreatorUserId,
     Guid ServerId
@@ -23,10 +45,9 @@ public sealed record ServerCreatedNotification(
 
 public sealed class CreateServerHandler(
     ICurrentUserService currentUserService,
-    ICommunityServerWriteRepository communityServerWriteRepository,
+    ICommunityServerRepository communityServerRepository,
     IUnitOfWork unitOfWork,
     IServerMediaService serverMediaService,
-    IMediaItemWriteRepository mediaItemWriteRepository,
     ILogger<CreateServerHandler> logger,
     IPublisher publisher
 ) : ICommandHandler<CreateServerCommand, Result<ServerIdentityDto>> {
@@ -70,6 +91,8 @@ public sealed class CreateServerHandler(
         CommunityServerMember ownerMember = new() {
             UserId = userId,
             CommunityServer = server,
+            HighestAuthorizeRole = ownerRole,
+            HighestAuthorizeLevel = ownerRole.AuthorizeLevel,
             MemberRoles = [
                 new() {
                     Role = ownerRole,
@@ -82,7 +105,7 @@ public sealed class CreateServerHandler(
 
         server.Members.Add(ownerMember);
 
-        communityServerWriteRepository.Add(server);
+        communityServerRepository.Add(server);
 
         try {
             await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -102,14 +125,7 @@ public sealed class CreateServerHandler(
                 await serverMediaService.UploadAvatar(server.Id, avatarStream, CancellationToken.None);
 
             if (avatarUploadResult.IsSuccess) {
-                MediaItem mediaItem = new() {
-                    ContentType = avatarUploadResult.Value!.Format.MediaType,
-                    Type = MediaItemType.ServerAvatar,
-                    Version = 1,
-                };
-                
-                mediaItemWriteRepository.Add(mediaItem);
-                server.Avatar = mediaItem;
+                server.AvatarVersion = 1;
                 
                 try {
                     await unitOfWork.SaveChangesAsync(cancellationToken);

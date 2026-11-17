@@ -1,13 +1,10 @@
-import {type HTMLAttributes, useEffect, useRef} from "react";
-import {createTimeline} from "animejs";
-import {BsGearFill} from "react-icons/bs";
+import { type HTMLAttributes, useEffect, useRef } from "react";
+import { createTimeline } from "animejs";
+import { BsGearFill } from "react-icons/bs";
 
-interface AnimatedGearIconProps extends HTMLAttributes<SVGElement> {
-}
+interface AnimatedGearIconProps extends HTMLAttributes<SVGElement> {}
 
-export default function AnimatedGearIcon({
-  ...props
-}: AnimatedGearIconProps) {
+export default function AnimatedGearIcon({ ...props }: AnimatedGearIconProps) {
   const gearIcon = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -18,10 +15,10 @@ export default function AnimatedGearIcon({
     });
 
     timeline.add(gearIcon.current, {
-      rotate: '+=45deg',
+      rotate: "+=45deg",
       duration: 500,
       delay: 1000,
-      ease: 'inOutBack(2.5)',
+      ease: "inOutBack(2.5)",
     });
 
     return () => {
@@ -29,9 +26,5 @@ export default function AnimatedGearIcon({
     };
   }, []);
 
-  return (
-    <div ref={gearIcon}>
-      {<BsGearFill {...props}/>}
-    </div>
-  );
+  return <div ref={gearIcon}>{<BsGearFill {...props} />}</div>;
 }

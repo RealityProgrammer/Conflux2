@@ -3,12 +3,8 @@ query GetSessionUserProfileSettingInfo {
         id
         userName
         displayName
-        avatar {
-            version
-        }
-        banner {
-            version
-        }
+        avatarVersion
+        bannerVersion
         biography
         pronouns
         createdAt

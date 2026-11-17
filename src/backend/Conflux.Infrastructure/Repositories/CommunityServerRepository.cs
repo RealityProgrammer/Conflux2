@@ -8,7 +8,7 @@ namespace Conflux.Infrastructure.Repositories;
 
 internal sealed class CommunityServerRepository(
     ApplicationDbContext dbContext
-) : ICommunityServerWriteRepository, ICommunityServerReadRepository {
+) : ICommunityServerRepository {
     public IQueryable<CommunityServer> AsQueryable() {
         return dbContext.CommunityServers;
     }

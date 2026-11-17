@@ -1,305 +1,235 @@
-import {useDebounceValue} from "usehooks-ts";
-import {type InfiniteData, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
+import { useDebounceValue } from "usehooks-ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { type FriendSearchResponse } from "../../api/types.ts";
+import { UserNameplate } from "../../components/UserNameplate.tsx";
+import { FriendActionButtons } from "../../components/FriendActionButtons.tsx";
 import {
-  type DiscoverFriendSummary,
-  type PaginatedResult,
-  type ServiceResponse,
-} from "../../api/types.ts";
-import {friendService} from "../../api/friendService.ts";
+  FriendSearchStatus,
+  UserRelationshipStatus,
+} from "../../api/schema.ts";
+import { BsExclamationTriangle, BsQuestion } from "react-icons/bs";
+import useDiscoverFriend from "../../hooks/useDiscoverFriend.ts";
+import { toast } from "react-toastify";
+import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import type {
   FriendRequestAcceptedEvent,
   FriendRequestCanceledEvent,
   FriendRequestReceivedEvent,
   FriendRequestRejectedEvent,
-  UnfriendedEvent
+  UnfriendedEvent,
 } from "../../api/events.ts";
-import {DropdownMenu} from "radix-ui";
-import {UserNameplate} from "../../components/UserNameplate.tsx";
-import MoreActionsButton from "../../components/MoreActionsButton.tsx";
-import {FriendActionButtons} from "../../components/FriendActionButtons.tsx";
-import useFriendActions from "../../hooks/useFriendActions.ts";
-import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import {UserRelationshipStatus} from "../../api/schema.ts";
-import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
-
-interface RowProps {
-  user: DiscoverFriendSummary;
-  updateCacheStatus: (userId: string, newStatus: UserRelationshipStatus) => void;
-}
 
 export default function AddFriendTabContent() {
-  const PAGE_SIZE: number = 20;
-
-  const [userNameSearch, setUserNameSearch] = useDebounceValue("", 500);
-
-  const {
-    data,
-    fetchNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    enabled: !!userNameSearch,
-    queryKey: ["discoverUsers", userNameSearch],
-    queryFn: async ({pageParam = 0}): Promise<PaginatedResult<DiscoverFriendSummary> | null | undefined> => {
-      const response: ServiceResponse<PaginatedResult<DiscoverFriendSummary>> =
-        await friendService.discover(userNameSearch, pageParam, PAGE_SIZE);
-
-      return response.data;
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage) return undefined;
-
-      const loadedCount = allPages.reduce(
-        (acc, page) => acc + (page?.elements.length ?? 0),
-        0
-      );
-
-      return loadedCount < lastPage.totalCount ? loadedCount : undefined;
-    },
-  });
-
-  const allElements = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
-
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useDebounceValue("", 500);
 
-  const updateRelationshipStatus = (userId: string, newStatus: UserRelationshipStatus) => {
-    queryClient.setQueryData<InfiniteData<PaginatedResult<DiscoverFriendSummary>>>(
-      ["discoverUsers", userNameSearch],
+  const { data, isEnabled, isLoading, isError } = useDiscoverFriend(
+    searchTerm,
+    {
+      enabled: searchTerm.length >= 8,
+      retry: false,
+    },
+  );
+
+  const handleChangeStatus = (
+    relationshipStatus: UserRelationshipStatus,
+    friendRequestId: string | null | undefined,
+  ) => {
+    queryClient.setQueryData<FriendSearchResponse>(
+      useDiscoverFriend.getKey(searchTerm),
       (oldData) => {
         if (!oldData) return oldData;
 
         return {
           ...oldData,
-          pages: oldData.pages.map(page => ({
-            ...page,
-            elements: page.elements.map(user => {
-              return user.userId === userId ? {...user, status: newStatus} : user;
-            })
-          }))
+          result: !!oldData.result
+            ? {
+                ...oldData.result,
+                relationshipStatus: relationshipStatus,
+                friendRequestId:
+                  friendRequestId === undefined
+                    ? oldData.result.friendRequestId
+                    : friendRequestId,
+              }
+            : oldData.result,
         };
-      }
+      },
     );
   };
 
-  // handle realtime modification
-  useSignalREvent("FriendRequestReceived", (event: FriendRequestReceivedEvent) => {
-    updateRelationshipStatus(event.senderUserId, UserRelationshipStatus.IncomingRequest);
-  });
+  useSignalREvent(
+    "FriendRequestReceived",
+    async (event: FriendRequestReceivedEvent) => {
+      if (event.senderUserId === data?.result?.userProfile.id) {
+        handleChangeStatus(
+          UserRelationshipStatus.IncomingRequest,
+          event.requestId,
+        );
+      }
+    },
+  );
 
-  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
-    updateRelationshipStatus(event.senderUserId, UserRelationshipStatus.Stranger);
-  });
+  useSignalREvent(
+    "FriendRequestRejected",
+    (event: FriendRequestRejectedEvent) => {
+      if (event.rejecterUserId === data?.result?.userProfile.id) {
+        handleChangeStatus(UserRelationshipStatus.Stranger, null);
+      }
+    },
+  );
 
-  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
-    updateRelationshipStatus(event.acceptorUserId, UserRelationshipStatus.Friended);
-  });
+  useSignalREvent(
+    "FriendRequestAccepted",
+    (event: FriendRequestAcceptedEvent) => {
+      if (event.acceptorUserId === data?.result?.userProfile.id) {
+        handleChangeStatus(UserRelationshipStatus.Friended, event.requestId);
+      }
+    },
+  );
 
-  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
-    updateRelationshipStatus(event.rejecterUserId, UserRelationshipStatus.Stranger);
-  });
+  useSignalREvent(
+    "FriendRequestCanceled",
+    (event: FriendRequestCanceledEvent) => {
+      if (event.senderUserId === data?.result?.userProfile.id) {
+        handleChangeStatus(UserRelationshipStatus.Stranger, null);
+      }
+    },
+  );
 
   useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
-    updateRelationshipStatus(event.invokerUserId, UserRelationshipStatus.Stranger);
+    if (event.invokerUserId === data?.result?.userProfile.id) {
+      handleChangeStatus(UserRelationshipStatus.Stranger, null);
+    }
   });
 
   return (
-    <div className="flex flex-col gap-2 h-full">
-      <header className="flex-none text-sm">
-        <span className="block">Need to search for a friend?</span>
-        <span className="block">You can send friend request with their username.</span>
+    <div className="w-full">
+      <header className="text-sm">
+        <p>Need to search for a friend?</p>
+        <p>You can send friend request with their name or ID.</p>
       </header>
 
-      <section className="flex-none flex flex-row h-10">
-        <div
-          className="select-none w-11 flex justify-center items-center border border-gray-600 rounded-l-lg border-r-0">
+      <section className="mt-2 flex h-10 flex-row">
+        <div className="flex w-11 items-center justify-center rounded-l-lg border-2 border-r-0 border-gray-600 select-none">
           @
         </div>
 
-        <input 
-          className="flex-1 input-field w-full px-3 rounded-l-none"
-          placeholder="Enter username"
+        <input
+          className="input-field w-full flex-1 rounded-l-none px-3"
+          placeholder="Enter something here..."
           onChange={(e) => {
-            setUserNameSearch(e.target.value);
-          }}/>
+            setSearchTerm(e.target.value);
+          }}
+        />
       </section>
 
-      <div className="flex-1 overflow-hidden border-2 border-gray-600 rounded-md">
-        {(!userNameSearch || userNameSearch.length === 0) ? (
-          <div className="size-full flex flex-row justify-center items-center text-gray-500">
-            <span className="select-none">Enter the name above</span>
-          </div>
+      <div className="container mt-4 flex max-w-lg flex-col items-center justify-center rounded-md border-2 border-gray-600">
+        {!isEnabled ? (
+          <p className="p-3 text-sm text-gray-500 select-none">
+            Enter at least 8 characters to search user.
+          </p>
         ) : isLoading ? (
-          <>
-            {Array.from({length: 20}).map((_, index) => (
-              <UserNameplate.Skeleton key={index} className="p-1.5"/>
-            ))}
-          </>
+          <UserNameplate.Skeleton className="w-full p-1" />
+        ) : isError || !data ? (
+          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center text-sm select-none">
+            <BsExclamationTriangle className="block size-8 fill-white" />
+            <p>An error occurred while discovering user...</p>
+          </div>
+        ) : data.status === FriendSearchStatus.NoUser ? (
+          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center text-sm select-none">
+            <BsQuestion className="block size-8 fill-white" />
+            <p>Seems like nobody answered...</p>
+          </div>
+        ) : data.status === FriendSearchStatus.DisallowSelf ? (
+          <div className="flex flex-col items-center justify-center gap-1 py-2 text-center text-sm select-none">
+            <BsExclamationTriangle className="block size-8 fill-white" />
+            <p>Searching for yourself is not allowed.</p>
+          </div>
         ) : (
-          <VirtualizedScrollList2
-            totalCount={allElements.length}
-            computeItemKey={(index) => allElements[index].userId}
-            atBottomThreshold={120}
-            endReached={() => fetchNextPage()}
-            overscan={10}
-            renderItem={(index) => {
-              return (
-                <Row user={allElements[index]} updateCacheStatus={updateRelationshipStatus}/>
-              );
-            }}
-            renderEmpty={() => (
-              <div className="size-full flex flex-row justify-center items-center text-gray-500">
-                <span className="select-none">There is nothing here...</span>
-              </div>
-            )}
-            showBottomLoader={isFetchingNextPage}
-          />
+          <UserNameplate.Root
+            userId={data.result!.userProfile.id}
+            displayName={data.result!.userProfile.displayName ?? "???"}
+            userName={data.result!.userProfile.userName ?? undefined}
+            avatarVersion={data.result!.userProfile.avatarVersion}
+            className="w-full p-2"
+          >
+            {data.result!.relationshipStatus === "Stranger" ? (
+              <FriendActionButtons.Send
+                recipientId={data.result!.userProfile.id}
+                className="size-6"
+                onSuccess={(response, recipientId) => {
+                  if (data.result!.userProfile.id === recipientId) {
+                    handleChangeStatus(
+                      response.relationshipStatus,
+                      response.friendRequestId,
+                    );
+                  }
+                }}
+                onError={() => {
+                  toast.error("Failed to send friend request.");
+                }}
+              />
+            ) : data.result!.relationshipStatus === "IncomingRequest" ? (
+              <>
+                <FriendActionButtons.Reject
+                  requestId={data.result!.friendRequestId!}
+                  className="size-6"
+                  onSuccess={(variables) => {
+                    if (data.result!.friendRequestId === variables.requestId) {
+                      handleChangeStatus(UserRelationshipStatus.Stranger, null);
+                    }
+                  }}
+                  onError={() => {
+                    toast.error("Failed to reject friend request.");
+                  }}
+                />
+
+                <FriendActionButtons.Accept
+                  requestId={data.result!.friendRequestId!}
+                  className="size-6"
+                  onSuccess={(variables) => {
+                    if (data.result!.friendRequestId === variables.requestId) {
+                      handleChangeStatus(
+                        UserRelationshipStatus.Friended,
+                        undefined,
+                      );
+                    }
+                  }}
+                  onError={() => {
+                    toast.error("Failed to accept friend request.");
+                  }}
+                />
+              </>
+            ) : data.result!.relationshipStatus === "OutcomingRequest" ? (
+              <FriendActionButtons.Cancel
+                requestId={data.result!.friendRequestId!}
+                className="size-6"
+                onSuccess={(variables) => {
+                  if (data.result!.friendRequestId === variables.requestId) {
+                    handleChangeStatus(UserRelationshipStatus.Stranger, null);
+                  }
+                }}
+                onError={() => {
+                  toast.error("Failed to cancel friend request.");
+                }}
+              />
+            ) : data.result!.relationshipStatus === "Friended" ? (
+              <FriendActionButtons.Unfriend
+                friendId={data.result!.userProfile.id}
+                className="size-6"
+                onSuccess={(friendId) => {
+                  if (data.result!.userProfile.id === friendId) {
+                    handleChangeStatus(UserRelationshipStatus.Stranger, null);
+                  }
+                }}
+                onError={() => {
+                  toast.error("Failed to unfriend.");
+                }}
+              />
+            ) : null}
+          </UserNameplate.Root>
         )}
       </div>
     </div>
-  );
-}
-
-function Row({user, updateCacheStatus}: RowProps) {
-  const {mutation, activeAction} = useFriendActions(user.userId);
-
-  const handleSendFriendRequest = () => mutation.mutate('send', {
-    onSuccess: (response: ServiceResponse<UserRelationshipStatus>) => {
-      if (response && response.success && response.data) {
-        updateCacheStatus(user.userId, response.data);
-      }
-    },
-  });
-  const handleAcceptFriendRequest = () => mutation.mutate('accept', {
-    onSuccess: (response: ServiceResponse) => {
-      if (response && response.success) {
-        updateCacheStatus(user.userId, UserRelationshipStatus.Friended);
-      }
-    }
-  });
-  const handleRejectFriendRequest = () => mutation.mutate('reject', {
-    onSuccess: (response: ServiceResponse) => {
-      if (response && response.success) {
-        updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
-      }
-    }
-  });
-  const handleCancelFriendRequest = () => mutation.mutate('cancel', {
-    onSuccess: (response: ServiceResponse) => {
-      if (response && response.success) {
-        updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
-      }
-    }
-  });
-  const handleUnfriend = () => mutation.mutate('unfriend', {
-    onSuccess: (response: ServiceResponse) => {
-      if (response && response.success) {
-        updateCacheStatus(user.userId, UserRelationshipStatus.Stranger);
-      }
-    }
-  });
-
-  return (
-    <UserNameplate.Root
-      userId={user.userId}
-      avatarVersion={user.avatarVersion ?? undefined}
-      userName={user.userName}
-      displayName={user.displayName}
-      className="w-full p-1.5 hover-highlight"
-    >
-      {user.status == UserRelationshipStatus.Stranger ? (
-        <FriendActionButtons.Send
-          isExecuting={activeAction == 'send'}
-          onClick={handleSendFriendRequest}
-          className="size-6"/>
-      ) : user.status == UserRelationshipStatus.IncomingRequest ? (
-        <>
-          <FriendActionButtons.Reject
-            isExecuting={activeAction == 'reject'}
-            onClick={handleRejectFriendRequest}
-            className="size-6"/>
-
-          <FriendActionButtons.Accept
-            isExecuting={activeAction == 'accept'}
-            onClick={handleAcceptFriendRequest}
-            className="size-6"/>
-        </>
-      ) : user.status == UserRelationshipStatus.OutcomingRequest ? (
-        <FriendActionButtons.Cancel
-          isExecuting={activeAction == 'cancel'}
-          onClick={handleCancelFriendRequest}
-          className="size-6"/>
-      ) : (
-        <FriendActionButtons.Unfriend
-          isExecuting={activeAction == 'unfriend'}
-          className="size-6"
-          onClick={handleUnfriend}/>
-      )}
-
-      <MoreActionsButton>
-        <DropdownMenu.Item className="dropdown-item-default">
-          Visit Profile
-        </DropdownMenu.Item>
-
-        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
-
-        {user.status == UserRelationshipStatus.Stranger ? (
-          <DropdownMenu.Item
-            className="dropdown-item-default"
-            onSelect={handleSendFriendRequest}
-          >
-            Send Friend Request
-          </DropdownMenu.Item>
-        ) : user.status == UserRelationshipStatus.IncomingRequest ? (
-          <>
-            <DropdownMenu.Item
-              className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
-              onSelect={handleAcceptFriendRequest}
-              disabled={!!activeAction}
-            >
-              Accept Friend Request
-            </DropdownMenu.Item>
-
-            <DropdownMenu.Item
-              className="dropdown-item-danger"
-              onSelect={handleRejectFriendRequest}
-              disabled={!!activeAction}
-            >
-              Reject Friend Request
-            </DropdownMenu.Item>
-          </>
-        ) : user.status == UserRelationshipStatus.OutcomingRequest ? (
-          <DropdownMenu.Item
-            className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
-            onSelect={handleCancelFriendRequest}
-            disabled={!!activeAction}
-          >
-            Cancel Friend Request
-          </DropdownMenu.Item>
-        ) : (
-          <DropdownMenu.Item
-            className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm"
-            onSelect={handleUnfriend}
-            disabled={!!activeAction}
-          >
-            Unfriend
-          </DropdownMenu.Item>
-        )}
-
-        <DropdownMenu.Separator className="horizontal-separator my-1.5"/>
-
-        <DropdownMenu.Item
-          className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-        >
-          Block
-        </DropdownMenu.Item>
-
-        <DropdownMenu.Item
-          className="group relative flex p-2 select-none items-center rounded-sm leading-none outline-none button-cursor hover-highlight text-sm text-red-400 font-semibold"
-        >
-          Report User
-        </DropdownMenu.Item>
-      </MoreActionsButton>
-    </UserNameplate.Root>
   );
 }

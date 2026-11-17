@@ -49,10 +49,10 @@ internal sealed class EmojiMediaService(
             });
         }
 
-        if (imageFormat is not Png and not Jpeg and not Webp) {
+        if (imageFormat is not Png and not Jpeg and not Webp and not Gif) {
             return Errors.ValidationErrorsOccurred(new() {
                 [nameof(stream)] = [
-                    "Only PNG, JPEG and WEBP image formats are supported.",
+                    "Only PNG, JPEG, WEBP, GIF image formats are supported.",
                 ],
             });
         }

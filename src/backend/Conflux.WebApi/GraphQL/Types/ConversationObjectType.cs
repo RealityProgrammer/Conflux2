@@ -1,7 +1,9 @@
 using Conflux.Domain.Entities;
+using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using GreenDonut.Data;
 using HotChocolate.Resolvers;
+using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Collections.Frozen;
@@ -16,6 +18,21 @@ public sealed class ConversationObjectType : ObjectType<Conversation> {
         descriptor.Field(c => c.Id);
         descriptor.Field(c => c.LatestMessageAt);
         descriptor.Field(c => c.Channel);
+
+        // descriptor.Field(c => c.Participants)
+        //     .UsePaging()
+        //     .Resolve(async context => {
+        //         var parent = context.Parent<Conversation>();
+        //         var repository = context.Service<IConversationParticipantRepository>();
+        //         
+        //         
+        //         
+        //         return repository
+        //             .AsQueryable()
+        //             .Where(p => p.ConversationId == parent.Id)
+        //             .
+        //     });
+        
         descriptor.Field("peerUser")
             .Type<ApplicationUserObjectType>()
             .ResolveWith(ResolvePeerUser);

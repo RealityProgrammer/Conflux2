@@ -1,5 +1,4 @@
 using Conflux.Domain.Entities;
-using Conflux.Domain.Enums;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conflux.Infrastructure.Config;
@@ -19,5 +18,10 @@ public sealed class CommunityServerMemberConfiguration : IEntityTypeConfiguratio
             .HasForeignKey(m => m.CommunityServerId)
             .HasPrincipalKey(s => s.Id)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(m => m.HighestAuthorizeRole)
+            .WithMany()
+            .HasForeignKey(m => m.HighestAuthorizeRoleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

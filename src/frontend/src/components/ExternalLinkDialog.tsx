@@ -1,8 +1,8 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import Dialog from "./Dialog.tsx";
-import {BsBoxArrowUpRight} from "react-icons/bs";
-import {Dialog as RadixDialog} from "radix-ui";
-import {useExternalLinkDialog} from "../store/useExternalLinkDialog.ts";
+import { BsBoxArrowUpRight } from "react-icons/bs";
+import { Dialog as RadixDialog } from "radix-ui";
+import { useExternalLinkDialog } from "../store/useExternalLinkDialog.ts";
 
 const CONFIRMATION_DELAY = 5000;
 
@@ -18,7 +18,7 @@ export default function ExternalLinkDialog() {
   const handleConfirm = () => {
     if (url) {
       // Open the URL in a new tab securely
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open(url, "_blank", "noopener,noreferrer");
     }
     closeDialog();
   };
@@ -58,55 +58,55 @@ export default function ExternalLinkDialog() {
       onOpenChange={handleOpenChange}
       title="Prepare to be in the barren land"
       subtitle="It is dangerous out there..."
-      contentClassName="centered-dialog w-160 rounded-xl text-white bg-gray-650 outline-none"
-      headerIcon={(
-        <BsBoxArrowUpRight className="fill-white size-10"/>
-      )}
-      footerContent={(
-        <div className="w-full flex flex-row justify-end p-3 gap-3">
+      contentClassName="centered-dialog text-white bg-gray-650 outline-none container"
+      headerIcon={<BsBoxArrowUpRight className="size-10 fill-white" />}
+      footerContent={
+        <div className="flex w-full flex-row justify-end gap-3 p-3">
           <RadixDialog.Close
             type="button"
-            className="cursor-pointer basis-20 outline-none"
+            className="basis-20 cursor-pointer outline-none"
           >
             Cancel
           </RadixDialog.Close>
 
           <button
             disabled={!canConfirm}
-            className={`relative overflow-hidden outline-none w-40 py-2 rounded-md ${canConfirm ? "cursor-pointer" : "cursor-not-allowed"}`}
+            className={`relative w-40 overflow-hidden rounded-md py-2 outline-none ${canConfirm ? "cursor-pointer" : "cursor-not-allowed"}`}
             onClick={handleConfirm}
           >
             <div className="absolute inset-0 bg-red-600" />
             <div
-              className="absolute left-0 top-0 bottom-0 bg-green-600 ease-linear"
+              className="absolute top-0 bottom-0 left-0 bg-green-600 ease-linear"
               style={{
                 width: `${progress}%`,
                 transitionProperty: "width",
-                transitionDuration: progress === 100 ? `${CONFIRMATION_DELAY}ms` : "0ms",
+                transitionDuration:
+                  progress === 100 ? `${CONFIRMATION_DELAY}ms` : "0ms",
               }}
             />
 
-            <span className="relative z-10 text-white font-medium select-none flex items-center justify-center">
+            <span className="relative z-10 flex items-center justify-center font-medium text-white select-none">
               {canConfirm ? "Confirm Redirect" : "Wait..."}
             </span>
           </button>
         </div>
-      )}
+      }
     >
-      <div className="p-3 space-y-3">
+      <div className="space-y-3 p-3">
         <p>
-          Are you sure you want to access this external URL?<br/>
-          Look closely, it can be a trap...<br/>
+          Are you sure you want to access this external URL?
+          <br />
+          Look closely, it can be a trap...
+          <br />
         </p>
 
         <span className="mt-3">
           External URL:
-
-          <pre className="mt-1 p-2 bg-black/8 border-2 border-gray-500 rounded-md text-wrap text-sm">
+          <pre className="mt-1 rounded-md border-2 border-gray-500 bg-black/8 p-2 text-sm text-wrap">
             {url}
           </pre>
         </span>
       </div>
     </Dialog>
-  )
+  );
 }

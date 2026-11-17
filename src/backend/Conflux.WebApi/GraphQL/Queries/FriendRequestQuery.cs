@@ -1,14 +1,14 @@
+using Conflux.Application.Services;
 using Conflux.Domain;
 using Conflux.Domain.Entities;
 using Conflux.Domain.Enums;
+using Conflux.Domain.Repositories;
 using Conflux.Infrastructure;
 using Conflux.WebApi.Helpers;
 using GreenDonut.Data;
 using HotChocolate.Authorization;
 using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.JsonWebTokens;
-using System.Security.Claims;
 
 namespace Conflux.WebApi.GraphQL.Queries;
 
@@ -16,15 +16,13 @@ namespace Conflux.WebApi.GraphQL.Queries;
 public static partial class FriendRequestQuery {
     [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseFiltering, UseSorting]
     public static async Task<PageConnection<FriendRequest>> GetFriendRequests(
-        ClaimsPrincipal claimsPrincipal,
         QueryContext<FriendRequest> queryContext,
         PagingArguments pagingArgs,
+        [Service] ICurrentUserService currentUserService,
         [Service] ApplicationDbContext dbContext,
         CancellationToken cancellationToken
     ) {
-        var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+        if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
@@ -41,21 +39,19 @@ public static partial class FriendRequestQuery {
     
     [UseConnection(DefaultPageSize = 20, MaxPageSize = 50), UseSorting]
     public static async Task<PageConnection<FriendRequest>> GetFriends(
-        ClaimsPrincipal claimsPrincipal,
         QueryContext<FriendRequest> queryContext,
         PagingArguments pagingArgs,
         string? nameFilter,
-        [Service] ApplicationDbContext dbContext,
+        [Service] ICurrentUserService currentUserService,
+        [Service] IFriendRequestRepository friendRequestRepository,
         CancellationToken cancellationToken
     ) {
-        var idClaim = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (string.IsNullOrEmpty(idClaim) || !Guid.TryParse(idClaim, out var userId)) {
+        if (currentUserService.UserId is not { } userId) {
             throw new GraphQLException(Errors.InvalidIdentifier().ToHotChocolateError());
         }
 
-        var query = dbContext.FriendRequests
-            .AsNoTracking()
+        var query = friendRequestRepository
+            .AsQueryable()
             .Where(r => r.SenderUserId == userId || r.ReceiverUserId == userId)
             .Where(r => r.Status == FriendRequestStatus.Accepted);
 

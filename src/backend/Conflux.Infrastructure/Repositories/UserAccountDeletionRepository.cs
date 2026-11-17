@@ -9,7 +9,7 @@ namespace Conflux.Infrastructure.Repositories;
 internal sealed class UserAccountDeletionRepository(
     ApplicationDbContext dbContext,
     TimeProvider timeProvider
-) : IUserAccountDeletionReadRepository, IUserAccountDeletionWriteRepository {
+) : IUserAccountDeletionRepository {
     public IQueryable<UserAccountDeletion> AsQueryable() {
         return dbContext.UserAccountDeletions;
     }

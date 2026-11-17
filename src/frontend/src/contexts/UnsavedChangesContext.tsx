@@ -16,9 +16,15 @@ type UnsavedChangesContextType = {
   cancelPending: () => void;
 };
 
-const UnsavedChangesContext = createContext<UnsavedChangesContextType | null>(null);
+const UnsavedChangesContext = createContext<UnsavedChangesContextType | null>(
+  null,
+);
 
-export const UnsavedChangesProvider = ({ children }: { children: React.ReactNode }) => {
+export const UnsavedChangesProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [isDirty, setDirty] = useState(false);
   const [hasPendingAction, setHasPendingAction] = useState(false);
   const pendingRef = useRef<(() => void) | null>(null);
@@ -31,19 +37,18 @@ export const UnsavedChangesProvider = ({ children }: { children: React.ReactNode
     };
   };
 
-  const guard = 
-    <T extends (...args: any[]) => any>(action: T): Guarded<T> =>
-      ((...args: Parameters<T>) => {
-        if (isDirty) {
-          pendingRef.current = () => action(...args);
-          setHasPendingAction(true);
+  const guard = <T extends (...args: any[]) => any>(action: T): Guarded<T> =>
+    ((...args: Parameters<T>) => {
+      if (isDirty) {
+        pendingRef.current = () => action(...args);
+        setHasPendingAction(true);
 
-          listenersRef.current.forEach((fn) => fn());
-          return undefined;
-        }
-        return action(...args);
-      }) as Guarded<T>;
-  
+        listenersRef.current.forEach((fn) => fn());
+        return undefined;
+      }
+      return action(...args);
+    }) as Guarded<T>;
+
   const confirmPending = () => {
     const action = pendingRef.current;
     pendingRef.current = null;
@@ -57,15 +62,17 @@ export const UnsavedChangesProvider = ({ children }: { children: React.ReactNode
   };
 
   return (
-    <UnsavedChangesContext.Provider value={{ 
-      isDirty, 
-      setDirty, 
-      guard,
-      onBlocked,
-      hasPendingAction,
-      confirmPending,
-      cancelPending,
-    }}>
+    <UnsavedChangesContext.Provider
+      value={{
+        isDirty,
+        setDirty,
+        guard,
+        onBlocked,
+        hasPendingAction,
+        confirmPending,
+        cancelPending,
+      }}
+    >
       {children}
     </UnsavedChangesContext.Provider>
   );
@@ -73,8 +80,11 @@ export const UnsavedChangesProvider = ({ children }: { children: React.ReactNode
 
 export function useUnsavedChanges() {
   const context = useContext(UnsavedChangesContext);
-  if (!context) throw new Error("useUnsavedChanges must be used within an UnsavedChangesProvider.");
-  
+  if (!context)
+    throw new Error(
+      "useUnsavedChanges must be used within an UnsavedChangesProvider.",
+    );
+
   return context;
 }
 

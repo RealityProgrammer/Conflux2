@@ -11,7 +11,7 @@ namespace Conflux.WebApi.GraphQL.Queries;
 
 [QueryType, Authorize]
 internal static partial class CommunityServerMemberQuery {
-    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]
+    [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50), UseSorting]
     public static async Task<PageConnection<CommunityServerMember>> GetCommunityServerMembers(
         Guid serverId,
         PagingArguments pagingArgs,
@@ -20,11 +20,14 @@ internal static partial class CommunityServerMemberQuery {
         CancellationToken cancellationToken
     ) {
         return await dbContext.CommunityServerMembers
-            .Where(m => m.Status == MembershipStatus.Active)
-            .Where(m => m.CommunityServerId == serverId)
+            .Where(m => m.Status == MembershipStatus.Active && m.CommunityServerId == serverId)
             .OrderBy(m => m.User.Id)
-            .With(queryContext)
+            .AsSingleQuery()
+            .With(queryContext, DefaultOrder)
             .ToPageAsync(pagingArgs, cancellationToken);
+        
+        static SortDefinition<CommunityServerMember> DefaultOrder(SortDefinition<CommunityServerMember> sort) =>
+            sort.IfEmpty(o => o.AddAscending(t => t.Id));
     }
     
     [UseConnection(IncludeTotalCount = true, DefaultPageSize = 20, MaxPageSize = 50)]

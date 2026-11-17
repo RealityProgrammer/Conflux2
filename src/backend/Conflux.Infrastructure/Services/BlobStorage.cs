@@ -27,7 +27,7 @@ internal sealed class StorageService(
             ContentType = contentType,
             UseChunkEncoding = false,
         };
-        
+
         try {
             PutObjectResponse response = await s3Client.PutObjectAsync(uploadRequest, cancellationToken);
 
@@ -135,6 +135,21 @@ internal sealed class StorageService(
             Expires = timeProvider.GetUtcNow().Add(expireIn).UtcDateTime,
             Verb = HttpVerb.GET,
             Protocol = _options.PreSignEndpoint.StartsWith("https") ? Protocol.HTTPS : Protocol.HTTP,
+        };
+
+        return preSignS3Client.GetPreSignedURL(request);
+    }
+
+    public string GenerateDownloadPreSignedUrl(string key, string? fileName, TimeSpan expireIn) {
+        var request = new GetPreSignedUrlRequest {
+            BucketName = _options.BucketName,
+            Key = key,
+            Expires = timeProvider.GetUtcNow().Add(expireIn).UtcDateTime,
+            Verb = HttpVerb.GET,
+            Protocol = _options.PreSignEndpoint.StartsWith("https") ? Protocol.HTTPS : Protocol.HTTP,
+            ResponseHeaderOverrides = new() {
+                ContentDisposition = string.IsNullOrWhiteSpace(fileName) ? "attachment" : $"attachment; filename=\"{fileName}\"",
+            },
         };
 
         return preSignS3Client.GetPreSignedURL(request);

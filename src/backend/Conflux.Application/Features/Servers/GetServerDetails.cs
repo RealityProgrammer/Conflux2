@@ -7,19 +7,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conflux.Application.Features.Servers;
 
-public sealed record GetServerDetailsQuery(Guid ServerId, Guid UserId) : IQuery<Result<ServerDetailsDto>>;
+public sealed record GetServerDetailsQuery(Guid ServerId) : IQuery<Result<ServerDetailsDto>>;
 
 public sealed class GetServerDetailsHandler(
-    ICommunityServerWriteRepository repository,
+    ICurrentUserService currentUserService,
+    ICommunityServerRepository repository,
     IServerPermissionsProvider permissionsProvider
 ) : IQueryHandler<GetServerDetailsQuery, Result<ServerDetailsDto>> {
     public async ValueTask<Result<ServerDetailsDto>> Handle(
         GetServerDetailsQuery query, 
         CancellationToken cancellationToken
     ) {
+	if (currentUserService.UserId is not { } userId) {
+	    return Errors.InvalidIdentifier();
+	}
+
         var serverId = query.ServerId;
         
-        var userAuthorizeResult = await permissionsProvider.GetUserAuthorizeInfo(serverId, query.UserId, cancellationToken);
+        var userAuthorizeResult = await permissionsProvider.GetUserAuthorizeInfo(serverId, userId, cancellationToken);
         if (!userAuthorizeResult.IsSuccess) {
             return userAuthorizeResult.Error;
         }
@@ -30,7 +35,7 @@ public sealed class GetServerDetailsHandler(
             .Select(s => new {
                 s.Id,
                 s.Name,
-                AvatarVersion = s.Avatar == null ? (int?)null : s.Avatar.Version,
+                s.AvatarVersion,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
