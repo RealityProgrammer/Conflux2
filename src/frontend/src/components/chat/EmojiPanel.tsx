@@ -136,6 +136,7 @@ interface StandardPopoverProps {
   onSelect: (value: SelectedEmoji) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  disableFocusOutsideClose?: boolean;
 }
 
 function StandardPopover({
@@ -145,6 +146,7 @@ function StandardPopover({
   side,
   open,
   onOpenChange,
+  disableFocusOutsideClose = false,
 }: StandardPopoverProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -169,7 +171,7 @@ function StandardPopover({
       open={isOpen}
       onOpenChange={handleOpenChange}
       onFocusOutside={(e) => {
-        if (shiftPressedRef.current) {
+        if (shiftPressedRef.current || disableFocusOutsideClose) {
           e.preventDefault();
         }
       }}

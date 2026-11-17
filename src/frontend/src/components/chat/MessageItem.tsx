@@ -298,7 +298,7 @@ function MessageView({
           <ContextMenu.Item
             className="dropdown-item-default"
             onSelect={(e) => {
-              e.preventDefault();
+              // e.preventDefault();
               handleEmojiPanelOpen(e.currentTarget as HTMLElement, "right");
             }}
           >

@@ -386,6 +386,7 @@ export function ChatView({
   const [emojiPanel, setEmojiPanelState] = useState<EmojiPanelRequest | null>(null);
   const emojiPanelRequestRef = useRef<EmojiPanelRequest | null>(null);
   const emojiPanelTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const pendingEmojiOpenRef = useRef<{ rafId: number; request: EmojiPanelRequest } | null>(null);
 
   const setEmojiPanel = (next: EmojiPanelRequest | null) => {
     const prev = emojiPanelRequestRef.current;
@@ -401,8 +402,33 @@ export function ChatView({
     onSelect: (emoji: SelectedEmoji) => void,
     onOpenChange?: (open: boolean) => void,
   ) => {
-    setEmojiPanel({ getRect: createRectGetter(anchor), side, onSelect, onOpenChange });
+    const request: EmojiPanelRequest = {
+      getRect: createRectGetter(anchor),
+      side,
+      onSelect,
+      onOpenChange,
+    };
+
+    const pending = pendingEmojiOpenRef.current;
+    if (pending) {
+      cancelAnimationFrame(pending.rafId);
+      pending.request.onOpenChange?.(false);
+      pendingEmojiOpenRef.current = null;
+    }
+
+    const rafId = requestAnimationFrame(() => {
+      pendingEmojiOpenRef.current = null;
+      setEmojiPanel(request);
+    });
+    pendingEmojiOpenRef.current = { rafId, request };
   };
+
+  useEffect(() => {
+    return () => {
+      const pending = pendingEmojiOpenRef.current;
+      if (pending) cancelAnimationFrame(pending.rafId);
+    };
+  }, []);
 
   // keep the emoji panel glue to the trigger when resize or scroll
   useEffect(() => {
