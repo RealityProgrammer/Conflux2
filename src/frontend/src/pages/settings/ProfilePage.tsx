@@ -146,25 +146,9 @@ function ProfileForm() {
 
       auth.updateUserProfile({
         displayName: data.displayName,
-        // avatar: response.data?.avatarVersion !== undefined ? {
-        //   version: response.data.avatarVersion,
-        // } : undefined,
+        avatarVersion: response.data?.avatarVersion,
+        // bannerVersion: response.data?.bannerVersion,
       });
-
-      if (response.data?.avatarVersion !== undefined) {
-        auth.updateUserProfile({
-          avatarVersion: response.data.avatarVersion,
-        });
-      }
-
-      // TODO: Update banner
-      // if (response.data?.bannerVersion !== undefined) {
-      //   auth.updateUserProfile({
-      //     banner: response.data?.bannerVersion === null ? null : {
-      //       version: response.data.bannerVersion,
-      //     }
-      //   });
-      // }
 
       if (dirtyFields.presence) {
         presence.updateManualStatus(data.presence, "client");
