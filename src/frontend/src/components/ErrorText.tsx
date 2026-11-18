@@ -6,7 +6,7 @@ export default function ErrorText({
   ...props
 }: { children: ReactNode } & HTMLAttributes<HTMLSpanElement>) {
   return (
-    <span className={`text-sm text-red-500 ${className ?? ""}`} {...props}>
+    <span className={`text-xs font-semibold text-red-500 ${className ?? ""}`} {...props}>
       {children}
     </span>
   );

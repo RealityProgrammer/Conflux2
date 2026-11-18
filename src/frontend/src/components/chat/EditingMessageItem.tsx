@@ -12,6 +12,7 @@ import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import { FaPencil, FaRepeat, FaTrashCan } from "react-icons/fa6";
 import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
+import ErrorText from "../ErrorText.tsx";
 
 type EditingMessageItemProps = {
   message: TimelineMessageDto;
@@ -52,7 +53,7 @@ function View({ data, showHeader, context }: ViewProps) {
 
   return (
     <div
-      className={`group relative flex flex-col pt-0.5 ${data.error ? "bg-red-500/40 hover:bg-red-500/50" : ""}`}
+      className={`group relative pt-0.5 ${data.error ? "bg-red-500/40 hover:bg-red-500/50" : ""}`}
     >
       <div className={`px-2`}>
         {message.replyTo && (
@@ -79,12 +80,12 @@ function View({ data, showHeader, context }: ViewProps) {
           }
           date={new Date(message.createdAt)}
         >
-          <div className={`flex-1 space-y-1 text-white`}>
+          <div className={`flex-1 text-white`}>
             <MessageBody
               content={
                 data.input.body === undefined ? message.body : data.input.body
               }
-              className="animate-pulse"
+              className="text-gray-400"
             />
 
             {message.attachments && message.attachments.length > 0 && (
@@ -117,17 +118,51 @@ function View({ data, showHeader, context }: ViewProps) {
                 );
               } else return null;
             })()}
+
+            {(() => {
+              const error = data.error;
+
+              if (!error) return null;
+
+              switch (error.type) {
+                case "network":
+                  return <ErrorText>A network error occurred.</ErrorText>;
+
+                case "forbidden":
+                  return (
+                    <p className="mt-1 text-xs font-bold text-red-500">
+                      You are not allowed to send message in this conversation.
+                    </p>
+                  );
+
+                case "server":
+                  return (
+                    <p className="mt-1 text-xs font-bold text-red-500">
+                      An internal server error occurred.
+                    </p>
+                  );
+
+                case "validation":
+                  return (
+                    <p className="mt-1 text-xs font-bold text-red-500">
+                      {error.messages[0]}
+                    </p>
+                  );
+
+                default:
+                  return (
+                    <p className="mt-1 text-xs font-bold text-red-500">
+                      Unknown error occurred.
+                    </p>
+                  );
+              }
+            })()}
           </div>
         </MessageRow.Row>
       </div>
 
       {data.error && (
         <section className="absolute top-0 right-2 hidden -translate-y-1/2 flex-row items-center gap-2 rounded-md border-2 border-gray-500 bg-gray-600 px-2 py-1 shadow-md group-hover:flex">
-          <MessageOperationErrorDisplay
-            error={data.error}
-            className="size-5 flex-1"
-          />
-
           <IconButton
             theme="default"
             className="size-5"

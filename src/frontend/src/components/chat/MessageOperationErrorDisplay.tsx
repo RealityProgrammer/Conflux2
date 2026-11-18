@@ -1,4 +1,4 @@
-import { Tooltip } from "radix-ui";
+import { Popover, Tooltip } from "radix-ui";
 import type { MessageOperationError } from "../../store/useMessageOperationsStore.ts";
 import type { SVGAttributes } from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
@@ -12,13 +12,13 @@ export default function MessageOperationErrorDisplay({
   ...props
 }: MessageOperationErrorDisplayProps) {
   return (
-    <Tooltip.Root>
-      <Tooltip.Trigger>
+    <Popover.Root>
+      <Popover.Trigger>
         <FaExclamationTriangle {...props} />
-      </Tooltip.Trigger>
+      </Popover.Trigger>
 
-      <Tooltip.Portal>
-        <Tooltip.Content
+      <Popover.Portal>
+        <Popover.Content
           side="top"
           align="center"
           sideOffset={4}
@@ -52,8 +52,8 @@ export default function MessageOperationErrorDisplay({
                 return "Unknown error happened.";
             }
           })()}
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

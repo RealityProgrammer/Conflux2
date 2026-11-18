@@ -335,7 +335,7 @@ export default function MessageBody({
   return (
     <>
       {content && content.length > 0 && (
-        <div className={`w-full text-sm leading-6 ${className}`}>
+        <div className={`w-full text-sm ${className}`}>
           <Markdown
             remarkPlugins={[[remarkGfm, {}], remarkMath, remarkCustomTokens]}
             rehypePlugins={[rehypeRaw, [rehypeKatex, { strict: "warn" }]]}

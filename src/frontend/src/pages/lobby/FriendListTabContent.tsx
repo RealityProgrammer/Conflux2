@@ -96,7 +96,7 @@ export default function FriendListTabContent() {
         <BsSearch className="pointer-events-none absolute left-2.5 size-4 fill-white" />
 
         <input
-          className="input-field h-10 w-full px-3 pl-8"
+          className="input-field h-9 text-sm w-full px-3 pl-8"
           placeholder="Search..."
           onChange={(e) => {
             setNameFilter(e.target.value);

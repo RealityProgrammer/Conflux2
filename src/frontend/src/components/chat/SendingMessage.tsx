@@ -9,6 +9,7 @@ import type {
   MessageSendInput,
 } from "../../store/useMessageOperationsStore.ts";
 import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
+import ErrorText from "../ErrorText.tsx";
 
 type SendingMessageProps = {
   idempotencyKey: string;
@@ -31,10 +32,10 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
     return (
       <div className="hover-highlight">
         <div
-          className={`group relative flex flex-row items-start justify-center gap-3 px-2 py-1 ${this.data.error ? "bg-red-500/40" : ""}`}
+          className={`group relative px-2 py-1 ${this.data.error ? "bg-red-500/20" : ""}`}
         >
           <div
-            className={`ml-13 flex-1 ${this.data.error ? "text-gray-300" : "animate-pulse"}`}
+            className={`ml-13 flex-1 ${this.data.error ? "text-gray-300" : "text-gray-400"}`}
           >
             {trimmedBody && trimmedBody.length > 0 ? (
               <>
@@ -52,15 +53,53 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
                 {this.data.input.attachments.length} attachment(s).
               </p>
             )}
+
+            {(() => {
+              const error = this.data.error;
+
+              if (!error) return null;
+
+              switch (error.type) {
+                case "network":
+                  return (
+                    <p className="text-xs font-bold text-red-500 mt-1">
+                      A network error occurred.
+                    </p>
+                  );
+
+                case "forbidden":
+                  return (
+                    <p className="text-xs font-bold text-red-500 mt-1">
+                      You are not allowed to send message in this conversation.
+                    </p>
+                  );
+
+                case "server":
+                  return (
+                    <p className="text-xs font-bold text-red-500 mt-1">
+                      An internal server error occurred.
+                    </p>
+                  );
+
+                case "validation":
+                  return (
+                    <p className="text-xs font-bold text-red-500 mt-1">
+                      {error.messages[0]}
+                    </p>
+                  );
+
+                default:
+                  return (
+                    <p className="mt-1 text-xs font-bold text-red-500">
+                      Unknown error occurred.
+                    </p>
+                  );
+              }
+            })()}
           </div>
 
           {this.data.error && (
             <section className="absolute top-0 right-2 hidden -translate-y-1/2 flex-row items-center gap-2 rounded-md border-2 border-gray-500 bg-gray-600 px-2 py-1 shadow-md group-hover:flex">
-              <MessageOperationErrorDisplay
-                error={this.data.error}
-                className="size-5 flex-1"
-              />
-
               <IconButton
                 theme="default"
                 className="flex-1"

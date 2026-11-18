@@ -2,7 +2,7 @@ import { Tabs } from "radix-ui";
 import { BsPeople } from "react-icons/bs";
 import { useState } from "react";
 import { useDocumentTitle } from "usehooks-ts";
-import AddFriendTabContent from "./AddFriendTabContent.tsx";
+import SearchUserTabContent from "./SearchUserTabContent.tsx";
 import FriendListTabContent from "./FriendListTabContent.tsx";
 import PendingRequestsTabContent from "./PendingRequestsTabContent.tsx";
 
@@ -68,7 +68,7 @@ export default function FriendsPage() {
           </Tabs.Content>
 
           <Tabs.Content value="add-friend" className="min-h-0 flex-1 pt-2">
-            <AddFriendTabContent />
+            <SearchUserTabContent />
           </Tabs.Content>
         </Tabs.Root>
       </div>

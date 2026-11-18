@@ -14,6 +14,7 @@ var refreshTokenDuration = builder.AddParameter("Auth-Refresh-Token-Duration");
 var maxAvatarSize = builder.AddParameter("Media-Max-Avatar-Size");
 var maxBannerSize = builder.AddParameter("Media-Max-Banner-Size");
 var maxMessageAttachmentSize = builder.AddParameter("Media-Max-Message-Attachment-Size");
+var maxEmojiSize = builder.AddParameter("Media-Max-Emoji-Size");
 
 var s3Endpoint = builder.AddParameter("S3-Endpoint", true);
 var s3PreSignUrl = builder.AddParameter("S3-PreSign-Endpoint", true);
@@ -49,25 +50,29 @@ var database = postgres.AddDatabase("Database", "Conflux");
 
 IResourceBuilder<ContainerResource>? garage = null;
 
-if (useLocalGarage) {
-    var garageConfigPath = builder.ExecutionContext.IsPublishMode 
-        ? "./garage/garage.toml" 
+if (useLocalGarage)
+{
+    var garageConfigPath = builder.ExecutionContext.IsPublishMode
+        ? "./garage/garage.toml"
         : "../../../../garage/garage.toml";
-    
+
     garage = builder
         .AddContainer("Garage", "dxflrs/garage", "v2.3.0")
         .WithHttpEndpoint(3900, 3900, "s3-api")
         .WithVolume("garage-data", "/var/lib/garage/data")
         .WithVolume("garage-meta", "/var/lib/garage/meta");
 
-    if (!builder.ExecutionContext.IsPublishMode) {
+    if (!builder.ExecutionContext.IsPublishMode)
+    {
         garage.WithBindMount(garageConfigPath, "/etc/garage.toml", true);
     }
-    
+
     garage.WithEnvironment("GARAGE_RPC_SECRET", garageRpcSecret);
 
-    garage.PublishAsDockerComposeService((resource, service) => {
-        service.Volumes.Add(new() {
+    garage.PublishAsDockerComposeService((resource, service) =>
+    {
+        service.Volumes.Add(new()
+        {
             Name = "GarageConfiguration",
             Type = "bind",
             Source = "./garage/garage.toml",
@@ -75,13 +80,15 @@ if (useLocalGarage) {
             ReadOnly = true,
         });
 
-        foreach (var key in service.Environment.Keys.Where(k => k.Contains("BINDMOUNT"))) {
+        foreach (var key in service.Environment.Keys.Where(k => k.Contains("BINDMOUNT")))
+        {
             service.Environment.Remove(key);
         }
     });
 }
 
-if (builder.ExecutionContext.IsPublishMode) {
+if (builder.ExecutionContext.IsPublishMode)
+{
     var backendApi = builder
         .AddDockerfile("backend", "../../../backend", "Dockerfile")
         .WithHttpEndpoint(port: 5127, targetPort: 5127, name: "http")
@@ -92,12 +99,13 @@ if (builder.ExecutionContext.IsPublishMode) {
     backendApi
         .WithEnvironment("ASPNETCORE_URLS", "http://0.0.0.0:5127")
         .WithEnvironment("Frontend__Origin", frontendOrigin)
-        
+
         .WithEnvironment("Auth__AccessTokenDuration", accessTokenDuration)
         .WithEnvironment("Auth__RefreshTokenDuration", refreshTokenDuration)
         .WithEnvironment("Media__MaxAvatarSize", maxAvatarSize)
         .WithEnvironment("Media__MaxBannerSize", maxBannerSize)
         .WithEnvironment("Media__MaxMessageAttachmentSize", maxMessageAttachmentSize)
+        .WithEnvironment("Media__MaxEmojiSize", maxEmojiSize)
 
         .WithEnvironment("JWT__Secret", jwtSecret)
         .WithEnvironment("JWT__Issuer", jwtIssuer)
@@ -114,26 +122,32 @@ if (builder.ExecutionContext.IsPublishMode) {
         .WithEnvironment("S3__SecretKey", s3SecretKey)
         .WithEnvironment("S3__Region", s3Region)
         .WithEnvironment("S3__BucketName", s3BucketName);
-    
-    if (useLocalGarage && garage != null) {
+
+    if (useLocalGarage && garage != null)
+    {
         backendApi.WithEnvironment("S3__Endpoint", garage.GetEndpoint("s3-api"));
-    } else {
+    }
+    else
+    {
         backendApi.WithEnvironment("S3__Endpoint", s3Endpoint);
     }
-    
 
-    backendApi.PublishAsDockerComposeService((resource, service) => {
+
+    backendApi.PublishAsDockerComposeService((resource, service) =>
+    {
         service.Image = string.Empty;
-        service.Build = new() {
+        service.Build = new()
+        {
             Context = "./src/backend",
             Dockerfile = "Dockerfile",
         };
-        
+
         service.Ports = [
             "5127:5127",
         ];
-        
-        service.ExtraHosts = new() {
+
+        service.ExtraHosts = new()
+        {
             ["host.docker.internal"] = "host-gateway",
         };
 

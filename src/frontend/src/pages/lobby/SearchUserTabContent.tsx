@@ -19,7 +19,7 @@ import type {
   UnfriendedEvent,
 } from "../../api/events.ts";
 
-export default function AddFriendTabContent() {
+export default function SearchUserTabContent() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useDebounceValue("", 500);
 
@@ -44,13 +44,13 @@ export default function AddFriendTabContent() {
           ...oldData,
           result: !!oldData.result
             ? {
-                ...oldData.result,
-                relationshipStatus: relationshipStatus,
-                friendRequestId:
-                  friendRequestId === undefined
-                    ? oldData.result.friendRequestId
-                    : friendRequestId,
-              }
+              ...oldData.result,
+              relationshipStatus: relationshipStatus,
+              friendRequestId:
+                friendRequestId === undefined
+                  ? oldData.result.friendRequestId
+                  : friendRequestId,
+            }
             : oldData.result,
         };
       },
@@ -109,13 +109,13 @@ export default function AddFriendTabContent() {
         <p>You can send friend request with their name or ID.</p>
       </header>
 
-      <section className="mt-2 flex h-10 flex-row">
+      <section className="mt-2 flex flex-row">
         <div className="flex w-11 items-center justify-center rounded-l-lg border-2 border-r-0 border-gray-600 select-none">
           @
         </div>
 
         <input
-          className="input-field w-full flex-1 rounded-l-none px-3"
+          className="input-field h-9 text-sm w-full flex-1 rounded-l-none px-3"
           placeholder="Enter something here..."
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -123,9 +123,9 @@ export default function AddFriendTabContent() {
         />
       </section>
 
-      <div className="container mt-4 flex max-w-lg flex-col items-center justify-center rounded-md border-2 border-gray-600">
+      <div className="mt-4 mx-auto flex flex-col items-center justify-center rounded-md border-2 border-gray-600">
         {!isEnabled ? (
-          <p className="p-3 text-sm text-gray-500 select-none">
+          <p className="p-3 text-sm text-gray-500 select-none text-center">
             Enter at least 8 characters to search user.
           </p>
         ) : isLoading ? (

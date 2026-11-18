@@ -201,7 +201,7 @@ function StandardPopover({
               placeholder="Search for emoji..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field h-10 w-full pl-9"
+              className="input-field h-9 text-sm w-full pl-9"
             />
           </div>
         </header>
