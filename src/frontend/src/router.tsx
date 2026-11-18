@@ -19,7 +19,6 @@ import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
 import { Tooltip } from "radix-ui";
 import { Slide, ToastContainer } from "react-toastify";
-import SuspenseFallback from "./pages/SuspenseFallback.tsx";
 
 import HomePage from "./pages/HomePage";
 const AuthenticatePage = lazy(
@@ -137,17 +136,13 @@ export const router = createBrowserRouter([
             path: "verify-email",
             loader: requireUnverified,
             element: (
-              <Suspense fallback={<SuspenseFallback />}>
-                <VerifyEmailPage />
-              </Suspense>
+              <VerifyEmailPage />
             ),
           },
           {
             path: "confirm-email",
             element: (
-              <Suspense fallback={<SuspenseFallback />}>
-                <ConfirmEmailPage />
-              </Suspense>
+              <ConfirmEmailPage />
             ),
           },
           {
@@ -164,9 +159,7 @@ export const router = createBrowserRouter([
           return auth.isProfileSetup ? redirect("/") : null;
         },
         element: (
-          <Suspense fallback={<SuspenseFallback />}>
-            <ProfileSetupPage />
-          </Suspense>
+          <ProfileSetupPage />
         ),
       },
       {
@@ -213,9 +206,7 @@ export const router = createBrowserRouter([
                   {
                     path: "announcements",
                     element: (
-                      <Suspense fallback={<SuspenseFallback />}>
-                        <SystemAnnouncementPage />
-                      </Suspense>
+                      <SystemAnnouncementPage />
                     ),
                   },
                   {
@@ -264,9 +255,7 @@ export const router = createBrowserRouter([
           {
             path: "invite/:inviteId",
             element: (
-              <Suspense fallback={<SuspenseFallback />}>
-                <InvitePage />
-              </Suspense>
+              <InvitePage />
             ),
           },
           {
