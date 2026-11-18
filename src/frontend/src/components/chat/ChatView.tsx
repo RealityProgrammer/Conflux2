@@ -732,6 +732,13 @@ export function ChatView({
             itemContent={(_index, timelineItem) =>
               timelineItem.render(timelineContext)
             }
+            components={{
+              EmptyPlaceholder: () => (
+                <div className="flex size-full flex-row items-end justify-center select-none">
+                  <p className="text-gray-400 text-sm text-center">There is nothing here... There was nothing here... Would you start something here?</p>
+                </div>
+              ),
+            }}
           />
 
           <IconButton
