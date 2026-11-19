@@ -8,10 +8,12 @@ import type {
   MessageOperationError,
   MessageSendInput,
 } from "../../store/useMessageOperationsStore.ts";
-import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
-import ErrorText from "../ErrorText.tsx";
+import MessageOperationErrorText from "./MessageOperationErrorText.tsx";
+import { MessageRow } from "./MessageRow.tsx";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 
 type SendingMessageProps = {
+  showHeader: boolean;
   idempotencyKey: string;
   input: MessageSendInput;
   error?: MessageOperationError;
@@ -27,106 +29,81 @@ export class SendingMessage extends TimelineItem<SendingMessageProps> {
   }
 
   render(context: TimelineContext): ReactNode {
-    const trimmedBody = this.data.input.body?.trim() ?? null;
-
     return (
-      <div className="hover-highlight">
-        <div
-          className={`group relative px-2 py-1 ${this.data.error ? "bg-red-500/20" : ""}`}
-        >
-          <div
-            className={`ml-13 flex-1 ${this.data.error ? "text-gray-300" : "text-gray-400"}`}
-          >
-            {trimmedBody && trimmedBody.length > 0 ? (
-              <>
-                <MessageBody content={this.data.input.body} />
+      <MessageView
+        input={this.data.input}
+        showHeader={this.data.showHeader}
+        error={this.data.error}
+        retrySendOperation={() => {
+          context.actions.retrySendingOperation(this.data.idempotencyKey);
+        }}
+        removeSendOperation={() => {
+          context.actions.removeSendingOperation(this.data.idempotencyKey);
+        }}
+      />
+    );
+  }
+}
 
-                {this.data.input.attachments &&
-                  this.data.input.attachments.length > 0 && (
-                    <p className="text-xs">
-                      With {this.data.input.attachments.length} attachment(s).
-                    </p>
-                  )}
-              </>
-            ) : (
+interface MessageViewProps {
+  input: MessageSendInput;
+  showHeader: boolean;
+  error?: MessageOperationError | null;
+  retrySendOperation: () => void;
+  removeSendOperation: () => void;
+}
+
+function MessageView({
+  input,
+  showHeader,
+  error,
+  retrySendOperation,
+  removeSendOperation,
+}: MessageViewProps) {
+  const auth = useAuth();
+
+  return (
+    <div className="group block w-full hover-highlight">
+      <div className={`px-2 py-0.75 relative ${error ? "bg-red-500/20" : ""}`}>
+        <MessageRow.Row header={showHeader && auth.userProfile ? {
+          senderId: auth.userProfile.id,
+          senderAvatarVersion: auth.userProfile.avatarVersion,
+          avatarAlt: "Your avatar",
+          senderDisplayName: auth.userProfile.displayName ?? "???",
+        } : undefined}>
+          <div className="space-y-1 text-gray-400">
+            <MessageBody content={input.body} />
+
+            {input.attachments && input.attachments.length > 0 && (
               <p className="text-xs">
-                {this.data.input.attachments.length} attachment(s).
+                With {input.attachments.length} attachment(s).
               </p>
             )}
 
-            {(() => {
-              const error = this.data.error;
-
-              if (!error) return null;
-
-              switch (error.type) {
-                case "network":
-                  return (
-                    <p className="text-xs font-bold text-red-500 mt-1">
-                      A network error occurred.
-                    </p>
-                  );
-
-                case "forbidden":
-                  return (
-                    <p className="text-xs font-bold text-red-500 mt-1">
-                      You are not allowed to send message in this conversation.
-                    </p>
-                  );
-
-                case "server":
-                  return (
-                    <p className="text-xs font-bold text-red-500 mt-1">
-                      An internal server error occurred.
-                    </p>
-                  );
-
-                case "validation":
-                  return (
-                    <p className="text-xs font-bold text-red-500 mt-1">
-                      {error.messages[0]}
-                    </p>
-                  );
-
-                default:
-                  return (
-                    <p className="mt-1 text-xs font-bold text-red-500">
-                      Unknown error occurred.
-                    </p>
-                  );
-              }
-            })()}
+            <MessageOperationErrorText error={error} />
           </div>
+        </MessageRow.Row>
 
-          {this.data.error && (
-            <section className="absolute top-0 right-2 hidden -translate-y-1/2 flex-row items-center gap-2 rounded-md border-2 border-gray-500 bg-gray-600 px-2 py-1 shadow-md group-hover:flex">
-              <IconButton
-                theme="default"
-                className="flex-1"
-                onClick={() =>
-                  context.actions.retrySendingOperation(
-                    this.data.idempotencyKey,
-                  )
-                }
-              >
-                <FaRepeat className="size-5" />
-              </IconButton>
+        {error && (
+          <section className="absolute top-0 right-2 hidden -translate-y-1/2 flex-row items-center gap-2 rounded-md border-2 border-gray-500 bg-gray-600 px-2 py-1 shadow-md group-hover:flex">
+            <IconButton
+              theme="default"
+              className="flex-1"
+              onClick={retrySendOperation}
+            >
+              <FaRepeat className="size-5" />
+            </IconButton>
 
-              <IconButton
-                theme="danger"
-                className="flex-1"
-                onClick={() =>
-                  context.actions.removeSendingOperation(
-                    this.data.idempotencyKey,
-                  )
-                }
-              >
-                <FaTrashCan className="size-5" />
-              </IconButton>
-            </section>
-          )}
-        </div>
+            <IconButton
+              theme="danger"
+              className="flex-1"
+              onClick={removeSendOperation}
+            >
+              <FaTrashCan className="size-5" />
+            </IconButton>
+          </section>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
 }

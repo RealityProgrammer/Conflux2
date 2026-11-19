@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { lazy } from "react";
 import {
   createBrowserRouter,
   type LoaderFunctionArgs,

@@ -11,8 +11,7 @@ import MessageBody from "./MessageBody.tsx";
 import MessageAttachments from "./MessageAttachments.tsx";
 import IconButton from "../IconButton.tsx";
 import { FaPencil, FaRepeat, FaTrashCan } from "react-icons/fa6";
-import MessageOperationErrorDisplay from "./MessageOperationErrorDisplay.tsx";
-import ErrorText from "../ErrorText.tsx";
+import MessageOperationErrorText from "./MessageOperationErrorText.tsx";
 
 type EditingMessageItemProps = {
   message: TimelineMessageDto;
@@ -66,17 +65,13 @@ function View({ data, showHeader, context }: ViewProps) {
         )}
 
         <MessageRow.Row
-          header={
-            showHeader
-              ? {
-                  senderId: message.sender?.id,
-                  senderAvatarVersion: message.sender!.avatarVersion,
-                  avatarAlt: message.sender
-                    ? `Avatar of ${message.sender.displayName ?? "???"}`
-                    : undefined,
-                  senderDisplayName: message.sender?.displayName ?? "???",
-                }
-              : undefined
+          header={showHeader ?
+            {
+              senderId: message.sender?.id,
+              senderAvatarVersion: message.sender!.avatarVersion,
+              avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
+              senderDisplayName: message.sender?.displayName ?? "???",
+            } : undefined
           }
           date={new Date(message.createdAt)}
         >
@@ -91,7 +86,7 @@ function View({ data, showHeader, context }: ViewProps) {
             {message.attachments && message.attachments.length > 0 && (
               <MessageAttachments
                 attachments={message.attachments}
-                onAttachmentClick={() => {}}
+                onAttachmentClick={() => { }}
               />
             )}
 
@@ -119,44 +114,7 @@ function View({ data, showHeader, context }: ViewProps) {
               } else return null;
             })()}
 
-            {(() => {
-              const error = data.error;
-
-              if (!error) return null;
-
-              switch (error.type) {
-                case "network":
-                  return <ErrorText>A network error occurred.</ErrorText>;
-
-                case "forbidden":
-                  return (
-                    <p className="mt-1 text-xs font-bold text-red-500">
-                      You are not allowed to send message in this conversation.
-                    </p>
-                  );
-
-                case "server":
-                  return (
-                    <p className="mt-1 text-xs font-bold text-red-500">
-                      An internal server error occurred.
-                    </p>
-                  );
-
-                case "validation":
-                  return (
-                    <p className="mt-1 text-xs font-bold text-red-500">
-                      {error.messages[0]}
-                    </p>
-                  );
-
-                default:
-                  return (
-                    <p className="mt-1 text-xs font-bold text-red-500">
-                      Unknown error occurred.
-                    </p>
-                  );
-              }
-            })()}
+            <MessageOperationErrorText error={data.error} />
           </div>
         </MessageRow.Row>
       </div>

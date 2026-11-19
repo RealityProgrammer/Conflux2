@@ -12,6 +12,7 @@ import { CallCancelItem } from "../components/chat/CallCancelItem.tsx";
 import { CallEndItem } from "../components/chat/CallEndItem.tsx";
 import type { InfiniteData } from "@tanstack/react-query";
 import { EditingMessageItem } from "../components/chat/EditingMessageItem.tsx";
+import { useAuth } from "../contexts/AuthContext.tsx";
 
 function isSameDay(d1: Date, d2: Date): boolean {
   return (
@@ -26,6 +27,7 @@ export default function useTimelineItems(
     InfiniteData<TimelineMessagePage | null | undefined, unknown> | undefined,
 ): TimelineItem[] {
   const { conversationId } = useChatContainerContext();
+  const auth = useAuth();
 
   const sendOperations =
     useMessageOperationsStore(
@@ -48,7 +50,9 @@ export default function useTimelineItems(
   let lastMessageSenderId: string | null = null;
   let showHeader = true;
 
-  for (const page of messagePages.pages.filter((p) => !!p)) {
+  for (const page of messagePages.pages) {
+    if (!page) continue;
+
     const activeMessages = page.messages.filter(
       (m) => !deletingMessageIds.has(m.id),
     );
@@ -165,17 +169,14 @@ export default function useTimelineItems(
   }
 
   // sending messages appending
-  for (const operation of sendOperations) {
-    if (operation.conversationId !== conversationId) continue;
-
-    items.push(
-      new SendingMessage({
-        idempotencyKey: operation.idempotencyKey,
-        input: operation.input,
-        error: operation.error,
-      }),
-    );
-  }
+  items.push(...sendOperations.filter(o => o.conversationId === conversationId).map(o => {
+    return new SendingMessage({
+      showHeader: lastMessageSenderId !== auth.userProfile?.id,
+      idempotencyKey: o.idempotencyKey,
+      input: o.input,
+      error: o.error,
+    });
+  }));
 
   return items;
 }

@@ -48,14 +48,14 @@ function Reply({
 
 interface RowProps {
   header:
-    | {
-        senderId?: string;
-        senderAvatarVersion: number | null | undefined;
-        senderDisplayName: string;
-        avatarAlt?: string;
-      }
-    | undefined;
-  date: Date;
+  | {
+    senderId?: string;
+    senderAvatarVersion: number | null | undefined;
+    senderDisplayName: string;
+    avatarAlt?: string;
+  }
+  | undefined;
+  date?: Date;
   children: ReactNode;
 }
 
@@ -74,11 +74,14 @@ function Row({ header, date, children }: RowProps) {
           <div className="min-w-0 flex-1">
             <p className="mb-0.5 text-sm font-semibold text-white">
               {header.senderDisplayName}{" "}
-              <DateTimeText
-                value={date}
-                relative={false}
-                className="hidden text-xs font-normal text-gray-400 select-none group-hover:inline"
-              />
+
+              {date && (
+                <DateTimeText
+                  value={date}
+                  relative={false}
+                  className="hidden text-xs font-normal text-gray-400 select-none group-hover:inline"
+                />
+              )}
             </p>
 
             {children}
@@ -86,11 +89,19 @@ function Row({ header, date, children }: RowProps) {
         </>
       ) : (
         <>
-          <span className="invisible mt-1 inline-flex w-10 flex-none items-center justify-center self-start text-xs font-normal text-gray-400 select-none group-hover:visible">
-            {formatDate(date, "HH:mm")}
-          </span>
+          {date ? (
+            <>
+              <span className="invisible mt-1 inline-flex w-10 flex-none items-center justify-center self-start text-xs font-normal text-gray-400 select-none group-hover:visible">
+                {formatDate(date, "HH:mm")}
+              </span>
 
-          {children}
+              {children}
+            </>
+          ) : (
+            <div className="ml-13">
+              {children}
+            </div>
+          )}
         </>
       )}
     </div>
