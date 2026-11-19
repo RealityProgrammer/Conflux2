@@ -103,6 +103,7 @@ import {
   $createMentionNode,
   MentionDecoratorNode,
 } from "./nodes/MentionDecoratorNode.tsx";
+import { EditablePlugin } from "./EditablePlugin.tsx";
 
 // TODO: Design toolbar
 // TODO: Table in the design toolbar
@@ -152,6 +153,7 @@ export interface MessageTextboxEditorRef {
 
 interface MessageTextboxEditorProps {
   initialValue?: string;
+  disabled?: boolean;
   onTextChange?: (text: string, cursorPosition: number) => void;
   onEnterSend?: () => void;
   onSuggestionChange: (data: SuggestionData | null) => void;
@@ -767,6 +769,7 @@ const lexicalExtensions = defineExtension({
 
 export default function MessageTextboxEditor({
   initialValue = "",
+  disabled = false,
   onTextChange,
   onEnterSend,
   onSuggestionChange,
@@ -884,6 +887,7 @@ export default function MessageTextboxEditor({
     >
       <TextArea
         initialValue={initialValue}
+        disabled={disabled}
         onTextChange={onTextChange}
         onEnterSend={onEnterSend}
         onSuggestionChange={onSuggestionChange}
@@ -899,6 +903,7 @@ export default function MessageTextboxEditor({
 
 interface TextAreaProps {
   initialValue?: string;
+  disabled?: boolean;
   onTextChange?: (text: string, cursorPosition: number) => void;
   onEnterSend?: () => void;
   onEditorReady: (editor: LexicalEditor) => void;
@@ -909,6 +914,7 @@ interface TextAreaProps {
 
 function TextArea({
   initialValue = "",
+  disabled = false,
   onTextChange,
   onEnterSend,
   onEditorReady,
@@ -1393,8 +1399,12 @@ function TextArea({
 
   return (
     <>
-      <ContentEditable className="input-field relative max-h-48 min-h-9 w-full overflow-y-auto px-3 py-2 text-sm leading-relaxed break-all whitespace-pre-wrap outline-none" />
+      <ContentEditable
+        disabled={disabled}
+        className={`input-field relative max-h-48 min-h-9 w-full overflow-y-auto px-3 py-2 text-sm leading-relaxed break-all whitespace-pre-wrap outline-none ${disabled ? "focus:ring-gray-600!" : ""}`}
+      />
       <LexicalSyncPlugin onTextChange={onTextChange} />
+      <EditablePlugin editable={!disabled} />
     </>
   );
 }

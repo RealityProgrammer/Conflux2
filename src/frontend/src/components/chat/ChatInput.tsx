@@ -246,6 +246,7 @@ export default function ChatInput({ disabled }: ChatInputProps) {
 
         <MessageTextboxEditor
           ref={textboxEditorRef}
+          disabled={disabled}
           onTextChange={handleInput}
           onEnterSend={handleSend}
           onSuggestionChange={setSuggestion}
@@ -264,7 +265,7 @@ export default function ChatInput({ disabled }: ChatInputProps) {
         <EmojiPanel.StandardPopover
           side="top"
           trigger={
-            <IconButton className="mb-2 flex-none" isLoading={false}>
+            <IconButton className="mb-2 flex-none" isLoading={false} disabled={disabled}>
               <BsEmojiWinkFill className="size-6" />
             </IconButton>
           }
