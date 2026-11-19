@@ -19,7 +19,6 @@ import {
 } from "../store/useMessageOperationsStore.ts";
 import useTimelineMessageMutations from "../hooks/useTimelineMessageMutations.ts";
 import { useActiveConversationStore } from "../store/useActiveConversationStore.ts";
-import { useConversationContext } from "./ConversationContext.tsx";
 import { type AxiosError, HttpStatusCode } from "axios";
 import { handleAxiosError } from "../api/errorHandling.ts";
 import useSendMessageMutation, {
@@ -58,36 +57,24 @@ const ChatContainerContext = createContext<ChatContainerContextType | null>(
 );
 
 export default function ChatContainerContextProvider({
+  conversationId,
   children,
 }: {
+  conversationId: string;
   children: ReactNode;
 }) {
-  const { detailsQuery } = useConversationContext();
-
-  if (!detailsQuery!.isSuccess) {
-    throw new Error(
-      "ChatContainerContextProvider can only be used if conversation details query has success query.",
-    );
-  }
-
   // set active conversation id
-  const conversationId = detailsQuery?.data?.conversationId!;
   const setActiveConversationId = useActiveConversationStore(
     (state) => state.setActiveConversationId,
   );
 
   useEffect(() => {
-    if (!detailsQuery || !detailsQuery.data) {
-      setActiveConversationId(null);
-      return;
-    }
-
-    setActiveConversationId(detailsQuery.data.conversationId);
+    setActiveConversationId(conversationId);
 
     return () => {
       setActiveConversationId(null);
     };
-  }, [detailsQuery, setActiveConversationId]);
+  }, [conversationId, setActiveConversationId]);
 
   // setup some states
   const [replyingMessage, setReplyingMessage] =

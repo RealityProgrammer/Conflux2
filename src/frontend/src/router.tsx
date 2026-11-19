@@ -28,8 +28,12 @@ const ResetPasswordPage = lazy(
   () => import("./pages/auth/ResetPasswordPage.tsx"),
 );
 import AuthProvider from "./contexts/AuthContext.tsx";
-import ConversationPage from "./pages/ConversationPage.tsx";
-import type { ConversationSource } from "./contexts/ConversationContext.tsx";
+import DmConversationPage, {
+  type DmConversationPageLoaderProps,
+} from "./pages/lobby/DmConversationPage.tsx";
+import ServerChannelConversationPage, {
+  type ServerChannelConversationPageLoaderProps,
+} from "./pages/lobby/ServerChannelConversationPage.tsx";
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
 const ConfirmEmailPage = lazy(
   () => import("./pages/auth/ConfirmEmailPage.tsx"),
@@ -135,15 +139,11 @@ export const router = createBrowserRouter([
           {
             path: "verify-email",
             loader: requireUnverified,
-            element: (
-              <VerifyEmailPage />
-            ),
+            element: <VerifyEmailPage />,
           },
           {
             path: "confirm-email",
-            element: (
-              <ConfirmEmailPage />
-            ),
+            element: <ConfirmEmailPage />,
           },
           {
             path: "reset-password",
@@ -158,9 +158,7 @@ export const router = createBrowserRouter([
           const auth = await requireAuth();
           return auth.isProfileSetup ? redirect("/") : null;
         },
-        element: (
-          <ProfileSetupPage />
-        ),
+        element: <ProfileSetupPage />,
       },
       {
         path: "impending-doom",
@@ -205,9 +203,7 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     path: "announcements",
-                    element: (
-                      <SystemAnnouncementPage />
-                    ),
+                    element: <SystemAnnouncementPage />,
                   },
                   {
                     path: "friends",
@@ -216,14 +212,13 @@ export const router = createBrowserRouter([
                   {
                     id: "dm",
                     path: "dm/:peerId?",
-                    element: <ConversationPage />,
+                    element: <DmConversationPage />,
                     loader: ({
                       params,
-                    }: LoaderFunctionArgs): ConversationSource => {
+                    }: LoaderFunctionArgs): DmConversationPageLoaderProps => {
                       const peerId: string | undefined = params.peerId;
-                      return peerId
-                        ? { type: "dm", peerId: peerId }
-                        : { type: "invalid" };
+
+                      return { peerId };
                     },
                   },
                 ],
@@ -236,16 +231,14 @@ export const router = createBrowserRouter([
                   {
                     id: "channel",
                     path: "channels/:channelId?",
-                    element: <ConversationPage />,
+                    element: <ServerChannelConversationPage />,
                     loader: ({
                       params,
-                    }: LoaderFunctionArgs): ConversationSource => {
+                    }: LoaderFunctionArgs): ServerChannelConversationPageLoaderProps => {
                       const serverId: string | undefined = params.serverId;
                       const channelId: string | undefined = params.channelId;
 
-                      return serverId && channelId
-                        ? { type: "server-channel", serverId, channelId }
-                        : { type: "invalid" };
+                      return { serverId, channelId };
                     },
                   },
                 ],
@@ -254,9 +247,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "invite/:inviteId",
-            element: (
-              <InvitePage />
-            ),
+            element: <InvitePage />,
           },
           {
             path: "settings",

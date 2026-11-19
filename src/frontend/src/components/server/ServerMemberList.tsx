@@ -3,7 +3,6 @@ import {
   useInfiniteGetServerMembersQuery,
 } from "../../graphql/infiniteQueries.ts";
 import { UserNameplate } from "../UserNameplate.tsx";
-import { useConversationContext } from "../../contexts/ConversationContext.tsx";
 import VirtualizedScrollList2 from "../VirtualizedScrollList2.tsx";
 import { BsExclamationTriangle } from "react-icons/bs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -11,15 +10,11 @@ import type { UserLeftServerEvent } from "../../api/events.ts";
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { useDebounceCallback } from "usehooks-ts";
 
-export default function ServerMemberList() {
-  const { source } = useConversationContext();
-
-  if (source.type !== "server-channel") return null;
-
-  return <MemberList serverId={source.serverId} />;
+interface ServerMemberListProps {
+  serverId: string;
 }
 
-function MemberList({ serverId }: { serverId: string }) {
+export default function ServerMemberList({ serverId }: ServerMemberListProps) {
   const queryClient = useQueryClient();
   const {
     renderItems,

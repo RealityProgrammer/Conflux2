@@ -1,0 +1,4 @@
+root = true
+
+[*.{js,jsx,ts,tsx,css}]
+max_line_length = 108

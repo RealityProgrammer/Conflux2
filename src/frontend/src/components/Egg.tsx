@@ -160,7 +160,7 @@ export default function Egg() {
       : null;
 
   return (
-    <div className="@container-size mx-auto flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-black select-none">
+    <div className="@container-size mx-auto flex min-h-0 size-full flex-1 items-center justify-center overflow-hidden bg-black select-none">
       <div
         className="relative flex aspect-4/3 h-[min(100cqh,calc(100cqw*3/4))] w-[min(100cqw,calc(100cqh*4/3))] items-center justify-center"
         onClick={handleTextboxContinuation}
