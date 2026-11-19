@@ -1,17 +1,17 @@
-import { MessageItem } from "../components/chat/MessageItem.tsx";
-import type { TimelineItem } from "../components/chat/TimelineItem.ts";
-import { DateSeparator } from "../components/chat/DateSeparator.tsx";
+import { MessageItem } from "../components/conversation/MessageItem.tsx";
+import type { TimelineItem } from "../components/conversation/TimelineItem.ts";
+import { DateSeparator } from "../components/conversation/DateSeparator.tsx";
 import { useChatContainerContext } from "../contexts/ChatContainerContext.tsx";
-import { SendingMessage } from "../components/chat/SendingMessage.tsx";
+import { SendingMessage } from "../components/conversation/SendingMessage.tsx";
 import { MessageType } from "../api/schema.ts";
-import { CallStartItem } from "../components/chat/CallStartItem.tsx";
+import { CallStartItem } from "../components/conversation/CallStartItem.tsx";
 import type { CallEndProperties, TimelineMessagePage } from "../api/types.ts";
 import { useMessageOperationsStore } from "../store/useMessageOperationsStore.ts";
-import { PinMessageItem } from "../components/chat/PinMessageItem.tsx";
-import { CallCancelItem } from "../components/chat/CallCancelItem.tsx";
-import { CallEndItem } from "../components/chat/CallEndItem.tsx";
+import { PinMessageItem } from "../components/conversation/PinMessageItem.tsx";
+import { CallCancelItem } from "../components/conversation/CallCancelItem.tsx";
+import { CallEndItem } from "../components/conversation/CallEndItem.tsx";
 import type { InfiniteData } from "@tanstack/react-query";
-import { EditingMessageItem } from "../components/chat/EditingMessageItem.tsx";
+import { EditingMessageItem } from "../components/conversation/EditingMessageItem.tsx";
 import { useAuth } from "../contexts/AuthContext.tsx";
 
 function isSameDay(d1: Date, d2: Date): boolean {

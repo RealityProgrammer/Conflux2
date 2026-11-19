@@ -303,7 +303,7 @@ const markdownComponents: Components = {
 
   span: ({ ...props }) => {
     const timestampAttribute: string = (props as any)[
-      "data-chat-timestamp"
+      "data-conversation-timestamp"
     ] as string;
 
     if (timestampAttribute) {
@@ -312,13 +312,13 @@ const markdownComponents: Components = {
       return <Timestamp date={new Date(timeMillisecond)} />;
     }
 
-    const emojiAttribute: string = (props as any)["data-chat-emoji"] as string;
+    const emojiAttribute: string = (props as any)["data-conversation-emoji"] as string;
     if (emojiAttribute) {
       return <EmojiWithTooltip emojiId={emojiAttribute} />;
     }
 
     const mentionUserIdAttribute: string = (props as any)[
-      "data-chat-mention-userid"
+      "data-conversation-mention-userid"
     ] as string;
     if (mentionUserIdAttribute) {
       return <Mention userId={mentionUserIdAttribute} />;

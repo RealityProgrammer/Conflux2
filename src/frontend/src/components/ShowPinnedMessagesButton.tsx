@@ -2,9 +2,9 @@ import { Popover } from "radix-ui";
 import IconButton from "./IconButton.tsx";
 import { FaThumbtack } from "react-icons/fa6";
 import { BsExclamationTriangle, BsPinAngleFill } from "react-icons/bs";
-import MessageBody from "./chat/MessageBody.tsx";
+import MessageBody from "./conversation/MessageBody.tsx";
 import { Virtuoso } from "react-virtuoso";
-import { MessageRow } from "./chat/MessageRow.tsx";
+import { MessageRow } from "./conversation/MessageRow.tsx";
 import useQueryPinnedMessages from "../hooks/useQueryPinnedMessages.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {

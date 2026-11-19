@@ -442,7 +442,7 @@ export function ChatView({
     });
   };
 
-  // shared emoji panel, one emoji standard popover instance for the whole chat view.
+  // shared emoji panel, one emoji standard popover instance for the whole conversation view.
   const [emojiPanel, setEmojiPanelState] = useState<EmojiPanelRequest | null>(
     null,
   );

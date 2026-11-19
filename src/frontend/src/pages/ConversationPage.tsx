@@ -16,9 +16,9 @@ import {
   BsVolumeUp,
 } from "react-icons/bs";
 import ChatContainerContextProvider from "../contexts/ChatContainerContext.tsx";
-import { ChatView } from "../components/chat/ChatView.tsx";
-import TypingIndicator from "../components/chat/TypingIndicator.tsx";
-import ChatInput from "../components/chat/ChatInput.tsx";
+import { ChatView } from "../components/conversation/ChatView.tsx";
+import TypingIndicator from "../components/conversation/TypingIndicator.tsx";
+import ChatInput from "../components/conversation/ChatInput.tsx";
 import useConversationConnection from "../hooks/useConversationConnection.ts";
 import ShowPinnedMessagesButton from "../components/ShowPinnedMessagesButton.tsx";
 import { FaSearch } from "react-icons/fa";
@@ -26,7 +26,7 @@ import IconButton from "../components/IconButton.tsx";
 import { useState } from "react";
 import UserProfilePanel from "../components/UserProfilePanel.tsx";
 import ServerMemberList from "../components/server/ServerMemberList.tsx";
-import SearchMessagesButton from "../components/chat/SearchMessagesButton.tsx";
+import SearchMessagesButton from "../components/conversation/SearchMessagesButton.tsx";
 
 export default function ConversationPage() {
   const loaderData = useLoaderData<ConversationSource>();

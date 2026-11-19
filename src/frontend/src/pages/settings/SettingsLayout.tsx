@@ -12,7 +12,7 @@ export default function SettingsLayout() {
     <div className="flex h-dvh w-dvw flex-row text-white">
       <aside className="bg-gray-725 w-80 flex-none scrollbar-none space-y-2 overflow-y-auto border-r-2 border-r-gray-600 p-2">
         <button
-          onClick={() => navigate(-1)} // Or replace with a specific path like navigate('/chat')
+          onClick={() => navigate(-1)} // Or replace with a specific path like navigate('/conversation')
           className="hover-highlight group flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:text-white"
         >
           <BsArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
