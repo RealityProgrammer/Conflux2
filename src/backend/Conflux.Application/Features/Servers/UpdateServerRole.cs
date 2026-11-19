@@ -60,6 +60,7 @@ public sealed class UpdateServerRoleHandler(
             .Where(r => r.CommunityServerId == serverId && r.Id == roleId)
             .Include(r => r.CommunityServer)
             .ThenInclude(s => s.Roles)
+            .Include(r => r.Permissions)
             .FirstOrDefaultAsync(cancellationToken);
 
         switch (updatingRole) {

@@ -108,7 +108,7 @@ function SuccessDisplay() {
           <section className="flex min-w-0 flex-1 flex-col gap-0">
             <ChatView />
             <TypingIndicator />
-            <ChatInput disabled/>
+            <ChatInput/>
           </section>
 
           <aside
