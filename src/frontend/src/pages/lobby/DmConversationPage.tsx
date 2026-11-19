@@ -63,7 +63,6 @@ function Success({data}: {data: DmConversationDetails}) {
 
   useConversationConnection(data.conversationId);
 
-
   return (
     <ChatContainerContextProvider conversationId={data.conversationId}>
       <ConversationPageTemplate.Template

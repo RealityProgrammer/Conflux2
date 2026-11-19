@@ -123,14 +123,15 @@ internal sealed class MessageRepository(
              SELECT
                  m."MessageId",
                  COALESCE(
-                     jsonb_object_agg(
+                     json_object_agg(
                          CASE 
                              WHEN r."IconSource" = 0 THEN 'unicode.' || r."UnicodeValue"
                              WHEN r."IconSource" = 1 THEN 'emoji.' || r."EmojiId"::text
                          END,
                          cardinality(r."UserIds")
+                         ORDER BY r."CreatedAt" ASC
                      ) FILTER (WHERE r."MessageId" IS NOT NULL),
-                     '{}'::jsonb
+                     '{}'::json
                  )::text AS "ReactionsCountsJson",
                  COALESCE(
                      jsonb_agg(

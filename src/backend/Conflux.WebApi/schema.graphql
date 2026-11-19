@@ -1262,6 +1262,7 @@ input MessageReactionFilterInput {
   emojiId: UuidOperationFilterInput
   emoji: EmojiFilterInput
   userIds: ListUuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
 }
 
 input MessageTypeOperationFilterInput {
