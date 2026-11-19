@@ -3,10 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type FriendSearchResponse } from "../../api/types.ts";
 import { UserNameplate } from "../../components/UserNameplate.tsx";
 import { FriendActionButtons } from "../../components/FriendActionButtons.tsx";
-import {
-  FriendSearchStatus,
-  UserRelationshipStatus,
-} from "../../api/schema.ts";
+import { FriendSearchStatus, UserRelationshipStatus } from "../../api/schema.ts";
 import { BsExclamationTriangle, BsQuestion } from "react-icons/bs";
 import useDiscoverFriend from "../../hooks/useDiscoverFriend.ts";
 import { toast } from "react-toastify";
@@ -23,78 +20,55 @@ export default function SearchUserTabContent() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useDebounceValue("", 500);
 
-  const { data, isEnabled, isLoading, isError } = useDiscoverFriend(
-    searchTerm,
-    {
-      enabled: searchTerm.length >= 8,
-      retry: false,
-    },
-  );
+  const { data, isEnabled, isLoading, isError } = useDiscoverFriend(searchTerm, {
+    enabled: searchTerm.length >= 8,
+    retry: false,
+  });
 
   const handleChangeStatus = (
     relationshipStatus: UserRelationshipStatus,
     friendRequestId: string | null | undefined,
   ) => {
-    queryClient.setQueryData<FriendSearchResponse>(
-      useDiscoverFriend.getKey(searchTerm),
-      (oldData) => {
-        if (!oldData) return oldData;
+    queryClient.setQueryData<FriendSearchResponse>(useDiscoverFriend.getKey(searchTerm), (oldData) => {
+      if (!oldData) return oldData;
 
-        return {
-          ...oldData,
-          result: !!oldData.result
-            ? {
+      return {
+        ...oldData,
+        result: !!oldData.result
+          ? {
               ...oldData.result,
               relationshipStatus: relationshipStatus,
               friendRequestId:
-                friendRequestId === undefined
-                  ? oldData.result.friendRequestId
-                  : friendRequestId,
+                friendRequestId === undefined ? oldData.result.friendRequestId : friendRequestId,
             }
-            : oldData.result,
-        };
-      },
-    );
+          : oldData.result,
+      };
+    });
   };
 
-  useSignalREvent(
-    "FriendRequestReceived",
-    async (event: FriendRequestReceivedEvent) => {
-      if (event.senderUserId === data?.result?.userProfile.id) {
-        handleChangeStatus(
-          UserRelationshipStatus.IncomingRequest,
-          event.requestId,
-        );
-      }
-    },
-  );
+  useSignalREvent("FriendRequestReceived", async (event: FriendRequestReceivedEvent) => {
+    if (event.senderUserId === data?.result?.userProfile.id) {
+      handleChangeStatus(UserRelationshipStatus.IncomingRequest, event.requestId);
+    }
+  });
 
-  useSignalREvent(
-    "FriendRequestRejected",
-    (event: FriendRequestRejectedEvent) => {
-      if (event.rejecterUserId === data?.result?.userProfile.id) {
-        handleChangeStatus(UserRelationshipStatus.Stranger, null);
-      }
-    },
-  );
+  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
+    if (event.rejecterUserId === data?.result?.userProfile.id) {
+      handleChangeStatus(UserRelationshipStatus.Stranger, null);
+    }
+  });
 
-  useSignalREvent(
-    "FriendRequestAccepted",
-    (event: FriendRequestAcceptedEvent) => {
-      if (event.acceptorUserId === data?.result?.userProfile.id) {
-        handleChangeStatus(UserRelationshipStatus.Friended, event.requestId);
-      }
-    },
-  );
+  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
+    if (event.acceptorUserId === data?.result?.userProfile.id) {
+      handleChangeStatus(UserRelationshipStatus.Friended, event.requestId);
+    }
+  });
 
-  useSignalREvent(
-    "FriendRequestCanceled",
-    (event: FriendRequestCanceledEvent) => {
-      if (event.senderUserId === data?.result?.userProfile.id) {
-        handleChangeStatus(UserRelationshipStatus.Stranger, null);
-      }
-    },
-  );
+  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
+    if (event.senderUserId === data?.result?.userProfile.id) {
+      handleChangeStatus(UserRelationshipStatus.Stranger, null);
+    }
+  });
 
   useSignalREvent("Unfriended", (event: UnfriendedEvent) => {
     if (event.invokerUserId === data?.result?.userProfile.id) {
@@ -115,7 +89,7 @@ export default function SearchUserTabContent() {
         </div>
 
         <input
-          className="input-field h-9 text-sm w-full flex-1 rounded-l-none px-3"
+          className="input-field h-9 w-full flex-1 rounded-l-none px-3 text-sm"
           placeholder="Enter something here..."
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -123,9 +97,9 @@ export default function SearchUserTabContent() {
         />
       </section>
 
-      <div className="mt-4 mx-auto flex flex-col items-center justify-center rounded-md border-2 border-gray-600">
+      <div className="mx-auto mt-4 flex flex-col items-center justify-center rounded-md border-2 border-gray-600">
         {!isEnabled ? (
-          <p className="p-3 text-sm text-gray-500 select-none text-center">
+          <p className="p-3 text-center text-sm text-gray-500 select-none">
             Enter at least 8 characters to search user.
           </p>
         ) : isLoading ? (
@@ -159,10 +133,7 @@ export default function SearchUserTabContent() {
                 className="size-6"
                 onSuccess={(response, recipientId) => {
                   if (data.result!.userProfile.id === recipientId) {
-                    handleChangeStatus(
-                      response.relationshipStatus,
-                      response.friendRequestId,
-                    );
+                    handleChangeStatus(response.relationshipStatus, response.friendRequestId);
                   }
                 }}
                 onError={() => {
@@ -189,10 +160,7 @@ export default function SearchUserTabContent() {
                   className="size-6"
                   onSuccess={(variables) => {
                     if (data.result!.friendRequestId === variables.requestId) {
-                      handleChangeStatus(
-                        UserRelationshipStatus.Friended,
-                        undefined,
-                      );
+                      handleChangeStatus(UserRelationshipStatus.Friended, undefined);
                     }
                   }}
                   onError={() => {

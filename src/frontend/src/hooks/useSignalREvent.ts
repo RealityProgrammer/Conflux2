@@ -8,9 +8,7 @@ export default function useSignalREvent(
   const { connection, isConnected } = useSignalR();
   const onSignalREvent = useEffectEvent(callback);
 
-  const eventsKey = Array.isArray(methodNames)
-    ? methodNames.join(",")
-    : methodNames;
+  const eventsKey = Array.isArray(methodNames) ? methodNames.join(",") : methodNames;
 
   useEffect(() => {
     if (!connection || !isConnected) {
@@ -18,8 +16,7 @@ export default function useSignalREvent(
       return;
     }
 
-    const handler: (...args: any[]) => any = (...args: any[]) =>
-      onSignalREvent(...args);
+    const handler: (...args: any[]) => any = (...args: any[]) => onSignalREvent(...args);
     const methods = Array.isArray(methodNames) ? methodNames : [methodNames];
 
     for (let methodName of methods) {

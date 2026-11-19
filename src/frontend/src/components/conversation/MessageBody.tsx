@@ -23,74 +23,70 @@ interface MessageContentProps {
 
 function remarkCustomTokens() {
   return (tree: Node) => {
-    visit(
-      tree,
-      "text",
-      (node: any, index: number | undefined, parent: Parent | undefined) => {
-        if (!parent || parent.type === "code" || parent.type === "inlineCode") {
-          // TODO: also ignore quote and blockquote
-          return;
-        }
+    visit(tree, "text", (node: any, index: number | undefined, parent: Parent | undefined) => {
+      if (!parent || parent.type === "code" || parent.type === "inlineCode") {
+        // TODO: also ignore quote and blockquote
+        return;
+      }
 
-        const value = node.value;
+      const value = node.value;
 
-        const regex = /:t(\d+):|:e([\da-f\-]+):|:m([\da-f\-]+):/g;
-        if (!regex.test(value)) return;
+      const regex = /:t(\d+):|:e([\da-f\-]+):|:m([\da-f\-]+):/g;
+      if (!regex.test(value)) return;
 
-        regex.lastIndex = 0;
-        let match;
-        let lastIndex = 0;
-        const newChildren: Node[] = [];
+      regex.lastIndex = 0;
+      let match;
+      let lastIndex = 0;
+      const newChildren: Node[] = [];
 
-        while ((match = regex.exec(value)) !== null) {
-          const matchStart = match.index;
-          const matchEnd = regex.lastIndex;
+      while ((match = regex.exec(value)) !== null) {
+        const matchStart = match.index;
+        const matchEnd = regex.lastIndex;
 
-          if (matchStart > lastIndex) {
-            newChildren.push({
-              type: "text",
-              value: value.slice(lastIndex, matchStart),
-            } as Literal);
-          }
-
-          const timestampMatch = match[1];
-          const emojiMatch = match[2];
-          const mentionMatch = match[3];
-
-          if (timestampMatch) {
-            const ms = Number(timestampMatch) || 0;
-            newChildren.push({
-              type: "html",
-              value: `<span data-chat-timestamp="${ms}"></span>`,
-            } as Literal);
-          } else if (emojiMatch) {
-            newChildren.push({
-              type: "html",
-              value: `<span data-chat-emoji="${emojiMatch}"></span>`,
-            } as Literal);
-          } else if (mentionMatch) {
-            newChildren.push({
-              type: "html",
-              value: `<span data-chat-mention-userid="${mentionMatch}"></span>`,
-            } as Literal);
-          }
-
-          lastIndex = matchEnd;
-        }
-
-        if (lastIndex < value.length) {
+        if (matchStart > lastIndex) {
           newChildren.push({
             type: "text",
-            value: value.slice(lastIndex),
+            value: value.slice(lastIndex, matchStart),
           } as Literal);
         }
 
-        if (index !== undefined && parent.children) {
-          parent.children.splice(index, 1, ...newChildren);
-          return index + newChildren.length;
+        const timestampMatch = match[1];
+        const emojiMatch = match[2];
+        const mentionMatch = match[3];
+
+        if (timestampMatch) {
+          const ms = Number(timestampMatch) || 0;
+          newChildren.push({
+            type: "html",
+            value: `<span data-chat-timestamp="${ms}"></span>`,
+          } as Literal);
+        } else if (emojiMatch) {
+          newChildren.push({
+            type: "html",
+            value: `<span data-chat-emoji="${emojiMatch}"></span>`,
+          } as Literal);
+        } else if (mentionMatch) {
+          newChildren.push({
+            type: "html",
+            value: `<span data-chat-mention-userid="${mentionMatch}"></span>`,
+          } as Literal);
         }
-      },
-    );
+
+        lastIndex = matchEnd;
+      }
+
+      if (lastIndex < value.length) {
+        newChildren.push({
+          type: "text",
+          value: value.slice(lastIndex),
+        } as Literal);
+      }
+
+      if (index !== undefined && parent.children) {
+        parent.children.splice(index, 1, ...newChildren);
+        return index + newChildren.length;
+      }
+    });
   };
 }
 
@@ -144,10 +140,7 @@ const markdownComponents: Components = {
 
   code: ({ className = "", children, node, ...props }) => {
     return (
-      <code
-        className={`${className} message-inline-code inline-block`}
-        {...props}
-      >
+      <code className={`${className} message-inline-code inline-block`} {...props}>
         {children}
       </code>
     );
@@ -157,10 +150,7 @@ const markdownComponents: Components = {
     const isTaskList = className?.includes("contains-task-list");
 
     return (
-      <ul
-        className={`${isTaskList ? "ml-1 list-none pl-5" : "message-ul"} ${className}`}
-        {...props}
-      >
+      <ul className={`${isTaskList ? "ml-1 list-none pl-5" : "message-ul"} ${className}`} {...props}>
         {children}
       </ul>
     );
@@ -186,10 +176,7 @@ const markdownComponents: Components = {
   },
 
   p: ({ children, node, ...props }) => (
-    <p
-      className="mb-2 wrap-break-word whitespace-pre-wrap last:mb-0"
-      {...props}
-    >
+    <p className="mb-2 wrap-break-word whitespace-pre-wrap last:mb-0" {...props}>
       {children}
     </p>
   ),
@@ -254,9 +241,7 @@ const markdownComponents: Components = {
   section: ({ children, node, className = "", ...props }) => {
     if (className?.includes("footnotes")) {
       return (
-        <section
-          className={`mt-4 border-t border-gray-500 pt-3 text-xs text-gray-300 ${className}`}
-        >
+        <section className={`mt-4 border-t border-gray-500 pt-3 text-xs text-gray-300 ${className}`}>
           {children}
         </section>
       );
@@ -272,15 +257,7 @@ const markdownComponents: Components = {
   // input
   input: ({ type, checked, node, ...props }) => {
     if (type === "checkbox") {
-      return (
-        <input
-          type="checkbox"
-          checked={checked}
-          readOnly
-          className="mt-1.5 shrink-0"
-          {...props}
-        />
-      );
+      return <input type="checkbox" checked={checked} readOnly className="mt-1.5 shrink-0" {...props} />;
     }
 
     return <input type={type} {...props} />;
@@ -302,9 +279,7 @@ const markdownComponents: Components = {
   ),
 
   span: ({ ...props }) => {
-    const timestampAttribute: string = (props as any)[
-      "data-conversation-timestamp"
-    ] as string;
+    const timestampAttribute: string = (props as any)["data-conversation-timestamp"] as string;
 
     if (timestampAttribute) {
       const timeMillisecond = Number(timestampAttribute);
@@ -317,9 +292,7 @@ const markdownComponents: Components = {
       return <EmojiWithTooltip emojiId={emojiAttribute} />;
     }
 
-    const mentionUserIdAttribute: string = (props as any)[
-      "data-conversation-mention-userid"
-    ] as string;
+    const mentionUserIdAttribute: string = (props as any)["data-conversation-mention-userid"] as string;
     if (mentionUserIdAttribute) {
       return <Mention userId={mentionUserIdAttribute} />;
     }
@@ -328,10 +301,7 @@ const markdownComponents: Components = {
   },
 };
 
-export default function MessageBody({
-  content,
-  className = "",
-}: MessageContentProps) {
+export default function MessageBody({ content, className = "" }: MessageContentProps) {
   return (
     <>
       {content && content.length > 0 && (
@@ -377,10 +347,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
     return (
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <Emoji.Root
-            emojiId={emojiId}
-            className="inline-block size-6 align-text-bottom"
-          />
+          <Emoji.Root emojiId={emojiId} className="inline-block size-6 align-text-bottom" />
         </Tooltip.Trigger>
 
         <Tooltip.Portal>
@@ -390,9 +357,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
             className="bg-gray-750 rounded-lg border-2 border-gray-600 p-2 text-sm text-white shadow-lg"
           >
             <p className="font-mono text-xs text-gray-400">:unknown_emoji:</p>
-            <p className="text-[10px] text-gray-500">
-              This emoji no longer exists.
-            </p>
+            <p className="text-[10px] text-gray-500">This emoji no longer exists.</p>
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -403,10 +368,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
     return (
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <Emoji.Root
-            emojiId={emojiId}
-            className="inline-block size-6 align-text-bottom"
-          />
+          <Emoji.Root emojiId={emojiId} className="inline-block size-6 align-text-bottom" />
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content
@@ -414,9 +376,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
             sideOffset={5}
             className="bg-gray-750 rounded-lg border-2 border-gray-600 p-2 text-sm text-white shadow-lg"
           >
-            <p className="text-xs text-red-400">
-              Failed to load emoji details.
-            </p>
+            <p className="text-xs text-red-400">Failed to load emoji details.</p>
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -426,10 +386,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
   return (
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
-        <Emoji.Root
-          emojiId={emojiId}
-          className="inline-block size-6 align-text-bottom"
-        />
+        <Emoji.Root emojiId={emojiId} className="inline-block size-6 align-text-bottom" />
       </Tooltip.Trigger>
 
       <Tooltip.Portal>
@@ -468,9 +425,7 @@ function EmojiWithTooltip({ emojiId }: { emojiId: string }) {
                 {data && data.emoji && !isLoading ? (
                   <>
                     <p className="font-semibold">{data.emoji.server.name}</p>
-                    <p className="text-xs">
-                      {data.emoji.server.numMembers} members
-                    </p>
+                    <p className="text-xs">{data.emoji.server.numMembers} members</p>
                   </>
                 ) : (
                   <>

@@ -19,23 +19,14 @@ import {
   useWarnServerMemberMutation,
 } from "../../graphql/queries.ts";
 import Spinner from "../Spinner.tsx";
-import {
-  BsCheck,
-  BsCircleFill,
-  BsExclamationTriangle,
-  BsHammer,
-} from "react-icons/bs";
+import { BsCheck, BsCircleFill, BsExclamationTriangle, BsHammer } from "react-icons/bs";
 import IconButton from "../IconButton.tsx";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { FaSave } from "react-icons/fa";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  MembershipStatus,
-  ServerPermission,
-  SpecialRoleType,
-} from "../../graphql/types.ts";
+import { MembershipStatus, ServerPermission, SpecialRoleType } from "../../graphql/types.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -50,26 +41,19 @@ import ModalForm from "../ModalForm.tsx";
 import ErrorText from "../ErrorText.tsx";
 import DurationInput, { type DurationValue } from "../DurationInput.tsx";
 import Dialog from "../Dialog.tsx";
-import {
-  useUnsavedChanges,
-  useUnsavedChangesOnBlock,
-} from "../../contexts/UnsavedChangesContext.tsx";
+import { useUnsavedChanges, useUnsavedChangesOnBlock } from "../../contexts/UnsavedChangesContext.tsx";
 import { Avatar } from "../Avatar.tsx";
 import useUpdateMemberRolesMutation from "../../hooks/useUpdateMemberRolesMutation.ts";
 
 type InspectingMemberContextResult = {
-  inspectingMemberInfo: NonNullable<
-    InspectMemberQuery["communityServerMemberForAdmin"]
-  >;
+  inspectingMemberInfo: NonNullable<InspectMemberQuery["communityServerMemberForAdmin"]>;
   refreshInspectingMemberInfo: () => void;
   setBanExpiredAt: (value: string | null) => void;
   setWarnCount: (value: number) => void;
   setMembershipStatus: (value: MembershipStatus) => void;
 };
 
-const InspectingMemberContext = createContext<
-  InspectingMemberContextResult | undefined
->(undefined);
+const InspectingMemberContext = createContext<InspectingMemberContextResult | undefined>(undefined);
 
 export default function MemberManagement() {
   const {
@@ -96,9 +80,7 @@ export default function MemberManagement() {
       {
         enabled: !!searchValue,
         initialPageParam: { after: null },
-        getNextPageParam: (
-          lastPage: SearchServerMemberForAdminQuery,
-        ): { after: string } | undefined => {
+        getNextPageParam: (lastPage: SearchServerMemberForAdminQuery): { after: string } | undefined => {
           const pageInfo = lastPage?.serverMemberSearchForAdmin?.pageInfo;
 
           if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
@@ -111,14 +93,9 @@ export default function MemberManagement() {
       },
     );
 
-  const allMembers =
-    data?.pages.flatMap(
-      (page) => page?.serverMemberSearchForAdmin?.nodes ?? [],
-    ) ?? [];
+  const allMembers = data?.pages.flatMap((page) => page?.serverMemberSearchForAdmin?.nodes ?? []) ?? [];
 
-  const [inspectingMemberId, setInspectingMemberId] = useState<
-    string | undefined
-  >(undefined);
+  const [inspectingMemberId, setInspectingMemberId] = useState<string | undefined>(undefined);
 
   const handleSwitchInspectingMember = guard((memberId: string) => {
     setIsShowingSearchResults(false);
@@ -135,11 +112,7 @@ export default function MemberManagement() {
       </header>
 
       <main className="flex flex-1 flex-col space-y-2">
-        <Popover.Root
-          open={isShowingSearchResults}
-          onOpenChange={setIsShowingSearchResults}
-          modal={false}
-        >
+        <Popover.Root open={isShowingSearchResults} onOpenChange={setIsShowingSearchResults} modal={false}>
           <Popover.Anchor asChild>
             <input
               ref={inputRef}
@@ -181,15 +154,9 @@ export default function MemberManagement() {
                 fetchNextPage={() => {
                   fetchNextPage();
                 }}
-                renderEmpty={() => (
-                  <p className="py-3 text-center text-sm text-white">
-                    Nobody here...
-                  </p>
-                )}
+                renderEmpty={() => <p className="py-3 text-center text-sm text-white">Nobody here...</p>}
                 renderSkeletonItem={(index: number) => {
-                  return (
-                    <UserNameplate.Skeleton key={index} className="h-12 p-1" />
-                  );
+                  return <UserNameplate.Skeleton key={index} className="h-12 p-1" />;
                 }}
                 renderItem={(itemIndex) => {
                   const member = allMembers[itemIndex];
@@ -219,9 +186,7 @@ export default function MemberManagement() {
             <MemberInformation memberId={inspectingMemberId} />
           ) : (
             <div className="flex size-full flex-row items-center justify-center">
-              <p className="text-gray-500 select-none">
-                Gotta search for the member first, boss...
-              </p>
+              <p className="text-gray-500 select-none">Gotta search for the member first, boss...</p>
             </div>
           )}
         </div>
@@ -332,9 +297,7 @@ const updateMemberInformationSchema = z.object({
   roleIds: z.string().array(),
 });
 
-type UpdateMemberInformationFormValues = z.infer<
-  typeof updateMemberInformationSchema
->;
+type UpdateMemberInformationFormValues = z.infer<typeof updateMemberInformationSchema>;
 
 function MemberInformationContent() {
   const {
@@ -401,17 +364,14 @@ function MemberInformationContent() {
     },
   });
 
-  const onSubmitModification: SubmitHandler<
-    UpdateMemberInformationFormValues
-  > = async (value: UpdateMemberInformationFormValues) => {
-    const addRoleIds = value.roleIds.filter(
-      (id) => !defaultValues!.roleIds!.includes(id),
-    );
+  const onSubmitModification: SubmitHandler<UpdateMemberInformationFormValues> = async (
+    value: UpdateMemberInformationFormValues,
+  ) => {
+    const addRoleIds = value.roleIds.filter((id) => !defaultValues!.roleIds!.includes(id));
 
     const removeRoleIds =
-      (defaultValues?.roleIds?.filter(
-        (id) => !value.roleIds.includes(id!),
-      ) as string[]) ?? ([] as string[]);
+      (defaultValues?.roleIds?.filter((id) => !value.roleIds.includes(id!)) as string[]) ??
+      ([] as string[]);
 
     await updateMemberRolesMutation.mutateAsync({
       serverId,
@@ -423,8 +383,7 @@ function MemberInformationContent() {
 
   useSignalREvent("ServerRoleUpdated", (event: ServerRoleUpdatedEvent) => {
     if (event.serverId !== serverId) return;
-    if (!inspectingMemberInfo.roles.map((r) => r.id).includes(event.roleId))
-      return;
+    if (!inspectingMemberInfo.roles.map((r) => r.id).includes(event.roleId)) return;
 
     refreshInspectingMemberInfo();
   });
@@ -497,12 +456,8 @@ function MemberInformationContent() {
                 className="size-10 flex-none overflow-hidden rounded-full"
               />
 
-              <span className="font-semibold">
-                {inspectingMemberInfo.user.displayName}
-              </span>
-              <span className="text-sm text-gray-400">
-                @{inspectingMemberInfo.user.userName}
-              </span>
+              <span className="font-semibold">{inspectingMemberInfo.user.displayName}</span>
+              <span className="text-sm text-gray-400">@{inspectingMemberInfo.user.userName}</span>
             </div>
           </div>
 
@@ -513,9 +468,7 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Join Date</span>
 
-                <DateTimeText
-                  value={new Date(inspectingMemberInfo.createdAt)}
-                />
+                <DateTimeText value={new Date(inspectingMemberInfo.createdAt)} />
               </li>
 
               <Separator.Root className="horizontal-separator my-3" />
@@ -544,12 +497,7 @@ function MemberInformationContent() {
                       control={control}
                       name="roleIds"
                       render={({ field }) => {
-                        return (
-                          <RoleModificationButton
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        );
+                        return <RoleModificationButton value={field.value} onChange={field.onChange} />;
                       }}
                     />
                   )}
@@ -561,9 +509,7 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Authorize Level</span>
 
-                <span className="font-mono">
-                  {inspectingMemberInfo.authorizeInfo.authorizeLevel}
-                </span>
+                <span className="font-mono">{inspectingMemberInfo.authorizeInfo.authorizeLevel}</span>
               </li>
 
               <Separator.Root className="horizontal-separator my-3" />
@@ -573,18 +519,16 @@ function MemberInformationContent() {
 
                 {inspectingMemberInfo.authorizeInfo.permissions?.length > 0 ? (
                   <span className="flex flex-1 flex-row flex-wrap justify-end gap-2">
-                    {inspectingMemberInfo.authorizeInfo.permissions.map(
-                      (permission) => {
-                        return (
-                          <span
-                            key={permission}
-                            className="flex flex-row items-center gap-2 rounded-sm bg-black/12 px-2 py-0.5"
-                          >
-                            {permission}
-                          </span>
-                        );
-                      },
-                    )}
+                    {inspectingMemberInfo.authorizeInfo.permissions.map((permission) => {
+                      return (
+                        <span
+                          key={permission}
+                          className="flex flex-row items-center gap-2 rounded-sm bg-black/12 px-2 py-0.5"
+                        >
+                          {permission}
+                        </span>
+                      );
+                    })}
                   </span>
                 ) : (
                   <span className="text-gray-500 select-none">None</span>
@@ -604,9 +548,7 @@ function MemberInformationContent() {
               <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                 <span>Warn Count</span>
 
-                <span className="font-mono">
-                  {inspectingMemberInfo.numWarn}
-                </span>
+                <span className="font-mono">{inspectingMemberInfo.numWarn}</span>
               </li>
 
               {inspectingMemberInfo.banExpireAt && (
@@ -616,15 +558,10 @@ function MemberInformationContent() {
                   <li className="flex items-center justify-between gap-2 px-2.5 py-1">
                     <span>Ban Expired At</span>
 
-                    {inspectingMemberInfo.banExpireAt ===
-                    "9999-12-31T23:59:59.9999999Z" ? (
-                      <span className="text-red-600">
-                        Death of the universe
-                      </span>
+                    {inspectingMemberInfo.banExpireAt === "9999-12-31T23:59:59.9999999Z" ? (
+                      <span className="text-red-600">Death of the universe</span>
                     ) : (
-                      <DateTimeText
-                        value={new Date(inspectingMemberInfo.banExpireAt)}
-                      />
+                      <DateTimeText value={new Date(inspectingMemberInfo.banExpireAt)} />
                     )}
                   </li>
                 </>
@@ -634,9 +571,7 @@ function MemberInformationContent() {
         </div>
       </form>
 
-      {inspectingMemberInfo.id !== serverDetails!.authorizeInfo.memberId && (
-        <MemberActions />
-      )}
+      {inspectingMemberInfo.id !== serverDetails!.authorizeInfo.memberId && <MemberActions />}
     </>
   );
 }
@@ -674,9 +609,7 @@ const reasonSchema = z.object({
 type KickMemberFormValues = z.infer<typeof reasonSchema>;
 
 function KickMemberButton() {
-  const { inspectingMemberInfo, setMembershipStatus } = useContext(
-    InspectingMemberContext,
-  )!;
+  const { inspectingMemberInfo, setMembershipStatus } = useContext(InspectingMemberContext)!;
   const {
     detailsQueryResult: { data: serverDetails },
     hasPermission,
@@ -709,9 +642,7 @@ function KickMemberButton() {
     },
   });
 
-  const handleSubmit: SubmitHandler<KickMemberFormValues> = async (
-    data: KickMemberFormValues,
-  ) => {
+  const handleSubmit: SubmitHandler<KickMemberFormValues> = async (data: KickMemberFormValues) => {
     kickMember.mutate({
       serverId: serverId,
       memberId: inspectingMemberInfo.id,
@@ -731,11 +662,7 @@ function KickMemberButton() {
         className="button-theme-danger2 button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenModal(true)}
       >
-        {isSubmitting ? (
-          <Spinner className="size-6 fill-white" />
-        ) : (
-          <>Kick Member</>
-        )}
+        {isSubmitting ? <Spinner className="size-6 fill-white" /> : <>Kick Member</>}
       </button>
 
       {hasPermission(ServerPermission.KickMembers) && (
@@ -760,11 +687,7 @@ function KickMemberButton() {
               className="button-theme-primary button-cursor flex h-10 w-32 flex-row items-center justify-center rounded-md"
               disabled={isSubmitting}
             >
-              {isSubmitting ? (
-                <Spinner className="size-5 fill-white" />
-              ) : (
-                <>Kick Member</>
-              )}
+              {isSubmitting ? <Spinner className="size-5 fill-white" /> : <>Kick Member</>}
             </button>
           }
           onSubmit={handleSubmit}
@@ -772,8 +695,7 @@ function KickMemberButton() {
           <p>
             Are you sure you want to kick this member?
             <br />
-            User can only rejoin the server if they have a valid invitation
-            link.
+            User can only rejoin the server if they have a valid invitation link.
           </p>
 
           <Label.Root className="label mt-2 mb-1 block">Reason</Label.Root>
@@ -784,9 +706,7 @@ function KickMemberButton() {
             {...register("reason")}
           />
 
-          {errors.reason && (
-            <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
-          )}
+          {errors.reason && <ErrorText className="mt-1">{errors.reason.message}</ErrorText>}
         </ModalForm>
       )}
     </>
@@ -796,9 +716,7 @@ function KickMemberButton() {
 type WarnMemberFormValues = z.infer<typeof reasonSchema>;
 
 function WarnMemberButton() {
-  const { inspectingMemberInfo, setWarnCount } = useContext(
-    InspectingMemberContext,
-  )!;
+  const { inspectingMemberInfo, setWarnCount } = useContext(InspectingMemberContext)!;
   const {
     detailsQueryResult: { data: serverDetails },
     hasPermission,
@@ -845,17 +763,11 @@ function WarnMemberButton() {
     <>
       <button
         type="button"
-        disabled={
-          !hasPermission(ServerPermission.WarnMembers) || warnMutation.isPending
-        }
+        disabled={!hasPermission(ServerPermission.WarnMembers) || warnMutation.isPending}
         className="button-theme-warning button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenDialog(true)}
       >
-        {warnMutation.isPending ? (
-          <Spinner className="size-6 fill-white" />
-        ) : (
-          <>Warn Member</>
-        )}
+        {warnMutation.isPending ? <Spinner className="size-6 fill-white" /> : <>Warn Member</>}
       </button>
 
       {hasPermission(ServerPermission.WarnMembers) && (
@@ -880,11 +792,7 @@ function WarnMemberButton() {
               className="button-theme-primary button-cursor flex h-10 w-32 flex-row items-center justify-center rounded-md"
               disabled={isSubmitting}
             >
-              {isSubmitting ? (
-                <Spinner className="size-5 fill-white" />
-              ) : (
-                <>Warn Member</>
-              )}
+              {isSubmitting ? <Spinner className="size-5 fill-white" /> : <>Warn Member</>}
             </button>
           }
           onSubmit={handleSubmit}
@@ -902,9 +810,7 @@ function WarnMemberButton() {
             {...register("reason")}
           />
 
-          {errors.reason && (
-            <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
-          )}
+          {errors.reason && <ErrorText className="mt-1">{errors.reason.message}</ErrorText>}
         </ModalForm>
       )}
     </>
@@ -915,12 +821,7 @@ const banMemberSchema = reasonSchema.and(
   z.object({
     duration: z.custom<DurationValue>().refine(
       (val) => {
-        return (
-          val.days != 0 ||
-          val.hours != 0 ||
-          val.minutes != 0 ||
-          val.seconds != 0
-        );
+        return val.days != 0 || val.hours != 0 || val.minutes != 0 || val.seconds != 0;
       },
       { error: "Duration should not be zero." },
     ),
@@ -929,11 +830,7 @@ const banMemberSchema = reasonSchema.and(
 
 type BanMemberFormValues = z.infer<typeof banMemberSchema>;
 
-function BanMemberButton({
-  refreshBanExpireInfo,
-}: {
-  refreshBanExpireInfo: () => void;
-}) {
+function BanMemberButton({ refreshBanExpireInfo }: { refreshBanExpireInfo: () => void }) {
   const { inspectingMemberInfo } = useContext(InspectingMemberContext)!;
   const {
     detailsQueryResult: { data: serverDetails },
@@ -971,9 +868,7 @@ function BanMemberButton({
     },
   });
 
-  const handleSubmit: SubmitHandler<BanMemberFormValues> = async (
-    data: BanMemberFormValues,
-  ) => {
+  const handleSubmit: SubmitHandler<BanMemberFormValues> = async (data: BanMemberFormValues) => {
     // https://scalars.graphql.org/chillicream/duration.html
     const duration = data.duration;
     const durationString = `P${duration.days}DT${duration.hours}H${duration.minutes}M${duration.seconds}S`;
@@ -994,11 +889,7 @@ function BanMemberButton({
         className="button-theme-danger button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenDialog(true)}
       >
-        {isSubmitting ? (
-          <Spinner className="size-6 fill-white" />
-        ) : (
-          <>Ban Member</>
-        )}
+        {isSubmitting ? <Spinner className="size-6 fill-white" /> : <>Ban Member</>}
       </button>
 
       {hasPermission(ServerPermission.BanMembers) && (
@@ -1023,11 +914,7 @@ function BanMemberButton({
               className="button-theme-primary button-cursor flex h-10 w-32 flex-row items-center justify-center rounded-md"
               disabled={isSubmitting}
             >
-              {isSubmitting ? (
-                <Spinner className="size-5 fill-white" />
-              ) : (
-                <>Ban Member</>
-              )}
+              {isSubmitting ? <Spinner className="size-5 fill-white" /> : <>Ban Member</>}
             </button>
           }
           onSubmit={handleSubmit}
@@ -1035,8 +922,7 @@ function BanMemberButton({
           <p>
             Are you sure you want to ban this member?
             <br />
-            You can unban them later, but the action will be logged in the
-            moderation log.
+            You can unban them later, but the action will be logged in the moderation log.
           </p>
 
           <Label.Root className="label mt-2 mb-1 block">Reason</Label.Root>
@@ -1047,9 +933,7 @@ function BanMemberButton({
             {...register("reason")}
           />
 
-          {errors.reason && (
-            <ErrorText className="mt-1">{errors.reason.message}</ErrorText>
-          )}
+          {errors.reason && <ErrorText className="mt-1">{errors.reason.message}</ErrorText>}
 
           <Label.Root className="label mt-2 mb-1 block">Duration</Label.Root>
 
@@ -1101,9 +985,7 @@ function BanMemberButton({
           />
 
           {errors.duration && (
-            <ErrorText className="mt-1 block text-center">
-              {errors.duration.message}
-            </ErrorText>
+            <ErrorText className="mt-1 block text-center">{errors.duration.message}</ErrorText>
           )}
         </ModalForm>
       )}
@@ -1143,11 +1025,7 @@ function UnbanMemberButton({ onUnbanned }: { onUnbanned: () => void }) {
         className="button-theme-success button-cursor flex h-12 flex-1 items-center justify-center rounded-lg px-4 text-sm text-white"
         onClick={() => setOpenDialog(true)}
       >
-        {unbanMutation.isPending ? (
-          <Spinner className="size-6 fill-white" />
-        ) : (
-          <>Unban Member</>
-        )}
+        {unbanMutation.isPending ? <Spinner className="size-6 fill-white" /> : <>Unban Member</>}
       </button>
 
       {hasPermission(ServerPermission.UnbanMembers) && (
@@ -1166,10 +1044,7 @@ function UnbanMemberButton({ onUnbanned }: { onUnbanned: () => void }) {
           contentClassName="centered-dialog w-2xl text-white bg-gray-650 outline-none"
           footerContent={
             <div className="flex w-full flex-row justify-end gap-3 p-3">
-              <RadixDialog.Close
-                type="button"
-                className="basis-20 cursor-pointer outline-none"
-              >
+              <RadixDialog.Close type="button" className="basis-20 cursor-pointer outline-none">
                 Cancel
               </RadixDialog.Close>
 
@@ -1184,11 +1059,7 @@ function UnbanMemberButton({ onUnbanned }: { onUnbanned: () => void }) {
                   })
                 }
               >
-                {unbanMutation.isPending ? (
-                  <Spinner className="size-5 fill-white" />
-                ) : (
-                  <>Unban Member</>
-                )}
+                {unbanMutation.isPending ? <Spinner className="size-5 fill-white" /> : <>Unban Member</>}
               </button>
             </div>
           }
@@ -1208,10 +1079,7 @@ interface RoleModificationButtonProps {
   onChange: (value: string[]) => void;
 }
 
-function RoleModificationButton({
-  value,
-  onChange,
-}: RoleModificationButtonProps) {
+function RoleModificationButton({ value, onChange }: RoleModificationButtonProps) {
   const queryClient = useQueryClient();
   const {
     detailsQueryResult: { data: serverDetails },
@@ -1240,9 +1108,7 @@ function RoleModificationButton({
       },
     );
 
-  const allElements =
-    data?.pages.flatMap((page) => page?.communityServerRoles?.nodes ?? []) ??
-    [];
+  const allElements = data?.pages.flatMap((page) => page?.communityServerRoles?.nodes ?? []) ?? [];
 
   useSignalREvent("ServerRoleCreated", (event: ServerRoleCreatedEvent) => {
     if (serverId !== event.serverId) return;
@@ -1280,10 +1146,7 @@ function RoleModificationButton({
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <IconButton
-          theme="default"
-          className="size-6 rounded-sm bg-black/12 shadow-sm"
-        >
+        <IconButton theme="default" className="size-6 rounded-sm bg-black/12 shadow-sm">
           <FaPlus className="size-4" />
         </IconButton>
       </Popover.Trigger>
@@ -1319,10 +1182,7 @@ function RoleModificationButton({
               fetchNextPage();
             }}
             renderSkeletonItem={(index) => (
-              <li
-                className="flex h-8 flex-row items-center gap-2 px-1"
-                key={index}
-              >
+              <li className="flex h-8 flex-row items-center gap-2 px-1" key={index}>
                 <BsCircleFill className="size-2.5 animate-pulse fill-white/10" />
                 <span className="h-4 w-32 animate-pulse rounded bg-white/10"></span>
               </li>
@@ -1350,13 +1210,9 @@ function RoleModificationButton({
                 >
                   <BsCircleFill className="size-2.5 fill-blue-500" />
 
-                  <span className="min-w-0 flex-1 truncate text-left">
-                    {role.name}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate text-left">{role.name}</span>
 
-                  {isSelected && (
-                    <BsCheck className="size-5 flex-none fill-white" />
-                  )}
+                  {isSelected && <BsCheck className="size-5 flex-none fill-white" />}
                 </button>
               );
             }}

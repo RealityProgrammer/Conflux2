@@ -8,13 +8,7 @@ export interface SelectItemProps extends HTMLAttributes<HTMLDivElement> {
   icon?: ReactNode;
 }
 
-export default function SelectItem({
-  text,
-  value,
-  icon,
-  className = "",
-  ...props
-}: SelectItemProps) {
+export default function SelectItem({ text, value, icon, className = "", ...props }: SelectItemProps) {
   return (
     <Select.Item
       className={`dropdown-item-default flex w-full flex-row items-center gap-2 ${className}`}

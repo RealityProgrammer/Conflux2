@@ -1,11 +1,4 @@
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import {
   HttpTransportType,
   type HubConnection,
@@ -57,10 +50,8 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
 
         if (connectionId) {
-          apiClient.defaults.headers.common["X-SignalR-Connection-Id"] =
-            connectionId;
-          graphqlClient.defaults.headers.common["X-SignalR-Connection-Id"] =
-            connectionId;
+          apiClient.defaults.headers.common["X-SignalR-Connection-Id"] = connectionId;
+          graphqlClient.defaults.headers.common["X-SignalR-Connection-Id"] = connectionId;
         }
       }
     });
@@ -83,10 +74,8 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
           setIsConnected(true);
 
           if (newConnection.connectionId) {
-            apiClient.defaults.headers.common["X-SignalR-Connection-Id"] =
-              newConnection.connectionId;
-            graphqlClient.defaults.headers.common["X-SignalR-Connection-Id"] =
-              newConnection.connectionId;
+            apiClient.defaults.headers.common["X-SignalR-Connection-Id"] = newConnection.connectionId;
+            graphqlClient.defaults.headers.common["X-SignalR-Connection-Id"] = newConnection.connectionId;
           }
         }
       })
@@ -115,11 +104,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const invokeSafely = async (methodName: string, ...args: unknown[]) => {
-    if (
-      connection &&
-      connection.state === HubConnectionState.Connected &&
-      isConnected
-    ) {
+    if (connection && connection.state === HubConnectionState.Connected && isConnected) {
       try {
         return await connection.invoke(methodName, ...args);
       } catch (err) {
@@ -138,10 +123,7 @@ export default function SignalRProvider({ children }: { children: ReactNode }) {
 
 export function useSignalR(): SignalRContextType {
   const context = useContext(SignalRContext);
-  if (!context)
-    throw new Error(
-      "useSignalR must be used within an SignalRConnectionProvider.",
-    );
+  if (!context) throw new Error("useSignalR must be used within an SignalRConnectionProvider.");
 
   return context;
 }

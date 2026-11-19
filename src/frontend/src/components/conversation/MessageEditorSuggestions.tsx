@@ -1,8 +1,5 @@
 import { Suggestion } from "./Suggestion.tsx";
-import type {
-  MessageTextboxEditorRef,
-  SuggestionData,
-} from "./MessageTextboxEditor.tsx";
+import type { MessageTextboxEditorRef, SuggestionData } from "./MessageTextboxEditor.tsx";
 import type { UserIdentityProfileDto } from "../../api/types.ts";
 import type { RefObject } from "react";
 import type { SelectedEmoji } from "./EmojiPanel.tsx";
@@ -59,21 +56,13 @@ interface DefaultProps {
   cursorPosition: number;
 }
 
-function Default({
-  suggestion,
-  textboxEditorRef,
-  cursorPosition,
-}: DefaultProps) {
+function Default({ suggestion, textboxEditorRef, cursorPosition }: DefaultProps) {
   return (
     <Base
       suggestion={suggestion}
       onSuggestionModeSelected={(mode) => {
         // cursor is after the start colon, insert the mode directly
-        textboxEditorRef.current?.insertText(
-          mode,
-          suggestion!.startColonIndex + 1,
-          cursorPosition,
-        );
+        textboxEditorRef.current?.insertText(mode, suggestion!.startColonIndex + 1, cursorPosition);
       }}
       onEmojiSelected={(emoji) => {
         // replace from the starting colon with the full formatted emoji tag and a trailing space
@@ -87,11 +76,7 @@ function Default({
             break;
 
           case "unicode-emoji":
-            textboxEditorRef.current?.insertText(
-              emoji.value,
-              suggestion!.startColonIndex,
-              cursorPosition,
-            );
+            textboxEditorRef.current?.insertText(emoji.value, suggestion!.startColonIndex, cursorPosition);
             break;
         }
       }}

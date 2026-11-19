@@ -1,7 +1,4 @@
-import {
-  type OutgoingDirectCall,
-  useCallStore,
-} from "../../store/useCallStore.ts";
+import { type OutgoingDirectCall, useCallStore } from "../../store/useCallStore.ts";
 import CallWindowHeader from "./CallWindowHeader.tsx";
 import { useAuth } from "../../contexts/AuthContext.tsx";
 import IconButton from "../IconButton.tsx";
@@ -10,10 +7,7 @@ import { useTimeout } from "usehooks-ts";
 import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {
-  DirectCallAcceptedEvent,
-  DirectCallDeniedEvent,
-} from "../../api/events.ts";
+import type { DirectCallAcceptedEvent, DirectCallDeniedEvent } from "../../api/events.ts";
 import useUserMedia from "../../hooks/useUserMedia.ts";
 import Spinner from "../Spinner.tsx";
 import useWebRTC from "../../hooks/useWebRTC.ts";
@@ -27,11 +21,7 @@ import type { DirectMessagePageLoaderProps } from "../../router.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 import { Avatar } from "../Avatar.tsx";
 
-export default function OutgoingCallWindowContent({
-  call,
-}: {
-  call: OutgoingDirectCall;
-}) {
+export default function OutgoingCallWindowContent({ call }: { call: OutgoingDirectCall }) {
   if (call.state === "dialing") {
     return <DialingPhase call={call} />;
   }
@@ -64,15 +54,13 @@ function DialingPhase({ call }: { call: OutgoingDirectCall }) {
   const updateCallState = useCallStore((state) => state.updateCallState);
   const endCall = useCallStore((state) => state.endCall);
 
-  const loaderData = useRouteLoaderData("dm") as
-    DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessageMutations(
-    loaderData?.conversationId ?? "",
-  );
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const handleCancelCall = async () => {
-    const result: ServiceResponse<TimelineMessageDto> =
-      await directConversationService.cancelDirectCall(call.id);
+    const result: ServiceResponse<TimelineMessageDto> = await directConversationService.cancelDirectCall(
+      call.id,
+    );
 
     if (result.success) {
       updateCallState(call.id, "canceled");
@@ -150,11 +138,7 @@ function DialingPhase({ call }: { call: OutgoingDirectCall }) {
         </div>
 
         <div className="bg-gray-650 absolute bottom-2 flex flex-row gap-4 rounded-lg border-2 border-gray-600 p-2">
-          <IconButton
-            isLoading={false}
-            theme="danger"
-            onClick={handleCancelCall}
-          >
+          <IconButton isLoading={false} theme="danger" onClick={handleCancelCall}>
             <BsTelephoneXFill className="size-7" />
           </IconButton>
         </div>
@@ -237,11 +221,8 @@ function ActivePhase({ call }: { call: OutgoingDirectCall }) {
   const updateCallState = useCallStore((state) => state.updateCallState);
   const [isEndingCall, setIsEndingCall] = useState(false);
 
-  const loaderData = useRouteLoaderData("dm") as
-    DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessageMutations(
-    loaderData?.conversationId ?? "",
-  );
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const {
     stream,
@@ -259,16 +240,12 @@ function ActivePhase({ call }: { call: OutgoingDirectCall }) {
     audioOutputDevices,
   } = useUserMedia({});
 
-  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] =
-    useState<string | undefined>();
+  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] = useState<string | undefined>();
 
   useEffect(() => {
     if (!selectedAudioDeviceOutputId && audioOutputDevices.length > 0) {
-      const defaultDevice = audioOutputDevices.find(
-        (d) => d.deviceId === "default",
-      );
-      const initialId =
-        defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
+      const defaultDevice = audioOutputDevices.find((d) => d.deviceId === "default");
+      const initialId = defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
 
       setSelectedAudioDeviceOutputId(initialId);
     }
@@ -296,8 +273,9 @@ function ActivePhase({ call }: { call: OutgoingDirectCall }) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    const response: ServiceResponse<TimelineMessageDto> =
-      await directConversationService.endDirectCall(call.id);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(
+      call.id,
+    );
 
     if (response.success) {
       updateCallState(call.id, "ended");
@@ -311,9 +289,7 @@ function ActivePhase({ call }: { call: OutgoingDirectCall }) {
 
   return (
     <>
-      <CallWindowHeader
-        title={`On call with ${call.calleeProfile!.displayName}`}
-      />
+      <CallWindowHeader title={`On call with ${call.calleeProfile!.displayName}`} />
 
       <div className="@container-size relative flex flex-1 flex-col items-center justify-center bg-black">
         {/* Local video */}

@@ -12,86 +12,26 @@
 }
 
 @theme {
-  --color-red-425: color-mix(
-    in oklch,
-    var(--color-red-400) 75%,
-    var(--color-red-500) 25%
-  );
-  --color-red-450: color-mix(
-    in oklch,
-    var(--color-red-400) 50%,
-    var(--color-red-500) 50%
-  );
-  --color-red-475: color-mix(
-    in oklch,
-    var(--color-red-400) 25%,
-    var(--color-red-500) 75%
-  );
+  --color-red-425: color-mix(in oklch, var(--color-red-400) 75%, var(--color-red-500) 25%);
+  --color-red-450: color-mix(in oklch, var(--color-red-400) 50%, var(--color-red-500) 50%);
+  --color-red-475: color-mix(in oklch, var(--color-red-400) 25%, var(--color-red-500) 75%);
 
   /* "50 shades of gray" - @GameCreator, 2025 */
-  --color-gray-525: color-mix(
-    in oklch,
-    var(--color-gray-500) 75%,
-    var(--color-gray-600) 25%
-  );
-  --color-gray-550: color-mix(
-    in oklch,
-    var(--color-gray-500) 50%,
-    var(--color-gray-600) 50%
-  );
-  --color-gray-575: color-mix(
-    in oklch,
-    var(--color-gray-500) 25%,
-    var(--color-gray-600) 75%
-  );
+  --color-gray-525: color-mix(in oklch, var(--color-gray-500) 75%, var(--color-gray-600) 25%);
+  --color-gray-550: color-mix(in oklch, var(--color-gray-500) 50%, var(--color-gray-600) 50%);
+  --color-gray-575: color-mix(in oklch, var(--color-gray-500) 25%, var(--color-gray-600) 75%);
 
-  --color-gray-625: color-mix(
-    in oklch,
-    var(--color-gray-600) 75%,
-    var(--color-gray-700) 25%
-  );
-  --color-gray-650: color-mix(
-    in oklch,
-    var(--color-gray-600) 50%,
-    var(--color-gray-700) 50%
-  );
-  --color-gray-675: color-mix(
-    in oklch,
-    var(--color-gray-600) 25%,
-    var(--color-gray-700) 75%
-  );
+  --color-gray-625: color-mix(in oklch, var(--color-gray-600) 75%, var(--color-gray-700) 25%);
+  --color-gray-650: color-mix(in oklch, var(--color-gray-600) 50%, var(--color-gray-700) 50%);
+  --color-gray-675: color-mix(in oklch, var(--color-gray-600) 25%, var(--color-gray-700) 75%);
 
-  --color-gray-725: color-mix(
-    in oklch,
-    var(--color-gray-700) 75%,
-    var(--color-gray-800) 25%
-  );
-  --color-gray-750: color-mix(
-    in oklch,
-    var(--color-gray-700) 50%,
-    var(--color-gray-800) 50%
-  );
-  --color-gray-775: color-mix(
-    in oklch,
-    var(--color-gray-700) 25%,
-    var(--color-gray-800) 75%
-  );
+  --color-gray-725: color-mix(in oklch, var(--color-gray-700) 75%, var(--color-gray-800) 25%);
+  --color-gray-750: color-mix(in oklch, var(--color-gray-700) 50%, var(--color-gray-800) 50%);
+  --color-gray-775: color-mix(in oklch, var(--color-gray-700) 25%, var(--color-gray-800) 75%);
 
-  --color-gray-825: color-mix(
-    in oklch,
-    var(--color-gray-800) 75%,
-    var(--color-gray-900) 25%
-  );
-  --color-gray-850: color-mix(
-    in oklch,
-    var(--color-gray-800) 50%,
-    var(--color-gray-900) 50%
-  );
-  --color-gray-875: color-mix(
-    in oklch,
-    var(--color-gray-800) 25%,
-    var(--color-gray-900) 75%
-  );
+  --color-gray-825: color-mix(in oklch, var(--color-gray-800) 75%, var(--color-gray-900) 25%);
+  --color-gray-850: color-mix(in oklch, var(--color-gray-800) 50%, var(--color-gray-900) 50%);
+  --color-gray-875: color-mix(in oklch, var(--color-gray-800) 25%, var(--color-gray-900) 75%);
 }
 
 :root {

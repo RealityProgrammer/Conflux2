@@ -24,12 +24,7 @@ export interface DmConversationPageLoaderProps {
 export default function DmConversationPage() {
   const { peerId } = useLoaderData<DmConversationPageLoaderProps>();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    isEnabled,
-  } = useQueryDmConversationDetails(peerId ?? "", {
+  const { data, isLoading, isError, isEnabled } = useQueryDmConversationDetails(peerId ?? "", {
     enabled: !!peerId,
     staleTime: 30 * 60 * 1000,
   });
@@ -38,7 +33,7 @@ export default function DmConversationPage() {
     return (
       <ConversationPageTemplate.Template
         header={
-          <div className="flex flex-row items-center justify-center gap-2 w-full">
+          <div className="flex w-full flex-row items-center justify-center gap-2">
             <div className="h-5 w-1/2 animate-pulse rounded-full bg-white/10"></div>
           </div>
         }
@@ -55,10 +50,10 @@ export default function DmConversationPage() {
     return <Secret />;
   }
 
-  return <Success data={data}/>
+  return <Success data={data} />;
 }
 
-function Success({data}: {data: DmConversationDetails}) {
+function Success({ data }: { data: DmConversationDetails }) {
   const [showRightSidebar, setShowRightSidebar] = useState(false);
 
   useConversationConnection(data.conversationId);

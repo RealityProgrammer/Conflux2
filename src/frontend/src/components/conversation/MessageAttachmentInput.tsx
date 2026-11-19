@@ -5,10 +5,7 @@ interface MessageAttachmentInputProps {
   onChange: ChangeEventHandler<HTMLInputElement, HTMLInputElement>;
 }
 
-export default function MessageAttachmentInput({
-  ref,
-  onChange,
-}: MessageAttachmentInputProps) {
+export default function MessageAttachmentInput({ ref, onChange }: MessageAttachmentInputProps) {
   return (
     <input
       ref={ref}

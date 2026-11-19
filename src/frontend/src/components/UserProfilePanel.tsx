@@ -77,11 +77,7 @@ export default function UserProfilePanel({
 
             {data.user.biography && (
               <>
-                <Separator.Root
-                  orientation="horizontal"
-                  decorative
-                  className="horizontal-separator my-2"
-                />
+                <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2" />
 
                 <span className="group-label mb-1">About me</span>
 

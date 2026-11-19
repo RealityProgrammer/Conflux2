@@ -42,10 +42,8 @@ export default function CallWindow({ call }: { call: Call }) {
             const target = event.target as HTMLElement | null;
             if (!target) return;
 
-            let x: number =
-              parseFloat(target.getAttribute("data-x") || "0") || 0;
-            let y: number =
-              parseFloat(target.getAttribute("data-y") || "0") || 0;
+            let x: number = parseFloat(target.getAttribute("data-x") || "0") || 0;
+            let y: number = parseFloat(target.getAttribute("data-y") || "0") || 0;
 
             target.style.width = event.rect.width + "px";
             target.style.height = event.rect.height + "px";
@@ -75,12 +73,8 @@ export default function CallWindow({ call }: { call: Call }) {
             const target = event.target as HTMLElement | null;
             if (!target) return;
 
-            const x: number =
-              (parseFloat(target.getAttribute("data-x") || "0") || 0) +
-              event.dx;
-            const y: number =
-              (parseFloat(target.getAttribute("data-y") || "0") || 0) +
-              event.dy;
+            const x: number = (parseFloat(target.getAttribute("data-x") || "0") || 0) + event.dx;
+            const y: number = (parseFloat(target.getAttribute("data-y") || "0") || 0) + event.dy;
 
             target.style.transform = "translate(" + x + "px, " + y + "px)";
 

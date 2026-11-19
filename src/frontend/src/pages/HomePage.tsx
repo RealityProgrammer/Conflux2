@@ -7,13 +7,7 @@ import { BsDoorClosed, BsDoorOpen, BsGear } from "react-icons/bs";
 import { NavLink } from "react-router";
 import { useDocumentTitle } from "usehooks-ts";
 
-function AuthenticatedNavigationDrawer({
-  userName,
-  logout,
-}: {
-  userName: string;
-  logout: () => void;
-}) {
+function AuthenticatedNavigationDrawer({ userName, logout }: { userName: string; logout: () => void }) {
   const [open, setOpen] = useState(false);
 
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -92,9 +86,7 @@ function AuthenticatedNavigationDrawer({
                 handleClose();
               }}
             >
-              <Dialog.Title className="m-0 font-medium text-white">
-                Select your destination
-              </Dialog.Title>
+              <Dialog.Title className="m-0 font-medium text-white">Select your destination</Dialog.Title>
               <Dialog.Description className="mt-3 mb-5 text-sm text-gray-400">
                 Where are we going next?
               </Dialog.Description>
@@ -218,9 +210,7 @@ export default function HomePage() {
       </header>
 
       <section>
-        <h1 className="pt-8 pl-8 text-2xl leading-tight font-bold text-white">
-          insert cool homepage here
-        </h1>
+        <h1 className="pt-8 pl-8 text-2xl leading-tight font-bold text-white">insert cool homepage here</h1>
       </section>
     </>
   );

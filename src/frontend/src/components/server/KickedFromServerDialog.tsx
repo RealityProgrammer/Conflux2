@@ -7,10 +7,7 @@ interface KickedFromServerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function KickedFromServerDialog({
-  open,
-  onOpenChange,
-}: KickedFromServerDialogProps) {
+export default function KickedFromServerDialog({ open, onOpenChange }: KickedFromServerDialogProps) {
   const navigate = useNavigate();
 
   return (

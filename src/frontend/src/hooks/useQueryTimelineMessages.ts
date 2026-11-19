@@ -15,10 +15,7 @@ type PageParams = {
 export default function useQueryTimelineMessages(
   conversationId: string,
   anchorId: string | null = null,
-): UseInfiniteQueryResult<
-  InfiniteData<TimelineMessagePage | null | undefined, unknown>,
-  Error
-> {
+): UseInfiniteQueryResult<InfiniteData<TimelineMessagePage | null | undefined, unknown>, Error> {
   return useInfiniteQuery<
     TimelineMessagePage,
     Error,
@@ -28,11 +25,7 @@ export default function useQueryTimelineMessages(
   >({
     enabled: !!conversationId,
     queryKey: useQueryTimelineMessages.getKey(conversationId, anchorId),
-    queryFn: async ({
-      pageParam,
-    }: {
-      pageParam: PageParams;
-    }): Promise<TimelineMessagePage> => {
+    queryFn: async ({ pageParam }: { pageParam: PageParams }): Promise<TimelineMessagePage> => {
       return await conversationService.queryTimelineMessages(
         conversationId,
         pageParam.loadDirection,
@@ -43,11 +36,8 @@ export default function useQueryTimelineMessages(
       ? { loadDirection: "Around", cursorMessageId: anchorId }
       : { loadDirection: "Latest" },
 
-    getPreviousPageParam: (
-      firstPage: TimelineMessagePage,
-    ): PageParams | undefined => {
-      if (!firstPage?.hasMoreBefore || firstPage.messages.length === 0)
-        return undefined;
+    getPreviousPageParam: (firstPage: TimelineMessagePage): PageParams | undefined => {
+      if (!firstPage?.hasMoreBefore || firstPage.messages.length === 0) return undefined;
 
       return {
         loadDirection: "Before",
@@ -55,11 +45,8 @@ export default function useQueryTimelineMessages(
       };
     },
 
-    getNextPageParam: (
-      lastPage: TimelineMessagePage,
-    ): PageParams | undefined => {
-      if (!lastPage?.hasMoreAfter || lastPage.messages.length === 0)
-        return undefined;
+    getNextPageParam: (lastPage: TimelineMessagePage): PageParams | undefined => {
+      if (!lastPage?.hasMoreAfter || lastPage.messages.length === 0) return undefined;
 
       return {
         loadDirection: "After",
@@ -72,7 +59,8 @@ export default function useQueryTimelineMessages(
   });
 }
 
-useQueryTimelineMessages.getKey = (
-  conversationId: string,
-  anchorId: string | null = null,
-) => ["useQueryTimelineMessages", conversationId, anchorId ?? "latest"];
+useQueryTimelineMessages.getKey = (conversationId: string, anchorId: string | null = null) => [
+  "useQueryTimelineMessages",
+  conversationId,
+  anchorId ?? "latest",
+];

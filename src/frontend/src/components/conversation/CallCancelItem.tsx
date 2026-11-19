@@ -25,9 +25,7 @@ export class CallCancelItem extends TimelineItem<CallCancelItemProps> {
       <div className="pt-1 text-sm">
         <div className="hover-highlight px-4 py-1">
           <BsTelephoneMinusFill className="mr-4 inline size-6 fill-red-400" />
-          <span className="font-semibold">
-            {this.data.sender.displayName ?? "???"}
-          </span>
+          <span className="font-semibold">{this.data.sender.displayName ?? "???"}</span>
           <span> canceled a call.</span>
 
           <DateTimeText

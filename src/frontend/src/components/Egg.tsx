@@ -95,18 +95,11 @@ export default function Egg() {
   const currentStep = currentDialog[lineIndex];
 
   useEffect(() => {
-    if (
-      !showTextbox ||
-      !currentStep ||
-      currentStep.type !== "text" ||
-      !textRef.current
-    )
-      return;
+    if (!showTextbox || !currentStep || currentStep.type !== "text" || !textRef.current) return;
 
     setIsTyping(true);
 
-    const chars =
-      textRef.current.querySelectorAll<HTMLSpanElement>(".dialog-char");
+    const chars = textRef.current.querySelectorAll<HTMLSpanElement>(".dialog-char");
     chars.forEach((c) => (c.style.opacity = "0"));
 
     // Anime.js v4 syntax
@@ -129,8 +122,7 @@ export default function Egg() {
 
     if (isTyping) {
       if (animationRef.current) animationRef.current.pause();
-      const chars =
-        textRef.current.querySelectorAll<HTMLSpanElement>(".dialog-char");
+      const chars = textRef.current.querySelectorAll<HTMLSpanElement>(".dialog-char");
       chars.forEach((c) => (c.style.opacity = "1"));
       setIsTyping(false);
     } else {
@@ -160,7 +152,7 @@ export default function Egg() {
       : null;
 
   return (
-    <div className="@container-size mx-auto flex min-h-0 size-full flex-1 items-center justify-center overflow-hidden bg-black select-none">
+    <div className="@container-size mx-auto flex size-full min-h-0 flex-1 items-center justify-center overflow-hidden bg-black select-none">
       <div
         className="relative flex aspect-4/3 h-[min(100cqh,calc(100cqw*3/4))] w-[min(100cqw,calc(100cqh*4/3))] items-center justify-center"
         onClick={handleTextboxContinuation}
@@ -234,10 +226,7 @@ export default function Egg() {
                     className="group group flex cursor-pointer flex-row items-center gap-x-4"
                     onClick={() => handleChoiceSelect(opt)}
                   >
-                    <img
-                      src="/secrets/soul.png"
-                      className="invisible size-6 group-hover:visible"
-                    />
+                    <img src="/secrets/soul.png" className="invisible size-6 group-hover:visible" />
 
                     <span className="leading-[1.3]">{opt.label}</span>
                   </div>

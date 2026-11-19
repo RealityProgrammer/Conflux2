@@ -10,9 +10,7 @@ export function useRestoreAccountMutation(
 ) {
   return useMutation({
     mutationKey: useRestoreAccountMutation.key,
-    mutationFn: async (
-      restorationPassword: string,
-    ): Promise<ServiceResponse> => {
+    mutationFn: async (restorationPassword: string): Promise<ServiceResponse> => {
       return authService.restoreAccount(restorationPassword);
     },
     ...options,

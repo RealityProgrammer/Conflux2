@@ -3,10 +3,7 @@ import { BsMegaphone, BsPeople } from "react-icons/bs";
 import { Separator } from "radix-ui";
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {
-  DirectConversationUpdatedEvent,
-  UserPresenceChangedEvent,
-} from "../../api/events.ts";
+import type { DirectConversationUpdatedEvent, UserPresenceChangedEvent } from "../../api/events.ts";
 import VirtualizedScrollList from "../../components/VirtualizedScrollList.tsx";
 import { UserNameplate } from "../../components/UserNameplate.tsx";
 import {
@@ -31,9 +28,7 @@ function Sidebar() {
   return (
     <aside className="bg-gray-725 flex h-full flex-none basis-64 flex-col overflow-hidden overflow-y-auto border-r-2 border-r-gray-600 px-1.5 pt-1.5 text-white">
       <section className="flex-none">
-        <header className="mb-1.5 text-xs font-bold text-gray-400 uppercase">
-          System
-        </header>
+        <header className="mb-1.5 text-xs font-bold text-gray-400 uppercase">System</header>
 
         <NavLink
           to="/lobby/me/announcements"
@@ -58,11 +53,7 @@ function Sidebar() {
         </NavLink>
       </section>
 
-      <Separator.Root
-        orientation="horizontal"
-        decorative
-        className="my-2 h-px flex-none bg-gray-600"
-      />
+      <Separator.Root orientation="horizontal" decorative className="my-2 h-px flex-none bg-gray-600" />
 
       <section className="flex min-h-0 flex-1 flex-col">
         <header className="mb-1.5 flex-none text-xs font-bold text-gray-400 uppercase">
@@ -96,52 +87,39 @@ function DirectMessagesList() {
       },
     );
 
-  const allElements =
-    data?.pages.flatMap((page) => page?.directConversations.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.directConversations.nodes ?? []) ?? [];
 
-  useSignalREvent(
-    "DirectConversationUpdated",
-    async (event: DirectConversationUpdatedEvent) => {
-      const hasConversation =
-        data &&
-        data.pages.some((page) => {
-          return (
-            page.directConversations.nodes?.some(
-              (node) => node.id === event.conversationId,
-            ) ?? false
-          );
-        });
+  useSignalREvent("DirectConversationUpdated", async (event: DirectConversationUpdatedEvent) => {
+    const hasConversation =
+      data &&
+      data.pages.some((page) => {
+        return page.directConversations.nodes?.some((node) => node.id === event.conversationId) ?? false;
+      });
 
-      if (hasConversation) {
-        queryClient.setQueryData<
-          InfiniteData<GetDirectConversationsQuery, unknown> | undefined
-        >(useInfiniteGetDirectConversationsQuery.getKey({}), (oldData) => {
+    if (hasConversation) {
+      queryClient.setQueryData<InfiniteData<GetDirectConversationsQuery, unknown> | undefined>(
+        useInfiniteGetDirectConversationsQuery.getKey({}),
+        (oldData) => {
           if (!oldData || oldData.pages.length === 0) return oldData;
 
           const newPages = oldData.pages.map((page) => ({
             ...page,
             directConversations: {
               ...page.directConversations,
-              nodes: page.directConversations.nodes
-                ? [...page.directConversations.nodes]
-                : [],
+              nodes: page.directConversations.nodes ? [...page.directConversations.nodes] : [],
             },
           }));
 
           let conversation:
-            | NonNullable<
-                GetDirectConversationsQuery["directConversations"]["nodes"]
-              >[number]
-            | undefined = undefined;
+            NonNullable<GetDirectConversationsQuery["directConversations"]["nodes"]>[number] | undefined =
+            undefined;
 
           // extract element
           for (const page of newPages) {
             if (!page.directConversations.nodes) continue;
 
             const index =
-              page.directConversations.nodes.findIndex(
-                (node) => node.id === event.conversationId,
-              ) ?? -1;
+              page.directConversations.nodes.findIndex((node) => node.id === event.conversationId) ?? -1;
             if (index === -1) continue;
 
             conversation = page.directConversations.nodes.splice(index, 1)[0];
@@ -155,48 +133,47 @@ function DirectMessagesList() {
             ...oldData,
             pages: newPages,
           };
-        });
-      } else {
-        queryClient.invalidateQueries({
-          queryKey: useInfiniteGetDirectConversationsQuery.getKey({}),
-        });
-      }
-    },
-  );
+        },
+      );
+    } else {
+      queryClient.invalidateQueries({
+        queryKey: useInfiniteGetDirectConversationsQuery.getKey({}),
+      });
+    }
+  });
 
   useSignalREvent("PresenceUpdated", (event: UserPresenceChangedEvent) => {
-    if (allElements.findIndex((e) => e.peerUser?.id === event.userId) === -1)
-      return;
+    if (allElements.findIndex((e) => e.peerUser?.id === event.userId) === -1) return;
 
-    queryClient.setQueryData<
-      InfiniteData<GetDirectConversationsQuery, unknown>
-    >(useInfiniteGetDirectConversationsQuery.getKey({}), (oldData) => {
-      if (!oldData || !oldData.pages || oldData.pages.length == 0)
-        return oldData;
+    queryClient.setQueryData<InfiniteData<GetDirectConversationsQuery, unknown>>(
+      useInfiniteGetDirectConversationsQuery.getKey({}),
+      (oldData) => {
+        if (!oldData || !oldData.pages || oldData.pages.length == 0) return oldData;
 
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page) => ({
-          ...page,
-          directMessageChannels: {
-            ...page.directConversations,
-            nodes: !page.directConversations.nodes
-              ? null
-              : page.directConversations.nodes.map((node) =>
-                  node.peerUser?.id !== event.userId
-                    ? node
-                    : {
-                        ...node,
-                        peerUser: {
-                          ...node.peerUser,
-                          effectivePresenceStatus: event.status,
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            directMessageChannels: {
+              ...page.directConversations,
+              nodes: !page.directConversations.nodes
+                ? null
+                : page.directConversations.nodes.map((node) =>
+                    node.peerUser?.id !== event.userId
+                      ? node
+                      : {
+                          ...node,
+                          peerUser: {
+                            ...node.peerUser,
+                            effectivePresenceStatus: event.status,
+                          },
                         },
-                      },
-                ),
-          },
-        })),
-      };
-    });
+                  ),
+            },
+          })),
+        };
+      },
+    );
   });
 
   return (
@@ -223,15 +200,11 @@ function DirectMessagesList() {
 function DmNameplate({
   dm,
 }: {
-  dm: NonNullable<
-    GetDirectConversationsQuery["directConversations"]["nodes"]
-  >[number];
+  dm: NonNullable<GetDirectConversationsQuery["directConversations"]["nodes"]>[number];
 }) {
   const navigate = useNavigate();
 
-  const mentionCount = useMentionCountStore(
-    (state) => state.dmMentions[dm.peerUser?.id!] || 0,
-  );
+  const mentionCount = useMentionCountStore((state) => state.dmMentions[dm.peerUser?.id!] || 0);
 
   return (
     <UserNameplate.Root

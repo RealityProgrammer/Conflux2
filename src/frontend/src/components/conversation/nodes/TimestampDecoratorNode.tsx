@@ -60,9 +60,7 @@ export class TimestampDecoratorNode extends DecoratorNode<ReactNode> {
     return <Timestamp date={new Date(this.__timestamp)} />;
   }
 
-  static importJSON(
-    serializedNode: SerializedTimestampNode,
-  ): TimestampDecoratorNode {
+  static importJSON(serializedNode: SerializedTimestampNode): TimestampDecoratorNode {
     return $createTimestampNode(serializedNode.timestamp);
   }
 
@@ -75,14 +73,10 @@ export class TimestampDecoratorNode extends DecoratorNode<ReactNode> {
   }
 }
 
-export function $createTimestampNode(
-  timestamp: number,
-): TimestampDecoratorNode {
+export function $createTimestampNode(timestamp: number): TimestampDecoratorNode {
   return new TimestampDecoratorNode(timestamp);
 }
 
-export function $isTimestampNode(
-  node: LexicalNode | null | undefined,
-): node is TimestampDecoratorNode {
+export function $isTimestampNode(node: LexicalNode | null | undefined): node is TimestampDecoratorNode {
   return node instanceof TimestampDecoratorNode;
 }

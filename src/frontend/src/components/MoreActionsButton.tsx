@@ -7,9 +7,7 @@ interface MoreActionsButtonProps {
   children: ReactNode;
 }
 
-export default function MoreActionsButton({
-  children,
-}: MoreActionsButtonProps) {
+export default function MoreActionsButton({ children }: MoreActionsButtonProps) {
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>

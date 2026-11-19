@@ -1,10 +1,4 @@
-import {
-  BsAt,
-  BsClockFill,
-  BsEmojiSmileFill,
-  BsEmojiTear,
-  BsExclamationTriangle,
-} from "react-icons/bs";
+import { BsAt, BsClockFill, BsEmojiSmileFill, BsEmojiTear, BsExclamationTriangle } from "react-icons/bs";
 import { useInterval } from "usehooks-ts";
 import { useState } from "react";
 import { Separator } from "radix-ui";
@@ -35,9 +29,7 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
 
           <div className="flex-1">
             <p>Emoji (e)</p>
-            <p className="text-gray-400">
-              Spice up the chat with some fun icons.
-            </p>
+            <p className="text-gray-400">Spice up the chat with some fun icons.</p>
           </div>
         </li>
 
@@ -61,9 +53,7 @@ function SelectMode({ className = "", onSelect }: ModeProps) {
 
           <div className="flex-1">
             <p>Mention (m)</p>
-            <p className="text-gray-400">
-              Specifically mention an user to draw their attention.
-            </p>
+            <p className="text-gray-400">Specifically mention an user to draw their attention.</p>
           </div>
         </li>
       </ul>
@@ -137,26 +127,24 @@ function MentionMode({ className, searchTerm = "", onSelect }: MentionProps) {
   const { conversationId } = useChatContainerContext();
   const setUsers = useUserIdentityStore((state) => state.setUsers);
 
-  const { data, isLoading, isError, isEnabled } =
-    useInfiniteGetMentionableUsersQuery(
-      { conversationId, nameFilter: searchTerm },
-      {
-        enabled: searchTerm.length >= 3,
-        initialPageParam: { after: null },
-        getNextPageParam: (lastPage) => {
-          const pageInfo = lastPage?.mentionableUsers?.pageInfo;
+  const { data, isLoading, isError, isEnabled } = useInfiniteGetMentionableUsersQuery(
+    { conversationId, nameFilter: searchTerm },
+    {
+      enabled: searchTerm.length >= 3,
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage) => {
+        const pageInfo = lastPage?.mentionableUsers?.pageInfo;
 
-          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-            return { after: pageInfo.endCursor };
-          }
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
+        }
 
-          return undefined;
-        },
+        return undefined;
       },
-    );
+    },
+  );
 
-  const allElements =
-    data?.pages.flatMap((page) => page?.mentionableUsers.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.mentionableUsers.nodes ?? []) ?? [];
   const [listHeight, setListHeight] = useState(150);
 
   const commonClassName = `bg-gray-725 ring-2 ring-gray-600 rounded-lg flex flex-col justify-center items-center gap-1 text-sm ${className}`;
@@ -178,9 +166,7 @@ function MentionMode({ className, searchTerm = "", onSelect }: MentionProps) {
       ) : isError || !data ? (
         <div className={`py-3 ${commonClassName}`}>
           <BsExclamationTriangle className="size-8 fill-white" />
-          <p className="text-center select-none">
-            Failed to load mentionable users.
-          </p>
+          <p className="text-center select-none">Failed to load mentionable users.</p>
         </div>
       ) : (
         <div className={`p-1 ${commonClassName}`}>

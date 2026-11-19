@@ -1,8 +1,4 @@
-import {
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import type { ServerEmojiGroupDto } from "../api/types.ts";
 import { sessionUserService } from "../api/sessionUserService.ts";
 import { queryClient } from "../main.tsx";
@@ -31,48 +27,37 @@ export default function useUserEmojis(): UseQueryResult<ServerEmojiGroupDto[]> {
   useSignalREvent("EmojiDeleted", (event: EmojiDeletedEvent) => {
     if (!isSuccess || !data) return;
 
-    queryClient.setQueryData<ServerEmojiGroupDto[]>(
-      useUserEmojis.queryKey,
-      (oldData) => {
-        if (!oldData) return oldData;
+    queryClient.setQueryData<ServerEmojiGroupDto[]>(useUserEmojis.queryKey, (oldData) => {
+      if (!oldData) return oldData;
 
-        const index = oldData.findIndex(
-          (g) => g.serverInfo.serverId === event.serverId,
-        );
-        if (index === -1) return oldData;
+      const index = oldData.findIndex((g) => g.serverInfo.serverId === event.serverId);
+      if (index === -1) return oldData;
 
-        const updatedData = [...oldData];
-        const filteredEmojiEntries = updatedData[index].emojiEntries.filter(
-          (entry) => !event.emojiIds.includes(entry.id),
-        );
+      const updatedData = [...oldData];
+      const filteredEmojiEntries = updatedData[index].emojiEntries.filter(
+        (entry) => !event.emojiIds.includes(entry.id),
+      );
 
-        if (filteredEmojiEntries.length > 0) {
-          updatedData[index] = {
-            ...updatedData[index],
-            emojiEntries: filteredEmojiEntries,
-          };
-        } else {
-          updatedData.splice(index);
-        }
+      if (filteredEmojiEntries.length > 0) {
+        updatedData[index] = {
+          ...updatedData[index],
+          emojiEntries: filteredEmojiEntries,
+        };
+      } else {
+        updatedData.splice(index);
+      }
 
-        return updatedData;
-      },
-    );
+      return updatedData;
+    });
   });
 
-  useSignalREvent(
-    ["KickedFromServer", "BannedFromServer"],
-    (serverId: string) => {
-      queryClient.setQueryData<ServerEmojiGroupDto[]>(
-        useUserEmojis.queryKey,
-        (oldData) => {
-          if (!oldData) return oldData;
+  useSignalREvent(["KickedFromServer", "BannedFromServer"], (serverId: string) => {
+    queryClient.setQueryData<ServerEmojiGroupDto[]>(useUserEmojis.queryKey, (oldData) => {
+      if (!oldData) return oldData;
 
-          return [...oldData.filter((g) => g.serverInfo.serverId !== serverId)];
-        },
-      );
-    },
-  );
+      return [...oldData.filter((g) => g.serverInfo.serverId !== serverId)];
+    });
+  });
 
   useSignalREvent("UnbannedFromServer", (_unbannedServerId: string) => {
     queryClient.invalidateQueries({
@@ -87,17 +72,13 @@ useUserEmojis.queryKey = ["UserEmojis"];
 
 export function findMatchingEmoji(identifier: string) {
   // Synchronously grab cached data from React Query
-  const emojiGroups = queryClient.getQueryData<ServerEmojiGroupDto[]>(
-    useUserEmojis.queryKey,
-  );
+  const emojiGroups = queryClient.getQueryData<ServerEmojiGroupDto[]>(useUserEmojis.queryKey);
   if (!emojiGroups) return null;
 
   for (const group of emojiGroups) {
     const emojis = group.emojiEntries;
 
-    const matched = emojis.find(
-      (emoji) => emoji.id === identifier || emoji.shortCode === identifier,
-    );
+    const matched = emojis.find((emoji) => emoji.id === identifier || emoji.shortCode === identifier);
 
     if (matched) {
       return matched;

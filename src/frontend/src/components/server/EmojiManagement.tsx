@@ -10,11 +10,7 @@ import {
 import { Virtuoso } from "react-virtuoso";
 import useQueryEmojisForManagement from "../../hooks/useQueryEmojisForManagement.ts";
 import { useCommunityServerContext } from "../../contexts/CommunityServerContext.tsx";
-import type {
-  EmojiDto,
-  EmojiManagementDto,
-  ServiceResponse,
-} from "../../api/types.ts";
+import type { EmojiDto, EmojiManagementDto, ServiceResponse } from "../../api/types.ts";
 import ModalForm from "../ModalForm.tsx";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -38,8 +34,7 @@ export default function EmojiManagement() {
       <header className="mb-0 flex-none">
         <h3 className="text-xl font-bold text-white">Emoji</h3>
         <p className="text-sm text-gray-400">
-          Sprinkle some extra spice to your conversation with meme and
-          animatable.
+          Sprinkle some extra spice to your conversation with meme and animatable.
         </p>
       </header>
 
@@ -57,9 +52,7 @@ function ContainerContent() {
   } = useCommunityServerContext();
   const hasDeletePermission = hasPermission(ServerPermission.DeleteEmoji);
 
-  const { data, isError, isLoading } = useQueryEmojisForManagement(
-    serverDetails!.id,
-  );
+  const { data, isError, isLoading } = useQueryEmojisForManagement(serverDetails!.id);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -68,15 +61,9 @@ function ContainerContent() {
     ? []
     : !searchQuery.trim()
       ? data
-      : data.filter((emoji) =>
-          emoji.shortCode
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase().trim()),
-        );
+      : data.filter((emoji) => emoji.shortCode.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const allFilteredIds = filteredEmojis.map((e) => e.id);
-  const isAllSelected =
-    filteredEmojis.length > 0 &&
-    allFilteredIds.every((id) => selectedIds.has(id));
+  const isAllSelected = filteredEmojis.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
   const isIndeterminate = selectedIds.size > 0 && !isAllSelected;
 
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
@@ -230,10 +217,7 @@ function BulkDeleteButton({
   const bulkDeleteMutation = useMutation({
     mutationKey: ["BulkDeleteEmojis"],
     mutationFn: async () => {
-      const response = await serverService.deleteEmojis(
-        serverId,
-        Array.from(selectedIds),
-      );
+      const response = await serverService.deleteEmojis(serverId, Array.from(selectedIds));
 
       if (response.success) return;
 
@@ -276,9 +260,7 @@ const createEmojiSchema = z.object({
       "Short code can only contains lowercase, uppercase, numbers, dash and underscore characters.",
     ),
 
-  file: z
-    .file("File is required.")
-    .max(256 * 1024, "Emoji must be smaller or equals to 256KB."),
+  file: z.file("File is required.").max(256 * 1024, "Emoji must be smaller or equals to 256KB."),
 });
 
 type CreateEmojiFormValues = z.infer<typeof createEmojiSchema>;
@@ -310,13 +292,12 @@ function CreateEmojiButton({ disabled = false }: { disabled?: boolean }) {
   const createMutation = useMutation({
     mutationKey: ["CreateEmoji"],
     mutationFn: async (data: CreateEmojiFormValues) => {
-      const response: ServiceResponse<EmojiDto> =
-        await serverService.createEmoji(
-          serverDetails!.id,
-          data.shortCode,
-          data.file,
-          crypto.randomUUID(),
-        );
+      const response: ServiceResponse<EmojiDto> = await serverService.createEmoji(
+        serverDetails!.id,
+        data.shortCode,
+        data.file,
+        crypto.randomUUID(),
+      );
 
       if (response.success) {
         return response.data!;
@@ -359,10 +340,7 @@ function CreateEmojiButton({ disabled = false }: { disabled?: boolean }) {
         </button>
       }
       submitButton={
-        <button
-          type="submit"
-          className="button-theme-primary button-cursor w-32 rounded-md py-2"
-        >
+        <button type="submit" className="button-theme-primary button-cursor w-32 rounded-md py-2">
           Create Emoji
         </button>
       }
@@ -371,10 +349,7 @@ function CreateEmojiButton({ disabled = false }: { disabled?: boolean }) {
       <div className="mb-2">
         <Label.Root className="label mb-1 block">Short code</Label.Root>
 
-        <ErrorPopover
-          open={!!errors.shortCode}
-          content={errors.shortCode?.message}
-        >
+        <ErrorPopover open={!!errors.shortCode} content={errors.shortCode?.message}>
           <input
             type="text"
             placeholder="Enter short code of emoji..."
@@ -392,18 +367,12 @@ function CreateEmojiButton({ disabled = false }: { disabled?: boolean }) {
             control={control}
             name="file"
             render={({ field }) => (
-              <ErrorPopover
-                open={!!errors.file}
-                content={errors.file?.message}
-                sideOffset={0}
-              >
+              <ErrorPopover open={!!errors.file} content={errors.file?.message} sideOffset={0}>
                 <SelectableImageInput
                   value={field.value}
                   onChange={field.onChange}
                   className="size-48 rounded-xl"
-                  fallback={() => (
-                    <BsEmojiWink className="size-1/2 fill-gray-700/40" />
-                  )}
+                  fallback={() => <BsEmojiWink className="size-1/2 fill-gray-700/40" />}
                   accept="image/png, image/jpeg, image/webp, image/gif"
                 />
               </ErrorPopover>
@@ -412,11 +381,7 @@ function CreateEmojiButton({ disabled = false }: { disabled?: boolean }) {
         </div>
 
         <p className="mt-2 text-center font-mono text-sm">
-          :
-          {!shortCodeValue || shortCodeValue.length === 0
-            ? "???"
-            : shortCodeValue}
-          :
+          :{!shortCodeValue || shortCodeValue.length === 0 ? "???" : shortCodeValue}:
         </p>
       </div>
     </ModalForm>
@@ -464,16 +429,10 @@ function Row({
           />
         )}
 
-        <Emoji.Root
-          emojiId={data.id}
-          shortCode={data.shortCode}
-          className="size-10 flex-none"
-        />
+        <Emoji.Root emojiId={data.id} shortCode={data.shortCode} className="size-10 flex-none" />
 
         <div className="flex-1">
-          <span className="text-sm font-semibold text-white">
-            {data.shortCode}
-          </span>
+          <span className="text-sm font-semibold text-white">{data.shortCode}</span>
 
           <div className="font-mono text-xs text-gray-400">ID: {data.id}</div>
         </div>
@@ -488,9 +447,7 @@ function Row({
           className="size-5 rounded-full"
         />
 
-        <span className="font-medium text-gray-300">
-          {data.creator.displayName}
-        </span>
+        <span className="font-medium text-gray-300">{data.creator.displayName}</span>
       </div>
     </div>
   );

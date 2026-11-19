@@ -33,14 +33,10 @@ function IntroPanel({ setDisplayingPanel }: PanelProps) {
     <section className="flex flex-col gap-2 overflow-visible rounded-3xl bg-gray-700 p-6 text-white shadow-xl sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw]">
       <header className="flex-none">
         <h1 className="text-center text-3xl font-bold text-white">Hold up</h1>
-        <p className="mt-2 text-center">
-          Before going further, you need to setup your profile first!
-        </p>
+        <p className="mt-2 text-center">Before going further, you need to setup your profile first!</p>
       </header>
 
-      <p className="mt-2 text-center text-sm text-gray-400">
-        You don't want to be an unknown, don't you?
-      </p>
+      <p className="mt-2 text-center text-sm text-gray-400">You don't want to be an unknown, don't you?</p>
 
       <footer className="mt-2 flex flex-none flex-row justify-center">
         <button
@@ -85,8 +81,7 @@ function AvatarPanel({ setDisplayingPanel }: AvatarPanelProps) {
   const onSubmit = async (data: UploadAvatarFormValues) => {
     if (isDirty) {
       if (data.file) {
-        const response: ServiceResponse<number> =
-          await sessionUserService.uploadAvatar(data.file);
+        const response: ServiceResponse<number> = await sessionUserService.uploadAvatar(data.file);
 
         if (response.success) {
           setDisplayingPanel(DisplayingPanel.Name);
@@ -109,8 +104,7 @@ function AvatarPanel({ setDisplayingPanel }: AvatarPanelProps) {
             }
           } else {
             setError("root", {
-              message:
-                response.error?.message ?? "An unexpected error occurred.",
+              message: response.error?.message ?? "An unexpected error occurred.",
             });
           }
         }
@@ -127,19 +121,11 @@ function AvatarPanel({ setDisplayingPanel }: AvatarPanelProps) {
   return (
     <section className="flex flex-col gap-3 overflow-visible rounded-3xl bg-gray-700 p-6 text-white shadow-xl sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw]">
       <header className="flex-none">
-        <h1 className="text-center text-3xl font-bold text-white">
-          Setup Avatar
-        </h1>
-        <p className="mt-2 text-center text-sm text-gray-400">
-          Make yourself look special
-        </p>
+        <h1 className="text-center text-3xl font-bold text-white">Setup Avatar</h1>
+        <p className="mt-2 text-center text-sm text-gray-400">Make yourself look special</p>
       </header>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-1 flex-col"
-        id="avatar-form"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col" id="avatar-form">
         <div className="flex flex-row flex-nowrap items-start justify-center gap-2">
           <Controller
             control={control}
@@ -170,18 +156,10 @@ function AvatarPanel({ setDisplayingPanel }: AvatarPanelProps) {
           />
         </div>
 
-        {errors.file && (
-          <ErrorText className="mt-1 block text-center">
-            {errors.file.message}
-          </ErrorText>
-        )}
+        {errors.file && <ErrorText className="mt-1 block text-center">{errors.file.message}</ErrorText>}
       </form>
 
-      {errors.root && (
-        <ErrorText className="mt-1 block text-center">
-          {errors.root.message}
-        </ErrorText>
-      )}
+      {errors.root && <ErrorText className="mt-1 block text-center">{errors.root.message}</ErrorText>}
 
       <footer className="mt-2 flex flex-none flex-row justify-center">
         <button
@@ -240,10 +218,7 @@ function NamesPanel({ setDisplayingPanel }: NamesPanelProps) {
 
   const onSubmit = async (data: SetNamesFormValues) => {
     if (isDirty) {
-      const response: ServiceResponse = await sessionUserService.setNames(
-        data.userName,
-        data.displayName,
-      );
+      const response: ServiceResponse = await sessionUserService.setNames(data.userName, data.displayName);
 
       if (response.success) {
         setDisplayingPanel(DisplayingPanel.Complete);
@@ -256,10 +231,7 @@ function NamesPanel({ setDisplayingPanel }: NamesPanelProps) {
           response.statusCode === HttpStatusCode.BadRequest &&
           response.error?.code === "ValidationErrorsOccurred"
         ) {
-          const details = response.error.details as Record<
-            "userName" | "displayName",
-            string[]
-          >;
+          const details = response.error.details as Record<"userName" | "displayName", string[]>;
 
           if (details.userName && details.userName.length > 0) {
             setError("userName", {
@@ -286,19 +258,11 @@ function NamesPanel({ setDisplayingPanel }: NamesPanelProps) {
   return (
     <section className="flex flex-col gap-3 overflow-visible rounded-3xl bg-gray-700 p-6 text-white shadow-xl sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw]">
       <header className="flex-none">
-        <h1 className="text-center text-3xl font-bold text-white">
-          Name yourself
-        </h1>
-        <p className="mt-2 text-center text-sm text-gray-400">
-          Make a name of yourself, literally
-        </p>
+        <h1 className="text-center text-3xl font-bold text-white">Name yourself</h1>
+        <p className="mt-2 text-center text-sm text-gray-400">Make a name of yourself, literally</p>
       </header>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-1 flex-row gap-2"
-        id="name-form"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-row gap-2" id="name-form">
         <div className="flex-1">
           <Label.Root className="label mb-1 block" htmlFor="username">
             Username
@@ -311,9 +275,7 @@ function NamesPanel({ setDisplayingPanel }: NamesPanelProps) {
             {...register("userName")}
           />
 
-          {errors.userName && (
-            <ErrorText className="mt-1">{errors.userName.message}</ErrorText>
-          )}
+          {errors.userName && <ErrorText className="mt-1">{errors.userName.message}</ErrorText>}
         </div>
 
         <div className="flex-1">
@@ -328,19 +290,11 @@ function NamesPanel({ setDisplayingPanel }: NamesPanelProps) {
             {...register("displayName")}
           />
 
-          {errors.displayName && (
-            <ErrorText className="mt-1">
-              {errors.displayName?.message}
-            </ErrorText>
-          )}
+          {errors.displayName && <ErrorText className="mt-1">{errors.displayName?.message}</ErrorText>}
         </div>
       </form>
 
-      {errors.root && (
-        <ErrorText className="mt-1 block text-center">
-          {errors.root.message}
-        </ErrorText>
-      )}
+      {errors.root && <ErrorText className="mt-1 block text-center">{errors.root.message}</ErrorText>}
 
       <footer className="mt-2 flex flex-none flex-row justify-around">
         <button
@@ -396,15 +350,13 @@ function CompletePanel({ setDisplayingPanel }: CompletePanelProps) {
   return (
     <section className="relative overflow-visible rounded-3xl bg-gray-700 p-6 text-white shadow-xl sm:w-[95vw] md:w-[83vw] lg:w-[66vw] xl:w-[50vw]">
       <header>
-        <h1 className="text-center text-3xl font-bold text-white">
-          Almost complete
-        </h1>
+        <h1 className="text-center text-3xl font-bold text-white">Almost complete</h1>
       </header>
 
       <div className="mt-4">
         <p className="text-center text-sm text-white">
-          Well that wasn't too hard, you can now revise everything, press the
-          Complete button if you want to complete profile setup.
+          Well that wasn't too hard, you can now revise everything, press the Complete button if you want to
+          complete profile setup.
         </p>
       </div>
 
@@ -437,17 +389,13 @@ function CompletePanel({ setDisplayingPanel }: CompletePanelProps) {
         </button>
       </footer>
 
-      {error ?? (
-        <ErrorText className="mt-1 block text-center">{error}</ErrorText>
-      )}
+      {error ?? <ErrorText className="mt-1 block text-center">{error}</ErrorText>}
     </section>
   );
 }
 
 export default function ProfileSetupPage() {
-  const [displayingPanel, setDisplayingPanel] = useState<DisplayingPanel>(
-    DisplayingPanel.Intro,
-  );
+  const [displayingPanel, setDisplayingPanel] = useState<DisplayingPanel>(DisplayingPanel.Intro);
   const previousPanel = useRef<DisplayingPanel>(displayingPanel);
 
   const zoomRef = useRef<HTMLDivElement | null>(null);
@@ -520,10 +468,7 @@ export default function ProfileSetupPage() {
   return (
     <div className="mesh-bg-1 fixed inset-0 overflow-hidden bg-fixed">
       <div ref={zoomRef} className="absolute inset-0 origin-center">
-        <div
-          ref={mapRef}
-          className="absolute top-0 left-0 h-[2000px] w-[3000px] origin-top-left"
-        >
+        <div ref={mapRef} className="absolute top-0 left-0 h-[2000px] w-[3000px] origin-top-left">
           <div
             id={`panel-${DisplayingPanel.Intro}`}
             className={`absolute top-[20%] left-[15%] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-700 ${displayingPanel === DisplayingPanel.Intro ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-40"}`}

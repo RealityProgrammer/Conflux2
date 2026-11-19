@@ -18,23 +18,11 @@ type PageParam = { beforeCursor: string | null };
 export default function useMessageSearchQuery(
   variables: UseMessageSearchQueryVariables,
   options: Omit<
-    UseInfiniteQueryOptions<
-      MessageSearchPage,
-      Error,
-      InfiniteData<MessageSearchPage>,
-      QueryKey,
-      PageParam
-    >,
+    UseInfiniteQueryOptions<MessageSearchPage, Error, InfiniteData<MessageSearchPage>, QueryKey, PageParam>,
     "queryKey" | "getNextPageParam" | "initialPageParam" | "queryFn"
   >,
 ) {
-  return useInfiniteQuery<
-    MessageSearchPage,
-    Error,
-    InfiniteData<MessageSearchPage>,
-    QueryKey,
-    PageParam
-  >({
+  return useInfiniteQuery<MessageSearchPage, Error, InfiniteData<MessageSearchPage>, QueryKey, PageParam>({
     queryKey: useMessageSearchQuery.getKey(variables),
     initialPageParam: { beforeCursor: null },
     getNextPageParam: (lastPage: MessageSearchPage) => {

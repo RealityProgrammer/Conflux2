@@ -87,11 +87,7 @@ export default function UserProfileContent({
 
         {bio && (
           <>
-            <Separator.Root
-              orientation="horizontal"
-              decorative
-              className="horizontal-separator my-2"
-            />
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2" />
 
             <p className="group-label">About me</p>
 
@@ -101,14 +97,8 @@ export default function UserProfileContent({
 
         {mutualFriendsCount && (
           <>
-            <Separator.Root
-              orientation="horizontal"
-              decorative
-              className="horizontal-separator my-2"
-            />
-            <span className="block text-xs">
-              {mutualFriendsCount} mutual friends.
-            </span>
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2" />
+            <span className="block text-xs">{mutualFriendsCount} mutual friends.</span>
           </>
         )}
       </div>

@@ -1,9 +1,5 @@
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
-import type {
-  EditedMessageDto,
-  TimelineMessageDto,
-  TimelineMessagePage,
-} from "../api/types.ts";
+import type { EditedMessageDto, TimelineMessageDto, TimelineMessagePage } from "../api/types.ts";
 import useQueryTimelineMessages from "./useQueryTimelineMessages.ts";
 
 interface UseTimelineMessagesResult {
@@ -11,19 +7,11 @@ interface UseTimelineMessagesResult {
   updateMessage: (messageId: string, properties: EditedMessageDto) => void;
   updatePinStatus: (messageId: string, isPinned: boolean) => void;
   deleteMessage: (messageId: string) => void;
-  updateReactionsCounts: (
-    messageId: string,
-    reactionsCounts: Record<string, number>,
-  ) => void;
-  updateUserReactionKeys: (
-    messageId: string,
-    updater: (previous: string[]) => string[],
-  ) => void;
+  updateReactionsCounts: (messageId: string, reactionsCounts: Record<string, number>) => void;
+  updateUserReactionKeys: (messageId: string, updater: (previous: string[]) => string[]) => void;
 }
 
-export default function useTimelineMessageMutations(
-  conversationId: string,
-): UseTimelineMessagesResult {
+export default function useTimelineMessageMutations(conversationId: string): UseTimelineMessagesResult {
   const queryClient = useQueryClient();
 
   const modifyMessageData = (
@@ -31,17 +19,11 @@ export default function useTimelineMessageMutations(
       oldData: InfiniteData<TimelineMessagePage | null | undefined>,
     ) => InfiniteData<TimelineMessagePage | null | undefined>,
   ) => {
-    queryClient.setQueriesData<
-      InfiniteData<TimelineMessagePage | undefined | null>
-    >(
+    queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
       { queryKey: useQueryTimelineMessages.getKey(conversationId) },
       (
-        oldData:
-          | NoInfer<InfiniteData<TimelineMessagePage | null | undefined>>
-          | undefined,
-      ):
-        | NoInfer<InfiniteData<TimelineMessagePage | null | undefined>>
-        | undefined => {
+        oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined,
+      ): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) {
           return oldData;
         }
@@ -56,8 +38,7 @@ export default function useTimelineMessageMutations(
       (
         oldData: InfiniteData<TimelineMessagePage | null | undefined>,
       ): InfiniteData<TimelineMessagePage | null | undefined> => {
-        if (!oldData || !oldData.pages || oldData.pages.length === 0)
-          return oldData;
+        if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
 
         const lastPage = oldData.pages[oldData.pages.length - 1];
         if (!lastPage) return oldData;
@@ -71,10 +52,7 @@ export default function useTimelineMessageMutations(
             ...oldData.pages.slice(0, -1),
             {
               ...oldData.pages[oldData.pages.length - 1]!,
-              messages: [
-                ...oldData.pages[oldData.pages.length - 1]!.messages,
-                newMessage,
-              ],
+              messages: [...oldData.pages[oldData.pages.length - 1]!.messages, newMessage],
             },
           ],
         };
@@ -99,26 +77,24 @@ export default function useTimelineMessageMutations(
 
         return {
           ...oldData,
-          pages: oldData.pages.map(
-            (page: TimelineMessagePage | null | undefined) => {
-              if (!page || !page.messages.some((m) => m.id === messageId)) {
-                return page;
-              }
+          pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+            if (!page || !page.messages.some((m) => m.id === messageId)) {
+              return page;
+            }
 
-              return {
-                ...page,
-                messages: page.messages.map((m) =>
-                  m.id === messageId
-                    ? {
-                        ...m,
-                        body: properties.newBody,
-                        attachments: properties.attachments,
-                      }
-                    : m,
-                ),
-              };
-            },
-          ),
+            return {
+              ...page,
+              messages: page.messages.map((m) =>
+                m.id === messageId
+                  ? {
+                      ...m,
+                      body: properties.newBody,
+                      attachments: properties.attachments,
+                    }
+                  : m,
+              ),
+            };
+          }),
         };
       },
     );
@@ -141,20 +117,16 @@ export default function useTimelineMessageMutations(
 
         return {
           ...oldData,
-          pages: oldData.pages.map(
-            (page: TimelineMessagePage | null | undefined) => {
-              if (!page || !page.messages.some((m) => m.id === messageId)) {
-                return page;
-              }
+          pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+            if (!page || !page.messages.some((m) => m.id === messageId)) {
+              return page;
+            }
 
-              return {
-                ...page,
-                messages: page.messages.map((m) =>
-                  m.id === messageId ? { ...m, isPinned } : m,
-                ),
-              };
-            },
-          ),
+            return {
+              ...page,
+              messages: page.messages.map((m) => (m.id === messageId ? { ...m, isPinned } : m)),
+            };
+          }),
         };
       },
     );
@@ -177,27 +149,22 @@ export default function useTimelineMessageMutations(
 
         return {
           ...oldData,
-          pages: oldData.pages.map(
-            (page: TimelineMessagePage | null | undefined) => {
-              if (!page || !page.messages.some((m) => m.id === messageId)) {
-                return page;
-              }
+          pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+            if (!page || !page.messages.some((m) => m.id === messageId)) {
+              return page;
+            }
 
-              return {
-                ...page,
-                messages: page.messages.filter((m) => m.id !== messageId),
-              };
-            },
-          ),
+            return {
+              ...page,
+              messages: page.messages.filter((m) => m.id !== messageId),
+            };
+          }),
         };
       },
     );
   };
 
-  const updateReactionsCounts = (
-    messageId: string,
-    reactionsCounts: Record<string, number>,
-  ) => {
+  const updateReactionsCounts = (messageId: string, reactionsCounts: Record<string, number>) => {
     modifyMessageData(
       (
         oldData: InfiniteData<TimelineMessagePage | null | undefined>,
@@ -214,29 +181,22 @@ export default function useTimelineMessageMutations(
 
         return {
           ...oldData,
-          pages: oldData.pages.map(
-            (page: TimelineMessagePage | null | undefined) => {
-              if (!page || !page.messages.some((m) => m.id === messageId)) {
-                return page;
-              }
+          pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+            if (!page || !page.messages.some((m) => m.id === messageId)) {
+              return page;
+            }
 
-              return {
-                ...page,
-                messages: page.messages.map((m) =>
-                  m.id === messageId ? { ...m, reactionsCounts } : m,
-                ),
-              };
-            },
-          ),
+            return {
+              ...page,
+              messages: page.messages.map((m) => (m.id === messageId ? { ...m, reactionsCounts } : m)),
+            };
+          }),
         };
       },
     );
   };
 
-  const updateUserReactionKeys = (
-    messageId: string,
-    updater: (previous: string[]) => string[],
-  ) => {
+  const updateUserReactionKeys = (messageId: string, updater: (previous: string[]) => string[]) => {
     modifyMessageData(
       (
         oldData: InfiniteData<TimelineMessagePage | null | undefined>,
@@ -253,25 +213,23 @@ export default function useTimelineMessageMutations(
 
         return {
           ...oldData,
-          pages: oldData.pages.map(
-            (page: TimelineMessagePage | null | undefined) => {
-              if (!page || !page.messages.some((m) => m.id === messageId)) {
-                return page;
-              }
+          pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+            if (!page || !page.messages.some((m) => m.id === messageId)) {
+              return page;
+            }
 
-              return {
-                ...page,
-                messages: page.messages.map((m) =>
-                  m.id === messageId
-                    ? {
-                        ...m,
-                        userReactionKeys: updater(m.userReactionKeys ?? []),
-                      }
-                    : m,
-                ),
-              };
-            },
-          ),
+            return {
+              ...page,
+              messages: page.messages.map((m) =>
+                m.id === messageId
+                  ? {
+                      ...m,
+                      userReactionKeys: updater(m.userReactionKeys ?? []),
+                    }
+                  : m,
+              ),
+            };
+          }),
         };
       },
     );

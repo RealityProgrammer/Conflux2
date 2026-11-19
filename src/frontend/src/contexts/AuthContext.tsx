@@ -1,16 +1,7 @@
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import { useNavigate, useRevalidator, useRouteLoaderData } from "react-router";
 import { authService } from "../api/authService.ts";
-import type {
-  UserAuthorizationInfo,
-  UserIdentityProfileDto,
-} from "../api/types.ts";
+import type { UserAuthorizationInfo, UserIdentityProfileDto } from "../api/types.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RootLoaderProps } from "../router.tsx";
 
@@ -45,9 +36,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   // update callback
   const updateUserProfile = (updates: Partial<UserIdentityProfileDto>) => {
-    setUserProfile(
-      (prev: UserIdentityProfileDto | null): UserIdentityProfileDto | null =>
-        prev ? { ...prev, ...updates } : null,
+    setUserProfile((prev: UserIdentityProfileDto | null): UserIdentityProfileDto | null =>
+      prev ? { ...prev, ...updates } : null,
     );
   };
 

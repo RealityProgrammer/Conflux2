@@ -12,10 +12,7 @@ import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useInfiniteGetServerModerationLogsQuery } from "../../graphql/infiniteQueries.ts";
 import AnimatedGearIcon from "../AnimatedGearIcon.tsx";
-import {
-  UnsavedChangesProvider,
-  useUnsavedChanges,
-} from "../../contexts/UnsavedChangesContext.tsx";
+import { UnsavedChangesProvider, useUnsavedChanges } from "../../contexts/UnsavedChangesContext.tsx";
 import EmojiManagement from "./EmojiManagement.tsx";
 
 export function ServerManagementModal({
@@ -32,13 +29,7 @@ export function ServerManagementModal({
   );
 }
 
-function Modal({
-  open,
-  onOpenChanged,
-}: {
-  open: boolean;
-  onOpenChanged: (open: boolean) => void;
-}) {
+function Modal({ open, onOpenChanged }: { open: boolean; onOpenChanged: (open: boolean) => void }) {
   const queryClient = useQueryClient();
 
   const {
@@ -57,8 +48,7 @@ function Modal({
 
   // invalidate the moderation log query when there is update event
   useSignalREvent("UpdateModerationLog", () => {
-    if (!serverDetails || !hasPermission(ServerPermission.ReadModerationLogs))
-      return;
+    if (!serverDetails || !hasPermission(ServerPermission.ReadModerationLogs)) return;
 
     queryClient.invalidateQueries({
       queryKey: useInfiniteGetServerModerationLogsQuery.getKey({
@@ -124,19 +114,12 @@ function Modal({
         >
           {!activeTab && (
             <div className="flex flex-1 flex-col items-center justify-center">
-              <p className="font-medium text-gray-400 select-none">
-                No section selected
-              </p>
-              <p className="text-sm text-gray-400 select-none">
-                Click a tab to view details.
-              </p>
+              <p className="font-medium text-gray-400 select-none">No section selected</p>
+              <p className="text-sm text-gray-400 select-none">Click a tab to view details.</p>
             </div>
           )}
 
-          <Tabs.Content
-            value="roles"
-            className="relative flex flex-1 flex-col gap-2 overflow-hidden p-2"
-          >
+          <Tabs.Content value="roles" className="relative flex flex-1 flex-col gap-2 overflow-hidden p-2">
             <RoleManagement />
           </Tabs.Content>
 
@@ -159,10 +142,7 @@ function Modal({
           )}
 
           {hasPermission(ServerPermission.ManageEmojis) && (
-            <Tabs.Content
-              value="emoji"
-              className="relative flex flex-1 flex-col gap-2 overflow-hidden p-2"
-            >
+            <Tabs.Content value="emoji" className="relative flex flex-1 flex-col gap-2 overflow-hidden p-2">
               <EmojiManagement />
             </Tabs.Content>
           )}

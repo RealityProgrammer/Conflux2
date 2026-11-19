@@ -1,16 +1,5 @@
-import {
-  cloneElement,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  useId,
-} from "react";
-import {
-  type FieldValues,
-  FormProvider,
-  type SubmitHandler,
-  type UseFormReturn,
-} from "react-hook-form";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode, useId } from "react";
+import { type FieldValues, FormProvider, type SubmitHandler, type UseFormReturn } from "react-hook-form";
 import Dialog from "./Dialog.tsx";
 import { Dialog as RadixDialog } from "radix-ui";
 
@@ -57,21 +46,15 @@ export default function ModalForm<TFieldValues extends FieldValues>({
         </button>
       )}
 
-      <RadixDialog.Close
-        type="button"
-        className="basis-20 cursor-pointer outline-none"
-      >
+      <RadixDialog.Close type="button" className="basis-20 cursor-pointer outline-none">
         Cancel
       </RadixDialog.Close>
 
       {isValidElement(submitButton)
-        ? cloneElement(
-            submitButton as ReactElement<{ form?: string; type?: string }>,
-            {
-              form: formId,
-              type: (submitButton.props as any).type ?? "submit",
-            },
-          )
+        ? cloneElement(submitButton as ReactElement<{ form?: string; type?: string }>, {
+            form: formId,
+            type: (submitButton.props as any).type ?? "submit",
+          })
         : submitButton}
     </div>
   );
@@ -94,11 +77,7 @@ export default function ModalForm<TFieldValues extends FieldValues>({
       footerContent={footerContent}
     >
       <FormProvider {...formMethods}>
-        <form
-          id={formId}
-          className="panel-padding"
-          onSubmit={formMethods.handleSubmit(onSubmit)}
-        >
+        <form id={formId} className="panel-padding" onSubmit={formMethods.handleSubmit(onSubmit)}>
           {children}
         </form>
       </FormProvider>

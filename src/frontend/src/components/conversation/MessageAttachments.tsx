@@ -8,10 +8,7 @@ export interface MessageAttachmentsProps {
   onAttachmentClick: (index: number) => void;
 }
 
-export default function MessageAttachments({
-  attachments,
-  onAttachmentClick,
-}: MessageAttachmentsProps) {
+export default function MessageAttachments({ attachments, onAttachmentClick }: MessageAttachmentsProps) {
   return (
     <ScrollArea.Root className={`group mt-1 w-full overflow-hidden`}>
       <ScrollArea.Viewport className="">

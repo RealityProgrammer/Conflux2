@@ -20,26 +20,14 @@ interface UserAvatarProps extends RadixAvatar.AvatarProps {
   presence?: PresenceProps;
 }
 
-function User({
-  ref,
-  userId,
-  version,
-  alt,
-  className,
-  presence,
-  ...props
-}: UserAvatarProps) {
+function User({ ref, userId, version, alt, className, presence, ...props }: UserAvatarProps) {
   return (
     <div className={`relative ${className}`} ref={ref} {...props}>
       <div className="size-full overflow-hidden rounded-[inherit]">
         <RadixAvatar.Root className="size-full">
           <RadixAvatar.Image
             className="size-full object-cover"
-            src={
-              userId && version
-                ? userService.getAvatarUrl(userId, version)
-                : undefined
-            }
+            src={userId && version ? userService.getAvatarUrl(userId, version) : undefined}
             alt={alt}
             draggable={false}
           />
@@ -71,11 +59,7 @@ function Server({ serverId, version, alt, ...props }: ServerAvatarProps) {
     <RadixAvatar.Root {...props}>
       <RadixAvatar.Image
         className="size-full rounded-[inherit] object-cover"
-        src={
-          serverId && version
-            ? serverService.getAvatarUrl(serverId, version)
-            : undefined
-        }
+        src={serverId && version ? serverService.getAvatarUrl(serverId, version) : undefined}
         alt={alt}
         draggable={false}
       />
@@ -88,9 +72,7 @@ function Server({ serverId, version, alt, ...props }: ServerAvatarProps) {
 }
 
 function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={`animate-pulse bg-white/10 ${className}`} {...props}></div>
-  );
+  return <div className={`animate-pulse bg-white/10 ${className}`} {...props}></div>;
 }
 
 export const Avatar = {

@@ -15,18 +15,13 @@ import { DropdownMenu, Separator, Tooltip } from "radix-ui";
 import { useCommunityServerContext } from "../../contexts/CommunityServerContext.tsx";
 import { serverService } from "../../api/serverService.ts";
 import AvatarFallback from "./AvatarFallback.tsx";
-import type {
-  ServerChannelIdentityDto,
-  ServiceResponse,
-} from "../../api/types.ts";
+import type { ServerChannelIdentityDto, ServiceResponse } from "../../api/types.ts";
 import { useState } from "react";
 import { FaChevronRight } from "react-icons/fa6";
 import IconButton from "../IconButton.tsx";
 import { useNavigate } from "react-router";
 import { ChannelType, ServerPermission } from "../../api/schema.ts";
-import CreateCategoryOrChannelModal, {
-  type CreateType,
-} from "./CreateCategoryOrChannelModal.tsx";
+import CreateCategoryOrChannelModal, { type CreateType } from "./CreateCategoryOrChannelModal.tsx";
 import AlertDialog from "../AlertActionDialog.tsx";
 import { useChannelDeleteMutation } from "../../hooks/useChannelDeleteMutation.ts";
 import { toast } from "react-toastify";
@@ -53,10 +48,8 @@ export default function SidebarContent() {
     detailsQueryResult: { data: serverDetails, isLoading, isError, isSuccess },
   } = useCommunityServerContext();
 
-  const [createModalState, setCreateModalState] =
-    useState<CreateModalState | null>(null);
-  const [deleteModalState, setDeleteModalState] =
-    useState<CategoryOrChannelDeleteState | null>(null);
+  const [createModalState, setCreateModalState] = useState<CreateModalState | null>(null);
+  const [deleteModalState, setDeleteModalState] = useState<CategoryOrChannelDeleteState | null>(null);
   const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
 
@@ -86,8 +79,8 @@ export default function SidebarContent() {
                   sideOffset={5}
                   side="top"
                 >
-                  You might have slipped through the fabric of reality and ended
-                  up here. Trace back to where you were and try again...
+                  You might have slipped through the fabric of reality and ended up here. Trace back to
+                  where you were and try again...
                 </Tooltip.Content>
               </Tooltip.Portal>
             </Tooltip.Root>
@@ -101,11 +94,7 @@ export default function SidebarContent() {
         />
       )}
 
-      <Separator.Root
-        orientation="horizontal"
-        decorative
-        className="horizontal-separator mx-1 my-2"
-      />
+      <Separator.Root orientation="horizontal" decorative className="horizontal-separator mx-1 my-2" />
 
       {isSuccess && (
         <SuccessfulBody
@@ -174,10 +163,7 @@ function SuccessfulHeader({
         }}
         avatar={{
           src: serverDetails.avatarVersion
-            ? serverService.getAvatarUrl(
-                serverDetails.id,
-                serverDetails.avatarVersion,
-              )
+            ? serverService.getAvatarUrl(serverDetails.id, serverDetails.avatarVersion)
             : undefined,
           alt: "Server Avatar",
           fallback: <AvatarFallback />,
@@ -188,11 +174,7 @@ function SuccessfulHeader({
       <p className="flex-none truncate px-2">{serverDetails.name}</p>
 
       {isDetailsSuccess && (
-        <DropdownMenu.Root
-          open={isDropdownOpen}
-          onOpenChange={setIsDropdownOpen}
-          modal={false}
-        >
+        <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
           <DropdownMenu.Trigger asChild>
             <IconButton theme="default" className="absolute top-1 right-1">
               <BsGearFill className="size-5" />
@@ -225,9 +207,7 @@ function SuccessfulHeader({
 
                   <DropdownMenu.Item
                     className="dropdown-item-default"
-                    onSelect={() =>
-                      setCreateModalState({ categoryId: null, type: "text" })
-                    }
+                    onSelect={() => setCreateModalState({ categoryId: null, type: "text" })}
                   >
                     Create text channel
                     <BsChatText className="ml-auto size-4 fill-white" />
@@ -235,9 +215,7 @@ function SuccessfulHeader({
 
                   <DropdownMenu.Item
                     className="dropdown-item-default"
-                    onSelect={() =>
-                      setCreateModalState({ categoryId: null, type: "voice" })
-                    }
+                    onSelect={() => setCreateModalState({ categoryId: null, type: "voice" })}
                   >
                     Create voice channel
                     <BsVolumeUp className="ml-auto size-4 fill-white" />
@@ -321,9 +299,7 @@ function SuccessfulHeader({
                 {
                   onSuccess: () => {
                     queryClient.invalidateQueries({
-                      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey(
-                        {},
-                      ),
+                      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({}),
                     });
 
                     navigate("/lobby");
@@ -340,9 +316,7 @@ function SuccessfulHeader({
           </button>
         }
       >
-        <div className="p-3">
-          Are you sure you want to leave? Your friends will miss you...
-        </div>
+        <div className="p-3">Are you sure you want to leave? Your friends will miss you...</div>
       </AlertDialog>
     </div>
   );
@@ -381,10 +355,7 @@ function SuccessfulBody({
   return (
     <>
       <div className="px-2">
-        <CategoryList
-          setCreateModalState={setCreateModalState}
-          setDeleteModalState={setDeleteModalState}
-        />
+        <CategoryList setCreateModalState={setCreateModalState} setDeleteModalState={setDeleteModalState} />
       </div>
 
       <CreateCategoryOrChannelModal
@@ -398,15 +369,9 @@ function SuccessfulBody({
         initialType={createModalState?.type}
       />
 
-      <ServerManagementModal
-        open={isManagementModalOpen}
-        onOpenChanged={setIsManagementModalOpen}
-      />
+      <ServerManagementModal open={isManagementModalOpen} onOpenChanged={setIsManagementModalOpen} />
 
-      <CreateInvitationDialog
-        open={isInvitationModalOpen}
-        onOpenChange={setIsInvitationModalOpen}
-      />
+      <CreateInvitationDialog open={isInvitationModalOpen} onOpenChange={setIsInvitationModalOpen} />
 
       <AlertDialog
         contentClassName="centered-dialog w-lg bg-gray-650 text-white"
@@ -416,11 +381,7 @@ function SuccessfulBody({
             setDeleteModalState(null);
           }
         }}
-        title={
-          deleteModalState?.type === "channel"
-            ? "Delete channel"
-            : "Delete channel category"
-        }
+        title={deleteModalState?.type === "channel" ? "Delete channel" : "Delete channel category"}
         subtitle="Time to forget the history..."
         headerIcon={
           deleteModalState?.type === "channel" ? (
@@ -430,10 +391,7 @@ function SuccessfulBody({
           )
         }
         cancelButton={
-          <button
-            type="button"
-            className="basis-20 cursor-pointer outline-none"
-          >
+          <button type="button" className="basis-20 cursor-pointer outline-none">
             Cancel
           </button>
         }
@@ -487,17 +445,11 @@ function SuccessfulBody({
         <div className="p-3">
           {deleteModalState?.type === "category" ? (
             <>
-              <p>
-                Are you sure you want to delete this channel category? This
-                action cannot be undone.
-              </p>
+              <p>Are you sure you want to delete this channel category? This action cannot be undone.</p>
               <p>The inner channels will be uncategorized.</p>
             </>
           ) : (
-            <p>
-              Are you sure you want to delete this channel? This action cannot
-              be undone.
-            </p>
+            <p>Are you sure you want to delete this channel? This action cannot be undone.</p>
           )}
         </div>
       </AlertDialog>
@@ -510,10 +462,7 @@ interface CategoryListProps {
   setDeleteModalState: (value: CategoryOrChannelDeleteState) => void;
 }
 
-function CategoryList({
-  setCreateModalState,
-  setDeleteModalState,
-}: CategoryListProps) {
+function CategoryList({ setCreateModalState, setDeleteModalState }: CategoryListProps) {
   const {
     detailsQueryResult: { data: serverDetails },
   } = useCommunityServerContext();
@@ -588,11 +537,7 @@ function ChannelCategory({
             className={`h-5 flex-none ${isDropdownOpen ? "block" : "hidden group-hover:block"}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <DropdownMenu.Root
-              open={isDropdownOpen}
-              onOpenChange={setIsDropdownOpen}
-              modal={false}
-            >
+            <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
               <DropdownMenu.Trigger asChild>
                 <IconButton theme="default">
                   <BsGearFill className="size-4" />
@@ -610,9 +555,7 @@ function ChannelCategory({
                 >
                   <DropdownMenu.Item
                     className="dropdown-item-default"
-                    onSelect={() =>
-                      setCreateModalState({ categoryId: id, type: "text" })
-                    }
+                    onSelect={() => setCreateModalState({ categoryId: id, type: "text" })}
                   >
                     Create text channel
                     <BsChatText className="ml-auto size-4 fill-white" />
@@ -620,9 +563,7 @@ function ChannelCategory({
 
                   <DropdownMenu.Item
                     className="dropdown-item-default"
-                    onSelect={() =>
-                      setCreateModalState({ categoryId: id, type: "voice" })
-                    }
+                    onSelect={() => setCreateModalState({ categoryId: id, type: "voice" })}
                   >
                     Create voice channel
                     <BsVolumeUp className="ml-auto size-4 fill-white" />
@@ -630,9 +571,7 @@ function ChannelCategory({
 
                   <DropdownMenu.Item
                     className="dropdown-item-danger"
-                    onSelect={() =>
-                      setDeleteModalState({ type: "category", id })
-                    }
+                    onSelect={() => setDeleteModalState({ type: "category", id })}
                   >
                     Delete category
                     <BsTrashFill className="ml-auto size-4 fill-red-500" />
@@ -670,12 +609,7 @@ interface ChannelButtonProps {
   setDeleteModalState: (value: CategoryOrChannelDeleteState) => void;
 }
 
-function ChannelButton({
-  id,
-  name,
-  type,
-  setDeleteModalState,
-}: ChannelButtonProps) {
+function ChannelButton({ id, name, type, setDeleteModalState }: ChannelButtonProps) {
   const {
     detailsQueryResult: { data: serverDetails },
     hasPermission,
@@ -684,9 +618,7 @@ function ChannelButton({
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const mentionCount = useMentionCountStore(
-    (state) => state.serverMentions[serverDetails?.id!]?.[id] || 0,
-  );
+  const mentionCount = useMentionCountStore((state) => state.serverMentions[serverDetails?.id!]?.[id] || 0);
 
   return (
     <div
@@ -717,11 +649,7 @@ function ChannelButton({
           className={`h-5 flex-none ${isDropdownOpen ? "block" : "hidden group-hover:block"}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <DropdownMenu.Root
-            open={isDropdownOpen}
-            onOpenChange={setIsDropdownOpen}
-            modal={false}
-          >
+          <DropdownMenu.Root open={isDropdownOpen} onOpenChange={setIsDropdownOpen} modal={false}>
             <DropdownMenu.Trigger asChild>
               <IconButton theme="default">
                 <BsGearFill className="inline size-4" />

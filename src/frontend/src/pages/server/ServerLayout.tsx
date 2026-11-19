@@ -36,8 +36,7 @@ function EnableGuard() {
     return (
       <div className="flex size-full flex-row items-center justify-center">
         <span className="text-gray-400 select-none">
-          Well there is nothing here... Whatever you are trying to find here
-          might have been lost to time.
+          Well there is nothing here... Whatever you are trying to find here might have been lost to time.
         </span>
       </div>
     );
@@ -75,8 +74,7 @@ function PageOutlet() {
         <div className="flex size-full flex-col items-center justify-center gap-2">
           <BsExclamationTriangle className="size-10 fill-white" />
           <span className="text-sm text-gray-400 select-none">
-            You are not supposed to be here, unless something went wrong. Very
-            wrong...
+            You are not supposed to be here, unless something went wrong. Very wrong...
           </span>
         </div>
       ) : (
@@ -95,31 +93,24 @@ function SuccessfullyLoaded() {
   const [showKickedDialog, setShowKickedDialog] = useState(false);
   const navigate = useNavigate();
 
-  useSignalREvent(
-    "MemberRolesUpdated",
-    async (event: MemberRolesUpdatedEvent) => {
-      if (event.serverId !== serverDetails?.id) return;
-      if (event.memberUserId !== serverDetails.authorizeInfo.memberId) return;
+  useSignalREvent("MemberRolesUpdated", async (event: MemberRolesUpdatedEvent) => {
+    if (event.serverId !== serverDetails?.id) return;
+    if (event.memberUserId !== serverDetails.authorizeInfo.memberId) return;
 
-      await refreshPermission();
-    },
-  );
+    await refreshPermission();
+  });
 
-  useSignalREvent(
-    "ServerDefaultRoleUpdated",
-    async (event: ServerDefaultRoleUpdatedEvent) => {
-      if (serverDetails?.id !== event.serverId) return;
+  useSignalREvent("ServerDefaultRoleUpdated", async (event: ServerDefaultRoleUpdatedEvent) => {
+    if (serverDetails?.id !== event.serverId) return;
 
-      await refreshPermission();
-    },
-  );
+    await refreshPermission();
+  });
 
   useSignalREvent(
     ["ServerRoleUpdated", "ServerRoleDeleted"],
     async (event: ServerRoleUpdatedEvent | ServerRoleDeletedEvent) => {
       if (serverDetails?.id !== event.serverId) return;
-      if (!serverDetails.authorizeInfo.roles.some((r) => r.id === event.roleId))
-        return;
+      if (!serverDetails.authorizeInfo.roles.some((r) => r.id === event.roleId)) return;
 
       await refreshPermission();
     },
@@ -171,10 +162,7 @@ function SuccessfullyLoaded() {
   return (
     <>
       <Outlet />
-      <KickedFromServerDialog
-        open={showKickedDialog}
-        onOpenChange={setShowKickedDialog}
-      />
+      <KickedFromServerDialog open={showKickedDialog} onOpenChange={setShowKickedDialog} />
     </>
   );
 }

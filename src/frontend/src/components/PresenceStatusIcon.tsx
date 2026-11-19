@@ -8,11 +8,7 @@ interface PresenceStatusProps extends SVGAttributes<SVGElement> {
   status: PresenceStatus;
 }
 
-export default function PresenceStatusIcon({
-  status,
-  className = "",
-  ...props
-}: PresenceStatusProps) {
+export default function PresenceStatusIcon({ status, className = "", ...props }: PresenceStatusProps) {
   return (
     <>
       {status === PresenceStatus.Online ? (

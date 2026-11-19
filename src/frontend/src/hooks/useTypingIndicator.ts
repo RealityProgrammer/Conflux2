@@ -15,12 +15,8 @@ interface UseTypingIndicatorResult {
   typingUsers: TypingUser[];
 }
 
-export default function useTypingIndicator(
-  currentUserId: string,
-): UseTypingIndicatorResult {
-  const [typingUsersMap, setTypingUsersMap] = useState<Map<string, TypingUser>>(
-    new Map(),
-  );
+export default function useTypingIndicator(currentUserId: string): UseTypingIndicatorResult {
+  const [typingUsersMap, setTypingUsersMap] = useState<Map<string, TypingUser>>(new Map());
   const timersRef = useRef<Record<string, number>>({});
 
   useSignalREvent("UserTyping", (event: TypingUserEvent) => {

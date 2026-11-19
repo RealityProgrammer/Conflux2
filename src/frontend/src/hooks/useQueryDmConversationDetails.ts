@@ -15,7 +15,4 @@ export default function useQueryDmConversationDetails(
   });
 }
 
-useQueryDmConversationDetails.getKey = (peerId: string) => [
-  "useQueryDmConversationDetails",
-  peerId,
-];
+useQueryDmConversationDetails.getKey = (peerId: string) => ["useQueryDmConversationDetails", peerId];

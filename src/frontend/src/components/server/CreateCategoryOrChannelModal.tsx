@@ -1,9 +1,4 @@
-import {
-  BsChatText,
-  BsChevronDown,
-  BsFolder,
-  BsVolumeUp,
-} from "react-icons/bs";
+import { BsChatText, BsChevronDown, BsFolder, BsVolumeUp } from "react-icons/bs";
 import Spinner from "../Spinner.tsx";
 import { Label, Select } from "radix-ui";
 import ErrorText from "../ErrorText.tsx";
@@ -82,11 +77,7 @@ export default function CreateCategoryOrChannelModal({
     switch (data.type) {
       case "category": {
         const response: ServiceResponse<ChannelCategoryIdentityDto> =
-          await serverService.createChannelCategory(
-            idempotencyKey,
-            serverDetails!.id,
-            data.name,
-          );
+          await serverService.createChannelCategory(idempotencyKey, serverDetails!.id, data.name);
 
         if (response.success && response.data) {
           onOpenChange(false);
@@ -99,14 +90,13 @@ export default function CreateCategoryOrChannelModal({
 
       case "text":
       case "voice": {
-        const response: ServiceResponse<ServerChannelIdentityDto> =
-          await serverService.createChannel(
-            idempotencyKey,
-            serverDetails!.id,
-            data.name,
-            data.type,
-            categoryId,
-          );
+        const response: ServiceResponse<ServerChannelIdentityDto> = await serverService.createChannel(
+          idempotencyKey,
+          serverDetails!.id,
+          data.name,
+          data.type,
+          categoryId,
+        );
 
         if (response.success && response.data) {
           onOpenChange(false);
@@ -141,11 +131,7 @@ export default function CreateCategoryOrChannelModal({
           className="button-theme-primary flex h-10 basis-32 cursor-pointer flex-row items-center justify-center rounded-md px-3"
           disabled={isSubmitting}
         >
-          {isSubmitting ? (
-            <Spinner className="size-5 fill-white" />
-          ) : (
-            <>Create</>
-          )}
+          {isSubmitting ? <Spinner className="size-5 fill-white" /> : <>Create</>}
         </button>
       }
     >
@@ -191,26 +177,20 @@ export default function CreateCategoryOrChannelModal({
                       <SelectItem
                         text="Category"
                         value="category"
-                        icon={
-                          <BsFolder className="size-4 flex-none fill-white" />
-                        }
+                        icon={<BsFolder className="size-4 flex-none fill-white" />}
                       />
                     )}
 
                     <SelectItem
                       text="Text Channel"
                       value="text"
-                      icon={
-                        <BsChatText className="size-4 flex-none fill-white" />
-                      }
+                      icon={<BsChatText className="size-4 flex-none fill-white" />}
                     />
 
                     <SelectItem
                       text="Voice Channel"
                       value="voice"
-                      icon={
-                        <BsVolumeUp className="size-4 flex-none fill-white" />
-                      }
+                      icon={<BsVolumeUp className="size-4 flex-none fill-white" />}
                     />
                   </Select.Viewport>
                 </Select.Content>

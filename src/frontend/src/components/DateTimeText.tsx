@@ -1,11 +1,6 @@
 import { Tooltip } from "radix-ui";
 import { type HTMLAttributes, useSyncExternalStore } from "react";
-import {
-  intervalToDuration,
-  formatDuration,
-  type DurationUnit,
-  formatDate,
-} from "date-fns";
+import { intervalToDuration, formatDuration, type DurationUnit, formatDate } from "date-fns";
 
 const ONE_WEEK_SECONDS = 7 * 24 * 60 * 60;
 
@@ -45,16 +40,12 @@ function formatTime(value: Date, now: number, relative: boolean): string {
 
   const past = diffSec >= 0;
   const duration = intervalToDuration(
-    past
-      ? { start: value, end: new Date(now) }
-      : { start: new Date(now), end: value },
+    past ? { start: value, end: new Date(now) } : { start: new Date(now), end: value },
   );
 
-  const format: DurationUnit[] =
-    abs < 60 ? ["seconds"] : ["days", "hours", "minutes"];
+  const format: DurationUnit[] = abs < 60 ? ["seconds"] : ["days", "hours", "minutes"];
 
-  const text =
-    formatDuration(duration, { format, delimiter: " " }) || "0 seconds";
+  const text = formatDuration(duration, { format, delimiter: " " }) || "0 seconds";
 
   return past ? `${text} ago` : `in ${text}`;
 }

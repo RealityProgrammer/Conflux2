@@ -45,12 +45,7 @@ function normalizeDuration(val: DurationValue): DurationValue {
   };
 }
 
-export default function DurationInput({
-  value,
-  onChange,
-  presets,
-  className,
-}: DurationInputProps) {
+export default function DurationInput({ value, onChange, presets, className }: DurationInputProps) {
   const handleBlur = () => {
     onChange(normalizeDuration(value));
   };
@@ -74,11 +69,7 @@ export default function DurationInput({
         e.preventDefault();
         const isScrollingUp = e.deltaY < 0; // "up should be negative" <-- utterly deranged
 
-        const step = e.shiftKey
-          ? e.ctrlKey
-            ? shiftControlStep
-            : shiftStep
-          : 1;
+        const step = e.shiftKey ? (e.ctrlKey ? shiftControlStep : shiftStep) : 1;
         const change = isScrollingUp ? step : -step;
 
         const currentValue = value?.[field] ?? 0;
@@ -131,11 +122,7 @@ export default function DurationInput({
             >
               <Select.Viewport className="size-full overflow-y-auto p-1">
                 {presets.map((preset, index) => (
-                  <SelectItem
-                    key={index}
-                    text={preset.label}
-                    value={String(index)}
-                  />
+                  <SelectItem key={index} text={preset.label} value={String(index)} />
                 ))}
               </Select.Viewport>
             </Select.Content>

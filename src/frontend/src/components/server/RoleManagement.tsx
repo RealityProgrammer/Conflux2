@@ -26,14 +26,8 @@ import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { PermissionState } from "../../api/schema.ts";
 import { useDebounceValue } from "usehooks-ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
-import type {
-  ServerRoleCreatedEvent,
-  ServerRoleDeletedEvent,
-} from "../../api/events.ts";
-import {
-  useUnsavedChanges,
-  useUnsavedChangesOnBlock,
-} from "../../contexts/UnsavedChangesContext.tsx";
+import type { ServerRoleCreatedEvent, ServerRoleDeletedEvent } from "../../api/events.ts";
+import { useUnsavedChanges, useUnsavedChangesOnBlock } from "../../contexts/UnsavedChangesContext.tsx";
 import { Avatar } from "../Avatar.tsx";
 import AlertDialog from "../AlertActionDialog.tsx";
 
@@ -63,9 +57,7 @@ export default function RoleManagement() {
       },
       {
         initialPageParam: { after: null },
-        getNextPageParam: (
-          lastPage: GetServerRolesByServerIdQuery,
-        ): { after: string } | undefined => {
+        getNextPageParam: (lastPage: GetServerRolesByServerIdQuery): { after: string } | undefined => {
           const pageInfo = lastPage?.communityServerRoles?.pageInfo;
 
           if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
@@ -99,8 +91,7 @@ export default function RoleManagement() {
         after: null,
       }),
       (
-        oldData:
-          NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined,
+        oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined,
       ): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
         if (!oldData) return oldData;
 
@@ -119,16 +110,12 @@ export default function RoleManagement() {
                   ...node,
                   name: role.name,
                   authorizeLevel: role.authorizeLevel,
-                  permissions: Object.keys(role.permissions).map(
-                    (key: string) => {
-                      return {
-                        permission: key as ServerPermission,
-                        state:
-                          role.permissions[key as ServerPermission] ??
-                          PermissionState.Inherit,
-                      };
-                    },
-                  ),
+                  permissions: Object.keys(role.permissions).map((key: string) => {
+                    return {
+                      permission: key as ServerPermission,
+                      state: role.permissions[key as ServerPermission] ?? PermissionState.Inherit,
+                    };
+                  }),
                 };
               }),
             },
@@ -146,8 +133,7 @@ export default function RoleManagement() {
         after: null,
       }),
       (
-        oldData:
-          NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined,
+        oldData: NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined,
       ): NoInfer<InfiniteData<GetServerRolesByServerIdQuery>> | undefined => {
         if (!oldData) return oldData;
 
@@ -157,9 +143,7 @@ export default function RoleManagement() {
             ...page,
             communityServerRoles: {
               ...page.communityServerRoles!,
-              nodes: page.communityServerRoles?.nodes!.filter(
-                (node) => node.id !== roleId,
-              ),
+              nodes: page.communityServerRoles?.nodes!.filter((node) => node.id !== roleId),
             },
           })),
         };
@@ -197,8 +181,7 @@ export default function RoleManagement() {
       <header className="mb-0 flex-none">
         <h3 className="text-xl font-bold text-white">Role Management</h3>
         <p className="text-sm text-gray-400">
-          Where power trips are just a click away. Handle with care (or don't,
-          we're not your mom).
+          Where power trips are just a click away. Handle with care (or don't, we're not your mom).
         </p>
       </header>
 
@@ -255,12 +238,9 @@ type RoleListProps = {
 };
 
 const createRoleSchema = z.object({
-  name: z
-    .string()
-    .min(1, { message: "Name cannot be empty." })
-    .max(32, {
-      message: "Name can only have maximum length of 32 characters.",
-    }),
+  name: z.string().min(1, { message: "Name cannot be empty." }).max(32, {
+    message: "Name can only have maximum length of 32 characters.",
+  }),
 });
 
 type CreateRoleFormValues = z.infer<typeof createRoleSchema>;
@@ -312,18 +292,12 @@ function RoleList({
     }
   }, [watchedName]);
 
-  const handleCreateRole: SubmitHandler<CreateRoleFormValues> = async (
-    data: CreateRoleFormValues,
-  ) => {
+  const handleCreateRole: SubmitHandler<CreateRoleFormValues> = async (data: CreateRoleFormValues) => {
     if (!idempotencyKeyRef.current) {
       idempotencyKeyRef.current = crypto.randomUUID();
     }
 
-    const response = await serverService.createRole(
-      serverId,
-      data.name,
-      idempotencyKeyRef.current,
-    );
+    const response = await serverService.createRole(serverId, data.name, idempotencyKeyRef.current);
 
     if (response.success) {
       invalidateRoleQuery();
@@ -369,11 +343,7 @@ function RoleList({
             disabled={isSubmitting}
             className="button-theme-primary flex-none cursor-pointer rounded p-1.5"
           >
-            {isSubmitting ? (
-              <Spinner className="size-4 fill-white" />
-            ) : (
-              <BsPlusLg className="size-4" />
-            )}
+            {isSubmitting ? <Spinner className="size-4 fill-white" /> : <BsPlusLg className="size-4" />}
           </button>
         )}
       </form>
@@ -399,9 +369,7 @@ function RoleList({
               <BsCircleFill className="size-2.5 flex-none fill-blue-500" />
 
               <span className="flex-1 truncate text-sm">{role.name}</span>
-              <span className="flex-none truncate text-xs text-gray-500">
-                {role.numMembers}
-              </span>
+              <span className="flex-none truncate text-xs text-gray-500">{role.numMembers}</span>
             </button>
           );
         }}
@@ -480,8 +448,7 @@ function RoleDetails({
               return {
                 ...acc,
                 [curr]:
-                  role.permissions.find((p) => p.permission === curr)?.state ??
-                  PermissionState.Inherit,
+                  role.permissions.find((p) => p.permission === curr)?.state ?? PermissionState.Inherit,
               };
             }, {}),
     },
@@ -501,32 +468,24 @@ function RoleDetails({
     toast.warning("You have unsaved role changes.");
   });
 
-  const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (
-    data: UpdateRoleFormValues,
-  ) => {
+  const handleUpdateRole: SubmitHandler<UpdateRoleFormValues> = async (data: UpdateRoleFormValues) => {
     if (!isEditable) return;
 
-    let updatedPermissionStates:
-      Record<ServerPermission, PermissionState> | undefined = undefined;
+    let updatedPermissionStates: Record<ServerPermission, PermissionState> | undefined = undefined;
     if (dirtyFields.permissions) {
       updatedPermissionStates = {} as Record<ServerPermission, PermissionState>;
 
       for (const [key, isDirty] of Object.entries(dirtyFields.permissions)) {
         if (!isDirty) continue;
 
-        updatedPermissionStates[key as ServerPermission] =
-          data.permissions[key as ServerPermission];
+        updatedPermissionStates[key as ServerPermission] = data.permissions[key as ServerPermission];
       }
     }
 
     const response = await serverService.updateRole(serverId, role.id, {
       name: dirtyFields.name ? data.name : undefined,
-      authorizeLevel: dirtyFields.authorizeLevel
-        ? data.authorizeLevel
-        : undefined,
-      permissionStates:
-        updatedPermissionStates ??
-        ({} as Record<ServerPermission, PermissionState>),
+      authorizeLevel: dirtyFields.authorizeLevel ? data.authorizeLevel : undefined,
+      permissionStates: updatedPermissionStates ?? ({} as Record<ServerPermission, PermissionState>),
     });
 
     if (response.success && response.data) {
@@ -570,9 +529,7 @@ function RoleDetails({
             <h4 className="text-xl font-semibold text-white">{role.name}</h4>
           )}
 
-          <span className="ml-1 rounded bg-gray-600 px-2 py-0.5 text-xs">
-            {role.numMembers} members
-          </span>
+          <span className="ml-1 rounded bg-gray-600 px-2 py-0.5 text-xs">{role.numMembers} members</span>
         </div>
 
         {hasPermission(ServerPermission.UpdateRole) && isEditable && (
@@ -600,10 +557,7 @@ function RoleDetails({
                 )}
               </div>
             ) : (
-              <IconButton
-                theme="info"
-                onClick={() => setIsEditingRole(!isEditingRole)}
-              >
+              <IconButton theme="info" onClick={() => setIsEditingRole(!isEditingRole)}>
                 <FaPencil className="size-5" />
               </IconButton>
             )}
@@ -640,9 +594,7 @@ function RoleDetails({
           <li className="flex items-center justify-between gap-2 px-2.5 py-1">
             <span>Special Role</span>
 
-            <span className="text-sm font-medium text-zinc-300">
-              {role.specialRoleType}
-            </span>
+            <span className="text-sm font-medium text-zinc-300">{role.specialRoleType}</span>
           </li>
 
           <Separator.Root className="horizontal-separator my-3" />
@@ -651,17 +603,13 @@ function RoleDetails({
             <span>Authorize Level</span>
 
             {isEditingRole && role.specialRoleType === SpecialRoleType.None ? (
-              <ErrorPopover
-                open={!!errors.authorizeLevel}
-                content={errors.authorizeLevel?.message}
-              >
+              <ErrorPopover open={!!errors.authorizeLevel} content={errors.authorizeLevel?.message}>
                 <input
                   type="text"
                   className="input-field h-[29.6px] w-64 text-sm"
                   placeholder="Enter Authorize Level"
                   {...register("authorizeLevel", {
-                    setValueAs: (value) =>
-                      value === "" || value == null ? null : Number(value),
+                    setValueAs: (value) => (value === "" || value == null ? null : Number(value)),
                   })}
                 />
               </ErrorPopover>
@@ -1091,10 +1039,7 @@ function RoleDetails({
               headerIcon={<BsTrashFill className="size-10 fill-white" />}
               contentClassName="centered-dialog w-128 text-white bg-gray-650 outline-none"
               trigger={
-                <button
-                  type="button"
-                  className="button-theme-danger ml-auto cursor-pointer rounded-md p-2"
-                >
+                <button type="button" className="button-theme-danger ml-auto cursor-pointer rounded-md p-2">
                   Delete Role
                 </button>
               }
@@ -1114,8 +1059,7 @@ function RoleDetails({
               }
             >
               <div className="p-3">
-                Are you sure you want to delete this role? This action cannot be
-                reverted...
+                Are you sure you want to delete this role? This action cannot be reverted...
               </div>
             </AlertDialog>
           </div>
@@ -1124,25 +1068,14 @@ function RoleDetails({
   );
 }
 
-function PermissionGroupAccordion({
-  header,
-  children,
-}: {
-  header: string;
-  children: ReactNode;
-}) {
+function PermissionGroupAccordion({ header, children }: { header: string; children: ReactNode }) {
   return (
-    <Accordion.Item
-      value={header}
-      className="mt-1 rounded-md border-2 border-gray-600"
-    >
+    <Accordion.Item value={header} className="mt-1 rounded-md border-2 border-gray-600">
       <Accordion.Trigger className="hover-highlight w-full cursor-pointer p-2 text-left text-sm text-gray-300">
         {header}
       </Accordion.Trigger>
 
-      <Accordion.Content className="border-t-2 border-t-gray-600">
-        {children}
-      </Accordion.Content>
+      <Accordion.Content className="border-t-2 border-t-gray-600">{children}</Accordion.Content>
     </Accordion.Item>
   );
 }

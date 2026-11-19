@@ -14,32 +14,24 @@ interface PresenceContextType {
   manualStatus: PresenceStatus; // TODO: intersect with a type containing Error value?
   effectiveStatus: PresenceStatus;
   // updateManualStatus: (newStatus: PresenceStatus) => Promise<void>;
-  updateManualStatus: (
-    newStatus: PresenceStatus,
-    side: "client" | "server",
-  ) => void;
+  updateManualStatus: (newStatus: PresenceStatus, side: "client" | "server") => void;
 }
 
 const PresenceContext = createContext<PresenceContextType | null>(null);
 
-export default function PresenceProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function PresenceProvider({ children }: { children: ReactNode }) {
   const { userProfile } = useAuth()!;
   const queryClient = useQueryClient();
 
   const isIdle = useIdleTimer();
 
-  const { data, isLoading, isError } =
-    useGetSessionUserManualPresenceStatusQuery(
-      {},
-      {
-        enabled: !!userProfile?.id,
-        staleTime: 60 * 30 * 1000,
-      },
-    );
+  const { data, isLoading, isError } = useGetSessionUserManualPresenceStatusQuery(
+    {},
+    {
+      enabled: !!userProfile?.id,
+      staleTime: 60 * 30 * 1000,
+    },
+  );
 
   const updateManualPresenceMutation = useUpdateManualPresenceStatusMutation({
     onMutate: async () => {
@@ -50,25 +42,19 @@ export default function PresenceProvider({
     },
   });
 
-  const manualStatus =
-    data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Offline;
+  const manualStatus = data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Offline;
 
   const getEffectiveStatus = (): PresenceStatus => {
     if (isLoading || isError) return PresenceStatus.Offline;
 
-    if (manualStatus === PresenceStatus.Invisible)
-      return PresenceStatus.Offline;
-    if (manualStatus === PresenceStatus.DoNotDisturb)
-      return PresenceStatus.DoNotDisturb;
+    if (manualStatus === PresenceStatus.Invisible) return PresenceStatus.Offline;
+    if (manualStatus === PresenceStatus.DoNotDisturb) return PresenceStatus.DoNotDisturb;
     if (isIdle) return PresenceStatus.Idle;
 
     return manualStatus;
   };
 
-  const updateManualStatus = async (
-    newStatus: PresenceStatus,
-    side: "client" | "server",
-  ) => {
+  const updateManualStatus = async (newStatus: PresenceStatus, side: "client" | "server") => {
     if (!data?.sessionUser?.manualPresenceStatus) return;
 
     if (side === "server") {
@@ -96,8 +82,7 @@ export default function PresenceProvider({
   return (
     <PresenceContext.Provider
       value={{
-        manualStatus:
-          data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Offline,
+        manualStatus: data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Offline,
         effectiveStatus: getEffectiveStatus(),
         updateManualStatus,
       }}
@@ -109,8 +94,7 @@ export default function PresenceProvider({
 
 export function usePresence(): PresenceContextType {
   const context = useContext(PresenceContext);
-  if (!context)
-    throw new Error("usePresence must be used within a PresenceProvider");
+  if (!context) throw new Error("usePresence must be used within a PresenceProvider");
 
   return context;
 }

@@ -7,10 +7,7 @@ function maskEmail(email: string) {
   if (localPart.length <= 2) {
     maskedLocal = "*".repeat(localPart.length);
   } else if (localPart.length <= 5) {
-    maskedLocal =
-      localPart[0] +
-      "*".repeat(localPart.length - 2) +
-      localPart[localPart.length - 1];
+    maskedLocal = localPart[0] + "*".repeat(localPart.length - 2) + localPart[localPart.length - 1];
   } else {
     const start = localPart.slice(0, 2);
     const end = localPart.slice(-2);

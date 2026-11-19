@@ -38,15 +38,11 @@ export default function MediaFeed({
 
     const updateTrackState = () => {
       setHasVideo(
-        stream
-          .getVideoTracks()
-          .some((t) => t.enabled && !t.muted && t.readyState === "live") &&
+        stream.getVideoTracks().some((t) => t.enabled && !t.muted && t.readyState === "live") &&
           isVideoEnabled,
       );
       setHasAudio(
-        stream
-          .getAudioTracks()
-          .some((t) => t.enabled && !t.muted && t.readyState === "live") &&
+        stream.getAudioTracks().some((t) => t.enabled && !t.muted && t.readyState === "live") &&
           isAudioEnabled,
       );
     };
@@ -123,9 +119,7 @@ export default function MediaFeed({
   }, [stream]);
 
   return (
-    <div
-      className={`relative flex items-center justify-center overflow-hidden bg-gray-900 ${className}`}
-    >
+    <div className={`relative flex items-center justify-center overflow-hidden bg-gray-900 ${className}`}>
       {/* always mounted so that audio be playing */}
       <video
         ref={videoRef}
@@ -145,9 +139,7 @@ export default function MediaFeed({
           />
 
           {displayName && (
-            <span className="truncate text-sm font-medium text-gray-200 select-none">
-              {displayName}
-            </span>
+            <span className="truncate text-sm font-medium text-gray-200 select-none">{displayName}</span>
           )}
 
           <div className="flex items-center gap-2">

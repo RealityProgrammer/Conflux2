@@ -55,15 +55,9 @@ const profileSchema = z.object({
     .min(1, { error: "Display name is required." })
     .max(48, "Display name can only have maximum length of 48 characters."),
 
-  pronouns: z
-    .string()
-    .max(32, "Pronouns can only have maximum length of 32 characters.")
-    .optional(),
+  pronouns: z.string().max(32, "Pronouns can only have maximum length of 32 characters.").optional(),
 
-  bio: z
-    .string()
-    .max(255, "Biography can only have maximum length of 255 characters.")
-    .optional(),
+  bio: z.string().max(255, "Biography can only have maximum length of 255 characters.").optional(),
 
   presence: z.enum(PresenceStatus),
 
@@ -111,8 +105,7 @@ function ProfileForm() {
       displayName: data?.sessionUser?.displayName ?? "",
       bio: data?.sessionUser?.biography ?? "",
       pronouns: data?.sessionUser?.pronouns ?? "",
-      presence:
-        data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Online,
+      presence: data?.sessionUser?.manualPresenceStatus ?? PresenceStatus.Online,
     },
   });
 
@@ -122,20 +115,17 @@ function ProfileForm() {
     formState: { dirtyFields, isDirty },
   } = formMethods;
 
-  const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (
-    data: UpdateProfileFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<UpdateProfileFormValues> = async (data: UpdateProfileFormValues) => {
     if (!isDirty) return;
 
-    const response: ServiceResponse<UpdateProfileResult> =
-      await sessionUserService.updateProfile(
-        dirtyFields.displayName ? data.displayName : undefined,
-        dirtyFields.pronouns ? data.pronouns : undefined,
-        dirtyFields.bio ? data.bio : undefined,
-        dirtyFields.presence ? data.presence : undefined,
-        data.avatar,
-        data.banner,
-      );
+    const response: ServiceResponse<UpdateProfileResult> = await sessionUserService.updateProfile(
+      dirtyFields.displayName ? data.displayName : undefined,
+      dirtyFields.pronouns ? data.pronouns : undefined,
+      dirtyFields.bio ? data.bio : undefined,
+      dirtyFields.presence ? data.presence : undefined,
+      data.avatar,
+      data.banner,
+    );
 
     if (response.success) {
       reset({
@@ -166,10 +156,7 @@ function ProfileForm() {
 
   return (
     <FormProvider {...formMethods}>
-      <form
-        className="relative overflow-y-hidden"
-        onSubmit={handleSubmit(onSubmit)}
-      >
+      <form className="relative overflow-y-hidden" onSubmit={handleSubmit(onSubmit)}>
         {(!auth.userProfile?.id || isLoading || isError) && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-xs">
             <Spinner className="mb-2 size-10 fill-white" />
@@ -225,10 +212,7 @@ function FormFields({
                     userData
                       ? field.value === undefined
                         ? userData.avatarVersion
-                          ? userService.getAvatarUrl(
-                              userData.id,
-                              userData.avatarVersion,
-                            )
+                          ? userService.getAvatarUrl(userData.id, userData.avatarVersion)
                           : null
                         : field.value
                       : undefined
@@ -279,10 +263,7 @@ function FormFields({
                     userData
                       ? field.value === undefined
                         ? userData.bannerVersion
-                          ? userService.getBannerUrl(
-                              userData.id,
-                              userData.bannerVersion,
-                            )
+                          ? userService.getBannerUrl(userData.id, userData.bannerVersion)
                           : null
                         : field.value
                       : undefined
@@ -335,15 +316,8 @@ function FormFields({
           control={control}
           name="displayName"
           render={({ field }) => (
-            <ErrorPopover
-              open={!!errors.displayName}
-              content={errors.displayName?.message}
-            >
-              <input
-                {...field}
-                type="text"
-                className="input-field h-10 w-full px-3"
-              />
+            <ErrorPopover open={!!errors.displayName} content={errors.displayName?.message}>
+              <input {...field} type="text" className="input-field h-10 w-full px-3" />
             </ErrorPopover>
           )}
         />
@@ -369,15 +343,8 @@ function FormFields({
           control={control}
           name="pronouns"
           render={({ field }) => (
-            <ErrorPopover
-              open={!!errors.pronouns}
-              content={errors.pronouns?.message}
-            >
-              <input
-                {...field}
-                type="text"
-                className="input-field h-10 w-full px-3"
-              />
+            <ErrorPopover open={!!errors.pronouns} content={errors.pronouns?.message}>
+              <input {...field} type="text" className="input-field h-10 w-full px-3" />
             </ErrorPopover>
           )}
         />
@@ -391,10 +358,7 @@ function FormFields({
           name="bio"
           render={({ field }) => (
             <ErrorPopover open={!!errors.bio} content={errors.bio?.message}>
-              <textarea
-                {...field}
-                className="input-field h-40 w-full resize-none px-3 py-2"
-              />
+              <textarea {...field} className="input-field h-40 w-full resize-none px-3 py-2" />
             </ErrorPopover>
           )}
         />
@@ -427,10 +391,7 @@ function FormFields({
                       text="Online"
                       value={PresenceStatus.Online}
                       icon={
-                        <PresenceStatusIcon
-                          status={PresenceStatus.Online}
-                          className="size-3 flex-none"
-                        />
+                        <PresenceStatusIcon status={PresenceStatus.Online} className="size-3 flex-none" />
                       }
                     />
 
@@ -438,10 +399,7 @@ function FormFields({
                       text="Idle"
                       value={PresenceStatus.Idle}
                       icon={
-                        <PresenceStatusIcon
-                          status={PresenceStatus.Idle}
-                          className="size-3 flex-none"
-                        />
+                        <PresenceStatusIcon status={PresenceStatus.Idle} className="size-3 flex-none" />
                       }
                     />
 
@@ -500,11 +458,7 @@ function FormButtons() {
         className="button-theme-primary button-cursor flex w-32 flex-row items-center justify-center rounded-md py-2"
         disabled={isSubmitting}
       >
-        {isSubmitting ? (
-          <Spinner className="size-6 fill-white" />
-        ) : (
-          "Save Profile"
-        )}
+        {isSubmitting ? <Spinner className="size-6 fill-white" /> : "Save Profile"}
       </button>
     </div>
   );
@@ -521,15 +475,11 @@ function Displayer({
 
   const avatarDisplayUrl = usePreviewUrl(
     watchedValues.avatar,
-    userData?.avatarVersion
-      ? userService.getAvatarUrl(userData.id, userData.avatarVersion)
-      : undefined,
+    userData?.avatarVersion ? userService.getAvatarUrl(userData.id, userData.avatarVersion) : undefined,
   );
   const bannerDisplayUrl = usePreviewUrl(
     watchedValues.banner,
-    userData?.bannerVersion
-      ? userService.getBannerUrl(userData.id, userData.bannerVersion)
-      : undefined,
+    userData?.bannerVersion ? userService.getBannerUrl(userData.id, userData.bannerVersion) : undefined,
   );
 
   return (
@@ -569,21 +519,13 @@ function Displayer({
 
         <UserProfile.FieldContainer>
           {[...Array(5).keys()].map((_, index) => (
-            <UserProfile.Field
-              key={index}
-              label={`Field ${index}`}
-              value={<span>Value {index}</span>}
-            />
+            <UserProfile.Field key={index} label={`Field ${index}`} value={<span>Value {index}</span>} />
           ))}
         </UserProfile.FieldContainer>
 
         {watchedValues.bio && (
           <>
-            <Separator.Root
-              orientation="horizontal"
-              decorative
-              className="horizontal-separator my-2"
-            />
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2" />
 
             <span className="group-label mb-1">About me</span>
 

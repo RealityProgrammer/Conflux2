@@ -1,7 +1,4 @@
-import type {
-  MessageAttachmentDto,
-  TimelineMessageDto,
-} from "../../api/types.ts";
+import type { MessageAttachmentDto, TimelineMessageDto } from "../../api/types.ts";
 import type { SelectedEmoji } from "./EmojiPanel.tsx";
 
 export interface TimelineContext {
@@ -11,10 +8,7 @@ export interface TimelineContext {
     onMessageReplyTrigger: (message: TimelineMessageDto) => void;
 
     onEditCancel: () => void;
-    onAttachmentClick: (
-      attachments: MessageAttachmentDto[],
-      index: number,
-    ) => void;
+    onAttachmentClick: (attachments: MessageAttachmentDto[], index: number) => void;
 
     retrySendingOperation: (idempotencyKey: string) => void;
     removeSendingOperation: (idempotencyKey: string) => void;

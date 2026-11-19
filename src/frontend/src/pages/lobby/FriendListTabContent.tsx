@@ -4,19 +4,13 @@ import { DropdownMenu } from "radix-ui";
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import { UserNameplate } from "../../components/UserNameplate.tsx";
 import MoreActionsButton from "../../components/MoreActionsButton.tsx";
-import type {
-  FriendRequestAcceptedEvent,
-  UnfriendedEvent,
-} from "../../api/events.ts";
+import type { FriendRequestAcceptedEvent, UnfriendedEvent } from "../../api/events.ts";
 import { FriendActionButtons } from "../../components/FriendActionButtons.tsx";
 import IconButton from "../../components/IconButton.tsx";
 import { useNavigate } from "react-router";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
 import VirtualizedScrollList2 from "../../components/VirtualizedScrollList2.tsx";
-import {
-  type GetFriendsQuery,
-  useInfiniteGetFriendsQuery,
-} from "../../graphql/infiniteQueries.ts";
+import { type GetFriendsQuery, useInfiniteGetFriendsQuery } from "../../graphql/infiniteQueries.ts";
 import { toast } from "react-toastify";
 
 const ITEM_HEIGHT: number = 52;
@@ -27,25 +21,23 @@ export default function FriendListTabContent() {
   const queryClient = useQueryClient();
   const [nameFilter, setNameFilter] = useDebounceValue("", 500);
 
-  const { data, fetchNextPage, isFetchingNextPage, hasNextPage, isLoading } =
-    useInfiniteGetFriendsQuery(
-      { after: null, nameFilter },
-      {
-        initialPageParam: { after: null },
-        getNextPageParam: (lastPage) => {
-          const pageInfo = lastPage?.friends?.pageInfo;
+  const { data, fetchNextPage, isFetchingNextPage, hasNextPage, isLoading } = useInfiniteGetFriendsQuery(
+    { after: null, nameFilter },
+    {
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage) => {
+        const pageInfo = lastPage?.friends?.pageInfo;
 
-          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-            return { after: pageInfo.endCursor };
-          }
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
+        }
 
-          return undefined;
-        },
+        return undefined;
       },
-    );
+    },
+  );
 
-  const allElements =
-    data?.pages.flatMap((page) => page?.friends.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.friends.nodes ?? []) ?? [];
 
   const removeUser = (userId: string) => {
     queryClient.setQueriesData<InfiniteData<GetFriendsQuery>>(
@@ -54,9 +46,7 @@ export default function FriendListTabContent() {
         if (!oldData) return oldData;
 
         const elementExists = oldData.pages.some((page) =>
-          page?.friends.nodes!.some(
-            (element) => element.otherUser!.id === userId,
-          ),
+          page?.friends.nodes!.some((element) => element.otherUser!.id === userId),
         );
 
         if (!elementExists) return oldData;
@@ -81,14 +71,11 @@ export default function FriendListTabContent() {
     removeUser(event.invokerUserId);
   });
 
-  useSignalREvent(
-    "FriendRequestAccepted",
-    (_event: FriendRequestAcceptedEvent) => {
-      queryClient.invalidateQueries({
-        queryKey: useInfiniteGetFriendsQuery.getKey({ after: null }),
-      });
-    },
-  );
+  useSignalREvent("FriendRequestAccepted", (_event: FriendRequestAcceptedEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetFriendsQuery.getKey({ after: null }),
+    });
+  });
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -96,7 +83,7 @@ export default function FriendListTabContent() {
         <BsSearch className="pointer-events-none absolute left-2.5 size-4 fill-white" />
 
         <input
-          className="input-field h-9 text-sm w-full px-3 pl-8"
+          className="input-field h-9 w-full px-3 pl-8 text-sm"
           placeholder="Search..."
           onChange={(e) => {
             setNameFilter(e.target.value);
@@ -164,12 +151,7 @@ function Row({ element, removeFriend, navigateToDirectMessage }: RowProps) {
       className="hover-highlight w-full p-1.5"
       style={{ height: `${ITEM_HEIGHT}px` }}
     >
-      <IconButton
-        theme="default"
-        onClick={toDirectMessage}
-        className="size-6"
-        isLoading={false}
-      >
+      <IconButton theme="default" onClick={toDirectMessage} className="size-6" isLoading={false}>
         <BsChatSquareText className="size-6" />
       </IconButton>
 
@@ -189,10 +171,7 @@ function Row({ element, removeFriend, navigateToDirectMessage }: RowProps) {
           Visit Profile
         </DropdownMenu.Item>
 
-        <DropdownMenu.Item
-          className="dropdown-item-default"
-          onSelect={toDirectMessage}
-        >
+        <DropdownMenu.Item className="dropdown-item-default" onSelect={toDirectMessage}>
           Direct Message
         </DropdownMenu.Item>
 

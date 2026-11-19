@@ -17,8 +17,10 @@ export const sessionUserService = {
       const formData = new FormData();
       formData.set("File", file);
 
-      const response: AxiosResponse<BackendResponse<number>> =
-        await apiClient.postForm("/users/me/avatar", formData);
+      const response: AxiosResponse<BackendResponse<number>> = await apiClient.postForm(
+        "/users/me/avatar",
+        formData,
+      );
 
       return {
         success: true,
@@ -46,10 +48,7 @@ export const sessionUserService = {
     }
   },
 
-  setNames: async (
-    userName: string,
-    displayName: string,
-  ): Promise<ServiceResponse> => {
+  setNames: async (userName: string, displayName: string): Promise<ServiceResponse> => {
     try {
       const response = await apiClient.post("/users/me/names", {
         userName,
@@ -132,11 +131,9 @@ export const sessionUserService = {
         formData.append("banner.type", "NoMod");
       }
 
-      const response: AxiosResponse<BackendResponse<UpdateProfileResult>> =
-        await apiClient.patchForm<BackendResponse<UpdateProfileResult>>(
-          `users/me/profile`,
-          formData,
-        );
+      const response: AxiosResponse<BackendResponse<UpdateProfileResult>> = await apiClient.patchForm<
+        BackendResponse<UpdateProfileResult>
+      >(`users/me/profile`, formData);
 
       return {
         success: true,
@@ -144,16 +141,12 @@ export const sessionUserService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<UpdateProfileResult>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<UpdateProfileResult>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  getAccountDeletionStatus: async (): Promise<
-    ServiceResponse<AccountDeletionStatusDto>
-  > => {
+  getAccountDeletionStatus: async (): Promise<ServiceResponse<AccountDeletionStatusDto>> => {
     try {
       const response: AxiosResponse<BackendResponse<AccountDeletionStatusDto>> =
         await apiClient.get("/users/me/deletion");
@@ -164,9 +157,7 @@ export const sessionUserService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<AccountDeletionStatusDto>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<AccountDeletionStatusDto>>;
       return handleAxiosError(axiosError);
     }
   },

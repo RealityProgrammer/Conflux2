@@ -16,15 +16,9 @@ type UnsavedChangesContextType = {
   cancelPending: () => void;
 };
 
-const UnsavedChangesContext = createContext<UnsavedChangesContextType | null>(
-  null,
-);
+const UnsavedChangesContext = createContext<UnsavedChangesContextType | null>(null);
 
-export const UnsavedChangesProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const UnsavedChangesProvider = ({ children }: { children: React.ReactNode }) => {
   const [isDirty, setDirty] = useState(false);
   const [hasPendingAction, setHasPendingAction] = useState(false);
   const pendingRef = useRef<(() => void) | null>(null);
@@ -80,10 +74,7 @@ export const UnsavedChangesProvider = ({
 
 export function useUnsavedChanges() {
   const context = useContext(UnsavedChangesContext);
-  if (!context)
-    throw new Error(
-      "useUnsavedChanges must be used within an UnsavedChangesProvider.",
-    );
+  if (!context) throw new Error("useUnsavedChanges must be used within an UnsavedChangesProvider.");
 
   return context;
 }

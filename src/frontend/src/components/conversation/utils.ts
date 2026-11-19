@@ -1,9 +1,4 @@
-import {
-  layout,
-  type LayoutResult,
-  prepare,
-  type PreparedText,
-} from "@chenglou/pretext";
+import { layout, type LayoutResult, prepare, type PreparedText } from "@chenglou/pretext";
 
 const BODY_FONT =
   '14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -49,18 +44,13 @@ export function estimateMessageLayout(
 ): { height: number; lineCount: number } {
   const prepared = getPreparedMessage(id, content);
 
-  const isSupported: boolean =
-    typeof Intl !== "undefined" && "Segmenter" in Intl;
+  const isSupported: boolean = typeof Intl !== "undefined" && "Segmenter" in Intl;
 
   if (!isSupported) {
     console.error("pretext is not supported.");
     return { height: 0, lineCount: 0 };
   } else {
-    const layoutResult: LayoutResult = layout(
-      prepared,
-      displayAreaWidth,
-      lineHeight,
-    );
+    const layoutResult: LayoutResult = layout(prepared, displayAreaWidth, lineHeight);
     return { height: layoutResult.height, lineCount: layoutResult.lineCount };
   }
 }

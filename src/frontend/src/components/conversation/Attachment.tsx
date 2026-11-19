@@ -10,11 +10,7 @@ function FilePill({ file, className = "", ...props }: FilePillProps) {
     <div className={`flex flex-row items-center gap-2 ${className}`} {...props}>
       <div className="aspect-square h-full">
         {file.type.startsWith("image/") ? (
-          <img
-            src={file.src}
-            alt={file.alt}
-            className="size-full object-cover"
-          />
+          <img src={file.src} alt={file.alt} className="size-full object-cover" />
         ) : file.type.startsWith("video/") ? (
           <div className="flex size-full flex-row items-center justify-center bg-slate-300">
             <FaFileVideo className="size-8 fill-gray-800" />

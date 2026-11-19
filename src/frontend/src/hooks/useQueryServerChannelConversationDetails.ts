@@ -9,16 +9,10 @@ export interface UseQueryServerChannelConversationDetails {
 
 export default function useQueryServerChannelConversationDetails(
   variables: UseQueryServerChannelConversationDetails,
-  options: Omit<
-    UseQueryOptions<ServerChannelConversationDetails>,
-    "queryKey" | "queryFn"
-  >,
+  options: Omit<UseQueryOptions<ServerChannelConversationDetails>, "queryKey" | "queryFn">,
 ) {
   return useQuery({
-    queryKey: useQueryServerChannelConversationDetails.getKey(
-      variables.serverId,
-      variables.channelId,
-    ),
+    queryKey: useQueryServerChannelConversationDetails.getKey(variables.serverId, variables.channelId),
     queryFn: async () => {
       return await conversationService.getServerChannelConversationDetails(
         variables.serverId,
@@ -29,7 +23,8 @@ export default function useQueryServerChannelConversationDetails(
   });
 }
 
-useQueryServerChannelConversationDetails.getKey = (
-  serverId: string,
-  channelId: string,
-) => ["useQueryDmConversationDetails", serverId, channelId];
+useQueryServerChannelConversationDetails.getKey = (serverId: string, channelId: string) => [
+  "useQueryDmConversationDetails",
+  serverId,
+  channelId,
+];

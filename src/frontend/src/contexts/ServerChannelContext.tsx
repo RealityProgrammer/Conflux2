@@ -5,9 +5,7 @@ interface ServerChannelContextType {
   channelDetails: ChannelDetailsDto;
 }
 
-const ServerChannelContext = createContext<ServerChannelContextType | null>(
-  null,
-);
+const ServerChannelContext = createContext<ServerChannelContextType | null>(null);
 
 interface CommunityServerChannelContextProviderProps {
   children: ReactNode;

@@ -38,10 +38,7 @@ export default function SelectableImageInput({
   };
 
   return (
-    <div
-      className={`group relative block overflow-hidden ${className}`}
-      {...props}
-    >
+    <div className={`group relative block overflow-hidden ${className}`} {...props}>
       <input
         type="file"
         ref={fileInputRef}
@@ -65,9 +62,7 @@ export default function SelectableImageInput({
         className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
         onClick={handleAvatarClick}
       >
-        <span className="px-2 text-center text-sm font-medium text-white">
-          Select new image
-        </span>
+        <span className="px-2 text-center text-sm font-medium text-white">Select new image</span>
       </div>
     </div>
   );

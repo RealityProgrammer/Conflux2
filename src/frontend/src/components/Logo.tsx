@@ -17,13 +17,7 @@ export default function Logo({ ...props }) {
         </linearGradient>
 
         <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow
-            dx="0"
-            dy="8"
-            stdDeviation="12"
-            floodColor="#000000"
-            floodOpacity="0.5"
-          />
+          <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="#000000" floodOpacity="0.5" />
         </filter>
 
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -36,33 +30,13 @@ export default function Logo({ ...props }) {
       </defs>
 
       <g filter="url(#shadow)" opacity="0.9" style={{ mixBlendMode: "screen" }}>
-        <rect
-          x="125"
-          y="145"
-          width="160"
-          height="150"
-          rx="55"
-          fill="url(#cyanGrad)"
-        />
-        <path
-          d="M 160 285 Q 120 315, 105 345 Q 145 330, 185 292 Z"
-          fill="url(#cyanGrad)"
-        />
+        <rect x="125" y="145" width="160" height="150" rx="55" fill="url(#cyanGrad)" />
+        <path d="M 160 285 Q 120 315, 105 345 Q 145 330, 185 292 Z" fill="url(#cyanGrad)" />
       </g>
 
       <g filter="url(#shadow)" opacity="0.9" style={{ mixBlendMode: "screen" }}>
-        <rect
-          x="215"
-          y="145"
-          width="160"
-          height="150"
-          rx="55"
-          fill="url(#magentaGrad)"
-        />
-        <path
-          d="M 340 155 Q 380 125, 395 95 Q 355 110, 315 148 Z"
-          fill="url(#magentaGrad)"
-        />
+        <rect x="215" y="145" width="160" height="150" rx="55" fill="url(#magentaGrad)" />
+        <path d="M 340 155 Q 380 125, 395 95 Q 355 110, 315 148 Z" fill="url(#magentaGrad)" />
       </g>
 
       <g>
@@ -76,24 +50,8 @@ export default function Logo({ ...props }) {
       </g>
 
       <g>
-        <circle
-          cx="250"
-          cy="220"
-          r="28"
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth="1"
-          opacity="0.3"
-        />
-        <circle
-          cx="250"
-          cy="220"
-          r="18"
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth="2"
-          opacity="0.6"
-        />
+        <circle cx="250" cy="220" r="28" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.3" />
+        <circle cx="250" cy="220" r="18" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity="0.6" />
         <circle cx="250" cy="220" r="10" fill="#FFFFFF" filter="url(#glow)" />
       </g>
 

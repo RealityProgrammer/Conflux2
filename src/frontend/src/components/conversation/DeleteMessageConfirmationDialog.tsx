@@ -23,17 +23,11 @@ export default function DeleteMessageConfirmationDialog({
       contentClassName="centered-dialog w-xl text-white bg-gray-650 outline-none"
       footerContent={
         <div className="flex flex-row justify-end gap-3 p-3">
-          <RadixDialog.Close
-            type="button"
-            className="basis-20 cursor-pointer outline-none"
-          >
+          <RadixDialog.Close type="button" className="basis-20 cursor-pointer outline-none">
             Cancel
           </RadixDialog.Close>
 
-          <button
-            className="button-theme-danger cursor-pointer rounded-md px-3 py-2"
-            onClick={onConfirm}
-          >
+          <button className="button-theme-danger cursor-pointer rounded-md px-3 py-2" onClick={onConfirm}>
             Delete message
           </button>
         </div>
@@ -42,8 +36,7 @@ export default function DeleteMessageConfirmationDialog({
       <div className="panel-padding">
         Are you sure you want to delete this message?
         <br />
-        This action cannot be undone. You will never see this message and its
-        attachments ever again.
+        This action cannot be undone. You will never see this message and its attachments ever again.
       </div>
     </Dialog>
   );

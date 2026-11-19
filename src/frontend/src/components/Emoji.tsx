@@ -11,11 +11,7 @@ function Root({ emojiId, shortCode, className, ...props }: EmojiProps) {
   const [hasError, setHasError] = useState(false);
 
   if (hasError) {
-    return (
-      <BsExclamationTriangle
-        className={`inline-block animate-pulse fill-red-500 ${className}`}
-      />
-    );
+    return <BsExclamationTriangle className={`inline-block animate-pulse fill-red-500 ${className}`} />;
   }
 
   return (
@@ -32,9 +28,7 @@ function Root({ emojiId, shortCode, className, ...props }: EmojiProps) {
 }
 
 function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={`animate-pulse bg-white/10 ${className}`} {...props}></div>
-  );
+  return <div className={`animate-pulse bg-white/10 ${className}`} {...props}></div>;
 }
 
 export const Emoji = {

@@ -44,11 +44,8 @@ export default function useQueryPinnedMessages(
       );
     },
     initialPageParam: {} as PageParams,
-    getNextPageParam: (
-      lastPage: KeyedPaginatedPage<string, PinnedMessageDto>,
-    ) => {
-      if (!lastPage?.hasNextPage || lastPage.elements.length === 0)
-        return undefined;
+    getNextPageParam: (lastPage: KeyedPaginatedPage<string, PinnedMessageDto>) => {
+      if (!lastPage?.hasNextPage || lastPage.elements.length === 0) return undefined;
 
       return { before: lastPage.elements[0].pinnedAt };
     },
@@ -56,7 +53,4 @@ export default function useQueryPinnedMessages(
   });
 }
 
-useQueryPinnedMessages.getKey = (conversationId: string) => [
-  "useQueryPinnedMessages",
-  conversationId,
-];
+useQueryPinnedMessages.getKey = (conversationId: string) => ["useQueryPinnedMessages", conversationId];

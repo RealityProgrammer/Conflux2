@@ -7,12 +7,7 @@ interface MentionProps {
   className?: string;
 }
 
-export default function Mention({
-  userId,
-  fallbackDisplayName,
-  className,
-  ...props
-}: MentionProps) {
+export default function Mention({ userId, fallbackDisplayName, className, ...props }: MentionProps) {
   const user = useUserIdentityStore((state) => state.getUser(userId));
   const fetchUser = useUserIdentityStore((state) => state.fetchUser);
 
@@ -22,8 +17,7 @@ export default function Mention({
     }
   }, [userId, userId, fetchUser]);
 
-  const displayName =
-    user?.displayName || fallbackDisplayName || `user_${userId}`;
+  const displayName = user?.displayName || fallbackDisplayName || `user_${userId}`;
 
   return (
     <span

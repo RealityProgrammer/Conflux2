@@ -48,10 +48,7 @@ interface CreateInvitationDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function CreateInvitationDialog({
-  open,
-  onOpenChange,
-}: CreateInvitationDialogProps) {
+export default function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationDialogProps) {
   const {
     detailsQueryResult: { data: serverDetails },
   } = useCommunityServerContext();
@@ -77,26 +74,19 @@ export default function CreateInvitationDialog({
 
     if (response.success) {
       try {
-        await navigator.clipboard.writeText(
-          `${window.location.origin}/invite/${response.data}`,
-        );
+        await navigator.clipboard.writeText(`${window.location.origin}/invite/${response.data}`);
         formMethods.reset();
         onOpenChange(false);
         toast.success("Invitation link has been copied to clipboard.");
       } catch {
-        toast.error(
-          "Failed to copy invitation link to clipboard, possible API error?",
-        );
+        toast.error("Failed to copy invitation link to clipboard, possible API error?");
       }
     } else {
       if (
         response.statusCode === HttpStatusCode.BadRequest &&
         response.error?.code === "ValidationErrorsOccurred"
       ) {
-        const details = response.error.details as Record<
-          "expireAfter" | "maxUses",
-          string[]
-        >;
+        const details = response.error.details as Record<"expireAfter" | "maxUses", string[]>;
 
         if (details.expireAfter && details.expireAfter.length > 0) {
           formMethods.setError("expireAfter", {
@@ -154,11 +144,7 @@ export default function CreateInvitationDialog({
                   >
                     <Select.Viewport className="size-full overflow-y-auto p-1">
                       {INVITATION_OPTIONS.map((e) => (
-                        <SelectItem
-                          key={e.value}
-                          text={e.label}
-                          value={e.value}
-                        />
+                        <SelectItem key={e.value} text={e.label} value={e.value} />
                       ))}
                     </Select.Viewport>
                   </Select.Content>
@@ -166,9 +152,7 @@ export default function CreateInvitationDialog({
               </Select.Root>
 
               {formMethods.formState.errors.expireAfter && (
-                <ErrorText>
-                  {formMethods.formState.errors.expireAfter.message}
-                </ErrorText>
+                <ErrorText>{formMethods.formState.errors.expireAfter.message}</ErrorText>
               )}
             </>
           )}
@@ -183,8 +167,7 @@ export default function CreateInvitationDialog({
           className="input-field h-11 w-full"
           placeholder="Enter max number of uses"
           {...formMethods.register("maxUses", {
-            setValueAs: (value) =>
-              value === "" || value == null ? null : Number(value),
+            setValueAs: (value) => (value === "" || value == null ? null : Number(value)),
           })}
         />
 
@@ -193,9 +176,7 @@ export default function CreateInvitationDialog({
         )}
 
         {formMethods.formState.errors.root && (
-          <ErrorText className="mt-2">
-            {formMethods.formState.errors.root.message}
-          </ErrorText>
+          <ErrorText className="mt-2">{formMethods.formState.errors.root.message}</ErrorText>
         )}
       </div>
     </ModalForm>
@@ -203,8 +184,7 @@ export default function CreateInvitationDialog({
 }
 
 function GetInvitationLinkButton({ ...props }) {
-  const CHARACTERS =
-    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const generateRandomInvitationId = (length: number): string => {
     let result = "";
@@ -219,9 +199,7 @@ function GetInvitationLinkButton({ ...props }) {
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const [fakeInvitationId, setFakeInvitationId] = useState(() =>
-    generateRandomInvitationId(12),
-  );
+  const [fakeInvitationId, setFakeInvitationId] = useState(() => generateRandomInvitationId(12));
 
   useInterval(() => {
     setFakeInvitationId(generateRandomInvitationId(12));

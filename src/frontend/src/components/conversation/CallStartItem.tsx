@@ -25,9 +25,7 @@ export class CallStartItem extends TimelineItem<CallStartItemProps> {
       <div className="pt-1 text-sm">
         <div className="hover-highlight px-4 py-1">
           <BsTelephoneOutboundFill className="mr-4 inline size-6 fill-green-500" />
-          <span className="font-semibold">
-            {this.data.sender.displayName ?? "???"}
-          </span>
+          <span className="font-semibold">{this.data.sender.displayName ?? "???"}</span>
           <span> started a call.</span>
 
           <DateTimeText

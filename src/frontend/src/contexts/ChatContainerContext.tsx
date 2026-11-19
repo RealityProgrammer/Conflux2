@@ -1,10 +1,4 @@
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import type {
   BackendResponse,
   EditedMessageDto,
@@ -52,9 +46,7 @@ interface ChatContainerContextType {
   removeEditOperation: (operationIdempotencyKey: string) => void;
 }
 
-const ChatContainerContext = createContext<ChatContainerContextType | null>(
-  null,
-);
+const ChatContainerContext = createContext<ChatContainerContextType | null>(null);
 
 export default function ChatContainerContextProvider({
   conversationId,
@@ -64,9 +56,7 @@ export default function ChatContainerContextProvider({
   children: ReactNode;
 }) {
   // set active conversation id
-  const setActiveConversationId = useActiveConversationStore(
-    (state) => state.setActiveConversationId,
-  );
+  const setActiveConversationId = useActiveConversationStore((state) => state.setActiveConversationId);
 
   useEffect(() => {
     setActiveConversationId(conversationId);
@@ -77,8 +67,7 @@ export default function ChatContainerContextProvider({
   }, [conversationId, setActiveConversationId]);
 
   // setup some states
-  const [replyingMessage, setReplyingMessage] =
-    useState<TimelineMessageDto | null>(null);
+  const [replyingMessage, setReplyingMessage] = useState<TimelineMessageDto | null>(null);
   const [jumpMessageId, setJumpMessageId] = useState<string | null>(null);
 
   const requestJump = (messageId: string) => setJumpMessageId(messageId);
@@ -96,16 +85,11 @@ export default function ChatContainerContextProvider({
   } = useMessageOperationsStore();
 
   const sendOperations =
-    useMessageOperationsStore(
-      (state) => state.sendOperationsByConversation[conversationId],
-    ) || [];
+    useMessageOperationsStore((state) => state.sendOperationsByConversation[conversationId]) || [];
   const editOperations =
-    useMessageOperationsStore(
-      (state) => state.editOperationsByConversation[conversationId],
-    ) || {};
+    useMessageOperationsStore((state) => state.editOperationsByConversation[conversationId]) || {};
 
-  const { appendMessage, updateMessage, deleteMessage } =
-    useTimelineMessageMutations(conversationId);
+  const { appendMessage, updateMessage, deleteMessage } = useTimelineMessageMutations(conversationId);
 
   // message mutations
   const sendMessageMutation = useSendMessageMutation({
@@ -116,19 +100,14 @@ export default function ChatContainerContextProvider({
         conversationId,
       });
     },
-    onSuccess: async (
-      result: TimelineMessageDto,
-      variables: UseSendMessageMutationVariables,
-    ) => {
+    onSuccess: async (result: TimelineMessageDto, variables: UseSendMessageMutationVariables) => {
       removeSendOperation(conversationId, variables.idempotencyKey);
       appendMessage(result);
     },
     onError: (error: Error, variables: UseSendMessageMutationVariables) => {
       toast.error("Failed to send message.");
 
-      const response: ServiceResponse = handleAxiosError(
-        error as AxiosError<BackendResponse>,
-      );
+      const response: ServiceResponse = handleAxiosError(error as AxiosError<BackendResponse>);
 
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
@@ -175,9 +154,7 @@ export default function ChatContainerContextProvider({
   });
 
   const retrySendOperation = (idempotencyKey: string) => {
-    const operation = sendOperations.find(
-      (o) => o.idempotencyKey === idempotencyKey && o.error,
-    );
+    const operation = sendOperations.find((o) => o.idempotencyKey === idempotencyKey && o.error);
     if (!operation) return;
 
     sendMessageMutation.mutate({
@@ -195,10 +172,7 @@ export default function ChatContainerContextProvider({
         addAttachments: variables.addAttachments,
       });
     },
-    onSuccess: async (
-      result: EditedMessageDto,
-      variables: UseEditMessageMutationVariables,
-    ) => {
+    onSuccess: async (result: EditedMessageDto, variables: UseEditMessageMutationVariables) => {
       removeEditOperation(conversationId, variables.messageId);
       updateMessage(variables.messageId, {
         newBody: result.newBody,
@@ -208,9 +182,7 @@ export default function ChatContainerContextProvider({
     onError: (error: Error, variables: UseEditMessageMutationVariables) => {
       toast.error("Failed to edit message.");
 
-      const response: ServiceResponse = handleAxiosError(
-        error as AxiosError<BackendResponse>,
-      );
+      const response: ServiceResponse = handleAxiosError(error as AxiosError<BackendResponse>);
 
       switch (response.statusCode) {
         case HttpStatusCode.BadRequest:
@@ -274,10 +246,7 @@ export default function ChatContainerContextProvider({
     onMutate: async (payload: UseDeleteMessageMutationVariables) => {
       addDeletingMessage(conversationId, payload.messageId);
     },
-    onSuccess: async (
-      _result: void,
-      payload: UseDeleteMessageMutationVariables,
-    ) => {
+    onSuccess: async (_result: void, payload: UseDeleteMessageMutationVariables) => {
       deleteMessage(payload.messageId);
     },
     onError: (_error, _payload) => {
@@ -301,10 +270,7 @@ export default function ChatContainerContextProvider({
     setReplyingMessage(null);
   };
 
-  const handleEditMessage = async (
-    messageId: string,
-    input: MessageEditInput,
-  ) => {
+  const handleEditMessage = async (messageId: string, input: MessageEditInput) => {
     if (!conversationId) return;
 
     editMessageMutation.mutate({
@@ -353,9 +319,7 @@ export default function ChatContainerContextProvider({
 export function useChatContainerContext(): ChatContainerContextType {
   const context = useContext(ChatContainerContext);
   if (!context)
-    throw new Error(
-      "useChatContainerContext must be used within an ChatContainerContextProvider.",
-    );
+    throw new Error("useChatContainerContext must be used within an ChatContainerContextProvider.");
 
   return context;
 }

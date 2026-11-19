@@ -23,24 +23,18 @@ function isSameDay(d1: Date, d2: Date): boolean {
 }
 
 export default function useTimelineItems(
-  messagePages:
-    InfiniteData<TimelineMessagePage | null | undefined, unknown> | undefined,
+  messagePages: InfiniteData<TimelineMessagePage | null | undefined, unknown> | undefined,
 ): TimelineItem[] {
   const { conversationId } = useChatContainerContext();
   const auth = useAuth();
 
   const sendOperations =
-    useMessageOperationsStore(
-      (state) => state.sendOperationsByConversation[conversationId],
-    ) ?? [];
+    useMessageOperationsStore((state) => state.sendOperationsByConversation[conversationId]) ?? [];
   const editOperations =
-    useMessageOperationsStore(
-      (state) => state.editOperationsByConversation[conversationId],
-    ) ?? [];
+    useMessageOperationsStore((state) => state.editOperationsByConversation[conversationId]) ?? [];
   const deletingMessageIds =
-    useMessageOperationsStore(
-      (state) => state.deletingMessageIdsByConversation[conversationId],
-    ) ?? new Set<string>();
+    useMessageOperationsStore((state) => state.deletingMessageIdsByConversation[conversationId]) ??
+    new Set<string>();
 
   const items: TimelineItem[] = [];
 
@@ -53,9 +47,7 @@ export default function useTimelineItems(
   for (const page of messagePages.pages) {
     if (!page) continue;
 
-    const activeMessages = page.messages.filter(
-      (m) => !deletingMessageIds.has(m.id),
-    );
+    const activeMessages = page.messages.filter((m) => !deletingMessageIds.has(m.id));
 
     if (!activeMessages.length) continue;
 
@@ -63,8 +55,7 @@ export default function useTimelineItems(
       const messageDate = new Date(message.createdAt);
 
       // insert DateSeparator if calendar day changed
-      const dateChanged =
-        !lastMessageDate || !isSameDay(lastMessageDate, messageDate);
+      const dateChanged = !lastMessageDate || !isSameDay(lastMessageDate, messageDate);
       if (dateChanged) {
         items.push(
           new DateSeparator({
@@ -77,10 +68,7 @@ export default function useTimelineItems(
       }
 
       if (message.type === MessageType.Message) {
-        if (
-          !showHeader &&
-          (lastMessageSenderId !== message.sender!.id || !!message.replyTo)
-        ) {
+        if (!showHeader && (lastMessageSenderId !== message.sender!.id || !!message.replyTo)) {
           showHeader = true;
         }
 
@@ -169,14 +157,18 @@ export default function useTimelineItems(
   }
 
   // sending messages appending
-  items.push(...sendOperations.filter(o => o.conversationId === conversationId).map(o => {
-    return new SendingMessage({
-      showHeader: lastMessageSenderId !== auth.userProfile?.id,
-      idempotencyKey: o.idempotencyKey,
-      input: o.input,
-      error: o.error,
-    });
-  }));
+  items.push(
+    ...sendOperations
+      .filter((o) => o.conversationId === conversationId)
+      .map((o) => {
+        return new SendingMessage({
+          showHeader: lastMessageSenderId !== auth.userProfile?.id,
+          idempotencyKey: o.idempotencyKey,
+          input: o.input,
+          error: o.error,
+        });
+      }),
+  );
 
   return items;
 }

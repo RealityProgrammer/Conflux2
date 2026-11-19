@@ -1,7 +1,4 @@
-import {
-  type IncomingDirectCall,
-  useCallStore,
-} from "../../store/useCallStore.ts";
+import { type IncomingDirectCall, useCallStore } from "../../store/useCallStore.ts";
 import CallWindowHeader from "./CallWindowHeader.tsx";
 import IconButton from "../IconButton.tsx";
 import { BsTelephoneInboundFill, BsTelephoneXFill } from "react-icons/bs";
@@ -24,11 +21,7 @@ import type { DirectMessagePageLoaderProps } from "../../router.tsx";
 import useTimelineMessageMutations from "../../hooks/useTimelineMessageMutations.ts";
 import { Avatar } from "../Avatar.tsx";
 
-export default function IncomingCallWindowContent({
-  call,
-}: {
-  call: IncomingDirectCall;
-}) {
+export default function IncomingCallWindowContent({ call }: { call: IncomingDirectCall }) {
   if (call.state === "dialing") {
     return <IncomingPhase call={call} />;
   }
@@ -60,15 +53,13 @@ function IncomingPhase({ call }: { call: IncomingDirectCall }) {
   const updateCallState = useCallStore((state) => state.updateCallState);
 
   // TODO: not do this shit
-  const loaderData = useRouteLoaderData("dm") as
-    DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessageMutations(
-    loaderData?.conversationId ?? "",
-  );
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const handleRejectCall = async () => {
-    const response: ServiceResponse<TimelineMessageDto> =
-      await directConversationService.rejectDirectCall(call.id);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.rejectDirectCall(
+      call.id,
+    );
 
     if (response.success) {
       updateCallState(call.id, "rejected");
@@ -80,8 +71,7 @@ function IncomingPhase({ call }: { call: IncomingDirectCall }) {
   };
 
   const handleAcceptCall = async () => {
-    const response: ServiceResponse =
-      await directConversationService.acceptDirectCall(call.id);
+    const response: ServiceResponse = await directConversationService.acceptDirectCall(call.id);
 
     if (response.success) {
       updateCallState(call.id, "active");
@@ -152,9 +142,7 @@ function IncomingPhase({ call }: { call: IncomingDirectCall }) {
 
   return (
     <>
-      <CallWindowHeader
-        title={`Incoming call from ${call.callerProfile.displayName}`}
-      />
+      <CallWindowHeader title={`Incoming call from ${call.callerProfile.displayName}`} />
 
       <section className="@container-size relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden bg-black">
         <Avatar.User
@@ -174,19 +162,11 @@ function IncomingPhase({ call }: { call: IncomingDirectCall }) {
         <p className="text-sm select-none">{call.callerProfile.displayName}</p>
 
         <div className="bg-gray-650 absolute bottom-2 flex flex-row gap-4 rounded-lg border-2 border-gray-600 p-2">
-          <IconButton
-            className="size-8"
-            theme="danger"
-            onClick={handleRejectCall}
-          >
+          <IconButton className="size-8" theme="danger" onClick={handleRejectCall}>
             <BsTelephoneXFill className="size-7" />
           </IconButton>
 
-          <IconButton
-            className="size-8"
-            theme="success"
-            onClick={handleAcceptCall}
-          >
+          <IconButton className="size-8" theme="success" onClick={handleAcceptCall}>
             <BsTelephoneInboundFill className="size-7" />
           </IconButton>
         </div>
@@ -269,11 +249,8 @@ function ActivePhase({ call }: { call: IncomingDirectCall }) {
   const updateCallState = useCallStore((state) => state.updateCallState);
   const [isEndingCall, setIsEndingCall] = useState(false);
 
-  const loaderData = useRouteLoaderData("dm") as
-    DirectMessagePageLoaderProps | undefined;
-  const { appendMessage } = useTimelineMessageMutations(
-    loaderData?.conversationId ?? "",
-  );
+  const loaderData = useRouteLoaderData("dm") as DirectMessagePageLoaderProps | undefined;
+  const { appendMessage } = useTimelineMessageMutations(loaderData?.conversationId ?? "");
 
   const {
     stream,
@@ -291,16 +268,12 @@ function ActivePhase({ call }: { call: IncomingDirectCall }) {
     audioOutputDevices,
   } = useUserMedia({});
 
-  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] =
-    useState<string | undefined>();
+  const [selectedAudioDeviceOutputId, setSelectedAudioDeviceOutputId] = useState<string | undefined>();
 
   useEffect(() => {
     if (!selectedAudioDeviceOutputId && audioOutputDevices.length > 0) {
-      const defaultDevice = audioOutputDevices.find(
-        (d) => d.deviceId === "default",
-      );
-      const initialId =
-        defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
+      const defaultDevice = audioOutputDevices.find((d) => d.deviceId === "default");
+      const initialId = defaultDevice?.deviceId ?? audioOutputDevices[0].deviceId;
 
       setSelectedAudioDeviceOutputId(initialId);
     }
@@ -322,8 +295,9 @@ function ActivePhase({ call }: { call: IncomingDirectCall }) {
   const handleCallEnd = async () => {
     setIsEndingCall(true);
 
-    const response: ServiceResponse<TimelineMessageDto> =
-      await directConversationService.endDirectCall(call.id);
+    const response: ServiceResponse<TimelineMessageDto> = await directConversationService.endDirectCall(
+      call.id,
+    );
 
     if (response.success) {
       updateCallState(call.id, "ended");
@@ -337,9 +311,7 @@ function ActivePhase({ call }: { call: IncomingDirectCall }) {
 
   return (
     <>
-      <CallWindowHeader
-        title={`On call with ${call.callerProfile!.displayName}`}
-      />
+      <CallWindowHeader title={`On call with ${call.callerProfile!.displayName}`} />
 
       <div className="@container-size relative flex flex-1 flex-col items-center justify-center bg-black">
         {/*Local video */}

@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  type UseMutationOptions,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions, type UseMutationResult } from "@tanstack/react-query";
 import { conversationService } from "../api/conversationService.ts";
 import type { TimelineMessageDto } from "../api/types.ts";
 import type { MessageSendInput } from "../store/useMessageOperationsStore.ts";
@@ -15,18 +11,10 @@ export type UseSendMessageMutationVariables = {
 
 export default function useSendMessageMutation(
   options?: Omit<
-    UseMutationOptions<
-      TimelineMessageDto,
-      Error,
-      UseSendMessageMutationVariables
-    >,
+    UseMutationOptions<TimelineMessageDto, Error, UseSendMessageMutationVariables>,
     "mutationKey" | "mutationFn"
   >,
-): UseMutationResult<
-  TimelineMessageDto,
-  Error,
-  UseSendMessageMutationVariables
-> {
+): UseMutationResult<TimelineMessageDto, Error, UseSendMessageMutationVariables> {
   return useMutation({
     mutationKey: useSendMessageMutation.key,
     mutationFn: async (variables: UseSendMessageMutationVariables) => {

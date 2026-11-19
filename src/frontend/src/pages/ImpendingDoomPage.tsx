@@ -5,11 +5,7 @@ import { type CSSProperties, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext.tsx";
 import { useQuery } from "@tanstack/react-query";
 import { sessionUserService } from "../api/sessionUserService.ts";
-import type {
-  AccountDeletionStatusDto,
-  RestoreAccountResponse,
-  ServiceResponse,
-} from "../api/types.ts";
+import type { AccountDeletionStatusDto, RestoreAccountResponse, ServiceResponse } from "../api/types.ts";
 import Spinner from "../components/Spinner.tsx";
 import { useRestoreAccountMutation } from "../hooks/useRestoreAccountMutation.ts";
 import { toast } from "react-toastify";
@@ -60,11 +56,7 @@ export default function ImpendingDoomPage() {
 }
 
 function ContentPanel() {
-  const { data, isLoading, isError } = useQuery<
-    unknown,
-    Error,
-    AccountDeletionStatusDto
-  >({
+  const { data, isLoading, isError } = useQuery<unknown, Error, AccountDeletionStatusDto>({
     queryKey: ["GetAccountDeletionStatus"],
     queryFn: async (): Promise<AccountDeletionStatusDto> => {
       const response: ServiceResponse<AccountDeletionStatusDto> =
@@ -107,9 +99,7 @@ type RestoreAccountFormValues = z.infer<typeof restoreAccountSchema>;
 
 function SuccessfullyLoaded({ data }: { data: AccountDeletionStatusDto }) {
   const { logout } = useAuth();
-  const setCachedAuthorization = useAuthStore(
-    (state) => state.setCachedAuthorization,
-  );
+  const setCachedAuthorization = useAuthStore((state) => state.setCachedAuthorization);
   const navigate = useNavigate();
 
   const { mutate, isPending } = useRestoreAccountMutation({
@@ -169,9 +159,7 @@ function SuccessfullyLoaded({ data }: { data: AccountDeletionStatusDto }) {
       }
 
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-      );
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
@@ -194,13 +182,9 @@ function SuccessfullyLoaded({ data }: { data: AccountDeletionStatusDto }) {
         <BsPersonXFill className="size-10 flex-none fill-white" />
 
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">
-            Account Scheduled for Deletion
-          </h1>
+          <h1 className="text-xl font-bold text-white">Account Scheduled for Deletion</h1>
 
-          <p className="text-sm text-gray-400">
-            Revive or watch it wither away. Your choice.
-          </p>
+          <p className="text-sm text-gray-400">Revive or watch it wither away. Your choice.</p>
         </div>
       </header>
 
@@ -208,8 +192,7 @@ function SuccessfullyLoaded({ data }: { data: AccountDeletionStatusDto }) {
         <p className="mb-2">
           <span>Approximate remaining time:</span>
           <span className="float-end">
-            {timeLeft.days} days, {timeLeft.hours}h {timeLeft.minutes}m{" "}
-            {timeLeft.seconds}s
+            {timeLeft.days} days, {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
           </span>
         </p>
 
@@ -220,10 +203,7 @@ function SuccessfullyLoaded({ data }: { data: AccountDeletionStatusDto }) {
             const isCurrentDay = dayNumber === elapsedDays + 1;
 
             return (
-              <div
-                key={dayNumber}
-                className="group relative flex flex-col items-center"
-              >
+              <div key={dayNumber} className="group relative flex flex-col items-center">
                 {/* Day Box */}
                 <div
                   className={`relative flex aspect-4/5 w-full flex-col items-center justify-center overflow-hidden rounded-lg text-xs font-medium transition-all duration-300 ${

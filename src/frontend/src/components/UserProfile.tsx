@@ -79,8 +79,7 @@ interface BioProps {
 }
 
 function Bio({ children, displayName }: BioProps) {
-  const randomTitle =
-    HUMOROUS_TITLES[Math.floor(Math.random() * HUMOROUS_TITLES.length)];
+  const randomTitle = HUMOROUS_TITLES[Math.floor(Math.random() * HUMOROUS_TITLES.length)];
 
   return (
     <div className="hover-highlight flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-3">
@@ -89,9 +88,7 @@ function Bio({ children, displayName }: BioProps) {
       </blockquote>
 
       <span className="text-xs text-gray-400">
-        -{" "}
-        <span className="text-xs font-semibold text-white">{displayName}</span>,{" "}
-        {randomTitle}
+        - <span className="text-xs font-semibold text-white">{displayName}</span>, {randomTitle}
       </span>
     </div>
   );

@@ -13,9 +13,7 @@ export default function MediaPreviewGallery() {
   const viewIndex = useMediaGalleryStore((state) => state.viewIndex);
   const options = useMediaGalleryStore((state) => state.options);
   const clearElements = useMediaGalleryStore((state) => state.clearElements);
-  const previousElement = useMediaGalleryStore(
-    (state) => state.previousElement,
-  );
+  const previousElement = useMediaGalleryStore((state) => state.previousElement);
   const nextElement = useMediaGalleryStore((state) => state.nextElement);
 
   const handlePrev = (e?: MouseEvent<HTMLButtonElement>) => {
@@ -116,9 +114,7 @@ export default function MediaPreviewGallery() {
 }
 
 function AttachmentContent() {
-  const attachment = useMediaGalleryStore(
-    (state) => state.elements?.[state.viewIndex],
-  );
+  const attachment = useMediaGalleryStore((state) => state.elements?.[state.viewIndex]);
 
   if (!attachment) return null;
 
@@ -134,12 +130,7 @@ function AttachmentContent() {
           className="h-auto max-h-[95vh] w-auto max-w-[95vw] object-contain"
         />
       ) : attachment.mediaType.startsWith("audio") ? (
-        <audio
-          src={attachment.src}
-          controls
-          autoPlay={false}
-          className="h-auto w-full max-w-[95vw]"
-        />
+        <audio src={attachment.src} controls autoPlay={false} className="h-auto w-full max-w-[95vw]" />
       ) : (
         <div className="flex h-[30vh] w-[50vw] max-w-md flex-col items-center justify-center rounded-lg bg-gray-800 p-10 text-gray-300">
           <span className="w-full px-4 text-center text-lg font-medium">
@@ -155,19 +146,9 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function clampImagePanning(
-  valueX: number,
-  valueY: number,
-  image: HTMLImageElement,
-) {
-  const maxPanX = Math.max(
-    0,
-    (image.offsetWidth * IMAGE_SCALE_FACTOR - window.innerWidth) / 2,
-  );
-  const maxPanY = Math.max(
-    0,
-    (image.offsetHeight * IMAGE_SCALE_FACTOR - window.innerHeight) / 2,
-  );
+function clampImagePanning(valueX: number, valueY: number, image: HTMLImageElement) {
+  const maxPanX = Math.max(0, (image.offsetWidth * IMAGE_SCALE_FACTOR - window.innerWidth) / 2);
+  const maxPanY = Math.max(0, (image.offsetHeight * IMAGE_SCALE_FACTOR - window.innerHeight) / 2);
 
   return [clamp(valueX, -maxPanX, maxPanX), clamp(valueY, -maxPanY, maxPanY)];
 }
@@ -267,17 +248,11 @@ function ZoomableImage({ src }: { src: string }) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       className={`h-auto max-h-[95vh] w-auto max-w-[95vw] object-contain ${
-        isDragging
-          ? "cursor-grabbing"
-          : isZoomed
-            ? "cursor-zoom-out"
-            : "cursor-zoom-in"
+        isDragging ? "cursor-grabbing" : isZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
       }`}
       style={{
         transform: `translate(${pan.x}px, ${pan.y}px) scale(${isZoomed ? IMAGE_SCALE_FACTOR : 1})`,
-        transition: isDragging
-          ? "none"
-          : "transform 0.3s cubic-bezier(0.2, 0, 0, 1)",
+        transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.2, 0, 0, 1)",
       }}
     />
   );

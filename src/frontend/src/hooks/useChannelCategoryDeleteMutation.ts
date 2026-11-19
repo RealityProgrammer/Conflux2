@@ -22,46 +22,25 @@ export interface UseChannelCategoryDeleteMutationState {
 
 export function useChannelCategoryDeleteMutation(
   options?: Omit<
-    UseMutationOptions<
-      ServiceResponse,
-      Error,
-      UseChannelCategoryDeleteMutationVariables,
-      unknown
-    >,
+    UseMutationOptions<ServiceResponse, Error, UseChannelCategoryDeleteMutationVariables, unknown>,
     "mutationFn" | "mutationKey"
   >,
 ) {
-  return useMutation<
-    ServiceResponse,
-    Error,
-    UseChannelCategoryDeleteMutationVariables,
-    unknown
-  >({
+  return useMutation<ServiceResponse, Error, UseChannelCategoryDeleteMutationVariables, unknown>({
     mutationKey: ["channelCategoryDelete"],
-    mutationFn: async (
-      variables: UseChannelCategoryDeleteMutationVariables,
-    ): Promise<ServiceResponse> => {
-      return serverService.deleteChannelCategory(
-        variables.serverId,
-        variables.categoryId,
-      );
+    mutationFn: async (variables: UseChannelCategoryDeleteMutationVariables): Promise<ServiceResponse> => {
+      return serverService.deleteChannelCategory(variables.serverId, variables.categoryId);
     },
     ...options,
   });
 }
 
-export function useChannelCategoryDeleteMutationState(
-  serverId: string,
-  categoryId: string,
-) {
+export function useChannelCategoryDeleteMutationState(serverId: string, categoryId: string) {
   const mutations = useMutationState({
     filters: { mutationKey: ["channelCategoryDelete"] },
     select: (mutation) => {
-      const variables = mutation.state.variables as
-        UseChannelCategoryDeleteMutationVariables | undefined;
-      const isTarget =
-        variables?.serverId === serverId &&
-        variables?.categoryId === categoryId;
+      const variables = mutation.state.variables as UseChannelCategoryDeleteMutationVariables | undefined;
+      const isTarget = variables?.serverId === serverId && variables?.categoryId === categoryId;
 
       if (!isTarget) return null;
 

@@ -38,8 +38,7 @@ export class MarkdownMarkerNode extends TextNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
-    dom.style.color =
-      "color-mix(in oklab, var(--color-gray-400) 70%, transparent)";
+    dom.style.color = "color-mix(in oklab, var(--color-gray-400) 70%, transparent)";
     dom.className = "editor-markdown-marker";
     return dom;
   }
@@ -69,8 +68,6 @@ export function $createMarkdownMarkerNode(text: string): MarkdownMarkerNode {
   return new MarkdownMarkerNode(text);
 }
 
-export function $isMarkdownMarkerNode(
-  node: LexicalNode | null | undefined,
-): node is MarkdownMarkerNode {
+export function $isMarkdownMarkerNode(node: LexicalNode | null | undefined): node is MarkdownMarkerNode {
   return node instanceof MarkdownMarkerNode;
 }

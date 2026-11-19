@@ -28,12 +28,12 @@ export const userService = {
     return `${url}?${queryParams.toString()}`;
   },
 
-  getIdentities: async (
-    ids: string[],
-  ): Promise<ServiceResponse<UserIdentityProfileDto[]>> => {
+  getIdentities: async (ids: string[]): Promise<ServiceResponse<UserIdentityProfileDto[]>> => {
     try {
-      const response: AxiosResponse<BackendResponse<UserIdentityProfileDto[]>> =
-        await apiClient.post("/users/get-identities", { ids });
+      const response: AxiosResponse<BackendResponse<UserIdentityProfileDto[]>> = await apiClient.post(
+        "/users/get-identities",
+        { ids },
+      );
 
       await csrfService.requestCsrfToken();
 
@@ -43,21 +43,18 @@ export const userService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<UserIdentityProfileDto[]>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<UserIdentityProfileDto[]>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  discoverFriend: async (
-    searchTerm: string,
-  ): Promise<FriendSearchResponse | null> => {
+  discoverFriend: async (searchTerm: string): Promise<FriendSearchResponse | null> => {
     const params = new URLSearchParams();
     params.set("search", searchTerm);
 
-    const response: AxiosResponse<BackendResponse<FriendSearchResponse>> =
-      await apiClient.get(`/users/discover-friend?${params.toString()}`);
+    const response: AxiosResponse<BackendResponse<FriendSearchResponse>> = await apiClient.get(
+      `/users/discover-friend?${params.toString()}`,
+    );
 
     return response.data.data ?? null;
   },

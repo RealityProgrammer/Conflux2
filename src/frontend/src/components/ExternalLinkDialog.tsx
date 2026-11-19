@@ -62,10 +62,7 @@ export default function ExternalLinkDialog() {
       headerIcon={<BsBoxArrowUpRight className="size-10 fill-white" />}
       footerContent={
         <div className="flex w-full flex-row justify-end gap-3 p-3">
-          <RadixDialog.Close
-            type="button"
-            className="basis-20 cursor-pointer outline-none"
-          >
+          <RadixDialog.Close type="button" className="basis-20 cursor-pointer outline-none">
             Cancel
           </RadixDialog.Close>
 
@@ -80,8 +77,7 @@ export default function ExternalLinkDialog() {
               style={{
                 width: `${progress}%`,
                 transitionProperty: "width",
-                transitionDuration:
-                  progress === 100 ? `${CONFIRMATION_DELAY}ms` : "0ms",
+                transitionDuration: progress === 100 ? `${CONFIRMATION_DELAY}ms` : "0ms",
               }}
             />
 

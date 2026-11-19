@@ -7,10 +7,7 @@ interface TruncatedTextProps {
   delayDuration?: number;
 }
 
-export function TruncatedText({
-  children,
-  className = "",
-}: TruncatedTextProps) {
+export function TruncatedText({ children, className = "" }: TruncatedTextProps) {
   const textRef = useRef<HTMLSpanElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
@@ -32,11 +29,7 @@ export function TruncatedText({
       }}
     >
       <Tooltip.Trigger asChild>
-        <span
-          ref={textRef}
-          onMouseEnter={checkTruncation}
-          className={`block truncate ${className}`}
-        >
+        <span ref={textRef} onMouseEnter={checkTruncation} className={`block truncate ${className}`}>
           {children}
         </span>
       </Tooltip.Trigger>

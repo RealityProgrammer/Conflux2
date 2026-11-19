@@ -12,11 +12,7 @@ import type {
   ServiceResponse,
   UserAuthorizationInfo,
 } from "./types.ts";
-import axios, {
-  type AxiosError,
-  type AxiosResponse,
-  HttpStatusCode,
-} from "axios";
+import axios, { type AxiosError, type AxiosResponse, HttpStatusCode } from "axios";
 import Cookies from "js-cookie";
 import { handleAxiosError } from "./errorHandling.ts";
 import { csrfService } from "./csrfService.ts";
@@ -24,17 +20,15 @@ import type { UserAccountDeleteReason } from "./schema.ts";
 import { useAuthStore } from "../store/useAuthStore.ts";
 
 export const authService = {
-  login: async (
-    request: LoginRequest,
-  ): Promise<ServiceResponse<LoginResponse>> => {
+  login: async (request: LoginRequest): Promise<ServiceResponse<LoginResponse>> => {
     try {
-      const response: AxiosResponse<BackendResponse<LoginResponse>> =
-        await apiClient.post("/auth/login", request);
+      const response: AxiosResponse<BackendResponse<LoginResponse>> = await apiClient.post(
+        "/auth/login",
+        request,
+      );
 
       if (response.status === HttpStatusCode.Ok) {
-        useAuthStore
-          .getState()
-          .setCachedAuthorization(response.data.data!.authorization);
+        useAuthStore.getState().setCachedAuthorization(response.data.data!.authorization);
       }
 
       await csrfService.requestCsrfToken();
@@ -52,10 +46,7 @@ export const authService = {
 
   register: async (request: RegisterRequest): Promise<ServiceResponse> => {
     try {
-      const response = await apiClient.post<BackendResponse>(
-        "/auth/register",
-        request,
-      );
+      const response = await apiClient.post<BackendResponse>("/auth/register", request);
 
       return {
         success: true,
@@ -130,10 +121,7 @@ export const authService = {
         try {
           await csrfService.requestCsrfToken();
         } catch (csrfErr) {
-          console.error(
-            "Failed to reset to anonymous CSRF token after refresh failure",
-            csrfErr,
-          );
+          console.error("Failed to reset to anonymous CSRF token after refresh failure", csrfErr);
         }
 
         return handleAxiosError(axiosError);
@@ -148,8 +136,7 @@ export const authService = {
 
   logout: async (): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse =
-        await apiClient.post<BackendResponse>("/auth/logout");
+      const response: AxiosResponse = await apiClient.post<BackendResponse>("/auth/logout");
       useAuthStore.getState().clearSession();
 
       await csrfService.requestCsrfToken();
@@ -166,8 +153,7 @@ export const authService = {
 
   logoutAll: async (): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse =
-        await apiClient.post<BackendResponse>("/auth/logout-all");
+      const response: AxiosResponse = await apiClient.post<BackendResponse>("/auth/logout-all");
       useAuthStore.getState().clearSession();
 
       await csrfService.requestCsrfToken();
@@ -189,12 +175,11 @@ export const authService = {
     idempotencyKey: string,
   ): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(
-          "auth/delete-account",
-          { reason, extraMessage, restorationPassword },
-          { headers: { "Idempotency-Key": idempotencyKey } },
-        );
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        "auth/delete-account",
+        { reason, extraMessage, restorationPassword },
+        { headers: { "Idempotency-Key": idempotencyKey } },
+      );
 
       useAuthStore.getState().clearSession();
 
@@ -210,15 +195,11 @@ export const authService = {
     }
   },
 
-  restoreAccount: async (
-    restorationPassword: string,
-  ): Promise<ServiceResponse<RestoreAccountResponse>> => {
+  restoreAccount: async (restorationPassword: string): Promise<ServiceResponse<RestoreAccountResponse>> => {
     try {
-      const response: AxiosResponse<BackendResponse<RestoreAccountResponse>> =
-        await apiClient.post<BackendResponse<RestoreAccountResponse>>(
-          "auth/restore-account",
-          { restorationPassword },
-        );
+      const response: AxiosResponse<BackendResponse<RestoreAccountResponse>> = await apiClient.post<
+        BackendResponse<RestoreAccountResponse>
+      >("auth/restore-account", { restorationPassword });
 
       useAuthStore.getState().clearSession();
 
@@ -230,16 +211,12 @@ export const authService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<RestoreAccountResponse>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<RestoreAccountResponse>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  getAuthorizationInfo: async (): Promise<
-    ServiceResponse<UserAuthorizationInfo>
-  > => {
+  getAuthorizationInfo: async (): Promise<ServiceResponse<UserAuthorizationInfo>> => {
     const {
       cachedAuthorization,
       hasSession,
@@ -295,8 +272,9 @@ export const authService = {
 
   resendConfirmEmail: async (): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/resend-confirm-email");
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        "/auth/resend-confirm-email",
+      );
 
       return {
         success: true,
@@ -308,16 +286,15 @@ export const authService = {
     }
   },
 
-  confirmEmail: async (
-    email: string,
-    confirmationCode: string,
-  ): Promise<ServiceResponse> => {
+  confirmEmail: async (email: string, confirmationCode: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/confirm-email", {
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        "/auth/confirm-email",
+        {
           email,
           confirmationCode,
-        });
+        },
+      );
 
       if (response.status === HttpStatusCode.Ok) {
         // refresh the authorization information.
@@ -334,16 +311,15 @@ export const authService = {
     }
   },
 
-  changePassword: async (
-    oldPassword: string,
-    newPassword: string,
-  ): Promise<ServiceResponse> => {
+  changePassword: async (oldPassword: string, newPassword: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/change-password", {
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        "/auth/change-password",
+        {
           oldPassword,
           newPassword,
-        });
+        },
+      );
 
       return {
         success: true,
@@ -357,10 +333,12 @@ export const authService = {
 
   forgotPassword: async (email: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/forgot-password", {
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        "/auth/forgot-password",
+        {
           email,
-        });
+        },
+      );
 
       return {
         success: true,
@@ -372,18 +350,16 @@ export const authService = {
     }
   },
 
-  resetPassword: async (
-    email: string,
-    token: string,
-    password: string,
-  ): Promise<ServiceResponse> => {
+  resetPassword: async (email: string, token: string, password: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>("/auth/reset-password", {
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        "/auth/reset-password",
+        {
           email,
           token,
           password,
-        });
+        },
+      );
 
       return {
         success: true,
@@ -406,19 +382,16 @@ export const authService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<SessionsQueryResult>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<SessionsQueryResult>>;
       return handleAxiosError(axiosError);
     }
   },
 
   deleteSession: async (sessionId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete<BackendResponse>(
-          `/auth/sessions/${encodeURIComponent(sessionId)}`,
-        );
+      const response: AxiosResponse<BackendResponse> = await apiClient.delete<BackendResponse>(
+        `/auth/sessions/${encodeURIComponent(sessionId)}`,
+      );
 
       return {
         success: true,

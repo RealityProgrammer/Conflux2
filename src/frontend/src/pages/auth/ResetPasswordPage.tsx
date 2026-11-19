@@ -4,10 +4,7 @@ import { BsArrowRepeat, BsEye, BsEyeSlash } from "react-icons/bs";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Label,
-  unstable_PasswordToggleField as PasswordToggleField,
-} from "radix-ui";
+import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
 import ErrorText from "../../components/ErrorText.tsx";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
 import ErrorPopover from "../../components/ErrorPopover.tsx";
@@ -59,11 +56,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    const response = await authService.resetPassword(
-      email,
-      token,
-      values.password,
-    );
+    const response = await authService.resetPassword(email, token, values.password);
 
     if (response.success) {
       toast.success("Password reset successfully.");
@@ -92,21 +85,14 @@ export default function ResetPasswordPage() {
             <div className="flex-1">
               <h1 className="text-xl font-bold text-white">Reset Password</h1>
 
-              <p className="text-sm text-gray-400">
-                Someone made a whoopsie...
-              </p>
+              <p className="text-sm text-gray-400">Someone made a whoopsie...</p>
             </div>
           </header>
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            onChange={() => clearErrors("root")}
-          >
+          <form onSubmit={handleSubmit(onSubmit)} onChange={() => clearErrors("root")}>
             <main className="panel-padding space-y-3">
               <div>
-                <Label.Root className="label mb-1 block">
-                  New Password
-                </Label.Root>
+                <Label.Root className="label mb-1 block">New Password</Label.Root>
 
                 <PasswordToggleField.Root>
                   <div className="flex w-full flex-nowrap">
@@ -131,9 +117,8 @@ export default function ResetPasswordPage() {
                       label: "At least 8 characters",
                       fulfilled: passwordValue.length >= 8,
                       error:
-                        errors.password?.message?.includes(
-                          "must be at least",
-                        ) || errors.password?.message?.includes("is required"),
+                        errors.password?.message?.includes("must be at least") ||
+                        errors.password?.message?.includes("is required"),
                     },
                     {
                       label: "Contain uppercase",
@@ -153,9 +138,8 @@ export default function ResetPasswordPage() {
                       label: "Contain special",
                       fulfilled: /[^\p{L}\p{N}]/u.test(passwordValue),
                       error:
-                        errors.password?.message?.includes(
-                          "one non alphanumeric",
-                        ) || errors.password?.message?.includes("is required"),
+                        errors.password?.message?.includes("one non alphanumeric") ||
+                        errors.password?.message?.includes("is required"),
                     },
                   ]}
                   className="mt-2 grid grid-cols-2 gap-y-1"
@@ -163,16 +147,11 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <Label.Root className="label mb-1 block">
-                  Confirm Password
-                </Label.Root>
+                <Label.Root className="label mb-1 block">Confirm Password</Label.Root>
 
                 <PasswordToggleField.Root>
                   <div className="flex w-full flex-nowrap">
-                    <ErrorPopover
-                      open={!!errors.confirmPassword}
-                      content={errors.confirmPassword?.message}
-                    >
+                    <ErrorPopover open={!!errors.confirmPassword} content={errors.confirmPassword?.message}>
                       <PasswordToggleField.Input
                         placeholder="Enter Password (Again)"
                         className="input-field mr-1 h-10 flex-1 px-3"
@@ -191,17 +170,12 @@ export default function ResetPasswordPage() {
               </div>
 
               {errors.root && (
-                <ErrorText className="mt-1 block text-center">
-                  {errors.root.message}
-                </ErrorText>
+                <ErrorText className="mt-1 block text-center">{errors.root.message}</ErrorText>
               )}
             </main>
 
             <footer className="flex flex-row justify-end gap-3 border-t border-t-gray-600 p-4">
-              <button
-                type="submit"
-                className="button-theme-primary cursor-pointer rounded-md px-3 py-2"
-              >
+              <button type="submit" className="button-theme-primary cursor-pointer rounded-md px-3 py-2">
                 Confirm Password
               </button>
             </footer>

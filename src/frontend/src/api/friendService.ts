@@ -1,20 +1,12 @@
-import type {
-  BackendResponse,
-  SendFriendRequestResult,
-  ServiceResponse,
-} from "./types.ts";
+import type { BackendResponse, SendFriendRequestResult, ServiceResponse } from "./types.ts";
 import type { AxiosResponse } from "axios";
 import { apiClient } from "./client.ts";
 
 export const friendService = {
-  sendFriendRequest: async (
-    recipientId: string,
-  ): Promise<ServiceResponse<SendFriendRequestResult>> => {
-    const response: AxiosResponse<BackendResponse<SendFriendRequestResult>> =
-      await apiClient.post<BackendResponse<SendFriendRequestResult>>(
-        "/friend-requests",
-        { recipientId },
-      );
+  sendFriendRequest: async (recipientId: string): Promise<ServiceResponse<SendFriendRequestResult>> => {
+    const response: AxiosResponse<BackendResponse<SendFriendRequestResult>> = await apiClient.post<
+      BackendResponse<SendFriendRequestResult>
+    >("/friend-requests", { recipientId });
 
     return {
       success: true,
@@ -23,13 +15,10 @@ export const friendService = {
     };
   },
 
-  acceptFriendRequest: async (
-    senderUserId: string,
-  ): Promise<ServiceResponse> => {
-    const response: AxiosResponse<BackendResponse> =
-      await apiClient.post<BackendResponse>(
-        `/friend-requests/${encodeURIComponent(senderUserId)}/accept`,
-      );
+  acceptFriendRequest: async (senderUserId: string): Promise<ServiceResponse> => {
+    const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+      `/friend-requests/${encodeURIComponent(senderUserId)}/accept`,
+    );
 
     return {
       success: true,
@@ -37,13 +26,10 @@ export const friendService = {
     };
   },
 
-  rejectFriendRequest: async (
-    senderUserId: string,
-  ): Promise<ServiceResponse> => {
-    const response: AxiosResponse<BackendResponse> =
-      await apiClient.post<BackendResponse>(
-        `/friend-requests/${encodeURIComponent(senderUserId)}/reject`,
-      );
+  rejectFriendRequest: async (senderUserId: string): Promise<ServiceResponse> => {
+    const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+      `/friend-requests/${encodeURIComponent(senderUserId)}/reject`,
+    );
 
     return {
       success: true,
@@ -52,10 +38,9 @@ export const friendService = {
   },
 
   cancelFriendRequest: async (requestId: string): Promise<ServiceResponse> => {
-    const response: AxiosResponse<BackendResponse> =
-      await apiClient.post<BackendResponse>(
-        `/friend-requests/${encodeURIComponent(requestId)}/cancel`,
-      );
+    const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+      `/friend-requests/${encodeURIComponent(requestId)}/cancel`,
+    );
 
     return {
       success: true,
@@ -64,10 +49,9 @@ export const friendService = {
   },
 
   unfriend: async (userId: string): Promise<ServiceResponse> => {
-    const response: AxiosResponse<BackendResponse> =
-      await apiClient.delete<BackendResponse>(
-        `/friends/${encodeURIComponent(userId)}`,
-      );
+    const response: AxiosResponse<BackendResponse> = await apiClient.delete<BackendResponse>(
+      `/friends/${encodeURIComponent(userId)}`,
+    );
 
     return {
       success: true,

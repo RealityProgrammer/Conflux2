@@ -42,173 +42,138 @@ interface MessageOperationStoreType {
     operationIdempotencyKey: string,
     error?: MessageOperationError,
   ) => void;
-  removeSendOperation: (
-    conversationId: string,
-    operationIdempotencyKey: string,
-  ) => void;
+  removeSendOperation: (conversationId: string, operationIdempotencyKey: string) => void;
 
-  addEditOperation: (
-    conversationId: string,
-    messageId: string,
-    input: MessageEditInput,
-  ) => void;
-  setEditOperationError: (
-    conversationId: string,
-    messageId: string,
-    error?: MessageOperationError,
-  ) => void;
+  addEditOperation: (conversationId: string, messageId: string, input: MessageEditInput) => void;
+  setEditOperationError: (conversationId: string, messageId: string, error?: MessageOperationError) => void;
   removeEditOperation: (conversationId: string, messageId: string) => void;
 
   addDeletingMessage: (conversationId: string, messageId: string) => void;
   removeDeletingMessage: (conversationId: string, messageId: string) => void;
 }
 
-export const useMessageOperationsStore = create<MessageOperationStoreType>(
-  (set) => ({
-    sendOperationsByConversation: {},
-    editOperationsByConversation: {},
-    deletingMessageIdsByConversation: {},
+export const useMessageOperationsStore = create<MessageOperationStoreType>((set) => ({
+  sendOperationsByConversation: {},
+  editOperationsByConversation: {},
+  deletingMessageIdsByConversation: {},
 
-    addSendOperation: (conversationId: string, operation: SendOperation) =>
-      set((state) => {
-        const currentList =
-          state.sendOperationsByConversation[conversationId] || [];
-        const existingIndex = currentList.findIndex(
-          (op) => op.idempotencyKey === operation.idempotencyKey,
-        );
+  addSendOperation: (conversationId: string, operation: SendOperation) =>
+    set((state) => {
+      const currentList = state.sendOperationsByConversation[conversationId] || [];
+      const existingIndex = currentList.findIndex((op) => op.idempotencyKey === operation.idempotencyKey);
 
-        let updatedList: SendOperation[];
-        if (existingIndex >= 0) {
-          updatedList = [...currentList];
-          updatedList[existingIndex] = { ...operation, error: undefined };
-        } else {
-          updatedList = [...currentList, operation];
-        }
+      let updatedList: SendOperation[];
+      if (existingIndex >= 0) {
+        updatedList = [...currentList];
+        updatedList[existingIndex] = { ...operation, error: undefined };
+      } else {
+        updatedList = [...currentList, operation];
+      }
 
-        return {
-          sendOperationsByConversation: {
-            ...state.sendOperationsByConversation,
-            [conversationId]: updatedList,
+      return {
+        sendOperationsByConversation: {
+          ...state.sendOperationsByConversation,
+          [conversationId]: updatedList,
+        },
+      };
+    }),
+
+  setSendOperationError: (
+    conversationId: string,
+    operationIdempotencyKey: string,
+    error?: MessageOperationError,
+  ) =>
+    set((state) => {
+      return {
+        sendOperationsByConversation: {
+          ...state.sendOperationsByConversation,
+          [conversationId]: (state.sendOperationsByConversation[conversationId] || []).map((op) =>
+            op.idempotencyKey === operationIdempotencyKey ? { ...op, error } : op,
+          ),
+        },
+      };
+    }),
+
+  removeSendOperation: (conversationId: string, operationIdempotencyKey: string) =>
+    set((state) => {
+      return {
+        sendOperationsByConversation: {
+          ...state.sendOperationsByConversation,
+          [conversationId]: (state.sendOperationsByConversation[conversationId] || []).filter(
+            (op) => op.idempotencyKey !== operationIdempotencyKey,
+          ),
+        },
+      };
+    }),
+
+  addEditOperation: (conversationId: string, messageId: string, input: MessageEditInput) =>
+    set((state) => {
+      return {
+        editOperationsByConversation: {
+          ...state.editOperationsByConversation,
+          [conversationId]: {
+            ...(state.editOperationsByConversation[conversationId] || {}),
+            [messageId]: { input },
           },
-        };
-      }),
+        },
+      };
+    }),
 
-    setSendOperationError: (
-      conversationId: string,
-      operationIdempotencyKey: string,
-      error?: MessageOperationError,
-    ) =>
-      set((state) => {
-        return {
-          sendOperationsByConversation: {
-            ...state.sendOperationsByConversation,
-            [conversationId]: (
-              state.sendOperationsByConversation[conversationId] || []
-            ).map((op) =>
-              op.idempotencyKey === operationIdempotencyKey
-                ? { ...op, error }
-                : op,
-            ),
+  setEditOperationError: (conversationId: string, messageId: string, error?: MessageOperationError) =>
+    set((state) => {
+      const convEdits = state.editOperationsByConversation[conversationId];
+      if (!convEdits || !convEdits[messageId]) return state;
+
+      return {
+        editOperationsByConversation: {
+          ...state.editOperationsByConversation,
+          [conversationId]: {
+            ...convEdits,
+            [messageId]: { ...convEdits[messageId], error },
           },
-        };
-      }),
+        },
+      };
+    }),
 
-    removeSendOperation: (
-      conversationId: string,
-      operationIdempotencyKey: string,
-    ) =>
-      set((state) => {
-        return {
-          sendOperationsByConversation: {
-            ...state.sendOperationsByConversation,
-            [conversationId]: (
-              state.sendOperationsByConversation[conversationId] || []
-            ).filter((op) => op.idempotencyKey !== operationIdempotencyKey),
-          },
-        };
-      }),
+  removeEditOperation: (conversationId: string, messageId: string) =>
+    set((state) => {
+      const convEdits = state.editOperationsByConversation[conversationId];
+      if (!convEdits) return state;
 
-    addEditOperation: (
-      conversationId: string,
-      messageId: string,
-      input: MessageEditInput,
-    ) =>
-      set((state) => {
-        return {
-          editOperationsByConversation: {
-            ...state.editOperationsByConversation,
-            [conversationId]: {
-              ...(state.editOperationsByConversation[conversationId] || {}),
-              [messageId]: { input },
-            },
-          },
-        };
-      }),
+      const updated = { ...convEdits };
+      delete updated[messageId];
 
-    setEditOperationError: (
-      conversationId: string,
-      messageId: string,
-      error?: MessageOperationError,
-    ) =>
-      set((state) => {
-        const convEdits = state.editOperationsByConversation[conversationId];
-        if (!convEdits || !convEdits[messageId]) return state;
+      return {
+        editOperationsByConversation: {
+          ...state.editOperationsByConversation,
+          [conversationId]: updated,
+        },
+      };
+    }),
 
-        return {
-          editOperationsByConversation: {
-            ...state.editOperationsByConversation,
-            [conversationId]: {
-              ...convEdits,
-              [messageId]: { ...convEdits[messageId], error },
-            },
-          },
-        };
-      }),
+  addDeletingMessage: (conversationId, messageId) =>
+    set((state) => {
+      const setObj = new Set(state.deletingMessageIdsByConversation[conversationId] || []);
+      setObj.add(messageId);
 
-    removeEditOperation: (conversationId: string, messageId: string) =>
-      set((state) => {
-        const convEdits = state.editOperationsByConversation[conversationId];
-        if (!convEdits) return state;
+      return {
+        deletingMessageIdsByConversation: {
+          ...state.deletingMessageIdsByConversation,
+          [conversationId]: setObj,
+        },
+      };
+    }),
 
-        const updated = { ...convEdits };
-        delete updated[messageId];
+  removeDeletingMessage: (conversationId, messageId) =>
+    set((state) => {
+      const setObj = new Set(state.deletingMessageIdsByConversation[conversationId] || []);
+      setObj.delete(messageId);
 
-        return {
-          editOperationsByConversation: {
-            ...state.editOperationsByConversation,
-            [conversationId]: updated,
-          },
-        };
-      }),
-
-    addDeletingMessage: (conversationId, messageId) =>
-      set((state) => {
-        const setObj = new Set(
-          state.deletingMessageIdsByConversation[conversationId] || [],
-        );
-        setObj.add(messageId);
-
-        return {
-          deletingMessageIdsByConversation: {
-            ...state.deletingMessageIdsByConversation,
-            [conversationId]: setObj,
-          },
-        };
-      }),
-
-    removeDeletingMessage: (conversationId, messageId) =>
-      set((state) => {
-        const setObj = new Set(
-          state.deletingMessageIdsByConversation[conversationId] || [],
-        );
-        setObj.delete(messageId);
-
-        return {
-          deletingMessageIdsByConversation: {
-            ...state.deletingMessageIdsByConversation,
-            [conversationId]: setObj,
-          },
-        };
-      }),
-  }),
-);
+      return {
+        deletingMessageIdsByConversation: {
+          ...state.deletingMessageIdsByConversation,
+          [conversationId]: setObj,
+        },
+      };
+    }),
+}));

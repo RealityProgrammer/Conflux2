@@ -20,19 +20,13 @@ export class DateSeparator extends TimelineItem<DateSeparatorProps> {
   render(_context: TimelineContext): ReactNode {
     return (
       <div className="flex w-full flex-row items-center justify-center gap-2 px-3">
-        <Separator.Root
-          decorative
-          className="horizontal-separator my-3 flex-1"
-        />
+        <Separator.Root decorative className="horizontal-separator my-3 flex-1" />
 
         <span className="flex-none text-xs font-semibold text-gray-400 select-none">
           {formatDate(this.data.date, "PPP")}
         </span>
 
-        <Separator.Root
-          decorative
-          className="horizontal-separator my-3 flex-1"
-        />
+        <Separator.Root decorative className="horizontal-separator my-3 flex-1" />
       </div>
     );
   }

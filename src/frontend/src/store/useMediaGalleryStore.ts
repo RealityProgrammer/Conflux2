@@ -16,11 +16,7 @@ interface MediaGalleryStoreType {
   viewIndex: number;
   options?: MediaGalleryOptions;
 
-  setElements: (
-    elements: MediaGalleryElement[],
-    viewIndex: number,
-    options?: MediaGalleryOptions,
-  ) => void;
+  setElements: (elements: MediaGalleryElement[], viewIndex: number, options?: MediaGalleryOptions) => void;
   clearElements: () => void;
   previousElement: () => void;
   nextElement: () => void;
@@ -31,11 +27,7 @@ export const useMediaGalleryStore = create<MediaGalleryStoreType>((set) => ({
   viewIndex: -1,
   options: undefined,
 
-  setElements: (
-    elements: MediaGalleryElement[],
-    viewIndex: number,
-    options?: MediaGalleryOptions,
-  ) =>
+  setElements: (elements: MediaGalleryElement[], viewIndex: number, options?: MediaGalleryOptions) =>
     set(() => {
       return {
         elements,
@@ -51,27 +43,16 @@ export const useMediaGalleryStore = create<MediaGalleryStoreType>((set) => ({
 
   previousElement: () =>
     set((state) => {
-      if (
-        state.viewIndex === -1 ||
-        !state.elements ||
-        state.elements.length === 0
-      )
-        return {};
+      if (state.viewIndex === -1 || !state.elements || state.elements.length === 0) return {};
 
       return {
-        viewIndex:
-          (state.viewIndex === 0 ? state.elements.length : state.viewIndex) - 1,
+        viewIndex: (state.viewIndex === 0 ? state.elements.length : state.viewIndex) - 1,
       };
     }),
 
   nextElement: () =>
     set((state) => {
-      if (
-        state.viewIndex === -1 ||
-        !state.elements ||
-        state.elements.length === 0
-      )
-        return {};
+      if (state.viewIndex === -1 || !state.elements || state.elements.length === 0) return {};
 
       return {
         viewIndex: (state.viewIndex + 1) % state.elements.length,

@@ -30,12 +30,8 @@ export type AttachmentItem = {
 export default function ChatInput({ disabled }: ChatInputProps) {
   const setGalleryElements = useMediaGalleryStore((state) => state.setElements);
 
-  const {
-    conversationId,
-    replyingMessage,
-    handleSendMessage,
-    setReplyingMessage,
-  } = useChatContainerContext();
+  const { conversationId, replyingMessage, handleSendMessage, setReplyingMessage } =
+    useChatContainerContext();
 
   const textboxEditorRef = useRef<MessageTextboxEditorRef | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,9 +62,7 @@ export default function ChatInput({ disabled }: ChatInputProps) {
 
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
-  const handleAttachmentChanged = (
-    e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
-  ) => {
+  const handleAttachmentChanged = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
     const files = e.target.files;
 
     if (!files || !files.length) {
@@ -85,10 +79,7 @@ export default function ChatInput({ disabled }: ChatInputProps) {
       };
     });
 
-    setAttachments((prev: AttachmentItem[]): AttachmentItem[] => [
-      ...prev,
-      ...newAttachments,
-    ]);
+    setAttachments((prev: AttachmentItem[]): AttachmentItem[] => [...prev, ...newAttachments]);
     e.target.value = "";
   };
 
@@ -117,8 +108,7 @@ export default function ChatInput({ disabled }: ChatInputProps) {
     });
   };
 
-  const isSendable: boolean =
-    !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
+  const isSendable: boolean = !disabled && (messageBody.trim().length > 0 || attachments.length > 0);
 
   const handleSend = () => {
     if (!isSendable || !textboxEditorRef.current) return;
@@ -166,19 +156,16 @@ export default function ChatInput({ disabled }: ChatInputProps) {
           {/* https://stackoverflow.com/a/79634869 */}
           {replyingMessage.body && (
             <p className="mt-1 min-w-0 overflow-hidden rounded-md border border-gray-600 bg-white/5 px-2 py-1 text-sm">
-              <span className="line-clamp-2 break-all">
-                {replyingMessage.body}
-              </span>
+              <span className="line-clamp-2 break-all">{replyingMessage.body}</span>
             </p>
           )}
 
-          {replyingMessage.attachments &&
-            replyingMessage.attachments.length > 0 && (
-              <span className="mt-1 text-sm">
-                With {replyingMessage.attachments.length} attachment
-                {replyingMessage.attachments.length > 1 ? "s" : ""}
-              </span>
-            )}
+          {replyingMessage.attachments && replyingMessage.attachments.length > 0 && (
+            <span className="mt-1 text-sm">
+              With {replyingMessage.attachments.length} attachment
+              {replyingMessage.attachments.length > 1 ? "s" : ""}
+            </span>
+          )}
         </section>
       )}
 
@@ -231,16 +218,9 @@ export default function ChatInput({ disabled }: ChatInputProps) {
       )}
 
       <section className="flex flex-row items-end gap-2">
-        <MessageAttachmentInput
-          ref={fileInputRef}
-          onChange={handleAttachmentChanged}
-        />
+        <MessageAttachmentInput ref={fileInputRef} onChange={handleAttachmentChanged} />
 
-        <IconButton
-          className="mb-2 flex-none"
-          disabled={disabled}
-          onClick={handleAttachmentButtonClick}
-        >
+        <IconButton className="mb-2 flex-none" disabled={disabled} onClick={handleAttachmentButtonClick}>
           <BsPaperclip className="size-6" />
         </IconButton>
 
@@ -254,10 +234,7 @@ export default function ChatInput({ disabled }: ChatInputProps) {
             setAttachments((prev: AttachmentItem[]): AttachmentItem[] => {
               const objectUrl = URL.createObjectURL(file);
 
-              return [
-                ...prev,
-                { id: crypto.randomUUID(), file, previewUrl: objectUrl },
-              ];
+              return [...prev, { id: crypto.randomUUID(), file, previewUrl: objectUrl }];
             });
           }}
         />
@@ -273,15 +250,11 @@ export default function ChatInput({ disabled }: ChatInputProps) {
           onSelect={(emoji) => {
             switch (emoji.type) {
               case "server-emoji":
-                textboxEditorRef.current?.insertAtLastSelection(() =>
-                  $createEmojiNode(emoji.id),
-                );
+                textboxEditorRef.current?.insertAtLastSelection(() => $createEmojiNode(emoji.id));
                 break;
 
               case "unicode-emoji":
-                textboxEditorRef.current?.insertAtLastSelection(() =>
-                  $createTextNode(emoji.value),
-                );
+                textboxEditorRef.current?.insertAtLastSelection(() => $createTextNode(emoji.value));
                 break;
             }
           }}

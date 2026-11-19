@@ -72,27 +72,17 @@ interface BodyContentProps {
   footerContent?: ReactNode;
 }
 
-function BodyContent({
-  headerIcon,
-  title,
-  subtitle,
-  children,
-  footerContent,
-}: BodyContentProps) {
+function BodyContent({ headerIcon, title, subtitle, children, footerContent }: BodyContentProps) {
   return (
     <>
       <header className="flex flex-none flex-row items-center gap-2 border-b-2 border-b-gray-600 bg-black/10 px-3 py-2">
         {headerIcon}
 
         <div className="flex-1">
-          <RadixDialog.Title className="text-xl font-bold text-white">
-            {title}
-          </RadixDialog.Title>
+          <RadixDialog.Title className="text-xl font-bold text-white">{title}</RadixDialog.Title>
 
           {subtitle && (
-            <RadixDialog.Description className="text-sm text-gray-400">
-              {subtitle}
-            </RadixDialog.Description>
+            <RadixDialog.Description className="text-sm text-gray-400">{subtitle}</RadixDialog.Description>
           )}
         </div>
 
@@ -105,11 +95,7 @@ function BodyContent({
 
       <main className="min-h-0 min-w-0 flex-1">{children}</main>
 
-      {footerContent && (
-        <footer className="flex-none border-t-2 border-t-gray-600">
-          {footerContent}
-        </footer>
-      )}
+      {footerContent && <footer className="flex-none border-t-2 border-t-gray-600">{footerContent}</footer>}
     </>
   );
 }

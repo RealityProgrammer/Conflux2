@@ -58,11 +58,7 @@ export default function CallControl({
         <Popover.Anchor>
           <div className="bg-gray-675 flex flex-row items-center gap-3 rounded-lg border-2 border-gray-600 p-2">
             <IconButton isLoading={false} theme="default" onClick={toggleAudio}>
-              {isAudioMuted ? (
-                <BsMicMuteFill className="size-6" />
-              ) : (
-                <BsMicFill className="size-6" />
-              )}
+              {isAudioMuted ? <BsMicMuteFill className="size-6" /> : <BsMicFill className="size-6" />}
             </IconButton>
 
             <IconButton isLoading={false} theme="default" onClick={toggleVideo}>
@@ -79,12 +75,7 @@ export default function CallControl({
               </IconButton>
             </Popover.Trigger>
 
-            <IconButton
-              isLoading={false}
-              theme="danger"
-              disabled={isEndingCall}
-              onClick={handleCallEnd}
-            >
+            <IconButton isLoading={false} theme="danger" disabled={isEndingCall} onClick={handleCallEnd}>
               <BsTelephoneXFill className="size-6" />
             </IconButton>
 
@@ -137,20 +128,13 @@ export default function CallControl({
               </Popover.Close>
             </header>
 
-            <Separator.Root
-              orientation="horizontal"
-              decorative
-              className="horizontal-separator my-2"
-            />
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2" />
 
             <p className="group-label">Video</p>
 
             <Label.Root className="label mb-1 block">Input Device</Label.Root>
 
-            <Select.Root
-              value={selectedVideoDeviceId}
-              onValueChange={handleVideoDeviceChange}
-            >
+            <Select.Root value={selectedVideoDeviceId} onValueChange={handleVideoDeviceChange}>
               <Select.Trigger className="input-field inline-flex h-8 w-full flex-row items-center gap-2">
                 <Select.Value placeholder="Select device..." />
                 <Select.Icon className="ml-auto flex-none fill-white">
@@ -178,20 +162,13 @@ export default function CallControl({
               </Select.Portal>
             </Select.Root>
 
-            <Separator.Root
-              orientation="horizontal"
-              decorative
-              className="horizontal-separator my-2"
-            />
+            <Separator.Root orientation="horizontal" decorative className="horizontal-separator my-2" />
 
             <p className="group-label">Audio</p>
 
             <Label.Root className="label mb-1 block">Input Device</Label.Root>
 
-            <Select.Root
-              value={selectedAudioInputDeviceId}
-              onValueChange={handleAudioInputDeviceChange}
-            >
+            <Select.Root value={selectedAudioInputDeviceId} onValueChange={handleAudioInputDeviceChange}>
               <Select.Trigger className="input-field inline-flex h-8 w-full flex-row items-center gap-2">
                 <Select.Value placeholder="Select device..." />
                 <Select.Icon className="ml-auto flex-none fill-white">
@@ -221,10 +198,7 @@ export default function CallControl({
 
             <Label.Root className="label mb-1 block">Output Device</Label.Root>
 
-            <Select.Root
-              value={selectedAudioOutputDeviceId}
-              onValueChange={handleAudioOutputDeviceChange}
-            >
+            <Select.Root value={selectedAudioOutputDeviceId} onValueChange={handleAudioOutputDeviceChange}>
               <Select.Trigger className="input-field inline-flex h-8 w-full flex-row items-center gap-2">
                 <Select.Value placeholder="Select device..." />
                 <Select.Icon className="ml-auto flex-none fill-white">

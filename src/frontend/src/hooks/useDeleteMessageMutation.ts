@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  type UseMutationOptions,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationOptions, type UseMutationResult } from "@tanstack/react-query";
 import { conversationService } from "../api/conversationService.ts";
 
 export type UseDeleteMessageMutationVariables = {
@@ -18,13 +14,8 @@ export default function useDeleteMessageMutation(
 ): UseMutationResult<void, Error, UseDeleteMessageMutationVariables> {
   return useMutation({
     mutationKey: useDeleteMessageMutation.key,
-    mutationFn: async (
-      variables: UseDeleteMessageMutationVariables,
-    ): Promise<void> => {
-      await conversationService.deleteMessage(
-        variables.conversationId,
-        variables.messageId,
-      );
+    mutationFn: async (variables: UseDeleteMessageMutationVariables): Promise<void> => {
+      await conversationService.deleteMessage(variables.conversationId, variables.messageId);
     },
     ...options,
   });

@@ -33,9 +33,7 @@ export default function VirtualizedScrollList2<ItemData>({
     <div className="relative size-full">
       <div
         className={`bg-gray-750 pointer-events-none absolute top-2 left-1/2 z-10 -translate-x-1/2 rounded-md p-2 transition-all duration-200 ease-out ${
-          showTopLoader
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-2 opacity-0"
+          showTopLoader ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
         }`}
       >
         <Spinner className="size-6 fill-white" />
@@ -58,9 +56,7 @@ export default function VirtualizedScrollList2<ItemData>({
 
       <div
         className={`bg-gray-750 pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md p-2 transition-all duration-200 ease-out ${
-          showBottomLoader
-            ? "translate-y-0 opacity-100"
-            : "translate-y-2 opacity-0"
+          showBottomLoader ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         }`}
       >
         <Spinner className="size-6 fill-white" />

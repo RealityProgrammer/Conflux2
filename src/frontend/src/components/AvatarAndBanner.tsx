@@ -20,14 +20,8 @@ interface TemplateProps {
 export function Template({ avatar, banner }: TemplateProps) {
   return (
     <div className="relative mb-11 aspect-video w-full">
-      <RadixAvatar.Root
-        className={`block aspect-video overflow-hidden ${banner.rootClassName ?? ""}`}
-      >
-        <RadixAvatar.Image
-          className="size-full object-cover"
-          src={banner.src}
-          alt={banner.alt}
-        />
+      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${banner.rootClassName ?? ""}`}>
+        <RadixAvatar.Image className="size-full object-cover" src={banner.src} alt={banner.alt} />
 
         {banner.fallback}
       </RadixAvatar.Root>
@@ -35,11 +29,7 @@ export function Template({ avatar, banner }: TemplateProps) {
       <RadixAvatar.Root
         className={`absolute -bottom-11 left-2 size-21 overflow-hidden rounded-full ${avatar.rootClassName ?? ""}`}
       >
-        <RadixAvatar.Image
-          className="size-full object-contain"
-          src={avatar.src}
-          alt={avatar.alt}
-        />
+        <RadixAvatar.Image className="size-full object-contain" src={avatar.src} alt={avatar.alt} />
 
         {avatar.fallback}
       </RadixAvatar.Root>
@@ -72,16 +62,10 @@ function User({
 }: UserProps) {
   return (
     <div className="relative mb-11 aspect-video w-full">
-      <RadixAvatar.Root
-        className={`block aspect-video overflow-hidden ${bannerClassName}`}
-      >
+      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${bannerClassName}`}>
         <RadixAvatar.Image
           className="size-full object-cover"
-          src={
-            bannerVersion
-              ? userService.getBannerUrl(userId, bannerVersion)
-              : undefined
-          }
+          src={bannerVersion ? userService.getBannerUrl(userId, bannerVersion) : undefined}
           alt={bannerAlt}
         />
 
@@ -129,16 +113,10 @@ function Server({
 }: ServerProps) {
   return (
     <div className="relative mb-11 aspect-video w-full">
-      <RadixAvatar.Root
-        className={`block aspect-video overflow-hidden ${bannerClassName}`}
-      >
+      <RadixAvatar.Root className={`block aspect-video overflow-hidden ${bannerClassName}`}>
         <RadixAvatar.Image
           className="size-full object-cover"
-          src={
-            bannerVersion
-              ? serverService.getBannerUrl(serverId, bannerVersion)
-              : undefined
-          }
+          src={bannerVersion ? serverService.getBannerUrl(serverId, bannerVersion) : undefined}
           alt={bannerAlt}
         />
 

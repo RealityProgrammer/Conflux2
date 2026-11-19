@@ -1,8 +1,4 @@
-import type {
-  MentionSource,
-  MessageAttachmentDto,
-  TimelineMessageDto,
-} from "../../api/types.ts";
+import type { MentionSource, MessageAttachmentDto, TimelineMessageDto } from "../../api/types.ts";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { conversationService } from "../../api/conversationService.ts";
 import useSignalREvent from "../../hooks/useSignalREvent.ts";
@@ -52,20 +48,12 @@ interface ChatViewProps {
 
 function createRectGetter(element: HTMLElement): () => DOMRect {
   const fallbackRect = element.getBoundingClientRect();
-  return () =>
-    element.isConnected ? element.getBoundingClientRect() : fallbackRect;
+  return () => (element.isConnected ? element.getBoundingClientRect() : fallbackRect);
 }
 
-export function ChatView({
-  allowEditMessage = true,
-  allowDeleteMessage = true,
-}: ChatViewProps) {
-  const clearDmMentions = useMentionCountStore(
-    (state) => state.clearDmMentions,
-  );
-  const clearServerChannelMentions = useMentionCountStore(
-    (state) => state.clearServerChannelMentions,
-  );
+export function ChatView({ allowEditMessage = true, allowDeleteMessage = true }: ChatViewProps) {
+  const clearDmMentions = useMentionCountStore((state) => state.clearDmMentions);
+  const clearServerChannelMentions = useMentionCountStore((state) => state.clearServerChannelMentions);
 
   const setMediaElements = useMediaGalleryStore((state) => state.setElements);
 
@@ -99,9 +87,7 @@ export function ChatView({
   useEffect(() => {
     (async () => {
       const mentionSource: MentionSource | null =
-        await conversationService.markMentionNotificationsAsRead(
-          conversationId,
-        );
+        await conversationService.markMentionNotificationsAsRead(conversationId);
 
       if (mentionSource) {
         switch (mentionSource.$type) {
@@ -110,10 +96,7 @@ export function ChatView({
             break;
 
           case "server":
-            clearServerChannelMentions(
-              mentionSource.serverId,
-              mentionSource.channelId,
-            );
+            clearServerChannelMentions(mentionSource.serverId, mentionSource.channelId);
             break;
         }
       }
@@ -131,9 +114,7 @@ export function ChatView({
 
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
 
-  const [editingMessage, setEditingMessage] = useState<
-    TimelineMessageDto | undefined
-  >(undefined);
+  const [editingMessage, setEditingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const prevAllowEditRef = useRef(allowEditMessage);
 
   useEffect(() => {
@@ -144,9 +125,7 @@ export function ChatView({
     prevAllowEditRef.current = allowEditMessage;
   }, [allowEditMessage]);
 
-  const [deletingMessage, setDeletingMessage] = useState<
-    TimelineMessageDto | undefined
-  >(undefined);
+  const [deletingMessage, setDeletingMessage] = useState<TimelineMessageDto | undefined>(undefined);
   const prevAllowDeleteRef = useRef(allowDeleteMessage);
 
   useEffect(() => {
@@ -166,9 +145,7 @@ export function ChatView({
   const scrollRafRef = useRef(0);
   const suppressScrollRef = useRef(false);
 
-  const [highlightedMessageId, setHighlightedMessageId] = useState<
-    string | null
-  >(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   const userAtBottomRef = useRef(true);
 
@@ -183,12 +160,10 @@ export function ChatView({
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
-    const distance =
-      scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
     const anchorViewNotLatest = !!anchorId && hasNextPage;
 
-    const shouldShow =
-      distance >= LATEST_BUTTON_THRESHOLD || anchorViewNotLatest;
+    const shouldShow = distance >= LATEST_BUTTON_THRESHOLD || anchorViewNotLatest;
 
     if (showScrollBottomRef.current !== shouldShow) {
       showScrollBottomRef.current = shouldShow;
@@ -204,8 +179,7 @@ export function ChatView({
       const scroller = scrollerRef.current;
 
       if (scroller) {
-        const distance =
-          scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+        const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
         userAtBottomRef.current = distance <= BOTTOM_THRESHOLD;
       }
 
@@ -315,10 +289,7 @@ export function ChatView({
   // if we're anchored and the target item is already in the list, make Virtuoso centred on it, else start at the bottom.
   const anchorArrayIndex =
     anchorId && !isLoading
-      ? timelineItems.findIndex(
-          (item) =>
-            item instanceof MessageItem && item.data.message.id === anchorId,
-        )
+      ? timelineItems.findIndex((item) => item instanceof MessageItem && item.data.message.id === anchorId)
       : -1;
 
   const initialTopMostItemIndex =
@@ -327,11 +298,8 @@ export function ChatView({
       : { index: "LAST" as const, align: "end" as const };
 
   // when older messages are loaded, shift the amount
-  const firstStableIndex = timelineItems.findIndex(
-    (item) => !(item instanceof DateSeparator),
-  );
-  const firstStableKey =
-    firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
+  const firstStableIndex = timelineItems.findIndex((item) => !(item instanceof DateSeparator));
+  const firstStableKey = firstStableIndex >= 0 ? timelineItems[firstStableIndex].getKey() : null;
   const prevStableRef = useRef({
     key: firstStableKey,
     index: firstStableIndex,
@@ -341,9 +309,7 @@ export function ChatView({
     const prev = prevStableRef.current;
 
     if (prev.key && firstStableKey && prev.key !== firstStableKey) {
-      const newIndexOfPrevStable = timelineItems.findIndex(
-        (item) => item.getKey() === prev.key,
-      );
+      const newIndexOfPrevStable = timelineItems.findIndex((item) => item.getKey() === prev.key);
 
       if (newIndexOfPrevStable !== -1) {
         const itemsAdded = newIndexOfPrevStable - prev.index;
@@ -361,8 +327,7 @@ export function ChatView({
     if (!jumpMessageId) return;
 
     const arrayIndex = timelineItems.findIndex(
-      (item) =>
-        item instanceof MessageItem && item.data.message.id === jumpMessageId,
+      (item) => item instanceof MessageItem && item.data.message.id === jumpMessageId,
     );
 
     // message already loaded, jump to it immediately
@@ -390,14 +355,7 @@ export function ChatView({
       clearJump();
       setAnchorId(null);
     }
-  }, [
-    jumpMessageId,
-    timelineItems,
-    firstItemIndex,
-    anchorId,
-    clearJump,
-    isLoading,
-  ]);
+  }, [jumpMessageId, timelineItems, firstItemIndex, anchorId, clearJump, isLoading]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -412,14 +370,7 @@ export function ChatView({
     if (scroller.scrollHeight > scroller.clientHeight + 1) return;
 
     fetchNextPage();
-  }, [
-    timelineItems,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    anchorId,
-    fetchNextPage,
-  ]);
+  }, [timelineItems, hasNextPage, isFetchingNextPage, isLoading, anchorId, fetchNextPage]);
 
   const fetchOlderMessages = async () => {
     if (isFetchingPreviousPage || !hasPreviousPage) return;
@@ -443,9 +394,7 @@ export function ChatView({
   };
 
   // shared emoji panel, one emoji standard popover instance for the whole conversation view.
-  const [emojiPanel, setEmojiPanelState] = useState<EmojiPanelRequest | null>(
-    null,
-  );
+  const [emojiPanel, setEmojiPanelState] = useState<EmojiPanelRequest | null>(null);
   const emojiPanelRequestRef = useRef<EmojiPanelRequest | null>(null);
   const emojiPanelTriggerRef = useRef<HTMLButtonElement | null>(null);
   const pendingEmojiOpenRef = useRef<{
@@ -538,44 +487,33 @@ export function ChatView({
     deleteMessage(event.messageId);
   });
 
-  useSignalREvent(
-    "ReactionsCountsSynchronized",
-    async (event: ReactionsCountsSynchronizedEvent) => {
-      if (event.conversationId !== conversationId) return;
+  useSignalREvent("ReactionsCountsSynchronized", async (event: ReactionsCountsSynchronizedEvent) => {
+    if (event.conversationId !== conversationId) return;
 
-      for (const message of event.messages) {
-        updateReactionsCounts(message.messageId, message.reactionsCounts);
-      }
-    },
-  );
+    for (const message of event.messages) {
+      updateReactionsCounts(message.messageId, message.reactionsCounts);
+    }
+  });
 
-  useSignalREvent(
-    "ReactionsActionsSynchronized",
-    async (event: ReactionsActionsSynchronizedEvent) => {
-      for (const actions of event.actions) {
-        updateUserReactionKeys(
-          actions.messageId,
-          (prev: string[]): string[] => {
-            let updatedKeys: string[] = [...prev];
+  useSignalREvent("ReactionsActionsSynchronized", async (event: ReactionsActionsSynchronizedEvent) => {
+    for (const actions of event.actions) {
+      updateUserReactionKeys(actions.messageId, (prev: string[]): string[] => {
+        let updatedKeys: string[] = [...prev];
 
-            for (const [reactionKey, action] of Object.entries(
-              actions.reactionActions,
-            )) {
-              if (action === ReactionAction.Add) {
-                if (!updatedKeys.includes(reactionKey)) {
-                  updatedKeys.push(reactionKey);
-                } else {
-                  updatedKeys = updatedKeys.filter((k) => k !== reactionKey);
-                }
-              }
+        for (const [reactionKey, action] of Object.entries(actions.reactionActions)) {
+          if (action === ReactionAction.Add) {
+            if (!updatedKeys.includes(reactionKey)) {
+              updatedKeys.push(reactionKey);
+            } else {
+              updatedKeys = updatedKeys.filter((k) => k !== reactionKey);
             }
+          }
+        }
 
-            return updatedKeys;
-          },
-        );
-      }
-    },
-  );
+        return updatedKeys;
+      });
+    }
+  });
 
   const timelineContext: TimelineContext = {
     actions: {
@@ -587,10 +525,7 @@ export function ChatView({
       onEditCancel: () => {
         setEditingMessage(undefined);
       },
-      onAttachmentClick: (
-        messageAttachments: MessageAttachmentDto[],
-        clickedIndex: number,
-      ) => {
+      onAttachmentClick: (messageAttachments: MessageAttachmentDto[], clickedIndex: number) => {
         setMediaElements(
           messageAttachments.map((attachment) => ({
             id: attachment.id,
@@ -601,9 +536,7 @@ export function ChatView({
           clickedIndex,
           {
             downloadUrlProvider: (attachmentIndex: number) =>
-              conversationService.getAttachmentDownloadUrl(
-                messageAttachments[attachmentIndex].id,
-              ),
+              conversationService.getAttachmentDownloadUrl(messageAttachments[attachmentIndex].id),
           },
         );
       },
@@ -612,8 +545,7 @@ export function ChatView({
       retrySendingOperation: retrySendOperation,
       retryEditOperation,
       removeEditOperation,
-      updateMessagePin: (messageId: string, isPinned: boolean) =>
-        updatePinStatus(messageId, isPinned),
+      updateMessagePin: (messageId: string, isPinned: boolean) => updatePinStatus(messageId, isPinned),
 
       onEmojiPanelOpen: handleEmojiPanelOpen,
     },
@@ -693,9 +625,7 @@ export function ChatView({
 
           <div
             className={`bg-gray-750 pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md p-2 transition-all duration-200 ease-out ${
-              isFetchingNextPage
-                ? "translate-y-0 opacity-100"
-                : "translate-y-2 opacity-0"
+              isFetchingNextPage ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
             }`}
           >
             <Spinner className="size-6 fill-white" />
@@ -729,13 +659,13 @@ export function ChatView({
               if (ref instanceof HTMLDivElement) scrollerRef.current = ref;
             }}
             onScroll={handleScroll}
-            itemContent={(_index, timelineItem) =>
-              timelineItem.render(timelineContext)
-            }
+            itemContent={(_index, timelineItem) => timelineItem.render(timelineContext)}
             components={{
               EmptyPlaceholder: () => (
                 <div className="flex size-full flex-row items-end justify-center select-none">
-                  <p className="text-gray-400 text-sm text-center">There is nothing here... There was nothing here... Would you start something here?</p>
+                  <p className="text-center text-sm text-gray-400">
+                    There is nothing here... There was nothing here... Would you start something here?
+                  </p>
                 </div>
               ),
             }}
@@ -764,11 +694,7 @@ export function ChatView({
         }}
         key={editingMessage?.id}
         originalMessage={editingMessage}
-        handleSubmit={(
-          newBody: string | null,
-          removeAttachmentIds: string[],
-          newAttachments: File[],
-        ) => {
+        handleSubmit={(newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => {
           handleSaveEdit(newBody, removeAttachmentIds, newAttachments);
         }}
       />

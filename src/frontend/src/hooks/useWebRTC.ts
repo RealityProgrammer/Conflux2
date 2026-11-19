@@ -3,10 +3,7 @@ import { useSignalR } from "../contexts/SignalRContext.tsx";
 import useSignalREvent from "./useSignalREvent.ts";
 
 const RTC_CONFIGURATION: RTCConfiguration = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-  ],
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }],
 };
 
 export type RemoteMediaStates = {
@@ -35,12 +32,8 @@ export default function useWebRTC({
   const { invokeSafely } = useSignalR();
 
   // mesh architecture, cuz idk how to implement SFU lmao
-  const [remoteStreams, setRemoteStreams] = useState<
-    Record<string, MediaStream>
-  >({});
-  const [remoteMediaStates, setRemoteMediaStates] = useState<
-    Record<string, RemoteMediaStates>
-  >({});
+  const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
+  const [remoteMediaStates, setRemoteMediaStates] = useState<Record<string, RemoteMediaStates>>({});
 
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const connectingPeersRef = useRef<Set<string>>(new Set());
@@ -75,13 +68,11 @@ export default function useWebRTC({
 
     peersRef.current.forEach((pc) => {
       pc.getTransceivers().forEach((transceiver) => {
-        const kind =
-          transceiver.receiver.track?.kind || transceiver.sender.track?.kind;
+        const kind = transceiver.receiver.track?.kind || transceiver.sender.track?.kind;
 
         switch (kind) {
           case "video": {
-            const targetTrack =
-              !isVideoDisabled && videoTrack ? videoTrack : null;
+            const targetTrack = !isVideoDisabled && videoTrack ? videoTrack : null;
             if (transceiver.sender.track !== targetTrack) {
               transceiver.sender.replaceTrack(targetTrack).catch((err) => {
                 console.error("Failed to replace video track:", err);
@@ -121,7 +112,7 @@ export default function useWebRTC({
       return updated;
     });
 
-    setRemoteMediaStates((prev: Record<string, MediaStream>) => {
+    setRemoteMediaStates((prev: Record<string, RemoteMediaStates>): Record<string, RemoteMediaStates> => {
       const updated = { ...prev };
       delete updated[peerId];
       return updated;
@@ -215,17 +206,10 @@ export default function useWebRTC({
         const existingStream = prev[peerId];
 
         if (existingStream) {
-          if (
-            !existingStream
-              .getTracks()
-              .some((t: MediaStreamTrack) => t.id === event.track.id)
-          ) {
+          if (!existingStream.getTracks().some((t: MediaStreamTrack) => t.id === event.track.id)) {
             return {
               ...prev,
-              [peerId]: new MediaStream([
-                ...existingStream.getTracks(),
-                event.track,
-              ]),
+              [peerId]: new MediaStream([...existingStream.getTracks(), event.track]),
             };
           }
 
@@ -239,11 +223,7 @@ export default function useWebRTC({
     // send ice candidate to peer
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        invokeSafely(
-          "SendIceCandidate",
-          peerId,
-          JSON.stringify(event.candidate),
-        );
+        invokeSafely("SendIceCandidate", peerId, JSON.stringify(event.candidate));
       }
     };
 
@@ -268,9 +248,7 @@ export default function useWebRTC({
   // connect when user connects to the call
   const connectToPeer = async (targetPeerId: string): Promise<void> => {
     if (connectingPeersRef.current.has(targetPeerId)) {
-      console.warn(
-        `Skipping duplicate offer negotiating with ${targetPeerId}.`,
-      );
+      console.warn(`Skipping duplicate offer negotiating with ${targetPeerId}.`);
       return;
     }
     connectingPeersRef.current.add(targetPeerId);
@@ -292,80 +270,67 @@ export default function useWebRTC({
     }
   };
 
-  useSignalREvent(
-    "ReceiveCallOffer",
-    async (senderId: string, sdp: string): Promise<void> => {
-      const pc = createPeerConnection(senderId, false);
+  useSignalREvent("ReceiveCallOffer", async (senderId: string, sdp: string): Promise<void> => {
+    const pc = createPeerConnection(senderId, false);
 
-      try {
-        await pc.setRemoteDescription(
-          new RTCSessionDescription({ type: "offer", sdp }),
-        );
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp }));
+
+      pc.getTransceivers().forEach((transceiver) => {
+        transceiver.direction = "sendrecv";
+      });
+
+      if (localStreamRef.current) {
+        const audioTrack = localStreamRef.current.getAudioTracks()[0];
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
 
         pc.getTransceivers().forEach((transceiver) => {
-          transceiver.direction = "sendrecv";
+          const kind = transceiver.receiver.track?.kind;
+
+          if (kind === "audio" && audioTrack && !isAudioMutedRef.current) {
+            transceiver.sender.replaceTrack(audioTrack).catch(console.error);
+          }
+          if (kind === "video" && videoTrack && !isVideoDisabledRef.current) {
+            transceiver.sender.replaceTrack(videoTrack).catch(console.error);
+          }
         });
-
-        if (localStreamRef.current) {
-          const audioTrack = localStreamRef.current.getAudioTracks()[0];
-          const videoTrack = localStreamRef.current.getVideoTracks()[0];
-
-          pc.getTransceivers().forEach((transceiver) => {
-            const kind = transceiver.receiver.track?.kind;
-
-            if (kind === "audio" && audioTrack && !isAudioMutedRef.current) {
-              transceiver.sender.replaceTrack(audioTrack).catch(console.error);
-            }
-            if (kind === "video" && videoTrack && !isVideoDisabledRef.current) {
-              transceiver.sender.replaceTrack(videoTrack).catch(console.error);
-            }
-          });
-        }
-
-        await processIceQueue(senderId, pc);
-
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await invokeSafely("SendAnswer", senderId, answer.sdp);
-      } catch (err) {
-        console.error(`Error handling WebRTC offer from ${senderId}:`, err);
       }
-    },
-  );
 
-  useSignalREvent(
-    "ReceiveCallAnswer",
-    async (senderId: string, sdp: string) => {
-      const pc = peersRef.current.get(senderId);
-      if (!pc) return;
+      await processIceQueue(senderId, pc);
 
-      try {
-        await pc.setRemoteDescription(
-          new RTCSessionDescription({ type: "answer", sdp }),
-        );
-        await processIceQueue(senderId, pc);
-      } catch (err) {
-        console.error(`Error handling WebRTC answer from ${senderId}:`, err);
-      }
-    },
-  );
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await invokeSafely("SendAnswer", senderId, answer.sdp);
+    } catch (err) {
+      console.error(`Error handling WebRTC offer from ${senderId}:`, err);
+    }
+  });
 
-  useSignalREvent(
-    "ReceiveIceCandidate",
-    async (senderId: string, candidateJson: string) => {
-      const pc = peersRef.current.get(senderId);
-      const candidateInit: RTCIceCandidateInit = JSON.parse(candidateJson);
+  useSignalREvent("ReceiveCallAnswer", async (senderId: string, sdp: string) => {
+    const pc = peersRef.current.get(senderId);
+    if (!pc) return;
 
-      if (pc?.remoteDescription?.type) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidateInit));
-      } else {
-        // Queue it if the offer/answer hasn't finished processing
-        const queue = iceQueuesRef.current.get(senderId) || [];
-        queue.push(candidateInit);
-        iceQueuesRef.current.set(senderId, queue);
-      }
-    },
-  );
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
+      await processIceQueue(senderId, pc);
+    } catch (err) {
+      console.error(`Error handling WebRTC answer from ${senderId}:`, err);
+    }
+  });
+
+  useSignalREvent("ReceiveIceCandidate", async (senderId: string, candidateJson: string) => {
+    const pc = peersRef.current.get(senderId);
+    const candidateInit: RTCIceCandidateInit = JSON.parse(candidateJson);
+
+    if (pc?.remoteDescription?.type) {
+      await pc.addIceCandidate(new RTCIceCandidate(candidateInit));
+    } else {
+      // Queue it if the offer/answer hasn't finished processing
+      const queue = iceQueuesRef.current.get(senderId) || [];
+      queue.push(candidateInit);
+      iceQueuesRef.current.set(senderId, queue);
+    }
+  });
 
   return {
     remoteStreams,

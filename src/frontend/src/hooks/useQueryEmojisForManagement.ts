@@ -20,7 +20,4 @@ export default function useQueryEmojisForManagement(
   });
 }
 
-useQueryEmojisForManagement.getKey = (serverId: string) => [
-  "useQueryEmojisForManagement",
-  serverId,
-];
+useQueryEmojisForManagement.getKey = (serverId: string) => ["useQueryEmojisForManagement", serverId];

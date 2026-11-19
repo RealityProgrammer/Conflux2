@@ -46,19 +46,11 @@ function Sidebar() {
         <UserHomePageButton />
       </div>
 
-      <Separator.Root
-        orientation="horizontal"
-        decorative
-        className="my-1 h-px bg-gray-600"
-      />
+      <Separator.Root orientation="horizontal" decorative className="my-1 h-px bg-gray-600" />
 
       <JoinedCommunityServerScrollList />
 
-      <Separator.Root
-        orientation="horizontal"
-        decorative
-        className="my-1 h-px bg-gray-600"
-      />
+      <Separator.Root orientation="horizontal" decorative className="my-1 h-px bg-gray-600" />
 
       <div className="flex flex-none flex-col items-center">
         <ExpandableMenuIcon />
@@ -123,8 +115,7 @@ function JoinedCommunityServerScrollList() {
       },
     );
 
-  const allElements =
-    data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.joinedServers?.nodes ?? []) ?? [];
 
   useSignalREvent("JoinedServer", () => {
     queryClient.invalidateQueries({
@@ -149,9 +140,7 @@ function JoinedCommunityServerScrollList() {
             joinedServers: {
               ...page.joinedServers,
               nodes: page.joinedServers.nodes
-                ? page.joinedServers.nodes.filter(
-                    (node) => node.id !== serverId,
-                  )
+                ? page.joinedServers.nodes.filter((node) => node.id !== serverId)
                 : page.joinedServers.nodes,
             },
           })),
@@ -197,13 +186,9 @@ function JoinedCommunityServerScrollList() {
 
 function ServerIcon({ server }: { server: ServerIdentityDto }) {
   const navigate = useNavigate();
-  const channelMentions =
-    useMentionCountStore((state) => state.serverMentions[server.id]) ?? {};
+  const channelMentions = useMentionCountStore((state) => state.serverMentions[server.id]) ?? {};
 
-  const sumMentionCount = Object.values(channelMentions).reduce(
-    (a, b) => a + b,
-    0,
-  );
+  const sumMentionCount = Object.values(channelMentions).reduce((a, b) => a + b, 0);
 
   return (
     <div className="flex aspect-square size-full items-center justify-center">
@@ -248,10 +233,7 @@ function ServerIcon({ server }: { server: ServerIdentityDto }) {
 }
 
 const createServerSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Input name.")
-    .max(48, "Name can only have maximum length of 48 characters."),
+  name: z.string().min(1, "Input name.").max(48, "Name can only have maximum length of 48 characters."),
 
   avatar: z.file().optional(),
 });
@@ -259,8 +241,7 @@ const createServerSchema = z.object({
 function ExpandableMenuIcon() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const [isCreateServerDialogOpen, setIsCreateServerDialogOpen] =
-    useState(false);
+  const [isCreateServerDialogOpen, setIsCreateServerDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -299,9 +280,7 @@ function ExpandableMenuIcon() {
                     sideOffset={8}
                     className="rounded-lg bg-gray-600 shadow-xl select-none"
                   >
-                    <p className="px-3 py-1 font-semibold text-white">
-                      Create your own community
-                    </p>
+                    <p className="px-3 py-1 font-semibold text-white">Create your own community</p>
 
                     <Tooltip.Arrow className="fill-gray-600" />
                   </Tooltip.Content>
@@ -327,9 +306,7 @@ function ExpandableMenuIcon() {
                     sideOffset={8}
                     className="rounded-lg bg-gray-600 shadow-xl select-none"
                   >
-                    <p className="px-3 py-1 font-semibold text-white">
-                      Application settings
-                    </p>
+                    <p className="px-3 py-1 font-semibold text-white">Application settings</p>
 
                     <Tooltip.Arrow className="fill-gray-600" />
                   </Tooltip.Content>
@@ -342,10 +319,7 @@ function ExpandableMenuIcon() {
         </Popover.Portal>
       </Popover.Root>
 
-      <CreateServerDialogForm
-        open={isCreateServerDialogOpen}
-        onOpenChange={setIsCreateServerDialogOpen}
-      />
+      <CreateServerDialogForm open={isCreateServerDialogOpen} onOpenChange={setIsCreateServerDialogOpen} />
     </>
   );
 }
@@ -389,12 +363,11 @@ function CreateServerDialogForm({
   }, [open, reset]);
 
   const onSubmit = async (data: CreateServerFormValues) => {
-    const response: ServiceResponse<ServerIdentityDto> =
-      await serverService.createServer(
-        idempotencyKey.current,
-        data.name,
-        data.avatar ?? undefined,
-      );
+    const response: ServiceResponse<ServerIdentityDto> = await serverService.createServer(
+      idempotencyKey.current,
+      data.name,
+      data.avatar ?? undefined,
+    );
 
     if (response.success) {
       onOpenChange(false);
@@ -403,10 +376,7 @@ function CreateServerDialogForm({
         response.statusCode === HttpStatusCode.BadRequest &&
         response.error?.code === "ValidationErrorsOccurred"
       ) {
-        const details = response.error.details as Record<
-          "name" | "avatar",
-          string[]
-        >;
+        const details = response.error.details as Record<"name" | "avatar", string[]>;
 
         if (details.name && details.name.length > 0) {
           setError("name", {
@@ -427,16 +397,13 @@ function CreateServerDialogForm({
     }
   };
 
-  useSignalREvent(
-    ["JoinedServer", "CreatedServer"],
-    (_event: JoinedServerEvent | CreatedServerEvent) => {
-      queryClient.invalidateQueries({
-        queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({
-          after: null,
-        }),
-      });
-    },
-  );
+  useSignalREvent(["JoinedServer", "CreatedServer"], (_event: JoinedServerEvent | CreatedServerEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetJoinedCommunityServerQuery.getKey({
+        after: null,
+      }),
+    });
+  });
 
   return (
     <ModalForm
@@ -452,11 +419,7 @@ function CreateServerDialogForm({
           className="button-theme-primary flex h-10 basis-32 cursor-pointer flex-row items-center justify-center rounded-md px-3"
           disabled={isSubmitting}
         >
-          {isSubmitting ? (
-            <Spinner className="size-5 fill-white" />
-          ) : (
-            <>Create Server</>
-          )}
+          {isSubmitting ? <Spinner className="size-5 fill-white" /> : <>Create Server</>}
         </button>
       }
       onSubmit={onSubmit}
@@ -468,10 +431,7 @@ function CreateServerDialogForm({
           name="avatar"
           render={({ field }) => (
             <div className="flex flex-row gap-3">
-              <ErrorPopover
-                open={!!errors.avatar}
-                content={errors.avatar?.message}
-              >
+              <ErrorPopover open={!!errors.avatar} content={errors.avatar?.message}>
                 <SelectableImageInput
                   value={field.value}
                   onChange={field.onChange}
@@ -516,18 +476,10 @@ function CreateServerDialogForm({
 export default function LobbyLayout() {
   useDocumentTitle("Conflux - Lobby");
 
-  const activeConversationId = useActiveConversationStore(
-    (state) => state.activeConversationId,
-  );
-  const setInitialMentions = useMentionCountStore(
-    (state) => state.setInitialMentions,
-  );
-  const incrementServerMention = useMentionCountStore(
-    (state) => state.incrementServerMention,
-  );
-  const incrementDmMention = useMentionCountStore(
-    (state) => state.incrementDmMention,
-  );
+  const activeConversationId = useActiveConversationStore((state) => state.activeConversationId);
+  const setInitialMentions = useMentionCountStore((state) => state.setInitialMentions);
+  const incrementServerMention = useMentionCountStore((state) => state.incrementServerMention);
+  const incrementDmMention = useMentionCountStore((state) => state.incrementDmMention);
 
   // request notification permission on start
   useEffect(() => {
@@ -542,9 +494,7 @@ export default function LobbyLayout() {
       if (response.success && response.data) {
         const serverMentions: Record<string, Record<string, number>> = {};
 
-        for (const [serverId, channels] of Object.entries(
-          response.data.servers,
-        )) {
+        for (const [serverId, channels] of Object.entries(response.data.servers)) {
           const channelMentions: Record<string, number> = {};
 
           for (const [channelId, value] of Object.entries(channels)) {
@@ -559,31 +509,26 @@ export default function LobbyLayout() {
     })();
   }, []);
 
-  useSignalREvent(
-    "MessageMentionReceived",
-    (event: MessageMentionReceivedEvent) => {
-      const source = event.source.source;
+  useSignalREvent("MessageMentionReceived", (event: MessageMentionReceivedEvent) => {
+    const source = event.source.source;
 
-      if (activeConversationId === source.conversationId) {
-        conversationService.markMentionNotificationsAsRead(
-          source.conversationId,
-        );
-        return;
-      }
+    if (activeConversationId === source.conversationId) {
+      conversationService.markMentionNotificationsAsRead(source.conversationId);
+      return;
+    }
 
-      playMentionAudio();
+    playMentionAudio();
 
-      switch (source.$type) {
-        case "dm":
-          incrementDmMention(source.peerUserId);
-          break;
+    switch (source.$type) {
+      case "dm":
+        incrementDmMention(source.peerUserId);
+        break;
 
-        case "server":
-          incrementServerMention(source.serverId, source.channelId);
-          break;
-      }
-    },
-  );
+      case "server":
+        incrementServerMention(source.serverId, source.channelId);
+        break;
+    }
+  });
 
   return (
     <div className="flex h-dvh w-dvw flex-row overflow-hidden">

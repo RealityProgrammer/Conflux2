@@ -1,8 +1,4 @@
-import type {
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
+import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import axios, { HttpStatusCode } from "axios";
 import Cookies from "js-cookie";
 import { csrfService } from "./csrfService.ts";
@@ -33,11 +29,7 @@ export const graphqlClient = apiClient.create({
 });
 
 const attachCsrfToken = (config: InternalAxiosRequestConfig) => {
-  if (
-    ["post", "put", "delete", "patch"].includes(
-      config.method?.toLowerCase() || "",
-    )
-  ) {
+  if (["post", "put", "delete", "patch"].includes(config.method?.toLowerCase() || "")) {
     const csrfToken = Cookies.get("XSRF-TOKEN");
     if (csrfToken) {
       config.headers["X-CSRF-TOKEN"] = csrfToken;
@@ -107,12 +99,10 @@ const handleUnauthorizedRetry = async (
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<BackendResponse>) => {
-    const isUnauthorized =
-      error.response?.status === HttpStatusCode.Unauthorized;
+    const isUnauthorized = error.response?.status === HttpStatusCode.Unauthorized;
     const isCsrfFailure =
       error.response?.status === HttpStatusCode.BadRequest &&
-      error.response?.data?.error?.code ===
-        "AntiforgeryTokenVerificationFailed";
+      error.response?.data?.error?.code === "AntiforgeryTokenVerificationFailed";
 
     if (!isUnauthorized && !isCsrfFailure) {
       return Promise.reject(error);
@@ -129,9 +119,7 @@ graphqlClient.interceptors.response.use(
     const isGqlAuthError =
       response.status === HttpStatusCode.Ok &&
       Array.isArray(data?.errors) &&
-      ((data?.errors as any[]) ?? []).some(
-        (e) => e.extensions?.code === "AUTH_NOT_AUTHENTICATED",
-      );
+      ((data?.errors as any[]) ?? []).some((e) => e.extensions?.code === "AUTH_NOT_AUTHENTICATED");
 
     if (!isGqlAuthError) {
       return response;
@@ -154,15 +142,14 @@ export const graphqlFetcher = <TData, TVariables>(
   options?: any,
 ): (() => Promise<TData>) => {
   return async (): Promise<TData> => {
-    const response: AxiosResponse<GraphQLResponse<TData>> =
-      await graphqlClient.post(
-        "",
-        {
-          query: query.toString(),
-          variables,
-        },
-        options,
-      );
+    const response: AxiosResponse<GraphQLResponse<TData>> = await graphqlClient.post(
+      "",
+      {
+        query: query.toString(),
+        variables,
+      },
+      options,
+    );
 
     if (response.data.errors && response.data.errors.length > 0) {
       throw response.data.errors;

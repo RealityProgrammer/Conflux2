@@ -26,12 +26,7 @@ type OnMutateResult = {
 
 export default function useMessageReactionMutation(
   options: Omit<
-    UseMutationOptions<
-      void,
-      Error,
-      UseMessageReactionMutationVariables,
-      unknown
-    >,
+    UseMutationOptions<void, Error, UseMessageReactionMutationVariables, unknown>,
     "mutationFn" | "mutationKey" | "onMutate"
   >,
 ) {
@@ -39,12 +34,7 @@ export default function useMessageReactionMutation(
 
   const { onError, ...otherOptions } = options;
 
-  return useMutation<
-    void,
-    Error,
-    UseMessageReactionMutationVariables,
-    OnMutateResult
-  >({
+  return useMutation<void, Error, UseMessageReactionMutationVariables, OnMutateResult>({
     mutationKey: useMessageReactionMutation.key,
     mutationFn: async ({
       conversationId,
@@ -52,12 +42,7 @@ export default function useMessageReactionMutation(
       reactionKey,
       action,
     }: UseMessageReactionMutationVariables): Promise<void> => {
-      return await conversationService.toggleReaction(
-        conversationId,
-        messageId,
-        reactionKey,
-        action,
-      );
+      return await conversationService.toggleReaction(conversationId, messageId, reactionKey, action);
     },
     onMutate: ({
       conversationId,
@@ -71,70 +56,61 @@ export default function useMessageReactionMutation(
 
       let previousSnapshot: ReactionsSnapshot | null = null;
 
-      queryClient.setQueriesData<
-        InfiniteData<TimelineMessagePage | undefined | null>
-      >(
+      queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
         { queryKey: useQueryTimelineMessages.getKey(conversationId) },
         (
-          oldData:
-            | NoInfer<InfiniteData<TimelineMessagePage | null | undefined>>
-            | undefined,
-        ):
-          | NoInfer<InfiniteData<TimelineMessagePage | null | undefined>>
-          | undefined => {
+          oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined,
+        ): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
           if (!oldData || !oldData.pages || oldData.pages.length === 0) {
             return oldData;
           }
 
           return {
             ...oldData,
-            pages: oldData.pages.map(
-              (page: TimelineMessagePage | null | undefined) => {
-                if (!page || !page.messages.some((m) => m.id === messageId)) {
-                  return page;
-                }
+            pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+              if (!page || !page.messages.some((m) => m.id === messageId)) {
+                return page;
+              }
 
-                return {
-                  ...page,
-                  messages: page.messages.map((msg) => {
-                    if (msg.id !== messageId) return msg;
+              return {
+                ...page,
+                messages: page.messages.map((msg) => {
+                  if (msg.id !== messageId) return msg;
 
-                    // save the snapshot to revert when failure happen
-                    previousSnapshot = {
-                      reactionsCounts: msg.reactionsCounts,
-                      userReactionKeys: msg.userReactionKeys,
-                    };
+                  // save the snapshot to revert when failure happen
+                  previousSnapshot = {
+                    reactionsCounts: msg.reactionsCounts,
+                    userReactionKeys: msg.userReactionKeys,
+                  };
 
-                    const counts = { ...(msg.reactionsCounts || {}) };
-                    let userKeys = [...(msg.userReactionKeys || [])];
-                    const currentCount = counts[reactionKey] || 0;
+                  const counts = { ...(msg.reactionsCounts || {}) };
+                  let userKeys = [...(msg.userReactionKeys || [])];
+                  const currentCount = counts[reactionKey] || 0;
 
-                    if (action === "add") {
-                      counts[reactionKey] = currentCount + 1;
+                  if (action === "add") {
+                    counts[reactionKey] = currentCount + 1;
 
-                      if (!userKeys.includes(reactionKey))
-                        userKeys.push(reactionKey);
+                    if (!userKeys.includes(reactionKey)) userKeys.push(reactionKey);
+                  } else {
+                    const newCount = currentCount - 1;
+
+                    if (newCount <= 0) {
+                      delete counts[reactionKey];
                     } else {
-                      const newCount = currentCount - 1;
-
-                      if (newCount <= 0) {
-                        delete counts[reactionKey];
-                      } else {
-                        counts[reactionKey] = newCount;
-                      }
-
-                      userKeys = userKeys.filter((k) => k !== reactionKey);
+                      counts[reactionKey] = newCount;
                     }
 
-                    return {
-                      ...msg,
-                      reactionsCounts: counts,
-                      userReactionKeys: userKeys,
-                    };
-                  }),
-                };
-              },
-            ),
+                    userKeys = userKeys.filter((k) => k !== reactionKey);
+                  }
+
+                  return {
+                    ...msg,
+                    reactionsCounts: counts,
+                    userReactionKeys: userKeys,
+                  };
+                }),
+              };
+            }),
           };
         },
       );
@@ -150,45 +126,35 @@ export default function useMessageReactionMutation(
       if (onMutateResult && onMutateResult.reactionsSnapshot) {
         const { conversationId, messageId } = variables;
 
-        queryClient.setQueriesData<
-          InfiniteData<TimelineMessagePage | undefined | null>
-        >(
+        queryClient.setQueriesData<InfiniteData<TimelineMessagePage | undefined | null>>(
           { queryKey: useQueryTimelineMessages.getKey(conversationId) },
           (
-            oldData:
-              | NoInfer<InfiniteData<TimelineMessagePage | null | undefined>>
-              | undefined,
-          ):
-            | NoInfer<InfiniteData<TimelineMessagePage | null | undefined>>
-            | undefined => {
+            oldData: NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined,
+          ): NoInfer<InfiniteData<TimelineMessagePage | null | undefined>> | undefined => {
             if (!oldData || !oldData.pages || oldData.pages.length === 0) {
               return oldData;
             }
 
             return {
               ...oldData,
-              pages: oldData.pages.map(
-                (page: TimelineMessagePage | null | undefined) => {
-                  if (!page || !page.messages.some((m) => m.id === messageId)) {
-                    return page;
-                  }
+              pages: oldData.pages.map((page: TimelineMessagePage | null | undefined) => {
+                if (!page || !page.messages.some((m) => m.id === messageId)) {
+                  return page;
+                }
 
-                  return {
-                    ...page,
-                    messages: page.messages.map((msg) => {
-                      if (msg.id !== messageId) return msg;
+                return {
+                  ...page,
+                  messages: page.messages.map((msg) => {
+                    if (msg.id !== messageId) return msg;
 
-                      return {
-                        ...msg,
-                        reactionsCounts:
-                          onMutateResult!.reactionsSnapshot!.reactionsCounts,
-                        userReactionKeys:
-                          onMutateResult!.reactionsSnapshot!.userReactionKeys,
-                      };
-                    }),
-                  };
-                },
-              ),
+                    return {
+                      ...msg,
+                      reactionsCounts: onMutateResult!.reactionsSnapshot!.reactionsCounts,
+                      userReactionKeys: onMutateResult!.reactionsSnapshot!.userReactionKeys,
+                    };
+                  }),
+                };
+              }),
             };
           },
         );

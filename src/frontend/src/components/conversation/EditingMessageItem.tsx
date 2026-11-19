@@ -1,8 +1,5 @@
 import type { TimelineMessageDto } from "../../api/types.ts";
-import type {
-  MessageEditInput,
-  MessageOperationError,
-} from "../../store/useMessageOperationsStore.ts";
+import type { MessageEditInput, MessageOperationError } from "../../store/useMessageOperationsStore.ts";
 import { TimelineItem } from "./TimelineItem.ts";
 import type { TimelineContext } from "./TimelineContext.ts";
 import type { ReactNode } from "react";
@@ -51,9 +48,7 @@ function View({ data, showHeader, context }: ViewProps) {
   const message = data.message;
 
   return (
-    <div
-      className={`group relative pt-0.5 ${data.error ? "bg-red-500/40 hover:bg-red-500/50" : ""}`}
-    >
+    <div className={`group relative pt-0.5 ${data.error ? "bg-red-500/40 hover:bg-red-500/50" : ""}`}>
       <div className={`px-2`}>
         {message.replyTo && (
           <MessageRow.Reply
@@ -65,29 +60,28 @@ function View({ data, showHeader, context }: ViewProps) {
         )}
 
         <MessageRow.Row
-          header={showHeader ?
-            {
-              senderId: message.sender?.id,
-              senderAvatarVersion: message.sender!.avatarVersion,
-              avatarAlt: message.sender ? `Avatar of ${message.sender.displayName ?? "???"}` : undefined,
-              senderDisplayName: message.sender?.displayName ?? "???",
-            } : undefined
+          header={
+            showHeader
+              ? {
+                  senderId: message.sender?.id,
+                  senderAvatarVersion: message.sender!.avatarVersion,
+                  avatarAlt: message.sender
+                    ? `Avatar of ${message.sender.displayName ?? "???"}`
+                    : undefined,
+                  senderDisplayName: message.sender?.displayName ?? "???",
+                }
+              : undefined
           }
           date={new Date(message.createdAt)}
         >
           <div className={`flex-1 text-white`}>
             <MessageBody
-              content={
-                data.input.body === undefined ? message.body : data.input.body
-              }
+              content={data.input.body === undefined ? message.body : data.input.body}
               className="text-gray-400"
             />
 
             {message.attachments && message.attachments.length > 0 && (
-              <MessageAttachments
-                attachments={message.attachments}
-                onAttachmentClick={() => { }}
-              />
+              <MessageAttachments attachments={message.attachments} onAttachmentClick={() => {}} />
             )}
 
             {(() => {
@@ -97,20 +91,13 @@ function View({ data, showHeader, context }: ViewProps) {
               if (numRemove > 0 && numAdd > 0) {
                 return (
                   <p className="text-xs">
-                    With {numRemove} attachment(s) removed and {numAdd} new
-                    attachments(s).
+                    With {numRemove} attachment(s) removed and {numAdd} new attachments(s).
                   </p>
                 );
               } else if (numRemove > 0 && numAdd === 0) {
-                return (
-                  <p className="text-xs">
-                    With {numRemove} attachment(s) removed.
-                  </p>
-                );
+                return <p className="text-xs">With {numRemove} attachment(s) removed.</p>;
               } else if (numRemove === 0 && numAdd > 0) {
-                return (
-                  <p className="text-xs">With {numAdd} new attachment(s).</p>
-                );
+                return <p className="text-xs">With {numAdd} new attachment(s).</p>;
               } else return null;
             })()}
 

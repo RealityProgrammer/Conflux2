@@ -32,9 +32,7 @@ export default function AlertDialog({
 }: AlertDialogProps) {
   return (
     <RadixAlertDialog.Root open={open} onOpenChange={onOpenChange}>
-      {trigger && (
-        <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>
-      )}
+      {trigger && <RadixAlertDialog.Trigger asChild>{trigger}</RadixAlertDialog.Trigger>}
 
       <RadixAlertDialog.Portal>
         <RadixAlertDialog.Overlay className="backdrop-overlay" />
@@ -69,19 +67,13 @@ export default function AlertDialog({
             </RadixAlertDialog.Cancel>
           </header>
 
-          <main className="min-h-0 min-w-0 flex-1 overflow-hidden overflow-y-auto">
-            {children}
-          </main>
+          <main className="min-h-0 min-w-0 flex-1 overflow-hidden overflow-y-auto">{children}</main>
 
           <footer className="flex-none border-t-2 border-t-gray-600">
             <div className="flex w-full flex-row justify-end gap-3 p-3">
-              <RadixAlertDialog.Cancel asChild>
-                {cancelButton}
-              </RadixAlertDialog.Cancel>
+              <RadixAlertDialog.Cancel asChild>{cancelButton}</RadixAlertDialog.Cancel>
 
-              <RadixAlertDialog.Action asChild>
-                {actionButton}
-              </RadixAlertDialog.Action>
+              <RadixAlertDialog.Action asChild>{actionButton}</RadixAlertDialog.Action>
             </div>
           </footer>
         </RadixAlertDialog.Content>

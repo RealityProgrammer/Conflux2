@@ -60,9 +60,7 @@ export default function useIdleTimer() {
       }
     };
 
-    events.forEach((evt) =>
-      window.addEventListener(evt, handleActivity, { passive: true }),
-    );
+    events.forEach((evt) => window.addEventListener(evt, handleActivity, { passive: true }));
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     startIdleTimer();

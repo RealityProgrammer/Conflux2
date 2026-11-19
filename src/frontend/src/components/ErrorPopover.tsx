@@ -8,12 +8,7 @@ export interface ErrorPopoverProps {
   sideOffset?: number;
 }
 
-export default function ErrorPopover({
-  open,
-  children,
-  content,
-  sideOffset = 5,
-}: ErrorPopoverProps) {
+export default function ErrorPopover({ open, children, content, sideOffset = 5 }: ErrorPopoverProps) {
   return (
     <Popover.Root open={open}>
       <Popover.Anchor asChild>{children}</Popover.Anchor>

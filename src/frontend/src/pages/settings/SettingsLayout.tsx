@@ -28,19 +28,13 @@ export default function SettingsLayout() {
           </div>
         </section>
 
-        <Separator.Root
-          decorative
-          className="horizontal-separator my-3 flex-1"
-        />
+        <Separator.Root decorative className="horizontal-separator my-3 flex-1" />
 
         <section>
           <p className="group-label text-red-500!">Danger</p>
 
           <div className="space-y-1 rounded-md border-2 border-red-500/40 bg-red-400/10 p-1">
-            <NavigateLink
-              to="delete-account"
-              className="font-semibold text-red-400!"
-            >
+            <NavigateLink to="delete-account" className="font-semibold text-red-400!">
               Delete account
             </NavigateLink>
 

@@ -4,10 +4,7 @@ import Spinner from "../../components/Spinner.tsx";
 import { invitationService } from "../../api/invitationService.ts";
 import { BsCheckLg, BsCircleFill, BsExclamationTriangle } from "react-icons/bs";
 import ErrorText from "../../components/ErrorText.tsx";
-import {
-  type GetInvitationSummaryQuery,
-  useGetInvitationSummaryQuery,
-} from "../../graphql/queries.ts";
+import { type GetInvitationSummaryQuery, useGetInvitationSummaryQuery } from "../../graphql/queries.ts";
 import { InvitationStatus } from "../../graphql/types.ts";
 import { Avatar } from "../../components/Avatar.tsx";
 
@@ -24,9 +21,7 @@ export default function InvitePage() {
         {isLoading ? (
           <Spinner className="size-8 w-full fill-white" />
         ) : !inviteId ? (
-          <p className="text-center">
-            Have you... uh... forgot to paste the invitation ID?
-          </p>
+          <p className="text-center">Have you... uh... forgot to paste the invitation ID?</p>
         ) : isError || !data ? (
           <>
             <p className="text-center">An error seems to have occurred</p>
@@ -69,12 +64,8 @@ function Invitation({
 }) {
   const navigation = useNavigate();
 
-  const [joinStatus, setJoinStatus] = useState<
-    "nothing" | "joining" | "joined" | "error"
-  >("nothing");
-  const [errorMessage, setErrorMessage] = useState<string | undefined>(
-    undefined,
-  );
+  const [joinStatus, setJoinStatus] = useState<"nothing" | "joining" | "joined" | "error">("nothing");
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
   const handleJoiningServer = async () => {
     if (joinStatus !== "nothing") return;
@@ -87,9 +78,7 @@ function Invitation({
       setJoinStatus("joined");
 
       const timeoutId = setTimeout(() => {
-        navigation(
-          `/lobby/servers/${encodeURIComponent(summary.communityServer!.id)}`,
-        );
+        navigation(`/lobby/servers/${encodeURIComponent(summary.communityServer!.id)}`);
       }, 3000);
 
       return () => clearTimeout(timeoutId);
@@ -110,9 +99,7 @@ function Invitation({
       <section className="flex-1">
         <header>
           <p className="text-center">You're invited to...</p>
-          <p className="text-center text-2xl font-bold">
-            {summary.communityServer!.name}
-          </p>
+          <p className="text-center text-2xl font-bold">{summary.communityServer!.name}</p>
         </header>
 
         <div className="mt-1 flex flex-row items-center justify-center">
@@ -127,11 +114,7 @@ function Invitation({
             className="button-theme-primary panel-padding relative cursor-pointer rounded-md"
             onClick={handleJoiningServer}
           >
-            <span
-              className={`${joinStatus === "nothing" ? "visible" : "invisible"}`}
-            >
-              Join server
-            </span>
+            <span className={`${joinStatus === "nothing" ? "visible" : "invisible"}`}>Join server</span>
 
             {joinStatus === "joining" && (
               <span className="absolute inset-0 flex items-center justify-center">
@@ -152,9 +135,7 @@ function Invitation({
             )}
           </button>
 
-          {errorMessage && (
-            <ErrorText className="block text-center">{errorMessage}</ErrorText>
-          )}
+          {errorMessage && <ErrorText className="block text-center">{errorMessage}</ErrorText>}
         </footer>
       </section>
     </div>

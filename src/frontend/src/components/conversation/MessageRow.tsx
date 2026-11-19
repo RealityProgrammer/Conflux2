@@ -14,12 +14,7 @@ interface ReplyProps {
   body: string | null;
 }
 
-function Reply({
-  messageId,
-  senderDisplayName,
-  attachmentCount,
-  body,
-}: ReplyProps) {
+function Reply({ messageId, senderDisplayName, attachmentCount, body }: ReplyProps) {
   const { requestJump } = useChatContainerContext();
 
   return (
@@ -28,15 +23,12 @@ function Reply({
         className="line-clamp-2 w-fit max-w-full cursor-pointer wrap-break-word text-gray-300 hover:text-white"
         onClick={() => requestJump(messageId)}
       >
-        <span className="font-semibold">{senderDisplayName ?? "???"}</span>{" "}
-        sent:{" "}
+        <span className="font-semibold">{senderDisplayName ?? "???"}</span> sent:{" "}
         {attachmentCount > 0 && (
           <>
             <span className="mx-1 inline-flex items-center align-text-bottom">
               <BsPaperclip className="mr-0.5 size-3.5" />
-              <span className="text-[10px] leading-none">
-                {attachmentCount}
-              </span>
+              <span className="text-[10px] leading-none">{attachmentCount}</span>
             </span>
           </>
         )}
@@ -48,13 +40,13 @@ function Reply({
 
 interface RowProps {
   header:
-  | {
-    senderId?: string;
-    senderAvatarVersion: number | null | undefined;
-    senderDisplayName: string;
-    avatarAlt?: string;
-  }
-  | undefined;
+    | {
+        senderId?: string;
+        senderAvatarVersion: number | null | undefined;
+        senderDisplayName: string;
+        avatarAlt?: string;
+      }
+    | undefined;
   date?: Date;
   children: ReactNode;
 }
@@ -74,7 +66,6 @@ function Row({ header, date, children }: RowProps) {
           <div className="min-w-0 flex-1">
             <p className="mb-0.5 text-sm font-semibold text-white">
               {header.senderDisplayName}{" "}
-
               {date && (
                 <DateTimeText
                   value={date}
@@ -98,9 +89,7 @@ function Row({ header, date, children }: RowProps) {
               {children}
             </>
           ) : (
-            <div className="ml-13">
-              {children}
-            </div>
+            <div className="ml-13">{children}</div>
           )}
         </>
       )}
@@ -137,10 +126,7 @@ function BodySkeleton() {
   return (
     <div className="flex-1 space-y-1">
       {[...new Array(numFullRow).keys()].map((_, index) => (
-        <div
-          key={index}
-          className="h-4.5 animate-pulse rounded-full bg-white/10"
-        ></div>
+        <div key={index} className="h-4.5 animate-pulse rounded-full bg-white/10"></div>
       ))}
 
       <div

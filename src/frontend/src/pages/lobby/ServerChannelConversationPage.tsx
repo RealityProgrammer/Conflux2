@@ -24,17 +24,15 @@ export interface ServerChannelConversationPageLoaderProps {
 }
 
 export default function ServerChannelConversationPage() {
-  const { serverId, channelId } =
-    useLoaderData<ServerChannelConversationPageLoaderProps>();
+  const { serverId, channelId } = useLoaderData<ServerChannelConversationPageLoaderProps>();
 
-  const { data, isLoading, isError, isEnabled } =
-    useQueryServerChannelConversationDetails(
-      { serverId: serverId ?? "", channelId: channelId ?? "" },
-      {
-        enabled: !!serverId && !!channelId,
-        staleTime: 30 * 60 * 1000,
-      },
-    );
+  const { data, isLoading, isError, isEnabled } = useQueryServerChannelConversationDetails(
+    { serverId: serverId ?? "", channelId: channelId ?? "" },
+    {
+      enabled: !!serverId && !!channelId,
+      staleTime: 30 * 60 * 1000,
+    },
+  );
 
   if (isLoading) {
     return (
@@ -57,10 +55,10 @@ export default function ServerChannelConversationPage() {
     return <Secret />;
   }
 
-  return <Success serverId={serverId!} data={data} />
+  return <Success serverId={serverId!} data={data} />;
 }
 
-function Success({ serverId, data }: { serverId: string; data: ServerChannelConversationDetails; }) {
+function Success({ serverId, data }: { serverId: string; data: ServerChannelConversationDetails }) {
   useConversationConnection(data.conversationId);
   const { hasPermission } = useCommunityServerContext();
   const [showRightSidebar, setShowRightSidebar] = useState(false);
@@ -81,10 +79,7 @@ function Success({ serverId, data }: { serverId: string; data: ServerChannelConv
             <div className="flex flex-none flex-row items-center justify-center gap-2">
               <ShowPinnedMessagesButton />
               <SearchMessagesButton />
-              <IconButton
-                theme="default"
-                onClick={() => setShowRightSidebar(!showRightSidebar)}
-              >
+              <IconButton theme="default" onClick={() => setShowRightSidebar(!showRightSidebar)}>
                 <BsPeopleFill className="size-5" />
               </IconButton>
             </div>
@@ -94,9 +89,7 @@ function Success({ serverId, data }: { serverId: string; data: ServerChannelConv
           <div className="flex size-full flex-col gap-0">
             <ChatView />
             <TypingIndicator />
-            <ChatInput
-              disabled={!hasPermission(ServerPermission.SendMessage)}
-            />
+            <ChatInput disabled={!hasPermission(ServerPermission.SendMessage)} />
           </div>
         }
         sidebar={{
@@ -121,8 +114,7 @@ function Secret() {
           main={
             <div className="flex size-full flex-row items-center justify-center">
               <p className="text-center text-sm text-gray-400 select-none">
-                It is dead empty here... And it might be the same in the
-                future...
+                It is dead empty here... And it might be the same in the future...
               </p>
             </div>
           }

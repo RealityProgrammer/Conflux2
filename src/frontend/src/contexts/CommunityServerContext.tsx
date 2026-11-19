@@ -7,12 +7,7 @@ import type {
   ServiceResponse,
 } from "../api/types.ts";
 import { createContext, type ReactNode, useContext } from "react";
-import {
-  type QueryKey,
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { type QueryKey, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { serverService } from "../api/serverService.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
 import type {
@@ -33,14 +28,10 @@ interface CommunityServerContextType {
   removeChannel: (id: string) => void;
   hasPermission: (permission: ServerPermission) => boolean;
   refreshPermission: () => Promise<void>;
-  updatePermission: (
-    value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">,
-  ) => void;
+  updatePermission: (value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">) => void;
 }
 
-const CommunityServerContext = createContext<CommunityServerContextType | null>(
-  null,
-);
+const CommunityServerContext = createContext<CommunityServerContextType | null>(null);
 
 interface CommunityServerContextProviderProps {
   serverId: string | undefined;
@@ -62,10 +53,7 @@ export default function CommunityServerContextProvider({
     },
     staleTime: 45 * 60 * 1000,
     retry: (failureCount, error: ServiceError) => {
-      if (
-        error.code === "NETWORK_ERROR" ||
-        error.code === "REQUEST_SETUP_ERROR"
-      ) {
+      if (error.code === "NETWORK_ERROR" || error.code === "REQUEST_SETUP_ERROR") {
         return failureCount <= 3;
       }
 
@@ -73,9 +61,7 @@ export default function CommunityServerContextProvider({
     },
   });
 
-  const updateServerDetails = (
-    updater: (value: ServerDetailsDto) => Partial<ServerDetailsDto>,
-  ) => {
+  const updateServerDetails = (updater: (value: ServerDetailsDto) => Partial<ServerDetailsDto>) => {
     queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
       if (!oldData) return oldData;
 
@@ -100,20 +86,14 @@ export default function CommunityServerContextProvider({
 
   const removeChannelCategory = (id: string) => {
     updateServerDetails((oldData) => {
-      const removingCategory = oldData.channelCategories.find(
-        (c) => c.id === id,
-      );
+      const removingCategory = oldData.channelCategories.find((c) => c.id === id);
 
       if (!removingCategory) {
         return {};
       }
 
-      let updatedChannelCategories = oldData.channelCategories.filter(
-        (c) => c.id !== id,
-      );
-      const nullCategoryExists = updatedChannelCategories.some(
-        (c) => c.id == null,
-      );
+      let updatedChannelCategories = oldData.channelCategories.filter((c) => c.id !== id);
+      const nullCategoryExists = updatedChannelCategories.some((c) => c.id == null);
 
       // if there is a category with null id, append the channels to it, else create a category with null id
       if (nullCategoryExists) {
@@ -195,9 +175,7 @@ export default function CommunityServerContextProvider({
   const hasPermission = (permission: ServerPermission): boolean => {
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return false;
 
-    return detailsQueryResult.data.authorizeInfo.effectivePermissions.includes(
-      permission,
-    );
+    return detailsQueryResult.data.authorizeInfo.effectivePermissions.includes(permission);
   };
 
   const refreshPermission = async () => {
@@ -218,9 +196,7 @@ export default function CommunityServerContextProvider({
     }
   };
 
-  const updatePermission = (
-    value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">,
-  ) => {
+  const updatePermission = (value: Omit<Partial<ServerMemberAuthorizeInfoDto>, "memberId">) => {
     if (!detailsQueryResult.isSuccess || !detailsQueryResult.data) return;
 
     queryClient.setQueryData<ServerDetailsDto>(detailsQueryKey, (oldData) => {
@@ -236,49 +212,37 @@ export default function CommunityServerContextProvider({
     });
   };
 
-  useSignalREvent(
-    "ServerChannelCategoryCreated",
-    (event: ServerChannelCategoryCreatedEvent) => {
-      if (event.serverId !== serverId) {
-        return;
-      }
+  useSignalREvent("ServerChannelCategoryCreated", (event: ServerChannelCategoryCreatedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
 
-      appendChannelCategory(event.categoryIdentity);
-    },
-  );
+    appendChannelCategory(event.categoryIdentity);
+  });
 
-  useSignalREvent(
-    "ServerChannelCategoryDeleted",
-    (event: ServerChannelCategoryDeletedEvent) => {
-      if (event.serverId !== serverId) {
-        return;
-      }
+  useSignalREvent("ServerChannelCategoryDeleted", (event: ServerChannelCategoryDeletedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
 
-      removeChannelCategory(event.categoryId);
-    },
-  );
+    removeChannelCategory(event.categoryId);
+  });
 
-  useSignalREvent(
-    "ServerChannelCreated",
-    async (event: ServerChannelCreatedEvent) => {
-      if (event.serverId !== serverId) {
-        return;
-      }
+  useSignalREvent("ServerChannelCreated", async (event: ServerChannelCreatedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
 
-      appendChannel(event.channel);
-    },
-  );
+    appendChannel(event.channel);
+  });
 
-  useSignalREvent(
-    "ServerChannelDeleted",
-    (event: ServerChannelDeletedEvent) => {
-      if (event.serverId !== serverId) {
-        return;
-      }
+  useSignalREvent("ServerChannelDeleted", (event: ServerChannelDeletedEvent) => {
+    if (event.serverId !== serverId) {
+      return;
+    }
 
-      removeChannel(event.channelId);
-    },
-  );
+    removeChannel(event.channelId);
+  });
 
   return (
     <CommunityServerContext.Provider
@@ -305,9 +269,7 @@ export default function CommunityServerContextProvider({
 export function useCommunityServerContext(): CommunityServerContextType {
   const context = useContext(CommunityServerContext);
   if (!context)
-    throw new Error(
-      "useChatContainerContext must be used within an CommunityServerContextProvider.",
-    );
+    throw new Error("useChatContainerContext must be used within an CommunityServerContextProvider.");
 
   return context;
 }

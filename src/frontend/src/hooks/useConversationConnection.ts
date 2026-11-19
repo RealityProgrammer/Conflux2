@@ -2,9 +2,7 @@ import { useSignalR } from "../contexts/SignalRContext.tsx";
 import { useEffect, useRef } from "react";
 import { HubConnectionState } from "@microsoft/signalr";
 
-export default function useConversationConnection(
-  conversationId: string | undefined,
-) {
+export default function useConversationConnection(conversationId: string | undefined) {
   const { connection, isConnected, invokeSafely } = useSignalR();
 
   const operationPromiseRef = useRef<Promise<void>>(Promise.resolve());
@@ -40,10 +38,7 @@ export default function useConversationConnection(
         if (!isMounted) {
           if (connection.state === HubConnectionState.Connected) {
             invokeSafely("LeaveConversation", conversationId).catch((err) =>
-              console.error(
-                `Failed to leave conversation ${conversationId}:`,
-                err,
-              ),
+              console.error(`Failed to leave conversation ${conversationId}:`, err),
             );
           }
 
@@ -65,16 +60,9 @@ export default function useConversationConnection(
       if (hasJoined && connection.state === HubConnectionState.Connected) {
         const leavePromise = invokeSafely("LeaveConversation", conversationId)
           .then(() => console.log(`Left conversation: ${conversationId}`))
-          .catch((err) =>
-            console.error(
-              `Failed to leave conversation ${conversationId}:`,
-              err,
-            ),
-          );
+          .catch((err) => console.error(`Failed to leave conversation ${conversationId}:`, err));
 
-        operationPromiseRef.current = operationPromiseRef.current.then(
-          () => leavePromise,
-        );
+        operationPromiseRef.current = operationPromiseRef.current.then(() => leavePromise);
       }
     };
   }, [conversationId, isConnected, connection]);

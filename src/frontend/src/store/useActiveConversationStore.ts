@@ -5,12 +5,10 @@ interface ConversationIdStoreType {
   setActiveConversationId: (conversationId: string | null) => void;
 }
 
-export const useActiveConversationStore = create<ConversationIdStoreType>(
-  (set) => ({
-    activeConversationId: null,
-    setActiveConversationId: (conversationId: string | null) =>
-      set(() => ({
-        activeConversationId: conversationId,
-      })),
-  }),
-);
+export const useActiveConversationStore = create<ConversationIdStoreType>((set) => ({
+  activeConversationId: null,
+  setActiveConversationId: (conversationId: string | null) =>
+    set(() => ({
+      activeConversationId: conversationId,
+    })),
+}));

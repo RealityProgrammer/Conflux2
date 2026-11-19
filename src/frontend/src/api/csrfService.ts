@@ -6,8 +6,7 @@ import { handleAxiosError } from "./errorHandling.ts";
 export const csrfService = {
   requestCsrfToken: async (): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.get<BackendResponse>("/csrf/token");
+      const response: AxiosResponse<BackendResponse> = await apiClient.get<BackendResponse>("/csrf/token");
 
       return {
         success: true,

@@ -16,21 +16,13 @@ interface ServerMemberListProps {
 
 export default function ServerMemberList({ serverId }: ServerMemberListProps) {
   const queryClient = useQueryClient();
-  const {
-    renderItems,
-    isLoading,
-    isError,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useGroupedServerMembers(serverId);
+  const { renderItems, isLoading, isError, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useGroupedServerMembers(serverId);
 
   useSignalREvent("UserLeftServer", (event: UserLeftServerEvent) => {
     queryClient.setQueryData(
       useInfiniteGetServerMembersQuery.getKey({ serverId, after: null }),
-      (
-        oldData: InfiniteData<GetServerMembersQuery>,
-      ): InfiniteData<GetServerMembersQuery> => {
+      (oldData: InfiniteData<GetServerMembersQuery>): InfiniteData<GetServerMembersQuery> => {
         if (!oldData) return oldData;
 
         return {
@@ -40,9 +32,7 @@ export default function ServerMemberList({ serverId }: ServerMemberListProps) {
             communityServerMembers: {
               ...page.communityServerMembers,
               nodes: page.communityServerMembers.nodes
-                ? page.communityServerMembers.nodes.filter(
-                    (n) => n.user.id !== event.memberUserId,
-                  )
+                ? page.communityServerMembers.nodes.filter((n) => n.user.id !== event.memberUserId)
                 : page.communityServerMembers.nodes,
             },
           })),
@@ -86,9 +76,7 @@ export default function ServerMemberList({ serverId }: ServerMemberListProps) {
       renderItem={(_index: number, data: RenderItem) => {
         switch (data.type) {
           case "header":
-            return (
-              <p className="group-label m-0! px-2 pt-3 pb-1">{data.roleName}</p>
-            );
+            return <p className="group-label m-0! px-2 pt-3 pb-1">{data.roleName}</p>;
 
           case "member":
             const memberUserInfo = data.member.user;
@@ -107,9 +95,7 @@ export default function ServerMemberList({ serverId }: ServerMemberListProps) {
       }}
       computeItemKey={(index) => {
         const item = renderItems[index];
-        return item.type === "header"
-          ? `header-${item.roleId}`
-          : `member-${item.member.user.id}`;
+        return item.type === "header" ? `header-${item.roleId}` : `member-${item.member.user.id}`;
       }}
       showBottomLoader={isFetchingNextPage}
       endReached={() => {
@@ -128,39 +114,29 @@ type RenderItem =
   | { type: "header"; roleId: string; roleName: string }
   | {
       type: "member";
-      member: NonNullable<
-        GetServerMembersQuery["communityServerMembers"]["nodes"]
-      >[number];
+      member: NonNullable<GetServerMembersQuery["communityServerMembers"]["nodes"]>[number];
     };
 
 function useGroupedServerMembers(serverId: string) {
-  const {
-    data,
-    isLoading,
-    isError,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteGetServerMembersQuery(
-    { serverId, after: null },
-    {
-      initialPageParam: { after: null },
-      getNextPageParam: (lastPage): { after: string } | undefined => {
-        const pageInfo = lastPage?.communityServerMembers.pageInfo;
+  const { data, isLoading, isError, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteGetServerMembersQuery(
+      { serverId, after: null },
+      {
+        initialPageParam: { after: null },
+        getNextPageParam: (lastPage): { after: string } | undefined => {
+          const pageInfo = lastPage?.communityServerMembers.pageInfo;
 
-        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-          return { after: pageInfo.endCursor };
-        }
+          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+            return { after: pageInfo.endCursor };
+          }
 
-        return undefined;
+          return undefined;
+        },
+        staleTime: 15 * 30 * 1000,
       },
-      staleTime: 15 * 30 * 1000,
-    },
-  );
+    );
 
-  const rawMembers =
-    data?.pages.flatMap((page) => page?.communityServerMembers?.nodes ?? []) ??
-    [];
+  const rawMembers = data?.pages.flatMap((page) => page?.communityServerMembers?.nodes ?? []) ?? [];
 
   const renderItems: RenderItem[] = [];
   let lastRoleId: string | null = null;

@@ -3103,9 +3103,7 @@ export interface components {
       error: components["schemas"]["Error"];
     };
     ApiResponseOfKeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto: {
-      data:
-        | null
-        | components["schemas"]["KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
+      data: null | components["schemas"]["KeyedPaginatedPageOfDateTimeOffsetAndPinnedMessageDto"];
       error: components["schemas"]["Error"];
     };
     ApiResponseOfListOfEmojiEntryDto: {
@@ -3659,9 +3657,7 @@ export interface components {
       };
       servers: {
         [key: string]: {
-          [
-            key: string
-          ]: components["schemas"]["ServerChannelNotificationCounts"];
+          [key: string]: components["schemas"]["ServerChannelNotificationCounts"];
         };
       };
     };

@@ -38,8 +38,7 @@ export default function PendingRequestsTabContent() {
       },
     );
 
-  const allElements =
-    data?.pages.flatMap((page) => page?.friendRequests.nodes ?? []) ?? [];
+  const allElements = data?.pages.flatMap((page) => page?.friendRequests.nodes ?? []) ?? [];
 
   const removeCacheElement = (requestId: string) => {
     queryClient.setQueryData<InfiniteData<GetPendingFriendRequestsQuery>>(
@@ -48,9 +47,7 @@ export default function PendingRequestsTabContent() {
         if (!oldData || oldData.pages.length === 0) return oldData;
 
         const elementExists = oldData.pages.some((page) =>
-          page?.friendRequests.nodes!.some(
-            (element) => element.id === requestId,
-          ),
+          page?.friendRequests.nodes!.some((element) => element.id === requestId),
         );
 
         if (!elementExists) return oldData;
@@ -71,35 +68,23 @@ export default function PendingRequestsTabContent() {
     );
   };
 
-  useSignalREvent(
-    "FriendRequestReceived",
-    async (_event: FriendRequestReceivedEvent) => {
-      queryClient.invalidateQueries({
-        queryKey: useInfiniteGetPendingFriendRequestsQuery.getKey({}),
-      });
-    },
-  );
+  useSignalREvent("FriendRequestReceived", async (_event: FriendRequestReceivedEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: useInfiniteGetPendingFriendRequestsQuery.getKey({}),
+    });
+  });
 
-  useSignalREvent(
-    "FriendRequestRejected",
-    (event: FriendRequestRejectedEvent) => {
-      removeCacheElement(event.requestId);
-    },
-  );
+  useSignalREvent("FriendRequestRejected", (event: FriendRequestRejectedEvent) => {
+    removeCacheElement(event.requestId);
+  });
 
-  useSignalREvent(
-    "FriendRequestAccepted",
-    (event: FriendRequestAcceptedEvent) => {
-      removeCacheElement(event.requestId);
-    },
-  );
+  useSignalREvent("FriendRequestAccepted", (event: FriendRequestAcceptedEvent) => {
+    removeCacheElement(event.requestId);
+  });
 
-  useSignalREvent(
-    "FriendRequestCanceled",
-    (event: FriendRequestCanceledEvent) => {
-      removeCacheElement(event.requestId);
-    },
-  );
+  useSignalREvent("FriendRequestCanceled", (event: FriendRequestCanceledEvent) => {
+    removeCacheElement(event.requestId);
+  });
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -122,12 +107,7 @@ export default function PendingRequestsTabContent() {
             }}
             overscan={10}
             renderItem={(index) => {
-              return (
-                <Row
-                  element={allElements[index]}
-                  removeCacheElement={removeCacheElement}
-                />
-              );
+              return <Row element={allElements[index]} removeCacheElement={removeCacheElement} />;
             }}
             renderEmpty={() => (
               <div className="flex size-full flex-row items-center justify-center text-gray-500">
@@ -143,9 +123,7 @@ export default function PendingRequestsTabContent() {
 }
 
 interface RowProps {
-  element: NonNullable<
-    GetPendingFriendRequestsQuery["friendRequests"]["nodes"]
-  >[number];
+  element: NonNullable<GetPendingFriendRequestsQuery["friendRequests"]["nodes"]>[number];
   removeCacheElement: (userId: string) => void;
 }
 

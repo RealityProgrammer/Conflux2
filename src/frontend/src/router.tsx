@@ -1,19 +1,10 @@
 import { lazy } from "react";
-import {
-  createBrowserRouter,
-  type LoaderFunctionArgs,
-  Outlet,
-  redirect,
-} from "react-router";
+import { createBrowserRouter, type LoaderFunctionArgs, Outlet, redirect } from "react-router";
 import { authService } from "./api/authService.ts";
 import { queryClient } from "./main.tsx";
 import { useGetUserIdentityProfileQuery } from "./graphql/queries.ts";
 import { HttpStatusCode } from "axios";
-import type {
-  ServiceResponse,
-  UserAuthorizationInfo,
-  UserIdentityProfileDto,
-} from "./api/types.ts";
+import type { ServiceResponse, UserAuthorizationInfo, UserIdentityProfileDto } from "./api/types.ts";
 import CallOverlay from "./components/call/CallOverlay.tsx";
 import ExternalLinkDialog from "./components/ExternalLinkDialog.tsx";
 import MediaPreviewGallery from "./components/MediaPreviewGallery.tsx";
@@ -21,12 +12,8 @@ import { Tooltip } from "radix-ui";
 import { Slide, ToastContainer } from "react-toastify";
 
 import HomePage from "./pages/HomePage";
-const AuthenticatePage = lazy(
-  () => import("./pages/auth/AuthenticatePage.tsx"),
-);
-const ResetPasswordPage = lazy(
-  () => import("./pages/auth/ResetPasswordPage.tsx"),
-);
+const AuthenticatePage = lazy(() => import("./pages/auth/AuthenticatePage.tsx"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
 import AuthProvider from "./contexts/AuthContext.tsx";
 import DmConversationPage, {
   type DmConversationPageLoaderProps,
@@ -35,30 +22,20 @@ import ServerChannelConversationPage, {
   type ServerChannelConversationPageLoaderProps,
 } from "./pages/lobby/ServerChannelConversationPage.tsx";
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
-const ConfirmEmailPage = lazy(
-  () => import("./pages/auth/ConfirmEmailPage.tsx"),
-);
-const ProfileSetupPage = lazy(
-  () => import("./pages/miscs/ProfileSetupPage.tsx"),
-);
+const ConfirmEmailPage = lazy(() => import("./pages/auth/ConfirmEmailPage.tsx"));
+const ProfileSetupPage = lazy(() => import("./pages/miscs/ProfileSetupPage.tsx"));
 const LobbyLayout = lazy(() => import("./pages/lobby/LobbyLayout.tsx"));
 const LobbyPage = lazy(() => import("./pages/lobby/LobbyPage.tsx"));
-const SystemAnnouncementPage = lazy(
-  () => import("./pages/lobby/SystemAnnouncementPage.tsx"),
-);
+const SystemAnnouncementPage = lazy(() => import("./pages/lobby/SystemAnnouncementPage.tsx"));
 const FriendsPage = lazy(() => import("./pages/lobby/FriendsPage.tsx"));
 const SignalRProvider = lazy(() => import("./contexts/SignalRContext.tsx"));
 const UserLobbyLayout = lazy(() => import("./pages/lobby/UserLobbyLayout.tsx"));
 const ServerLayout = lazy(() => import("./pages/server/ServerLayout.tsx"));
 const PresenceProvider = lazy(() => import("./contexts/PresenceContext.tsx"));
-const SettingsLayout = lazy(
-  () => import("./pages/settings/SettingsLayout.tsx"),
-);
+const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout.tsx"));
 const ProfilePage = lazy(() => import("./pages/settings/ProfilePage.tsx"));
 const AccountPage = lazy(() => import("./pages/settings/AccountPage.tsx"));
-const DeleteAccountPage = lazy(
-  () => import("./pages/settings/DeleteAccountPage.tsx"),
-);
+const DeleteAccountPage = lazy(() => import("./pages/settings/DeleteAccountPage.tsx"));
 const ImpendingDoomPage = lazy(() => import("./pages/ImpendingDoomPage.tsx"));
 const InvitePage = lazy(() => import("./pages/invite/InvitePage.tsx"));
 
@@ -77,8 +54,7 @@ export const router = createBrowserRouter([
     id: "root",
     path: "/",
     loader: async (): Promise<RootLoaderProps | null> => {
-      const authResponse: ServiceResponse<UserAuthorizationInfo> =
-        await authService.getAuthorizationInfo();
+      const authResponse: ServiceResponse<UserAuthorizationInfo> = await authService.getAuthorizationInfo();
       if (!authResponse.success || !authResponse.data) return null;
 
       const authInfo: UserAuthorizationInfo = authResponse.data;
@@ -213,9 +189,7 @@ export const router = createBrowserRouter([
                     id: "dm",
                     path: "dm/:peerId?",
                     element: <DmConversationPage />,
-                    loader: ({
-                      params,
-                    }: LoaderFunctionArgs): DmConversationPageLoaderProps => {
+                    loader: ({ params }: LoaderFunctionArgs): DmConversationPageLoaderProps => {
                       const peerId: string | undefined = params.peerId;
 
                       return { peerId };
@@ -232,9 +206,7 @@ export const router = createBrowserRouter([
                     id: "channel",
                     path: "channels/:channelId?",
                     element: <ServerChannelConversationPage />,
-                    loader: ({
-                      params,
-                    }: LoaderFunctionArgs): ServerChannelConversationPageLoaderProps => {
+                    loader: ({ params }: LoaderFunctionArgs): ServerChannelConversationPageLoaderProps => {
                       const serverId: string | undefined = params.serverId;
                       const channelId: string | undefined = params.channelId;
 
@@ -279,9 +251,7 @@ export const router = createBrowserRouter([
                 path: "*",
                 element: (
                   <div className="flex size-full flex-row items-center justify-center">
-                    <span className="text-gray-400 select-none">
-                      You are not supposed to be here...
-                    </span>
+                    <span className="text-gray-400 select-none">You are not supposed to be here...</span>
                   </div>
                 ),
               },

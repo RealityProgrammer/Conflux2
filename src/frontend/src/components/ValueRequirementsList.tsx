@@ -11,11 +11,7 @@ export interface PasswordConditionsProps extends HTMLAttributes<HTMLDivElement> 
   rules: PasswordRule[];
 }
 
-export default function ValueRequirementsList({
-  rules,
-  className,
-  ...props
-}: PasswordConditionsProps) {
+export default function ValueRequirementsList({ rules, className, ...props }: PasswordConditionsProps) {
   return (
     <section className={`text-sm ${className || ""}`} {...props}>
       {rules.map((rule) => (

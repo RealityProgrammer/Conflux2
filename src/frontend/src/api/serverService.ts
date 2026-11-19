@@ -31,16 +31,13 @@ export const serverService = {
         formData.append("avatar", avatar);
       }
 
-      const response: AxiosResponse<BackendResponse<ServerIdentityDto>> =
-        await apiClient.postForm<BackendResponse<ServerIdentityDto>>(
-          `/communities`,
-          formData,
-          {
-            headers: {
-              "Idempotency-Key": idempotencyKey,
-            },
-          },
-        );
+      const response: AxiosResponse<BackendResponse<ServerIdentityDto>> = await apiClient.postForm<
+        BackendResponse<ServerIdentityDto>
+      >(`/communities`, formData, {
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
+      });
 
       return {
         success: true,
@@ -48,9 +45,7 @@ export const serverService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<ServerIdentityDto>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<ServerIdentityDto>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -70,10 +65,9 @@ export const serverService = {
   },
 
   getDetails: async (serverId: string): Promise<ServerDetailsDto> => {
-    const response: AxiosResponse<BackendResponse<ServerDetailsDto>> =
-      await apiClient.get<BackendResponse<ServerDetailsDto>>(
-        `/communities/${encodeURIComponent(serverId)}/details`,
-      );
+    const response: AxiosResponse<BackendResponse<ServerDetailsDto>> = await apiClient.get<
+      BackendResponse<ServerDetailsDto>
+    >(`/communities/${encodeURIComponent(serverId)}/details`);
 
     return response.data!.data!;
   },
@@ -82,11 +76,9 @@ export const serverService = {
     serverId: string,
   ): Promise<ServiceResponse<ServerMemberAuthorizeInfoDto>> => {
     try {
-      const response: AxiosResponse<
+      const response: AxiosResponse<BackendResponse<ServerMemberAuthorizeInfoDto>> = await apiClient.get<
         BackendResponse<ServerMemberAuthorizeInfoDto>
-      > = await apiClient.get<BackendResponse<ServerMemberAuthorizeInfoDto>>(
-        `/communities/${encodeURIComponent(serverId)}/details/authorize`,
-      );
+      >(`/communities/${encodeURIComponent(serverId)}/details/authorize`);
 
       return {
         success: true,
@@ -94,9 +86,7 @@ export const serverService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<ServerMemberAuthorizeInfoDto>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<ServerMemberAuthorizeInfoDto>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -107,9 +97,9 @@ export const serverService = {
     name: string,
   ): Promise<ServiceResponse<ChannelCategoryIdentityDto>> => {
     try {
-      const response: AxiosResponse<
+      const response: AxiosResponse<BackendResponse<ChannelCategoryIdentityDto>> = await apiClient.post<
         BackendResponse<ChannelCategoryIdentityDto>
-      > = await apiClient.post<BackendResponse<ChannelCategoryIdentityDto>>(
+      >(
         `/communities/${encodeURIComponent(serverId)}/channel-categories`,
         {
           name,
@@ -128,9 +118,7 @@ export const serverService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<ChannelCategoryIdentityDto>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<ChannelCategoryIdentityDto>>;
       return handleAxiosError(axiosError);
     }
   },
@@ -143,21 +131,22 @@ export const serverService = {
     categoryId: string | null,
   ): Promise<ServiceResponse<ServerChannelIdentityDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<ServerChannelIdentityDto>> =
-        await apiClient.post<BackendResponse<ServerChannelIdentityDto>>(
-          `/communities/${encodeURIComponent(serverId)}/channels`,
-          {
-            name,
-            type,
-            categoryId,
+      const response: AxiosResponse<BackendResponse<ServerChannelIdentityDto>> = await apiClient.post<
+        BackendResponse<ServerChannelIdentityDto>
+      >(
+        `/communities/${encodeURIComponent(serverId)}/channels`,
+        {
+          name,
+          type,
+          categoryId,
+        },
+        {
+          headers: {
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
           },
-          {
-            headers: {
-              "Idempotency-Key": idempotencyKey,
-              "Content-Type": "application/json",
-            },
-          },
-        );
+        },
+      );
 
       return {
         success: true,
@@ -165,22 +154,16 @@ export const serverService = {
         data: response.data.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<ServerChannelIdentityDto>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<ServerChannelIdentityDto>>;
       return handleAxiosError(axiosError);
     }
   },
 
-  deleteChannelCategory: async (
-    serverId: string,
-    categoryId: string,
-  ): Promise<ServiceResponse> => {
+  deleteChannelCategory: async (serverId: string, categoryId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete<BackendResponse>(
-          `/communities/${encodeURIComponent(serverId)}/channel-categories/${encodeURIComponent(categoryId)}`,
-        );
+      const response: AxiosResponse<BackendResponse> = await apiClient.delete<BackendResponse>(
+        `/communities/${encodeURIComponent(serverId)}/channel-categories/${encodeURIComponent(categoryId)}`,
+      );
 
       return {
         success: true,
@@ -192,15 +175,11 @@ export const serverService = {
     }
   },
 
-  deleteChannel: async (
-    serverId: string,
-    categoryId: string,
-  ): Promise<ServiceResponse> => {
+  deleteChannel: async (serverId: string, categoryId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete<BackendResponse>(
-          `/communities/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(categoryId)}`,
-        );
+      const response: AxiosResponse<BackendResponse> = await apiClient.delete<BackendResponse>(
+        `/communities/${encodeURIComponent(serverId)}/channels/${encodeURIComponent(categoryId)}`,
+      );
 
       return {
         success: true,
@@ -218,19 +197,20 @@ export const serverService = {
     idempotencyKey: string,
   ): Promise<ServiceResponse<ServerRoleDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<ServerRoleDto>> =
-        await apiClient.post<BackendResponse<ServerRoleDto>>(
-          `/communities/${encodeURIComponent(serverId)}/roles`,
-          {
-            name,
+      const response: AxiosResponse<BackendResponse<ServerRoleDto>> = await apiClient.post<
+        BackendResponse<ServerRoleDto>
+      >(
+        `/communities/${encodeURIComponent(serverId)}/roles`,
+        {
+          name,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
           },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "Idempotency-Key": idempotencyKey,
-            },
-          },
-        );
+        },
+      );
 
       return {
         success: true,
@@ -253,11 +233,9 @@ export const serverService = {
     },
   ): Promise<ServiceResponse<ServerRoleDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<ServerRoleDto>> =
-        await apiClient.patch<BackendResponse<ServerRoleDto>>(
-          `/communities/${encodeURIComponent(serverId)}/roles/${encodeURIComponent(roleId)}`,
-          data,
-        );
+      const response: AxiosResponse<BackendResponse<ServerRoleDto>> = await apiClient.patch<
+        BackendResponse<ServerRoleDto>
+      >(`/communities/${encodeURIComponent(serverId)}/roles/${encodeURIComponent(roleId)}`, data);
 
       return {
         success: true,
@@ -270,15 +248,11 @@ export const serverService = {
     }
   },
 
-  deleteRole: async (
-    serverId: string,
-    roleId: string,
-  ): Promise<ServiceResponse> => {
+  deleteRole: async (serverId: string, roleId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.delete<BackendResponse>(
-          `/communities/${encodeURIComponent(serverId)}/roles/${encodeURIComponent(roleId)}`,
-        );
+      const response: AxiosResponse<BackendResponse> = await apiClient.delete<BackendResponse>(
+        `/communities/${encodeURIComponent(serverId)}/roles/${encodeURIComponent(roleId)}`,
+      );
 
       return {
         success: true,
@@ -297,16 +271,17 @@ export const serverService = {
     idempotencyKey: string,
   ): Promise<ServiceResponse<EmojiDto>> => {
     try {
-      const response: AxiosResponse<BackendResponse<EmojiDto>> =
-        await apiClient.postForm<BackendResponse<EmojiDto>>(
-          `/communities/${encodeURIComponent(serverId)}/emojis`,
-          { shortCode, image: file },
-          {
-            headers: {
-              "Idempotency-Key": idempotencyKey,
-            },
+      const response: AxiosResponse<BackendResponse<EmojiDto>> = await apiClient.postForm<
+        BackendResponse<EmojiDto>
+      >(
+        `/communities/${encodeURIComponent(serverId)}/emojis`,
+        { shortCode, image: file },
+        {
+          headers: {
+            "Idempotency-Key": idempotencyKey,
           },
-        );
+        },
+      );
 
       return {
         success: true,
@@ -319,16 +294,12 @@ export const serverService = {
     }
   },
 
-  deleteEmojis: async (
-    serverId: string,
-    emojiIds: string[],
-  ): Promise<ServiceResponse> => {
+  deleteEmojis: async (serverId: string, emojiIds: string[]): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse<EmojiDto>> =
-        await apiClient.post<BackendResponse>(
-          `/communities/${encodeURIComponent(serverId)}/emojis/delete`,
-          { ids: emojiIds },
-        );
+      const response: AxiosResponse<BackendResponse<EmojiDto>> = await apiClient.post<BackendResponse>(
+        `/communities/${encodeURIComponent(serverId)}/emojis/delete`,
+        { ids: emojiIds },
+      );
 
       return {
         success: true,
@@ -340,14 +311,11 @@ export const serverService = {
     }
   },
 
-  getEmojisForManagement: async (
-    serverId: string,
-  ): Promise<ServiceResponse<EmojiManagementDto[]>> => {
+  getEmojisForManagement: async (serverId: string): Promise<ServiceResponse<EmojiManagementDto[]>> => {
     try {
-      const response: AxiosResponse<BackendResponse<EmojiManagementDto[]>> =
-        await apiClient.get<BackendResponse<EmojiManagementDto[]>>(
-          `/communities/${encodeURIComponent(serverId)}/emojis/management`,
-        );
+      const response: AxiosResponse<BackendResponse<EmojiManagementDto[]>> = await apiClient.get<
+        BackendResponse<EmojiManagementDto[]>
+      >(`/communities/${encodeURIComponent(serverId)}/emojis/management`);
 
       return {
         success: true,
@@ -355,9 +323,7 @@ export const serverService = {
         data: response.data!.data,
       };
     } catch (error) {
-      const axiosError = error as AxiosError<
-        BackendResponse<EmojiManagementDto[]>
-      >;
+      const axiosError = error as AxiosError<BackendResponse<EmojiManagementDto[]>>;
       return handleAxiosError(axiosError);
     }
   },

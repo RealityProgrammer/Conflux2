@@ -1,8 +1,4 @@
-import {
-  type MutationFunctionContext,
-  useMutation,
-  type UseMutationOptions,
-} from "@tanstack/react-query";
+import { type MutationFunctionContext, useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { conversationService } from "../api/conversationService.ts";
 import type { TimelineMessageDto } from "../api/types.ts";
 
@@ -19,17 +15,9 @@ export default function usePinMessageMutation(
     "mutationFn" | "mutationKey"
   >,
 ) {
-  return useMutation<
-    TimelineMessageDto,
-    Error,
-    UsePinMessageVariables,
-    unknown
-  >({
+  return useMutation<TimelineMessageDto, Error, UsePinMessageVariables, unknown>({
     mutationKey: usePinMessageMutation.key,
-    mutationFn: async (
-      variables: UsePinMessageVariables,
-      _context: MutationFunctionContext,
-    ) => {
+    mutationFn: async (variables: UsePinMessageVariables, _context: MutationFunctionContext) => {
       return conversationService.pinMessage(
         variables.idempotencyKey,
         variables.conversationId,

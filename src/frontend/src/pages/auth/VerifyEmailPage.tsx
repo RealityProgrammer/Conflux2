@@ -19,11 +19,7 @@ export default function VerifyEmailPage() {
 
     setSendStatus(SendStatus.Sending);
     const response = await authService.resendConfirmEmail();
-    setSendStatus(
-      response.statusCode === HttpStatusCode.Ok
-        ? SendStatus.Success
-        : SendStatus.Failure,
-    );
+    setSendStatus(response.statusCode === HttpStatusCode.Ok ? SendStatus.Success : SendStatus.Failure);
   };
 
   return (
@@ -46,13 +42,9 @@ export default function VerifyEmailPage() {
         </button>
 
         {sendStatus === SendStatus.Sending ? (
-          <p className="mt-2 animate-bounce text-center text-sm text-gray-400">
-            Sending Email...
-          </p>
+          <p className="mt-2 animate-bounce text-center text-sm text-gray-400">Sending Email...</p>
         ) : sendStatus === SendStatus.Success ? (
-          <p className="mt-2 text-center text-sm text-green-500">
-            Email has been sent.
-          </p>
+          <p className="mt-2 text-center text-sm text-green-500">Email has been sent.</p>
         ) : sendStatus === SendStatus.Failure ? (
           <p className="mt-2 text-center text-sm text-red-500">
             Something went wrong while sending email. Please try again later.

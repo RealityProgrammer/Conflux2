@@ -1,9 +1,4 @@
-import {
-  BsPersonCheck,
-  BsPersonDash,
-  BsPersonPlus,
-  BsPersonX,
-} from "react-icons/bs";
+import { BsPersonCheck, BsPersonDash, BsPersonPlus, BsPersonX } from "react-icons/bs";
 import IconButton from "./IconButton.tsx";
 import type { HTMLAttributes } from "react";
 import useSendFriendRequestMutation, {
@@ -14,14 +9,9 @@ import useFriendRequestActions, {
   type UseFriendRequestActionsVariables,
 } from "../hooks/useFriendRequestActions.ts";
 import type { SendFriendRequestResult } from "../api/types.ts";
-import useUnfriendMutation, {
-  type UseUnfriendMutationVariables,
-} from "../hooks/useUnfriendMutation.ts";
+import useUnfriendMutation, { type UseUnfriendMutationVariables } from "../hooks/useUnfriendMutation.ts";
 
-interface SendButtonProps extends Omit<
-  HTMLAttributes<HTMLButtonElement>,
-  "onError"
-> {
+interface SendButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, "onError"> {
   recipientId: string;
   onSuccess?: (response: SendFriendRequestResult, recipientId: string) => void;
   onError?: (error: Error, recipientId: string) => void;
@@ -34,9 +24,7 @@ function Send({ recipientId, onSuccess, onError, ...props }: SendButtonProps) {
       mutationKey: useSendFriendRequestMutation.key,
       status: "pending",
     },
-    select: (mutation) =>
-      (mutation.state.variables as UseSendFriendRequestMutationVariables)
-        .recipientId,
+    select: (mutation) => (mutation.state.variables as UseSendFriendRequestMutationVariables).recipientId,
   });
 
   return (
@@ -67,31 +55,20 @@ function Send({ recipientId, onSuccess, onError, ...props }: SendButtonProps) {
   );
 }
 
-interface CancelButtonProps extends Omit<
-  HTMLAttributes<HTMLButtonElement>,
-  "onError"
-> {
+interface CancelButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, "onError"> {
   requestId: string;
-  onSuccess?: (
-    variables: Omit<UseFriendRequestActionsVariables, "action">,
-  ) => void;
+  onSuccess?: (variables: Omit<UseFriendRequestActionsVariables, "action">) => void;
   onError?: (error: Error, variables: UseFriendRequestActionsVariables) => void;
 }
 
-function Cancel({
-  requestId,
-  onSuccess,
-  onError,
-  ...props
-}: CancelButtonProps) {
+function Cancel({ requestId, onSuccess, onError, ...props }: CancelButtonProps) {
   const friendRequestActionsMutation = useFriendRequestActions();
   const friendRequestActions = useMutationState({
     filters: {
       mutationKey: useFriendRequestActions.key,
       status: "pending",
     },
-    select: (mutation) =>
-      mutation.state.variables as UseFriendRequestActionsVariables,
+    select: (mutation) => mutation.state.variables as UseFriendRequestActionsVariables,
   });
 
   const variables = friendRequestActions.find((v) => v.requestId === requestId);
@@ -124,31 +101,20 @@ function Cancel({
   );
 }
 
-interface RejectButtonProps extends Omit<
-  HTMLAttributes<HTMLButtonElement>,
-  "onError"
-> {
+interface RejectButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, "onError"> {
   requestId: string;
-  onSuccess?: (
-    variables: Omit<UseFriendRequestActionsVariables, "action">,
-  ) => void;
+  onSuccess?: (variables: Omit<UseFriendRequestActionsVariables, "action">) => void;
   onError?: (error: Error, variables: UseFriendRequestActionsVariables) => void;
 }
 
-function Reject({
-  requestId,
-  onSuccess,
-  onError,
-  ...props
-}: RejectButtonProps) {
+function Reject({ requestId, onSuccess, onError, ...props }: RejectButtonProps) {
   const friendRequestActionsMutation = useFriendRequestActions();
   const friendRequestActions = useMutationState({
     filters: {
       mutationKey: useFriendRequestActions.key,
       status: "pending",
     },
-    select: (mutation) =>
-      mutation.state.variables as UseFriendRequestActionsVariables,
+    select: (mutation) => mutation.state.variables as UseFriendRequestActionsVariables,
   });
 
   const variables = friendRequestActions.find((v) => v.requestId === requestId);
@@ -180,31 +146,20 @@ function Reject({
   );
 }
 
-interface AcceptButtonProps extends Omit<
-  HTMLAttributes<HTMLButtonElement>,
-  "onError"
-> {
+interface AcceptButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, "onError"> {
   requestId: string;
-  onSuccess?: (
-    variables: Omit<UseFriendRequestActionsVariables, "action">,
-  ) => void;
+  onSuccess?: (variables: Omit<UseFriendRequestActionsVariables, "action">) => void;
   onError?: (error: Error, variables: UseFriendRequestActionsVariables) => void;
 }
 
-function Accept({
-  requestId,
-  onSuccess,
-  onError,
-  ...props
-}: AcceptButtonProps) {
+function Accept({ requestId, onSuccess, onError, ...props }: AcceptButtonProps) {
   const friendRequestActionsMutation = useFriendRequestActions();
   const friendRequestActions = useMutationState({
     filters: {
       mutationKey: useFriendRequestActions.key,
       status: "pending",
     },
-    select: (mutation) =>
-      mutation.state.variables as UseFriendRequestActionsVariables,
+    select: (mutation) => mutation.state.variables as UseFriendRequestActionsVariables,
   });
 
   const variables = friendRequestActions.find((v) => v.requestId === requestId);
@@ -236,29 +191,20 @@ function Accept({
   );
 }
 
-interface UnfriendButtonProps extends Omit<
-  HTMLAttributes<HTMLButtonElement>,
-  "onError"
-> {
+interface UnfriendButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, "onError"> {
   friendId: string;
   onSuccess?: (friendId: string) => void;
   onError?: (error: Error, friendId: string) => void;
 }
 
-function Unfriend({
-  friendId,
-  onSuccess,
-  onError,
-  ...props
-}: UnfriendButtonProps) {
+function Unfriend({ friendId, onSuccess, onError, ...props }: UnfriendButtonProps) {
   const unfriendMutation = useUnfriendMutation();
   const unfriendingFriendIds = useMutationState({
     filters: {
       mutationKey: useSendFriendRequestMutation.key,
       status: "pending",
     },
-    select: (mutation) =>
-      (mutation.state.variables as UseUnfriendMutationVariables).friendId,
+    select: (mutation) => (mutation.state.variables as UseUnfriendMutationVariables).friendId,
   });
 
   return (

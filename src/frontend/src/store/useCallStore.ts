@@ -20,14 +20,8 @@ export type Call = OutgoingDirectCall | IncomingDirectCall;
 
 interface CallStoreType {
   call: Call | null;
-  startOutgoingDirectCall: (
-    callId: string,
-    calleeProfile: UserIdentityProfileDto,
-  ) => void;
-  startIncomingDirectCall: (
-    callId: string,
-    callerProfile: UserIdentityProfileDto,
-  ) => void;
+  startOutgoingDirectCall: (callId: string, calleeProfile: UserIdentityProfileDto) => void;
+  startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) => void;
   updateCallState: (callId: string, state: BaseCall["state"]) => void;
   endCall: (callId: string) => void;
 }
@@ -35,10 +29,7 @@ interface CallStoreType {
 export const useCallStore = create<CallStoreType>((set) => ({
   call: null,
 
-  startOutgoingDirectCall: (
-    callId: string,
-    calleeProfile: UserIdentityProfileDto,
-  ) =>
+  startOutgoingDirectCall: (callId: string, calleeProfile: UserIdentityProfileDto) =>
     set(() => ({
       call: {
         type: "outgoing_direct",
@@ -48,10 +39,7 @@ export const useCallStore = create<CallStoreType>((set) => ({
       },
     })),
 
-  startIncomingDirectCall: (
-    callId: string,
-    callerProfile: UserIdentityProfileDto,
-  ) =>
+  startIncomingDirectCall: (callId: string, callerProfile: UserIdentityProfileDto) =>
     set(() => ({
       call: {
         type: "incoming_direct",

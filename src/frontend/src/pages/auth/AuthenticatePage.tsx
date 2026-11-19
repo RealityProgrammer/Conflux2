@@ -2,17 +2,9 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { animate, JSAnimation, random } from "animejs";
 import { useLocation, useNavigate, useRevalidator } from "react-router";
 import { authService } from "../../api/authService.ts";
-import type {
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  ServiceResponse,
-} from "../../api/types.ts";
+import type { LoginRequest, LoginResponse, RegisterRequest, ServiceResponse } from "../../api/types.ts";
 import { HttpStatusCode } from "axios";
-import {
-  Label,
-  unstable_PasswordToggleField as PasswordToggleField,
-} from "radix-ui";
+import { Label, unstable_PasswordToggleField as PasswordToggleField } from "radix-ui";
 import Spinner from "../../components/Spinner.tsx";
 import { BsEye, BsEyeSlash } from "react-icons/bs";
 import ValueRequirementsList from "../../components/ValueRequirementsList.tsx";
@@ -30,11 +22,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-function LoginPanel({
-  navigateToRegister,
-}: {
-  navigateToRegister: () => void;
-}) {
+function LoginPanel({ navigateToRegister }: { navigateToRegister: () => void }) {
   const revalidator = useRevalidator();
   const navigate = useNavigate();
 
@@ -53,13 +41,9 @@ function LoginPanel({
     reValidateMode: "onSubmit",
   });
 
-  const onLoginSubmit: SubmitHandler<LoginFormValues> = async (
-    data: LoginFormValues,
-  ): Promise<void> => {
+  const onLoginSubmit: SubmitHandler<LoginFormValues> = async (data: LoginFormValues): Promise<void> => {
     try {
-      const response: ServiceResponse<LoginResponse> = await authService.login(
-        data as LoginRequest,
-      );
+      const response: ServiceResponse<LoginResponse> = await authService.login(data as LoginRequest);
 
       if (response.statusCode === HttpStatusCode.Ok) {
         await revalidator.revalidate();
@@ -72,9 +56,7 @@ function LoginPanel({
         response.statusCode === HttpStatusCode.BadRequest &&
         response.error?.code === "ValidationErrorsOccurred"
       ) {
-        Object.entries(
-          response.error.details as Record<string, string[]>,
-        ).forEach(([field, messages]) => {
+        Object.entries(response.error.details as Record<string, string[]>).forEach(([field, messages]) => {
           setError(field as keyof LoginFormValues, {
             message: (messages as string[])[0],
           });
@@ -91,8 +73,7 @@ function LoginPanel({
     }
   };
 
-  const [isRequestingPasswordResetEmail, setIsRequestingPasswordResetEmail] =
-    useState(false);
+  const [isRequestingPasswordResetEmail, setIsRequestingPasswordResetEmail] = useState(false);
 
   const onForgotPassword = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -108,9 +89,7 @@ function LoginPanel({
       await authService.forgotPassword(email);
       toast.success("A password reset email has been sent.");
     } catch {
-      toast.error(
-        "Failed to request password reset email. Please try again later.",
-      );
+      toast.error("Failed to request password reset email. Please try again later.");
     } finally {
       setIsRequestingPasswordResetEmail(false);
     }
@@ -123,12 +102,8 @@ function LoginPanel({
       </div>
 
       <section className="p-10">
-        <h1 className="text-center text-3xl font-bold text-white">
-          Welcome Back
-        </h1>
-        <p className="mt-2 text-center text-sm text-gray-400">
-          Identify yourself
-        </p>
+        <h1 className="text-center text-3xl font-bold text-white">Welcome Back</h1>
+        <p className="mt-2 text-center text-sm text-gray-400">Identify yourself</p>
 
         <form
           className="mt-5 space-y-3"
@@ -145,9 +120,7 @@ function LoginPanel({
               {...register("email")}
             />
 
-            {errors.email && (
-              <ErrorText className="mt-1">{errors.email.message}</ErrorText>
-            )}
+            {errors.email && <ErrorText className="mt-1">{errors.email.message}</ErrorText>}
           </div>
 
           <div>
@@ -170,16 +143,10 @@ function LoginPanel({
               </div>
             </PasswordToggleField.Root>
 
-            {errors.password && (
-              <ErrorText className="mt-1">{errors.password.message}</ErrorText>
-            )}
+            {errors.password && <ErrorText className="mt-1">{errors.password.message}</ErrorText>}
           </div>
 
-          {errors.root && (
-            <ErrorText className="mt-1 block text-center">
-              {errors.root.message}
-            </ErrorText>
-          )}
+          {errors.root && <ErrorText className="mt-1 block text-center">{errors.root.message}</ErrorText>}
 
           <div className="flex flex-row items-center justify-center">
             <button
@@ -199,11 +166,7 @@ function LoginPanel({
             disabled={isSubmitting}
             className="button-color-1 mt-4 flex h-11 w-full cursor-pointer flex-row items-center justify-center rounded-lg font-semibold text-white shadow-md transition-colors duration-300"
           >
-            {isSubmitting ? (
-              <Spinner className="size-6 fill-white" />
-            ) : (
-              <p>Log In</p>
-            )}
+            {isSubmitting ? <Spinner className="size-6 fill-white" /> : <p>Log In</p>}
           </button>
         </form>
 
@@ -274,13 +237,9 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
     }
   }, [isDirty]);
 
-  const onSubmit: SubmitHandler<RegisterFormValues> = async (
-    data: RegisterFormValues,
-  ): Promise<void> => {
+  const onSubmit: SubmitHandler<RegisterFormValues> = async (data: RegisterFormValues): Promise<void> => {
     try {
-      const response: ServiceResponse = await authService.register(
-        data as RegisterRequest,
-      );
+      const response: ServiceResponse = await authService.register(data as RegisterRequest);
 
       if (response.statusCode === HttpStatusCode.Created) {
         reset(data);
@@ -291,9 +250,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
         response.statusCode === HttpStatusCode.BadRequest &&
         response.error?.code === "ValidationErrorsOccurred"
       ) {
-        Object.entries(
-          response.error.details as Record<string, string[]>,
-        ).forEach(([field, messages]) => {
+        Object.entries(response.error.details as Record<string, string[]>).forEach(([field, messages]) => {
           if (field === "password") {
             setError(field as keyof RegisterFormValues, {
               message: messages.join("\n"),
@@ -326,9 +283,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
 
       <section className="p-10">
         <h1 className="text-center text-3xl font-bold text-white">Welcome</h1>
-        <p className="mt-2 text-center text-sm text-gray-400">
-          Hope you got drink
-        </p>
+        <p className="mt-2 text-center text-sm text-gray-400">Hope you got drink</p>
 
         <form
           className="mt-5 space-y-3"
@@ -345,9 +300,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
               {...register("email")}
             />
 
-            {errors.email && (
-              <ErrorText className="mt-1">{errors.email.message}</ErrorText>
-            )}
+            {errors.email && <ErrorText className="mt-1">{errors.email.message}</ErrorText>}
           </div>
 
           <div>
@@ -397,9 +350,8 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
                   label: "Contain special",
                   fulfilled: /[^\p{L}\p{N}]/u.test(passwordValue),
                   error:
-                    errors.password?.message?.includes(
-                      "one non alphanumeric",
-                    ) || errors.password?.message?.includes("is required"),
+                    errors.password?.message?.includes("one non alphanumeric") ||
+                    errors.password?.message?.includes("is required"),
                 },
               ]}
               className="mt-2 grid grid-cols-2 gap-y-1"
@@ -407,9 +359,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
           </div>
 
           <div>
-            <Label.Root className="label mb-1 block">
-              Confirm Password
-            </Label.Root>
+            <Label.Root className="label mb-1 block">Confirm Password</Label.Root>
 
             <PasswordToggleField.Root>
               <div className="flex w-full flex-nowrap">
@@ -429,9 +379,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
             </PasswordToggleField.Root>
 
             {errors.confirmPassword && (
-              <ErrorText className="mt-1">
-                {errors.confirmPassword.message}
-              </ErrorText>
+              <ErrorText className="mt-1">{errors.confirmPassword.message}</ErrorText>
             )}
           </div>
 
@@ -442,11 +390,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
             disabled={isSubmitting}
             className="button-color-1 mt-4 flex h-11 w-full cursor-pointer flex-row items-center justify-center rounded-lg font-semibold text-white shadow-md transition-colors duration-300"
           >
-            {isSubmitting ? (
-              <Spinner className="size-6 fill-white" />
-            ) : (
-              <p>Register</p>
-            )}
+            {isSubmitting ? <Spinner className="size-6 fill-white" /> : <p>Register</p>}
           </button>
         </form>
 
@@ -456,11 +400,7 @@ function RegisterPanel({ navigateToLogin }: { navigateToLogin: () => void }) {
           </span>
         )}
 
-        {errors.root && (
-          <ErrorText className="mt-1 block text-center">
-            {errors.root.message}
-          </ErrorText>
-        )}
+        {errors.root && <ErrorText className="mt-1 block text-center">{errors.root.message}</ErrorText>}
 
         <p className="mt-2 text-center text-sm text-gray-400">
           Already got an account? Click{" "}
@@ -486,9 +426,7 @@ export default function AuthenticatePage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [isOnLoginSide, setIsOnLoginSide] = useState(
-    location.hash !== "#register",
-  );
+  const [isOnLoginSide, setIsOnLoginSide] = useState(location.hash !== "#register");
 
   useEffect(() => {
     setIsOnLoginSide(location.hash !== "#register");
@@ -516,16 +454,12 @@ export default function AuthenticatePage() {
         x: {
           from: "0%",
           to: "360%",
-          modifier: (v) =>
-            Math.cos(((v * Math.PI) / 180) * direction + initialAngle) *
-              radiusX +
-            startX,
+          modifier: (v) => Math.cos(((v * Math.PI) / 180) * direction + initialAngle) * radiusX + startX,
         },
         y: {
           from: "0%",
           to: "360%",
-          modifier: (v) =>
-            Math.sin((v * Math.PI) / 180 + initialAngle) * radiusY + startY,
+          modifier: (v) => Math.sin((v * Math.PI) / 180 + initialAngle) * radiusY + startY,
         },
         ease: "linear",
         duration: duration,
@@ -565,11 +499,7 @@ export default function AuthenticatePage() {
         <svg xmlns="http://www.w3.org/2000/svg" className="size-0">
           <defs>
             <filter id="filter">
-              <feGaussianBlur
-                in="SourceGraphic"
-                stdDeviation="10"
-                result="blur"
-              />
+              <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
               <feColorMatrix
                 in="blur"
                 mode="matrix"
@@ -598,28 +528,19 @@ export default function AuthenticatePage() {
       <div className="flex h-dvh w-dvw flex-col items-center justify-center overflow-hidden px-4 sm:px-0">
         {/* Card flipping container */}
         <div className="relative w-full perspective-distant sm:w-lg lg:w-xl">
-          <div
-            ref={cardInnerRef}
-            className="relative grid w-full items-center transform-3d"
-          >
+          <div ref={cardInnerRef} className="relative grid w-full items-center transform-3d">
             {/* Front Face (Login) */}
             <div
               className={`col-start-1 row-start-1 w-full backface-hidden ${!isOnLoginSide ? "pointer-events-none" : ""}`}
             >
-              <LoginPanel
-                navigateToRegister={() =>
-                  navigate("#register", { replace: true })
-                }
-              />
+              <LoginPanel navigateToRegister={() => navigate("#register", { replace: true })} />
             </div>
 
             {/* Back Face (Register) */}
             <div
               className={`col-start-1 row-start-1 w-full rotate-y-180 backface-hidden ${isOnLoginSide ? "pointer-events-none" : ""}`}
             >
-              <RegisterPanel
-                navigateToLogin={() => navigate("#login", { replace: true })}
-              />
+              <RegisterPanel navigateToLogin={() => navigate("#login", { replace: true })} />
             </div>
           </div>
         </div>

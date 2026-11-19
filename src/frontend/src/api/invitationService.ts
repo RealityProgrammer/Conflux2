@@ -11,12 +11,13 @@ export const invitationService = {
     maxUses: number | null,
   ): Promise<ServiceResponse<string>> => {
     try {
-      const response: AxiosResponse<BackendResponse<string>> =
-        await apiClient.post<BackendResponse<string>>(`invite`, {
-          serverId,
-          maxUses,
-          expireAfter,
-        });
+      const response: AxiosResponse<BackendResponse<string>> = await apiClient.post<
+        BackendResponse<string>
+      >(`invite`, {
+        serverId,
+        maxUses,
+        expireAfter,
+      });
 
       return {
         success: true,
@@ -31,10 +32,9 @@ export const invitationService = {
 
   joinServer: async (invitationId: string): Promise<ServiceResponse> => {
     try {
-      const response: AxiosResponse<BackendResponse> =
-        await apiClient.post<BackendResponse>(
-          `invite/${encodeURIComponent(invitationId)}/join`,
-        );
+      const response: AxiosResponse<BackendResponse> = await apiClient.post<BackendResponse>(
+        `invite/${encodeURIComponent(invitationId)}/join`,
+      );
 
       return {
         success: true,

@@ -18,18 +18,14 @@ import { parse as parseDuration } from "iso8601-duration";
 import { BiInfinite } from "react-icons/bi";
 import { Avatar } from "../Avatar.tsx";
 
-type LogElement = NonNullable<
-  GetServerModerationLogsQuery["serverModerationLogs"]["nodes"]
->[number];
+type LogElement = NonNullable<GetServerModerationLogsQuery["serverModerationLogs"]["nodes"]>[number];
 
 export default function ModerationLog() {
   return (
     <>
       <header className="mb-0 flex-none">
         <h3 className="text-xl font-bold text-white">Moderation Log</h3>
-        <p className="text-sm text-gray-400">
-          Hall of fame or Wall of shame, but for moderators.
-        </p>
+        <p className="text-sm text-gray-400">Hall of fame or Wall of shame, but for moderators.</p>
       </header>
 
       <div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
@@ -53,8 +49,7 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
     accessorFn: (row) => row.executorMember?.user,
     header: "Executor",
     cell: (info) => {
-      const executor: NonNullable<LogElement["executorMember"]>["user"] | null =
-        info.getValue() as any;
+      const executor: NonNullable<LogElement["executorMember"]>["user"] | null = info.getValue() as any;
 
       if (!executor) {
         return "Unknown";
@@ -77,19 +72,14 @@ const logTableColumns: Array<ColumnDef<typeof features, LogElement>> = [
   {
     accessorKey: "action",
     header: "Action",
-    cell: (info) => (
-      <span className="block text-center select-none">
-        {info.getValue<string>()}
-      </span>
-    ),
+    cell: (info) => <span className="block text-center select-none">{info.getValue<string>()}</span>,
     size: 40,
   },
   {
     accessorFn: (row) => row.affectedMember?.user,
     header: "Affected",
     cell: (info) => {
-      const affected: NonNullable<LogElement["affectedMember"]>["user"] | null =
-        info.getValue() as any;
+      const affected: NonNullable<LogElement["affectedMember"]>["user"] | null = info.getValue() as any;
 
       if (!affected) {
         return "Unknown";
@@ -160,30 +150,26 @@ function LogTable() {
     detailsQueryResult: { data: serverDetails },
   } = useCommunityServerContext();
 
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useInfiniteGetServerModerationLogsQuery(
-      { serverId: serverDetails!.id, after: null },
-      {
-        initialPageParam: { after: null },
-        getNextPageParam: (
-          lastPage: GetServerModerationLogsQuery,
-        ): { after: string } | undefined => {
-          const pageInfo = lastPage?.serverModerationLogs?.pageInfo;
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteGetServerModerationLogsQuery(
+    { serverId: serverDetails!.id, after: null },
+    {
+      initialPageParam: { after: null },
+      getNextPageParam: (lastPage: GetServerModerationLogsQuery): { after: string } | undefined => {
+        const pageInfo = lastPage?.serverModerationLogs?.pageInfo;
 
-          if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
-            return { after: pageInfo.endCursor };
-          }
+        if (pageInfo?.hasNextPage && pageInfo?.endCursor) {
+          return { after: pageInfo.endCursor };
+        }
 
-          return undefined;
-        },
-        staleTime: 10 * 60 * 1000,
+        return undefined;
       },
-    );
+      staleTime: 10 * 60 * 1000,
+    },
+  );
 
   const allElements: LogElement[] =
     data?.pages.flatMap(
-      (page: GetServerModerationLogsQuery): LogElement[] =>
-        page?.serverModerationLogs?.nodes ?? [],
+      (page: GetServerModerationLogsQuery): LogElement[] => page?.serverModerationLogs?.nodes ?? [],
     ) ?? [];
 
   const table = useTable({
@@ -210,26 +196,15 @@ function LogTable() {
     const lastItem = virtualItems[virtualItems.length - 1];
     if (!lastItem) return;
 
-    if (
-      lastItem.index >= allElements.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
+    if (lastItem.index >= allElements.length - 1 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [
-    virtualItems,
-    allElements.length,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  ]);
+  }, [virtualItems, allElements.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const paddingTop = virtualItems.length > 0 ? virtualItems[0]?.start || 0 : 0;
   const paddingBottom =
     virtualItems.length > 0
-      ? virtualizer.getTotalSize() -
-        (virtualItems[virtualItems.length - 1]?.end || 0)
+      ? virtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end || 0)
       : 0;
 
   return (
@@ -252,10 +227,7 @@ function LogTable() {
                 >
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
 
                   {header.column.getCanResize() && (
                     <div
@@ -263,9 +235,7 @@ function LogTable() {
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
                       className={`absolute top-0 right-0 h-full w-0.75 cursor-col-resize touch-none select-none ${
-                        header.column.getIsResizing()
-                          ? "bg-gray-500"
-                          : "bg-gray-600"
+                        header.column.getIsResizing() ? "bg-gray-500" : "bg-gray-600"
                       }`}
                     />
                   )}

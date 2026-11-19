@@ -7,11 +7,7 @@ import { Virtuoso } from "react-virtuoso";
 import { MessageRow } from "./conversation/MessageRow.tsx";
 import useQueryPinnedMessages from "../hooks/useQueryPinnedMessages.ts";
 import useSignalREvent from "../hooks/useSignalREvent.ts";
-import type {
-  MessageDeletedEvent,
-  MessagePinnedEvent,
-  MessageUnpinnedEvent,
-} from "../api/events.ts";
+import type { MessageDeletedEvent, MessagePinnedEvent, MessageUnpinnedEvent } from "../api/events.ts";
 import { useState } from "react";
 import { useChatContainerContext } from "../contexts/ChatContainerContext.tsx";
 import { queryClient } from "../main.tsx";
@@ -31,8 +27,7 @@ export default function ShowPinnedMessagesButton() {
     retry: false,
   });
 
-  const allElements: PinnedMessageDto[] =
-    data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
+  const allElements: PinnedMessageDto[] = data?.pages.flatMap((page) => page?.elements ?? []) ?? [];
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -63,19 +58,20 @@ export default function ShowPinnedMessagesButton() {
     (event: MessageUnpinnedEvent | MessageDeletedEvent) => {
       if (!hasBeenOpened) return;
 
-      queryClient.setQueryData<
-        InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>
-      >(useQueryPinnedMessages.getKey(conversationId), (oldData) => {
-        if (!oldData) return oldData;
+      queryClient.setQueryData<InfiniteData<KeyedPaginatedPage<string, PinnedMessageDto>>>(
+        useQueryPinnedMessages.getKey(conversationId),
+        (oldData) => {
+          if (!oldData) return oldData;
 
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            elements: page.elements.filter((msg) => msg.id !== event.messageId),
-          })),
-        };
-      });
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              elements: page.elements.filter((msg) => msg.id !== event.messageId),
+            })),
+          };
+        },
+      );
     },
   );
 
@@ -123,12 +119,7 @@ interface ContentDisplayProps {
   onPinnedMessageClick: (messageId: string) => void;
 }
 
-function ContentDisplay({
-  allElements,
-  isLoading,
-  isError,
-  onPinnedMessageClick,
-}: ContentDisplayProps) {
+function ContentDisplay({ allElements, isLoading, isError, onPinnedMessageClick }: ContentDisplayProps) {
   return (
     <>
       {isLoading ? (
@@ -150,9 +141,7 @@ function ContentDisplay({
         </div>
       ) : allElements.length == 0 ? (
         <div className="flex size-full flex-col items-center justify-center gap-1">
-          <span className="text-sm text-gray-500 select-none">
-            It is so very empty here
-          </span>
+          <span className="text-sm text-gray-500 select-none">It is so very empty here</span>
         </div>
       ) : (
         <Virtuoso

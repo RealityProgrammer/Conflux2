@@ -17,9 +17,7 @@ export default function ConfirmEmailPage() {
   const confirmationCode: string | null = searchParams.get("code");
 
   const [verificationStatus, setVerificationStatus] = useState(
-    email == null || confirmationCode == null
-      ? VerificationStatus.Failed
-      : VerificationStatus.Verifying,
+    email == null || confirmationCode == null ? VerificationStatus.Failed : VerificationStatus.Verifying,
   );
 
   const hasExecuted = useRef<boolean>(false);
@@ -59,24 +57,18 @@ export default function ConfirmEmailPage() {
               {verificationStatus === VerificationStatus.Verifying ? (
                 <>
                   <Spinner className="size-16 fill-white" />
-                  <p className="mt-2 text-center text-sm text-gray-400">
-                    Verifying...
-                  </p>
+                  <p className="mt-2 text-center text-sm text-gray-400">Verifying...</p>
                 </>
               ) : verificationStatus === VerificationStatus.Success ? (
                 <>
-                  <h1 className="text-center text-3xl font-bold text-white">
-                    Verification Success
-                  </h1>
+                  <h1 className="text-center text-3xl font-bold text-white">Verification Success</h1>
                   <p className="mt-2 text-center text-sm text-gray-400">
                     Welcome aboard, you will be redirected soon
                   </p>
                 </>
               ) : (
                 <>
-                  <h1 className="text-center text-3xl font-bold text-white">
-                    Verification Failed
-                  </h1>
+                  <h1 className="text-center text-3xl font-bold text-white">Verification Failed</h1>
                   <p className="mt-2 text-center text-sm text-gray-400">
                     Something might have gone wrong...
                   </p>

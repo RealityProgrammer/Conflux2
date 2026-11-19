@@ -1,8 +1,5 @@
 import type { TimelineMessageDto } from "../../api/types.ts";
-import {
-  type MediaGalleryElement,
-  useMediaGalleryStore,
-} from "../../store/useMediaGalleryStore.ts";
+import { type MediaGalleryElement, useMediaGalleryStore } from "../../store/useMediaGalleryStore.ts";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import MessageTextboxEditor, {
   type MessageTextboxEditorRef,
@@ -24,11 +21,7 @@ interface EditMessageModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   originalMessage: TimelineMessageDto | undefined;
-  handleSubmit: (
-    newBody: string | null,
-    removeAttachmentIds: string[],
-    newAttachments: File[],
-  ) => void;
+  handleSubmit: (newBody: string | null, removeAttachmentIds: string[], newAttachments: File[]) => void;
 }
 
 export default function EditMessageModal({
@@ -41,10 +34,7 @@ export default function EditMessageModal({
   const setGalleryElements = useMediaGalleryStore((state) => state.setElements);
 
   const editOperation = useMessageOperationsStore(
-    (state) =>
-      state.editOperationsByConversation[conversationId]?.[
-        originalMessage?.id ?? ""
-      ],
+    (state) => state.editOperationsByConversation[conversationId]?.[originalMessage?.id ?? ""],
   );
 
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
@@ -85,13 +75,9 @@ export default function EditMessageModal({
   }, [open, editOperation]);
 
   const initialBody =
-    editOperation?.input.body !== undefined
-      ? editOperation.input.body
-      : (originalMessage?.body ?? "");
+    editOperation?.input.body !== undefined ? editOperation.input.body : (originalMessage?.body ?? "");
 
-  const handleAttachmentChanged = (
-    e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
-  ) => {
+  const handleAttachmentChanged = (e: ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
     const files = e.target.files;
 
     if (!files || !files.length) {
@@ -108,10 +94,7 @@ export default function EditMessageModal({
       };
     });
 
-    setNewAttachments((prev: AttachmentItem[]): AttachmentItem[] => [
-      ...prev,
-      ...newAttachments,
-    ]);
+    setNewAttachments((prev: AttachmentItem[]): AttachmentItem[] => [...prev, ...newAttachments]);
     e.target.value = "";
   };
 
@@ -138,11 +121,7 @@ export default function EditMessageModal({
   const handleAttachmentClick = (index: number) => {
     const galleryElements: MediaGalleryElement[] = [];
 
-    if (
-      originalMessage &&
-      originalMessage.attachments &&
-      originalMessage.attachments.length > 0
-    ) {
+    if (originalMessage && originalMessage.attachments && originalMessage.attachments.length > 0) {
       galleryElements.push(
         ...originalMessage.attachments.map((a): MediaGalleryElement => ({
           id: a.id,
@@ -182,17 +161,13 @@ export default function EditMessageModal({
   // object url revoking
   useEffect(() => {
     return () => {
-      newAttachments.forEach(
-        (att) => att.previewUrl && URL.revokeObjectURL(att.previewUrl),
-      );
+      newAttachments.forEach((att) => att.previewUrl && URL.revokeObjectURL(att.previewUrl));
     };
   }, [newAttachments]);
 
   useEffect(() => {
     if (!open) {
-      newAttachments.forEach(
-        (att) => att.previewUrl && URL.revokeObjectURL(att.previewUrl),
-      );
+      newAttachments.forEach((att) => att.previewUrl && URL.revokeObjectURL(att.previewUrl));
       setNewAttachments([]);
       setRemoveAttachmentIds([]);
     }
@@ -208,10 +183,7 @@ export default function EditMessageModal({
       contentClassName="centered-dialog w-4xl rounded-xl text-white bg-gray-650 outline-none"
       footerContent={
         <div className="flex w-full flex-row justify-end gap-3 p-3">
-          <RadixDialog.Close
-            type="button"
-            className="basis-20 cursor-pointer outline-none"
-          >
+          <RadixDialog.Close type="button" className="basis-20 cursor-pointer outline-none">
             Cancel
           </RadixDialog.Close>
 
@@ -237,11 +209,7 @@ export default function EditMessageModal({
 
             <MessageTextboxEditor
               ref={textboxEditorRef}
-              key={
-                open
-                  ? `${originalMessage.id}-${editOperation ? "editing" : "fresh"}`
-                  : undefined
-              }
+              key={open ? `${originalMessage.id}-${editOperation ? "editing" : "fresh"}` : undefined}
               initialValue={initialBody ?? ""}
               onSuggestionChange={(suggestion) => {
                 setSuggestion(suggestion);
@@ -260,12 +228,8 @@ export default function EditMessageModal({
                 {originalMessage.attachments &&
                   originalMessage.attachments.length > 0 &&
                   originalMessage.attachments.map((attachment, index) => {
-                    const viewUrl = conversationService.getAttachmentViewUrl(
-                      attachment.id,
-                    );
-                    const isBeingRemoved = removeAttachmentIds.includes(
-                      attachment.id,
-                    );
+                    const viewUrl = conversationService.getAttachmentViewUrl(attachment.id);
+                    const isBeingRemoved = removeAttachmentIds.includes(attachment.id);
 
                     return (
                       <div key={index} className="relative h-13 shrink-0">
@@ -282,9 +246,7 @@ export default function EditMessageModal({
 
                         <button
                           className={`absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 bg-gray-700 p-1 ${isBeingRemoved ? "border-red-600" : "border-gray-600"} `}
-                          onClick={() =>
-                            handleToggleRemoveCurrentAttachment(attachment.id)
-                          }
+                          onClick={() => handleToggleRemoveCurrentAttachment(attachment.id)}
                         >
                           {isBeingRemoved ? (
                             <FaRepeat className="size-4 fill-white" />
@@ -308,9 +270,7 @@ export default function EditMessageModal({
                         }}
                         className="h-full max-w-64 cursor-pointer overflow-hidden rounded-md border-2 border-green-500 bg-green-500/50 pr-4"
                         onClick={() =>
-                          handleAttachmentClick(
-                            (originalMessage?.attachments?.length ?? 0) + index,
-                          )
+                          handleAttachmentClick((originalMessage?.attachments?.length ?? 0) + index)
                         }
                       />
 
@@ -332,10 +292,7 @@ export default function EditMessageModal({
                   <FaFileCirclePlus className="size-6 fill-white" />
                 </button>
 
-                <MessageAttachmentInput
-                  ref={attachmentInputRef}
-                  onChange={handleAttachmentChanged}
-                />
+                <MessageAttachmentInput ref={attachmentInputRef} onChange={handleAttachmentChanged} />
               </div>
             </ScrollArea.Viewport>
 

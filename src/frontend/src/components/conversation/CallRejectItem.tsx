@@ -25,9 +25,7 @@ export class CallRejectItem extends TimelineItem<CallRejectItemProps> {
       <div className="pt-1 text-sm">
         <div className="hover-highlight px-4 py-1">
           <BsTelephoneXFill className="mr-4 inline size-6 fill-red-600" />
-          <span className="font-semibold">
-            {this.data.sender.displayName ?? "???"}
-          </span>
+          <span className="font-semibold">{this.data.sender.displayName ?? "???"}</span>
           <span> rejected a call.</span>
 
           <DateTimeText

@@ -4,13 +4,7 @@ import {
   Separator,
   unstable_PasswordToggleField as PasswordToggleField,
 } from "radix-ui";
-import {
-  BsDoorOpenFill,
-  BsExclamationTriangle,
-  BsEye,
-  BsEyeSlash,
-  BsKeyFill,
-} from "react-icons/bs";
+import { BsDoorOpenFill, BsExclamationTriangle, BsEye, BsEyeSlash, BsKeyFill } from "react-icons/bs";
 import DateTimeText from "../../components/DateTimeText.tsx";
 import useQuerySessions from "../../hooks/useQuerySessions.ts";
 import Spinner from "../../components/Spinner.tsx";
@@ -54,8 +48,8 @@ export default function AccountPage() {
 
       <h2 className="text-xl font-semibold">Login Sessions</h2>
       <p className="text-sm text-gray-400">
-        Here are the history of login of this account. Take a good look at it
-        and remove any suspicious session.
+        Here are the history of login of this account. Take a good look at it and remove any suspicious
+        session.
       </p>
 
       <AccountSessions />
@@ -66,12 +60,9 @@ export default function AccountPage() {
 function AccountInfoContainer() {
   const auth = useAuth();
 
-  const { data, isLoading, isError } = useGetSessionUserAccountInfoQuery(
-    undefined,
-    {
-      staleTime: 30 * 60 * 1000,
-    },
-  );
+  const { data, isLoading, isError } = useGetSessionUserAccountInfoQuery(undefined, {
+    staleTime: 30 * 60 * 1000,
+  });
 
   const [showEmail, setShowEmail] = useState(false);
 
@@ -91,9 +82,7 @@ function AccountInfoContainer() {
           <div className="flex items-center justify-between border-b border-gray-700/50 px-3 py-2 last:border-none">
             <span>Username</span>
 
-            <span className="text-right">
-              {auth.userProfile?.userName ?? "???"}
-            </span>
+            <span className="text-right">{auth.userProfile?.userName ?? "???"}</span>
           </div>
 
           <Separator.Root className="horizontal-separator mx-3 my-2" />
@@ -188,10 +177,7 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
   const newPassword = watch("newPassword", "");
 
   const onSubmit = async (values: ChangePasswordFormValues) => {
-    var response = await authService.changePassword(
-      values.oldPassword,
-      values.newPassword,
-    );
+    var response = await authService.changePassword(values.oldPassword, values.newPassword);
 
     if (response.success) {
       toast.success("Password changed successfully.");
@@ -201,10 +187,7 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
         response.statusCode === HttpStatusCode.BadRequest &&
         response.error?.code === "ValidationErrorsOccurred"
       ) {
-        const details = response.error.details as Record<
-          "oldPassword" | "newPassword",
-          string[]
-        >;
+        const details = response.error.details as Record<"oldPassword" | "newPassword", string[]>;
 
         if (details.oldPassword && details.oldPassword.length > 0) {
           setError("oldPassword", {
@@ -256,10 +239,7 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
 
           <PasswordToggleField.Root>
             <div className="flex w-full flex-nowrap">
-              <ErrorPopover
-                open={!!errors.oldPassword}
-                content={errors.oldPassword?.message ?? "???"}
-              >
+              <ErrorPopover open={!!errors.oldPassword} content={errors.oldPassword?.message ?? "???"}>
                 <PasswordToggleField.Input
                   placeholder="Enter old password"
                   className="input-field mr-1 h-10 flex-1 px-3"
@@ -324,9 +304,8 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
                 label: "Contain special",
                 fulfilled: /[^\p{L}\p{N}]/u.test(newPassword),
                 error:
-                  errors.newPassword?.message?.includes(
-                    "one non alphanumeric",
-                  ) || errors.newPassword?.message?.includes("is required"),
+                  errors.newPassword?.message?.includes("one non alphanumeric") ||
+                  errors.newPassword?.message?.includes("is required"),
               },
             ]}
             className="mt-2 grid grid-cols-2 gap-y-1"
@@ -359,11 +338,7 @@ function ChangePasswordDialog({ trigger }: { trigger: ReactNode }) {
           </PasswordToggleField.Root>
         </div>
 
-        {errors.root && (
-          <ErrorText className="mt-2 block text-center">
-            {errors.root.message}
-          </ErrorText>
-        )}
+        {errors.root && <ErrorText className="mt-2 block text-center">{errors.root.message}</ErrorText>}
       </div>
     </ModalForm>
   );
@@ -396,19 +371,14 @@ function AccountSessions() {
       if (data.success) {
         toast.success("Session deleted successfully.");
 
-        queryClient.setQueryData<SessionsQueryResult>(
-          useQuerySessions.queryKey,
-          (oldData) => {
-            if (!oldData) return oldData;
+        queryClient.setQueryData<SessionsQueryResult>(useQuerySessions.queryKey, (oldData) => {
+          if (!oldData) return oldData;
 
-            return {
-              ...oldData,
-              allSessions: oldData.allSessions.filter(
-                (s) => s.sessionId !== sessionId,
-              ),
-            };
-          },
-        );
+          return {
+            ...oldData,
+            allSessions: oldData.allSessions.filter((s) => s.sessionId !== sessionId),
+          };
+        });
       } else {
         toast.error("Failed to delete session.");
       }
@@ -416,14 +386,8 @@ function AccountSessions() {
     onError: (_error: Error) => {
       toast.error("Failed to delete session.");
     },
-    onSettled: async (
-      _data: ServiceResponse | undefined,
-      _error: Error | null,
-      sessionId: string,
-    ) => {
-      setDeletingSessions((prev: string[]) =>
-        prev.filter((v) => v !== sessionId),
-      );
+    onSettled: async (_data: ServiceResponse | undefined, _error: Error | null, sessionId: string) => {
+      setDeletingSessions((prev: string[]) => prev.filter((v) => v !== sessionId));
     },
   });
 
@@ -444,19 +408,16 @@ function AccountSessions() {
       if (data.success) {
         toast.success("Sessions deleted successfully.");
 
-        queryClient.setQueryData<SessionsQueryResult>(
-          useQuerySessions.queryKey,
-          (oldData) => {
-            if (!oldData) return oldData;
+        queryClient.setQueryData<SessionsQueryResult>(useQuerySessions.queryKey, (oldData) => {
+          if (!oldData) return oldData;
 
-            return {
-              ...oldData,
-              allSessions: oldData.allSessions.filter(
-                (s) => s.sessionId === oldData.currentSession.sessionId,
-              ),
-            };
-          },
-        );
+          return {
+            ...oldData,
+            allSessions: oldData.allSessions.filter(
+              (s) => s.sessionId === oldData.currentSession.sessionId,
+            ),
+          };
+        });
       } else {
         toast.error("Failed to delete sessions.");
       }
@@ -464,10 +425,7 @@ function AccountSessions() {
     onError: (_error: Error) => {
       toast.error("Failed to delete sessions.");
     },
-    onSettled: async (
-      _data: ServiceResponse | undefined,
-      _error: Error | null,
-    ) => {
+    onSettled: async (_data: ServiceResponse | undefined, _error: Error | null) => {
       setDeletingSessions([]);
     },
   });
@@ -485,10 +443,7 @@ function AccountSessions() {
               <BsExclamationTriangle className="size-8 fill-white" />
             </div>
           ) : (
-            <SessionElement
-              details={data.currentSession}
-              isThisSession={false}
-            />
+            <SessionElement details={data.currentSession} isThisSession={false} />
           )}
         </div>
 
@@ -509,22 +464,15 @@ function AccountSessions() {
           ) : (
             <>
               {data.allSessions
-                .filter(
-                  (s: SessionDetails) =>
-                    !deletingSessions.includes(s.sessionId),
-                )
+                .filter((s: SessionDetails) => !deletingSessions.includes(s.sessionId))
                 .map((details) => (
                   <SessionElement
                     key={details.sessionId}
                     details={details}
                     className="hover-highlight"
-                    isThisSession={
-                      details.sessionId === data.currentSession.sessionId
-                    }
+                    isThisSession={details.sessionId === data.currentSession.sessionId}
                     menu={details.sessionId !== data.currentSession.sessionId}
-                    handleLogout={() =>
-                      deleteSessionMutation.mutate(details.sessionId)
-                    }
+                    handleLogout={() => deleteSessionMutation.mutate(details.sessionId)}
                   />
                 ))}
             </>
@@ -559,9 +507,7 @@ function SessionElement({
 }) {
   if (!menu) {
     return (
-      <div
-        className={`flex h-14 flex-row items-center justify-center gap-2 px-2 ${className}`}
-      >
+      <div className={`flex h-14 flex-row items-center justify-center gap-2 px-2 ${className}`}>
         {DeviceIcons[details.device]}
 
         <div className="flex-1">
@@ -570,8 +516,7 @@ function SessionElement({
             {isThisSession && " (This session)"}
           </p>
           <p className="text-sm text-gray-400">
-            Last activity:{" "}
-            <DateTimeText value={new Date(details.lastActivityMs)} />{" "}
+            Last activity: <DateTimeText value={new Date(details.lastActivityMs)} />{" "}
           </p>
         </div>
       </div>
@@ -591,8 +536,7 @@ function SessionElement({
             {isThisSession && " (This session)"}
           </p>
           <p className="text-sm text-gray-400">
-            Last activity:{" "}
-            <DateTimeText value={new Date(details.lastActivityMs)} />{" "}
+            Last activity: <DateTimeText value={new Date(details.lastActivityMs)} />{" "}
           </p>
         </div>
       </ContextMenu.Trigger>
@@ -602,10 +546,7 @@ function SessionElement({
           className="bg-gray-725 w-64 space-y-1 overflow-hidden rounded-md border border-gray-500 p-1 text-sm text-white shadow-lg"
           alignOffset={5}
         >
-          <ContextMenu.Item
-            className="dropdown-item-default"
-            onSelect={handleLogout}
-          >
+          <ContextMenu.Item className="dropdown-item-default" onSelect={handleLogout}>
             <span className="font-semibold text-red-500">Logout</span>{" "}
             <BsDoorOpenFill className="ml-auto size-4 fill-red-500" />
           </ContextMenu.Item>

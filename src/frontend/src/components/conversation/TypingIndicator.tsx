@@ -41,11 +41,7 @@ export default function TypingIndicator() {
           </>
         );
       default:
-        return (
-          <span className="font-semibold text-gray-200">
-            Several people are typing...
-          </span>
-        );
+        return <span className="font-semibold text-gray-200">Several people are typing...</span>;
     }
   };
 
