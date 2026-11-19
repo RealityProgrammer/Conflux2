@@ -1,0 +1,46 @@
+name: Build and Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26.12.1"
+          cache: "npm"
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.DEPLOYMENT_HOST_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.DEPLOYMENT_HOST_PORT }}" -H "${{ secrets.DEPLOYMENT_HOST_ADDR }}" >> ~/.ssh/known_hosts
+
+      - name: Sync dist folder to VPS
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.DEPLOYMENT_HOST_PORT }} -i ~/.ssh/id_ed25519" \
+            src/frontend/dist/ "${{ secrets.DEPLOYMENT_HOST_USER }}@${{ secrets.DEPLOYMENT_HOST_ADDR }}:/var/www/conflux/"

@@ -3,7 +3,7 @@ import { ConversationPageTemplate } from "../../components/conversation/Conversa
 import IconButton from "../../components/IconButton.tsx";
 import Egg from "../../components/Egg.tsx";
 import useQueryServerChannelConversationDetails from "../../hooks/useQueryServerChannelConversationDetails.ts";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import Spinner from "../../components/Spinner.tsx";
 import ChatContainerContextProvider from "../../contexts/ChatContainerContext.tsx";
 import { ChannelType, ServerPermission } from "../../api/schema.ts";
@@ -57,10 +57,10 @@ export default function ServerChannelConversationPage() {
     return <Secret />;
   }
 
-  return <Success serverId={serverId!} data={data}/>
+  return <Success serverId={serverId!} data={data} />
 }
 
-function Success({serverId, data}: {serverId: string; data: ServerChannelConversationDetails; }) {
+function Success({ serverId, data }: { serverId: string; data: ServerChannelConversationDetails; }) {
   useConversationConnection(data.conversationId);
   const { hasPermission } = useCommunityServerContext();
   const [showRightSidebar, setShowRightSidebar] = useState(false);
