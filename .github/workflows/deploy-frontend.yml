@@ -40,9 +40,7 @@ jobs:
           ssh-keyscan -p "${{ secrets.DEPLOYMENT_HOST_PORT }}" -H "${{ secrets.DEPLOYMENT_HOST_ADDR }}" >> ~/.ssh/known_hosts
 
       - name: Sync dist folder to VPS
-        defaults:
-          run:
-            working-directory: .
+        working-directory: .
         run: |
           rsync -az --delete \
             -e "ssh -p ${{ secrets.DEPLOYMENT_HOST_PORT }} -i ~/.ssh/id_ed25519" \
